@@ -17,6 +17,9 @@ const ENDPOINT = process.env.CRAWL_ENDPOINT;
 const SECRET = process.env.CRAWL_SECRET;
 const RUN_ID = process.env.RUN_ID ?? new Date().toISOString().slice(0, 10) + "-" + Math.random().toString(36).slice(2, 6);
 const ALLOW_HTTP = process.env.ALLOW_HTTP === "1"; // tests only
+// Second line of defence after the seed blocklists: what the page says about itself.
+export const ADULT_TEXT = /\b(porn\w*|xxx|sex(y|ual)? ?(video|cam|chat|movie|story|stories)|nude|naked|nsfw|hentai|escorts?|milf|onlyfans|cam ?girls?|erotic\w*|adult (video|content|site)|jav\b|fetish|hookup)\b|色情|成人|アダルト|야동/i;
+export const GAMBLING_TEXT = /\b(casino|online slots|slot machines?|sportsbook|betting|bet now|lottery|jackpot|satta|matka|togel|judi)\b|博彩|彩票|娱乐城|bóng đá|xổ số/i;
 
 if (!DRY && (!ENDPOINT || !SECRET)) throw new Error("Set CRAWL_ENDPOINT and CRAWL_SECRET, or DRY_RUN=1");
 
@@ -89,6 +92,9 @@ async function crawlOne(browser, domain, index) {
       signals = await page.evaluate(extractInPage); // client-side redirect: one retry on the new page
     }
     if (signals.adult) return { ...base, ok: false, error: "adult" };
+    const text = `${signals.title} ${signals.lexicon.description ?? ""} ${signals.lexicon.h1 ?? ""}`;
+    if (ADULT_TEXT.test(text)) return { ...base, ok: false, error: "adult" };
+    if (GAMBLING_TEXT.test(text)) return { ...base, ok: false, error: "gambling" };
     const fonts = resolveFonts(await renderedFonts(page), signals.type_declared);
     const shot = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width: 1440, height: 900 } });
     const bg = parseCssColor(signals.colors_declared.page_bg);
