@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
+import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
+import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/api/public/oauth-protected-resource'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,70 @@ const ApiPublicIngestWireRoute = ApiPublicIngestWireRouteImport.update({
   path: '/api/public/ingest-wire',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
+  id: '/api/public/mcp',
+  path: '/api/public/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicOauthProtectedResourceRoute =
+  ApiPublicOauthProtectedResourceRouteImport.update({
+    id: '/api/public/oauth-protected-resource',
+    path: '/api/public/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/ingest-gfonts' | '/api/public/ingest-wire'
+  fullPaths:
+    | '/'
+    | '/api/public/ingest-gfonts'
+    | '/api/public/ingest-wire'
+    | '/api/public/mcp'
+    | '/api/public/oauth-protected-resource'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/ingest-gfonts' | '/api/public/ingest-wire'
-  id: '__root__' | '/' | '/api/public/ingest-gfonts' | '/api/public/ingest-wire'
+  to:
+    | '/'
+    | '/api/public/ingest-gfonts'
+    | '/api/public/ingest-wire'
+    | '/api/public/mcp'
+    | '/api/public/oauth-protected-resource'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/ingest-gfonts'
+    | '/api/public/ingest-wire'
+    | '/api/public/mcp'
+    | '/api/public/oauth-protected-resource'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
+  ApiPublicMcpRoute: typeof ApiPublicMcpRoute
+  ApiPublicOauthProtectedResourceRoute: typeof ApiPublicOauthProtectedResourceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +119,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestWireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mcp': {
+      id: '/api/public/mcp'
+      path: '/api/public/mcp'
+      fullPath: '/api/public/mcp'
+      preLoaderRoute: typeof ApiPublicMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/oauth-protected-resource': {
+      id: '/api/public/oauth-protected-resource'
+      path: '/api/public/oauth-protected-resource'
+      fullPath: '/api/public/oauth-protected-resource'
+      preLoaderRoute: typeof ApiPublicOauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +140,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,
+  ApiPublicMcpRoute: ApiPublicMcpRoute,
+  ApiPublicOauthProtectedResourceRoute: ApiPublicOauthProtectedResourceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
