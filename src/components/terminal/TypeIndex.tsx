@@ -37,8 +37,9 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
     if (!compact || !section.current) return;
     const observer = new ResizeObserver(([entry]) => {
       if (!entry) return;
-      const rowHeight = window.innerWidth < 768 ? 40 : 32;
-      setCompactRows(Math.max(10, Math.ceil((entry.contentRect.height - 64) / rowHeight)));
+      if (window.innerWidth < 768) { setCompactRows(10); return; }
+      const rowHeight = parseFloat(getComputedStyle(document.documentElement).fontSize) * 2;
+      setCompactRows(Math.max(10, Math.ceil((entry.contentRect.height - rowHeight * 2) / rowHeight)));
     });
     observer.observe(section.current);
     return () => observer.disconnect();

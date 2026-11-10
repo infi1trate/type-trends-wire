@@ -83,7 +83,7 @@ function Terminal() {
         {panel === "wire" && <Wire freshIds={fresh} />}
         {!["overview", "type", "wire"].includes(panel) && <Dormant id={panel} />}
       </main>
-      <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500">
+      <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS DEVELOPER API · DESIGN RSS · HACKER NEWS</span>
         <div className="flex shrink-0 items-center">
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
