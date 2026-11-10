@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { lastIngestQuery, typeIndexQuery } from "@/lib/data";
+import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
 import { PANELS, type PanelId } from "./panels";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -37,6 +37,7 @@ export function FKeys({ active, onSelect }: { active: PanelId; onSelect: (p: Pan
 
 export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: PanelId) => void }) {
   const { data: ingest } = useQuery(lastIngestQuery());
+  const { data: snapshot } = useQuery(typeSnapshotQuery());
   const ingestStr = ingest
     ? `${pad(new Date(ingest).getUTCHours())}:${pad(new Date(ingest).getUTCMinutes())} UTC`
     : "—";
@@ -58,6 +59,7 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
         <span className="hidden text-g500 xl:inline">
           LAST WIRE INGEST <span className="text-ink">{ingestStr}</span>
         </span>
+        <span className="hidden text-g500 xl:inline">TYPE SNAPSHOT <span className="text-ink">{snapshot ?? "—"}</span></span>
       </div>
     </header>
   );
