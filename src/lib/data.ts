@@ -200,3 +200,20 @@ export const lastIngestQuery = () =>
       return r ? (r.finished_at ?? r.started_at) : null;
     },
   });
+
+export const typeSnapshotQuery = () =>
+  queryOptions({
+    queryKey: ["type-snapshot"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ingest_runs")
+        .select("started_at,detail").eq("job", "ingest-gfonts").eq("ok", true)
+        .order("started_at", { ascending: false }).limit(1);
+      if (error) throw error;
+      const run = data?.[0];
+      if (!run) return null;
+      const detail = run.detail;
+      return detail && typeof detail === "object" && !Array.isArray(detail) && typeof detail['date'] === "string"
+        ? detail['date'] : run.started_at.slice(0, 10);
+    },
+  });

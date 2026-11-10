@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
+import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestGfontsRoute = ApiPublicIngestGfontsRouteImport.update({
+  id: '/api/public/ingest-gfonts',
+  path: '/api/public/ingest-gfonts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicIngestWireRoute = ApiPublicIngestWireRouteImport.update({
+  id: '/api/public/ingest-wire',
+  path: '/api/public/ingest-wire',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
+  '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
+  '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
+  '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/ingest-gfonts' | '/api/public/ingest-wire'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/ingest-gfonts' | '/api/public/ingest-wire'
+  id: '__root__' | '/' | '/api/public/ingest-gfonts' | '/api/public/ingest-wire'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
+  ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingest-gfonts': {
+      id: '/api/public/ingest-gfonts'
+      path: '/api/public/ingest-gfonts'
+      fullPath: '/api/public/ingest-gfonts'
+      preLoaderRoute: typeof ApiPublicIngestGfontsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest-wire': {
+      id: '/api/public/ingest-wire'
+      path: '/api/public/ingest-wire'
+      fullPath: '/api/public/ingest-wire'
+      preLoaderRoute: typeof ApiPublicIngestWireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
+  ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
