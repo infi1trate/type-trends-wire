@@ -31,7 +31,7 @@ export async function handleMcp(req:Request):Promise<Response>{
     if(req.method==='POST'&&res.ok&&res.body){
       const text=await res.text();
       const payload=(res.headers.get('content-type')??'').includes('text/event-stream') ? text.split('\n').find(line=>line.startsWith('data:'))?.slice(5).trim() : text;
-      if(payload){const data=JSON.parse(payload);if(method==='initialize'&&data.result?.capabilities)data.result.capabilities.resources={};return Response.json(data,{status:res.status,headers});}
+      if(payload){const data=JSON.parse(payload);if(method==='initialize'&&data.result?.capabilities)data.result.capabilities.resources={};headers.set('Content-Type','application/json');return Response.json(data,{status:res.status,headers});}
       return new Response(null,{status:res.status,headers});
     }
     return new Response(res.body,{status:res.status,headers});
