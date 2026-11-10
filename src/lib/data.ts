@@ -76,12 +76,12 @@ async function fetchTypeIndex(): Promise<TypeIndex> {
   const firstDate = f?.[0]?.captured_on ?? latest;
   const dates = [...new Set([d28, d14, d7].filter((x): x is string => !!x))];
   const [cur, ...older] = await Promise.all([rowsOn(latest), ...dates.map(rowsOn)]);
-  const byDate = new Map(dates.map((d, i) => [d, new Map(older[i].map((r) => [r.family, r]))]));
+  const byDate = new Map(dates.map((d, i) => [d, new Map(older[i]!.map((r) => [r.family, r]))]));
 
   const rows: FamilyRow[] = cur.map((r) => {
     const history: RankPoint[] = dates
       .map((d) => {
-        const o = byDate.get(d)!.get(r.family);
+        const o = byDate.get(d)?.get(r.family);
         return o ? { captured_on: d, popularity_rank: o.popularity_rank, trending_rank: o.trending_rank } : null;
       })
       .filter((x): x is RankPoint => !!x);

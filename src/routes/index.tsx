@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
   component: Terminal,
 });
 
-const KEYS = [
+const KEYS: [string, string][] = [
   ["F1–F10", "Switch panel"],
   ["1–0", "Switch panel"],
   ["/", "Focus query bar"],
@@ -51,13 +51,13 @@ function Terminal() {
       const fk = /^F(\d{1,2})$/.exec(e.key);
       if (fk) {
         const i = Number(fk[1]) - 1;
-        if (i >= 0 && i < 10) { e.preventDefault(); setPanel(PANELS[i].id); }
+        if (i >= 0 && i < 10) { e.preventDefault(); setPanel(PANELS[i]!.id); }
         return;
       }
       if (e.key === "Escape") { setOverlay(null); return; }
       const t = e.target as HTMLElement;
       if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (/^[0-9]$/.test(e.key)) { setPanel(PANELS[e.key === "0" ? 9 : Number(e.key) - 1].id); return; }
+      if (/^[0-9]$/.test(e.key)) { setPanel(PANELS[e.key === "0" ? 9 : Number(e.key) - 1]!.id); return; }
       if (e.key === "?") { e.preventDefault(); setOverlay("keys"); return; }
       if (e.key === "/") {
         const q = document.querySelector<HTMLInputElement>("[data-query-bar]");

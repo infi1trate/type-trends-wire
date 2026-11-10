@@ -24,7 +24,8 @@ export const daysBetween = (a: string, b: string) => Math.round((toMs(b) - toMs(
 /** Latest point at least `days` older than `latestDate`. History must be sorted ascending. */
 export function pointAtLeast(history: RankPoint[], latestDate: string, days: number): RankPoint | null {
   for (let i = history.length - 1; i >= 0; i--) {
-    if (daysBetween(history[i].captured_on, latestDate) >= days) return history[i];
+    const p = history[i]!;
+    if (daysBetween(p.captured_on, latestDate) >= days) return p;
   }
   return null;
 }
@@ -43,8 +44,8 @@ export function computeBand(history: RankPoint[], opts: { firstDate?: string } =
   if (sorted.length === 0) {
     return { band: "BASELINE", reason: `Collecting history: 0 of ${BASELINE_DAYS} days`, delta7: null, delta28: null };
   }
-  const cur = sorted[sorted.length - 1];
-  const first = opts.firstDate ?? sorted[0].captured_on;
+  const cur = sorted[sorted.length - 1]!;
+  const first = opts.firstDate ?? sorted[0]!.captured_on;
   const p7 = pointAtLeast(sorted, cur.captured_on, 7);
   const p14 = pointAtLeast(sorted, cur.captured_on, 14);
   const p28 = pointAtLeast(sorted, cur.captured_on, 28);
