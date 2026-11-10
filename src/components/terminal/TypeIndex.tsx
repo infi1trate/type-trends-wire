@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { familyHistoryQuery, sparkQuery, typeIndexQuery, type FamilyRow } from "@/lib/data";
 import { computeBand } from "@/lib/bands";
@@ -31,16 +31,28 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [open, setOpen] = useState<FamilyRow | null>(null);
+  const section = useRef<HTMLElement>(null);
+  const [compactRows, setCompactRows] = useState(10);
+  useEffect(() => {
+    if (!compact || !section.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const rowHeight = window.innerWidth < 768 ? 40 : 32;
+      setCompactRows(Math.max(10, Math.ceil((entry.contentRect.height - 64) / rowHeight)));
+    });
+    observer.observe(section.current);
+    return () => observer.disconnect();
+  }, [compact]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    if (compact) return [...data.rows].sort((a, b) => a.popularity_rank - b.popularity_rank).slice(0, 10);
+    if (compact) return [...data.rows].sort((a, b) => a.popularity_rank - b.popularity_rank).slice(0, compactRows);
     const ql = q.trim().toLowerCase();
     return data.rows
       .filter((r) => cat === "ALL" || r.category.toLowerCase() === CAT_MAP[cat])
       .filter((r) => !ql || r.family.toLowerCase().includes(ql))
       .sort(sorters[sort]);
-  }, [data, cat, sort, q, compact]);
+  }, [data, cat, sort, q, compact, compactRows]);
 
   useEffect(() => setPage(0), [cat, sort, q]);
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
@@ -50,9 +62,9 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
 
   const hideSm = "hidden md:table-cell";
   return (
-    <section className="flex min-h-0 flex-1 flex-col" aria-label="Type index">
+    <section ref={section} className="flex min-h-0 flex-1 flex-col" aria-label="Type index">
       <PanelHeader
-        title={compact ? "TYPE INDEX · TOP 10" : "F2 TYPE INDEX"}
+        title={compact ? "TYPE INDEX" : "F2 TYPE INDEX"}
         meta={data?.latest ? <>SNAPSHOT {data.latest} · {data.rows.length} FAMILIES</> : null}
       />
       {!compact && (

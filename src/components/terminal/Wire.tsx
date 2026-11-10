@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { wireQuery, type WireItem } from "@/lib/data";
+import { decodeEntities } from "@/lib/entities";
 import { Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
 
 const TAGS = ["ALL", "TYPE", "COLOR", "BRAND", "UI", "WEB", "MOTION", "AI"] as const;
@@ -40,8 +41,8 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
 
   const sources = useMemo(() => [...new Set((data ?? []).map((d) => d.source))].sort(), [data]);
   const rows = useMemo(() => {
-    const all = data ?? [];
-    if (compact) return all.slice(0, 15);
+    const all = (data ?? []).map(r => ({ ...r, title: decodeEntities(r.title), excerpt: r.excerpt ? decodeEntities(r.excerpt) : null }));
+    if (compact) return all;
     const ql = q.trim().toLowerCase();
     return all.filter(
       (r) =>
@@ -53,7 +54,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
 
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label="Wire">
-      <PanelHeader title={compact ? "WIRE · LATEST 15" : "F8 WIRE"} meta={<span aria-live="polite">{rows.length} ITEMS</span>} />
+      <PanelHeader title={compact ? "WIRE" : "F8 WIRE"} meta={<span aria-live="polite">{rows.length} ITEMS</span>} />
       {!compact && (
         <div className="flex flex-col gap-2 border-b border-rule p-3 lg:flex-row lg:items-center">
           <Seg label="Tag" options={TAGS} value={tag} onChange={setTag} />

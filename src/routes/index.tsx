@@ -7,6 +7,8 @@ import { TypeIndex } from "@/components/terminal/TypeIndex";
 import { Dormant, Overview } from "@/components/terminal/Views";
 import { Wire, useWireRealtime } from "@/components/terminal/Wire";
 import { METHODOLOGY } from "@/lib/bands";
+import { Button } from "@/components/ui/button";
+import { McpOverlay } from "@/components/terminal/McpOverlay";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: typefaces, color, layout and design news, measured weekly.";
@@ -36,7 +38,7 @@ const KEYS: [string, string][] = [
 
 function Terminal() {
   const [panel, setPanel] = useState<PanelId>("overview");
-  const [overlay, setOverlay] = useState<null | "keys" | "method">(null);
+  const [overlay, setOverlay] = useState<null | "keys" | "method" | "mcp">(null);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
 
   useWireRealtime(
@@ -70,23 +72,27 @@ function Terminal() {
   }, [panel]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-void pb-10 md:pb-0">
-      <div className="sticky top-0 z-30">
+    <div className="flex min-h-dvh flex-col bg-void pb-10 md:h-dvh md:overflow-hidden md:pb-0">
+      <div className="sticky top-0 z-30 shrink-0">
         <TopBar active={panel} onSelect={setPanel} />
         <Ticker />
       </div>
       <main className="flex min-h-0 flex-1 flex-col">
         {panel === "overview" && <Overview go={setPanel} freshIds={fresh} />}
-        {panel === "type" && <div className="flex h-[calc(100vh-84px)] flex-col max-md:h-[calc(100vh-124px)]"><TypeIndex /></div>}
-        {panel === "wire" && <div className="flex h-[calc(100vh-84px)] flex-col max-md:h-[calc(100vh-124px)]"><Wire freshIds={fresh} /></div>}
+        {panel === "type" && <TypeIndex />}
+        {panel === "wire" && <Wire freshIds={fresh} />}
         {!["overview", "type", "wire"].includes(panel) && <Dormant id={panel} />}
       </main>
-      <footer className="label flex min-h-6 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500">
+      <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS DEVELOPER API · DESIGN RSS · HACKER NEWS</span>
-        <button onClick={() => setOverlay("method")} className="h-6 px-2 text-ink hover:underline max-md:h-10">METHODOLOGY</button>
+        <div className="flex shrink-0 items-center">
+          <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
+          <Button variant="link" onClick={() => setOverlay("method")} className="label h-6 px-2 text-ink max-md:h-10">METHODOLOGY</Button>
+        </div>
         <a href="https://brandon.wtf" target="_blank" rel="noopener" className="text-ink hover:underline">BRANDON.WTF</a>
       </footer>
       <MobileKeys active={panel} onSelect={setPanel} />
+      {overlay === "mcp" && <McpOverlay onClose={() => setOverlay(null)} />}
       {overlay === "keys" && (
         <Overlay title="KEYMAP" onClose={() => setOverlay(null)}>
           <dl className="grid grid-cols-[10ch_1fr] gap-y-1">
