@@ -213,7 +213,7 @@ export const typeSnapshotQuery = () =>
       const run = data?.[0];
       if (!run) return null;
       const detail = run.detail;
-      return detail && typeof detail === "object" && !Array.isArray(detail) && typeof detail.date === "string"
-        ? detail.date : run.started_at.slice(0, 10);
+      return detail && typeof detail === "object" && !Array.isArray(detail) && typeof detail['date'] === "string"
+        ? detail['date'] : run.started_at.slice(0, 10);
     },
   });
