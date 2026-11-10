@@ -92,7 +92,8 @@ async function crawlOne(browser, domain, index) {
       signals = await page.evaluate(extractInPage); // client-side redirect: one retry on the new page
     }
     if (signals.adult) return { ...base, ok: false, error: "adult" };
-    const text = `${signals.title} ${signals.lexicon.description ?? ""} ${signals.lexicon.h1 ?? ""}`;
+    // Title + meta description only: news homepages carry headlines about anything.
+    const text = `${signals.title} ${signals.lexicon.description ?? ""}`;
     if (ADULT_TEXT.test(text)) return { ...base, ok: false, error: "adult" };
     if (GAMBLING_TEXT.test(text)) return { ...base, ok: false, error: "gambling" };
     const fonts = resolveFonts(await renderedFonts(page), signals.type_declared);
