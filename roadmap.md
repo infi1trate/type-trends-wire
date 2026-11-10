@@ -5,7 +5,7 @@
 - [x] Run ingestion once and verify database results and live UI.
 
 # Phase 3
-- [ ] Confirm public exposure consent for font snapshots and design news.
+- [x] Confirm public exposure consent for font snapshots and design news.
 - [ ] Add read-only MCP tools using the supported SDK and anonymous public-read policies, with analysis and round-trip tests.
 - [ ] Add footer MCP connection overlay.
 - [ ] Decode headline/excerpt entities, test, and backfill existing wire rows once.
