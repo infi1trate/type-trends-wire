@@ -1,0 +1,66 @@
+import { useQuery } from "@tanstack/react-query";
+import { typeIndexQuery, wire24hQuery } from "@/lib/data";
+import { DORMANT, PANELS, isoWeek, type PanelId } from "./panels";
+import { Loading, Roll } from "./primitives";
+import { TypeIndex } from "./TypeIndex";
+import { Wire } from "./Wire";
+
+function Stat({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="border-b border-r border-rule p-3 xl:border-b-0">
+      <div className="label text-g500">{label}</div>
+      <div className="mt-1 text-hero font-semibold text-ink">{children}</div>
+    </div>
+  );
+}
+
+export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds: Set<number> }) {
+  const { data, isLoading } = useQuery(typeIndexQuery());
+  const { data: w24, isLoading: wl } = useQuery(wire24hQuery());
+  const top = data?.rows.filter((r) => r.delta7 !== null).sort((a, b) => b.delta7! - a.delta7!)[0];
+  const dash = <span className="text-g500">—</span>;
+  return (
+    <div className="flex flex-col">
+      <div className="grid grid-cols-2 border-b border-rule xl:grid-cols-4">
+        <Stat label="FAMILIES TRACKED">{isLoading ? <Loading /> : data?.rows.length ? <Roll value={String(data.rows.length)} /> : dash}</Stat>
+        <Stat label="SNAPSHOT DAYS">{isLoading ? <Loading /> : data?.latest ? <Roll value={String(data.snapshotDays)} /> : dash}</Stat>
+        <Stat label="WIRE ITEMS / 24H">{wl ? <Loading /> : <Roll value={String(w24 ?? 0)} />}</Stat>
+        <Stat label="TOP RISER 7D">
+          {isLoading ? <Loading /> : top ? (
+            <span className="flex flex-wrap gap-x-2">
+              <span className="truncate">{top.ticker}</span>
+              <span className={top.delta7! > 0 ? "text-signal" : "text-g500"}>{top.delta7! > 0 ? "▲" : "▼"}{Math.abs(top.delta7!)}</span>
+            </span>
+          ) : dash}
+        </Stat>
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12">
+        <div className="flex min-h-[360px] flex-col border-b border-rule xl:col-span-7 xl:border-r">
+          <TypeIndex compact onOpenFull={() => go("type")} />
+        </div>
+        <div className="flex max-h-[520px] min-h-[360px] flex-col border-b border-rule xl:col-span-5">
+          <Wire compact freshIds={freshIds} />
+        </div>
+      </div>
+      <section className="bg-paper p-3 text-void" aria-label="Weekly brief">
+        <h2 className="label font-semibold">WEEKLY BRIEF · WEEK {String(isoWeek()).padStart(2, "0")}</h2>
+        <p className="mt-1">First brief publishes after 7 days of data.</p>
+      </section>
+    </div>
+  );
+}
+
+export function Dormant({ id }: { id: PanelId }) {
+  const p = PANELS.find((x) => x.id === id)!;
+  return (
+    <section className="hatch flex min-h-[calc(100vh-120px)] flex-1 items-center justify-center p-3" aria-label={p.label}>
+      <div className="max-w-md border border-rule bg-g800 p-3">
+        <div className="label text-g500">{p.key}</div>
+        <h2 className="text-hero font-semibold text-ink">{p.label}</h2>
+        <div className="label mt-2 text-ink">STATUS <span className="text-g500">OFFLINE</span></div>
+        <p className="mt-2 text-ink">{DORMANT[id]}</p>
+        <p className="label mt-3 text-g500">SIGNAL ACQUISITION ░░░░░░░░░░ 0%</p>
+      </div>
+    </section>
+  );
+}
