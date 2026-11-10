@@ -14,7 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gfont_snapshots: {
+        Row: {
+          captured_on: string
+          category: string
+          family: string
+          is_variable: boolean
+          popularity_rank: number
+          trending_rank: number
+        }
+        Insert: {
+          captured_on: string
+          category: string
+          family: string
+          is_variable?: boolean
+          popularity_rank: number
+          trending_rank: number
+        }
+        Update: {
+          captured_on?: string
+          category?: string
+          family?: string
+          is_variable?: boolean
+          popularity_rank?: number
+          trending_rank?: number
+        }
+        Relationships: []
+      }
+      ingest_runs: {
+        Row: {
+          detail: Json | null
+          finished_at: string | null
+          id: number
+          job: string
+          ok: boolean
+          rows_written: number
+          started_at: string
+        }
+        Insert: {
+          detail?: Json | null
+          finished_at?: string | null
+          id?: never
+          job: string
+          ok: boolean
+          rows_written?: number
+          started_at: string
+        }
+        Update: {
+          detail?: Json | null
+          finished_at?: string | null
+          id?: never
+          job?: string
+          ok?: boolean
+          rows_written?: number
+          started_at?: string
+        }
+        Relationships: []
+      }
+      wire_items: {
+        Row: {
+          excerpt: string | null
+          fetched_at: string
+          id: number
+          published_at: string
+          source: string
+          source_kind: string
+          tags: string[]
+          title: string
+          url: string
+        }
+        Insert: {
+          excerpt?: string | null
+          fetched_at?: string
+          id?: never
+          published_at: string
+          source: string
+          source_kind: string
+          tags?: string[]
+          title: string
+          url: string
+        }
+        Update: {
+          excerpt?: string | null
+          fetched_at?: string
+          id?: never
+          published_at?: string
+          source?: string
+          source_kind?: string
+          tags?: string[]
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
