@@ -32,6 +32,12 @@ test("junk font names fall back to the declared family", () => {
   assert.equal(r.h1.system, false);
 });
 
+test("system stacks and Times New Roman", () => {
+  const r = resolveFonts({ h1: { raw: "Liberation Sans", glyphs: 5, also: [] } }, { h1: { stack: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }, body: null, cta: null });
+  assert.equal(r.h1.family, "System UI");
+  assert.equal(normalizeFamily("Times New Roman"), "Times New Roman");
+});
+
 test("gambling filtered", () => {
   assert.equal(keepMainstream("dpbossnet.me"), false);
   assert.equal(keepMainstream("xosodaiphat.com"), false);

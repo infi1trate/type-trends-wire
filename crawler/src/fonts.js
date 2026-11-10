@@ -4,7 +4,7 @@
 const FALLBACK = /^(Liberation (Sans|Serif|Mono)|DejaVu (Sans|Serif)( Mono)?|FreeSans|FreeSerif|FreeMono|Noto (Sans|Serif)( [A-Z][\w ]*)?|WenQuanYi.*|Loma|Garuda|Kinnari|Norasi|Umpush|Waree|Tlwg.*|Lohit.*|Droid Sans.*|Nimbus.*|URW.*|C059|P052|Z003)$/i;
 const GENERIC = /^(serif|sans-serif|monospace|cursive|fantasy|system-ui|ui-sans-serif|ui-serif|ui-monospace|ui-rounded|emoji|math|fangsong|-apple-system|BlinkMacSystemFont)$/i;
 const SYSTEM_STACK = /^(-apple-system|BlinkMacSystemFont|system-ui|ui-sans-serif|Segoe UI|Roboto|Helvetica Neue|Helvetica|Arial|San Francisco|SF Pro( Display| Text)?)$/i;
-const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|Light|Regular|Normal|Book|Roman|Medium|Semi ?Bold|Demi ?Bold|Bold|Extra ?Bold|Ultra ?Bold|Black|Heavy|Italic|Oblique|\d+\s?pt|Web|Pro Web)$/i;
+const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|Light|Regular|Normal|Book|Medium|Semi ?Bold|Demi ?Bold|Bold|Extra ?Bold|Ultra ?Bold|Black|Heavy|Italic|Oblique|\d+\s?pt|Web|Pro Web)$/i;
 
 export function normalizeFamily(name) {
   if (!name) return null;
@@ -23,6 +23,9 @@ export function firstDeclared(stack) {
   return null;
 }
 
+// A stack that opens with the OS UI font means "use the system font", whatever Linux substituted.
+const SYSTEM_FIRST = /^\s*["']?(-apple-system|BlinkMacSystemFont|system-ui|ui-sans-serif)["']?\s*(,|$)/i;
+
 export function resolveFonts(rendered, declared) {
   const declaredFor = { h1: declared.h1, body: declared.body, cta: declared.cta, h2: null, nav: declared.body };
   const out = {};
@@ -32,7 +35,9 @@ export function resolveFonts(rendered, declared) {
     const isFallback = (!r.webfont && FALLBACK.test(r.raw)) || junkName;
     let family = normalizeFamily(r.raw);
     let system = false;
-    if (isFallback) {
+    if (isFallback && SYSTEM_FIRST.test(declaredFor[role]?.stack ?? "")) {
+      family = "System UI"; system = true;
+    } else if (isFallback) {
       const asked = firstDeclared(declaredFor[role]?.stack);
       family = asked ? normalizeFamily(asked) : family;
       system = !junkName && (!asked || SYSTEM_STACK.test(asked));

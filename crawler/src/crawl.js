@@ -46,6 +46,7 @@ async function renderedFonts(page) {
       for (const nodeId of nodeIds.slice(0, 12)) {
         const { fonts } = await cdp.send("CSS.getPlatformFontsForNode", { nodeId }).catch(() => ({ fonts: [] }));
         for (const f of fonts) {
+          if (/emoji|symbol/i.test(f.familyName)) continue; // emoji glyphs in a headline are not its typeface
           const c = counts.get(f.familyName) ?? { glyphs: 0, custom: f.isCustomFont };
           c.glyphs += f.glyphCount; counts.set(f.familyName, c);
         }
