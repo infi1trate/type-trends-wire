@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { FKeys, MobileKeys, Ticker, TopBar } from "@/components/terminal/Chrome";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { MobileKeys, Ticker, TopBar } from "@/components/terminal/Chrome";
 import { PANELS, type PanelId } from "@/components/terminal/panels";
 import { Overlay } from "@/components/terminal/primitives";
 import { TypeIndex } from "@/components/terminal/TypeIndex";
@@ -90,7 +90,7 @@ function Terminal() {
       {overlay === "keys" && (
         <Overlay title="KEYMAP" onClose={() => setOverlay(null)}>
           <dl className="grid grid-cols-[10ch_1fr] gap-y-1">
-            {KEYS.map(([k, v]) => (<><dt key={k} className="font-semibold text-ink">{k}</dt><dd key={k + "d"} className="text-g500">{v}</dd></>))}
+            {KEYS.map(([k, v]) => (<Fragment key={k + v}><dt className="font-semibold text-ink">{k}</dt><dd className="text-g500">{v}</dd></Fragment>))}
           </dl>
           <div className="mt-3 border-t border-rule pt-3">
             {PANELS.map((p, i) => (
@@ -110,5 +110,3 @@ function Terminal() {
   );
 }
 
-// keep FKeys import used for tree-shaking clarity on desktop bar
-void FKeys;
