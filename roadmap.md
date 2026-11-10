@@ -11,3 +11,8 @@
 - [x] Decode headline/excerpt entities, test, and backfill existing wire rows once.
 - [x] Fill desktop panels to the footer with internal scrolling; preserve stacked mobile layout.
 - [x] Verify the central MCP flow, report created paths, tests, and an Inter response; leave publishing to the user.
+
+# Phase 4A
+- [ ] Add crawler tables and public-read aggregate views without changing existing tables.
+- [ ] Add secret-authenticated, size-bounded crawler reception and focused tests.
+- [ ] Verify tests, receiver responses and crawl_latest; leave secret setup and publishing to the user.
