@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { decodeEntities } from "./entities";
 
 export type WireItem = { url: string; title: string; source: string; source_kind: "rss" | "hn"; published_at: string; excerpt: string | null; tags: string[] };
 export const DAY = 86400000;
@@ -20,7 +21,7 @@ export const tagText = (text: string) => TAG_RES.filter(([, re]) => re.test(text
 export const isDesignStory = (title: string) => tagText(title).some((x) => x !== "ai" && x !== "web") || /\bdesign(er|ers|ing)?\b/i.test(title);
 export function stripHtml(s: unknown, max = 280): string | null {
   if (!s) return null;
-  const t = String(s).replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#8217;|&rsquo;/g, "'").replace(/&#8220;|&#8221;|&ldquo;|&rdquo;/g, '"').replace(/\s+/g, " ").trim();
+  const t = decodeEntities(String(s).replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
   return t.length > max ? t.slice(0, max - 1) + "…" : t || null;
 }
 export const FEEDS = [
@@ -59,7 +60,7 @@ export function parseFeed(xml: string, source: string): WireItem[] {
 export function parseHn(json: any): WireItem[] {
   return arr<any>(json?.hits).filter((h) => h.title && isDesignStory(h.title)).map((h) => ({
     url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}`,
-    title: String(h.title), source: "Hacker News", source_kind: "hn" as const,
+    title: stripHtml(h.title, 300) ?? "", source: "Hacker News", source_kind: "hn" as const,
     published_at: new Date(h.created_at_i * 1000).toISOString(),
     excerpt: `${h.points ?? 0} points · ${h.num_comments ?? 0} comments · https://news.ycombinator.com/item?id=${h.objectID}`,
     tags: tagText(h.title),

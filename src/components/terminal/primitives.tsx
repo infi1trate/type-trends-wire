@@ -158,12 +158,12 @@ export function LineChart({ points }: { points: { date: string; rank: number }[]
 
 export function Overlay({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 md:p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-[80vh] w-full max-w-lg overflow-y-auto border border-rule bg-void"
+        className="h-full w-full overflow-y-auto border border-rule bg-void md:h-auto md:max-h-[80vh] md:max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex h-8 items-center justify-between border-b border-rule bg-g900 px-3">

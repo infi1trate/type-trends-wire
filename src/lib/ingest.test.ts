@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { decodeEntities } from "./entities";
 import { DAY, FEEDS, HN_QUERIES, RUN_RETENTION_DAYS, WIRE_RETENTION_DAYS, isDesignStory, parseFeed, parseHn, recentUnique, snapshotRows, stripHtml, tagText, type WireItem } from "./ingest";
 describe("ingest rules", () => {
+  it("decodes decimal entities in titles and excerpts", () => { expect(stripHtml("&#8216;Out Into Us&#8217; humanity&#039;s")).toBe("‘Out Into Us’ humanity's"); });
+  it("decodes hexadecimal Unicode entities", () => { expect(decodeEntities("&#x2019; &#X1F600;")).toBe("’ 😀"); });
+  it("decodes the named entity set", () => { expect(decodeEntities("&amp;&quot;&apos;&lt;&gt;&nbsp;&rsquo;&lsquo;&rdquo;&ldquo;&ndash;&mdash;&hellip;")).toBe("&\"'<> ’‘”“–—…"); });
+  it("decodes ampersands last without recursively decoding", () => { expect(decodeEntities("&amp;quot; &amp;#8216;")).toBe("&quot; &#8216;"); });
+  it("cleans RSS titles and excerpts with the same decoder", () => { const r = parseFeed('<rss><channel><item><title><![CDATA[&#8216;Font&#x2019;]]></title><link>https://example.com</link><pubDate>2026-11-10</pubDate><description><![CDATA[humanity&#039;s &mdash; type]]></description></item></channel></rss>', "Test")[0]; expect(r?.title).toBe("‘Font’"); expect(r?.excerpt).toBe("humanity's — type"); });
   it("uses the nine feeds and ten HN queries", () => { expect(FEEDS).toHaveLength(9); expect(HN_QUERIES).toEqual(["typeface", "font", "typography", "design system", "figma", "rebrand", "logo", "color palette", "web design", "ui design"]); });
   it("tags whole words across all seven categories", () => { expect(tagText("font palette logo figma css animation ai")).toEqual(["type", "color", "brand", "ui", "web", "motion", "ai"]); expect(tagText("chair waiting website")).toEqual(["web"]); });
   it("excludes AI-only and web-only HN titles", () => { expect(isDesignStory("AI agents in CSS")).toBe(false); expect(isDesignStory("A designer's website")).toBe(true); expect(isDesignStory("New variable font")).toBe(true); });

@@ -20,8 +20,8 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
   const top = data?.rows.filter((r) => r.delta7 !== null).sort((a, b) => b.delta7! - a.delta7!)[0];
   const dash = <span className="text-g500">—</span>;
   return (
-    <div className="flex flex-col">
-      <div className="grid grid-cols-2 border-b border-rule xl:grid-cols-4">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="grid shrink-0 grid-cols-2 border-b border-rule xl:grid-cols-4">
         <Stat label="FAMILIES TRACKED">{isLoading ? <Loading /> : data?.rows.length ? <Roll value={String(data.rows.length)} /> : dash}</Stat>
         <Stat label="SNAPSHOT DAYS">{isLoading ? <Loading /> : data?.latest ? <Roll value={String(data.snapshotDays)} /> : dash}</Stat>
         <Stat label="WIRE ITEMS / 24H">{wl ? <Loading /> : <Roll value={String(w24 ?? 0)} />}</Stat>
@@ -34,15 +34,15 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
           ) : dash}
         </Stat>
       </div>
-      <div className="grid grid-cols-1 xl:grid-cols-12">
-        <div className="flex min-h-[360px] flex-col border-b border-rule xl:col-span-7 xl:border-r">
+      <div className="grid grid-cols-1 md:min-h-0 md:flex-1 md:grid-rows-2 xl:grid-cols-12 xl:grid-rows-1">
+        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-7 xl:border-r">
           <TypeIndex compact onOpenFull={() => go("type")} />
         </div>
-        <div className="flex max-h-[520px] min-h-[360px] flex-col border-b border-rule xl:col-span-5">
+        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-5">
           <Wire compact freshIds={freshIds} />
         </div>
       </div>
-      <section className="bg-paper p-3 text-void" aria-label="Weekly brief">
+      <section className="shrink-0 bg-paper p-3 text-void" aria-label="Weekly brief">
         <h2 className="label font-semibold">WEEKLY BRIEF · WEEK {String(isoWeek()).padStart(2, "0")}</h2>
         <p className="mt-1">First brief publishes after 7 days of data.</p>
       </section>
