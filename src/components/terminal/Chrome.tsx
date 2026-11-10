@@ -44,7 +44,7 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
     <header className="flex h-8 items-stretch border-b border-rule bg-g900 text-label">
       <div className="flex shrink-0 items-center gap-2 px-3">
         <h1 className="label font-semibold text-ink">DSGN/TERMINAL</h1>
-        <span className="label text-g500">v0.1</span>
+        <span className="label normal-case text-g500">v0.1</span>
       </div>
       <div className="hidden min-w-0 flex-1 md:block">
         <FKeys active={active} onSelect={onSelect} />
