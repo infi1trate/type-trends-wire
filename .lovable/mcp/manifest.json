@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "sdk_version": "3.4.0",
+  "path": "/api/public/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "type-trends-wire",
+      "version": "0.1.0",
+      "title": "Type Trends Wire"
+    },
+    "tools": [
+      {
+        "name": "get_trend",
+        "title": "Get a typeface's trend",
+        "description": "Usage rank, trending rank, 7- and 28-day rank changes, band and daily history for one Google Fonts family.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "family": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200,
+              "description": "Family name, e.g. 'Inter', 'Instrument Serif'"
+            }
+          },
+          "required": [
+            "family"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_trends",
+        "title": "Find typefaces that are moving",
+        "description": "Ranks Google Fonts families by usage-rank change over a window, or Google's current trending order. Filter by category.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "direction": {
+              "default": "rising",
+              "type": "string",
+              "enum": [
+                "rising",
+                "falling",
+                "trending"
+              ]
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "serif",
+                "sans-serif",
+                "display",
+                "handwriting",
+                "monospace"
+              ]
+            },
+            "window_days": {
+              "default": 28,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90
+            },
+            "limit": {
+              "default": 15,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "wire",
+        "title": "Design news wire",
+        "description": "Recent design news from design publications (RSS) and Hacker News. Filter by keyword, tag or source.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Words to match in title or excerpt",
+              "type": "string",
+              "maxLength": 300
+            },
+            "tag": {
+              "type": "string",
+              "enum": [
+                "type",
+                "color",
+                "brand",
+                "ui",
+                "web",
+                "motion",
+                "ai"
+              ]
+            },
+            "source": {
+              "description": "e.g. 'Dezeen', 'Hacker News'",
+              "type": "string",
+              "maxLength": 100
+            },
+            "since_hours": {
+              "default": 72,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 720
+            },
+            "limit": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
