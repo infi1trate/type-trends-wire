@@ -14,7 +14,7 @@ export function analyzeFamily(history: FontRow[]) {
     band: band.band, band_reason: band.reason, days_of_history: daysBetween(first.captured_on, cur.captured_on),
     history: sorted.map(r => ({ d: r.captured_on, pop: r.popularity_rank, trend: r.trending_rank })) };
 }
-export function movers(latest: FontRow[], earlier: FontRow[], opts: {direction: 'rising'|'falling'|'trending'; category?: string; limit: number}) {
+export function movers(latest: FontRow[], earlier: FontRow[], opts: {direction: 'rising'|'falling'|'trending'; category?: string | undefined; limit: number}) {
   const old = new Map(earlier.map(r => [r.family,r]));
   return latest.filter(r => !opts.category || r.category === opts.category).map(r => ({family:r.family,category:r.category,popularity_rank:r.popularity_rank,trending_rank:r.trending_rank,
     popularity_change: old.has(r.family) ? (old.get(r.family)?.popularity_rank ?? r.popularity_rank)-r.popularity_rank : null}))

@@ -31,7 +31,7 @@ export async function familySuggestions(fragment: string, limit: number) {
   const {data,error}=await supabaseAnon().from('gfont_snapshots').select('family').eq('captured_on',latest).ilike('family',`%${q}%`).order('popularity_rank').limit(limit);
   if (error) throw error; return (data ?? []).map(r=>r.family);
 }
-export async function wire(opts: {query?:string;tag?:string;source?:string;sinceIso:string;limit:number}) {
+export async function wire(opts: {query?:string | undefined;tag?:string | undefined;source?:string | undefined;sinceIso:string;limit:number}) {
   let q=supabaseAnon().from('wire_items').select('url,title,source,source_kind,published_at,excerpt,tags').gte('published_at',opts.sinceIso);
   if (opts.tag) q=q.contains('tags',[opts.tag]);
   const source=clean(opts.source ?? ''), query=clean(opts.query ?? '');
