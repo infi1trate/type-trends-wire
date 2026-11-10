@@ -64,7 +64,14 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
       const { data: run, error: lookupError } = await db.from("crawl_runs").select("id").eq("id", payload.run_id).maybeSingle();
       if (lookupError) throw new Error("Crawler run lookup failed");
       if (!run) return Response.json({ error: "Unknown run" }, { status: 404 });
-      const rows = payload.sites.map(({ index, ...entry }) => ({ ...entry, index_name: index }));
+      const rows = payload.sites.map((entry) => ({
+        run_id: entry.run_id, domain: entry.domain, index_name: entry.index,
+        crawled_at: entry.crawled_at, ok: entry.ok,
+        error: entry.error ?? null, final_url: entry.final_url ?? null,
+        title: entry.title ?? null, lang: entry.lang ?? null,
+        type: entry.type ?? null, color: entry.color ?? null, layout: entry.layout ?? null,
+        composition: entry.composition ?? null, lexicon: entry.lexicon ?? null, tech: entry.tech ?? null,
+      }));
       const { error } = await db.from("crawl_sites").upsert(rows, { onConflict: "run_id,domain" });
       if (error) throw new Error("Crawler site write failed");
       return Response.json({ ok: true, written: rows.length });

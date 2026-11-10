@@ -17,7 +17,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
       const rows = table === "crawl_runs" ? state.runs : state.sites;
       if (operation === "upsert") {
         for (const row of Array.isArray(values) ? values : [values]) {
-          const key = table === "crawl_runs" ? String(row.id) : `${row.run_id}/${row.domain}`;
+          const key = table === "crawl_runs" ? String(row['id']) : `${row['run_id']}/${row['domain']}`;
           rows.set(key, { ...rows.get(key), ...row });
         }
         return { data: null, error: null };
@@ -63,7 +63,7 @@ describe("crawler receiver", () => {
   });
   it("start → sites → finish writes rows and maps index_name", async () => {
     expect(await (await handleCrawlIngest(request(start))).json()).toEqual({ ok: true, written: 1 });
-    expect(state.runs.get("weekly_1")?.status).toBe("running");
+    expect(state.runs.get("weekly_1")?.['status']).toBe("running");
     expect(await (await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }))).json()).toEqual({ ok: true, written: 1 });
     expect(state.sites.get("weekly_1/example.com")).toMatchObject({ index_name: "vanguard", type: site.type });
     const finished_at = "2026-11-10T06:10:00Z";
@@ -74,9 +74,9 @@ describe("crawler receiver", () => {
     state.runs.set("stale", { id: "stale", status: "running", started_at: new Date(Date.now() - 25 * 3600000).toISOString() });
     state.runs.set("fresh", { id: "fresh", status: "running", started_at: new Date(Date.now() - 23 * 3600000).toISOString() });
     await handleCrawlIngest(request(start));
-    expect(state.runs.get("stale")?.status).toBe("failed");
-    expect(state.runs.get("fresh")?.status).toBe("running");
-    expect(state.runs.get("weekly_1")?.status).toBe("running");
+    expect(state.runs.get("stale")?.['status']).toBe("failed");
+    expect(state.runs.get("fresh")?.['status']).toBe("running");
+    expect(state.runs.get("weekly_1")?.['status']).toBe("running");
   });
   it("returns 404 for sites referencing an unknown run", async () => { expect((await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }))).status).toBe(404); });
   it("returns 404 when finishing an unknown run", async () => { expect((await handleCrawlIngest(request({ kind: "finish", run_id: "unknown", finished_at: start.started_at, stats: {} }))).status).toBe(404); });
