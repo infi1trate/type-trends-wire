@@ -1,0 +1,38 @@
+name: weekly-crawl
+on:
+  schedule:
+    - cron: "23 3 * * 0"   # Sundays 03:23 UTC, so the index is fresh for Monday
+  workflow_dispatch:
+    inputs:
+      per_index:
+        description: "Sites per index (mainstream and vanguard)"
+        default: "500"
+      dry_run:
+        description: "1 = don't post, upload results as an artifact"
+        default: "0"
+concurrency: { group: crawl, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Crawl
+        env:
+          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          PER_INDEX: ${{ inputs.per_index || '500' }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+          CONCURRENCY: "8"
+        run: npm run crawl
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: crawl-out, path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }

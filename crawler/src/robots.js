@@ -1,0 +1,27 @@
+// Minimal robots.txt check: is "/" allowed for our UA (or *)?
+export function homepageAllowed(robotsTxt, ua = "dsgnterminalbot") {
+  if (!robotsTxt) return true;
+  const groups = [];
+  let cur = null;
+  for (const raw of robotsTxt.split(/\r?\n/)) {
+    const line = raw.replace(/#.*/, "").trim();
+    const m = /^([a-z-]+)\s*:\s*(.*)$/i.exec(line);
+    if (!m) continue;
+    const [, k, v] = m;
+    const key = k.toLowerCase();
+    if (key === "user-agent") {
+      if (!cur || cur.rules.length) { cur = { agents: [], rules: [] }; groups.push(cur); }
+      cur.agents.push(v.toLowerCase());
+    } else if ((key === "disallow" || key === "allow") && cur) cur.rules.push({ allow: key === "allow", path: v });
+  }
+  const mine = groups.filter((g) => g.agents.some((a) => a !== "*" && ua.includes(a)));
+  const group = mine.length ? mine : groups.filter((g) => g.agents.includes("*"));
+  let best = { len: -1, allow: true };
+  for (const g of group) for (const r of g.rules) {
+    if (!r.path) continue; // "Disallow:" (empty) allows everything
+    if (!["/", "/*", "*", "/$"].includes(r.path)) continue; // only rules that cover the homepage itself
+    const len = r.path.length;
+    if (len > best.len || (len === best.len && r.allow)) best = { len, allow: r.allow };
+  }
+  return best.allow;
+}

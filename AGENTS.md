@@ -40,3 +40,4 @@ use the editor.
 - The MCP HTTP boundary adds bounded per-IP throttling and a methodology-resource compatibility adapter, because the toolkit currently only registers tool and app resources.
 - HTML entity decoding is shared by ingest and render safety checks; a one-time maintenance script repairs existing rows without changing recurring jobs.
 - Crawler writes use a dedicated dynamic-imported server handler with SHA-256 shared-secret authentication, bounded streaming bodies, and a pure payload schema; aggregate views use security_invoker to preserve public-read RLS.
+- The design crawler lives in `crawler/` (plain Node + Playwright, its own package.json and node:test suite) and runs only on GitHub Actions via `.github/workflows/crawl.yml`; it is not part of the app build. It posts to `/api/public/ingest-crawl`.
