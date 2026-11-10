@@ -28,8 +28,11 @@ export async function handleMcp(req:Request):Promise<Response>{
       }
     }
     const res=await protocol(req);const headers=new Headers(res.headers);for(const[k,v]of Object.entries(CORS))headers.set(k,v);
-    if(method==='initialize'&&res.ok&&(res.headers.get('content-type')??'').includes('application/json')){
-      const data=await res.json();if(data.result?.capabilities)data.result.capabilities.resources={};return Response.json(data,{status:res.status,headers});
+    if(req.method==='POST'&&res.ok&&res.body){
+      const text=await res.text();
+      const payload=(res.headers.get('content-type')??'').includes('text/event-stream') ? text.split('\n').find(line=>line.startsWith('data:'))?.slice(5).trim() : text;
+      if(payload){const data=JSON.parse(payload);if(method==='initialize'&&data.result?.capabilities)data.result.capabilities.resources={};return Response.json(data,{status:res.status,headers});}
+      return new Response(null,{status:res.status,headers});
     }
     return new Response(res.body,{status:res.status,headers});
   }catch(error){console.error('MCP request failed',error);return rpcError('Internal error',-32603,500);}
