@@ -37,7 +37,7 @@ async function renderedFonts(page) {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("DOM.enable"); await cdp.send("CSS.enable");
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
-  const roles = { h1: "[data-dsgn-headline]", h2: "h2", body: "main p, article p, p", nav: "header a, nav a", cta: "button, a[class*=button], a[class*=btn]" };
+  const roles = { h1: "[data-dsgn-headline], [data-dsgn-headline] *", h2: "h2, h2 *", body: "main p, article p, p", nav: "header a, nav a", cta: "button, a[class*=button], a[class*=btn]" };
   const out = {};
   for (const [role, sel] of Object.entries(roles)) {
     try {

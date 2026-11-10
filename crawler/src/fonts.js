@@ -28,13 +28,14 @@ export function resolveFonts(rendered, declared) {
   const out = {};
   for (const [role, r] of Object.entries(rendered)) {
     // A downloaded webfont is what the designer chose, whatever its name; only local system faces can be substitutes.
-    const isFallback = !r.webfont && FALLBACK.test(r.raw);
+    const junkName = /copyright|licen[cs]e|©|trademark/i.test(r.raw) || normalizeFamily(r.raw) === "(obfuscated)";
+    const isFallback = (!r.webfont && FALLBACK.test(r.raw)) || junkName;
     let family = normalizeFamily(r.raw);
     let system = false;
     if (isFallback) {
       const asked = firstDeclared(declaredFor[role]?.stack);
       family = asked ? normalizeFamily(asked) : family;
-      system = !asked || SYSTEM_STACK.test(asked);
+      system = !junkName && (!asked || SYSTEM_STACK.test(asked));
     }
     out[role] = { family, raw: r.raw, webfont: !!r.webfont, substituted: isFallback, system, glyphs: r.glyphs, also: r.also };
   }

@@ -26,6 +26,12 @@ test("fallback maps back to the declared family", () => {
   assert.equal(firstDeclared('-apple-system, BlinkMacSystemFont, "Segoe UI"'), "Segoe UI");
 });
 
+test("junk font names fall back to the declared family", () => {
+  const r = resolveFonts({ h1: { raw: "Copyright Klim Type Foundry", webfont: true, glyphs: 10, also: [] } }, { h1: { stack: '"Tiempos Headline", serif' }, body: null, cta: null });
+  assert.equal(r.h1.family, "Tiempos Headline");
+  assert.equal(r.h1.system, false);
+});
+
 test("gambling filtered", () => {
   assert.equal(keepMainstream("dpbossnet.me"), false);
   assert.equal(keepMainstream("xosodaiphat.com"), false);

@@ -77,7 +77,7 @@ export function extractInPage() {
   // ---- composition ----
   const textChars = (() => {
     let n = 0;
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
       const t = walker.currentNode; const p = t.parentElement;
       if (!p || !t.textContent.trim()) continue;
@@ -144,7 +144,7 @@ export function extractInPage() {
       ctas: [...new Set(ctas.map((e) => clean(e.innerText, 40)))].filter(Boolean).slice(0, 8),
     },
     colors_declared: {
-      page_bg: bgOf(document.body), body_text: bodyP ? cs(bodyP).color : cs(document.body).color,
+      page_bg: bgOf(document.body || document.documentElement), body_text: bodyP ? cs(bodyP).color : cs(document.body || document.documentElement).color,
       h1_color: h1 ? cs(h1).color : null, cta_bgs: ctaColors,
     },
     tech,
