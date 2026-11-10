@@ -7,6 +7,7 @@ import { extractInPage } from "./extract-page.js";
 import { paletteFromScreenshot, pickAccent, parseCssColor, contrast, rgbToHex } from "./color.js";
 import { homepageAllowed } from "./robots.js";
 import { buildSeeds } from "./seeds.js";
+import { resolveFonts } from "./fonts.js";
 
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36 DSGNTerminalBot/0.1 (+https://type-trends-wire.lovable.app)";
 const PER_INDEX = Number(process.env.PER_INDEX ?? 500);
@@ -36,7 +37,7 @@ async function renderedFonts(page) {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("DOM.enable"); await cdp.send("CSS.enable");
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
-  const roles = { h1: "h1", h2: "h2", body: "main p, article p, p", nav: "header a, nav a", cta: "button, a[class*=button], a[class*=btn]" };
+  const roles = { h1: "[data-dsgn-headline]", h2: "h2", body: "main p, article p, p", nav: "header a, nav a", cta: "button, a[class*=button], a[class*=btn]" };
   const out = {};
   for (const [role, sel] of Object.entries(roles)) {
     try {
@@ -44,10 +45,13 @@ async function renderedFonts(page) {
       const counts = new Map();
       for (const nodeId of nodeIds.slice(0, 12)) {
         const { fonts } = await cdp.send("CSS.getPlatformFontsForNode", { nodeId }).catch(() => ({ fonts: [] }));
-        for (const f of fonts) counts.set(f.familyName, (counts.get(f.familyName) ?? 0) + f.glyphCount);
+        for (const f of fonts) {
+          const c = counts.get(f.familyName) ?? { glyphs: 0, custom: f.isCustomFont };
+          c.glyphs += f.glyphCount; counts.set(f.familyName, c);
+        }
       }
-      const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-      if (ranked.length) out[role] = { family: ranked[0][0], glyphs: ranked[0][1], also: ranked.slice(1, 3).map(([f]) => f) };
+      const ranked = [...counts.entries()].sort((a, b) => b[1].glyphs - a[1].glyphs);
+      if (ranked.length) out[role] = { raw: ranked[0][0], glyphs: ranked[0][1].glyphs, webfont: !!ranked[0][1].custom, also: ranked.slice(1, 3).map(([f]) => f) };
     } catch { /* selector absent */ }
   }
   await cdp.detach().catch(() => {});
@@ -75,9 +79,16 @@ async function crawlOne(browser, domain, index) {
     await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
     await page.evaluate(() => document.fonts?.ready).catch(() => {});
     await page.waitForTimeout(1200);
-    const signals = await page.evaluate(extractInPage);
+    let signals;
+    try { signals = await page.evaluate(extractInPage); }
+    catch (e) {
+      if (!/context was destroyed|navigat/i.test(String(e))) throw e;
+      await page.waitForLoadState("load", { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(1500);
+      signals = await page.evaluate(extractInPage); // client-side redirect: one retry on the new page
+    }
     if (signals.adult) return { ...base, ok: false, error: "adult" };
-    const fonts = await renderedFonts(page);
+    const fonts = resolveFonts(await renderedFonts(page), signals.type_declared);
     const shot = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width: 1440, height: 900 } });
     const bg = parseCssColor(signals.colors_declared.page_bg);
     const pal = await paletteFromScreenshot(shot, bg);

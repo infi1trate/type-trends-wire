@@ -44,7 +44,10 @@ test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   const dark = by["localhost:4801"];
   assert.ok(dark.ok, dark.error);
   assert.equal(dark.index, "mainstream");
-  assert.equal(dark.type.rendered.h1.family, "DejaVu Sans Mono"); // the actual face behind "Acme Grotesk"
+  assert.equal(dark.type.rendered.h1.raw, "DejaVu Sans Mono"); // the actual face behind "Acme Grotesk"
+  assert.equal(dark.type.rendered.h1.family, "DejaVu Sans Mono"); // a downloaded webfont keeps its real name
+  assert.equal(dark.type.rendered.h1.webfont, true);
+  assert.equal(dark.layout.headline_source, "h1");
   assert.equal(dark.type.declared.h1.size_px, 88);
   assert.equal(dark.color.theme, "dark");
   assert.equal(dark.color.accent, "#FF4F00");

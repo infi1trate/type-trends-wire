@@ -14,7 +14,8 @@ export const registrable = (h) => h.split(".").slice(SLD.test(h) ? -3 : -2).join
 const SKIP_VANGUARD = /(^|\.)(github\.com|github\.io|gitlab\.com|youtube\.com|youtu\.be|twitter\.com|x\.com|medium\.com|substack\.com|reddit\.com|news\.ycombinator\.com|apps\.apple\.com|play\.google\.com|chromewebstore\.google\.com|docs\.google\.com|arxiv\.org|npmjs\.com|pypi\.org|huggingface\.co|notion\.site|vercel\.app|netlify\.app|herokuapp\.com|pages\.dev|itch\.io|bsky\.app|linkedin\.com|wikipedia\.org)$/i;
 
 export const hostOf = (u) => { try { return new URL(u.includes("://") ? u : `https://${u}`).hostname.replace(/^www\./, "").toLowerCase(); } catch { return null; } };
-export const keepMainstream = (d) => d && !INFRA.test(d) && !ADULT.test(d) && d.split(".").length <= 3;
+const GAMBLING = /(matka|dpboss|satta|xoso|xổsố|lottery|loteria|lotto|casino|betting|\bbet\d|\d+bet|1xbet|betway|sportybet|toto|slot|thscore|bola\d|jackpot|pokies)/i;
+export const keepMainstream = (d) => d && !INFRA.test(d) && !ADULT.test(d) && !GAMBLING.test(d) && d.split(".").length <= 3;
 export const keepVanguard = (d) => d && !SKIP_VANGUARD.test(d) && !ADULT.test(d);
 
 /** CrUX top origins (Chrome UX Report, popularity buckets of pages real users load; github.com/zakird/crux-top-lists). */
@@ -68,7 +69,7 @@ export async function buildSeeds({ perIndex, curatedPath }) {
     source = { mainstream: "crux-top-lists global <=5000", crux_candidates: crux.length };
     for (const { origin } of crux) {
       const h = hostOf(origin);
-      if (!h || ADULT.test(h) || APP_SUB.test(h) || INFRA.test(h)) continue;
+      if (!h || ADULT.test(h) || GAMBLING.test(h) || APP_SUB.test(h) || INFRA.test(h)) continue;
       const reg = registrable(h);
       if (sites.has(reg)) continue;
       sites.add(reg); mainstream.push(origin.replace(/\/$/, ""));

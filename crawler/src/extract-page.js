@@ -30,7 +30,21 @@ export function extractInPage() {
       transform: s.textTransform, style: s.fontStyle,
     };
   };
-  const h1 = [...document.querySelectorAll("h1")].find((e) => visible(e)) || null;
+  // Headline = first visible h1 in the fold; many sites have none, so fall back to the largest text in the fold.
+  let h1 = [...document.querySelectorAll("h1")].find((e) => visible(e) && inFold(e)) || null;
+  let headline_source = h1 ? "h1" : null;
+  if (!h1) {
+    let best = null, bestSize = 0;
+    for (const e of document.querySelectorAll("body h2, body h3, body p, body div, body span, body a")) {
+      if (e.children.length > 2 || !visible(e) || !inFold(e)) continue;
+      const t = (e.innerText || "").trim();
+      if (t.length < 3 || t.length > 140) continue;
+      const sz = px(cs(e).fontSize);
+      if (sz > bestSize) { best = e; bestSize = sz; }
+    }
+    if (best && bestSize >= 24) { h1 = best; headline_source = "largest_text"; }
+  }
+  if (h1) h1.setAttribute("data-dsgn-headline", "1");
   const bodyP = [...document.querySelectorAll("main p, article p, p")].find((e) => visible(e) && (e.textContent || "").trim().length > 40) || null;
   const firstButton = [...document.querySelectorAll("a, button")].find((e) => visible(e) && inFold(e) && px(cs(e).paddingLeft) >= 8 && cs(e).backgroundColor !== "rgba(0, 0, 0, 0)") || null;
 
@@ -110,7 +124,7 @@ export function extractInPage() {
     viewport: { w: VW, h: VH },
     type_declared: { h1: typeOf(h1), body: typeOf(bodyP), cta: typeOf(firstButton) },
     layout: {
-      has_h1: !!h1, h1_align: h1Align, h1_lines: h1 && typeOf(h1).line_height ? Math.round(h1.getBoundingClientRect().height / (typeOf(h1).line_height * typeOf(h1).size_px)) : null,
+      has_h1: headline_source === "h1", headline_source, h1_align: h1Align, h1_lines: h1 && typeOf(h1).line_height ? Math.round(h1.getBoundingClientRect().height / (typeOf(h1).line_height * typeOf(h1).size_px)) : null,
       h1_words: h1 ? clean(h1.innerText, 400).split(" ").filter(Boolean).length : 0,
       has_nav: !!header, nav_links: navLinks, hero_media,
       cta_count: ctas.length, cta_radius_px: median(radii),
