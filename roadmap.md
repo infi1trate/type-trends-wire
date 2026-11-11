@@ -18,6 +18,6 @@
 - [x] Verify tests, receiver responses and crawl_latest; leave secret setup and publishing to the user.
 
 # Phase 4B
-- [ ] Add language-scoped aggregates and the Spread view.
-- [ ] Activate Color, Layout, Composition and Lexicon; add Spread and In the Wild.
-- [ ] Verify formatting, persistence, live data and desktop/mobile layouts; report without publishing.
+- [x] Add language-scoped aggregates and the Spread view.
+- [x] Activate Color, Layout, Composition and Lexicon; add Spread and In the Wild.
+- [x] Verify formatting, persistence, live data and desktop/mobile layouts; report without publishing.
