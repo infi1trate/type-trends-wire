@@ -49,4 +49,4 @@ use the editor.
 - Baseline surface eligibility is computed in transactional snapshot context and checked by pure diffs; require an existing domain capture strictly more than 24 hours earlier to prevent first-run noise.
 - AI inference uses the Gateway SDK server-side with forced schema tools, atomic database cost reservations and durable job leases; unknown outcomes retain reservations and are never automatically replayed.
 - AI confirmation uses a separate private baseline keyed by domain/page/viewport/kind and the existing pure advance function, so late AI output cannot clear measured pending changes or count one snapshot twice.
-- Vision inference fails closed until omission of image payloads from Gateway logs is verified; never persist images or log request/provider bodies.
+- Vision inference sends image data directly to the Gateway in memory; never persist images or log request/provider bodies, so app storage contains derived tags only.

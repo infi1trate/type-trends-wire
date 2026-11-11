@@ -51,4 +51,4 @@
 - [x] Add public trend aggregates and two-capture confirmation for tag/pricing changes.
 - [x] Add AI-marked Library panels, detail blocks and read-only MCP trends.
 - [x] Verify real pricing extraction (1,880 input / 486 output tokens), copy-only worker, 190 tests, protected endpoints, MCP and responsive displays; do not publish.
-- [ ] Enable and verify fresh vision inference only after Gateway omission of image payloads from logs is established; currently fail-closed.
+- [x] Enable vision under the owner's gateway-logging consent; one real in-memory JPEG through handleLibraryTag returned reused:false and stored tags for snapshot 2511 (1,704 input / 104 output tokens; $0.001164 estimated cost). Local fixture substituted only the unavailable crawler credential; production authentication unchanged. No publishing.

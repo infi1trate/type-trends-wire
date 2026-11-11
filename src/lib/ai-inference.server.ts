@@ -1,14 +1,13 @@
 import { generateChatCompletion, GatewayError } from "@lovable.dev/ai-gateway";
 import { z } from "zod";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
-import { AI_MODELS, AI_LIMITS, VISION_IMAGE_PRIVACY_VERIFIED } from "./ai-models";
+import { AI_MODELS, AI_LIMITS } from "./ai-models";
 import { estimateCost } from "./ai-budget";
 import { cleanTags, tagsSchema, extractionSchemas, normalizeExtraction, type ExtractionKind } from "./ai-schema";
 import { geminiToolSchema } from "./ai-tool-schema";
 export class AiFailure extends Error { constructor(public code: string, public pause = false, public http = 503) { super(code); } }
 const reservationSchema = z.object({ ok: z.boolean(), id: z.number().optional(), code: z.string().optional() });
 export async function inferAI(input: { snapshot_id: number; kind: "vision" | ExtractionKind; context: string; captured_at: string; images?: string[] }) {
- if (input.kind === "vision" && !VISION_IMAGE_PRIVACY_VERIFIED) throw new AiFailure("image_privacy_unverified", false);
  const model = input.kind === "vision" ? AI_MODELS.vision : AI_MODELS.text;
  const estimate = estimateCost({ model, input_tokens: input.kind === "vision" ? AI_LIMITS.visionInput : AI_LIMITS.textInput, output_tokens: AI_LIMITS.output });
  const { data, error } = await db.rpc("ai_reserve", { p_snapshot_id: input.snapshot_id, p_kind: input.kind, p_model: model, p_estimate: estimate });

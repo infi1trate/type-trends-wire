@@ -8,6 +8,7 @@ vi.mock('./ai-store.server',()=>({storeAiResult:vi.fn(async()=>{})}));
 import {handleLibraryTag,readAiBody} from './ai-tag.server';
 import {inferAI} from './ai-inference.server';
 import {storeAiResult} from './ai-store.server';
+import {tagsSchema} from './ai-schema';
 const tags={imagery:['product_ui'],aesthetic:['minimal'],components:[],hero_layout:'product_first',ai_positioning:'none',tone:['calm'],color_mood:'monochrome',confidence:.8};
 const input={domain:'example.com',page_type:'home',viewport:'desktop',captured_at:'2026-11-11T01:00:00Z',signals_hash:'hash',images:{fold:'data:image/jpeg;base64,/9j/2Q=='}};
 const request=(body:unknown)=>new Request('http://localhost/api/public/library-tag',{method:'POST',body:JSON.stringify(body)});
@@ -17,3 +18,4 @@ it('caps streaming bodies at exactly two megabytes',async()=>{expect(await readA
 it('returns 404 for a missing live capture',async()=>{expect((await handleLibraryTag(request(input))).status).toBe(404);expect(inferAI).not.toHaveBeenCalled();});
 it('rejects non-JPEG and non-home input',async()=>{expect((await handleLibraryTag(request({...input,page_type:'pricing'}))).status).toBe(400);expect((await handleLibraryTag(request({...input,images:{fold:'data:image/jpeg;base64,aGVsbG8='}}))).status).toBe(400);});
 it('copies matching tags younger than sixty days without any model call',async()=>{state.snapshot={id:1,...input,signals:{}};state.previous={domain:input.domain,signals_hash:'hash',created_at:new Date().toISOString(),tags,model:'test-model'};const response=await handleLibraryTag(request(input));expect(await response.json()).toEqual({ok:true,reused:true,tags});expect(storeAiResult).toHaveBeenCalledOnce();expect(inferAI).not.toHaveBeenCalled();});
+it('runs fresh vision through inference and stores validated tags when no reusable hash exists',async()=>{state.snapshot={id:1,...input,signals:{}};vi.mocked(inferAI).mockResolvedValueOnce({model:'google/gemini-3-flash-preview',data:tagsSchema.parse(tags)});const response=await handleLibraryTag(request(input));expect(await response.json()).toEqual({ok:true,reused:false,tags});expect(inferAI).toHaveBeenCalledWith(expect.objectContaining({snapshot_id:1,kind:'vision',images:[input.images.fold]}));expect(storeAiResult).toHaveBeenCalledWith(state.snapshot,'vision','google/gemini-3-flash-preview',tags);});
