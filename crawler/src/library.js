@@ -51,7 +51,7 @@ async function snapshot(page, { domain, page_type, viewport, url }) {
     return {
       links: x.links,
       record: {
-        domain, page_type, viewport, source: "live", captured_at: new Date().toISOString(), url: final_url, run_id: RUN_ID,
+        domain, page_type, viewport, source: "live", captured_at: new Date().toISOString(), url: final_url,
         html_hash: await fetchHtmlHash(url), content_hash: contentHash(x.text), signals_hash: signalsHash(signals),
         signals,
         ...(viewport === "desktop" && TEXT_PAGES.has(page_type) && x.text ? { raw_text: x.text } : {}),
@@ -124,18 +124,21 @@ async function main() {
   console.log(`run ${RUN_ID}: mode=${MODE}, ${sites.length} sites, state for ${Object.keys(byDomain).length}`);
 
   const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
-  let buffer = [];
+  let buffer = [], bufBytes = 0;
   const totals = { snapshots: 0, unchanged: 0, events: 0, sites_ok: 0, sites_failed: 0, sites_skipped: 0 };
   const errors = {};
   const flush = async () => {
     if (!buffer.length) return;
-    const snapshots = buffer; buffer = [];
+    const snapshots = buffer; buffer = []; bufBytes = 0;
     const res = await post({ kind: "library_snapshots", run_id: RUN_ID, snapshots });
     totals.events += res?.events ?? 0;
   };
   const emit = async (rec) => {
     if (!rec) { totals.unchanged++; return; }
-    buffer.push(rec); totals.snapshots++; if (buffer.length >= 25) await flush();
+    // Server caps a request at 2 MB and a batch at 25 snapshots.
+    const size = JSON.stringify(rec).length;
+    if (buffer.length && (bufBytes + size > 1_200_000 || buffer.length >= 25)) await flush();
+    buffer.push(rec); bufBytes += size; totals.snapshots++;
   };
 
   let next = 0;
