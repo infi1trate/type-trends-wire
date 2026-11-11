@@ -1,7 +1,7 @@
 export type LibraryEventType = "type_change" | "palette_shift" | "theme_flip" | "layout_change" | "redesign" | "message_pivot" | "pricing_change" | "new_surface" | "stack_change" | "nav_change";
 export type LibraryEvent = { type: LibraryEventType; severity: 1 | 2 | 3; summary: string; before: Record<string, unknown>; after: Record<string, unknown> };
 type Signals = Record<string, unknown>;
-export type DiffContext = { page_type: string; viewport: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean };
+export type DiffContext = { page_type: string; viewport: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined };
 const record = (value: unknown): Signals => value && typeof value === "object" && !Array.isArray(value) ? value as Signals : {};
 const at = (value: unknown, ...path: string[]): unknown => path.reduce((v, key) => record(v)[key], value);
 const text = (value: unknown) => typeof value === "string" ? value : null;
@@ -35,7 +35,7 @@ const palette = (signals: Signals) => {
   return Array.isArray(colors) ? colors.slice(0, 5).map(c => text(typeof c === "string" ? c : at(c, "hex"))).filter((c): c is string => !!c && lab(c) !== null) : [];
 };
 export function diffLibrarySignals(prev: Signals | null, next: Signals, context: DiffContext): LibraryEvent[] {
-  if (!prev) return context.new_surface ? [{ type: "new_surface", severity: 1, summary: `${context.page_type} page added`, before: {}, after: { page_type: context.page_type } }] : [];
+  if (!prev) return context.new_surface && context.first_captured_at && context.captured_at && Date.parse(context.captured_at) - Date.parse(context.first_captured_at) > 24 * 60 * 60 * 1000 ? [{ type: "new_surface", severity: 1, summary: `${context.page_type} page added`, before: {}, after: { page_type: context.page_type } }] : [];
   const events: LibraryEvent[] = [];
   const emit = (type: LibraryEventType, severity: 1 | 2 | 3, summary: string, before: Signals, after: Signals) => events.push({ type, severity, summary, before, after });
   const fonts = ["h1", "body"].filter(role => changed(at(prev, "type", "rendered", role, "family"), at(next, "type", "rendered", role, "family")));

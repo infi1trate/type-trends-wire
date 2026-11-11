@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useState } from "react";
 import { MobileKeys, Ticker, TopBar } from "@/components/terminal/Chrome";
 import { PANELS, type PanelId } from "@/components/terminal/panels";
 import { Overlay } from "@/components/terminal/primitives";
@@ -11,11 +11,18 @@ import { Button } from "@/components/ui/button";
 import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
+import { Library } from "@/components/terminal/Library";
+import { libraryQuery } from "@/lib/data";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: typefaces, color, layout and design news, measured weekly.";
 
 export const Route = createFileRoute("/")({
+  validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "overview", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0 }),
+  loaderDeps: ({ search }) => ({ panel: search.panel }),
+  loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : undefined,
+  errorComponent: () => <div role="alert" className="p-3">LIBRARY DATA UNAVAILABLE</div>,
+  notFoundComponent: () => <div className="p-3">NOT FOUND</div>,
   head: () => ({
     meta: [
       { title: TITLE },
@@ -30,7 +37,7 @@ export const Route = createFileRoute("/")({
 });
 
 const KEYS: [string, string][] = [
-  ["F1–F10", "Switch panel"],
+  ["F1–F11", "Switch panel"],
   ["1–0", "Switch panel"],
   ["/", "Focus query bar"],
   ["?", "Open keymap"],
@@ -39,7 +46,10 @@ const KEYS: [string, string][] = [
 ];
 
 function Terminal() {
-  const [panel, setPanel] = useState<PanelId>("overview");
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const panel = PANELS.find(p => p.id === search.panel)?.id ?? "overview";
+  const setPanel = useCallback((p: PanelId) => { void navigate({ search: prev => ({ ...prev, panel: p }) }); }, [navigate]);
   const [typeTab,setTypeTab]=useState("GOOGLE FONTS");
   const [overlay, setOverlay] = useState<null | "keys" | "method" | "mcp">(null);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
@@ -56,13 +66,14 @@ function Terminal() {
       const fk = /^F(\d{1,2})$/.exec(e.key);
       if (fk) {
         const i = Number(fk[1]) - 1;
-        if (i >= 0 && i < 10) { e.preventDefault(); setPanel(PANELS[i]!.id); }
+        const target = PANELS[i];
+        if (target) { e.preventDefault(); setPanel(target.id); }
         return;
       }
       if (e.key === "Escape") { setOverlay(null); return; }
       const t = e.target as HTMLElement;
       if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (/^[0-9]$/.test(e.key)) { setPanel(PANELS[e.key === "0" ? 9 : Number(e.key) - 1]!.id); return; }
+       if (/^[0-9]$/.test(e.key)) { const target = PANELS[e.key === "0" ? 9 : Number(e.key) - 1]; if (target) setPanel(target.id); return; }
       if (e.key === "?") { e.preventDefault(); setOverlay("keys"); return; }
       if (e.key === "/") {
         const q = document.querySelector<HTMLInputElement>("[data-query-bar]");
@@ -72,7 +83,7 @@ function Terminal() {
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [panel]);
+  }, [panel, setPanel]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-void pb-10 md:h-dvh md:overflow-hidden md:pb-0">
@@ -84,8 +95,9 @@ function Terminal() {
         {panel === "overview" && <Overview go={setPanel} freshIds={fresh} />}
         {panel === "type" && <><div className="shrink-0 border-b border-rule p-3"><Toggle label="TYPE" options={["GOOGLE FONTS","IN THE WILD"]} value={typeTab} onChange={setTypeTab}/></div>{typeTab==="GOOGLE FONTS"?<TypeIndex/>:<InTheWild/>}</>}
         {panel === "wire" && <Wire freshIds={fresh} />}
+        {panel === "library" && <Suspense fallback={<div className="p-3">▍</div>}><Library/></Suspense>}
         {(panel==="color"||panel==="layout"||panel==="composition"||panel==="lexicon") && <CrawlPanel key={panel} panel={panel}/>}
-        {!["overview", "type", "wire","color","layout","composition","lexicon"].includes(panel) && <Dormant id={panel} />}
+        {!["overview", "type", "wire","color","layout","composition","lexicon","library"].includes(panel) && <Dormant id={panel} />}
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>
@@ -104,7 +116,7 @@ function Terminal() {
           </dl>
           <div className="mt-3 border-t border-rule pt-3">
             {PANELS.map((p, i) => (
-              <div key={p.id} className="flex justify-between"><span className="text-ink">{p.key} / {(i + 1) % 10}</span><span className="text-g500">{p.label}</span></div>
+              <div key={p.id} className="flex justify-between"><span className="text-ink">{p.key}{i < 10 ? ` / ${(i + 1) % 10}` : ""}</span><span className="text-g500">{p.label}</span></div>
             ))}
           </div>
         </Overlay>

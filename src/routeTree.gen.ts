@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
@@ -20,6 +21,11 @@ import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/ap
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryDomainRoute = LibraryDomainRouteImport.update({
+  id: '/library/$domain',
+  path: '/library/$domain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIngestCrawlRoute = ApiPublicIngestCrawlRouteImport.update({
@@ -56,6 +62,7 @@ const ApiPublicOauthProtectedResourceRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/library/$domain': typeof LibraryDomainRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/library/$domain': typeof LibraryDomainRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/library/$domain': typeof LibraryDomainRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/library/$domain'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/library/$domain'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/library/$domain'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LibraryDomainRoute: typeof LibraryDomainRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
@@ -129,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library/$domain': {
+      id: '/library/$domain'
+      path: '/library/$domain'
+      fullPath: '/library/$domain'
+      preLoaderRoute: typeof LibraryDomainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest-crawl': {
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LibraryDomainRoute: LibraryDomainRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,

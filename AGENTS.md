@@ -32,7 +32,7 @@ use the editor.
 ## Project rules
 - Band classification lives only in `src/lib/bands.ts` (pure, dependency-free) so the phase-3 MCP server can mirror it; covered by `src/lib/bands.test.ts`.
 - All frontend Supabase reads go through query options in `src/lib/data.ts`; the front end only SELECTs and paginates past 1000 rows with `.range()`.
-- Terminal UI components live in `src/components/terminal/`; the single route is `/`.
+- Terminal UI components live in `src/components/terminal/`; the terminal uses `/` and library detail uses `/library/$domain` so site records are shareable and SSR-safe.
 - Ingestion uses cron-authenticated `/api/public/` callbacks with privileged writes in `src/lib/ingest.server.ts`; this keeps the terminal public-read-only and secrets server-only.
 - Shared ingest parsing/ranking lives in `src/lib/ingest.ts` with focused tests; cap outbound fetch concurrency at six for the hosted runtime.
 - Google Fonts ingestion calls the configured connector gateway, never the provider with the connection credential, because connection credentials are gateway keys.
@@ -45,3 +45,5 @@ use the editor.
 - Refresh all crawler materializations through a service-role-only RPC after finish and after finished-run site reposts; fail the request on refresh errors so retries repair stale summaries.
 - Library diffs stay pure in `src/lib/library-diff.ts`; authenticated ingestion uses transactional RPC writes with per-domain locks and optimistic context retries to keep snapshot/text/events atomic and duplicate-safe.
 - Library state uses a service-role-only DISTINCT ON RPC after crawler-secret verification; public views exclude raw text, which lives in an RLS-locked separate table.
+- Library UI queries use server functions wrapped by `src/lib/data.ts` query options with a shared anonymous SELECT-only store; MCP reuses the store and returns projected fingerprints without skeleton or private text.
+- Baseline surface eligibility is computed in transactional snapshot context and checked by pure diffs; require an existing domain capture strictly more than 24 hours earlier to prevent first-run noise.

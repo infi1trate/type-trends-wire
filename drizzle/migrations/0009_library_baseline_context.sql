@@ -1,0 +1,5 @@
+CREATE OR REPLACE FUNCTION public.library_snapshot_context(p_snapshot jsonb) RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
+SELECT jsonb_build_object('prev',(SELECT jsonb_build_object('id',id,'signals',signals,'content_hash',content_hash) FROM public.library_snapshots WHERE domain=p_snapshot->>'domain' AND page_type=p_snapshot->>'page_type' AND viewport=p_snapshot->>'viewport' AND source=p_snapshot->>'source' AND captured_at<(p_snapshot->>'captured_at')::timestamptz ORDER BY captured_at DESC LIMIT 1), 'new_surface',NOT EXISTS(SELECT 1 FROM public.library_snapshots WHERE domain=p_snapshot->>'domain' AND page_type=p_snapshot->>'page_type') AND EXISTS(SELECT 1 FROM public.library_snapshots WHERE domain=p_snapshot->>'domain' AND captured_at<(p_snapshot->>'captured_at')::timestamptz-interval '24 hours'), 'first_captured_at',(SELECT min(captured_at) FROM public.library_snapshots WHERE domain=p_snapshot->>'domain'));
+$$;
+REVOKE ALL ON FUNCTION public.library_snapshot_context(jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.library_snapshot_context(jsonb) TO service_role;

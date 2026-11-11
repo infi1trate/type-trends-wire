@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { computeBand, type BandResult, type RankPoint } from "./bands";
 import type { Scope } from "./crawl";
 import type { Database } from "@/integrations/supabase/types";
+import { getLibrary, getLibrarySite } from "./library.functions";
 
 const STALE = 5 * 60_000;
 const PAGE = 1000;
+export const libraryQuery = () => queryOptions({ queryKey: ["library"], staleTime: 5 * 60_000, queryFn: () => getLibrary() });
+export const librarySiteQuery = (domain: string) => queryOptions({ queryKey: ["library-site", domain], staleTime: 5 * 60_000, queryFn: () => getLibrarySite({ data: { domain } }) });
 
 export const toTicker = (family: string) => "$" + family.toUpperCase().replace(/[^A-Z0-9]/g, "-");
 

@@ -31,3 +31,9 @@
 - [x] Add public library storage/views and private snapshot text; do not seed sites.
 - [x] Extend crawler reception, add secret-authenticated state reads, and pure change detection.
 - [x] Verify rules, existing crawler compatibility, permissions and endpoint behavior; report schemas without publishing.
+
+# Phase 5B
+- [x] Suppress baseline surface events and remove existing baseline noise.
+- [x] Add F11 Library, site fingerprint/wireframes/history, and ticker events.
+- [x] Add four public read-only MCP tools and library methodology.
+- [x] Verify real sites, unknown-domain 404, responsive layouts, tests and MCP; do not publish.

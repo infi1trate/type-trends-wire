@@ -16,8 +16,11 @@ describe("library change rules", () => {
     for (const context of [{ page_type: "home", viewport: "mobile" }, { page_type: "pricing", viewport: "desktop" }]) expect(diffLibrarySignals(base, three, context).some(e => e.type === "redesign")).toBe(false);
   });
   it("only a new page type creates new_surface severity 1", () => {
-    expect(diffLibrarySignals(null, {}, { ...ctx, page_type: "pricing", new_surface: true })).toEqual([{ type: "new_surface", severity: 1, summary: "pricing page added", before: {}, after: { page_type: "pricing" } }]);
+    expect(diffLibrarySignals(null, {}, { ...ctx, page_type: "pricing", new_surface: true, first_captured_at: "2026-11-10T00:00:00Z", captured_at: "2026-11-11T00:00:01Z" })).toEqual([{ type: "new_surface", severity: 1, summary: "pricing page added", before: {}, after: { page_type: "pricing" } }]);
     expect(diffLibrarySignals(null, {}, { ...ctx, new_surface: false })).toEqual([]);
+  });
+  it("suppresses new surfaces during the baseline and at exactly 24 hours", () => {
+    for (const captured_at of ["2026-11-10T01:00:00Z", "2026-11-11T00:00:00Z"]) expect(diffLibrarySignals(null, {}, { ...ctx, new_surface: true, first_captured_at: "2026-11-10T00:00:00Z", captured_at })).toEqual([]);
   });
   it("accent shifts require CIE76 distance greater than 20", () => {
     expect(deltaE76("#000000", "#FFFFFF")).toBeCloseTo(100, 3);

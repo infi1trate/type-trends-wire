@@ -7,7 +7,8 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
     const row = args['p_snapshot'] as Record<string, unknown>;
     const context = () => {
       const prev = state.snapshots.filter(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type'] && s['viewport'] === row['viewport'] && s['source'] === row['source'] && String(s['captured_at']) < String(row['captured_at'])).sort((a, b) => String(b['captured_at']).localeCompare(String(a['captured_at'])))[0];
-      return { prev: prev ? { id: prev['id'], signals: prev['signals'], content_hash: prev['content_hash'] ?? null } : null, new_surface: state.snapshots.some(s => s['domain'] === row['domain']) && !state.snapshots.some(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type']) };
+      const first = state.snapshots.filter(s => s['domain'] === row['domain']).map(s => String(s['captured_at'])).sort()[0] ?? null;
+      return { prev: prev ? { id: prev['id'], signals: prev['signals'], content_hash: prev['content_hash'] ?? null } : null, first_captured_at: first, new_surface: !!first && Date.parse(String(row['captured_at'])) - Date.parse(first) > 86400000 && !state.snapshots.some(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type']) };
     };
     if (name === "library_sync") {
       const sites = args['p_sites'] as Record<string, unknown>[];
@@ -57,6 +58,10 @@ it("state rejects absent/wrong credentials with 401", async () => { for (const k
 it("sync deactivates omitted sites", async () => { state.sites.set("old.com", { domain: "old.com", active: true }); await handleCrawlIngest(request({ kind: "library_sync", sites: [] })); expect(state.sites.get("old.com")?.['active']).toBe(false); });
 it("new page type emits exactly one new_surface across viewports", async () => {
   await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }));
-  expect(await (await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [{ ...snapshot, page_type: "pricing" }, { ...snapshot, page_type: "pricing", viewport: "mobile" }] }))).json()).toEqual({ ok: true, inserted: 2, events: 1 });
+  expect(await (await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [{ ...snapshot, page_type: "pricing", captured_at: "2026-11-12T01:00:01Z" }, { ...snapshot, page_type: "pricing", viewport: "mobile", captured_at: "2026-11-12T01:00:01Z" }] }))).json()).toEqual({ ok: true, inserted: 2, events: 1 });
   expect(state.events).toMatchObject([{ type: "new_surface", severity: 1 }]);
+});
+it("baseline run adds pages without emitting surface events", async () => {
+  const response = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }));
+  expect(await response.json()).toEqual({ ok: true, inserted: 2, events: 0 });
 });
