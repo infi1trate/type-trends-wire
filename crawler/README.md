@@ -47,3 +47,14 @@ Edit `seeds/vanguard.txt` to shape the vanguard. It's the taste half of the mark
 - Global CrUX skews toward non-English sites; every record carries `lang` so the terminal can filter.
 - Show HN sites lean dev-tool and indie. Add studios and brands to `vanguard.txt` to balance it.
 - Some sites block headless browsers or bots; those show up as `http_403` or `timeout` in the run stats.
+
+## Library mode (`npm run library`)
+
+Tracks the 300 sites in `seeds/library.csv` (10 sectors × 30) over time. `.github/workflows/library.yml` runs it:
+
+- **full** (Saturdays, or dispatch `mode=full`): posts `library_sync`, renders each home page, discovers pricing / changelog / product / about from same-host links, snapshots each page at 1440 desktop plus the home page at 390 mobile.
+- **check** (daily): reads `/api/public/library-state`, refetches the server HTML of every page already captured, and re-renders only pages whose `html_hash` moved.
+
+Each snapshot carries the index-crawl signals plus `css_features`, `nav` (label/href/depth), `skeleton` (≤400 boxes for a wireframe redraw — no screenshots are stored), and three hashes (`html_hash` server HTML minus volatile bits, `content_hash` visible text, `signals_hash` design-relevant fields). Desktop pages also send `raw_text` (≤50k chars) for later extraction; the terminal keeps it private. The terminal diffs consecutive snapshots into `library_events`.
+
+Env: `LIBRARY_MODE`, `LIMIT`, `LIBRARY_FILE`, `STATE_FILE` (dry runs), plus the shared `CRAWL_ENDPOINT` / `CRAWL_SECRET` / `DRY_RUN` / `CONCURRENCY`.

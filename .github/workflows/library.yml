@@ -1,0 +1,43 @@
+name: library-crawl
+on:
+  schedule:
+    - cron: "41 5 * * *"   # daily cheap check: only pages whose server HTML changed
+    - cron: "11 4 * * 6"   # Saturdays: full library snapshot (discovery, all pages, mobile)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "full or check"
+        default: "full"
+      limit:
+        description: "Only the first N sites (0 = all 300)"
+        default: "0"
+      dry_run:
+        description: "1 = don't post, upload results as an artifact"
+        default: "0"
+concurrency: { group: library, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  library:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Library crawl
+        env:
+          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          LIBRARY_MODE: ${{ inputs.mode || (github.event.schedule == '11 4 * * 6' && 'full' || 'check') }}
+          LIMIT: ${{ inputs.limit || '0' }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+          CONCURRENCY: "8"
+        run: npm run library
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: library-out, path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }

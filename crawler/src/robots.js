@@ -1,5 +1,7 @@
-// Minimal robots.txt check: is "/" allowed for our UA (or *)?
-export function homepageAllowed(robotsTxt, ua = "dsgnterminalbot") {
+// Minimal robots.txt check: is `path` allowed for our UA (or *)? Longest match wins; Allow wins ties.
+const ruleRe = (p) => new RegExp("^" + p.replace(/[.+?^{}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\\\$$|\$$/, "$"));
+
+export function homepageAllowed(robotsTxt, ua = "dsgnterminalbot", path = "/") {
   if (!robotsTxt) return true;
   const groups = [];
   let cur = null;
@@ -19,8 +21,9 @@ export function homepageAllowed(robotsTxt, ua = "dsgnterminalbot") {
   let best = { len: -1, allow: true };
   for (const g of group) for (const r of g.rules) {
     if (!r.path) continue; // "Disallow:" (empty) allows everything
-    if (!["/", "/*", "*", "/$"].includes(r.path)) continue; // only rules that cover the homepage itself
-    const len = r.path.length;
+    const rp = r.path.startsWith("/") || r.path.startsWith("*") ? r.path : "/" + r.path;
+    if (!ruleRe(rp).test(path)) continue;
+    const len = rp.length;
     if (len > best.len || (len === best.len && r.allow)) best = { len, allow: r.allow };
   }
   return best.allow;

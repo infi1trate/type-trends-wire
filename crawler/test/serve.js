@@ -6,7 +6,8 @@ const types = { ".html": "text/html; charset=utf-8", ".ttf": "font/ttf", ".txt":
 export function serve(dir, port) {
   return new Promise((res) => {
     const s = createServer((req, r) => {
-      const p = join(dir, req.url === "/" ? "index.html" : req.url.split("?")[0]);
+      let p = join(dir, req.url === "/" ? "index.html" : req.url.split("?")[0].replace(/\/$/, ""));
+      if (!existsSync(p) && existsSync(p + ".html")) p += ".html";
       if (!existsSync(p)) { r.writeHead(404); return r.end(); }
       r.writeHead(200, { "content-type": types[extname(p)] ?? "application/octet-stream" }); r.end(readFileSync(p));
     }).listen(port, () => res(s));
