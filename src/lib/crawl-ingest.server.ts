@@ -36,6 +36,11 @@ async function boundedBody(request: Request): Promise<string | null> {
   return new TextDecoder().decode(bytes);
 }
 
+async function refreshAggregates(): Promise<void> {
+  const { error } = await db.rpc("refresh_crawl_aggregates");
+  if (error) throw new Error("Crawler aggregate refresh failed");
+}
+
 export async function handleCrawlIngest(request: Request): Promise<Response> {
   const secret = request.headers.get("x-crawl-secret");
   if (!secret) return forbidden();
@@ -74,12 +79,17 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
       }));
       const { error } = await db.from("crawl_sites").upsert(rows, { onConflict: "run_id,domain" });
       if (error) throw new Error("Crawler site write failed");
+      // Check after writing: a finish request may have completed while this batch was in flight.
+      const { data: currentRun, error: statusError } = await db.from("crawl_runs").select("status").eq("id", payload.run_id).maybeSingle();
+      if (statusError) throw new Error("Crawler run status lookup failed");
+      if (currentRun?.status === "finished") await refreshAggregates();
       return Response.json({ ok: true, written: rows.length });
     }
     const { data, error } = await db.from("crawl_runs").update({ status: "finished", finished_at: payload.finished_at, stats: payload.stats })
       .eq("id", payload.run_id).select("id");
     if (error) throw new Error("Crawler run finish failed");
     if (!data?.length) return Response.json({ error: "Unknown run" }, { status: 404 });
+    await refreshAggregates();
     return Response.json({ ok: true, written: data.length });
   } catch (error) {
     // Never log payloads, credentials, or provider errors that may contain input.

@@ -36,6 +36,13 @@
       "when": 1794357049144,
       "tag": "0004_language_scopes_and_spread",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794358044100,
+      "tag": "0005_precompute_crawl_aggregates",
+      "breakpoints": true
     }
   ]
 }
