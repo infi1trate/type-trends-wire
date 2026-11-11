@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "full or check"
+        description: "full, check, or tag (one-off AI tagging backfill)"
         default: "full"
       limit:
         description: "Only the first N sites (0 = all 300)"
