@@ -79,6 +79,13 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     assert.equal(home.signals.lexicon.h1, "Software that stays out of the way"); // not the cookie banner, no doubled roll copy
     assert.ok(!home.signals.color.palette.some((p) => p.hex.startsWith("#FFC")), "cookie banner leaked into palette");
     assert.deepEqual(by["pricing:desktop"].signals.prices, ["$12 per seat", "$29 per seat"]);
+    // images only for home:desktop, sent separately (never inside the snapshot payload)
+    const tags = readFileSync("out/libtest.tags.jsonl", "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    assert.equal(tags.length, 1);
+    assert.equal(tags[0].page_type, "home");
+    assert.equal(tags[0].signals_hash, home.signals_hash);
+    assert.ok(tags[0].images.fold > 1000 && tags[0].images.page > 1000);
+    assert.ok(!JSON.stringify(snaps).includes("data:image"));
     assert.equal(by["home:mobile"].signals.page.w, 390);
     assert.equal(by["home:mobile"].raw_text, undefined);
     assert.ok(by["pricing:desktop"].raw_text.includes("$29"));
@@ -96,5 +103,11 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     const sum2 = JSON.parse(readFileSync("out/libfull2.summary.json", "utf8"));
     assert.equal(sum2.snapshots, 1);
     assert.equal(sum2.unchanged, 3);
+
+    // tag mode: home desktop only, forced even when unchanged
+    await run("node", ["src/library.js"], { env: { ...process.env, DRY_RUN: "1", ALLOW_HTTP: "1", RUN_ID: "libtag", LIBRARY_MODE: "tag", STATE_FILE: "/tmp/state.json", LIBRARY_FILE: "/tmp/lib.csv", LIMIT: "1" } });
+    const sum3 = JSON.parse(readFileSync("out/libtag.summary.json", "utf8"));
+    assert.equal(sum3.snapshots, 1);
+    assert.equal(sum3.tagged, 1);
   } finally { server.close(); }
 });
