@@ -1,6 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { computeBand, type BandResult, type RankPoint } from "./bands";
+import type { Scope } from "./crawl";
+import type { Database } from "@/integrations/supabase/types";
 
 const STALE = 5 * 60_000;
 const PAGE = 1000;
@@ -217,3 +219,48 @@ export const typeSnapshotQuery = () =>
         ? detail['date'] : run.started_at.slice(0, 10);
     },
   });
+
+type ViewRow<T extends keyof Database["public"]["Views"]> = Database["public"]["Views"][T]["Row"];
+export type SpreadRow = ViewRow<"crawl_spread">;
+export type CrawlSite = {
+  domain: string; index_name: string; lang: string | null;
+  color: { theme?: string; accent?: string; mean_luminance?: number; palette?: {hex:string;share:number}[] };
+  composition: {whitespace_ratio?:number;text_density?:number;media_coverage?:number};
+  layout: {hero_media?:string;page_height_vh?:number};
+};
+const CRAWL_STALE = 10 * 60_000;
+export const crawlQuery = (scope: Scope) => queryOptions({
+  queryKey: ["crawl",scope], staleTime: CRAWL_STALE,
+  queryFn: async () => {
+    const { data: latest, error } = await supabase.from("crawl_latest").select("id,prev_id").limit(1);
+    if (error) throw error;
+    const id = latest?.[0]?.id;
+    if (!id) return null;
+    const runResult = await supabase.from("crawl_runs").select("*").eq("id",id).single();
+    if (runResult.error) throw runResult.error;
+    const [colors,layout,tech,ctas,words,fonts,spread,sites] = await Promise.all([
+      fetchAll<ViewRow<"crawl_color_stats">>((f,t)=>supabase.from("crawl_color_stats").select("*").eq("scope",scope).eq("run_id",id).order("index_name").range(f,t)),
+      fetchAll<ViewRow<"crawl_layout_share">>((f,t)=>supabase.from("crawl_layout_share").select("*").eq("scope",scope).eq("run_id",id).order("index_name").order("dimension").order("value").range(f,t)),
+      fetchAll<ViewRow<"crawl_tech_share">>((f,t)=>supabase.from("crawl_tech_share").select("*").eq("scope",scope).eq("run_id",id).order("index_name").order("tech").range(f,t)),
+      fetchAll<ViewRow<"crawl_cta_phrases">>((f,t)=>supabase.from("crawl_cta_phrases").select("*").eq("scope",scope).eq("run_id",id).order("index_name").order("sites",{ascending:false}).order("phrase").range(f,t)),
+      fetchAll<ViewRow<"crawl_h1_words">>((f,t)=>supabase.from("crawl_h1_words").select("*").eq("scope",scope).eq("run_id",id).order("index_name").order("sites",{ascending:false}).order("word").range(f,t)),
+      fetchAll<ViewRow<"crawl_font_share">>((f,t)=>supabase.from("crawl_font_share").select("*").eq("scope",scope).eq("run_id",id).order("index_name").order("role").order("sites",{ascending:false}).order("family").range(f,t)),
+      fetchAll<SpreadRow>((f,t)=>supabase.from("crawl_spread").select("*").eq("scope",scope).order("signal").range(f,t)),
+      fetchAll((f,t)=> {
+        let q = supabase.from("crawl_sites").select("domain,index_name,lang,color,composition,layout").eq("run_id",id).eq("ok",true).order("domain");
+        if(scope === "en") q=q.ilike("lang","en%");
+        return q.range(f,t);
+      }),
+    ]);
+    return {run:runResult.data,prevId:latest?.[0]?.prev_id,colors,layout,tech,ctas,words,fonts,
+      spread:spread.sort((a,b)=>Math.abs(b.spread_pts??0)-Math.abs(a.spread_pts??0)),
+      sites:sites.map(s=>({...s,color:s.color??{},composition:s.composition??{},layout:s.layout??{}})) as CrawlSite[]};
+  },
+});
+export type CrawlData = {
+ run: Database["public"]["Tables"]["crawl_runs"]["Row"]; prevId: string | null | undefined;
+ colors: ViewRow<"crawl_color_stats">[]; layout: ViewRow<"crawl_layout_share">[];
+ tech: ViewRow<"crawl_tech_share">[]; ctas: ViewRow<"crawl_cta_phrases">[];
+ words: ViewRow<"crawl_h1_words">[]; fonts: ViewRow<"crawl_font_share">[];
+ spread: SpreadRow[]; sites: CrawlSite[];
+};

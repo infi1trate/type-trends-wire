@@ -16,3 +16,8 @@
 - [x] Add crawler tables and public-read aggregate views without changing existing tables.
 - [x] Add secret-authenticated, size-bounded crawler reception and focused tests.
 - [x] Verify tests, receiver responses and crawl_latest; leave secret setup and publishing to the user.
+
+# Phase 4B
+- [x] Add language-scoped aggregates and the Spread view.
+- [x] Activate Color, Layout, Composition and Lexicon; add Spread and In the Wild.
+- [x] Verify formatting, persistence, live data and desktop/mobile layouts; report without publishing.

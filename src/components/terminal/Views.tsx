@@ -4,6 +4,7 @@ import { DORMANT, PANELS, isoWeek, type PanelId } from "./panels";
 import { Loading, Roll } from "./primitives";
 import { TypeIndex } from "./TypeIndex";
 import { Wire } from "./Wire";
+import { Spread } from "./Spread";
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -34,11 +35,12 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
           ) : dash}
         </Stat>
       </div>
-      <div className="grid grid-cols-1 md:min-h-0 md:flex-1 md:grid-rows-2 xl:grid-cols-12 xl:grid-rows-1">
-        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-7 xl:border-r">
+      <div className="grid grid-cols-1 md:min-h-0 md:flex-1 md:grid-rows-[1fr_1fr_1fr] xl:grid-cols-12 xl:grid-rows-1">
+        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-5 xl:border-r">
           <TypeIndex compact onOpenFull={() => go("type")} />
         </div>
-        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-5">
+        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-3 xl:border-r"><Spread/></div>
+        <div className="flex min-h-[360px] min-w-0 flex-col border-b border-rule md:min-h-0 xl:col-span-4">
           <Wire compact freshIds={freshIds} />
         </div>
       </div>

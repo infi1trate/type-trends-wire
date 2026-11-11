@@ -231,6 +231,7 @@ export type Database = {
           index_name: string | null
           median_body_contrast: number | null
           run_id: string | null
+          scope: string | null
         }
         Relationships: [
           {
@@ -254,6 +255,7 @@ export type Database = {
           index_name: string | null
           phrase: string | null
           run_id: string | null
+          scope: string | null
           share: number | null
           sites: number | null
         }
@@ -280,6 +282,7 @@ export type Database = {
           index_name: string | null
           role: string | null
           run_id: string | null
+          scope: string | null
           share: number | null
           sites: number | null
         }
@@ -304,6 +307,7 @@ export type Database = {
         Row: {
           index_name: string | null
           run_id: string | null
+          scope: string | null
           sites: number | null
           word: string | null
         }
@@ -336,6 +340,7 @@ export type Database = {
           dimension: string | null
           index_name: string | null
           run_id: string | null
+          scope: string | null
           share: number | null
           sites: number | null
           value: string | null
@@ -357,10 +362,23 @@ export type Database = {
           },
         ]
       }
+      crawl_spread: {
+        Row: {
+          label: string | null
+          mainstream_share: number | null
+          prev_spread_pts: number | null
+          scope: string | null
+          signal: string | null
+          spread_pts: number | null
+          vanguard_share: number | null
+        }
+        Relationships: []
+      }
       crawl_tech_share: {
         Row: {
           index_name: string | null
           run_id: string | null
+          scope: string | null
           share: number | null
           sites: number | null
           tech: string | null
