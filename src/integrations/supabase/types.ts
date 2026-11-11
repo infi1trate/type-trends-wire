@@ -1093,6 +1093,11 @@ export type Database = {
       }
     }
     Functions: {
+      library_replace_history: {
+        Args: { p_history: Json; p_ids: number[] }
+        Returns: Json
+      }
+      library_replay_input: { Args: never; Returns: Json }
       library_snapshot_context: { Args: { p_snapshot: Json }; Returns: Json }
       library_state: { Args: never; Returns: Json }
       library_store_snapshot: {
