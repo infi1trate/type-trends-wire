@@ -107,9 +107,9 @@ export function advance(baseline: Baseline | null, pending: Pending, next: { sig
   for (const [type, changes] of groups) {
     const value = (c: typeof confirmed[number], side: "from" | "to") => c.field === "h1" || c.field === "body" ? at(c[side], "family") : c[side];
     events.push({ type, severity: type === "type_change" ? changes.length === 2 ? 3 : 2 : ["theme_flip", "message_pivot", "pricing_change", "stack_change"].includes(type) ? 2 : 1,
-      summary: changes.map(c => summary(c.field, c.from, c.to)).join("; "), before: Object.fromEntries(changes.map(c => [c.field, value(c, "from")])), after: Object.fromEntries(changes.map(c => [c.field, value(c, "to")])), effective_at: changes.map(c => c.at).sort()[0], prev_snapshot_id: baseline.snapshot_id });
+      summary: changes.map(c => summary(c.field, c.from, c.to)).join("; "), before: Object.fromEntries(changes.map(c => [c.field, value(c, "from")])), after: Object.fromEntries(changes.map(c => [c.field, value(c, "to")])), effective_at: changes.map(c => c.at).sort()[0] ?? next.captured_at, prev_snapshot_id: baseline.snapshot_id });
   }
-  if (next.context.page_type === "home" && next.context.viewport === "desktop" && groups.size >= 3) events.push({ type: "redesign", severity: 3, summary: `home design → ${groups.size} signals changed`, before: Object.assign({}, ...events.map(e => e.before)), after: Object.assign({}, ...events.map(e => e.after)), effective_at: events.map(e => e.effective_at ?? next.captured_at).sort()[0], prev_snapshot_id: baseline.snapshot_id });
+  if (next.context.page_type === "home" && next.context.viewport === "desktop" && groups.size >= 3) events.push({ type: "redesign", severity: 3, summary: `home design → ${groups.size} signals changed`, before: Object.assign({}, ...events.map(e => e.before)), after: Object.assign({}, ...events.map(e => e.after)), effective_at: events.map(e => e.effective_at ?? next.captured_at).sort()[0] ?? next.captured_at, prev_snapshot_id: baseline.snapshot_id });
   return { baseline: { signals: values, snapshot_id: confirmed.length ? next.snapshot_id : baseline.snapshot_id, confirmed_at: confirmed.length ? next.captured_at : baseline.confirmed_at }, pending: candidates, events };
 }
 // Pairwise helper retained for rule tests and new-surface eligibility; ingestion uses advance.
