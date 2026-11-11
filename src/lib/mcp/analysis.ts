@@ -26,6 +26,7 @@ export const METHODOLOGY = [
   'Wire: 9 design RSS feeds + Hacker News every 15 minutes; keyword-tagged type/color/brand/ui/web/motion/ai.',
   ...BAND_RULES,
   'BASELINE also applies when there is no snapshot at least 28 days older. Rules are evaluated in the order shown.',
-  'Limits: open-source Google Fonts only; color, layout and vibe arrive with the crawler.',
+  'Crawler: weekly derived design signals, comparing vanguard and mainstream. EN includes English-language successful sites; ALL includes every language. Spread is (vanguard share − mainstream share) × 100.',
+  'LIBRARY: 300 active sites in 10 sectors; home, pricing, changelog, product and about pages in desktop/mobile. Daily checks + Saturday full captures. Baseline captures do not create new-surface events; a new page is an event only when the domain has a snapshot more than 24 hours older. Changes compare rendered fonts, palettes, theme, layout, messaging, pricing, stack and navigation. A desktop homepage with at least three distinct change types is a redesign. No screenshots are stored, ever. Raw text stays private; wireframes are derived boxes.',
   'Every tool response carries receipts. Headlines and links only; read the original source for full articles.'
 ].join('\n');
