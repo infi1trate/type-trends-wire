@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { librarySyncPayload, librarySnapshotsPayload } from "./library-payload";
 
 export const CRAWL_BODY_LIMIT = 2 * 1024 * 1024;
 const runId = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
@@ -19,6 +20,8 @@ const site = z.object({
 }).strict();
 
 export const crawlPayload = z.discriminatedUnion("kind", [
+  librarySyncPayload,
+  librarySnapshotsPayload,
   z.object({ kind: z.literal("start"), run_id: runId, started_at: iso,
     seeds_meta: object.nullable(), target_per_index: z.number().int() }).strict(),
   z.object({ kind: z.literal("sites"), run_id: runId, sites: z.array(site).min(1).max(100) }).strict(),
