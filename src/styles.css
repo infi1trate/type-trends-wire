@@ -147,6 +147,8 @@
 
 .crawler .label { letter-spacing: 0; }
 .crawler { color: var(--white); }
+.crawler table.sr-only { position: fixed; left: 0; top: 0; table-layout: fixed; width: 1px; height: 1px; }
+.crawler table.sr-only td, .crawler table.sr-only th { overflow-wrap: anywhere; }
 .crawl-tooltip { display: none; position: absolute; z-index: 45; top: 100%; left: 0; width: max-content; max-width: min(360px, 85vw); padding: 8px; border: 1px solid var(--rule); background: var(--black); color: var(--white); font-size: 11px; line-height: 16px; text-transform: none; letter-spacing: 0; pointer-events: none; }
 .crawl-tip:hover > .crawl-tooltip, .crawl-tip:focus > .crawl-tooltip, .crawl-tip:focus-within > .crawl-tooltip { display: block; }
 .crawl-tip.ml-auto > .crawl-tooltip { left: auto; right: 0; }
