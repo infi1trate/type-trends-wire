@@ -1,7 +1,7 @@
 export type LibraryEventType = "type_change" | "palette_shift" | "theme_flip" | "layout_change" | "redesign" | "message_pivot" | "pricing_change" | "new_surface" | "stack_change" | "nav_change";
 export type LibraryEvent = { type: LibraryEventType; severity: 1 | 2 | 3; summary: string; before: Record<string, unknown>; after: Record<string, unknown> };
 type Signals = Record<string, unknown>;
-export type DiffContext = { page_type: string; viewport: string; prev_content_hash?: string | null; content_hash?: string | null; new_surface?: boolean };
+export type DiffContext = { page_type: string; viewport: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean };
 const record = (value: unknown): Signals => value && typeof value === "object" && !Array.isArray(value) ? value as Signals : {};
 const at = (value: unknown, ...path: string[]): unknown => path.reduce((v, key) => record(v)[key], value);
 const text = (value: unknown) => typeof value === "string" ? value : null;
