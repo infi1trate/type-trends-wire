@@ -8,8 +8,8 @@ import { Loading } from "./primitives";
 const ScopeContext = createContext<{scope:Scope;setScope:(scope:Scope)=>void}>({scope:"en",setScope:()=>{}});
 export function CrawlScopeProvider({children}:{children:React.ReactNode}) {
   const [scope,setScopeState] = useState<Scope>("en");
-  useEffect(()=>{setScopeState(readScope(localStorage));},[]);
-  const setScope = (value:Scope)=>{setScopeState(value);saveScope(localStorage,value);};
+  useEffect(()=>{try {setScopeState(readScope(localStorage));} catch { /* Storage may be disabled. */ }},[]);
+  const setScope = (value:Scope)=>{setScopeState(value);try {saveScope(localStorage,value);} catch { /* Keep the in-memory preference. */ }};
   return <ScopeContext.Provider value={{scope,setScope}}>{children}</ScopeContext.Provider>;
 }
 export const useCrawl = () => {

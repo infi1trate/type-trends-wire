@@ -148,6 +148,7 @@
 .crawler .label { letter-spacing: 0; }
 .crawler h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .crawler td.num { white-space: nowrap; }
+.crawler[aria-label="Spread"] td.num { padding-left: 2px; padding-right: 2px; }
 .crawler .grid-cols-6 .label { white-space: nowrap; }
 .crawler { color: var(--white); }
 .crawler table.sr-only { position: fixed; left: 0; top: 0; table-layout: fixed; width: 1px; height: 1px; }
