@@ -28,6 +28,6 @@
 - [x] Verify counts, permissions, query speed and live Spread; do not publish.
 
 # Phase 5A
-- [ ] Add public library storage/views and private snapshot text; do not seed sites.
-- [ ] Extend crawler reception, add secret-authenticated state reads, and pure change detection.
-- [ ] Verify rules, existing crawler compatibility, permissions and endpoint behavior; report schemas without publishing.
+- [x] Add public library storage/views and private snapshot text; do not seed sites.
+- [x] Extend crawler reception, add secret-authenticated state reads, and pure change detection.
+- [x] Verify rules, existing crawler compatibility, permissions and endpoint behavior; report schemas without publishing.
