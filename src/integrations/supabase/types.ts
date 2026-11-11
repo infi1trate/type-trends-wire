@@ -250,7 +250,113 @@ export type Database = {
           },
         ]
       }
+      crawl_color_stats_live: {
+        Row: {
+          accent_top: Json | null
+          avg_whitespace: number | null
+          dark_share: number | null
+          index_name: string | null
+          median_body_contrast: number | null
+          run_id: string | null
+          scope: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_color_stats_mat: {
+        Row: {
+          accent_top: Json | null
+          avg_whitespace: number | null
+          dark_share: number | null
+          index_name: string | null
+          median_body_contrast: number | null
+          run_id: string | null
+          scope: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crawl_cta_phrases: {
+        Row: {
+          index_name: string | null
+          phrase: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_cta_phrases_live: {
+        Row: {
+          index_name: string | null
+          phrase: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_cta_phrases_mat: {
         Row: {
           index_name: string | null
           phrase: string | null
@@ -303,7 +409,111 @@ export type Database = {
           },
         ]
       }
+      crawl_font_share_live: {
+        Row: {
+          family: string | null
+          index_name: string | null
+          role: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_font_share_mat: {
+        Row: {
+          family: string | null
+          index_name: string | null
+          role: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crawl_h1_words: {
+        Row: {
+          index_name: string | null
+          run_id: string | null
+          scope: string | null
+          sites: number | null
+          word: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_h1_words_live: {
+        Row: {
+          index_name: string | null
+          run_id: string | null
+          scope: string | null
+          sites: number | null
+          word: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_h1_words_mat: {
         Row: {
           index_name: string | null
           run_id: string | null
@@ -362,7 +572,85 @@ export type Database = {
           },
         ]
       }
+      crawl_layout_share_live: {
+        Row: {
+          dimension: string | null
+          index_name: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+          value: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_layout_share_mat: {
+        Row: {
+          dimension: string | null
+          index_name: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+          value: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crawl_spread: {
+        Row: {
+          label: string | null
+          mainstream_share: number | null
+          prev_spread_pts: number | null
+          scope: string | null
+          signal: string | null
+          spread_pts: number | null
+          vanguard_share: number | null
+        }
+        Relationships: []
+      }
+      crawl_spread_live: {
+        Row: {
+          label: string | null
+          mainstream_share: number | null
+          prev_spread_pts: number | null
+          scope: string | null
+          signal: string | null
+          spread_pts: number | null
+          vanguard_share: number | null
+        }
+        Relationships: []
+      }
+      crawl_spread_mat: {
         Row: {
           label: string | null
           mainstream_share: number | null
@@ -400,9 +688,61 @@ export type Database = {
           },
         ]
       }
+      crawl_tech_share_live: {
+        Row: {
+          index_name: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+          tech: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crawl_tech_share_mat: {
+        Row: {
+          index_name: string | null
+          run_id: string | null
+          scope: string | null
+          share: number | null
+          sites: number | null
+          tech: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_latest"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crawl_sites_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "crawl_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      refresh_crawl_aggregates: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
