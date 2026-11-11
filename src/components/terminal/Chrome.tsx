@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
 import { PANELS, type PanelId } from "./panels";
+import { SpreadTicker } from "./Spread";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -101,6 +102,7 @@ export function Ticker() {
         {[0, 1].map((k) => (
           <div key={k} aria-hidden={k === 1} className="flex items-center pl-8">
             {content}
+            <SpreadTicker/>
             {!items && content}
             {!items && content}
           </div>

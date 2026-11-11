@@ -33,6 +33,8 @@
   --color-ink: var(--white);
   --color-paper: var(--paper);
   --color-signal: var(--signal);
+  --color-compare-muted: var(--compare-muted);
+  --text-word: 16px;
 
   --color-background: var(--black);
   --color-foreground: var(--white);
@@ -64,6 +66,7 @@
   --white: #ededed;
   --paper: #f2f2f2;
   --signal: #ff4f00;
+  --compare-muted: #9a9a9a;
 }
 
 @layer base {
@@ -141,3 +144,9 @@
   .roll-col { transition: none; }
   .animate-slide-in { animation: none; }
 }
+
+.crawler .label { letter-spacing: 0; }
+.crawler { color: var(--white); }
+.crawl-tooltip { display: none; position: absolute; z-index: 45; top: 100%; left: 0; width: max-content; max-width: min(360px, 85vw); padding: 8px; border: 1px solid var(--rule); background: var(--black); color: var(--white); font-size: 11px; line-height: 16px; text-transform: none; letter-spacing: 0; pointer-events: none; }
+.crawl-tip:hover > .crawl-tooltip, .crawl-tip:focus > .crawl-tooltip, .crawl-tip:focus-within > .crawl-tooltip { display: block; }
+.crawl-tip.ml-auto > .crawl-tooltip { left: auto; right: 0; }
