@@ -1,23 +1,26 @@
 export type LibraryEventType = "type_change" | "palette_shift" | "theme_flip" | "layout_change" | "redesign" | "message_pivot" | "pricing_change" | "new_surface" | "stack_change" | "nav_change";
-export type LibraryEvent = { type: LibraryEventType; severity: 1 | 2 | 3; summary: string; before: Record<string, unknown>; after: Record<string, unknown> };
-type Signals = Record<string, unknown>;
-export type DiffContext = { page_type: string; viewport: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined };
-const record = (value: unknown): Signals => value && typeof value === "object" && !Array.isArray(value) ? value as Signals : {};
+export type LibraryEvent = { type: LibraryEventType; severity: 1 | 2 | 3; summary: string; before: Record<string, unknown>; after: Record<string, unknown>; effective_at?: string; prev_snapshot_id?: number | null };
+export type Comparable = Record<string, unknown>;
+export type Pending = Record<string, { from: unknown; to: unknown; first_seen_snapshot_id: number | null; first_seen_at: string }>;
+export type Baseline = { signals: Comparable; snapshot_id: number | null; confirmed_at: string };
+export type DiffContext = { page_type: string; viewport: string; sector?: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined; snapshot_id?: number | null };
+const record = (value: unknown): Comparable => value && typeof value === "object" && !Array.isArray(value) ? value as Comparable : {};
 const at = (value: unknown, ...path: string[]): unknown => path.reduce((v, key) => record(v)[key], value);
 const text = (value: unknown) => typeof value === "string" ? value : null;
 const number = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
-const changed = (a: unknown, b: unknown) => a != null && b != null && a !== b;
-const display = (value: unknown) => String(value ?? "—").slice(0, 100);
-const jaccard = (a: Set<string>, b: Set<string>) => {
-  const union = new Set([...a, ...b]);
-  return union.size ? [...a].filter(x => b.has(x)).length / union.size : 1;
-};
-const words = (value: string) => new Set(value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []);
-const navLabels = (value: unknown): Set<string> | null => Array.isArray(value) ? new Set(value.filter(item => at(item, "depth") === 0).map(item => text(at(item, "label"))?.trim().toLowerCase()).filter((label): label is string => !!label)) : null;
-const bucket = (value: unknown) => {
-  const radius = number(value);
-  return radius == null ? null : radius === 0 ? "0" : radius <= 8 ? "1–8" : radius <= 24 ? "9–24" : "pill";
-};
+const display = (value: unknown) => String(value ?? "—").slice(0, 160);
+const jaccard = (a: string[], b: string[]) => { const x = new Set(a), y = new Set(b), union = new Set([...x, ...y]); return union.size ? [...x].filter(v => y.has(v)).length / union.size : 1; };
+const words = (value: string) => [...new Set(value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])];
+export const frameworks = ["next", "nuxt", "framer", "webflow", "wordpress", "shopify", "squarespace", "wix", "astro", "gatsby", "sveltekit"];
+const blockedHeadline = /cookie|privacy|consent|subscribe|sign in|log in|404|not found|access denied|just a moment/i;
+export function normalizeFont(value: string): string {
+  // Suffixes may be concatenated (BasiersquareWebfont), spaced, or repeated.
+  let key = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let previous;
+  do { previous = key; key = key.replace(/(?:webfont|variable|display|text|web|vf|pro)$/, ""); } while (key !== previous);
+  return key;
+}
+const bucket = (value: unknown) => { const r = number(value); return r == null ? null : r === 0 ? "0" : r <= 8 ? "1–8" : r <= 24 ? "9–24" : "pill"; };
 function lab(hex: string): number[] | null {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
   const rgb = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
@@ -30,45 +33,90 @@ export function deltaE76(a: string, b: string): number | null {
   const first = lab(a), second = lab(b);
   return first && second ? Math.hypot(...first.map((v, i) => v - (second[i] ?? 0))) : null;
 }
-const palette = (signals: Signals) => {
-  const colors = at(signals, "color", "palette");
-  return Array.isArray(colors) ? colors.slice(0, 5).map(c => text(typeof c === "string" ? c : at(c, "hex"))).filter((c): c is string => !!c && lab(c) !== null) : [];
-};
-export function diffLibrarySignals(prev: Signals | null, next: Signals, context: DiffContext): LibraryEvent[] {
-  if (!prev) return context.new_surface && context.first_captured_at && context.captured_at && Date.parse(context.captured_at) - Date.parse(context.first_captured_at) > 24 * 60 * 60 * 1000 ? [{ type: "new_surface", severity: 1, summary: `${context.page_type} page added`, before: {}, after: { page_type: context.page_type } }] : [];
-  const events: LibraryEvent[] = [];
-  const emit = (type: LibraryEventType, severity: 1 | 2 | 3, summary: string, before: Signals, after: Signals) => events.push({ type, severity, summary, before, after });
-  const fonts = ["h1", "body"].filter(role => changed(at(prev, "type", "rendered", role, "family"), at(next, "type", "rendered", role, "family")));
-  if (fonts.length) emit("type_change", fonts.length === 2 ? 3 : 2, fonts.map(role => `${role} ${display(at(prev, "type", "rendered", role, "family"))} → ${display(at(next, "type", "rendered", role, "family"))}`).join("; "), Object.fromEntries(fonts.map(role => [role, at(prev, "type", "rendered", role, "family")])), Object.fromEntries(fonts.map(role => [role, at(next, "type", "rendered", role, "family")])));
-  const themeBefore = text(at(prev, "color", "theme")), themeAfter = text(at(next, "color", "theme"));
-  if (changed(themeBefore, themeAfter)) emit("theme_flip", 2, `theme ${themeBefore} → ${themeAfter}`, { theme: themeBefore }, { theme: themeAfter });
-  const accentBefore = text(at(prev, "color", "accent")), accentAfter = text(at(next, "color", "accent"));
-  const accents = accentBefore && accentAfter ? deltaE76(accentBefore, accentAfter) : null;
-  const oldPalette = palette(prev), newPalette = palette(next);
-  const replaced = oldPalette.length ? newPalette.filter(color => oldPalette.every(old => (deltaE76(color, old) ?? 0) > 15)).length : 0;
-  if ((accents != null && accents > 20) || replaced >= 3) emit("palette_shift", 1, accents != null && accents > 20 ? `accent ${accentBefore} → ${accentAfter}` : `palette → ${replaced} colors replaced`, { accent: accentBefore, palette: oldPalette }, { accent: accentAfter, palette: newPalette });
-  const oldLayout: Signals = {}, newLayout: Signals = {};
+const validColors = (v: unknown) => Array.isArray(v) ? v.slice(0, 5).map(c => text(typeof c === "string" ? c : at(c, "hex"))).filter((c): c is string => c != null && lab(c) != null) : [];
+const strings = (v: unknown) => Array.isArray(v) ? [...new Set(v.filter((s): s is string => typeof s === "string"))].sort() : [];
+export function extractFields(signals: Comparable, context: DiffContext): Comparable {
+  const fields: Comparable = {};
+  for (const role of ["h1", "body"]) {
+    const font = record(at(signals, "type", "rendered", role));
+    if (typeof font['family'] === "string") fields[role] = { family: font['family'], webfont: font['webfont'] ?? null, substituted: font['substituted'] === true };
+  }
+  const theme = text(at(signals, "color", "theme")); if (theme != null) fields['theme'] = theme;
+  if (context.viewport !== "desktop") return fields;
+  const accent = text(at(signals, "color", "accent")); if (accent && lab(accent)) fields['accent'] = accent;
+  const palette = validColors(at(signals, "color", "palette")); if (palette.length) fields['palette'] = palette;
   for (const key of ["hero_media", "h1_align", "grid_max_cols", "cta_radius_px"]) {
-    const before = key === "cta_radius_px" ? bucket(at(prev, "layout", key)) : at(prev, "layout", key);
-    const after = key === "cta_radius_px" ? bucket(at(next, "layout", key)) : at(next, "layout", key);
-    if (changed(before, after)) { oldLayout[key] = before; newLayout[key] = after; }
+    const v = key === "cta_radius_px" ? bucket(at(signals, "layout", key)) : at(signals, "layout", key);
+    if (v != null) fields[key] = v;
   }
-  const heightBefore = number(at(prev, "composition", "page_height_vh") ?? at(prev, "layout", "page_height_vh"));
-  const heightAfter = number(at(next, "composition", "page_height_vh") ?? at(next, "layout", "page_height_vh"));
-  if (heightBefore != null && heightAfter != null && heightBefore > 0 && Math.abs(heightAfter - heightBefore) / heightBefore > 0.4) { oldLayout['page_height_vh'] = heightBefore; newLayout['page_height_vh'] = heightAfter; }
-  const layoutKeys = Object.keys(oldLayout);
-  if (layoutKeys.length) emit("layout_change", 1, layoutKeys.map(key => `${key.replace(/_/g, " ")} ${display(oldLayout[key])} → ${display(newLayout[key])}`).join("; "), oldLayout, newLayout);
-  const oldNav = navLabels(prev['nav']), newNav = navLabels(next['nav']);
-  if (oldNav && newNav && jaccard(oldNav, newNav) < 0.6) emit("nav_change", 1, `nav ${[...oldNav].join(", ").slice(0, 100)} → ${[...newNav].join(", ").slice(0, 100)}`, { labels: [...oldNav] }, { labels: [...newNav] });
-  const oldH1 = text(at(prev, "lexicon", "h1")), newH1 = text(at(next, "lexicon", "h1"));
-  if (oldH1 != null && newH1 != null && oldH1 !== newH1 && jaccard(words(oldH1), words(newH1)) < 0.3) emit("message_pivot", 2, `h1 ${display(oldH1)} → ${display(newH1)}`, { h1: oldH1 }, { h1: newH1 });
-  if (context.page_type === "pricing" && changed(context.prev_content_hash, context.content_hash)) emit("pricing_change", 2, "pricing page content changed", { content_hash: context.prev_content_hash }, { content_hash: context.content_hash });
-  const frameworks = ["next", "nuxt", "framer", "webflow", "wordpress", "shopify", "squarespace", "wix", "astro", "gatsby", "sveltekit"];
-  const flipped = frameworks.filter(key => typeof at(prev, "tech", key) === "boolean" && typeof at(next, "tech", key) === "boolean" && changed(at(prev, "tech", key), at(next, "tech", key)));
-  if (flipped.length) emit("stack_change", 2, flipped.map(key => `${key} ${display(at(prev, "tech", key))} → ${display(at(next, "tech", key))}`).join("; "), Object.fromEntries(flipped.map(key => [key, at(prev, "tech", key)])), Object.fromEntries(flipped.map(key => [key, at(next, "tech", key)])));
-  if (context.page_type === "home" && context.viewport === "desktop" && new Set(events.map(event => event.type)).size >= 3) {
-    const types = events.map(event => event.type);
-    emit("redesign", 3, `home design → ${types.length} signals changed`, Object.assign({}, ...events.map(e => e.before)), Object.assign({}, ...events.map(e => e.after)));
+  if (Array.isArray(signals['nav'])) fields['nav'] = strings(signals['nav'].filter(n => at(n, "depth") === 0).map(n => text(at(n, "label"))?.trim().toLowerCase()).filter(Boolean));
+  const h1 = text(at(signals, "lexicon", "h1"));
+  if (context.page_type === "home" && context.sector !== "media" && h1 && !blockedHeadline.test(h1)) fields['headline'] = h1;
+  if (context.page_type === "pricing" && Array.isArray(signals['prices'])) fields['prices'] = strings(signals['prices']);
+  for (const flag of frameworks) { const v = at(signals, "tech", flag); if (typeof v === "boolean") fields[`tech.${flag}`] = v; }
+  return fields;
+}
+export function equalField(field: string, a: unknown, b: unknown): boolean {
+  if (field === "h1" || field === "body") return normalizeFont(String(at(a, "family") ?? "")) === normalizeFont(String(at(b, "family") ?? ""));
+  if (field === "accent") return (deltaE76(String(a), String(b)) ?? 0) <= 25;
+  if (field === "palette") { const old = validColors(a), next = validColors(b); return next.filter(c => old.every(p => (deltaE76(c, p) ?? 0) > 15)).length < 3; }
+  if (field === "nav") return jaccard(strings(a), strings(b)) >= 0.6;
+  if (field === "headline") return blockedHeadline.test(String(a)) || blockedHeadline.test(String(b)) || jaccard(words(String(a)), words(String(b))) >= 0.3;
+  if (field === "prices") return JSON.stringify(strings(a)) === JSON.stringify(strings(b));
+  return a === b;
+}
+export function ignoreField(field: string, value: unknown, baseline: unknown): boolean {
+  return (field === "h1" || field === "body") && (at(value, "substituted") === true || at(value, "webfont") === false && at(baseline, "webfont") === true);
+}
+function eventType(field: string): LibraryEventType {
+  if (field === "h1" || field === "body") return "type_change";
+  if (field === "theme") return "theme_flip";
+  if (field === "accent" || field === "palette") return "palette_shift";
+  if (field === "nav") return "nav_change";
+  if (field === "headline") return "message_pivot";
+  if (field === "prices") return "pricing_change";
+  if (field.startsWith("tech.")) return "stack_change";
+  return "layout_change";
+}
+function summary(field: string, a: unknown, b: unknown): string {
+  if (field === "h1" || field === "body") return `${field} ${display(at(a, "family"))} → ${display(at(b, "family"))}`;
+  if (field === "prices") { const old = strings(a), next = strings(b); return `prices added: ${next.filter(p => !old.includes(p)).slice(0, 4).join(", ") || "—"}; removed: ${old.filter(p => !next.includes(p)).slice(0, 4).join(", ") || "—"}`; }
+  const show = (v: unknown) => Array.isArray(v) ? v.join(", ").slice(0, 160) : display(v);
+  return `${field.replace(/^tech\./, "").replace(/_/g, " ")} ${show(a)} → ${show(b)}`;
+}
+export function advance(baseline: Baseline | null, pending: Pending, next: { signals: Comparable; snapshot_id: number | null; captured_at: string; context: DiffContext }): { baseline: Baseline; pending: Pending; events: LibraryEvent[] } {
+  const fields = extractFields(next.signals, next.context);
+  if (!baseline) return { baseline: { signals: fields, snapshot_id: next.snapshot_id, confirmed_at: next.captured_at }, pending: {}, events: [] };
+  const values = { ...baseline.signals }, candidates = { ...pending };
+  const confirmed: { field: string; from: unknown; to: unknown; at: string }[] = [];
+  for (const field of new Set([...Object.keys(fields), ...Object.keys(candidates)])) {
+    const value = fields[field], old = values[field];
+    // A missing/unreliable capture breaks consecutiveness, but cannot alter the baseline.
+    if (value == null || ignoreField(field, value, old)) { delete candidates[field]; continue; }
+    if (old == null) { values[field] = value; delete candidates[field]; continue; }
+    if (equalField(field, old, value)) { delete candidates[field]; continue; }
+    const candidate = candidates[field];
+    if (candidate && equalField(field, candidate.to, value)) {
+      confirmed.push({ field, from: old, to: value, at: candidate.first_seen_at });
+      values[field] = value; delete candidates[field];
+    } else candidates[field] = { from: old, to: value, first_seen_snapshot_id: next.snapshot_id, first_seen_at: next.captured_at };
   }
-  return events;
+  const events: LibraryEvent[] = [];
+  const groups = new Map<LibraryEventType, typeof confirmed>();
+  for (const change of confirmed) { const type = eventType(change.field); groups.set(type, [...(groups.get(type) ?? []), change]); }
+  for (const [type, changes] of groups) {
+    const value = (c: typeof confirmed[number], side: "from" | "to") => c.field === "h1" || c.field === "body" ? at(c[side], "family") : c[side];
+    events.push({ type, severity: type === "type_change" ? changes.length === 2 ? 3 : 2 : ["theme_flip", "message_pivot", "pricing_change", "stack_change"].includes(type) ? 2 : 1,
+      summary: changes.map(c => summary(c.field, c.from, c.to)).join("; "), before: Object.fromEntries(changes.map(c => [c.field, value(c, "from")])), after: Object.fromEntries(changes.map(c => [c.field, value(c, "to")])), effective_at: changes.map(c => c.at).sort()[0], prev_snapshot_id: baseline.snapshot_id });
+  }
+  if (next.context.page_type === "home" && next.context.viewport === "desktop" && groups.size >= 3) events.push({ type: "redesign", severity: 3, summary: `home design → ${groups.size} signals changed`, before: Object.assign({}, ...events.map(e => e.before)), after: Object.assign({}, ...events.map(e => e.after)), effective_at: events.map(e => e.effective_at ?? next.captured_at).sort()[0], prev_snapshot_id: baseline.snapshot_id });
+  return { baseline: { signals: values, snapshot_id: confirmed.length ? next.snapshot_id : baseline.snapshot_id, confirmed_at: confirmed.length ? next.captured_at : baseline.confirmed_at }, pending: candidates, events };
+}
+// Pairwise helper retained for rule tests and new-surface eligibility; ingestion uses advance.
+export function diffLibrarySignals(prev: Comparable | null, next: Comparable, context: DiffContext): LibraryEvent[] {
+  if (!prev) return context.new_surface && context.first_captured_at && context.captured_at && Date.parse(context.captured_at) - Date.parse(context.first_captured_at) > 86400000 ? [{ type: "new_surface", severity: 1, summary: `${context.page_type} page added`, before: {}, after: { page_type: context.page_type } }] : [];
+  const captured_at = context.captured_at ?? "2000-01-01T00:00:00Z";
+  const baseline = { signals: extractFields(prev, context), snapshot_id: null, confirmed_at: captured_at };
+  const candidate = advance(baseline, {}, { signals: next, captured_at, snapshot_id: null, context });
+  return advance(baseline, candidate.pending, { signals: next, captured_at, snapshot_id: null, context }).events.map(({ effective_at, prev_snapshot_id, ...event }) => event);
 }
