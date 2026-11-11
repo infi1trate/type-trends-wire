@@ -84,7 +84,8 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     assert.equal(tags.length, 1);
     assert.equal(tags[0].page_type, "home");
     assert.equal(tags[0].signals_hash, home.signals_hash);
-    assert.ok(tags[0].images.fold > 1000 && tags[0].images.page > 1000);
+    assert.ok(tags[0].images.fold > 1000);
+    assert.ok(tags[0].images.sections.length >= 1 && tags[0].images.sections.length <= 4 && tags[0].images.sections.every((n) => n > 1000));
     assert.ok(!JSON.stringify(snaps).includes("data:image"));
     assert.equal(by["home:mobile"].signals.page.w, 390);
     assert.equal(by["home:mobile"].raw_text, undefined);

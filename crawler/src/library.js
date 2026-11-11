@@ -24,22 +24,26 @@ const post = makePoster({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: R
 const TEXT_PAGES = new Set(["pricing", "changelog", "about", "home", "product"]);
 const TAG = process.env.LIBRARY_TAG !== "0";
 
-/** Fold (960w) + full page (480w, ≤6 viewports) as JPEG data URLs, for transient AI tagging. Never written to disk. */
+/** Fold (960w) + up to 4 page sections below it (each 2 viewports tall, 720w) as JPEG data URLs, for transient
+ *  AI tagging. Never written to disk; dropped from memory once the tag request returns. */
 async function captureImages(page) {
   const { width, height } = page.viewportSize();
   const total = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => height);
-  const h = Math.min(total, height * 6);
+  const h = Math.min(total, height * 9);
   // Walk the page once so lazy images below the fold load, then return to the top.
   for (let y = height; y < h; y += height) { await page.evaluate((yy) => window.scrollTo(0, yy), y).catch(() => {}); await page.waitForTimeout(250); }
   await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
   await page.waitForTimeout(500);
-  const fold = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width, height } });
-  const full = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width, height: h } }).catch(() => fold);
   const url = (buf) => "data:image/jpeg;base64," + buf.toString("base64");
-  return {
-    fold: url(await sharp(fold).resize({ width: 960 }).jpeg({ quality: 70 }).toBuffer()),
-    page: url(await sharp(full).resize({ width: 480 }).jpeg({ quality: 60 }).toBuffer()),
-  };
+  const fold = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width, height } });
+  const sections = [];
+  for (let y = height; y < h && sections.length < 4; y += height * 2) {
+    const sh = Math.min(height * 2, h - y);
+    if (sh < 300) break;
+    const shot = await page.screenshot({ type: "png", fullPage: true, clip: { x: 0, y, width, height: sh } }).catch(() => null);
+    if (shot) sections.push(url(await sharp(shot).resize({ width: 720 }).jpeg({ quality: 65 }).toBuffer()));
+  }
+  return { fold: url(await sharp(fold).resize({ width: 960 }).jpeg({ quality: 70 }).toBuffer()), sections };
 }
 
 async function getState() {
@@ -157,7 +161,7 @@ async function main() {
   const tagOne = async (rec, imgs) => {
     if (tagBudgetOut) return;
     const body = { domain: rec.domain, page_type: rec.page_type, viewport: rec.viewport, captured_at: rec.captured_at, signals_hash: rec.signals_hash, images: imgs };
-    if (DRY) { appendFileSync(`out/${RUN_ID}.tags.jsonl`, JSON.stringify({ ...body, images: { fold: imgs.fold.length, page: imgs.page.length } }) + "\n"); totals.tagged++; return; }
+    if (DRY) { appendFileSync(`out/${RUN_ID}.tags.jsonl`, JSON.stringify({ ...body, images: { fold: imgs.fold.length, sections: imgs.sections.map((x) => x.length) } }) + "\n"); totals.tagged++; return; }
     for (let attempt = 1; attempt <= 3; attempt++) {
       const r = await fetch(new URL("library-tag", ENDPOINT), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": SECRET }, body: JSON.stringify(body) }).catch(() => null);
       if (r?.ok) { const j = await r.json().catch(() => ({})); if (j.reused) totals.tag_reused++; else totals.tagged++; return; }
