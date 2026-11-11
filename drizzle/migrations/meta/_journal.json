@@ -50,6 +50,13 @@
       "when": 1794366980055,
       "tag": "0006_library_backend",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794367097160,
+      "tag": "0007_restrict_library_public_grants",
+      "breakpoints": true
     }
   ]
 }
