@@ -6,8 +6,14 @@ const state = vi.hoisted(() => ({
   hash: "" as string | null,
   runs: new Map<string, Record<string, unknown>>(),
   sites: new Map<string, Record<string, unknown>>(),
+  refreshes: [] as { name: string; statuses: unknown[]; siteCount: number }[],
+  refreshError: false,
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
+  async rpc(name: string) {
+    state.refreshes.push({ name, statuses: [...state.runs.values()].map(row => row['status']), siteCount: state.sites.size });
+    return { error: state.refreshError ? { message: "refresh failed" } : null };
+  },
   from(table: string) {
     let operation = "select";
     let values: Record<string, unknown> | Record<string, unknown>[] = {};
@@ -50,7 +56,7 @@ const start = { kind: "start", run_id: "weekly_1", started_at: "2026-11-10T06:00
 const site = { run_id: "weekly_1", domain: "example.com", index: "vanguard", crawled_at: "2026-11-10T06:05:00Z", ok: true,
   type: { rendered: { h1: { family: "Inter" } } }, color: {}, layout: {}, composition: {}, lexicon: {}, tech: {} };
 
-beforeEach(async () => { state.hash = await sha256Hex(secret); state.runs.clear(); state.sites.clear(); });
+beforeEach(async () => { state.hash = await sha256Hex(secret); state.runs.clear(); state.sites.clear(); state.refreshes = []; state.refreshError = false; });
 describe("crawler receiver", () => {
   it("returns 403 without a secret", async () => { expect((await handleCrawlIngest(request(start, null))).status).toBe(403); expect(state.runs.size).toBe(0); });
   it("returns 403 with a wrong secret", async () => { const res = await handleCrawlIngest(request(start, "wrong")); expect(res.status).toBe(403); expect(await res.json()).toEqual({ error: "forbidden" }); });
@@ -69,6 +75,38 @@ describe("crawler receiver", () => {
     const finished_at = "2026-11-10T06:10:00Z";
     expect(await (await handleCrawlIngest(request({ kind: "finish", run_id: "weekly_1", finished_at, stats: { ok: 1 } }))).json()).toEqual({ ok: true, written: 1 });
     expect(state.runs.get("weekly_1")).toMatchObject({ status: "finished", finished_at, stats: { ok: 1 } });
+  });
+  it("refreshes all aggregates only after the finish write succeeds", async () => {
+    await handleCrawlIngest(request(start));
+    expect(state.refreshes).toHaveLength(0);
+    await handleCrawlIngest(request({ kind: "finish", run_id: "weekly_1", finished_at: start.started_at, stats: {} }));
+    expect(state.refreshes).toEqual([{ name: "refresh_crawl_aggregates", statuses: ["finished"], siteCount: 0 }]);
+  });
+  it("refreshes after site reposts to an already finished run", async () => {
+    state.runs.set("weekly_1", { id: "weekly_1", status: "finished" });
+    const response = await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }));
+    expect(response.status).toBe(200);
+    expect(state.refreshes).toEqual([{ name: "refresh_crawl_aggregates", statuses: ["finished"], siteCount: 1 }]);
+  });
+  it.each(["running", "failed"])("does not refresh site batches for a %s run", async (status) => {
+    state.runs.set("weekly_1", { id: "weekly_1", status });
+    expect((await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }))).status).toBe(200);
+    expect(state.refreshes).toHaveLength(0);
+  });
+  it("never refreshes an unknown run", async () => {
+    await handleCrawlIngest(request({ kind: "finish", run_id: "unknown", finished_at: start.started_at, stats: {} }));
+    expect(state.refreshes).toHaveLength(0);
+  });
+  it.each(["finish", "sites"])("reports %s refresh errors so crawler retries can repair stale aggregates", async (kind) => {
+    state.runs.set("weekly_1", { id: "weekly_1", status: "finished" });
+    state.refreshError = true;
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const body = kind === "finish" ? { kind, run_id: "weekly_1", finished_at: start.started_at, stats: {} } : { kind, run_id: "weekly_1", sites: [site] };
+    const response = await handleCrawlIngest(request(body));
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "Internal error" });
+    expect(state.refreshes).toHaveLength(1);
+    log.mockRestore();
   });
   it("marks only other running runs older than 24 hours failed", async () => {
     state.runs.set("stale", { id: "stale", status: "running", started_at: new Date(Date.now() - 25 * 3600000).toISOString() });

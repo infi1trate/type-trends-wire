@@ -39,6 +39,7 @@ use the editor.
 - MCP tools use the supported defineMcp toolkit and a shared anonymous SELECT-only client; public exposure must not bypass existing RLS.
 - The MCP HTTP boundary adds bounded per-IP throttling and a methodology-resource compatibility adapter, because the toolkit currently only registers tool and app resources.
 - HTML entity decoding is shared by ingest and render safety checks; a one-time maintenance script repairs existing rows without changing recurring jobs.
-- Crawler writes use a dedicated dynamic-imported server handler with SHA-256 shared-secret authentication, bounded streaming bodies, and a pure payload schema; aggregate views use security_invoker to preserve public-read RLS.
+- Crawler writes use a dedicated dynamic-imported server handler with SHA-256 shared-secret authentication, bounded streaming bodies, and a pure payload schema; private live aggregates retain security_invoker and filter to publicly readable ok sites.
 - The design crawler lives in `crawler/` (plain Node + Playwright, its own package.json and node:test suite) and runs only on GitHub Actions via `.github/workflows/crawl.yml`; it is not part of the app build. It posts to `/api/public/ingest-crawl`.
-- Crawler panels share one hydration-safe language-scope provider and paginated query options; aggregate views keep scope-specific denominators and security-invoker reads so comparisons preserve RLS.
+- Crawler panels share one hydration-safe language-scope provider and paginated query options; scope-specific aggregates are materialized behind owner-rights public facades because visitors cannot read private live/materialized objects.
+- Refresh all crawler materializations through a service-role-only RPC after finish and after finished-run site reposts; fail the request on refresh errors so retries repair stale summaries.
