@@ -77,7 +77,28 @@ export async function openPage(page, url) {
   await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready).catch(() => {});
   await page.waitForTimeout(1200);
+  // Late webfonts: give any still-loading faces up to 3s more, so a fallback isn't recorded as the design.
+  await page.evaluate(async () => {
+    const t0 = Date.now();
+    while (document.fonts && [...document.fonts].some((f) => f.status === "loading") && Date.now() - t0 < 3000) await new Promise((r) => setTimeout(r, 150));
+  }).catch(() => {});
+  await hideOverlays(page);
   return null;
+}
+
+/** Hide cookie/consent banners and modal overlays so they don't count as the page's colors or headline. */
+export async function hideOverlays(page) {
+  await page.evaluate(() => {
+    const sel = "#onetrust-consent-sdk, #onetrust-banner-sdk, #CybotCookiebotDialog, #usercentrics-root, #truste-consent-track, .truste_box_overlay, #didomi-host, .didomi-popup, #cookie-law-info-bar, .cc-window, .cky-consent-container, [id*=cookie-banner i], [class*=cookie-banner i], [id*=cookie-consent i], [class*=cookie-consent i], [class*=consent-banner i], [aria-modal=true]";
+    for (const e of document.querySelectorAll(sel)) e.style.setProperty("display", "none", "important");
+    const re = /cookie|consent|privacy (choices|preferences|settings)|we use (cookies|technologies)/i;
+    for (const e of document.querySelectorAll("body *")) {
+      const s = getComputedStyle(e);
+      if (s.position !== "fixed" && s.position !== "sticky") continue;
+      if (e.matches("header, nav, [role=banner], [role=navigation]")) continue;
+      if (re.test((e.innerText || "").slice(0, 600))) e.style.setProperty("display", "none", "important");
+    }
+  }).catch(() => {});
 }
 
 /** Evaluate an in-page function, retrying once if a client-side redirect destroys the context. */

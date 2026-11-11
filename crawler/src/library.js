@@ -47,7 +47,7 @@ async function snapshot(page, { domain, page_type, viewport, url }) {
     if (!a.ok) return { error: a.error };
     const x = await evalSettled(page, extractLibraryExtras);
     const { ok, final_url, ...fields } = a;
-    const signals = { ...fields, css_features: x.css_features, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h } };
+    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h } };
     return {
       links: x.links,
       record: {

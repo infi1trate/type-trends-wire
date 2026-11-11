@@ -104,6 +104,9 @@ export function extractLibraryExtras() {
     if (links.length >= 400) break;
   }
 
+  // Prices as a normalized set: pricing changes are about numbers, not about promo copy or dates.
+  const PRICE = /(?:[$€£¥₹]\s?\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{1,2})?|\d{1,3}(?:[,.]\d{3})*(?:[.,]\d{1,2})?\s?(?:USD|EUR|GBP|€|kr))(?:\s?(?:\/|per)\s?(?:mo|month|yr|year|user|seat|member))?/gi;
+  const prices = [...new Set(((root.innerText || "").match(PRICE) || []).map((p) => p.replace(/\s+/g, " ").trim().toLowerCase()))].sort().slice(0, 60);
   const text = (root.innerText || "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, 50000);
-  return { nav, skeleton: boxes, css_features, links, text, page_w: VW, page_h: document.documentElement.scrollHeight };
+  return { nav, skeleton: boxes, css_features, links, text, prices, page_w: VW, page_h: document.documentElement.scrollHeight };
 }

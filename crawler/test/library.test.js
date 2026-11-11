@@ -75,7 +75,10 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     assert.ok(home.signals.skeleton.length > 3 && home.signals.skeleton.length <= 400);
     assert.ok(home.signals.skeleton.some((b) => b.kind === "heading"));
     assert.equal(home.signals.layout.grid_max_cols, 3);
-    assert.ok(home.raw_text.includes("Software that stays out of the way"));
+    assert.ok(home.raw_text.includes("stays out of the way"));
+    assert.equal(home.signals.lexicon.h1, "Software that stays out of the way"); // not the cookie banner, no doubled roll copy
+    assert.ok(!home.signals.color.palette.some((p) => p.hex.startsWith("#FFC")), "cookie banner leaked into palette");
+    assert.deepEqual(by["pricing:desktop"].signals.prices, ["$12 per seat", "$29 per seat"]);
     assert.equal(by["home:mobile"].signals.page.w, 390);
     assert.equal(by["home:mobile"].raw_text, undefined);
     assert.ok(by["pricing:desktop"].raw_text.includes("$29"));

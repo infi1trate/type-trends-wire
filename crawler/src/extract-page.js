@@ -30,13 +30,16 @@ export function extractInPage() {
       transform: s.textTransform, style: s.fontStyle,
     };
   };
+  // Overlays (cookie/consent dialogs, modals) are not the page's design.
+  const OVERLAY = "[role=dialog], [aria-modal=true], [id*=cookie i], [class*=cookie i], [id*=consent i], [class*=consent i], [id*=onetrust i], [id*=gdpr i], [class*=gdpr i]";
+  const inOverlay = (e) => !!e.closest(OVERLAY);
   // Headline = first visible h1 in the fold; many sites have none, so fall back to the largest text in the fold.
-  let h1 = [...document.querySelectorAll("h1")].find((e) => visible(e) && inFold(e)) || null;
+  let h1 = [...document.querySelectorAll("h1")].find((e) => visible(e) && inFold(e) && !inOverlay(e)) || null;
   let headline_source = h1 ? "h1" : null;
   if (!h1) {
     let best = null, bestSize = 0;
     for (const e of document.querySelectorAll("body h2, body h3, body p, body div, body span, body a")) {
-      if (e.children.length > 2 || !visible(e) || !inFold(e)) continue;
+      if (e.children.length > 2 || !visible(e) || !inFold(e) || inOverlay(e)) continue;
       const t = (e.innerText || "").trim();
       if (t.length < 3 || t.length > 140) continue;
       const sz = px(cs(e).fontSize);
@@ -73,6 +76,36 @@ export function extractInPage() {
     const centered = ta === "center" || (Math.abs(r.left + r.width / 2 - VW / 2) < VW * 0.04 && r.width < VW * 0.8);
     h1Align = centered ? "center" : ta === "right" || ta === "end" || r.left > VW * 0.45 ? "right" : "left";
   }
+
+  // Visible headline text: aria-label wins; otherwise skip glyph copies parked outside clipping boxes
+  // (per-letter "roll" animations duplicate every character, so innerText reads "MMiissttrraall").
+  const headlineText = (el) => {
+    if (!el) return null;
+    const aria = (el.getAttribute("aria-label") || "").trim();
+    if (aria.length > 3) return clean(aria, 300);
+    const clips = [];
+    for (let a = el; a; a = a === el ? null : a.parentElement) if (a === el || cs(a).overflow !== "visible") clips.push(a.getBoundingClientRect());
+    const inner = [...el.querySelectorAll("*")].filter((a) => cs(a).overflow !== "visible" || cs(a).overflowY !== "visible");
+    let out = "", prev = null;
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) {
+      const t = w.currentNode; const txt = t.textContent;
+      if (!txt.trim()) { out += " "; continue; }
+      const p = t.parentElement;
+      if (p.closest("[aria-hidden=true]") && p.closest("[aria-hidden=true]") !== el) continue;
+      const ps = cs(p);
+      if (ps.visibility === "hidden" || Number(ps.opacity) < 0.05) continue;
+      const rg = document.createRange(); rg.selectNodeContents(t);
+      const r = rg.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const boxes = [...clips, ...inner.filter((a) => a.contains(t)).map((a) => a.getBoundingClientRect())];
+      if (!boxes.every((b) => cx >= b.left - 2 && cx <= b.right + 2 && cy >= b.top - 2 && cy <= b.bottom + 2)) continue;
+      // Line break (<br>, wrapped block) or a visible gap between nodes = a word boundary.
+      if (prev && (r.top > prev.top + prev.height * 0.5 || r.left > prev.right + 4)) out += " ";
+      out += txt; prev = r;
+    }
+    out = clean(out, 300);
+    return out.length >= 3 ? out : clean(el.innerText, 300);
+  };
 
   // ---- composition ----
   const textChars = (() => {
@@ -125,7 +158,7 @@ export function extractInPage() {
     type_declared: { h1: typeOf(h1), body: typeOf(bodyP), cta: typeOf(firstButton) },
     layout: {
       has_h1: headline_source === "h1", headline_source, h1_align: h1Align, h1_lines: h1 && typeOf(h1).line_height ? Math.round(h1.getBoundingClientRect().height / (typeOf(h1).line_height * typeOf(h1).size_px)) : null,
-      h1_words: h1 ? clean(h1.innerText, 400).split(" ").filter(Boolean).length : 0,
+      h1_words: h1 ? (headlineText(h1) || "").split(" ").filter(Boolean).length : 0,
       has_nav: !!header, nav_links: navLinks, hero_media,
       cta_count: ctas.length, cta_radius_px: median(radii),
       grid_count: grids.length, grid_max_cols: gridCols.length ? Math.max(...gridCols) : 0,
@@ -138,7 +171,7 @@ export function extractInPage() {
       media_coverage: +Math.min(1, videoCov + canvasCov + imgCov).toFixed(3),
     },
     lexicon: {
-      h1: h1 ? clean(h1.innerText, 300) : null,
+      h1: headlineText(h1),
       h2: h2s,
       description: clean(meta("description") || meta("og:description"), 300) || null,
       ctas: [...new Set(ctas.map((e) => clean(e.innerText, 40)))].filter(Boolean).slice(0, 8),
