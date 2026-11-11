@@ -39,7 +39,7 @@
 - [x] Verify real sites, unknown-domain 404, responsive layouts, tests and MCP; do not publish.
 
 # Phase 5A.2
-- [ ] Add private confirmed baselines and atomic two-capture confirmation.
-- [ ] Replay snapshots, replace noisy events and reset last-change dates.
-- [ ] Show safe unconfirmed changes under the timeline; keep headline plain.
-- [ ] Verify field rules, ingestion, real data and event counts; do not publish.
+- [x] Add private confirmed baselines and atomic two-capture confirmation.
+- [x] Replay snapshots, replace noisy events and reset last-change dates.
+- [x] Show safe unconfirmed changes under the timeline; keep headline plain.
+- [x] Verify field rules, ingestion, real data and event counts; do not publish.

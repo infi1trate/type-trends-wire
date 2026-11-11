@@ -85,6 +85,13 @@
       "when": 1794418371317,
       "tag": "0011_library_atomic_history_replay",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794419070272,
+      "tag": "0012_library_replay_safe_site_reset",
+      "breakpoints": true
     }
   ]
 }
