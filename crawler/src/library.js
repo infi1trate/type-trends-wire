@@ -77,8 +77,14 @@ async function plan(site, latest, pages, origin) {
   return { discover: false, jobs, known };
 }
 
-async function crawlSite(browser, site, st, emit, errors) {
+async function crawlSite(browser, site, st, emitRaw, errors) {
   const origin = (ALLOW_HTTP ? "http://" : "https://") + site.domain;
+  // Unchanged since the last stored snapshot (same design signals and same text): don't store a duplicate.
+  const emit = async (rec) => {
+    const prev = st?.latest?.[`${rec.page_type}:${rec.viewport}`];
+    if (prev && prev.signals_hash === rec.signals_hash && prev.content_hash === rec.content_hash && !rec.discovered_pages) return emitRaw(null);
+    return emitRaw(rec);
+  };
   const { discover, jobs: planned, known } = await plan(site, st?.latest, st?.pages, origin);
   if (planned && !planned.length) return { skipped: true };
   const ctx = { desktop: null, mobile: null };
@@ -119,7 +125,7 @@ async function main() {
 
   const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
   let buffer = [];
-  const totals = { snapshots: 0, events: 0, sites_ok: 0, sites_failed: 0, sites_skipped: 0 };
+  const totals = { snapshots: 0, unchanged: 0, events: 0, sites_ok: 0, sites_failed: 0, sites_skipped: 0 };
   const errors = {};
   const flush = async () => {
     if (!buffer.length) return;
@@ -127,7 +133,10 @@ async function main() {
     const res = await post({ kind: "library_snapshots", run_id: RUN_ID, snapshots });
     totals.events += res?.events ?? 0;
   };
-  const emit = async (rec) => { buffer.push(rec); totals.snapshots++; if (buffer.length >= 25) await flush(); };
+  const emit = async (rec) => {
+    if (!rec) { totals.unchanged++; return; }
+    buffer.push(rec); totals.snapshots++; if (buffer.length >= 25) await flush();
+  };
 
   let next = 0;
   const worker = async () => {

@@ -81,11 +81,17 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     assert.ok(by["pricing:desktop"].raw_text.includes("$29"));
 
     // daily check with unchanged state → nothing re-snapshotted
-    const latest = Object.fromEntries(snaps.map((s) => [key(s), { html_hash: s.html_hash, content_hash: s.content_hash, captured_at: s.captured_at }]));
+    const latest = Object.fromEntries(snaps.map((s) => [key(s), { html_hash: s.html_hash, content_hash: s.content_hash, signals_hash: s.signals_hash, captured_at: s.captured_at }]));
     writeFileSync("/tmp/state.json", JSON.stringify({ sites: [{ domain: "localhost:4811", sector: "dev-tools", active: true, pages: home.discovered_pages, latest }] }));
     await run("node", ["src/library.js"], { env: { ...process.env, DRY_RUN: "1", ALLOW_HTTP: "1", RUN_ID: "libcheck", LIBRARY_MODE: "check", STATE_FILE: "/tmp/state.json", LIBRARY_FILE: "/tmp/lib.csv", LIMIT: "1" } });
     const sum = JSON.parse(readFileSync("out/libcheck.summary.json", "utf8"));
     assert.equal(sum.snapshots, 0);
     assert.equal(sum.sites_skipped, 1);
+
+    // weekly full with unchanged state → only the home page is re-sent (it carries discovered_pages)
+    await run("node", ["src/library.js"], { env: { ...process.env, DRY_RUN: "1", ALLOW_HTTP: "1", RUN_ID: "libfull2", STATE_FILE: "/tmp/state.json", LIBRARY_FILE: "/tmp/lib.csv", LIMIT: "1" } });
+    const sum2 = JSON.parse(readFileSync("out/libfull2.summary.json", "utf8"));
+    assert.equal(sum2.snapshots, 1);
+    assert.equal(sum2.unchanged, 3);
   } finally { server.close(); }
 });

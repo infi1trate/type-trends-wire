@@ -63,7 +63,6 @@ export function signalsHash(s) {
   const pick = {
     h1: s.type?.rendered?.h1?.family ?? null, body: s.type?.rendered?.body?.family ?? null,
     theme: s.color?.theme ?? null, accent: s.color?.accent ?? null,
-    palette: (s.color?.palette ?? []).slice(0, 5).map((p) => p.hex),
     hero: s.layout?.hero_media ?? null, align: s.layout?.h1_align ?? null, cols: s.layout?.grid_max_cols ?? null,
     radius: s.layout?.cta_radius_px ?? null, h1text: s.lexicon?.h1 ?? null,
     nav: (s.nav ?? []).filter((n) => n.depth === 1).map((n) => n.label.toLowerCase()).sort(),
