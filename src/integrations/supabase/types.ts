@@ -185,6 +185,199 @@ export type Database = {
         }
         Relationships: []
       }
+      library_events: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          detected_at: string | null
+          domain: string
+          effective_at: string | null
+          id: number
+          page_type: string
+          prev_snapshot_id: number | null
+          severity: number
+          snapshot_id: number | null
+          summary: string | null
+          type: string
+          viewport: string
+        }
+        Insert: {
+          after?: Json | null
+          before?: Json | null
+          detected_at?: string | null
+          domain: string
+          effective_at?: string | null
+          id?: number
+          page_type: string
+          prev_snapshot_id?: number | null
+          severity: number
+          snapshot_id?: number | null
+          summary?: string | null
+          type: string
+          viewport: string
+        }
+        Update: {
+          after?: Json | null
+          before?: Json | null
+          detected_at?: string | null
+          domain?: string
+          effective_at?: string | null
+          id?: number
+          page_type?: string
+          prev_snapshot_id?: number | null
+          severity?: number
+          snapshot_id?: number | null
+          summary?: string | null
+          type?: string
+          viewport?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_events_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_events_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_events_prev_snapshot_id_fkey"
+            columns: ["prev_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_events_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_sites: {
+        Row: {
+          active: boolean | null
+          added_at: string | null
+          domain: string
+          last_change_at: string | null
+          last_snapshot_at: string | null
+          name: string | null
+          pages: Json | null
+          sector: string
+        }
+        Insert: {
+          active?: boolean | null
+          added_at?: string | null
+          domain: string
+          last_change_at?: string | null
+          last_snapshot_at?: string | null
+          name?: string | null
+          pages?: Json | null
+          sector: string
+        }
+        Update: {
+          active?: boolean | null
+          added_at?: string | null
+          domain?: string
+          last_change_at?: string | null
+          last_snapshot_at?: string | null
+          name?: string | null
+          pages?: Json | null
+          sector?: string
+        }
+        Relationships: []
+      }
+      library_snapshot_text: {
+        Row: {
+          raw_text: string
+          snapshot_id: number
+        }
+        Insert: {
+          raw_text: string
+          snapshot_id: number
+        }
+        Update: {
+          raw_text?: string
+          snapshot_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_snapshot_text_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_snapshots: {
+        Row: {
+          captured_at: string
+          content_hash: string | null
+          domain: string
+          html_hash: string | null
+          id: number
+          page_type: string
+          run_id: string | null
+          signals: Json
+          signals_hash: string | null
+          source: string
+          url: string | null
+          viewport: string
+        }
+        Insert: {
+          captured_at: string
+          content_hash?: string | null
+          domain: string
+          html_hash?: string | null
+          id?: number
+          page_type: string
+          run_id?: string | null
+          signals: Json
+          signals_hash?: string | null
+          source?: string
+          url?: string | null
+          viewport: string
+        }
+        Update: {
+          captured_at?: string
+          content_hash?: string | null
+          domain?: string
+          html_hash?: string | null
+          id?: number
+          page_type?: string
+          run_id?: string | null
+          signals?: Json
+          signals_hash?: string | null
+          source?: string
+          url?: string | null
+          viewport?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_snapshots_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_snapshots_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+        ]
+      }
       wire_items: {
         Row: {
           excerpt: string | null
@@ -740,8 +933,91 @@ export type Database = {
           },
         ]
       }
+      library_event_feed: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          detected_at: string | null
+          domain: string | null
+          effective_at: string | null
+          id: number | null
+          page_type: string | null
+          prev_snapshot_id: number | null
+          sector: string | null
+          severity: number | null
+          snapshot_id: number | null
+          summary: string | null
+          type: string | null
+          viewport: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_events_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_events_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_events_prev_snapshot_id_fkey"
+            columns: ["prev_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_events_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_latest: {
+        Row: {
+          accent: string | null
+          body_family: string | null
+          domain: string | null
+          events_30d: number | null
+          h1_family: string | null
+          hero_media: string | null
+          last_change_at: string | null
+          last_snapshot_at: string | null
+          sector: string | null
+          theme: string | null
+          whitespace_ratio: number | null
+        }
+        Relationships: []
+      }
+      library_sector_stats: {
+        Row: {
+          dark_theme_share: number | null
+          events_30d: number | null
+          median_whitespace_ratio: number | null
+          sector: string | null
+          serif_headline_share: number | null
+          sites: number | null
+          sites_snapshotted: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      library_snapshot_context: { Args: { p_snapshot: Json }; Returns: Json }
+      library_state: { Args: never; Returns: Json }
+      library_store_snapshot: {
+        Args: { p_context: Json; p_events: Json; p_snapshot: Json }
+        Returns: Json
+      }
+      library_sync: { Args: { p_sites: Json }; Returns: undefined }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
     }
     Enums: {
