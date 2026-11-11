@@ -42,7 +42,8 @@ export function normalizeExtraction(kind: ExtractionKind, value: unknown, captur
  return productSchema.parse(value);
 }
 const jpeg = z.string().max(2796204).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/).refine(v => { try { const bytes = atob(v.slice(v.indexOf(",")+1)); return bytes.startsWith("\xff\xd8\xff") && bytes.endsWith("\xff\xd9"); } catch { return false; } },"Valid JPEG required");
-export const tagRequestSchema = z.object({ domain: libraryDomain, page_type: z.literal("home"), viewport: z.literal("desktop"), captured_at: z.iso.datetime({ offset: true }), signals_hash: z.string().min(1).max(256), images: z.object({ fold: jpeg, page: jpeg.optional() }).strict() }).strict();
+const sectionJpeg = jpeg.refine(v => {try{return atob(v.slice(v.indexOf(",")+1)).length <= 600 * 1024;}catch{return false;}}, "Section JPEG must be at most 600 KB decoded");
+export const tagRequestSchema = z.object({ domain: libraryDomain, page_type: z.literal("home"), viewport: z.literal("desktop"), captured_at: z.iso.datetime({ offset: true }), signals_hash: z.string().min(1).max(256), images: z.object({ fold: jpeg, page: jpeg.optional(), sections: z.array(sectionJpeg).max(4).optional() }).strict() }).strict();
 export function reusableTags(row: { domain: string; signals_hash: string; created_at: string; tags: unknown }, domain: string, hash: string, now = new Date()) {
  const parsed=tagsSchema.safeParse(row.tags);
  return row.domain === domain && row.signals_hash === hash && Date.parse(row.created_at) <= now.getTime() && Date.parse(row.created_at) > now.getTime() - 60 * 86400000 && parsed.success && reliableVision(parsed.data);

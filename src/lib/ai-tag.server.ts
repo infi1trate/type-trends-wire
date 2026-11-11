@@ -20,7 +20,11 @@ export async function handleLibraryTag(request: Request) {
   let raw:unknown;try{raw=JSON.parse(body);}catch{return Response.json({ok:false,code:"invalid_json"},{status:400});}
   const parsed=tagRequestSchema.safeParse(raw);if(!parsed.success)return Response.json({ok:false,code:"invalid_input"},{status:400});
   const input=parsed.data;
-  for(const image of [input.images.fold,...(input.images.page?[input.images.page]:[])]) {
+  const sections=input.images.sections ?? [];
+  // Sections replace the low-resolution legacy strip when both are supplied.
+  const images=[input.images.fold,...(sections.length?sections:input.images.page?[input.images.page]:[])];
+  const imageLabels=["fold",...(sections.length?sections.map((_,i)=>`section ${i+1}, top to bottom`):input.images.page?["legacy page, top to bottom"]:[])];
+  for(const image of [input.images.fold,...sections,...(input.images.page?[input.images.page]:[])]) {
    const size=jpegDimensions(image);if(!size)return Response.json({ok:false,code:'invalid_input'},{status:400});
    if(size.width<200||size.height<200)return Response.json({ok:false,code:'image_too_small'},{status:400});
   }
@@ -31,7 +35,7 @@ export async function handleLibraryTag(request: Request) {
   if(reuseError)throw new Error("Tag reuse lookup failed");
   if(previous&&reusableTags(previous,input.domain,input.signals_hash)) {const tags=cleanTags(previous.tags);await storeAiResult(snapshot,"vision",previous.model,tags);return Response.json({ok:true,reused:true,tags});}
   const f=fingerprint(snapshot.signals);const {data:site}=await db.from("library_sites").select("sector").eq("domain",input.domain).single();
-  const result=await inferAI({snapshot_id:snapshot.id,kind:"vision",captured_at:input.captured_at,context:JSON.stringify({domain:input.domain,sector:site?.sector,headline:f.h1,h1_font:f.h1_family,body_font:f.body_family,theme:f.theme}),images:[input.images.fold,...(input.images.page?[input.images.page]:[])]});
+  const result=await inferAI({snapshot_id:snapshot.id,kind:"vision",captured_at:input.captured_at,context:JSON.stringify({domain:input.domain,sector:site?.sector,headline:f.h1,h1_font:f.h1_family,body_font:f.body_family,theme:f.theme}),images,imageLabels});
   await storeAiResult(snapshot,"vision",result.model,result.data);
   return Response.json({ok:true,reused:false,tags:result.data});
  } catch(error) {return Response.json({ok:false,code:error instanceof AiFailure?error.code:"internal_error"},{status:error instanceof AiFailure?error.http:500});}

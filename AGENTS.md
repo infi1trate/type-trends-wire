@@ -51,3 +51,4 @@ use the editor.
 - AI confirmation uses a separate private baseline keyed by domain/page/viewport/kind and the existing pure advance function, so late AI output cannot clear measured pending changes or count one snapshot twice.
 - Vision inference sends image data directly to the Gateway in memory; never persist images or log request/provider bodies, so app storage contains derived tags only.
 - Vision quality is normalized before persistence; blocked or low-confidence captures break AI change confirmation and are excluded after latest-snapshot selection from trend denominators and reuse.
+- Vision sends the fold plus up to four labeled top-to-bottom sections; sections supersede the legacy page strip to bound inference at five images while retaining old callers.
