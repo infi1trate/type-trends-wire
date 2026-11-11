@@ -21,3 +21,8 @@
 - [x] Add language-scoped aggregates and the Spread view.
 - [x] Activate Color, Layout, Composition and Lexicon; add Spread and In the Wild.
 - [x] Verify formatting, persistence, live data and desktop/mobile layouts; report without publishing.
+
+# Phase 4C
+- [ ] Materialize seven crawler aggregates and optimize font classification joins, preserving public query contracts.
+- [ ] Refresh after finish and finished-run site reposts; test ordering and error handling.
+- [ ] Verify counts, permissions, query speed and live Spread; do not publish.
