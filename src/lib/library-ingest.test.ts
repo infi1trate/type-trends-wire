@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from "vitest";
-const state = vi.hoisted(() => ({ hash: "", sites: new Map<string, Record<string, unknown>>(), snapshots: [] as Record<string, unknown>[], events: [] as Record<string, unknown>[], text: new Map<number, string>(), retry: false }));
+const state = vi.hoisted(() => ({ hash: "", sites: new Map<string, Record<string, unknown>>(), snapshots: [] as Record<string, unknown>[], events: [] as Record<string, unknown>[], text: new Map<number, string>(), retry: false, baselines: new Map<string, Record<string, unknown>>() }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   from() { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; },
   async rpc(name: string, args: Record<string, unknown> = {}) {
@@ -8,7 +8,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
     const context = () => {
       const prev = state.snapshots.filter(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type'] && s['viewport'] === row['viewport'] && s['source'] === row['source'] && String(s['captured_at']) < String(row['captured_at'])).sort((a, b) => String(b['captured_at']).localeCompare(String(a['captured_at'])))[0];
       const first = state.snapshots.filter(s => s['domain'] === row['domain']).map(s => String(s['captured_at'])).sort()[0] ?? null;
-      return { prev: prev ? { id: prev['id'], signals: prev['signals'], content_hash: prev['content_hash'] ?? null } : null, first_captured_at: first, new_surface: !!first && Date.parse(String(row['captured_at'])) - Date.parse(first) > 86400000 && !state.snapshots.some(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type']) };
+      return { sector: "ai", latest_captured_at: prev?.["captured_at"] ?? null, baseline: state.baselines.get([row["domain"],row["page_type"],row["viewport"],row["source"]].join(":")) ?? null, prev: prev ? { id: prev['id'], signals: prev['signals'], content_hash: prev['content_hash'] ?? null } : null, first_captured_at: first, new_surface: !!first && Date.parse(String(row['captured_at'])) - Date.parse(first) > 86400000 && !state.snapshots.some(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type']) };
     };
     if (name === "library_sync") {
       const sites = args['p_sites'] as Record<string, unknown>[];
@@ -23,7 +23,9 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
       const id = state.snapshots.length + 1;
       state.snapshots.push({ ...row, id });
       if (typeof row['raw_text'] === "string") state.text.set(id, row['raw_text']);
-      const events = args['p_events'] as Record<string, unknown>[];
+      const change = args['p_events'] as { baseline: Record<string, unknown>; pending: Record<string, Record<string, unknown>>; events: Record<string, unknown>[] };
+      const events = change.events;
+      state.baselines.set([row['domain'],row['page_type'],row['viewport'],row['source']].join(":"), { ...change.baseline, snapshot_id: change.baseline['snapshot_id'] ?? id, pending: change.pending });
       state.events.push(...events);
       const site = state.sites.get(String(row['domain']));
       if (site) site['pages'] = { ...site['pages'] as object, ...row['discovered_pages'] as object };
@@ -37,14 +39,15 @@ import { handleCrawlIngest, handleLibraryState, sha256Hex } from "./crawl-ingest
 const credential = "library-test-only";
 const request = (body: unknown) => new Request("http://localhost/api/public/ingest-crawl", { method: "POST", headers: { "x-crawl-secret": credential }, body: JSON.stringify(body) });
 const snapshot = { domain: "example.com", page_type: "home", viewport: "desktop", source: "live", captured_at: "2026-11-11T01:00:00Z", url: "https://example.com", html_hash: "hash-1", signals: { color: { theme: "light" } }, raw_text: "private text" };
-beforeEach(async () => { state.hash = await sha256Hex(credential); state.sites.clear(); state.snapshots = []; state.events = []; state.text.clear(); state.retry = false; });
+beforeEach(async () => { state.hash = await sha256Hex(credential); state.sites.clear(); state.snapshots = []; state.events = []; state.text.clear(); state.retry = false; state.baselines.clear(); });
 it("authenticated sync → snapshots → events → state, duplicates are no-op", async () => {
   expect(await (await handleCrawlIngest(request({ kind: "library_sync", sites: [{ domain: "example.com", sector: "ai" }] }))).json()).toEqual({ ok: true, inserted: 0, events: 0 });
   const post = (value: unknown) => handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [value] }));
   expect(await (await post(snapshot)).json()).toEqual({ ok: true, inserted: 1, events: 0 });
   state.retry = true;
   const next = { ...snapshot, captured_at: "2026-11-11T02:00:00Z", html_hash: "hash-2", signals: { color: { theme: "dark" } }, discovered_pages: { pricing: "https://example.com/pricing" } };
-  expect(await (await post(next)).json()).toEqual({ ok: true, inserted: 1, events: 1 });
+  expect(await (await post(next)).json()).toEqual({ ok: true, inserted: 1, events: 0 });
+  expect(await (await post({ ...next, captured_at: "2026-11-11T03:00:00Z" })).json()).toEqual({ ok: true, inserted: 1, events: 1 });
   expect(await (await post(next)).json()).toEqual({ ok: true, inserted: 0, events: 0 });
   expect(state.events).toMatchObject([{ type: "theme_flip", severity: 2 }]);
   expect(state.text.get(1)).toBe("private text");

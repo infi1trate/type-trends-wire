@@ -1,5 +1,5 @@
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
-import { diffLibrarySignals } from "./library-diff";
+import { advance, diffLibrarySignals, type Baseline, type Pending } from "./library-diff";
 import { librarySnapshotsPayload, librarySyncPayload } from "./library-payload";
 import { z } from "zod";
 import type { Json } from "@/integrations/supabase/types";
@@ -8,6 +8,9 @@ const contextSchema = z.object({
   prev: z.object({ id: z.number(), signals: z.record(z.string(), z.json()), content_hash: z.string().nullable() }).nullable(),
   new_surface: z.boolean(),
   first_captured_at: z.string().nullable(),
+  sector: z.string(),
+  latest_captured_at: z.string().nullable(),
+  baseline: z.object({ signals: z.record(z.string(), z.json()), snapshot_id: z.number().nullable(), confirmed_at: z.string(), pending: z.record(z.string(), z.json()) }).nullable(),
 });
 const resultSchema = z.object({ retry: z.boolean().optional(), inserted: z.number().optional(), events: z.number().optional() });
 export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> | z.infer<typeof librarySnapshotsPayload>): Promise<Response> {
@@ -25,11 +28,10 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
       const { data, error } = await db.rpc("library_snapshot_context", { p_snapshot: row as Json });
       if (error) throw new Error("Library context lookup failed");
       const context = contextSchema.parse(data);
-      const changes = diffLibrarySignals(context.prev?.signals ?? null, snapshot.signals, {
-        page_type: snapshot.page_type, viewport: snapshot.viewport, new_surface: context.new_surface, first_captured_at: context.first_captured_at, captured_at: snapshot.captured_at,
-        prev_content_hash: context.prev?.content_hash, content_hash: snapshot.content_hash,
-      });
-      const { data: result, error: storeError } = await db.rpc("library_store_snapshot", { p_snapshot: row as Json, p_context: data as Json, p_events: changes as Json });
+      const rules = { page_type: snapshot.page_type, viewport: snapshot.viewport, sector: context.sector, new_surface: context.new_surface, first_captured_at: context.first_captured_at, captured_at: snapshot.captured_at };
+      const changes = advance(context.baseline as Baseline | null, (context.baseline?.pending ?? {}) as Pending, { signals: snapshot.signals, snapshot_id: null, captured_at: snapshot.captured_at, context: rules });
+      changes.events.push(...diffLibrarySignals(null, snapshot.signals, rules));
+      const { data: result, error: storeError } = await db.rpc("library_store_snapshot", { p_snapshot: row as Json, p_context: data as Json, p_events: changes as unknown as Json });
       if (storeError) throw new Error("Library snapshot write failed");
       const outcome = resultSchema.parse(result);
       if (outcome.retry) continue;
