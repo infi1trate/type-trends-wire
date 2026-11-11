@@ -43,3 +43,15 @@ test("gambling filtered", () => {
   assert.equal(keepMainstream("xosodaiphat.com"), false);
   assert.equal(keepMainstream("people.com"), true);
 });
+
+test("css-style family names become display names", async () => {
+  const { normalizeFamily: n } = await import("../src/fonts.js");
+  assert.equal(n("basier-square"), "Basier Square");
+  assert.equal(n("abcNormal"), "ABC Normal");
+  assert.equal(n("pp-neue-montreal"), "PP Neue Montreal");
+  assert.equal(n("GT-America-Standard-Regular"), "GT America Standard");
+  assert.equal(n("Basiersquare Webfont"), "Basiersquare");
+  assert.equal(n("."), "(obfuscated)");
+  assert.equal(n("Söhne"), "Söhne");
+  assert.equal(n("IBM Plex Sans"), "IBM Plex Sans");
+});

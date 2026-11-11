@@ -4,14 +4,19 @@
 const FALLBACK = /^(Liberation (Sans|Serif|Mono)|DejaVu (Sans|Serif)( Mono)?|FreeSans|FreeSerif|FreeMono|Noto (Sans|Serif)( [A-Z][\w ]*)?|WenQuanYi.*|Loma|Garuda|Kinnari|Norasi|Umpush|Waree|Tlwg.*|Lohit.*|Droid Sans.*|Nimbus.*|URW.*|C059|P052|Z003)$/i;
 const GENERIC = /^(serif|sans-serif|monospace|cursive|fantasy|system-ui|ui-sans-serif|ui-serif|ui-monospace|ui-rounded|emoji|math|fangsong|-apple-system|BlinkMacSystemFont)$/i;
 const SYSTEM_STACK = /^(-apple-system|BlinkMacSystemFont|system-ui|ui-sans-serif|Segoe UI|Roboto|Helvetica Neue|Helvetica|Arial|San Francisco|SF Pro( Display| Text)?)$/i;
-const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|Light|Regular|Normal|Book|Medium|Semi ?Bold|Demi ?Bold|Bold|Extra ?Bold|Ultra ?Bold|Black|Heavy|Italic|Oblique|\d+\s?pt|Web|Pro Web)$/i;
+const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|Light|Regular|Normal|Book|Medium|Semi ?Bold|Demi ?Bold|Bold|Extra ?Bold|Ultra ?Bold|Black|Heavy|Italic|Oblique|\d+\s?pt|Web|Pro Web|Web ?Font|WF)$/i;
 
 export function normalizeFamily(name) {
   if (!name) return null;
   let n = String(name).replace(/\[.*?\]/g, "").replace(/["']/g, "").trim();
   if (!n || /[^\x20-\x7EÀ-ɏ]/.test(n) && !/[぀-ヿ一-鿿가-힯؀-ۿ]/.test(n)) return "(obfuscated)";
+  if (!/[A-Za-zÀ-ɏ぀-ヿ一-鿿가-힯؀-ۿ]/.test(n)) return "(obfuscated)"; // ".", "_", digits only
   for (let i = 0; i < 4; i++) { const m = n.replace(SUFFIX, "").trim(); if (m === n || !m) break; n = m; }
-  return n;
+  // CSS-style identifiers to display names: "basier-square" → "Basier Square", "abcNormal" → "ABC Normal".
+  if (/^[a-z0-9]+([-_][a-z0-9]+)+$/.test(n)) n = n.split(/[-_]/).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+  else if (/^[A-Za-z0-9]+(-[A-Za-z0-9]+)+$/.test(n)) n = n.replace(/-/g, " ");
+  else if (/^[a-z]+[A-Z]/.test(n) && !/\s/.test(n)) n = n.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+  return n.replace(/^Abc\b/, "ABC").replace(/^Pp\b/, "PP").replace(/^Tt\b/, "TT").replace(/^Gt\b/, "GT").replace(/^Sf\b/, "SF");
 }
 
 export function firstDeclared(stack) {
