@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
 import { PANELS, type PanelId } from "./panels";
 import { SpreadTicker } from "./Spread";
+import { LibraryTicker } from "./Library";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -103,6 +104,7 @@ export function Ticker() {
           <div key={k} aria-hidden={k === 1} className="flex items-center pl-8">
             {content}
             <SpreadTicker/>
+            <Suspense fallback={null}><LibraryTicker/></Suspense>
             {!items && content}
             {!items && content}
           </div>
