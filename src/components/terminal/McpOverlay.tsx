@@ -16,6 +16,6 @@ export function McpOverlay({onClose}:{onClose:()=>void}){
     <CopyLine label="ENDPOINT" value={ENDPOINT}/>
     <p className="border-b border-rule py-3 text-ink"><span className="label text-g500">CLAUDE</span><br/>Settings → Connectors → Add custom connector → paste the endpoint</p>
     <CopyLine label="CLAUDE CODE" value={COMMAND}/>
-    <p className="py-3 text-ink"><span className="label text-g500">TOOLS</span><br/>get_trend · search_trends · wire<br/><span className="label text-g500">RESOURCE</span><br/>trend://methodology</p>
+    <p className="py-3 text-ink"><span className="label text-g500">TOOLS</span><br/>get_trend · search_trends · wire · library_site · library_events · library_sector · crawl_spread<br/><span className="label text-g500">RESOURCE</span><br/>trend://methodology</p>
   </Overlay>;
 }
