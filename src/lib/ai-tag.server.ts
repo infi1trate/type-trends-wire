@@ -5,6 +5,7 @@ import { inferAI, AiFailure } from "./ai-inference.server";
 import { storeAiResult } from "./ai-store.server";
 import { AI_LIMITS } from "./ai-models";
 import { fingerprint } from "./library";
+import { jpegDimensions } from './ai-vision';
 export async function readAiBody(request: Request): Promise<string | null> {
  if(Number(request.headers.get("content-length") ?? 0)>AI_LIMITS.body) return null;
  const reader=request.body?.getReader();if(!reader)return "";
@@ -19,6 +20,10 @@ export async function handleLibraryTag(request: Request) {
   let raw:unknown;try{raw=JSON.parse(body);}catch{return Response.json({ok:false,code:"invalid_json"},{status:400});}
   const parsed=tagRequestSchema.safeParse(raw);if(!parsed.success)return Response.json({ok:false,code:"invalid_input"},{status:400});
   const input=parsed.data;
+  for(const image of [input.images.fold,...(input.images.page?[input.images.page]:[])]) {
+   const size=jpegDimensions(image);if(!size)return Response.json({ok:false,code:'invalid_input'},{status:400});
+   if(size.width<200||size.height<200)return Response.json({ok:false,code:'image_too_small'},{status:400});
+  }
   const {data:snapshot,error}=await db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,signals,signals_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source","live").eq("captured_at",input.captured_at).maybeSingle();
   if(error)throw new Error("Snapshot lookup failed");if(!snapshot)return Response.json({ok:false,code:"snapshot_not_found"},{status:404});
   if(snapshot.signals_hash!==input.signals_hash)return Response.json({ok:false,code:"signals_hash_mismatch"},{status:409});

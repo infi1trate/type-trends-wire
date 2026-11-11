@@ -16,3 +16,12 @@ it('emits pricing_change only on the second consecutive extracted price',()=>{
 it('confirms aesthetic changes for desktop home only',()=>{
  for(const viewport of ['desktop','mobile']){let baseline:Baseline|null=null,pending:Pending={};const events=[['minimal'],['brutalist'],['brutalist']].flatMap((aesthetic,i)=>{const r=advance(baseline,pending,{signals:{ai_tags:{aesthetic}},snapshot_id:i+1,captured_at:`2026-11-${10+i}T00:00:00Z`,context:{page_type:'home',viewport}});baseline=r.baseline;pending=r.pending;return r.events;});expect(events.map(e=>e.type)).toEqual(viewport==='desktop'?['aesthetic_shift']:[]);}
 });
+it('blocked and low-confidence captures break confirmation without changing the baseline',()=>{
+ for(const unreliable of [{confidence:.39},{confidence:.9,blocked_reason:'captcha'},{confidence:.9,low_confidence:true}]){
+ const context={page_type:'home',viewport:'desktop'};
+ const first=advance(null,{}, {signals:{ai_tags:{imagery:['product_ui'],aesthetic:['minimal'],confidence:.9}},snapshot_id:1,captured_at:'2026-11-10T00:00:00Z',context});
+ const candidate=advance(first.baseline,{}, {signals:{ai_tags:{imagery:['photography_people'],aesthetic:['brutalist'],confidence:.9}},snapshot_id:2,captured_at:'2026-11-11T00:00:00Z',context});
+ const blocked=advance(candidate.baseline,candidate.pending,{signals:{ai_tags:{imagery:['photography_people'],aesthetic:['brutalist'],...unreliable}},snapshot_id:3,captured_at:'2026-11-12T00:00:00Z',context});
+ expect(blocked.events).toEqual([]);expect(blocked.pending).toEqual({});expect(blocked.baseline.signals).toEqual(first.baseline.signals);
+ }
+});

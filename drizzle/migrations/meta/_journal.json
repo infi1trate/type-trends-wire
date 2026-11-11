@@ -120,6 +120,13 @@
       "when": 1794431849766,
       "tag": "0016_library_ai_ordered_copy_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794432766248,
+      "tag": "0017_library_vision_quality_filter",
+      "breakpoints": true
     }
   ]
 }

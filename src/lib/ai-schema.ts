@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { libraryDomain } from "./library-payload";
+import { reliableVision } from "./ai-vision";
 export const VOCAB = {
  imagery: ["product_ui","photography_people","photography_product","photography_lifestyle","3d_render","illustration_flat","illustration_hand_drawn","abstract_gradient","abstract_shapes","generative_art","data_viz","video_still","typographic_only","collage","pixel_art","none"],
  aesthetic: ["minimal","swiss_grid","editorial","brutalist","neo_brutalist","glassmorphism","dark_tech","retro_futurist","y2k","skeuomorphic","playful","luxury","corporate","maximalist","organic","terminal_mono"],
@@ -8,14 +9,17 @@ export const VOCAB = {
  ai_positioning: ["ai_core","ai_feature","ai_mentioned","none"], tone: ["technical","aspirational","playful","premium","friendly","authoritative","irreverent","calm","urgent"],
  color_mood: ["monochrome","muted","pastel","vivid","neon","earthy","high_contrast"],
 } as const;
-export const tagsSchema = z.object({ imagery: z.array(z.enum(VOCAB.imagery)).max(3), aesthetic: z.array(z.enum(VOCAB.aesthetic)).max(2), components: z.array(z.enum(VOCAB.components)).max(26), hero_layout: z.enum(VOCAB.hero_layout), ai_positioning: z.enum(VOCAB.ai_positioning), tone: z.array(z.enum(VOCAB.tone)).max(3), color_mood: z.enum(VOCAB.color_mood), confidence: z.number().min(0).max(1) }).strict();
+export const visionOutputSchema = z.object({ imagery: z.array(z.enum(VOCAB.imagery)).max(3), aesthetic: z.array(z.enum(VOCAB.aesthetic)).max(2), components: z.array(z.enum(VOCAB.components)).max(26), hero_layout: z.enum(VOCAB.hero_layout).nullable(), ai_positioning: z.enum(VOCAB.ai_positioning).nullable(), tone: z.array(z.enum(VOCAB.tone)).max(3), color_mood: z.enum(VOCAB.color_mood).nullable(), confidence: z.number().min(0).max(1), blocked_reason:z.enum(['blank','captcha','cookie_wall','login_wall','error_page']).nullable().default(null) }).strict();
+export const tagsSchema = visionOutputSchema.extend({low_confidence:z.boolean().optional()}).strict();
 export function cleanTags(value: unknown) {
  const raw = z.record(z.string(), z.unknown()).parse(value), cleaned = { ...raw };
  for (const key of ["imagery","aesthetic","components","tone"] as const) {
   const allowed: readonly string[] = VOCAB[key];
   cleaned[key] = Array.isArray(raw[key]) ? [...new Set(raw[key].filter((v): v is string => typeof v === "string" && allowed.includes(v)))].slice(0,key==="imagery"||key==="tone"?3:key==="aesthetic"?2:26) : [];
  }
- return tagsSchema.parse(cleaned);
+ const tags=tagsSchema.parse(cleaned);
+ if(tags.blocked_reason) return {...tags,imagery:[],aesthetic:[],components:[],tone:[],hero_layout:null,ai_positioning:null,color_mood:null,confidence:Math.min(tags.confidence,0.2),low_confidence:true};
+ return {...tags,low_confidence:!reliableVision(tags)};
 }
 const short = z.string().max(120), nullablePrice = z.number().nonnegative().nullable();
 export const pricingSchema = z.object({ currency: z.string().max(12).nullable(), plans: z.array(z.object({ name: z.string().min(1).max(80), price_monthly: nullablePrice, price_basis: z.enum(["flat","per_seat","usage","custom"]), billing: z.enum(["monthly","annual","both","unknown"]), is_free: z.boolean(), is_enterprise_contact: z.boolean(), highlighted: z.boolean(), ai_addon: z.boolean(), key_limits: z.array(short).max(3) }).strict()).max(30), has_free_tier: z.boolean(), has_trial: z.boolean(), trial_days: z.number().int().nonnegative().max(365).nullable(), has_usage_based: z.boolean(), has_ai_addon: z.boolean(), ai_credits_model: z.boolean(), cheapest_paid_monthly: nullablePrice }).strict();
@@ -40,5 +44,6 @@ export function normalizeExtraction(kind: ExtractionKind, value: unknown, captur
 const jpeg = z.string().max(2796204).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/).refine(v => { try { const bytes = atob(v.slice(v.indexOf(",")+1)); return bytes.startsWith("\xff\xd8\xff") && bytes.endsWith("\xff\xd9"); } catch { return false; } },"Valid JPEG required");
 export const tagRequestSchema = z.object({ domain: libraryDomain, page_type: z.literal("home"), viewport: z.literal("desktop"), captured_at: z.iso.datetime({ offset: true }), signals_hash: z.string().min(1).max(256), images: z.object({ fold: jpeg, page: jpeg.optional() }).strict() }).strict();
 export function reusableTags(row: { domain: string; signals_hash: string; created_at: string; tags: unknown }, domain: string, hash: string, now = new Date()) {
- return row.domain === domain && row.signals_hash === hash && Date.parse(row.created_at) <= now.getTime() && Date.parse(row.created_at) > now.getTime() - 60 * 86400000 && tagsSchema.safeParse(row.tags).success;
+ const parsed=tagsSchema.safeParse(row.tags);
+ return row.domain === domain && row.signals_hash === hash && Date.parse(row.created_at) <= now.getTime() && Date.parse(row.created_at) > now.getTime() - 60 * 86400000 && parsed.success && reliableVision(parsed.data);
 }

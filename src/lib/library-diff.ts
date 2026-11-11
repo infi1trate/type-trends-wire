@@ -53,7 +53,7 @@ export function extractFields(signals: Comparable, context: DiffContext): Compar
   const h1 = text(at(signals, "lexicon", "h1"));
   if (context.page_type === "home" && context.sector !== "media" && h1 && !blockedHeadline.test(h1)) fields['headline'] = h1;
   if (context.page_type === "pricing" && Array.isArray(signals['prices'])) fields['prices'] = strings(signals['prices']);
-  if (context.page_type === "home") for (const key of ["imagery", "aesthetic"]) {
+  if (context.page_type === "home" && at(signals,'ai_tags','low_confidence')!==true && !at(signals,'ai_tags','blocked_reason') && (number(at(signals,'ai_tags','confidence'))??1)>=0.4) for (const key of ["imagery", "aesthetic"]) {
     const tags = at(signals, "ai_tags", key); if (Array.isArray(tags)) fields[key] = strings(tags);
   }
   if (context.page_type === "pricing" && signals['ai_pricing']) fields['ai_pricing'] = signals['ai_pricing'];
