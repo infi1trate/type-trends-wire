@@ -43,3 +43,11 @@
 - [x] Replay snapshots, replace noisy events and reset last-change dates.
 - [x] Show safe unconfirmed changes under the timeline; keep headline plain.
 - [x] Verify field rules, ingestion, real data and event counts; do not publish.
+
+# Phase 5C
+- [ ] Add atomic AI spending reservations, private usage/jobs and public spend summary; test budget rules.
+- [ ] Add validated transient-image tagging and repeat-hash reuse with eligible low-cost models.
+- [ ] Enqueue text extractions transactionally and add a bounded, durable, budget-guarded worker.
+- [ ] Add public trend aggregates and two-capture confirmation for tag/pricing changes.
+- [ ] Add AI-marked Library panels, detail blocks and read-only MCP trends.
+- [ ] Verify real vision/pricing calls, recorded usage, permissions, tests and responsive displays; do not publish.
