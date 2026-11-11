@@ -7,6 +7,7 @@ import type { Json } from "@/integrations/supabase/types";
 const contextSchema = z.object({
   prev: z.object({ id: z.number(), signals: z.record(z.string(), z.json()), content_hash: z.string().nullable() }).nullable(),
   new_surface: z.boolean(),
+  first_captured_at: z.string().nullable(),
 });
 const resultSchema = z.object({ retry: z.boolean().optional(), inserted: z.number().optional(), events: z.number().optional() });
 export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> | z.infer<typeof librarySnapshotsPayload>): Promise<Response> {
@@ -25,7 +26,7 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
       if (error) throw new Error("Library context lookup failed");
       const context = contextSchema.parse(data);
       const changes = diffLibrarySignals(context.prev?.signals ?? null, snapshot.signals, {
-        page_type: snapshot.page_type, viewport: snapshot.viewport, new_surface: context.new_surface,
+        page_type: snapshot.page_type, viewport: snapshot.viewport, new_surface: context.new_surface, first_captured_at: context.first_captured_at, captured_at: snapshot.captured_at,
         prev_content_hash: context.prev?.content_hash, content_hash: snapshot.content_hash,
       });
       const { data: result, error: storeError } = await db.rpc("library_store_snapshot", { p_snapshot: row as Json, p_context: data as Json, p_events: changes as Json });
