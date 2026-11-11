@@ -8,7 +8,7 @@ import { LibraryWireframe } from "./LibraryWireframe";
 
 export function LibrarySite({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(librarySiteQuery(domain));
-  const { viewport, page_type, a, b } = useSearch({ from: "/library/$domain" });
+  const { viewport = "desktop", page_type = "home", a = "", b = "" } = useSearch({ from: "/library/$domain" });
   const navigate = useNavigate({ from: "/library/$domain" });
   if (!data) return null;
   const { site, snapshots, events, sector } = data;

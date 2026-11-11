@@ -8,7 +8,7 @@ import { BarMark, LibraryBand, Relative, Swatch } from "./LibraryShared";
 
 export function Library() {
   const { data } = useSuspenseQuery(libraryQuery());
-  const { sector, q, sort, desc, page } = useSearch({ from: "/" });
+  const { sector = "all", q = "", sort = "domain", desc = false, page = 0 } = useSearch({ from: "/" });
   const navigate = useNavigate({ from: "/" });
   const update = (next: Partial<{ sector: string; q: string; sort: string; desc: boolean; page: number }>) => navigate({ search: prev => ({ ...prev, ...next }) });
   const keys = ["domain", "sector", "h1_family", "body_family", "theme", "accent", "hero_media", "whitespace_ratio", "last_change_at", "events_30d"] as const;
@@ -29,7 +29,7 @@ export function Library() {
       <div className="grid min-h-0 lg:grid-cols-[minmax(0,3fr)_minmax(230px,1fr)]">
         <div className="min-w-0 lg:border-r lg:border-rule">
           <div className="flex flex-wrap gap-1 border-b border-rule p-3" aria-label="Sector filter">{["all", ...SECTORS].map(s => <Button key={s} variant="ghost" className={`label h-8 px-2 ${sector === s ? "bg-ink text-void" : "text-compare-muted"}`} aria-pressed={sector === s} onClick={() => update({ sector: s, page: 0 })}>{s}</Button>)}</div>
-          <div className="border-b border-rule p-3"><QueryBar label="Search library domains" placeholder="QUERY DOMAIN" value={q} onChange={e => update({ q: e.target.value, page: 0 })}/></div>
+          <div className="flex flex-wrap gap-2 border-b border-rule p-3"><QueryBar label="Search library domains" placeholder="QUERY DOMAIN" value={q} onChange={e => update({ q: e.target.value, page: 0 })}/><label className="label flex items-center gap-2 min-[1280px]:hidden">SORT<select aria-label="Library sort" value={sortKey} onChange={e => update({ sort: e.target.value })} className="border border-rule bg-void p-2">{keys.map(k => <option key={k} value={k}>{k.toUpperCase().replaceAll("_", " ")}</option>)}</select></label><Button variant="ghost" size="icon" className="min-[1280px]:hidden" aria-label={desc ? "Sort ascending" : "Sort descending"} onClick={() => update({ desc: !desc })}>{desc ? "↓" : "↑"}</Button></div>
           <table className="library-table w-full table-fixed text-label"><thead><tr>{["DOMAIN", "SECTOR", "H1 FAMILY", "BODY FAMILY", "L/D", "ACCENT", "HERO", "SPACE", "CHANGE", "EV 30D"].map((label, i) => <th key={label} className="border-b border-rule text-left"><Button variant="ghost" className="label h-auto w-full justify-start px-2 py-2" onClick={() => update({ sort: keys[i] ?? "domain", desc: sort === keys[i] ? !desc : false })}>{label}{sort === keys[i] ? desc ? " ↓" : " ↑" : ""}</Button></th>)}</tr></thead><tbody>{rows.map(r => r.domain && <tr key={r.domain} className="border-b border-rule hover:bg-g900">
             <td data-label="DOMAIN" className="p-2 font-semibold"><Link to="/library/$domain" params={{ domain: r.domain }} className="text-ink hover:text-signal">{r.domain}</Link></td>
             <td data-label="SECTOR" className="p-2 text-compare-muted">{r.sector}</td><td data-label="H1" className="p-2">{r.h1_family ?? "—"}</td><td data-label="BODY" className="p-2">{r.body_family ?? "—"}</td>
