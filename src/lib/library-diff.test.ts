@@ -6,8 +6,8 @@ const base = { type: { rendered: { h1: { family: "Inter" }, body: { family: "Ari
 describe("library change rules", () => {
   it("creates no events for a no-op or first snapshot", () => { expect(diffLibrarySignals(base, base, ctx)).toEqual([]); expect(diffLibrarySignals(null, base, ctx)).toEqual([]); });
   it("theme flip is severity 2", () => { expect(diffLibrarySignals(base, { ...base, color: { ...base.color, theme: "dark" } }, ctx)).toEqual([{ type: "theme_flip", severity: 2, summary: "theme light → dark", before: { theme: "light" }, after: { theme: "dark" } }]); });
-  it("one font change is severity 2", () => { expect(diffLibrarySignals(base, { ...base, type: { rendered: { ...base.type.rendered, h1: { family: "Söhne" } } } }, ctx)).map(e => [e.type, e.severity])).toEqual([["type_change", 2]]); });
-  it("both font changes are severity 3", () => { expect(diffLibrarySignals(base, { ...base, type: { rendered: { h1: { family: "Söhne" }, body: { family: "Roboto" } } } }, ctx)).map(e => [e.type, e.severity])).toEqual([["type_change", 3]]); });
+  it("one font change is severity 2", () => { expect(diffLibrarySignals(base, { ...base, type: { rendered: { ...base.type.rendered, h1: { family: "Söhne" } } } }, ctx).map(e => [e.type, e.severity])).toEqual([["type_change", 2]]); });
+  it("both font changes are severity 3", () => { expect(diffLibrarySignals(base, { ...base, type: { rendered: { h1: { family: "Söhne" }, body: { family: "Roboto" } } } }, ctx).map(e => [e.type, e.severity])).toEqual([["type_change", 3]]); });
   it("redesign requires three distinct types on home desktop", () => {
     const two = { ...base, color: { ...base.color, theme: "dark" }, tech: { next: true } };
     expect(diffLibrarySignals(base, two, ctx).map(e => e.type)).toEqual(["theme_flip", "stack_change"]);
