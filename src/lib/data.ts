@@ -257,4 +257,10 @@ export const crawlQuery = (scope: Scope) => queryOptions({
       sites:sites.map(s=>({...s,color:s.color??{},composition:s.composition??{},layout:s.layout??{}})) as CrawlSite[]};
   },
 });
-export type CrawlData = NonNullable<Awaited<ReturnType<ReturnType<typeof crawlQuery>["queryFn"]>>>;
+export type CrawlData = {
+ run: Database["public"]["Tables"]["crawl_runs"]["Row"]; prevId: string | null | undefined;
+ colors: ViewRow<"crawl_color_stats">[]; layout: ViewRow<"crawl_layout_share">[];
+ tech: ViewRow<"crawl_tech_share">[]; ctas: ViewRow<"crawl_cta_phrases">[];
+ words: ViewRow<"crawl_h1_words">[]; fonts: ViewRow<"crawl_font_share">[];
+ spread: SpreadRow[]; sites: CrawlSite[];
+};
