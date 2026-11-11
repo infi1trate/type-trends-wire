@@ -28,7 +28,7 @@ function Color({data,index}:{data:CrawlData;index:IndexFilter}) {
     </div>
   </div>;
 }
-const DIMENSIONS=[ ["h1_align","≡"],["hero_media","▣ ▷"],["cta_shape","[ ] ( )"],["grid_cols","▥"],["h1_size","Aa"],["h1_tracking","A A"],["h1_case","a A"] ];
+const DIMENSIONS=[ ["h1_align","≡"],["hero_media","▣ ▷"],["cta_shape","[ ] ( )"],["grid_cols","▥"],["h1_size","Aa"],["h1_tracking","A A"],["h1_case","a A"] ] as const;
 function Layout({data,index}:{data:CrawlData;index:IndexFilter}) {
   return <div className="grid xl:grid-cols-2">{DIMENSIONS.map(([dimension,glyph])=><CompareBlock key={dimension} title={(dimension??"").toUpperCase()} glyph={glyph} index={index} rows={comparisonRows(data.layout.filter(r=>r.dimension===dimension))}/>)}<CompareBlock title="TECH STACK" glyph="</>" index={index} rows={comparisonRows(data.tech).slice(0,10)}/></div>;
 }
