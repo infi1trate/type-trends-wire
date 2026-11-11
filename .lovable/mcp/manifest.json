@@ -136,6 +136,153 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "library_site",
+        "title": "Library site fingerprint",
+        "description": "Latest design fingerprint, snapshot metadata and last 20 change events for a tracked domain; excludes skeleton and private text.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 253,
+              "pattern": "^(?!www\\.)(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+            }
+          },
+          "required": [
+            "domain"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "library_events",
+        "title": "Library change events",
+        "description": "Recent derived design changes across tracked sites, filtered by sector or event type.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "type_change",
+                "palette_shift",
+                "theme_flip",
+                "layout_change",
+                "redesign",
+                "message_pivot",
+                "pricing_change",
+                "new_surface",
+                "stack_change",
+                "nav_change"
+              ]
+            },
+            "since_days": {
+              "default": 30,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 36500
+            },
+            "limit": {
+              "default": 50,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "library_sector",
+        "title": "Library sector statistics",
+        "description": "Sector statistics, top headline and body fonts with site counts, and theme split from latest desktop home captures.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            }
+          },
+          "required": [
+            "sector"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crawl_spread",
+        "title": "Vanguard versus mainstream spread",
+        "description": "Current crawler signal shares and spread points for English-language or all successful sites.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "scope": {
+              "type": "string",
+              "enum": [
+                "en",
+                "all"
+              ]
+            }
+          },
+          "required": [
+            "scope"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
