@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_budget: {
+        Row: {
+          active: boolean
+          cap_usd: number
+          ends_at: string | null
+          scope: string
+        }
+        Insert: {
+          active?: boolean
+          cap_usd: number
+          ends_at?: string | null
+          scope: string
+        }
+        Update: {
+          active?: boolean
+          cap_usd?: number
+          ends_at?: string | null
+          scope?: string
+        }
+        Relationships: []
+      }
+      ai_usage: {
+        Row: {
+          created_at: string
+          error: string | null
+          est_cost_usd: number
+          id: number
+          input_tokens: number | null
+          kind: string
+          model: string
+          ok: boolean
+          output_tokens: number | null
+          scope: string
+          snapshot_id: number | null
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          est_cost_usd: number
+          id?: number
+          input_tokens?: number | null
+          kind: string
+          model: string
+          ok?: boolean
+          output_tokens?: number | null
+          scope: string
+          snapshot_id?: number | null
+          state?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          est_cost_usd?: number
+          id?: number
+          input_tokens?: number | null
+          kind?: string
+          model?: string
+          ok?: boolean
+          output_tokens?: number | null
+          scope?: string
+          snapshot_id?: number | null
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_scope_fkey"
+            columns: ["scope"]
+            isOneToOne: false
+            referencedRelation: "ai_budget"
+            referencedColumns: ["scope"]
+          },
+          {
+            foreignKeyName: "ai_usage_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crawl_runs: {
         Row: {
           finished_at: string | null
@@ -185,6 +266,134 @@ export type Database = {
         }
         Relationships: []
       }
+      library_ai_baselines: {
+        Row: {
+          captured_at: string
+          confirmed_at: string
+          domain: string
+          kind: string
+          last_snapshot_id: number | null
+          page_type: string
+          pending: Json
+          signals: Json
+          snapshot_id: number | null
+          viewport: string
+        }
+        Insert: {
+          captured_at: string
+          confirmed_at: string
+          domain: string
+          kind: string
+          last_snapshot_id?: number | null
+          page_type: string
+          pending?: Json
+          signals: Json
+          snapshot_id?: number | null
+          viewport: string
+        }
+        Update: {
+          captured_at?: string
+          confirmed_at?: string
+          domain?: string
+          kind?: string
+          last_snapshot_id?: number | null
+          page_type?: string
+          pending?: Json
+          signals?: Json
+          snapshot_id?: number | null
+          viewport?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_ai_baselines_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_ai_baselines_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+        ]
+      }
+      library_ai_control: {
+        Row: {
+          lease_token: string | null
+          lease_until: string | null
+          name: string
+          paused: boolean
+          rate_limits: number
+          reason: string | null
+        }
+        Insert: {
+          lease_token?: string | null
+          lease_until?: string | null
+          name: string
+          paused?: boolean
+          rate_limits?: number
+          reason?: string | null
+        }
+        Update: {
+          lease_token?: string | null
+          lease_until?: string | null
+          name?: string
+          paused?: boolean
+          rate_limits?: number
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      library_ai_jobs: {
+        Row: {
+          attempts: number
+          claimed_at: string | null
+          created_at: string
+          done_at: string | null
+          error: string | null
+          id: number
+          kind: string
+          lease_token: string | null
+          snapshot_id: number
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          done_at?: string | null
+          error?: string | null
+          id?: number
+          kind: string
+          lease_token?: string | null
+          snapshot_id: number
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          done_at?: string | null
+          error?: string | null
+          id?: number
+          kind?: string
+          lease_token?: string | null
+          snapshot_id?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_ai_jobs_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library_baselines: {
         Row: {
           confirmed_at: string
@@ -317,6 +526,55 @@ export type Database = {
           },
         ]
       }
+      library_extractions: {
+        Row: {
+          created_at: string
+          data: Json
+          domain: string
+          kind: string
+          model: string
+          snapshot_id: number
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          domain: string
+          kind: string
+          model: string
+          snapshot_id: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          domain?: string
+          kind?: string
+          model?: string
+          snapshot_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_extractions_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_extractions_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_extractions_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library_sites: {
         Row: {
           active: boolean | null
@@ -433,6 +691,55 @@ export type Database = {
           },
         ]
       }
+      library_tags: {
+        Row: {
+          created_at: string
+          domain: string
+          model: string
+          signals_hash: string
+          snapshot_id: number
+          tags: Json
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          model: string
+          signals_hash: string
+          snapshot_id: number
+          tags: Json
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          model?: string
+          signals_hash?: string
+          snapshot_id?: number
+          tags?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_tags_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_tags_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_tags_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wire_items: {
         Row: {
           excerpt: string | null
@@ -471,6 +778,19 @@ export type Database = {
       }
     }
     Views: {
+      ai_spend_summary: {
+        Row: {
+          backfill_cap_usd: number | null
+          backfill_usd: number | null
+          changelog_calls: number | null
+          month_to_date_usd: number | null
+          monthly_cap_usd: number | null
+          pricing_calls: number | null
+          product_calls: number | null
+          vision_calls: number | null
+        }
+        Relationships: []
+      }
       crawl_color_stats: {
         Row: {
           accent_top: Json | null
@@ -988,6 +1308,103 @@ export type Database = {
           },
         ]
       }
+      library_ai_extraction_history: {
+        Row: {
+          captured_at: string | null
+          created_at: string | null
+          data: Json | null
+          domain: string | null
+          kind: string | null
+          model: string | null
+          sector: string | null
+          snapshot_id: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_extractions_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_extractions_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_extractions_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_ai_status: {
+        Row: {
+          name: string | null
+          paused: boolean | null
+          reason: string | null
+        }
+        Insert: {
+          name?: string | null
+          paused?: boolean | null
+          reason?: string | null
+        }
+        Update: {
+          name?: string | null
+          paused?: boolean | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      library_ai_tag_history: {
+        Row: {
+          captured_at: string | null
+          created_at: string | null
+          domain: string | null
+          model: string | null
+          sector: string | null
+          snapshot_id: number | null
+          tags: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_tags_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_tags_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_tags_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_changelog_stats: {
+        Row: {
+          median_ai_share: number | null
+          median_entries_last_30d: number | null
+          sector: string | null
+          shipped_last_30d_share: number | null
+          sites_extracted: number | null
+        }
+        Relationships: []
+      }
       library_event_feed: {
         Row: {
           after: Json | null
@@ -1036,6 +1453,19 @@ export type Database = {
           },
         ]
       }
+      library_feature_themes: {
+        Row: {
+          change_28d: number | null
+          delta_28d_pts: number | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+          sites_28d: number | null
+          sites_extracted: number | null
+          theme: string | null
+        }
+        Relationships: []
+      }
       library_latest: {
         Row: {
           accent: string | null
@@ -1079,6 +1509,21 @@ export type Database = {
           },
         ]
       }
+      library_pricing_stats: {
+        Row: {
+          ai_addon_share: number | null
+          credit_metering_share: number | null
+          currency: string | null
+          enterprise_contact_share: number | null
+          free_tier_share: number | null
+          median_cheapest_paid_monthly: number | null
+          sector: string | null
+          sites_extracted: number | null
+          trial_share: number | null
+          usage_based_share: number | null
+        }
+        Relationships: []
+      }
       library_sector_stats: {
         Row: {
           dark_theme_share: number | null
@@ -1091,8 +1536,67 @@ export type Database = {
         }
         Relationships: []
       }
+      library_tag_share: {
+        Row: {
+          delta_28d_pts: number | null
+          dimension: string | null
+          sector: string | null
+          share: number | null
+          share_28d: number | null
+          sites: number | null
+          tagged_sites: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      ai_reserve: {
+        Args: {
+          p_estimate: number
+          p_kind: string
+          p_model: string
+          p_snapshot_id: number
+        }
+        Returns: Json
+      }
+      ai_settle: {
+        Args: {
+          p_cost: number
+          p_error?: string
+          p_id: number
+          p_input: number
+          p_ok: boolean
+          p_output: number
+          p_state?: string
+        }
+        Returns: undefined
+      }
+      library_ai_claim: { Args: { p_token: string }; Returns: Json }
+      library_ai_complete: {
+        Args: {
+          p_data: Json
+          p_domain: string
+          p_job: number
+          p_kind: string
+          p_model: string
+          p_snapshot: number
+          p_token: string
+        }
+        Returns: boolean
+      }
+      library_ai_release: { Args: { p_token: string }; Returns: undefined }
+      library_ai_store: {
+        Args: {
+          p_data: Json
+          p_expected: Json
+          p_kind: string
+          p_model: string
+          p_snapshot: number
+          p_state: Json
+        }
+        Returns: boolean
+      }
       library_replace_history: {
         Args: { p_history: Json; p_ids: number[] }
         Returns: Json

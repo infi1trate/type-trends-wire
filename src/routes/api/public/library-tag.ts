@@ -1,0 +1,2 @@
+import { createFileRoute } from "@tanstack/react-router";
+export const Route = createFileRoute("/api/public/library-tag")({server:{handlers:{POST:async({request})=>{const {handleLibraryTag}=await import("@/lib/ai-tag.server");return handleLibraryTag(request);}}}});

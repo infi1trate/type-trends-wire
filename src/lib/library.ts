@@ -1,5 +1,5 @@
 export const SECTORS = ["ai", "dev-tools", "fintech", "consumer-apps", "commerce-dtc", "media", "studios", "hardware", "health", "enterprise-saas"] as const;
-export const EVENT_TYPES = ["type_change", "palette_shift", "theme_flip", "layout_change", "redesign", "message_pivot", "pricing_change", "new_surface", "stack_change", "nav_change"] as const;
+export const EVENT_TYPES = ["type_change", "palette_shift", "theme_flip", "layout_change", "redesign", "message_pivot", "pricing_change", "new_surface", "stack_change", "nav_change", "imagery_shift", "aesthetic_shift"] as const;
 export const obj = (v: unknown): Record<string, unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
 export const valueAt = (v: unknown, ...keys: string[]): unknown => keys.reduce((a, k) => obj(a)[k], v);
 export const str = (v: unknown): string | null => typeof v === "string" ? v : null;

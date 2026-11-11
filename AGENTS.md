@@ -47,3 +47,6 @@ use the editor.
 - Library state uses a service-role-only DISTINCT ON RPC after crawler-secret verification; public views exclude raw text, which lives in an RLS-locked separate table.
 - Library UI queries use server functions wrapped by `src/lib/data.ts` query options with a shared anonymous SELECT-only store; MCP reuses the store and returns projected fingerprints without skeleton or private text.
 - Baseline surface eligibility is computed in transactional snapshot context and checked by pure diffs; require an existing domain capture strictly more than 24 hours earlier to prevent first-run noise.
+- AI inference uses the Gateway SDK server-side with forced schema tools, atomic database cost reservations and durable job leases; unknown outcomes retain reservations and are never automatically replayed.
+- AI confirmation uses a separate private baseline keyed by domain/page/viewport/kind and the existing pure advance function, so late AI output cannot clear measured pending changes or count one snapshot twice.
+- Vision inference fails closed until omission of image payloads from Gateway logs is verified; never persist images or log request/provider bodies.

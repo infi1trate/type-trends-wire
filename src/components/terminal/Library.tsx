@@ -5,6 +5,7 @@ import { SECTORS, pct } from "@/lib/library";
 import { Button } from "@/components/ui/button";
 import { QueryBar } from "./primitives";
 import { BarMark, LibraryBand, Relative, Swatch } from "./LibraryShared";
+import { LibraryAiTrends } from "./LibraryAi";
 
 export function Library() {
   const { data } = useSuspenseQuery(libraryQuery());
@@ -25,6 +26,7 @@ export function Library() {
   const tape = data.events.filter(e => sector === "all" || e.sector === sector);
   return <div className="library flex min-h-0 flex-1 flex-col">
     <div className="label grid shrink-0 grid-cols-2 border-b border-rule lg:grid-cols-4">{[["SITES TRACKED", totals.sites], ["SNAPSHOTTED", totals.snapshots], ["EVENTS 7D", data.events.length], ["LAST CRAWL", last ? last.replace("T", " ").slice(0, 16) + " UTC" : "—"]].map(([k, v]) => <div key={k} className="border-r border-rule p-3 text-compare-muted">{k}<div className="mt-1 text-hero text-ink">{v}</div></div>)}</div>
+    <div className="label shrink-0 border-b border-rule p-3 text-compare-muted">AI ${(data.ai.spend?.month_to_date_usd??0).toFixed(2)} / ${data.ai.spend?.monthly_cap_usd??50} MTD</div>
     <div className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
       <div className="grid shrink-0 lg:grid-cols-[minmax(0,3fr)_minmax(230px,1fr)]">
         <div className="min-w-0 lg:border-r lg:border-rule">
@@ -41,6 +43,7 @@ export function Library() {
         <LibraryBand title="EVENT TAPE"><div className="lg:max-h-[720px] lg:overflow-y-auto">{tape.length === 0 ? <p className="p-3 text-compare-muted">baseline captured — changes appear after the next crawl</p> : tape.map(e => <div key={e.id} className={`border-b border-rule p-3 ${e.severity === 3 ? "text-signal" : e.severity === 2 ? "text-ink" : "text-compare-muted"}`}><div className="label"><Relative date={e.detected_at}/> · {e.domain && <Link to="/library/$domain" params={{ domain: e.domain }}>{e.domain}</Link>}</div><div className="label mt-1">{e.type}</div><p>{e.summary}</p></div>)}</div></LibraryBand>
       </div>
       <LibraryBand title="SECTOR GRID"><table className="library-table w-full text-label"><thead><tr>{["SECTOR", "SITES", "SNAPSHOTTED", "DARK", "SERIF H1", "MEDIAN SPACE", "EVENTS 30D"].map(k => <th className="p-3 text-left label" key={k}>{k}</th>)}</tr></thead><tbody>{data.sectors.map(r => <tr key={r.sector} className="border-t border-rule"><td data-label="SECTOR" className="p-3">{r.sector}</td><td data-label="SITES" className="p-3">{r.sites}</td><td data-label="SNAPSHOTTED" className="p-3">{r.sites_snapshotted}</td><td data-label="DARK" className="p-3"><BarMark value={r.dark_theme_share}/></td><td data-label="SERIF H1" className="p-3"><BarMark value={r.serif_headline_share}/></td><td data-label="MEDIAN SPACE" className="p-3"><BarMark value={r.median_whitespace_ratio}/></td><td data-label="EVENTS 30D" className="p-3">{r.events_30d}</td></tr>)}</tbody></table></LibraryBand>
+      <LibraryAiTrends data={data.ai} sector={sector} total={sector==='all'?totals.sites:data.sectors.find(s=>s.sector===sector)?.sites??0}/>
     </div>
   </div>;
 }

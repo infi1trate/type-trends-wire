@@ -14,8 +14,10 @@ import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
+import { Route as ApiPublicLibraryAiWorkerRouteImport } from './routes/api/public/library-ai-worker'
 import { Route as ApiPublicLibraryRebuildRouteImport } from './routes/api/public/library-rebuild'
 import { Route as ApiPublicLibraryStateRouteImport } from './routes/api/public/library-state'
+import { Route as ApiPublicLibraryTagRouteImport } from './routes/api/public/library-tag'
 import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
 import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/api/public/oauth-protected-resource'
 
@@ -44,6 +46,12 @@ const ApiPublicIngestWireRoute = ApiPublicIngestWireRouteImport.update({
   path: '/api/public/ingest-wire',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLibraryAiWorkerRoute =
+  ApiPublicLibraryAiWorkerRouteImport.update({
+    id: '/api/public/library-ai-worker',
+    path: '/api/public/library-ai-worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLibraryRebuildRoute = ApiPublicLibraryRebuildRouteImport.update({
   id: '/api/public/library-rebuild',
   path: '/api/public/library-rebuild',
@@ -52,6 +60,11 @@ const ApiPublicLibraryRebuildRoute = ApiPublicLibraryRebuildRouteImport.update({
 const ApiPublicLibraryStateRoute = ApiPublicLibraryStateRouteImport.update({
   id: '/api/public/library-state',
   path: '/api/public/library-state',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLibraryTagRoute = ApiPublicLibraryTagRouteImport.update({
+  id: '/api/public/library-tag',
+  path: '/api/public/library-tag',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
@@ -72,8 +85,10 @@ export interface FileRoutesByFullPath {
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
+  '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
   '/api/public/library-state': typeof ApiPublicLibraryStateRoute
+  '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
 }
@@ -83,8 +98,10 @@ export interface FileRoutesByTo {
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
+  '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
   '/api/public/library-state': typeof ApiPublicLibraryStateRoute
+  '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
 }
@@ -95,8 +112,10 @@ export interface FileRoutesById {
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
+  '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
   '/api/public/library-state': typeof ApiPublicLibraryStateRoute
+  '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
 }
@@ -108,8 +127,10 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
+    | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
     | '/api/public/library-state'
+    | '/api/public/library-tag'
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
   fileRoutesByTo: FileRoutesByTo
@@ -119,8 +140,10 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
+    | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
     | '/api/public/library-state'
+    | '/api/public/library-tag'
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
   id:
@@ -130,8 +153,10 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
+    | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
     | '/api/public/library-state'
+    | '/api/public/library-tag'
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
   fileRoutesById: FileRoutesById
@@ -142,8 +167,10 @@ export interface RootRouteChildren {
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
+  ApiPublicLibraryAiWorkerRoute: typeof ApiPublicLibraryAiWorkerRoute
   ApiPublicLibraryRebuildRoute: typeof ApiPublicLibraryRebuildRoute
   ApiPublicLibraryStateRoute: typeof ApiPublicLibraryStateRoute
+  ApiPublicLibraryTagRoute: typeof ApiPublicLibraryTagRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicOauthProtectedResourceRoute: typeof ApiPublicOauthProtectedResourceRoute
 }
@@ -185,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestWireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/library-ai-worker': {
+      id: '/api/public/library-ai-worker'
+      path: '/api/public/library-ai-worker'
+      fullPath: '/api/public/library-ai-worker'
+      preLoaderRoute: typeof ApiPublicLibraryAiWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/library-rebuild': {
       id: '/api/public/library-rebuild'
       path: '/api/public/library-rebuild'
@@ -197,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/library-state'
       fullPath: '/api/public/library-state'
       preLoaderRoute: typeof ApiPublicLibraryStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/library-tag': {
+      id: '/api/public/library-tag'
+      path: '/api/public/library-tag'
+      fullPath: '/api/public/library-tag'
+      preLoaderRoute: typeof ApiPublicLibraryTagRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/mcp': {
@@ -222,8 +263,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,
+  ApiPublicLibraryAiWorkerRoute: ApiPublicLibraryAiWorkerRoute,
   ApiPublicLibraryRebuildRoute: ApiPublicLibraryRebuildRoute,
   ApiPublicLibraryStateRoute: ApiPublicLibraryStateRoute,
+  ApiPublicLibraryTagRoute: ApiPublicLibraryTagRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicOauthProtectedResourceRoute: ApiPublicOauthProtectedResourceRoute,
 }

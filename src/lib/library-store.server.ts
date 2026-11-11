@@ -59,7 +59,8 @@ export async function librarySite(domain: string) {
   if (error) throw error;
   if (!site) return null;
   const [snapshots, events, sector, pending] = await Promise.all([librarySnapshots(domain), libraryEvents({ domain, since_days: 36500, limit: 1000 }), librarySector(site.sector), libraryPending(domain)]);
-  return { site, snapshots, events, sector, pending };
+  const { aiSite } = await import("./ai-public-store.server");
+  return { site, snapshots, events, sector, pending, ai: await aiSite(domain) };
 }
 async function libraryPending(domain: string) {
   const rows = [];

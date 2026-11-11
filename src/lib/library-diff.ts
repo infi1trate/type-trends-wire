@@ -1,4 +1,4 @@
-export type LibraryEventType = "type_change" | "palette_shift" | "theme_flip" | "layout_change" | "redesign" | "message_pivot" | "pricing_change" | "new_surface" | "stack_change" | "nav_change";
+export type LibraryEventType = "type_change" | "palette_shift" | "theme_flip" | "layout_change" | "redesign" | "message_pivot" | "pricing_change" | "new_surface" | "stack_change" | "nav_change" | "imagery_shift" | "aesthetic_shift";
 export type LibraryEvent = { type: LibraryEventType; severity: 1 | 2 | 3; summary: string; before: Record<string, unknown>; after: Record<string, unknown>; effective_at?: string; prev_snapshot_id?: number | null };
 export type Comparable = Record<string, unknown>;
 export type Pending = Record<string, { from: unknown; to: unknown; first_seen_snapshot_id: number | null; first_seen_at: string }>;
@@ -53,6 +53,10 @@ export function extractFields(signals: Comparable, context: DiffContext): Compar
   const h1 = text(at(signals, "lexicon", "h1"));
   if (context.page_type === "home" && context.sector !== "media" && h1 && !blockedHeadline.test(h1)) fields['headline'] = h1;
   if (context.page_type === "pricing" && Array.isArray(signals['prices'])) fields['prices'] = strings(signals['prices']);
+  if (context.page_type === "home") for (const key of ["imagery", "aesthetic"]) {
+    const tags = at(signals, "ai_tags", key); if (Array.isArray(tags)) fields[key] = strings(tags);
+  }
+  if (context.page_type === "pricing" && signals['ai_pricing']) fields['ai_pricing'] = signals['ai_pricing'];
   for (const flag of frameworks) { const v = at(signals, "tech", flag); if (typeof v === "boolean") fields[`tech.${flag}`] = v; }
   return fields;
 }
@@ -63,12 +67,17 @@ export function equalField(field: string, a: unknown, b: unknown): boolean {
   if (field === "nav") return jaccard(strings(a), strings(b)) >= 0.6;
   if (field === "headline") return blockedHeadline.test(String(a)) || blockedHeadline.test(String(b)) || jaccard(words(String(a)), words(String(b))) >= 0.3;
   if (field === "prices") return JSON.stringify(strings(a)) === JSON.stringify(strings(b));
+  if (field === "imagery" || field === "aesthetic") return jaccard(strings(a), strings(b)) >= 0.5;
+  if (field === "ai_pricing") return at(a, "cheapest_paid_monthly") === at(b, "cheapest_paid_monthly") && JSON.stringify(strings(at(a, "plans"))) === JSON.stringify(strings(at(b, "plans")));
   return a === b;
 }
 export function ignoreField(field: string, value: unknown, baseline: unknown): boolean {
   return (field === "h1" || field === "body") && (at(value, "substituted") === true || at(value, "webfont") === false && at(baseline, "webfont") === true);
 }
 function eventType(field: string): LibraryEventType {
+  if (field === "imagery") return "imagery_shift";
+  if (field === "aesthetic") return "aesthetic_shift";
+  if (field === "ai_pricing") return "pricing_change";
   if (field === "h1" || field === "body") return "type_change";
   if (field === "theme") return "theme_flip";
   if (field === "accent" || field === "palette") return "palette_shift";
@@ -79,6 +88,7 @@ function eventType(field: string): LibraryEventType {
   return "layout_change";
 }
 function summary(field: string, a: unknown, b: unknown): string {
+  if (field === "ai_pricing") return `pricing ${display(at(a, "cheapest_paid_monthly"))}/mo [${strings(at(a, "plans")).join(", ")}] → ${display(at(b, "cheapest_paid_monthly"))}/mo [${strings(at(b, "plans")).join(", ")}]`;
   if (field === "h1" || field === "body") return `${field} ${display(at(a, "family"))} → ${display(at(b, "family"))}`;
   if (field === "prices") { const old = strings(a), next = strings(b); return `prices added: ${next.filter(p => !old.includes(p)).slice(0, 4).join(", ") || "—"}; removed: ${old.filter(p => !next.includes(p)).slice(0, 4).join(", ") || "—"}`; }
   const show = (v: unknown) => Array.isArray(v) ? v.join(", ").slice(0, 160) : display(v);

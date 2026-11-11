@@ -202,7 +202,9 @@
                 "pricing_change",
                 "new_surface",
                 "stack_change",
-                "nav_change"
+                "nav_change",
+                "imagery_shift",
+                "aesthetic_shift"
               ]
             },
             "since_days": {
@@ -280,6 +282,53 @@
           "required": [
             "scope"
           ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "library_trends",
+        "title": "AI-derived Library trends",
+        "description": "Read public design tag shares and pricing, changelog or product-theme statistics, overall or by sector; no private page text or images.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "dimension": {
+              "type": "string",
+              "enum": [
+                "imagery",
+                "aesthetic",
+                "components",
+                "hero_layout",
+                "ai_positioning",
+                "tone",
+                "color_mood",
+                "pricing",
+                "changelog",
+                "features"
+              ]
+            },
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            }
+          },
           "additionalProperties": false
         },
         "outputSchema": null

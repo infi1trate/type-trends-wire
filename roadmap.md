@@ -45,9 +45,10 @@
 - [x] Verify field rules, ingestion, real data and event counts; do not publish.
 
 # Phase 5C
-- [ ] Add atomic AI spending reservations, private usage/jobs and public spend summary; test budget rules.
-- [ ] Add validated transient-image tagging and repeat-hash reuse with eligible low-cost models.
-- [ ] Enqueue text extractions transactionally and add a bounded, durable, budget-guarded worker.
-- [ ] Add public trend aggregates and two-capture confirmation for tag/pricing changes.
-- [ ] Add AI-marked Library panels, detail blocks and read-only MCP trends.
-- [ ] Verify real vision/pricing calls, recorded usage, permissions, tests and responsive displays; do not publish.
+- [x] Add atomic AI spending reservations, private usage/jobs and public spend summary; test budget rules.
+- [x] Add validated transient-image endpoint and repeat-hash reuse with eligible low-cost models.
+- [x] Enqueue text extractions transactionally and add a bounded, durable, budget-guarded worker.
+- [x] Add public trend aggregates and two-capture confirmation for tag/pricing changes.
+- [x] Add AI-marked Library panels, detail blocks and read-only MCP trends.
+- [x] Verify real pricing extraction (1,880 input / 486 output tokens), copy-only worker, 190 tests, protected endpoints, MCP and responsive displays; do not publish.
+- [ ] Enable and verify fresh vision inference only after Gateway omission of image payloads from logs is established; currently fail-closed.

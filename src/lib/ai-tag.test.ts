@@ -1,0 +1,19 @@
+// @vitest-environment node
+import {beforeEach,it,expect,vi} from 'vitest';
+const state=vi.hoisted(()=>({auth:true,snapshot:null as Record<string,unknown>|null,previous:null as Record<string,unknown>|null}));
+vi.mock('./crawl-ingest.server',()=>({authenticateCrawler:async()=>state.auth}));
+vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from(table:string){const c={select:()=>c,eq:()=>c,gte:()=>c,order:()=>c,limit:()=>c,maybeSingle:async()=>({data:table==='library_tags'?state.previous:state.snapshot,error:null}),single:async()=>({data:{sector:'ai'},error:null})};return c;}}}));
+vi.mock('./ai-inference.server',()=>({inferAI:vi.fn(),AiFailure:class extends Error{code='test';http=503;}}));
+vi.mock('./ai-store.server',()=>({storeAiResult:vi.fn(async()=>{})}));
+import {handleLibraryTag,readAiBody} from './ai-tag.server';
+import {inferAI} from './ai-inference.server';
+import {storeAiResult} from './ai-store.server';
+const tags={imagery:['product_ui'],aesthetic:['minimal'],components:[],hero_layout:'product_first',ai_positioning:'none',tone:['calm'],color_mood:'monochrome',confidence:.8};
+const input={domain:'example.com',page_type:'home',viewport:'desktop',captured_at:'2026-11-11T01:00:00Z',signals_hash:'hash',images:{fold:'data:image/jpeg;base64,/9j/2Q=='}};
+const request=(body:unknown)=>new Request('http://localhost/api/public/library-tag',{method:'POST',body:JSON.stringify(body)});
+beforeEach(()=>{state.auth=true;state.snapshot=null;state.previous=null;vi.clearAllMocks();});
+it('requires the crawler credential before reading image input',async()=>{state.auth=false;expect((await handleLibraryTag(request(input))).status).toBe(401);expect(inferAI).not.toHaveBeenCalled();});
+it('caps streaming bodies at exactly two megabytes',async()=>{expect(await readAiBody(new Request('http://localhost',{method:'POST',body:'x'.repeat(2*1024*1024)}))).toHaveLength(2*1024*1024);expect(await readAiBody(new Request('http://localhost',{method:'POST',body:'x'.repeat(2*1024*1024+1)}))).toBeNull();});
+it('returns 404 for a missing live capture',async()=>{expect((await handleLibraryTag(request(input))).status).toBe(404);expect(inferAI).not.toHaveBeenCalled();});
+it('rejects non-JPEG and non-home input',async()=>{expect((await handleLibraryTag(request({...input,page_type:'pricing'}))).status).toBe(400);expect((await handleLibraryTag(request({...input,images:{fold:'data:image/jpeg;base64,aGVsbG8='}}))).status).toBe(400);});
+it('copies matching tags younger than sixty days without any model call',async()=>{state.snapshot={id:1,...input,signals:{}};state.previous={domain:input.domain,signals_hash:'hash',created_at:new Date().toISOString(),tags,model:'test-model'};const response=await handleLibraryTag(request(input));expect(await response.json()).toEqual({ok:true,reused:true,tags});expect(storeAiResult).toHaveBeenCalledOnce();expect(inferAI).not.toHaveBeenCalled();});
