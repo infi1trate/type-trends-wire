@@ -127,6 +127,13 @@
       "when": 1794432766248,
       "tag": "0017_library_vision_quality_filter",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794434095653,
+      "tag": "0018_library_worker_bounded_recovery",
+      "breakpoints": true
     }
   ]
 }

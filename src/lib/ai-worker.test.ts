@@ -1,8 +1,19 @@
 // @vitest-environment node
-import {it,expect,vi} from 'vitest';
-const rpc=vi.hoisted(()=>vi.fn(async()=>({data:{ok:false,jobs:[]},error:null})));
-vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{rpc,from:vi.fn()}}));
-vi.mock('./ai-inference.server',()=>({inferAI:vi.fn(),AiFailure:class extends Error{}}));
-import {runAiWorker} from './ai-worker.server';
-import {inferAI} from './ai-inference.server';
-it('does not process or call inference when the persistent job lease is paused or busy',async()=>{expect(await runAiWorker()).toEqual({ok:true,processed:0,paused_or_busy:true});expect(rpc).toHaveBeenCalledWith('library_ai_claim',expect.objectContaining({p_token:expect.any(String)}));expect(inferAI).not.toHaveBeenCalled();});
+import {it,expect,vi,beforeEach} from 'vitest';
+const rpc=vi.hoisted(()=>vi.fn(async(..._args:unknown[]):Promise<{data:unknown;error:null}>=>({data:{ok:false,cap:0},error:null})));
+const state=vi.hoisted(()=>({updates:[] as Record<string,unknown>[],next:0,active:0,maxActive:0}));
+vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{rpc,from(table:string){const c={select:()=>c,eq:()=>c,update:(v:Record<string,unknown>)=>{state.updates.push(v);return c;},single:async()=>({data:{id:1,domain:'example.com',page_type:'product',viewport:'desktop',captured_at:'2026-11-11T00:00:00Z',content_hash:null},error:null}),maybeSingle:async()=>({data:table==='library_snapshot_text'?{raw_text:'Product features'}:null,error:null}),then:(resolve:(v:unknown)=>unknown)=>resolve({error:null})};return c;}}}));
+vi.mock('./ai-inference.server',()=>({inferAI:vi.fn(),AiFailure:class extends Error{constructor(public code:string,public pause=false,public http=503,public validation?:string){super(code);}}}));
+vi.mock('./ai-store.server',()=>({storeAiResult:vi.fn(async()=>{})}));
+import {runAiWorker,workerCanClaim,textRetryable,WORKER_TIME} from './ai-worker.server';
+import {inferAI,AiFailure} from './ai-inference.server';
+beforeEach(()=>{vi.clearAllMocks();rpc.mockImplementation(async()=>({data:{ok:false,cap:0},error:null}));state.updates=[];state.next=0;state.active=0;state.maxActive=0;});
+it('does not process or call inference when the persistent job lease is paused or busy',async()=>{expect(await runAiWorker()).toEqual({ok:true,processed:0,paused_or_busy:true});expect(rpc).toHaveBeenCalledWith('library_ai_worker_acquire',expect.objectContaining({p_token:expect.any(String)}));expect(inferAI).not.toHaveBeenCalled();});
+it('stops new claims at 50 seconds and bounds the whole run at 60 seconds',()=>{expect(workerCanClaim(0,49999,24,25)).toBe(true);expect(workerCanClaim(0,50000,24,25)).toBe(false);expect(WORKER_TIME.runMs).toBe(60000);expect(WORKER_TIME.inferenceMs).toBeLessThan(WORKER_TIME.runMs);});
+it('caps active backfill claims at 25 and ordinary runs at 10',()=>{expect(workerCanClaim(0,1,24,25)).toBe(true);expect(workerCanClaim(0,1,25,25)).toBe(false);expect(workerCanClaim(0,1,10,10)).toBe(false);});
+it('retries interrupted text only below three attempts, never provider denial',()=>{expect(textRetryable('unknown_outcome',2)).toBe(true);expect(textRetryable('unknown_outcome',3)).toBe(false);expect(textRetryable('provider_or_policy_denied',1)).toBe(false);});
+it('retries one validation failure with feedback then marks a second failure as error',async()=>{
+ rpc.mockImplementation(async(...args:unknown[])=>{const name=args[0];if(name==='library_ai_worker_acquire')return {data:{ok:true,cap:25},error:null};if(name==='library_ai_worker_next')return {data:state.next++===0?{id:1,snapshot_id:1,kind:'product',attempts:1,validation_failures:0,validation_error:null}:null,error:null};return {data:null,error:null};});
+ vi.mocked(inferAI).mockRejectedValueOnce(new AiFailure('invalid_structured_output',false,503,'features: invalid_type')).mockRejectedValueOnce(new AiFailure('invalid_structured_output',false,503,'primary_theme: invalid_value'));
+ const result=await runAiWorker();expect(result.processed).toBe(0);expect(inferAI).toHaveBeenCalledTimes(2);expect(inferAI).toHaveBeenLastCalledWith(expect.objectContaining({validationError:'features: invalid_type'}));expect(state.updates).toContainEqual({validation_failures:2,validation_error:'primary_theme: invalid_value'});expect(state.updates).toContainEqual(expect.objectContaining({status:'error',error:'invalid_structured_output'}));
+});

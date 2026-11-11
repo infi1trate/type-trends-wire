@@ -359,6 +359,8 @@ export type Database = {
           lease_token: string | null
           snapshot_id: number
           status: string
+          validation_error: string | null
+          validation_failures: number
         }
         Insert: {
           attempts?: number
@@ -371,6 +373,8 @@ export type Database = {
           lease_token?: string | null
           snapshot_id: number
           status?: string
+          validation_error?: string | null
+          validation_failures?: number
         }
         Update: {
           attempts?: number
@@ -383,6 +387,8 @@ export type Database = {
           lease_token?: string | null
           snapshot_id?: number
           status?: string
+          validation_error?: string | null
+          validation_failures?: number
         }
         Relationships: [
           {
@@ -1595,6 +1601,12 @@ export type Database = {
           p_snapshot: number
           p_state: Json
         }
+        Returns: boolean
+      }
+      library_ai_worker_acquire: { Args: { p_token: string }; Returns: Json }
+      library_ai_worker_next: { Args: { p_token: string }; Returns: Json }
+      library_ai_worker_retry: {
+        Args: { p_code: string; p_job: number; p_token: string }
         Returns: boolean
       }
       library_replace_history: {
