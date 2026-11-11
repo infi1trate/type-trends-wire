@@ -1519,7 +1519,6 @@ export type Database = {
         Row: {
           ai_addon_share: number | null
           credit_metering_share: number | null
-          currency: string | null
           enterprise_contact_share: number | null
           free_tier_share: number | null
           median_cheapest_paid_monthly: number | null
@@ -1527,6 +1526,7 @@ export type Database = {
           sites_extracted: number | null
           trial_share: number | null
           usage_based_share: number | null
+          usd_sites: number | null
         }
         Relationships: []
       }
@@ -1621,6 +1621,7 @@ export type Database = {
         Returns: Json
       }
       library_sync: { Args: { p_sites: Json }; Returns: undefined }
+      normalize_currency: { Args: { c: string }; Returns: string }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
     }
     Enums: {

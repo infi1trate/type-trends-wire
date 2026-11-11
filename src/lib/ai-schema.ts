@@ -30,10 +30,15 @@ export const FEATURE_THEMES = ["ai_assistant","ai_agents","ai_generation","searc
 export const productSchema = z.object({ features: z.array(z.object({ name: z.string().min(1).max(60), theme: z.enum(FEATURE_THEMES) }).strict()).max(20), primary_theme: z.enum(FEATURE_THEMES), mentions_agents: z.boolean(), mentions_mcp: z.boolean() }).strict();
 export const extractionSchemas = { pricing: pricingSchema, changelog: changelogSchema, product: productSchema };
 export type ExtractionKind = keyof typeof extractionSchemas;
+const CURRENCY_ALIASES: Record<string,string> = { "$":"USD", "US$":"USD", "USD":"USD", "€":"EUR", "EUR":"EUR", "£":"GBP", "GBP":"GBP", "¥":"JPY" };
+export function normalizeCurrency(value: string | null | undefined): string | null {
+ const v = (value ?? "").trim().toUpperCase();
+ return CURRENCY_ALIASES[v] ?? (/^[A-Z]{3}$/.test(v) ? v : null);
+}
 export function normalizeExtraction(kind: ExtractionKind, value: unknown, capturedAt: string) {
  if (kind === "pricing") {
   const p = pricingSchema.parse(value), paid = p.plans.filter(p => !p.is_free && !p.is_enterprise_contact && p.price_monthly !== null && p.price_monthly > 0).map(p => p.price_monthly ?? 0);
-  return { ...p, has_free_tier: p.plans.some(p => p.is_free), has_usage_based: p.plans.some(p => p.price_basis === "usage"), has_ai_addon: p.plans.some(p => p.ai_addon), cheapest_paid_monthly: paid.length ? Math.min(...paid) : null };
+  return { ...p, currency: normalizeCurrency(p.currency), has_free_tier: p.plans.some(p => p.is_free), has_usage_based: p.plans.some(p => p.price_basis === "usage"), has_ai_addon: p.plans.some(p => p.ai_addon), cheapest_paid_monthly: paid.length ? Math.min(...paid) : null };
  }
  if (kind === "changelog") {
   const c = changelogSchema.parse(value), time = Date.parse(capturedAt), entries = [...c.entries].sort((a,b) => (b.date ?? "").localeCompare(a.date ?? ""));

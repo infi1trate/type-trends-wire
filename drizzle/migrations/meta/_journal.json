@@ -134,6 +134,13 @@
       "when": 1794434095653,
       "tag": "0018_library_worker_bounded_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794436855833,
+      "tag": "0019_library_pricing_currency_normalization",
+      "breakpoints": true
     }
   ]
 }
