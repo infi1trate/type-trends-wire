@@ -58,8 +58,18 @@ export async function librarySite(domain: string) {
   const { data: site, error } = await supabaseAnon().from("library_sites").select("domain,sector,name,active,last_snapshot_at,last_change_at,pages").eq("domain", domain).maybeSingle();
   if (error) throw error;
   if (!site) return null;
-  const [snapshots, events, sector] = await Promise.all([librarySnapshots(domain), libraryEvents({ domain, since_days: 36500, limit: 1000 }), librarySector(site.sector)]);
-  return { site, snapshots, events, sector };
+  const [snapshots, events, sector, pending] = await Promise.all([librarySnapshots(domain), libraryEvents({ domain, since_days: 36500, limit: 1000 }), librarySector(site.sector), libraryPending(domain)]);
+  return { site, snapshots, events, sector, pending };
+}
+async function libraryPending(domain: string) {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabaseAnon().from("library_pending").select("domain,page_type,viewport,field,from,to,first_seen_at").eq("domain", domain).order("page_type").order("viewport").order("field").range(from, from + 999);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return rows;
 }
 export async function currentSpread(scope: "en" | "all") {
   const { data, error } = await supabaseAnon().from("crawl_spread").select("*").eq("scope", scope).order("spread_pts", { ascending: false }).range(0, 999);

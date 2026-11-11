@@ -185,6 +185,61 @@ export type Database = {
         }
         Relationships: []
       }
+      library_baselines: {
+        Row: {
+          confirmed_at: string
+          domain: string
+          page_type: string
+          pending: Json
+          signals: Json
+          snapshot_id: number | null
+          source: string
+          viewport: string
+        }
+        Insert: {
+          confirmed_at: string
+          domain: string
+          page_type: string
+          pending?: Json
+          signals: Json
+          snapshot_id?: number | null
+          source: string
+          viewport: string
+        }
+        Update: {
+          confirmed_at?: string
+          domain?: string
+          page_type?: string
+          pending?: Json
+          signals?: Json
+          snapshot_id?: number | null
+          source?: string
+          viewport?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_baselines_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_baselines_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_baselines_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library_events: {
         Row: {
           after: Json | null
@@ -996,6 +1051,33 @@ export type Database = {
           whitespace_ratio: number | null
         }
         Relationships: []
+      }
+      library_pending: {
+        Row: {
+          domain: string | null
+          field: string | null
+          first_seen_at: string | null
+          from: Json | null
+          page_type: string | null
+          to: Json | null
+          viewport: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_baselines_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_baselines_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+        ]
       }
       library_sector_stats: {
         Row: {
