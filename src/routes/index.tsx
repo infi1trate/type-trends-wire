@@ -19,7 +19,8 @@ const DESC = "A live terminal for design trends: typefaces, color, layout and de
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "overview", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0 }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined),
+  loaderDeps: ({ search }) => ({ panel: search.panel }),
+  loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : undefined,
   errorComponent: () => <div role="alert" className="p-3">LIBRARY DATA UNAVAILABLE</div>,
   notFoundComponent: () => <div className="p-3">NOT FOUND</div>,
   head: () => ({

@@ -33,7 +33,7 @@
 - [x] Verify rules, existing crawler compatibility, permissions and endpoint behavior; report schemas without publishing.
 
 # Phase 5B
-- [ ] Suppress baseline surface events and remove existing baseline noise.
-- [ ] Add F11 Library, site fingerprint/wireframes/history, and ticker events.
-- [ ] Add four public read-only MCP tools and library methodology.
-- [ ] Verify real sites, unknown-domain 404, responsive layouts, tests and MCP; do not publish.
+- [x] Suppress baseline surface events and remove existing baseline noise.
+- [x] Add F11 Library, site fingerprint/wireframes/history, and ticker events.
+- [x] Add four public read-only MCP tools and library methodology.
+- [x] Verify real sites, unknown-domain 404, responsive layouts, tests and MCP; do not publish.
