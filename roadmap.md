@@ -37,3 +37,9 @@
 - [x] Add F11 Library, site fingerprint/wireframes/history, and ticker events.
 - [x] Add four public read-only MCP tools and library methodology.
 - [x] Verify real sites, unknown-domain 404, responsive layouts, tests and MCP; do not publish.
+
+# Phase 5A.2
+- [ ] Add private confirmed baselines and atomic two-capture confirmation.
+- [ ] Replay snapshots, replace noisy events and reset last-change dates.
+- [ ] Show safe unconfirmed changes under the timeline; keep headline plain.
+- [ ] Verify field rules, ingestion, real data and event counts; do not publish.
