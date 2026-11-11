@@ -26,3 +26,8 @@
 - [x] Materialize seven crawler aggregates and optimize font classification joins, preserving public query contracts.
 - [x] Refresh after finish and finished-run site reposts; test ordering and error handling.
 - [x] Verify counts, permissions, query speed and live Spread; do not publish.
+
+# Phase 5A
+- [x] Add public library storage/views and private snapshot text; do not seed sites.
+- [x] Extend crawler reception, add secret-authenticated state reads, and pure change detection.
+- [x] Verify rules, existing crawler compatibility, permissions and endpoint behavior; report schemas without publishing.
