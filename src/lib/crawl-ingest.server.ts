@@ -14,6 +14,25 @@ export function constantTimeHashEqual(actual: string, expected: string): boolean
   return difference === 0;
 }
 
+export async function authenticateCrawler(request: Request): Promise<boolean> {
+  const secret = request.headers.get("x-crawl-secret");
+  if (!secret) return false;
+  const { data: configured, error } = await db.from("crawl_secrets").select("secret_sha256").eq("id", 1).maybeSingle();
+  if (error) throw new Error("Crawler secret lookup failed");
+  return !!configured && constantTimeHashEqual(await sha256Hex(secret), configured.secret_sha256);
+}
+
+export async function handleLibraryState(request: Request): Promise<Response> {
+  try {
+    if (!await authenticateCrawler(request)) return Response.json({ error: "unauthorized" }, { status: 401 });
+    const { data, error } = await db.rpc("library_state");
+    if (error) throw new Error("Library state lookup failed");
+    return Response.json(data, { headers: { "cache-control": "no-store" } });
+  } catch {
+    return Response.json({ error: "Internal error" }, { status: 500 });
+  }
+}
+
 async function boundedBody(request: Request): Promise<string | null> {
   const length = request.headers.get("content-length");
   if (length && Number(length) > CRAWL_BODY_LIMIT) return null;
@@ -42,12 +61,8 @@ async function refreshAggregates(): Promise<void> {
 }
 
 export async function handleCrawlIngest(request: Request): Promise<Response> {
-  const secret = request.headers.get("x-crawl-secret");
-  if (!secret) return forbidden();
   try {
-    const { data: configured, error: secretError } = await db.from("crawl_secrets").select("secret_sha256").eq("id", 1).maybeSingle();
-    if (secretError) throw new Error("Crawler secret lookup failed");
-    if (!configured || !constantTimeHashEqual(await sha256Hex(secret), configured.secret_sha256)) return forbidden();
+    if (!await authenticateCrawler(request)) return forbidden();
     const text = await boundedBody(request);
     if (text === null) return Response.json({ error: "Body exceeds 2 MB" }, { status: 413 });
     let json: unknown;
@@ -56,6 +71,10 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
     const result = crawlPayload.safeParse(json);
     if (!result.success) return Response.json({ error: "Invalid input", issues: result.error.issues.map(({ path, message }) => ({ path: path.join("."), message })) }, { status: 400 });
     const payload = result.data;
+    if (payload.kind === "library_sync" || payload.kind === "library_snapshots") {
+      const { ingestLibrary } = await import("./library-ingest.server");
+      return await ingestLibrary(payload);
+    }
     if (payload.kind === "start") {
       const { error } = await db.from("crawl_runs").upsert({ id: payload.run_id, started_at: payload.started_at,
         status: "running", target_per_index: payload.target_per_index, seeds_meta: payload.seeds_meta }, { onConflict: "id" });

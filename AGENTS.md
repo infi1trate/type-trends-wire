@@ -43,3 +43,5 @@ use the editor.
 - The design crawler lives in `crawler/` (plain Node + Playwright, its own package.json and node:test suite) and runs only on GitHub Actions via `.github/workflows/crawl.yml`; it is not part of the app build. It posts to `/api/public/ingest-crawl`.
 - Crawler panels share one hydration-safe language-scope provider and paginated query options; scope-specific aggregates are materialized behind owner-rights public facades because visitors cannot read private live/materialized objects.
 - Refresh all crawler materializations through a service-role-only RPC after finish and after finished-run site reposts; fail the request on refresh errors so retries repair stale summaries.
+- Library diffs stay pure in `src/lib/library-diff.ts`; authenticated ingestion uses transactional RPC writes with per-domain locks and optimistic context retries to keep snapshot/text/events atomic and duplicate-safe.
+- Library state uses a service-role-only DISTINCT ON RPC after crawler-secret verification; public views exclude raw text, which lives in an RLS-locked separate table.
