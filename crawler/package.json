@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "crawl": "node src/crawl.js",
-    "library": "node src/library.js"
+    "library": "node src/library.js",
+    "wayback": "node src/wayback.js"
   },
   "keywords": [],
   "author": "",

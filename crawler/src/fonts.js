@@ -4,7 +4,7 @@
 const FALLBACK = /^(Liberation (Sans|Serif|Mono)|DejaVu (Sans|Serif)( Mono)?|FreeSans|FreeSerif|FreeMono|Noto (Sans|Serif)( [A-Z][\w ]*)?|WenQuanYi.*|Loma|Garuda|Kinnari|Norasi|Umpush|Waree|Tlwg.*|Lohit.*|Droid Sans.*|Nimbus.*|URW.*|C059|P052|Z003)$/i;
 const GENERIC = /^(serif|sans-serif|monospace|cursive|fantasy|system-ui|ui-sans-serif|ui-serif|ui-monospace|ui-rounded|emoji|math|fangsong|-apple-system|BlinkMacSystemFont)$/i;
 const SYSTEM_STACK = /^(-apple-system|BlinkMacSystemFont|system-ui|ui-sans-serif|Segoe UI|Roboto|Helvetica Neue|Helvetica|Arial|San Francisco|SF Pro( Display| Text)?)$/i;
-const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|Light|Regular|Normal|Book|Medium|Semi ?Bold|Demi ?Bold|Bold|Extra ?Bold|Ultra ?Bold|Black|Heavy|Italic|Oblique|\d+\s?pt|Web|Pro Web|Web ?Font|WF)$/i;
+const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|Light|Regular|Normal|Book|Medium|Semi ?Bold|Demi ?Bold|Bold|Extra ?Bold|Ultra ?Bold|Black|Heavy|Italic|Oblique|\d+\s?pt|Web|Pro Web|Web ?Font|WF|Font|Sans Font)$/i;
 
 export function normalizeFamily(name) {
   if (!name) return null;

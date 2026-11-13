@@ -124,6 +124,13 @@ async function plan(site, latest, pages, origin) {
   return { discover: false, jobs, known };
 }
 
+/** Archived renders that came back empty (missing assets, broken playback, blocked JS shells). */
+function blankArchive(sig) {
+  const chars = sig?.composition?.text_chars_fold ?? 0;
+  const boxes = (sig?.skeleton ?? []).filter((b) => b.kind !== "section").length;
+  return chars < 40 && boxes < 6;
+}
+
 async function crawlWayback(browser, site, st, emit, errors) {
   const picks = pickCaptures(await cdx(site.domain), { fromYear: FROM_YEAR, have: st?.wayback ?? [] });
   if (!picks.length) return { skipped: true };
@@ -132,15 +139,24 @@ async function crawlWayback(browser, site, st, emit, errors) {
   let n = 0;
   try {
     for (const p of picks) {
-      const wayback_url = `${WAYBACK_BASE}/web/${p.timestamp}if_/${p.original}`;
-      const r = await snapshot(page, { domain: site.domain, page_type: "home", viewport: "desktop", url: p.original, archive: { timestamp: p.timestamp, wayback_url, iso: p.iso, original: p.original, bucket: p.bucket } });
-      if (r.error) errors[`wayback:${r.error}`] = (errors[`wayback:${r.error}`] ?? 0) + 1;
-      else {
+      // Try the capture nearest the half's midpoint, then up to 2 alternates if the archive render is blank/broken.
+      let done = false, last = null;
+      for (const c of [p, ...(p.alternates ?? [])]) {
+        const wayback_url = `${WAYBACK_BASE}/web/${c.timestamp}if_/${c.original}`;
+        let r;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          r = await snapshot(page, { domain: site.domain, page_type: "home", viewport: "desktop", url: c.original, archive: { timestamp: c.timestamp, wayback_url, iso: c.iso, original: c.original, bucket: p.bucket } });
+          if (r.error !== "http_429" && r.error !== "http_503") break;
+          await sleep(attempt * 45000); // archive.org rate limit: back off, then retry the same capture
+        }
+        await sleep(WAYBACK_DELAY_MS);
+        if (!r.error && blankArchive(r.record.signals)) r = { error: "blank_archive" };
+        if (r.error) { last = r.error; continue; }
         const { iso, original, ...archiveMeta } = r.record.signals.archive; // keep signals.archive = {timestamp, wayback_url, bucket}
         r.record.signals.archive = archiveMeta;
-        await emit(r.record, r.images); n++;
+        await emit(r.record, r.images); n++; done = true; break;
       }
-      await sleep(WAYBACK_DELAY_MS);
+      if (!done) errors[`wayback:${last}`] = (errors[`wayback:${last}`] ?? 0) + 1;
     }
     return n ? { snapshots: n } : { error: "no_archive_renders" };
   } finally { await ctx.close().catch(() => {}); }

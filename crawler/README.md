@@ -59,6 +59,10 @@ Each snapshot carries the index-crawl signals plus `css_features`, `nav` (label/
 
 Env: `LIBRARY_MODE`, `LIMIT`, `LIBRARY_FILE`, `STATE_FILE` (dry runs), plus the shared `CRAWL_ENDPOINT` / `CRAWL_SECRET` / `DRY_RUN` / `CONCURRENCY`.
 
-## Wayback history (`LIBRARY_MODE=wayback`)
+## Wayback, ad hoc (`LIBRARY_MODE=wayback`)
 
-`.github/workflows/wayback.yml` (manual) backfills each library homepage from the Wayback Machine: one archived capture per half-year since `FROM_YEAR` (default 2021), the one nearest the half's midpoint, rendered through `web.archive.org/web/{ts}if_/…` at desktop size and posted as `source: "wayback"` snapshots (captured_at = archive time, `signals.archive = {timestamp, wayback_url, bucket}`), then tagged like live homepages. One job per sector, two at a time, 2.5 s between archive loads. Halves already stored are skipped, so re-running fills gaps only. The current half-year is left to live crawls. Archived pages sometimes miss fonts or assets; the terminal flags low-coverage buckets.
+Older half-year path inside `library.js` (with `SECTOR`, alternates on blank renders). Kept for one-off runs; the scheduled backfill below supersedes it.
+
+## History backfill (`npm run wayback`)
+
+Renders archived homepages from the Internet Archive (`/web/<ts>if_/` playback: archived assets, no toolbar) — one capture per quarter per library site since 2021Q1, closest to mid-quarter. Coarse-first: every site's Q1s, then Q3s, then Q2/Q4, sector-interleaved, so a partial backfill is already a usable yearly history. `.github/workflows/wayback.yml` runs every 6 hours; each run asks `/api/public/library-state?source=wayback` what exists and continues. Gentle on the Archive: one page start per 2.5 s across workers, global back-off on 429/503. Snapshots post as `source:"wayback"` with `signals.archive = {timestamp, quarter, fonts_total, fonts_failed}` (archives often miss font files — the terminal falls back to declared fonts) and are tagged like live pages. If the nearest capture renders blank, up to two alternates in the same quarter (≥14 days apart) are tried.

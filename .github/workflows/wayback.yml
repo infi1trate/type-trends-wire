@@ -1,12 +1,21 @@
 name: wayback-backfill
-# One-off / occasional: 5 years of archived homepages for the library, one capture per half-year.
-# Re-running is safe: captures already stored are skipped via /api/public/library-state.
 on:
+  schedule:
+    - cron: "17 */6 * * *"   # resumable: each run picks up the quarters still missing; idles once complete
   workflow_dispatch:
     inputs:
-      from_year: { description: "First year to backfill", default: "2021" }
-      limit: { description: "Only the first N sites per sector (0 = all)", default: "0" }
-      dry_run: { description: "1 = don't post", default: "0" }
+      limit:
+        description: "Only the first N library sites (0 = all)"
+        default: "0"
+      pass_max:
+        description: "1 = Q1s only, 2 = +Q3s, 3 = every quarter"
+        default: "3"
+      budget_min:
+        description: "Stop starting new captures after N minutes"
+        default: "320"
+      dry_run:
+        description: "1 = don't post, upload results as an artifact"
+        default: "0"
 concurrency: { group: wayback, cancel-in-progress: false }
 defaults:
   run:
@@ -14,30 +23,24 @@ defaults:
 jobs:
   wayback:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        sector: [ai, dev-tools, fintech, consumer-apps, commerce-dtc, media, studios, hardware, health, enterprise-saas]
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Wayback backfill (${{ matrix.sector }})
+      - run: npm test
+      - name: Wayback backfill
         env:
           CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
-          LIBRARY_MODE: wayback
-          SECTOR: ${{ matrix.sector }}
-          FROM_YEAR: ${{ inputs.from_year }}
-          LIMIT: ${{ inputs.limit }}
-          DRY_RUN: ${{ inputs.dry_run }}
-          CONCURRENCY: "2"
-          WAYBACK_DELAY_MS: "2500"
-        run: npm run library
+          LIMIT: ${{ inputs.limit || '0' }}
+          PASS_MAX: ${{ inputs.pass_max || '3' }}
+          TIME_BUDGET_MIN: ${{ inputs.budget_min || '320' }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+          WB_CONCURRENCY: "3"
+        run: npm run wayback
       - if: always()
         uses: actions/upload-artifact@v4
-        with: { name: "wayback-${{ matrix.sector }}", path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }
+        with: { name: wayback-out, path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }
