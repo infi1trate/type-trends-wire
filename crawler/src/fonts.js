@@ -9,6 +9,9 @@ const SUFFIX = /[\s-]+(Variable|VF|Var|Thin|Hairline|Extra ?Light|Ultra ?Light|L
 export function normalizeFamily(name) {
   if (!name) return null;
   let n = String(name).replace(/\[.*?\]/g, "").replace(/["']/g, "").trim();
+  // next/font self-hosted names: "__styreneA_403256", "__Inter_Fallback_aaf875" → "styreneA" / "Inter"
+  const nf = /^__(.+?)(?:_Fallback)?_[0-9a-f]{5,8}$/i.exec(n);
+  if (nf) n = nf[1];
   if (!n || /[^\x20-\x7EÀ-ɏ]/.test(n) && !/[぀-ヿ一-鿿가-힯؀-ۿ]/.test(n)) return "(obfuscated)";
   if (!/[A-Za-zÀ-ɏ぀-ヿ一-鿿가-힯؀-ۿ]/.test(n)) return "(obfuscated)"; // ".", "_", digits only
   for (let i = 0; i < 4; i++) { const m = n.replace(SUFFIX, "").trim(); if (m === n || !m) break; n = m; }

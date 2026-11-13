@@ -117,7 +117,9 @@ async function renderCapture(browser, item, ts) {
     const images = TAG ? await captureImages(page).catch(() => null) : null;
     return { record, images };
   } catch (e) {
-    return { error: errorCode(e) };
+    const code = errorCode(e);
+    if (/CONNECTION_(REFUSED|RESET|CLOSED)|ERR_TIMED_OUT|EMPTY_RESPONSE/.test(code)) { backoff(90_000); return { error: "archive_throttled" }; }
+    return { error: code };
   } finally {
     await context.close().catch(() => {});
   }
@@ -181,9 +183,13 @@ async function main() {
       if (!candidates.length) { totals.no_capture++; continue; }
       let r = null;
       for (const ts of candidates) { // nearest mid-quarter first; alternates when the archive render is blank/broken
-        r = await renderCapture(browser, item, ts);
+        // Throttling (429/503/refused) is about the Archive, not the capture: wait out the global back-off and retry it.
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          r = await renderCapture(browser, item, ts);
+          if (!/^archive_(429|503|throttled)$/.test(r.error ?? "")) break;
+        }
         if (!r.error && blankArchive(r.record.signals)) r = { error: "blank_archive" };
-        if (!r.error || /^archive_(429|503)$/.test(r.error)) break;
+        if (!r.error || /^archive_(429|503|throttled)$/.test(r.error)) break;
       }
       if (r.error) { totals.failed++; errors[r.error] = (errors[r.error] ?? 0) + 1; continue; }
       await emit(r.record, r.images);

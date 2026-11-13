@@ -54,4 +54,7 @@ test("css-style family names become display names", async () => {
   assert.equal(n("."), "(obfuscated)");
   assert.equal(n("Söhne"), "Söhne");
   assert.equal(n("IBM Plex Sans"), "IBM Plex Sans");
+  assert.equal(n("__styreneA_403256"), "Styrene A");
+  assert.equal(n("__Inter_Fallback_aaf875"), "Inter");
+  assert.equal(n("__fkGrotesk_716da7"), "Fk Grotesk");
 });
