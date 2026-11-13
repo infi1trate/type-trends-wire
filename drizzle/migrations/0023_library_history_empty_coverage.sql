@@ -1,0 +1,2 @@
+DO $$ DECLARE definition text; BEGIN definition:=pg_get_viewdef('public.library_css_series'::regclass,true); definition:=replace(definition,'avg(', 'avg('); definition:=replace(definition,' AS share,',' FILTER (WHERE e.id IS NOT NULL) AS share,'); EXECUTE 'CREATE OR REPLACE VIEW public.library_css_series WITH(security_invoker=true) AS '||definition; END $$;
+REFRESH MATERIALIZED VIEW public.library_css_series_mat;

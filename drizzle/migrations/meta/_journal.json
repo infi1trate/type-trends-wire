@@ -141,6 +141,34 @@
       "when": 1794436855833,
       "tag": "0019_library_pricing_currency_normalization",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794538323370,
+      "tag": "0020_library_wayback_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794538370772,
+      "tag": "0021_library_half_year_series",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794538608135,
+      "tag": "0022_library_history_materialized_series",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794538679744,
+      "tag": "0023_library_history_empty_coverage",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { QueryBar } from "./primitives";
 import { BarMark, LibraryBand, Relative, Swatch } from "./LibraryShared";
 import { LibraryAiTrends } from "./LibraryAi";
+import { LibraryHistory } from "./LibraryHistory";
 
 export function Library() {
   const { data } = useSuspenseQuery(libraryQuery());
@@ -44,6 +45,7 @@ export function Library() {
       </div>
       <LibraryBand title="SECTOR GRID"><table className="library-table w-full text-label"><thead><tr>{["SECTOR", "SITES", "SNAPSHOTTED", "DARK", "SERIF H1", "MEDIAN SPACE", "EVENTS 30D"].map(k => <th className="p-3 text-left label" key={k}>{k}</th>)}</tr></thead><tbody>{data.sectors.map(r => <tr key={r.sector} className="border-t border-rule"><td data-label="SECTOR" className="p-3">{r.sector}</td><td data-label="SITES" className="p-3">{r.sites}</td><td data-label="SNAPSHOTTED" className="p-3">{r.sites_snapshotted}</td><td data-label="DARK" className="p-3"><BarMark value={r.dark_theme_share}/></td><td data-label="SERIF H1" className="p-3"><BarMark value={r.serif_headline_share}/></td><td data-label="MEDIAN SPACE" className="p-3"><BarMark value={r.median_whitespace_ratio}/></td><td data-label="EVENTS 30D" className="p-3">{r.events_30d}</td></tr>)}</tbody></table></LibraryBand>
       <LibraryAiTrends data={data.ai} sector={sector} total={sector==='all'?totals.sites:data.sectors.find(s=>s.sector===sector)?.sites??0}/>
+      <LibraryHistory sector={sector}/>
     </div>
   </div>;
 }

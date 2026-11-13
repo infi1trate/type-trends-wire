@@ -58,9 +58,14 @@ export async function librarySite(domain: string) {
   const { data: site, error } = await supabaseAnon().from("library_sites").select("domain,sector,name,active,last_snapshot_at,last_change_at,pages").eq("domain", domain).maybeSingle();
   if (error) throw error;
   if (!site) return null;
-  const [snapshots, events, sector, pending] = await Promise.all([librarySnapshots(domain), libraryEvents({ domain, since_days: 36500, limit: 1000 }), librarySector(site.sector), libraryPending(domain)]);
+  const [snapshots, events, sector, pending] = await Promise.all([librarySnapshots(domain), siteTimeline(domain), librarySector(site.sector), libraryPending(domain)]);
   const { aiSite } = await import("./ai-public-store.server");
   return { site, snapshots, events, sector, pending, ai: await aiSite(domain) };
+}
+async function siteTimeline(domain:string) {
+ const rows=[];
+ for(let from=0;;from+=1000){const {data,error}=await supabaseAnon().from("library_events").select("*").eq("domain",domain).order("effective_at",{ascending:false}).order("id",{ascending:false}).range(from,from+999);if(error)throw error;rows.push(...(data??[]));if(!data||data.length<1000)break;}
+ return rows;
 }
 async function libraryPending(domain: string) {
   const rows = [];

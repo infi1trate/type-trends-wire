@@ -28,10 +28,10 @@ export async function handleLibraryTag(request: Request) {
    const size=jpegDimensions(image);if(!size)return Response.json({ok:false,code:'invalid_input'},{status:400});
    if(size.width<200||size.height<200)return Response.json({ok:false,code:'image_too_small'},{status:400});
   }
-  const {data:snapshot,error}=await db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,signals,signals_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source","live").eq("captured_at",input.captured_at).maybeSingle();
+  const {data:snapshot,error}=await db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,source,signals,signals_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source",input.source).eq("captured_at",input.captured_at).maybeSingle();
   if(error)throw new Error("Snapshot lookup failed");if(!snapshot)return Response.json({ok:false,code:"snapshot_not_found"},{status:404});
   if(snapshot.signals_hash!==input.signals_hash)return Response.json({ok:false,code:"signals_hash_mismatch"},{status:409});
-  const {data:previous,error:reuseError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model").eq("domain",input.domain).eq("signals_hash",input.signals_hash).gte("created_at",new Date(Date.now()-60*86400000).toISOString()).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const {data:previous,error:reuseError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,library_snapshots!inner(source)").eq("domain",input.domain).eq("signals_hash",input.signals_hash).eq("library_snapshots.source",input.source).gte("created_at",new Date(Date.now()-60*86400000).toISOString()).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(reuseError)throw new Error("Tag reuse lookup failed");
   if(previous&&reusableTags(previous,input.domain,input.signals_hash)) {const tags=cleanTags(previous.tags);await storeAiResult(snapshot,"vision",previous.model,tags);return Response.json({ok:true,reused:true,tags});}
   const f=fingerprint(snapshot.signals);const {data:site}=await db.from("library_sites").select("sector").eq("domain",input.domain).single();

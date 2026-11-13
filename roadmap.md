@@ -59,3 +59,8 @@
 - [x] Fix worker incremental claims, three-lane concurrency, 50-second claim cutoff/57-second inference cancellation for 60-second response budget, active-backfill cap 25, bounded paid text retries, and orphan reservation recovery.
 - [ ] Set managed callback timeout to 90 seconds if supported; otherwise report the scheduling-tool limitation without replacing managed credentials.
 - [x] Recover interrupted text jobs (18 by recovery time, two orphan receipts settled without refund) and existing validation failure; one real local worker processed 24/25 jobs in 26.3 seconds: done 3→27, pending 249→224, error 0→1. Vision uses direct crawler fetch, not pg_net; no explicit 60-second client timeout in source. No publishing.
+# Phase 6A
+- [x] Add source-isolated Wayback ingestion, tagging, state and historical confirmation.
+- [x] Add public half-year signal/CSS/font/tag series and MCP history.
+- [x] Add Library history charts, archive wireframe strip and year-grouped timeline.
+- [x] Verify tests, public reads, endpoint contracts and responsive UI; do not publish.

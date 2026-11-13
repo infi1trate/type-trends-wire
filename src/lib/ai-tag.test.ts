@@ -1,8 +1,8 @@
 // @vitest-environment node
 import {beforeEach,it,expect,vi} from 'vitest';
-const state=vi.hoisted(()=>({auth:true,snapshot:null as Record<string,unknown>|null,previous:null as Record<string,unknown>|null}));
+const state=vi.hoisted(()=>({auth:true,snapshot:null as Record<string,unknown>|null,previous:null as Record<string,unknown>|null,filters:[] as [string,unknown][]}));
 vi.mock('./crawl-ingest.server',()=>({authenticateCrawler:async()=>state.auth}));
-vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from(table:string){const c={select:()=>c,eq:()=>c,gte:()=>c,order:()=>c,limit:()=>c,maybeSingle:async()=>({data:table==='library_tags'?state.previous:state.snapshot,error:null}),single:async()=>({data:{sector:'ai'},error:null})};return c;}}}));
+vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from(table:string){const c={select:()=>c,eq:(key:string,value:unknown)=>{state.filters.push([key,value]);return c;},gte:()=>c,order:()=>c,limit:()=>c,maybeSingle:async()=>({data:table==='library_tags'?state.previous:state.snapshot,error:null}),single:async()=>({data:{sector:'ai'},error:null})};return c;}}}));
 vi.mock('./ai-inference.server',()=>({inferAI:vi.fn(),AiFailure:class extends Error{code='test';http=503;}}));
 vi.mock('./ai-store.server',()=>({storeAiResult:vi.fn(async()=>{})}));
 import {handleLibraryTag,readAiBody} from './ai-tag.server';
@@ -13,7 +13,7 @@ const tags=cleanTags({imagery:['product_ui'],aesthetic:['minimal'],components:[]
 const testJpeg=(width:number,height:number)=>'data:image/jpeg;base64,'+btoa(String.fromCharCode(255,216,255,192,0,11,8,height>>8,height&255,width>>8,width&255,1,1,17,0,255,217));
 const input={domain:'example.com',page_type:'home',viewport:'desktop',captured_at:'2026-11-11T01:00:00Z',signals_hash:'hash',images:{fold:testJpeg(200,200)}};
 const request=(body:unknown)=>new Request('http://localhost/api/public/library-tag',{method:'POST',body:JSON.stringify(body)});
-beforeEach(()=>{state.auth=true;state.snapshot=null;state.previous=null;vi.clearAllMocks();});
+beforeEach(()=>{state.auth=true;state.snapshot=null;state.previous=null;state.filters=[];vi.clearAllMocks();});
 it('requires the crawler credential before reading image input',async()=>{state.auth=false;expect((await handleLibraryTag(request(input))).status).toBe(401);expect(inferAI).not.toHaveBeenCalled();});
 it('caps streaming bodies at exactly two megabytes',async()=>{expect(await readAiBody(new Request('http://localhost',{method:'POST',body:'x'.repeat(2*1024*1024)}))).toHaveLength(2*1024*1024);expect(await readAiBody(new Request('http://localhost',{method:'POST',body:'x'.repeat(2*1024*1024+1)}))).toBeNull();});
 it('returns 404 for a missing live capture',async()=>{expect((await handleLibraryTag(request(input))).status).toBe(404);expect(inferAI).not.toHaveBeenCalled();});
@@ -28,3 +28,9 @@ it('rejects more than four sections before inference',async()=>{const res=await 
 it('rejects a section smaller than 200 on either axis',async()=>{for(const section of [testJpeg(199,200),testJpeg(200,199)]){const res=await handleLibraryTag(request({...input,images:{...input.images,sections:[section]}}));expect(await res.json()).toEqual({ok:false,code:'image_too_small'});expect(res.status).toBe(400);}expect(inferAI).not.toHaveBeenCalled();});
 it('accepts exactly 600 KB decoded per section and rejects one byte over',()=>{const padded=(size:number)=>{const bytes=atob(testJpeg(200,200).split(',')[1]??'');return 'data:image/jpeg;base64,'+btoa(bytes.slice(0,-2)+'x'.repeat(size-bytes.length)+bytes.slice(-2));};expect(tagRequestSchema.safeParse({...input,images:{...input.images,sections:[padded(600*1024)]}}).success).toBe(true);expect(tagRequestSchema.safeParse({...input,images:{...input.images,sections:[padded(600*1024+1)]}}).success).toBe(false);});
 it('rejects combined section bodies over 2 MB before inference',async()=>{const bytes=atob(input.images.fold.split(',')[1]??'');const section='data:image/jpeg;base64,'+btoa(bytes.slice(0,-2)+'x'.repeat(400*1024)+bytes.slice(-2));const res=await handleLibraryTag(request({...input,images:{...input.images,sections:Array(4).fill(section)}}));expect(res.status).toBe(413);expect(await res.json()).toEqual({ok:false,code:'body_too_large'});expect(inferAI).not.toHaveBeenCalled();});
+it('scopes archive snapshot lookup and reuse to wayback without touching live baselines',async()=>{
+ state.snapshot={id:1,...input,source:'wayback',signals:{}};vi.mocked(inferAI).mockResolvedValueOnce({model:'google/gemini-3-flash-preview',data:tags});
+ expect((await handleLibraryTag(request({...input,source:'wayback'}))).status).toBe(200);
+ expect(state.filters).toContainEqual(['source','wayback']);expect(state.filters).toContainEqual(['library_snapshots.source','wayback']);
+});
+it('defaults tag source to live',()=>expect(tagRequestSchema.parse(input).source).toBe('live'));

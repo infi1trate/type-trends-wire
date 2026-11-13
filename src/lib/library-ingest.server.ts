@@ -28,7 +28,7 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
       const { data, error } = await db.rpc("library_snapshot_context", { p_snapshot: row as Json });
       if (error) throw new Error("Library context lookup failed");
       const context = contextSchema.parse(data);
-      const rules = { page_type: snapshot.page_type, viewport: snapshot.viewport, sector: context.sector, new_surface: context.new_surface, first_captured_at: context.first_captured_at, captured_at: snapshot.captured_at };
+      const rules = { page_type: snapshot.page_type, viewport: snapshot.viewport, source: snapshot.source, sector: context.sector, new_surface: context.new_surface, first_captured_at: context.first_captured_at, captured_at: snapshot.captured_at };
       const changes = advance(context.baseline as Baseline | null, (context.baseline?.pending ?? {}) as Pending, { signals: snapshot.signals, snapshot_id: null, captured_at: snapshot.captured_at, context: rules });
       changes.events.push(...diffLibrarySignals(null, snapshot.signals, rules));
       const { data: result, error: storeError } = await db.rpc("library_store_snapshot", { p_snapshot: row as Json, p_context: data as Json, p_events: changes as unknown as Json });
@@ -42,5 +42,7 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
     }
     if (!stored) throw new Error("Library snapshot contention");
   }
+  const {error:refreshError}=await db.rpc("refresh_library_history");
+  if(refreshError)throw new Error("Library history refresh failed");
   return Response.json({ ok: true, inserted, events });
 }

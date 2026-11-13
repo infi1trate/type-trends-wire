@@ -3,7 +3,9 @@ export type LibraryEvent = { type: LibraryEventType; severity: 1 | 2 | 3; summar
 export type Comparable = Record<string, unknown>;
 export type Pending = Record<string, { from: unknown; to: unknown; first_seen_snapshot_id: number | null; first_seen_at: string }>;
 export type Baseline = { signals: Comparable; snapshot_id: number | null; confirmed_at: string };
-export type DiffContext = { page_type: string; viewport: string; sector?: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined; snapshot_id?: number | null };
+export type DiffContext = { page_type: string; viewport: string; source?: string; sector?: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined; snapshot_id?: number | null };
+export const WAYBACK_EVENT_TYPES: readonly LibraryEventType[] = ["type_change", "theme_flip", "redesign", "stack_change", "aesthetic_shift", "imagery_shift"];
+export const confirmsOnce = (source: string | undefined, type: LibraryEventType) => source === "wayback" && WAYBACK_EVENT_TYPES.includes(type);
 const record = (value: unknown): Comparable => value && typeof value === "object" && !Array.isArray(value) ? value as Comparable : {};
 const at = (value: unknown, ...path: string[]): unknown => path.reduce((v, key) => record(v)[key], value);
 const text = (value: unknown) => typeof value === "string" ? value : null;
@@ -105,6 +107,10 @@ export function advance(baseline: Baseline | null, pending: Pending, next: { sig
     if (value == null || ignoreField(field, value, old)) { delete candidates[field]; continue; }
     if (old == null) { values[field] = value; delete candidates[field]; continue; }
     if (equalField(field, old, value)) { delete candidates[field]; continue; }
+    if (next.context.source === "wayback") {
+      if (confirmsOnce("wayback", eventType(field))) confirmed.push({ field, from: old, to: value, at: next.captured_at });
+      values[field] = value; delete candidates[field]; continue;
+    }
     const candidate = candidates[field];
     if (candidate && equalField(field, candidate.to, value)) {
       confirmed.push({ field, from: old, to: value, at: candidate.first_seen_at });
@@ -124,7 +130,7 @@ export function advance(baseline: Baseline | null, pending: Pending, next: { sig
 }
 // Pairwise helper retained for rule tests and new-surface eligibility; ingestion uses advance.
 export function diffLibrarySignals(prev: Comparable | null, next: Comparable, context: DiffContext): LibraryEvent[] {
-  if (!prev) return context.new_surface && context.first_captured_at && context.captured_at && Date.parse(context.captured_at) - Date.parse(context.first_captured_at) > 86400000 ? [{ type: "new_surface", severity: 1, summary: `${context.page_type} page added`, before: {}, after: { page_type: context.page_type } }] : [];
+  if (!prev) return context.source !== "wayback" && context.new_surface && context.first_captured_at && context.captured_at && Date.parse(context.captured_at) - Date.parse(context.first_captured_at) > 86400000 ? [{ type: "new_surface", severity: 1, summary: `${context.page_type} page added`, before: {}, after: { page_type: context.page_type } }] : [];
   const captured_at = context.captured_at ?? "2000-01-01T00:00:00Z";
   const baseline = { signals: extractFields(prev, context), snapshot_id: null, confirmed_at: captured_at };
   const candidate = advance(baseline, {}, { signals: next, captured_at, snapshot_id: null, context });

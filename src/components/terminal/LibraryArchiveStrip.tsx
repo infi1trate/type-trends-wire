@@ -1,0 +1,7 @@
+import { archiveVersions } from "@/lib/library-history";
+import { num, obj, valueAt } from "@/lib/library";
+import { Button } from "@/components/ui/button";
+export function LibraryArchiveStrip({snapshots,onSelect}:{snapshots:{id:number;source:string;page_type:string;viewport:string;captured_at:string;signals:unknown}[];onSelect:(id:number)=>void}) {
+ const rows=archiveVersions(snapshots);
+ return <div className="border-b border-rule p-3"><h3 className="label mb-2 text-compare-muted">HISTORY · ARCHIVE</h3><div className="flex gap-3 overflow-x-auto">{rows.length===0&&<span className="label text-compare-muted">NO ARCHIVE CAPTURES</span>}{rows.map(s=>{const boxes=valueAt(s.signals,"skeleton"),width=num(valueAt(s.signals,"page","w"))??1440,height=num(valueAt(s.signals,"page","h"))??900;return <Button key={s.id} variant="ghost" className="h-auto w-28 shrink-0 flex-col p-1 text-compare-muted [&_svg]:size-auto [&_svg]:h-24 [&_svg]:w-full" aria-label={`Load archive ${s.captured_at.slice(0,10)} into snapshot A`} onClick={()=>onSelect(s.id)}><svg viewBox={`0 0 ${Math.max(1,width)} ${Math.max(1,Math.min(height,2700))}`} className="h-24 w-full" role="img" aria-label={`Archive wireframe ${s.captured_at.slice(0,10)}`}>{(Array.isArray(boxes)?boxes:[]).map((box,i)=>{const r=obj(box);return <rect key={i} x={num(r['x'])??0} y={num(r['y'])??0} width={num(r['w'])??0} height={num(r['h'])??0} fill="none" stroke="var(--compare-muted)" strokeWidth="8"/>;})}</svg><span className="label">{s.captured_at.slice(0,10)}</span></Button>;})}</div></div>;
+}

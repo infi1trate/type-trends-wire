@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { computeBand, type BandResult, type RankPoint } from "./bands";
 import type { Scope } from "./crawl";
 import type { Database } from "@/integrations/supabase/types";
-import { getLibrary, getLibrarySite } from "./library.functions";
+import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functions";
+export const libraryHistoryQuery = () => queryOptions({queryKey:["library-history"],staleTime:10*60_000,queryFn:()=>getLibraryHistory({data:{}})});
 
 const STALE = 5 * 60_000;
 const PAGE = 1000;

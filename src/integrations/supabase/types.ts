@@ -467,6 +467,7 @@ export type Database = {
           prev_snapshot_id: number | null
           severity: number
           snapshot_id: number | null
+          source: string
           summary: string | null
           type: string
           viewport: string
@@ -482,6 +483,7 @@ export type Database = {
           prev_snapshot_id?: number | null
           severity: number
           snapshot_id?: number | null
+          source?: string
           summary?: string | null
           type: string
           viewport: string
@@ -497,6 +499,7 @@ export type Database = {
           prev_snapshot_id?: number | null
           severity?: number
           snapshot_id?: number | null
+          source?: string
           summary?: string | null
           type?: string
           viewport?: string
@@ -580,6 +583,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      library_history_control: {
+        Row: {
+          dirty: boolean
+          id: number
+        }
+        Insert: {
+          dirty?: boolean
+          id?: number
+        }
+        Update: {
+          dirty?: boolean
+          id?: number
+        }
+        Relationships: []
       }
       library_sites: {
         Row: {
@@ -1411,6 +1429,42 @@ export type Database = {
         }
         Relationships: []
       }
+      library_css_history: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          feature: string | null
+          low_coverage: boolean | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: []
+      }
+      library_css_series: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          feature: string | null
+          low_coverage: boolean | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: []
+      }
+      library_css_series_mat: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          feature: string | null
+          low_coverage: boolean | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: []
+      }
       library_event_feed: {
         Row: {
           after: Json | null
@@ -1424,6 +1478,7 @@ export type Database = {
           sector: string | null
           severity: number | null
           snapshot_id: number | null
+          source: string | null
           summary: string | null
           type: string | null
           viewport: string | null
@@ -1469,6 +1524,63 @@ export type Database = {
           sites_28d: number | null
           sites_extracted: number | null
           theme: string | null
+        }
+        Relationships: []
+      }
+      library_font_history: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          family: string | null
+          low_coverage: boolean | null
+          role: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: []
+      }
+      library_font_series: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          family: string | null
+          low_coverage: boolean | null
+          role: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: []
+      }
+      library_font_series_mat: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          family: string | null
+          low_coverage: boolean | null
+          role: string | null
+          share: number | null
+          sites: number | null
+        }
+        Relationships: []
+      }
+      library_history_coverage: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          sector: string | null
+          sites: number | null
+        }
+        Relationships: []
+      }
+      library_history_samples: {
+        Row: {
+          bucket: string | null
+          captured_at: string | null
+          domain: string | null
+          id: number | null
+          sector: string | null
+          signals: Json | null
+          source: string | null
         }
         Relationships: []
       }
@@ -1542,6 +1654,117 @@ export type Database = {
         }
         Relationships: []
       }
+      library_signal_history: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          dark_theme_share: number | null
+          framer_share: number | null
+          low_coverage: boolean | null
+          median_h1_px: number | null
+          median_whitespace: number | null
+          next_share: number | null
+          pill_cta_share: number | null
+          sector: string | null
+          serif_h1_share: number | null
+          sites: number | null
+          system_ui_body_share: number | null
+          tailwind_share: number | null
+          tight_tracking_share: number | null
+          video_hero_share: number | null
+          webflow_share: number | null
+          webfont_share: number | null
+          webgl_hero_share: number | null
+        }
+        Relationships: []
+      }
+      library_signal_series: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          dark_theme_share: number | null
+          framer_share: number | null
+          low_coverage: boolean | null
+          median_h1_px: number | null
+          median_whitespace: number | null
+          next_share: number | null
+          pill_cta_share: number | null
+          sector: string | null
+          serif_h1_share: number | null
+          sites: number | null
+          system_ui_body_share: number | null
+          tailwind_share: number | null
+          tight_tracking_share: number | null
+          video_hero_share: number | null
+          webflow_share: number | null
+          webfont_share: number | null
+          webgl_hero_share: number | null
+        }
+        Relationships: []
+      }
+      library_signal_series_mat: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          dark_theme_share: number | null
+          framer_share: number | null
+          low_coverage: boolean | null
+          median_h1_px: number | null
+          median_whitespace: number | null
+          next_share: number | null
+          pill_cta_share: number | null
+          sector: string | null
+          serif_h1_share: number | null
+          sites: number | null
+          system_ui_body_share: number | null
+          tailwind_share: number | null
+          tight_tracking_share: number | null
+          video_hero_share: number | null
+          webflow_share: number | null
+          webfont_share: number | null
+          webgl_hero_share: number | null
+        }
+        Relationships: []
+      }
+      library_tag_history: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          dimension: string | null
+          low_coverage: boolean | null
+          sector: string | null
+          share: number | null
+          tagged_sites: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
+      library_tag_series: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          dimension: string | null
+          low_coverage: boolean | null
+          sector: string | null
+          share: number | null
+          tagged_sites: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
+      library_tag_series_mat: {
+        Row: {
+          bucket: string | null
+          coverage: number | null
+          dimension: string | null
+          low_coverage: boolean | null
+          sector: string | null
+          share: number | null
+          tagged_sites: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
       library_tag_share: {
         Row: {
           delta_28d_pts: number | null
@@ -1609,6 +1832,8 @@ export type Database = {
         Args: { p_code: string; p_job: number; p_token: string }
         Returns: boolean
       }
+      library_half_year: { Args: { t: string }; Returns: string }
+      library_number: { Args: { j: Json }; Returns: number }
       library_replace_history: {
         Args: { p_history: Json; p_ids: number[] }
         Returns: Json
@@ -1623,6 +1848,7 @@ export type Database = {
       library_sync: { Args: { p_sites: Json }; Returns: undefined }
       normalize_currency: { Args: { c: string }; Returns: string }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
+      refresh_library_history: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
