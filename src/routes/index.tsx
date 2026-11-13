@@ -15,12 +15,13 @@ import { Library } from "@/components/terminal/Library";
 import { libraryQuery, libraryHistoryQuery, forecastQuery } from "@/lib/data";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
 import { ForecastPanel } from "@/components/terminal/Forecast";
+import {TasteConsole} from "@/components/terminal/TasteConsole";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: typefaces, color, layout and design news, measured weekly.";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "overview", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0 }),
+  validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?:string | undefined; trait?:string | undefined } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "overview", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0,cmd:typeof s['cmd']==='string'?s['cmd'].slice(0,4096):undefined,trait:typeof s['trait']==='string'?s['trait']:undefined }),
   loaderDeps: ({ search }) => ({ panel: search.panel }),
   loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : deps.panel === "brief" ? context.queryClient.ensureQueryData(forecastQuery()).then(()=>undefined) : undefined,
   errorComponent: () => <div role="alert" className="p-3">LIBRARY DATA UNAVAILABLE</div>,
@@ -53,7 +54,8 @@ function Terminal() {
   const panel = PANELS.find(p => p.id === search.panel)?.id ?? "overview";
   const setPanel = useCallback((p: PanelId) => { void navigate({ search: prev => ({ ...prev, panel: p }) }); }, [navigate]);
   const [typeTab,setTypeTab]=useState("GOOGLE FONTS");
-  const [overlay, setOverlay] = useState<null | "keys" | "method" | "mcp">(null);
+  const [overlay, setOverlay] = useState<null | "keys" | "method" | "mcp" | "taste">(null);
+  useEffect(()=>{if(search.cmd)setOverlay('taste');},[search.cmd]);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
 
   useWireRealtime(
@@ -77,11 +79,7 @@ function Terminal() {
       if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) return;
        if (/^[0-9]$/.test(e.key)) { const target = PANELS[e.key === "0" ? 9 : Number(e.key) - 1]; if (target) setPanel(target.id); return; }
       if (e.key === "?") { e.preventDefault(); setOverlay("keys"); return; }
-      if (e.key === "/") {
-        const q = document.querySelector<HTMLInputElement>("[data-query-bar]");
-        if (q) { e.preventDefault(); q.focus(); }
-        else if (panel === "overview") { e.preventDefault(); setPanel("type"); setTimeout(() => document.querySelector<HTMLInputElement>("[data-query-bar]")?.focus(), 50); }
-      }
+      if (e.key === "/") { e.preventDefault(); setOverlay('taste'); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
@@ -106,6 +104,7 @@ function Terminal() {
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>
         <div className="flex shrink-0 items-center">
+          <Button variant="link" aria-label="Open taste console" onClick={()=>setOverlay('taste')} className="label h-6 px-2 text-ink max-md:h-10">/</Button>
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
           <Button variant="link" onClick={() => setOverlay("method")} className="label h-6 px-2 text-ink max-md:h-10">METHODOLOGY</Button>
         </div>
@@ -113,6 +112,7 @@ function Terminal() {
       </footer>
       <MobileKeys active={panel} onSelect={setPanel} />
       {overlay === "mcp" && <McpOverlay onClose={() => setOverlay(null)} />}
+      {overlay === "taste" && <TasteConsole initialCommand={search.cmd} onClose={()=>setOverlay(null)}/>}
       {overlay === "keys" && (
         <Overlay title="KEYMAP" onClose={() => setOverlay(null)}>
           <dl className="grid grid-cols-[10ch_1fr] gap-y-1">

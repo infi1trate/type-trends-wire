@@ -11,13 +11,13 @@ export async function handleMcp(req:Request):Promise<Response>{
   if(!allowed(ip))return rpcError('Rate limited',-32000,429);
   try{
     if(req.method==='OPTIONS')return new Response(null,{status:204,headers:CORS});
-     if(req.method==='GET'&&!(req.headers.get('accept')??'').includes('text/event-stream'))return Response.json({name:definition.name,version:definition.version,transport:'streamable-http',tools:['get_trend','search_trends','wire','library_site','library_events','library_sector','crawl_spread','library_trends','library_history','site_history','forecast','next_wave','trendsetters','weekly_brief'],resources:['trend://methodology']},{headers:CORS});
+     if(req.method==='GET'&&!(req.headers.get('accept')??'').includes('text/event-stream'))return Response.json({name:definition.name,version:definition.version,transport:'streamable-http',tools:['get_trend','search_trends','wire','library_site','library_events','library_sector','crawl_spread','library_trends','library_history','site_history','forecast','next_wave','trendsetters','weekly_brief','recommend_type','recommend_palette','differentiate','critique'],resources:['trend://methodology']},{headers:CORS});
     // The SDK supports tools/app resources, but not arbitrary read-only resources.
     // This compatibility layer adds only the requested methodology resource.
     let method:unknown;
     if(req.method==='POST'){
-      const bytes=Number(req.headers.get('content-length')??0);if(bytes>1048576)return rpcError('Request too large',-32600,413);
-      const body=await req.clone().text();if(body.length>1048576)return rpcError('Request too large',-32600,413);
+      const bytes=Number(req.headers.get('content-length')??0);if(bytes>2200000)return rpcError('Request too large',-32600,413);
+      const body=await req.clone().text();if(body.length>2200000)return rpcError('Request too large',-32600,413);
       let data:unknown;try{data=JSON.parse(body);}catch{return rpcError('Parse error',-32700,400);}
       if(data && typeof data==='object' && !Array.isArray(data)){
         const msg=data as {jsonrpc?:unknown;method?:unknown;id?:unknown;params?:{uri?:unknown}};method=msg.method;

@@ -1,9 +1,9 @@
-export type HistoryShare = { quarter: string; dimension: string; value: string; share: number | null; denom?: number; coverage?: number };
+export type HistoryShare = { quarter: string; dimension: string; value: string; share: number | null; denom?: number | null; coverage?: number | null };
 export function yearVectors(rows: HistoryShare[]) {
   const groups = new Map<number, Map<string, number[]>>();
   for (const r of rows) {
     const year = Number(r.quarter.slice(0, 4));
-    if (!Number.isFinite(year) || r.share == null || r.coverage !== undefined && r.coverage < .3) continue;
+    if (!Number.isFinite(year) || r.share == null || r.coverage != null && r.coverage < .3) continue;
     const v = groups.get(year) ?? new Map<string, number[]>(), key = `${r.dimension}:${r.value}`;
     v.set(key, [...(v.get(key) ?? []), r.share]); groups.set(year, v);
   }

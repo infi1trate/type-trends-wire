@@ -95,6 +95,48 @@ export type Database = {
           },
         ]
       }
+      color_tickers: {
+        Row: {
+          data: Json
+          key: string
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          data: Json
+          key: string
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          key?: string
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crawl_requests: {
+        Row: {
+          domain: string
+          requested_at: string
+          status: string
+          url: string
+        }
+        Insert: {
+          domain: string
+          requested_at?: string
+          status?: string
+          url: string
+        }
+        Update: {
+          domain?: string
+          requested_at?: string
+          status?: string
+          url?: string
+        }
+        Relationships: []
+      }
       crawl_runs: {
         Row: {
           finished_at: string | null
@@ -208,6 +250,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      font_catalog: {
+        Row: {
+          category: string
+          family: string
+          key: string
+          license_hint: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          family: string
+          key: string
+          license_hint: string
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          family?: string
+          key?: string
+          license_hint?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      font_pairs: {
+        Row: {
+          data: Json
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          data: Json
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      font_usage: {
+        Row: {
+          data: Json
+          key: string
+          role: string
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          data: Json
+          key: string
+          role: string
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          key?: string
+          role?: string
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       forecast_runs: {
         Row: {
@@ -886,6 +997,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      palette_examples: {
+        Row: {
+          data: Json
+          domain: string
+          updated_at: string
+        }
+        Insert: {
+          data: Json
+          domain: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          domain?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tool_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          hash: string
+          response: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          hash: string
+          response: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          hash?: string
+          response?: Json
+        }
+        Relationships: []
       }
       trendsetters: {
         Row: {
@@ -2216,15 +2366,26 @@ export type Database = {
       }
     }
     Functions: {
-      ai_reserve: {
-        Args: {
-          p_estimate: number
-          p_kind: string
-          p_model: string
-          p_snapshot_id: number
-        }
-        Returns: Json
-      }
+      ai_reserve:
+        | {
+            Args: {
+              p_estimate: number
+              p_kind: string
+              p_model: string
+              p_snapshot_id: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_estimate: number
+              p_kind: string
+              p_model: string
+              p_scope: string
+              p_snapshot_id: number
+            }
+            Returns: Json
+          }
       ai_settle: {
         Args: {
           p_cost: number
@@ -2297,6 +2458,16 @@ export type Database = {
       normalize_currency: { Args: { c: string }; Returns: string }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
       refresh_library_history: { Args: never; Returns: undefined }
+      replace_taste_data: {
+        Args: {
+          p_catalog: Json
+          p_colors: Json
+          p_pairs: Json
+          p_palettes: Json
+          p_usage: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

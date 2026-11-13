@@ -80,8 +80,8 @@
 - [x] Phase 3 tweak: next-wave eligibility (share<35%, no none/image/*_none, ≥3 sites); rerun forecast + brief; no publish.
 
 # Phase 4 — Taste Tools
-- [ ] Pure font catalog, scoring, era, color and command/query parsing with tests.
-- [ ] Weekly-refreshed usage/pairs/color/palette data and private cache/request/public-AI guards.
-- [ ] Four shared MCP/console tools with receipts, brief parsing, safe LITE and transient image critique.
-- [ ] Slash console, shareable commands, MCP examples and methodology.
-- [ ] One font-classification pass, six real tool runs, tests, MCP extraction and responsive checks; do not publish.
+- [x] Pure font catalog, scoring, era, color and command/query parsing with tests.
+- [x] Weekly-refreshed usage/pairs/color/palette data and private cache/request/public-AI guards.
+- [x] Four shared MCP/console tools, slash console, examples and methodology; limitations recorded in taste-tools-report.md.
+- [x] One font-classification pass, six real runs, 298 tests, MCP extraction and responsive checks; no publishing.
+- [ ] Hosted LITE address-pinning validation: waits on a published runtime; do not publish without owner instruction.

@@ -510,6 +510,241 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "recommend_type",
+        "title": "Recommend type",
+        "description": "Rank real fonts and pairings with consensus bias, measured adoption and receipts.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            },
+            "bias_against_consensus": {
+              "default": true,
+              "type": "boolean"
+            },
+            "brief": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "headline",
+                "body",
+                "pair"
+              ]
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "serif",
+                "sans",
+                "mono",
+                "display",
+                "slab",
+                "script",
+                "unknown"
+              ]
+            },
+            "license": {
+              "default": "any",
+              "type": "string",
+              "enum": [
+                "free",
+                "any"
+              ]
+            },
+            "avoid": {
+              "default": [],
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 120
+              }
+            },
+            "limit": {
+              "default": 6,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10
+            }
+          },
+          "required": [
+            "role"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "recommend_palette",
+        "title": "Recommend palette",
+        "description": "Rank measured site palettes with contrast guarantees and consensus bias.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            },
+            "bias_against_consensus": {
+              "default": true,
+              "type": "boolean"
+            },
+            "brief": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "mood": {
+              "type": "string",
+              "enum": [
+                "monochrome",
+                "muted",
+                "pastel",
+                "vivid",
+                "neon",
+                "earthy",
+                "high_contrast"
+              ]
+            },
+            "theme": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark"
+              ]
+            },
+            "min_contrast": {
+              "default": 4.5,
+              "type": "number",
+              "minimum": 1,
+              "maximum": 21
+            },
+            "limit": {
+              "default": 4,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "differentiate",
+        "title": "Differentiate",
+        "description": "Find convergence and leader-led open territory in a sector or up to five URLs; unknown URLs queue rendering.",
+        "annotations": {
+          "readOnlyHint": false,
+          "openWorldHint": false,
+          "destructiveHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            },
+            "bias_against_consensus": {
+              "default": true,
+              "type": "boolean"
+            },
+            "urls": {
+              "minItems": 1,
+              "maxItems": 5,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 2048,
+                "format": "uri"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "critique",
+        "title": "Critique",
+        "description": "Evaluate a library URL, public declared CSS or transient image against design evidence; unknown URLs queue rendering.",
+        "annotations": {
+          "readOnlyHint": false,
+          "openWorldHint": false,
+          "destructiveHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "maxLength": 2048,
+              "format": "uri"
+            },
+            "image_base64": {
+              "type": "string",
+              "maxLength": 2100000
+            },
+            "bias_against_consensus": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }

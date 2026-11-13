@@ -58,3 +58,5 @@ use the editor.
 - Quarterly history views select one desktop home sample per site/quarter, prioritize current live samples, flag sparse coverage, and share anonymous paginated reads between Library charts and MCP.
 - Font comparison and SQL history keys strip next/font hashes before suffix normalization; declared archive stacks skip fallback families so hashed aliases cannot create false changes.
 - Forecast math stays pure in `src/lib/forecast*.ts` (model, signals, brief validation, one constants file); `forecast.server.ts` only loads public aggregates and writes a run, so models stay testable and MCP/UI read the same stored run.
+- Taste tools share pure math and one server handler layer between MCP and slash-console query options; anonymous reads stay separate from private cache, crawl requests and atomic public-AI reservations.
+- LITE outbound requests validate DNS and pin the approved address in the transport, failing closed when unavailable, so redirect and DNS-rebinding checks cannot be bypassed by an ordinary fetch.

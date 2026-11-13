@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { forecastQuery, forecastDetailQuery, type ForecastRow, type BriefDoc } from "@/lib/data";
@@ -49,6 +49,8 @@ export function ForecastPanel() {
   const { sector = "all" } = useSearch({ from: "/" }); const navigate = useNavigate({ from: "/" });
   const { data } = useSuspenseQuery(forecastQuery());
   const [open, setOpen] = useState<{ dimension: string; value: string } | null>(null);
+  const {trait}=useSearch({from:"/"});
+  useEffect(()=>{if(trait){const [dimension,...parts]=trait.split(':');if(dimension&&parts.length)setOpen({dimension,value:parts.join(':')});}},[trait]);
   const [week, setWeek] = useState<string | null>(null);
   const card = data.card;
   const all = data.rows.filter(r => r.scope === "all"), scoped = data.rows.filter(r => r.scope === sector);

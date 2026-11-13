@@ -1,0 +1,14 @@
+// @vitest-environment node
+import {describe,it,expect,vi,beforeEach} from 'vitest';
+const mock=vi.hoisted(()=>({rpc:vi.fn(),generate:vi.fn(),stored:new Map<string,unknown>(),updates:vi.fn()}));
+vi.mock('@lovable.dev/ai-gateway',()=>({generateChatCompletion:mock.generate}));
+vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{rpc:mock.rpc,from:(table:string)=>table==='tool_cache'?{select:()=>({eq:(_k:string,hash:string)=>({gt:()=>({maybeSingle:async()=>({data:mock.stored.has(hash)?{response:mock.stored.get(hash)}:null,error:null})})})}),upsert:async(row:{hash:string;response:unknown})=>{mock.stored.set(row.hash,row.response);return {error:null};}}:{update:()=>({eq:mock.updates})}}}));
+import {parseTasteBrief,publicInference} from './ai.server';
+import {briefSchema} from './schema';
+beforeEach(()=>{mock.stored.clear();mock.rpc.mockReset();mock.generate.mockReset();mock.updates.mockReset();mock.rpc.mockResolvedValue({data:{ok:true,id:12},error:null});mock.updates.mockResolvedValue({error:null});mock.generate.mockResolvedValue({usage:{prompt_tokens:100,completion_tokens:30},choices:[{message:{tool_calls:[{type:'function',function:{name:'emit_result',arguments:JSON.stringify({sector:'fintech',tone:['technical'],aesthetic:['minimal']})}}]}}]});});
+describe('public AI guards',()=>{
+ it('caches brief parsing by normalized text hash',async()=>{await parseTasteBrief('Technical fintech');await parseTasteBrief('  technical fintech  ');expect(mock.generate).toHaveBeenCalledTimes(1);expect(mock.rpc.mock.calls[0]?.[1].p_scope).toBe('public');expect(mock.rpc.mock.calls[0]?.[1].p_kind).toBe('taste_brief');});
+ it('returns 429 for the global 300/day rejection without inference',async()=>{mock.rpc.mockResolvedValueOnce({data:{ok:false,code:'Public AI daily limit reached (300 calls); try tomorrow'},error:null});await expect(publicInference('taste_brief',briefSchema,'x')).rejects.toMatchObject({status:429});expect(mock.generate).not.toHaveBeenCalled();});
+ it('returns 429 for the $5/month rejection without inference',async()=>{mock.rpc.mockResolvedValueOnce({data:{ok:false,code:'Public AI monthly budget reached ($5); use non-AI tools'},error:null});await expect(publicInference('taste_brief',briefSchema,'x')).rejects.toMatchObject({status:429});expect(mock.generate).not.toHaveBeenCalled();});
+ it('charges unknown outcomes in full and does not retry',async()=>{mock.generate.mockRejectedValueOnce(new Error('unknown'));await expect(publicInference('taste_brief',briefSchema,'x')).rejects.toThrow();expect(mock.generate).toHaveBeenCalledTimes(1);expect(mock.rpc.mock.calls[1]?.[1].p_state).toBe('unknown');expect(mock.rpc.mock.calls[1]?.[1].p_cost).toBe(.009894);});
+});

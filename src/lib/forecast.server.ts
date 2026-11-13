@@ -14,6 +14,8 @@ export async function runForecast(opts: { brief?: boolean } = {}) {
   if (run.error) throw run.error; const runId = run.data.id;
   try {
     const result = await compute(db, runId);
+    const { refreshTaste } = await import("./taste/refresh.server");
+    await refreshTaste();
     const fin = await db.from("forecast_runs").update({ status: "ok", data_cutoff_quarter: result.cutoff, coverage: result.coverage, model_card: result.card }).eq("id", runId);
     if (fin.error) throw fin.error;
     const old = await db.from("forecast_runs").select("id").order("id", { ascending: false }).range(KEEP_RUNS, KEEP_RUNS + 500);

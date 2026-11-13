@@ -4,6 +4,8 @@ import { computeBand, type BandResult, type RankPoint } from "./bands";
 import type { Scope } from "./crawl";
 import type { Database } from "@/integrations/supabase/types";
 import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functions";
+import {runTasteCommand} from "./taste.functions";
+export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
 export const libraryHistoryQuery = () => queryOptions({queryKey:["library-history"],staleTime:10*60_000,queryFn:()=>getLibraryHistory({data:{}})});
 
 const STALE = 5 * 60_000;
