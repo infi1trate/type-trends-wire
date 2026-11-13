@@ -14,6 +14,7 @@ const words = (value: string) => [...new Set(value.toLowerCase().match(/[\p{L}\p
 export const frameworks = ["next", "nuxt", "framer", "webflow", "wordpress", "shopify", "squarespace", "wix", "astro", "gatsby", "sveltekit"];
 const blockedHeadline = /cookie|privacy|consent|subscribe|sign in|log in|404|not found|access denied|just a moment/i;
 export function normalizeFont(value: string): string {
+  value = value.trim().replace(/^["']|["']$/g, "").replace(/^__(.+?)(?:_Fallback)?_[0-9a-f]{5,8}$/i, "$1").replace(/([a-z])([A-Z])/g, "$1 $2");
   // Suffixes may be concatenated (BasiersquareWebfont), spaced, or repeated.
   let key = value.toLowerCase().replace(/[^a-z0-9]/g, "");
   let previous;

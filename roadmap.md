@@ -66,6 +66,7 @@
 - [x] Verify tests, public reads, endpoint contracts and responsive UI; do not publish.
 
 # Phase 2A — quarterly archive history
+- [x] Normalize next/font aliases, skip declared fallback families, replay archive domains and refresh history; verify live state stays unchanged and do not publish.
 - [x] Add quarterly state, chronological per-domain archive replay and declared-font fallback; extend the existing backfill deadline.
 - [x] Add quarterly public history, font ranks/redesign counts and MCP tools.
 - [x] Add F12 History and quarterly site filmstrip without changing crawler code.

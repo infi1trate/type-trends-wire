@@ -19,6 +19,11 @@ it("A B C C confirms A to C only", () => { const r = replay([theme("light"), the
 it("pending stores first seen snapshot and display values", () => { expect(replay([font("Inter"), font("Söhne")]).pending['h1']).toMatchObject({ first_seen_snapshot_id: 2, from: { family: "Inter" }, to: { family: "Söhne" } }); });
 it.each(["Syndicat Grotesk", "SyndicatGrotesk", "Syndicat Grotesk Webfont", "SyndicatGrotesk Pro Variable"])("normalizes equivalent font %s", name => expect(normalizeFont(name)).toBe("syndicatgrotesk"));
 it("Basiersquare Webfont and Basiersquare stay silent", () => expect(replay([font("Basiersquare Webfont"), font("Basiersquare"), font("Basiersquare")]).events).toEqual([]));
+it.each([["__styreneA_403256", "styrenea", "Styrene A"], ["__fkGrotesk_716da7", "fkgrotesk", "Fk Grotesk"], ["__Inter_Fallback_aaf875", "inter", "Inter"]])("normalizes Next.js family %s without live events", (raw, key, clean) => {
+ expect(normalizeFont(raw)).toBe(key);
+ expect(replay([font(raw), font(clean), font(clean)]).events).toEqual([]);
+ expect(replay([font(raw), font(clean)]).pending).toEqual({});
+});
 it.each([{ substituted: true }, { webfont: false }])("ignores fallback captures %o", extra => { const r = replay([font("ABC"), font("Liberation Sans", extra), font("Liberation Sans", extra)]); expect(r.events).toEqual([]); expect(r.pending).toEqual({}); });
 it("fallback interruption breaks consecutive captures", () => expect(replay([font("Inter"), font("Söhne"), font("Arial", { substituted: true }), font("Söhne")]).events).toEqual([]));
 it("mobile only extracts theme and fonts", () => { const fields = extractFields({ ...theme("dark"), ...font("Inter"), color: { theme: "dark", accent: "#ff0000", palette: ["#ff0000"] }, layout: { hero_media: "video" }, prices: ["$29"], nav: [], tech: { next: true }, lexicon: { h1: "Hello" } }, { ...context, viewport: "mobile" }); expect(Object.keys(fields).sort()).toEqual(["h1", "theme"]); });

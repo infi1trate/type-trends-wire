@@ -56,3 +56,4 @@ use the editor.
 
 - Wayback measured confirmation stays source-keyed; archive AI uses a distinct internal baseline kind so live candidates cannot be altered by historical tagging. Archive changes confirm through chronological per-domain two-capture replay; all public event tapes are live-only.
 - Quarterly history views select one desktop home sample per site/quarter, prioritize current live samples, flag sparse coverage, and share anonymous paginated reads between Library charts and MCP.
+- Font comparison and SQL history keys strip next/font hashes before suffix normalization; declared archive stacks skip fallback families so hashed aliases cannot create false changes.
