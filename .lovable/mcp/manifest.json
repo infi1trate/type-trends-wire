@@ -592,6 +592,10 @@
             "include_proprietary": {
               "default": false,
               "type": "boolean"
+            },
+            "include_system": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
