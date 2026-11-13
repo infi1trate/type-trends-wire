@@ -78,3 +78,10 @@
 - [x] F10 FORECAST panel, Overview brief bar, MCP tools and methodology.
 - [ ] 90-second callback timeout for the forecast schedule (managed scheduling tool cannot set it; same blocker as the extraction worker).
 - [x] Phase 3 tweak: next-wave eligibility (share<35%, no none/image/*_none, ≥3 sites); rerun forecast + brief; no publish.
+
+# Phase 4 — Taste Tools
+- [ ] Pure font catalog, scoring, era, color and command/query parsing with tests.
+- [ ] Weekly-refreshed usage/pairs/color/palette data and private cache/request/public-AI guards.
+- [ ] Four shared MCP/console tools with receipts, brief parsing, safe LITE and transient image critique.
+- [ ] Slash console, shareable commands, MCP examples and methodology.
+- [ ] One font-classification pass, six real tool runs, tests, MCP extraction and responsive checks; do not publish.

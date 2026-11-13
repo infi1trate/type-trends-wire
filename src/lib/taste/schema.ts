@@ -1,0 +1,10 @@
+import {z} from "zod";
+import {SECTORS} from "../library";
+import {VOCAB} from "../ai-schema";
+import {CATEGORIES} from "./fonts";
+const common={sector:z.enum(SECTORS).optional(),bias_against_consensus:z.boolean().default(true)};
+export const typeInput=z.object({...common,brief:z.string().max(2000).optional(),role:z.enum(["headline","body","pair"]),category:z.enum(CATEGORIES).optional(),license:z.enum(["free","any"]).default("any"),avoid:z.array(z.string().max(120)).max(50).default([]),limit:z.number().int().min(1).max(10).default(6)}).strict();
+export const paletteInput=z.object({...common,brief:z.string().max(2000).optional(),mood:z.enum(VOCAB.color_mood).optional(),theme:z.enum(["light","dark"]).optional(),min_contrast:z.number().min(1).max(21).default(4.5),limit:z.number().int().min(1).max(6).default(4)}).strict();
+export const diffInput=z.object({...common,urls:z.array(z.string().url().max(2048)).min(1).max(5).optional()}).strict();
+export const critiqueInput=z.object({url:z.string().url().max(2048).optional(),image_base64:z.string().max(2100000).optional(),bias_against_consensus:z.boolean().default(true)}).strict().refine(v=>Boolean(v.url)!==Boolean(v.image_base64),"Provide exactly one URL or image");
+export const briefSchema=z.object({sector:z.enum(SECTORS).nullable(),tone:z.array(z.enum(VOCAB.tone)).max(3),aesthetic:z.array(z.enum(VOCAB.aesthetic)).max(2)}).strict();

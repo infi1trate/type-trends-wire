@@ -1,0 +1,8 @@
+export function blockedIp(ip:string):boolean {
+  const v=ip.toLowerCase().replace(/^\[|\]$/g,"");
+  if(v.includes(":")){if(v.startsWith("::ffff:")){const tail=v.slice(7);if(tail.includes("."))return blockedIp(tail);const parts=tail.split(":");if(parts.length===2){const n=parseInt(parts[0]??"",16)*65536+parseInt(parts[1]??"",16);return blockedIp([24,16,8,0].map(x=>(n>>>x)&255).join("."));}}return v==="::"||v==="::1"||/^(fc|fd|fe[89ab]|ff)/.test(v)||v.startsWith("2001:db8:")||v.startsWith("64:ff9b:");}
+  const p=v.split(".").map(Number);if(p.length!==4||p.some(n=>!Number.isInteger(n)||n<0||n>255))return true;
+  const [a=0,b=0]=p;return a===0||a===10||a===127||a===169&&b===254||a===172&&b>=16&&b<=31||a===192&&(b===168||b===0)||a===100&&b>=64&&b<=127||a===198&&(b===18||b===19||b===51)||a===203&&b===0||a>=224;
+}
+export function safeUrl(raw:string):URL {const u=new URL(raw);if(!["http:","https:"].includes(u.protocol)||u.username||u.password||u.port&&!['80','443'].includes(u.port))throw new Error("Only public HTTP(S) URLs on standard ports are allowed");const h=u.hostname.toLowerCase().replace(/\.$/,"");if(h==="localhost"||!h.includes(".")&&!h.includes(":")||/\.(localhost|local|internal|test|invalid)$/.test(h)||h==="metadata.google.internal"||h==="metadata"||(/^\d+(\.\d+){3}$/.test(h)||h.includes(":"))&&blockedIp(h))throw new Error("Private, local and metadata hosts are blocked");u.hash="";return u;}
+export async function checkResolved(raw:string,resolve:(host:string)=>Promise<string[]>){const u=safeUrl(raw),ips=/^\d+(\.\d+){3}$/.test(u.hostname)||u.hostname.includes(":")?[u.hostname]:await resolve(u.hostname);if(!ips.length||ips.some(blockedIp))throw new Error("Host resolves to a blocked or unknown address");return u;}
