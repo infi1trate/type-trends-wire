@@ -115,9 +115,9 @@ This project was built with [Lovable](https://lovable.dev).
 The GitHub crawler (`crawler/`) renders URLs that LITE analysis could not cover. Both endpoints use the same crawler secret as `library-state` and `library-tag`: send `Authorization: Bearer <secret>` (the existing `x-crawl-secret` header is also accepted). The server compares a SHA-256 hash of the secret with the stored hash; a missing or wrong secret returns `401`. No secret values are stored in this repository.
 
 - `GET /api/public/crawl-requests?limit=N` — `N` is 1–25 (default 10). Returns `{"requests":[{"url","domain","requested_at"}]}`, oldest pending first.
-- `POST /api/public/crawl-requests` — body `{"results":[{"url","status":"done"|"error","error"?}]}`, at most 25 results, `error` ≤ 300 characters, body ≤ 64 KB, unknown fields rejected. Each result adds one attempt; `done` sets `done_at`; `error` records `last_error` and returns the URL to `pending` until it has been attempted 3 times, after which it stays `error`. Returns `{"updated":[{url,status,attempts}],"skipped":[{url,reason}]}` (`unknown`, `not_pending`, `conflict`).
+- `POST /api/public/crawl-requests` — body `{"results":[{"url","status":"done"|"error","error"?,"signals"?}]}`, at most 25 results, `error` ≤ 300 characters, body ≤ 64 KB, unknown fields rejected. Each result adds one attempt; `done` sets `done_at`; `error` records `last_error` and returns the URL to `pending` until it has been attempted 3 times, after which it stays `error`. Returns `{"updated":[{url,status,attempts}],"skipped":[{url,reason}]}` (`unknown`, `not_pending`, `conflict`).
 
-Rendered results are sent separately as ordinary crawl/library snapshot payloads.
+A `done` result may carry `signals` (the crawler's rendered page analysis object); `signals` on an `error` result is rejected. Signals are stored privately with `rendered_at` and are never exposed publicly. `critique` and `differentiate` use a rendered result for a non-library URL (exact URL, or the same host+path ignoring `www.` and trailing slashes) when it is at most 30 days old; older results are re-queued when the URL is analysed again, keeping the old signals until replaced. A new rendered result clears cached responses for that URL.
 
 ## Build with Lovable
 

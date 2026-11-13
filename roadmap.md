@@ -90,4 +90,4 @@
 - [x] Crawler-secret GET/POST /api/public/crawl-requests with attempts/retry and docs.
 - [x] LITE fails closed on hosted workerd and still queues the URL; tests.
 - [x] Refresh rerun and fintech-headline / pair reruns reported; no publishing.
-
+- [x] Rendered crawl results: accept signals, rendered mode in critique/differentiate, 30-day re-queue, cache clearing on refresh and per URL.

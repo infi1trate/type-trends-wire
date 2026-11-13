@@ -122,7 +122,9 @@ export type Database = {
           domain: string
           done_at: string | null
           last_error: string | null
+          rendered_at: string | null
           requested_at: string
+          signals: Json | null
           status: string
           url: string
         }
@@ -131,7 +133,9 @@ export type Database = {
           domain: string
           done_at?: string | null
           last_error?: string | null
+          rendered_at?: string | null
           requested_at?: string
+          signals?: Json | null
           status?: string
           url: string
         }
@@ -140,7 +144,9 @@ export type Database = {
           domain?: string
           done_at?: string | null
           last_error?: string | null
+          rendered_at?: string | null
           requested_at?: string
+          signals?: Json | null
           status?: string
           url?: string
         }
@@ -1030,19 +1036,25 @@ export type Database = {
           created_at: string
           expires_at: string
           hash: string
+          namespace: string | null
           response: Json
+          tags: string[]
         }
         Insert: {
           created_at?: string
           expires_at?: string
           hash: string
+          namespace?: string | null
           response: Json
+          tags?: string[]
         }
         Update: {
           created_at?: string
           expires_at?: string
           hash?: string
+          namespace?: string | null
           response?: Json
+          tags?: string[]
         }
         Relationships: []
       }

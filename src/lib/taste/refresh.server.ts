@@ -1,6 +1,7 @@
 import {supabaseAnon} from "../mcp/supabase";
 import {loadTasteSites,pages,measuredPalette} from "./store.server";
 import {buildFontCatalog,isNonType} from "./fonts";
+import {invalidateTasteCache} from "./cache.server";
 import {normalizeFont} from "../library-diff";
 import {forecastSeries,type SeriesPoint} from "../forecast";
 import {SECTORS,obj} from "../library";
@@ -52,5 +53,7 @@ export async function refreshTaste(){
  const result=await db.rpc("replace_taste_data",{p_catalog:jsonValue(catalog),p_usage:jsonValue(usage),p_pairs:jsonValue(pairs),p_colors:jsonValue(colors),p_palettes:jsonValue(palettes)});if(result.error)throw result.error;
  // The summary RPC upserts the catalog; remove emoji/icon/symbol rows left from earlier refreshes so they are never faces.
  const stale=oldCatalog.filter(o=>isNonType(o.key)||nonType.has(o.key)).map(o=>o.key);if(stale.length){const removed=await db.from("font_catalog").delete().in("key",stale);if(removed.error)throw removed.error;}
- return {stale_non_type_removed:stale.length,proprietary:catalog.filter(c=>c.license_hint==="proprietary").map(c=>`${c.family} (${c.license_reason})`),system:catalog.filter(c=>c.license_hint==="system").length,non_type_dropped:[...nonType].filter(Boolean).sort(),catalog:catalog.length,usage:usage.length,pairs:pairs.length,colors:colors.length,palettes:palettes.length,unknown:catalog.filter(c=>c.category==="unknown").length};
+ // New summaries: cached recommendations, critiques and the shared daily taste data must not outlive them.
+ const cacheCleared=await invalidateTasteCache();
+ return {cache_cleared:cacheCleared,stale_non_type_removed:stale.length,proprietary:catalog.filter(c=>c.license_hint==="proprietary").map(c=>`${c.family} (${c.license_reason})`),system:catalog.filter(c=>c.license_hint==="system").length,non_type_dropped:[...nonType].filter(Boolean).sort(),catalog:catalog.length,usage:usage.length,pairs:pairs.length,colors:colors.length,palettes:palettes.length,unknown:catalog.filter(c=>c.category==="unknown").length};
 }

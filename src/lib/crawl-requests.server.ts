@@ -1,7 +1,9 @@
 // Crawler-secret endpoints for the LITE render queue. Privileged writes only after secret verification.
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { constantTimeHashEqual, sha256Hex } from "./crawl-ingest.server";
-import { CRAWL_REQUESTS_BODY_LIMIT, crawlResultsSchema, nextCrawlRequestState, parseRequestLimit } from "./crawl-requests";
+import { CRAWL_REQUESTS_BODY_LIMIT, crawlResultsSchema, nextCrawlRequestState, parseRequestLimit, urlKey } from "./crawl-requests";
+import { invalidateCacheTags } from "./taste/cache.server";
+import type { Json } from "@/integrations/supabase/types";
 
 const noStore = { "cache-control": "no-store" };
 const unauthorized = () => Response.json({ error: "unauthorized" }, { status: 401, headers: noStore });
@@ -70,10 +72,15 @@ export async function handleCrawlRequestsPost(request: Request): Promise<Respons
       if (row.status !== "pending") { skipped.push({ url: result.url, reason: "not_pending" }); continue; }
       const next = nextCrawlRequestState(row.attempts, result, now);
       // Optimistic guard: only the attempt count we read may be advanced, so concurrent posts cannot double-count.
-      const { data: changed, error: updateError } = await db.from("crawl_requests").update(next)
+      const { signals, ...fields } = next;
+      const { data: changed, error: updateError } = await db.from("crawl_requests").update({ ...fields, ...(signals ? { signals: signals as Json } : {}) })
         .eq("url", result.url).eq("status", "pending").eq("attempts", row.attempts).select("url");
       if (updateError) throw new Error("Queue update failed");
-      if (changed?.length) updated.push({ url: result.url, status: next.status, attempts: next.attempts });
+      if (changed?.length) {
+        updated.push({ url: result.url, status: next.status, attempts: next.attempts });
+        // A new rendered result supersedes cached LITE-based critiques/differentiations for this URL.
+        if (signals) await invalidateCacheTags([urlKey(result.url)]);
+      }
       else skipped.push({ url: result.url, reason: "conflict" });
     }
     return Response.json({ updated, skipped }, { headers: noStore });

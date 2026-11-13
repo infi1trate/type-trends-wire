@@ -20,14 +20,53 @@ export const crawlResultsSchema = z.object({
     url: z.string().url().max(2048),
     status: z.enum(["done", "error"]),
     error: z.string().max(300).optional(),
-  }).strict()).min(1).max(CRAWL_REQUESTS_MAX_BATCH),
+    // Rendered analyzePage output; the 64 KB body cap bounds its size.
+    signals: z.record(z.string(), z.unknown()).optional(),
+  }).strict().superRefine((r, ctx) => {
+    if (r.status === "error" && r.signals !== undefined) ctx.addIssue({ code: "custom", path: ["signals"], message: "signals are only accepted with status 'done'" });
+  })).min(1).max(CRAWL_REQUESTS_MAX_BATCH),
 }).strict().refine(v => new Set(v.results.map(r => r.url)).size === v.results.length, "Duplicate url in results");
 export type CrawlResult = z.infer<typeof crawlResultsSchema>["results"][number];
 
-export type CrawlRequestUpdate = { status: "pending" | "done" | "error"; attempts: number; done_at: string | null; last_error: string | null };
-/** done → done; error → back to pending while attempts (after this one) < 3, otherwise error. */
-export function nextCrawlRequestState(attempts: number, result: Pick<CrawlResult, "status" | "error">, now: string): CrawlRequestUpdate {
+export type CrawlRequestUpdate = { status: "pending" | "done" | "error"; attempts: number; done_at: string | null; last_error: string | null; signals?: Record<string, unknown>; rendered_at?: string };
+/** done → done (storing signals + rendered_at when sent); error → back to pending while attempts (after this one) < 3, otherwise error. */
+export function nextCrawlRequestState(attempts: number, result: Pick<CrawlResult, "status" | "error" | "signals">, now: string): CrawlRequestUpdate {
   const next = attempts + 1;
-  if (result.status === "done") return { status: "done", attempts: next, done_at: now, last_error: null };
+  if (result.status === "done") return { status: "done", attempts: next, done_at: now, last_error: null, ...(result.signals ? { signals: result.signals, rendered_at: now } : {}) };
   return { status: next < CRAWL_REQUEST_MAX_ATTEMPTS ? "pending" : "error", attempts: next, done_at: null, last_error: (result.error ?? "unspecified crawler error").slice(0, 300) };
 }
+
+/** Rendered results older than this are stale: used no longer, and the URL is re-queued when analysed again. */
+export const RENDERED_MAX_AGE_MS = 30 * 864e5;
+export const QUEUED_NOTE = "queued — rendered result usually within ~2 hours";
+
+/** host (lowercase, no www.) + path without trailing slashes; protocol, query and fragment ignored. */
+export function urlKey(raw: string): string {
+  const u = new URL(raw), path = u.pathname.replace(/\/+$/, "") || "/";
+  return `${u.hostname.toLowerCase().replace(/^www\./, "")}${path}`;
+}
+
+export type CrawlRow = { url: string; status: string; signals?: unknown; rendered_at?: string | null; done_at?: string | null };
+export type CrawlState = "rendered" | "stale" | "pending" | "error" | "done_empty" | "none";
+/**
+ * Pick the queue row for a URL: exact URL first, then same host+path. A done row with signals rendered
+ * within 30 days is used; a done row older than that (or never rendered) is stale and should be re-queued.
+ */
+export function pickCrawlRow<T extends CrawlRow>(rows: T[], raw: string, now: number): { state: CrawlState; row: T | null } {
+  const key = urlKey(raw), matching = rows.filter(r => { try { return urlKey(r.url) === key; } catch { return false; } })
+    .sort((a, b) => Number(b.url === raw) - Number(a.url === raw) || String(b.rendered_at ?? b.done_at ?? "").localeCompare(String(a.rendered_at ?? a.done_at ?? "")));
+  const age = (r: T) => { const at = Date.parse(r.rendered_at ?? r.done_at ?? ""); return Number.isFinite(at) ? now - at : Infinity; };
+  const hasSignals = (r: T) => !!r.signals && typeof r.signals === "object" && !Array.isArray(r.signals);
+  const fresh = matching.find(r => r.status === "done" && hasSignals(r) && !!r.rendered_at && age(r) <= RENDERED_MAX_AGE_MS);
+  if (fresh) return { state: "rendered", row: fresh };
+  const pending = matching.find(r => r.status === "pending");
+  if (pending) return { state: "pending", row: pending };
+  const stale = matching.find(r => r.status === "done" && age(r) > RENDERED_MAX_AGE_MS);
+  if (stale) return { state: "stale", row: stale };
+  const done = matching.find(r => r.status === "done");
+  if (done) return { state: "done_empty", row: done };
+  const failed = matching.find(r => r.status === "error");
+  return failed ? { state: "error", row: failed } : { state: "none", row: null };
+}
+/** Re-queue a stale row: pending with a fresh attempt budget; old signals stay until a new render replaces them. */
+export const requeueUpdate = () => ({ status: "pending" as const, attempts: 0, last_error: null, done_at: null });

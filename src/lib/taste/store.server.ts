@@ -5,7 +5,7 @@ import { normalizeFont } from "../library-diff";
 import { colorTicker, contrast } from "./color";
 import {cached} from "./cache.server";
 export async function pages<T>(f:(from:number)=>PromiseLike<{data:T[]|null;error:unknown}>){const rows:T[]=[];for(let n=0;;n+=1000){const r=await f(n);if(r.error)throw r.error;rows.push(...r.data??[]);if(!r.data||r.data.length<1000)break;}return rows;}
-export type TasteSite={domain:string;sector:string;captured_at:string;mode:"library"|"crawl"|"lite"|"image";h1:string|null;body:string|null;traits:string[];bg:string|null;fg:string|null;accent:string|null;palette:string[];theme:string|null;tags:Record<string,unknown>;note?:string};
+export type TasteSite={domain:string;sector:string;captured_at:string;mode:"library"|"crawl"|"lite"|"rendered"|"image";h1:string|null;body:string|null;traits:string[];bg:string|null;fg:string|null;accent:string|null;palette:string[];theme:string|null;tags:Record<string,unknown>;note?:string};
 export function siteFromSignals(domain:string,sector:string,captured_at:string,signals:unknown,tags:unknown={},mode:TasteSite["mode"]="library"):TasteSite{
   const fp=fingerprint(signals), s=obj(signals), t=obj(tags), valid=t['low_confidence']!==true&&!t['blocked_reason']&&Number(t['confidence']??1)>=.4?t:{};
   const h1=fp.h1_family??str(obj(obj(obj(s['type'])['declared'])['h1'])['family']),body=fp.body_family??str(obj(obj(obj(s['type'])['declared'])['body'])['family']);

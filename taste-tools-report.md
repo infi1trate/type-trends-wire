@@ -50,3 +50,10 @@ Pure/server modules: `src/lib/taste/*`; console call: `src/lib/taste.functions.t
 - Top 5 headline (fintech→all, identical to all): Geist 26, Oswald 3, Manrope 8, Figtree 6, Open Sans 14. Pair: Manrope/Inter 3, Geist/Geist 23, Fraunces/Inter 6, Space Grotesk/Inter 5, Inter/Inter 55. Body free: Instrument Sans 13, Inter 124, Open Sans 20, Geist 33, IBM Plex Sans 15.
 - Known brand-token false positive: a retail face sold from its own foundry domain (e.g. Mono Lisa on monolisa.dev) is labelled proprietary.
 - Tests: 328 passed across 31 files.
+
+## Follow-up 3: rendered crawl results + cache gap
+- POST results accept `signals` (object, done only) stored privately with `rendered_at`; 64 KB cap unchanged; table stays service-role only.
+- critique/differentiate: library → crawler-rendered (≤30 days, exact URL or host+path) in mode `rendered` → LITE with the queued note. Stale (>30 days) done rows go back to pending (attempts 0, signals kept) on the next analysis. Rows that failed 3 times are not re-queued and the note says so.
+- Cache rows now record namespace and URL tags. The weekly refresh clears all data-dependent namespaces (taste data, era history, recommendations, differentiate, critique) plus legacy untagged rows; brief parsing stays cached. A rendered result clears that URL's cached responses.
+- Verified live: cache clear removed 37 rows; critique of example.com returned LITE with the queued note, cached with tag `example.com/`, queue row pending.
+- Tests: 344 passed across 33 files.
