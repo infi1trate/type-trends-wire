@@ -1,0 +1,43 @@
+name: render-queue
+# Renders URLs queued by the public critique tool's LITE mode (declared CSS only) and reports rendered signals back.
+on:
+  schedule:
+    - cron: "23 */2 * * *"   # every 2 hours; exits in seconds when the queue is empty
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max URLs this run (1-25)"
+        default: "10"
+      dry_run:
+        description: "1 = render and print, don't report back"
+        default: "0"
+concurrency: { group: render-queue, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Queue empty?
+        id: peek
+        env:
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+        run: |
+          n=$(curl -sf -H "Authorization: Bearer $CRAWL_SECRET" "https://type-trends-wire.lovable.app/api/public/crawl-requests?limit=1" | python3 -c 'import json,sys;print(len(json.load(sys.stdin).get("requests",[])))' || echo 1)
+          echo "pending=$n" >> "$GITHUB_OUTPUT"
+      - if: steps.peek.outputs.pending != '0'
+        uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - if: steps.peek.outputs.pending != '0'
+        run: npm ci && npx playwright install --with-deps chromium
+      - if: steps.peek.outputs.pending != '0'
+        name: Render queued URLs
+        env:
+          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          LIMIT: ${{ inputs.limit || '10' }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+        run: npm run requests
