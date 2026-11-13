@@ -1,6 +1,6 @@
 // Weekly forecast job: loads public aggregates, runs pure models, persists a run. Service-role writes only.
 import { forecastSeries, backtestSeries, median, qIndex, usablePoints, type SeriesPoint } from "./forecast";
-import { crossingQuarter, trendsetterScores, trendsetterGap, leadLag, keywordCount, nextWaveScores, type SiteRow, type Components } from "./forecast-signals";
+import { crossingQuarter, nextWaveIneligibleReason, trendsetterScores, trendsetterGap, leadLag, keywordCount, nextWaveScores, siteTraits, type SiteRow, type Components } from "./forecast-signals";
 import { EXCLUDED_DIMENSIONS, TRAIT_SPREAD, TRAIT_GFONT_CATEGORY } from "./forecast-constants";
 import { SECTORS } from "./library";
 type Db = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
@@ -83,8 +83,16 @@ async function compute(db: Db, runId: number) {
         backtest: b });
     }
   }
-  const scores = nextWaveScores(allComponents.map(a => a.c));
-  allComponents.forEach((a, i) => { const r = rows.find(x => x.scope === "all" && `${x.dimension}:${x.value}` === a.trait)!; r.next_wave_score = scores[i]!.score; (r.components as Record<string, unknown>)["z"] = scores[i]!.z; });
+  const rowOf = (t: string) => rows.find(x => x.scope === "all" && `${x.dimension}:${x.value}` === t)!;
+  const eligible: typeof allComponents = [];
+  for (const a of allComponents) {
+    const r = rowOf(a.trait), n = latestSites.filter(s => siteTraits(s).includes(a.trait)).length;
+    const reason = nextWaveIneligibleReason(r.value, (r["current_share"] as number | null) ?? null, n);
+    (r.components as Record<string, unknown>)["sites"] = n;
+    if (reason) { r.next_wave_score = null; (r.components as Record<string, unknown>)["ineligible_reason"] = reason; } else eligible.push(a);
+  }
+  const scores = nextWaveScores(eligible.map(a => a.c));
+  eligible.forEach((a, i) => { const r = rowOf(a.trait); r.next_wave_score = scores[i]!.score; (r.components as Record<string, unknown>)["z"] = scores[i]!.z; });
 
   // Next-wave backtest: rank top-10 as of CUTOFF with data then available (gap + momentum), check ≥5pt growth by latest.
   const cutSites = latestPerSite(siteRows, CUTOFF), cutSetters = trendsetterScores(siteRows.filter(r => qIndex(r.quarter) <= qIndex(CUTOFF)), Object.fromEntries(Object.entries(crossings).filter(([, q]) => qIndex(q) <= qIndex(CUTOFF)))).filter(s => s.observed >= MIN_OBSERVED);

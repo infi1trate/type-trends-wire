@@ -77,3 +77,10 @@ describe("brief citations", () => {
     expect(validateBrief({ ...base, sections: [sec("Rising", "5 sites", []), sec("Peaking", "6", []), sec("Fading", "x", []), sec("Next wave", "y", [])] }, allowed).ok).toBe(false);
   });
 });
+
+import { nextWaveIneligibleReason } from "./forecast-signals";
+describe("next-wave eligibility", () => {
+  it("excludes mainstream shares at or above 35%", () => { expect(nextWaveIneligibleReason("minimal", 0.614, 50)).toBe("mainstream_share"); expect(nextWaveIneligibleReason("brutalist", 0.35, 10)).toBe("mainstream_share"); });
+  it("excludes none, image and *_none values", () => { expect(nextWaveIneligibleReason("image", 0.2, 10)).toBe("non_trait_value"); expect(nextWaveIneligibleReason("none", 0.1, 10)).toBe("non_trait_value"); expect(nextWaveIneligibleReason("ai_positioning_none", 0.1, 10)).toBe("non_trait_value"); });
+  it("requires at least 3 sites", () => { expect(nextWaveIneligibleReason("collage", 0.044, 2)).toBe("too_few_sites"); expect(nextWaveIneligibleReason("collage", 0.044, 3)).toBeNull(); });
+});

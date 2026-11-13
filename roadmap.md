@@ -77,3 +77,4 @@
 - [x] Forecast/trendsetter/brief storage, weekly Sunday schedule and one real run.
 - [x] F10 FORECAST panel, Overview brief bar, MCP tools and methodology.
 - [ ] 90-second callback timeout for the forecast schedule (managed scheduling tool cannot set it; same blocker as the extraction worker).
+- [x] Phase 3 tweak: next-wave eligibility (share<35%, no none/image/*_none, ≥3 sites); rerun forecast + brief; no publish.

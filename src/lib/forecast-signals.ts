@@ -71,3 +71,12 @@ export function nextWaveScores(items: Components[]) {
   const z = Object.fromEntries(keys.map(k => [k, zScores(items.map(i => i[k]))])) as Record<typeof keys[number], (number | null)[]>;
   return items.map((_, i) => ({ score: keys.reduce((s, k) => s + NEXT_WAVE_WEIGHTS[k] * (z[k]![i] ?? 0), 0), z: Object.fromEntries(keys.map(k => [k, z[k]![i]])) as Record<typeof keys[number], number | null> }));
 }
+
+// Next wave means "early and gaining with leaders": exclude mainstream, non-trait and barely-observed values.
+export const NEXT_WAVE_MAX_SHARE = 0.35, NEXT_WAVE_MIN_SITES = 3;
+export function nextWaveIneligibleReason(value: string, currentShare: number | null, sites: number): string | null {
+  if (value === "none" || value === "image" || value.endsWith("_none")) return "non_trait_value";
+  if (currentShare !== null && currentShare >= NEXT_WAVE_MAX_SHARE) return "mainstream_share";
+  if (sites < NEXT_WAVE_MIN_SITES) return "too_few_sites";
+  return null;
+}
