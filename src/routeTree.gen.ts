@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
+import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const LibraryDomainRoute = LibraryDomainRouteImport.update({
   id: '/library/$domain',
   path: '/library/$domain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicForecastRunRoute = ApiPublicForecastRunRouteImport.update({
+  id: '/api/public/forecast-run',
+  path: '/api/public/forecast-run',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIngestCrawlRoute = ApiPublicIngestCrawlRouteImport.update({
@@ -82,6 +88,7 @@ const ApiPublicOauthProtectedResourceRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/library/$domain'
+    | '/api/public/forecast-run'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/library/$domain'
+    | '/api/public/forecast-run'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/library/$domain'
+    | '/api/public/forecast-run'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-wire'
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
+  ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
@@ -189,6 +202,13 @@ declare module '@tanstack/react-router' {
       path: '/library/$domain'
       fullPath: '/library/$domain'
       preLoaderRoute: typeof LibraryDomainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/forecast-run': {
+      id: '/api/public/forecast-run'
+      path: '/api/public/forecast-run'
+      fullPath: '/api/public/forecast-run'
+      preLoaderRoute: typeof ApiPublicForecastRunRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest-crawl': {
@@ -260,6 +280,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LibraryDomainRoute: LibraryDomainRoute,
+  ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,

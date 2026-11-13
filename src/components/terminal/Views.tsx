@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { typeIndexQuery, wire24hQuery } from "@/lib/data";
+import { typeIndexQuery, wire24hQuery, latestBriefQuery } from "@/lib/data";
 import { DORMANT, PANELS, isoWeek, type PanelId } from "./panels";
 import { Loading, Roll } from "./primitives";
 import { TypeIndex } from "./TypeIndex";
@@ -18,6 +18,7 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds: Set<number> }) {
   const { data, isLoading } = useQuery(typeIndexQuery());
   const { data: w24, isLoading: wl } = useQuery(wire24hQuery());
+  const { data: brief } = useQuery(latestBriefQuery());
   const top = data?.rows.filter((r) => r.delta7 !== null).sort((a, b) => b.delta7! - a.delta7!)[0];
   const dash = <span className="text-g500">—</span>;
   return (
@@ -45,8 +46,8 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
         </div>
       </div>
       <section className="shrink-0 bg-paper p-3 text-void" aria-label="Weekly brief">
-        <h2 className="label font-semibold">WEEKLY BRIEF · WEEK {String(isoWeek()).padStart(2, "0")}</h2>
-        <p className="mt-1">First brief publishes after 7 days of data.</p>
+        <h2 className="label font-semibold">WEEKLY BRIEF · {brief?.week ?? `WEEK ${String(isoWeek()).padStart(2, "0")}`} · AI</h2>
+        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{brief.headline}</span><button type="button" className="label underline underline-offset-2" onClick={() => go("brief")}>OPEN F10 FORECAST →</button></p> : <p className="mt-1">First brief publishes after the first forecast run.</p>}
       </section>
     </div>
   );

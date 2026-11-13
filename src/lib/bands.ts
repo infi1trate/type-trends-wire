@@ -94,6 +94,7 @@ export function computeBand(history: RankPoint[], opts: { firstDate?: string } =
 }
 
 export const METHODOLOGY = [
+  "FORECAST (F10): logistic vs linear fits on quarterly shares (N≥15, coverage≥25%, ≥4 usable quarters), 80% bootstrap cones, stage rules, trendsetter/next-wave scores and a 2025Q2 backtest model card. AI-written brief cites computed evidence. Correlation, not causation.",
   "Bands compare a family's newest snapshot with the latest snapshot at least 7, 14 and 28 days older.",
   "Positive change = places climbed (old rank minus new rank). Rank 1 = most used.",
   "Threshold = max(5, 5% of the old rank).",

@@ -12,8 +12,9 @@ import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
 import { Library } from "@/components/terminal/Library";
-import { libraryQuery, libraryHistoryQuery } from "@/lib/data";
+import { libraryQuery, libraryHistoryQuery, forecastQuery } from "@/lib/data";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
+import { ForecastPanel } from "@/components/terminal/Forecast";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: typefaces, color, layout and design news, measured weekly.";
@@ -21,7 +22,7 @@ const DESC = "A live terminal for design trends: typefaces, color, layout and de
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "overview", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0 }),
   loaderDeps: ({ search }) => ({ panel: search.panel }),
-  loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : undefined,
+  loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : deps.panel === "brief" ? context.queryClient.ensureQueryData(forecastQuery()).then(()=>undefined) : undefined,
   errorComponent: () => <div role="alert" className="p-3">LIBRARY DATA UNAVAILABLE</div>,
   notFoundComponent: () => <div className="p-3">NOT FOUND</div>,
   head: () => ({
@@ -98,8 +99,9 @@ function Terminal() {
         {panel === "wire" && <Wire freshIds={fresh} />}
         {panel === "library" && <Suspense fallback={<div className="p-3">▍</div>}><Library/></Suspense>}
         {panel === "history" && <Suspense fallback={<div className="p-3">▍</div>}><HistoryPanel/></Suspense>}
+        {panel === "brief" && <Suspense fallback={<div className="p-3">▍</div>}><ForecastPanel/></Suspense>}
         {(panel==="color"||panel==="layout"||panel==="composition"||panel==="lexicon") && <CrawlPanel key={panel} panel={panel}/>}
-        {!["overview", "type", "wire","color","layout","composition","lexicon","library","history"].includes(panel) && <Dormant id={panel} />}
+        {!["overview", "type", "wire","color","layout","composition","lexicon","library","history","brief"].includes(panel) && <Dormant id={panel} />}
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>

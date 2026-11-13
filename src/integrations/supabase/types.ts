@@ -209,6 +209,129 @@ export type Database = {
           },
         ]
       }
+      forecast_runs: {
+        Row: {
+          computed_at: string
+          coverage: Json
+          data_cutoff_quarter: string | null
+          id: number
+          model_card: Json
+          status: string
+        }
+        Insert: {
+          computed_at?: string
+          coverage?: Json
+          data_cutoff_quarter?: string | null
+          id?: number
+          model_card?: Json
+          status?: string
+        }
+        Update: {
+          computed_at?: string
+          coverage?: Json
+          data_cutoff_quarter?: string | null
+          id?: number
+          model_card?: Json
+          status?: string
+        }
+        Relationships: []
+      }
+      forecasts: {
+        Row: {
+          backtest: Json
+          components: Json
+          computed_at: string
+          current_share: number | null
+          dimension: string
+          evidence: Json
+          id: number
+          model: string | null
+          momentum: number | null
+          next_wave_score: number | null
+          proj_q1: number | null
+          proj_q1_hi: number | null
+          proj_q1_lo: number | null
+          proj_q2: number | null
+          proj_q2_hi: number | null
+          proj_q2_lo: number | null
+          proj_q4: number | null
+          proj_q4_hi: number | null
+          proj_q4_lo: number | null
+          run_id: number
+          scope: string
+          stage: string | null
+          status: string
+          value: string
+        }
+        Insert: {
+          backtest?: Json
+          components?: Json
+          computed_at?: string
+          current_share?: number | null
+          dimension: string
+          evidence?: Json
+          id?: number
+          model?: string | null
+          momentum?: number | null
+          next_wave_score?: number | null
+          proj_q1?: number | null
+          proj_q1_hi?: number | null
+          proj_q1_lo?: number | null
+          proj_q2?: number | null
+          proj_q2_hi?: number | null
+          proj_q2_lo?: number | null
+          proj_q4?: number | null
+          proj_q4_hi?: number | null
+          proj_q4_lo?: number | null
+          run_id: number
+          scope: string
+          stage?: string | null
+          status: string
+          value: string
+        }
+        Update: {
+          backtest?: Json
+          components?: Json
+          computed_at?: string
+          current_share?: number | null
+          dimension?: string
+          evidence?: Json
+          id?: number
+          model?: string | null
+          momentum?: number | null
+          next_wave_score?: number | null
+          proj_q1?: number | null
+          proj_q1_hi?: number | null
+          proj_q1_lo?: number | null
+          proj_q2?: number | null
+          proj_q2_hi?: number | null
+          proj_q2_lo?: number | null
+          proj_q4?: number | null
+          proj_q4_hi?: number | null
+          proj_q4_lo?: number | null
+          run_id?: number
+          scope?: string
+          stage?: string | null
+          status?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecasts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "forecasts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gfont_snapshots: {
         Row: {
           captured_on: string
@@ -760,6 +883,87 @@ export type Database = {
             columns: ["snapshot_id"]
             isOneToOne: true
             referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trendsetters: {
+        Row: {
+          domain: string
+          rank: number
+          run_id: number
+          score: number
+          sector: string | null
+          traits_led: Json
+        }
+        Insert: {
+          domain: string
+          rank: number
+          run_id: number
+          score: number
+          sector?: string | null
+          traits_led?: Json
+        }
+        Update: {
+          domain?: string
+          rank?: number
+          run_id?: number
+          score?: number
+          sector?: string | null
+          traits_led?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trendsetters_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "trendsetters_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_briefs: {
+        Row: {
+          brief: Json
+          created_at: string
+          model: string
+          run_id: number | null
+          week: string
+        }
+        Insert: {
+          brief: Json
+          created_at?: string
+          model: string
+          run_id?: number | null
+          week: string
+        }
+        Update: {
+          brief?: Json
+          created_at?: string
+          model?: string
+          run_id?: number | null
+          week?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_briefs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "weekly_briefs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -1332,6 +1536,112 @@ export type Database = {
           },
         ]
       }
+      forecast_latest: {
+        Row: {
+          backtest: Json | null
+          components: Json | null
+          computed_at: string | null
+          current_share: number | null
+          dimension: string | null
+          evidence: Json | null
+          id: number | null
+          model: string | null
+          momentum: number | null
+          next_wave_score: number | null
+          proj_q1: number | null
+          proj_q1_hi: number | null
+          proj_q1_lo: number | null
+          proj_q2: number | null
+          proj_q2_hi: number | null
+          proj_q2_lo: number | null
+          proj_q4: number | null
+          proj_q4_hi: number | null
+          proj_q4_lo: number | null
+          run_id: number | null
+          scope: string | null
+          stage: string | null
+          status: string | null
+          value: string | null
+        }
+        Insert: {
+          backtest?: Json | null
+          components?: Json | null
+          computed_at?: string | null
+          current_share?: number | null
+          dimension?: string | null
+          evidence?: Json | null
+          id?: number | null
+          model?: string | null
+          momentum?: number | null
+          next_wave_score?: number | null
+          proj_q1?: number | null
+          proj_q1_hi?: number | null
+          proj_q1_lo?: number | null
+          proj_q2?: number | null
+          proj_q2_hi?: number | null
+          proj_q2_lo?: number | null
+          proj_q4?: number | null
+          proj_q4_hi?: number | null
+          proj_q4_lo?: number | null
+          run_id?: number | null
+          scope?: string | null
+          stage?: string | null
+          status?: string | null
+          value?: string | null
+        }
+        Update: {
+          backtest?: Json | null
+          components?: Json | null
+          computed_at?: string | null
+          current_share?: number | null
+          dimension?: string | null
+          evidence?: Json | null
+          id?: number | null
+          model?: string | null
+          momentum?: number | null
+          next_wave_score?: number | null
+          proj_q1?: number | null
+          proj_q1_hi?: number | null
+          proj_q1_lo?: number | null
+          proj_q2?: number | null
+          proj_q2_hi?: number | null
+          proj_q2_lo?: number | null
+          proj_q4?: number | null
+          proj_q4_hi?: number | null
+          proj_q4_lo?: number | null
+          run_id?: number | null
+          scope?: string | null
+          stage?: string | null
+          status?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecasts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "forecasts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forecast_model_card: {
+        Row: {
+          computed_at: string | null
+          coverage: Json | null
+          data_cutoff_quarter: string | null
+          model_card: Json | null
+          run_id: number | null
+        }
+        Relationships: []
+      }
       library_ai_extraction_history: {
         Row: {
           captured_at: string | null
@@ -1861,6 +2171,48 @@ export type Database = {
           value: string | null
         }
         Relationships: []
+      }
+      trendsetters_latest: {
+        Row: {
+          domain: string | null
+          rank: number | null
+          run_id: number | null
+          score: number | null
+          sector: string | null
+          traits_led: Json | null
+        }
+        Insert: {
+          domain?: string | null
+          rank?: number | null
+          run_id?: number | null
+          score?: number | null
+          sector?: string | null
+          traits_led?: Json | null
+        }
+        Update: {
+          domain?: string | null
+          rank?: number | null
+          run_id?: number | null
+          score?: number | null
+          sector?: string | null
+          traits_led?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trendsetters_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "trendsetters_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {

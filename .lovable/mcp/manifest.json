@@ -408,6 +408,108 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "forecast",
+        "title": "Trait forecast",
+        "description": "Fitted adoption curve, +1/+2/+4 quarter projections with 80% intervals, stage, momentum, evidence and backtest for design traits.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "dimension": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "value": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "description": "'all' or a library sector slug."
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "next_wave",
+        "title": "Next-wave traits",
+        "description": "Traits ranked by the next-wave score with each component (trendsetter gap, vanguard spread, momentum, corroboration).",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "description": "'all' or a library sector slug."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "trendsetters",
+        "title": "Trendsetter sites",
+        "description": "Library sites that adopted traits earliest before they crossed 20% library-wide share.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "weekly_brief",
+        "title": "Weekly brief",
+        "description": "The AI-written weekly brief with citations to forecasts, events, wire items and spread signals.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "week": {
+              "type": "string",
+              "pattern": "^\\d{4}-W\\d{2}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }

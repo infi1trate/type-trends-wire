@@ -268,3 +268,29 @@ export type CrawlData = {
  words: ViewRow<"crawl_h1_words">[]; fonts: ViewRow<"crawl_font_share">[];
  spread: SpreadRow[]; sites: CrawlSite[];
 };
+
+// FORECAST (F10): public SELECT-only reads of the latest finished run.
+const FORECAST_COLS = "dimension,value,scope,status,stage,model,current_share,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi,momentum,next_wave_score,components,quarters:evidence->quarters,sectors:evidence->sectors,crossed:evidence->crossed_20";
+export type ForecastRow = { dimension: string; value: string; scope: string; status: string; stage: string | null; model: string | null; current_share: number | null; proj_q1: number | null; proj_q1_lo: number | null; proj_q1_hi: number | null; proj_q2: number | null; proj_q2_lo: number | null; proj_q2_hi: number | null; proj_q4: number | null; proj_q4_lo: number | null; proj_q4_hi: number | null; momentum: number | null; next_wave_score: number | null; components: { z?: Record<string, number | null>; raw?: Record<string, number | null> } | null; quarters: { q: string; s: number | null; n: number; c: number }[] | null; sectors: Record<string, string | null> | null; crossed: string | null };
+export type ModelCard = { data_through: string | null; backtest_cutoff: string; median_mae_pts: number | null; hit_rate: number | null; n_backtested: number; n_traits: number; n_forecast_ok: number; n_insufficient: number; usable_quarters_all: string[]; next_wave_backtest: { ranked: number; grew_5pts: number; status?: string } };
+export type BriefDoc = { week: string; headline: string; caveats: string; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: "forecast" | "event" | "wire" | "spread"; id: string }[] }[] };
+export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleTime: 10 * 60_000, queryFn: async () => {
+  const [card, rows, setters, briefs] = await Promise.all([
+    supabase.from("forecast_model_card").select("*").maybeSingle(),
+    fetchAll<ForecastRow>((f, t) => supabase.from("forecast_latest").select(FORECAST_COLS).order("scope").order("dimension").order("value").range(f, t) as unknown as PromiseLike<{ data: ForecastRow[] | null; error: unknown }>),
+    supabase.from("trendsetters_latest").select("domain,rank,score,traits_led,sector").order("rank").limit(50),
+    supabase.from("weekly_briefs").select("week,brief,model,created_at").order("week", { ascending: false }).limit(12),
+  ]);
+  for (const r of [card, setters, briefs]) if (r.error) throw r.error;
+  return { card: card.data ? { ...(card.data.model_card as unknown as ModelCard), computed_at: card.data.computed_at } : null, rows,
+    setters: (setters.data ?? []).map(s => ({ ...s, traits_led: (s.traits_led as { trait: string; lead: number; adopted: string; crossed: string }[] | null) ?? [] })),
+    briefs: (briefs.data ?? []).map(b => ({ week: b.week, model: b.model, created_at: b.created_at, brief: b.brief as unknown as BriefDoc })) };
+} });
+export const forecastDetailQuery = (dimension: string, value: string) => queryOptions({ queryKey: ["forecast-detail", dimension, value], staleTime: 10 * 60_000, queryFn: async () => {
+  const { data, error } = await supabase.from("forecast_latest").select("scope,status,model,evidence,backtest,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi").eq("dimension", dimension).eq("value", value).order("scope");
+  if (error) throw error; return data ?? [];
+} });
+export const latestBriefQuery = () => queryOptions({ queryKey: ["brief-latest"], staleTime: 10 * 60_000, queryFn: async () => {
+  const { data, error } = await supabase.from("weekly_briefs").select("week,brief").order("week", { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error; return data ? { week: data.week, headline: (data.brief as unknown as BriefDoc).headline } : null;
+} });

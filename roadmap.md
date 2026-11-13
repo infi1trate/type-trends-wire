@@ -71,3 +71,9 @@
 - [x] Add quarterly public history, font ranks/redesign counts and MCP tools.
 - [x] Add F12 History and quarterly site filmstrip without changing crawler code.
 - [x] Verify replay, state/tag contracts, public reads, responsive UI and storage impact; do not publish.
+
+# Phase 3 — forecast + weekly brief
+- [x] Pure forecast model, leading indicators, backtest and brief validation with tests.
+- [x] Forecast/trendsetter/brief storage, weekly Sunday schedule and one real run.
+- [x] F10 FORECAST panel, Overview brief bar, MCP tools and methodology.
+- [ ] 90-second callback timeout for the forecast schedule (managed scheduling tool cannot set it; same blocker as the extraction worker).

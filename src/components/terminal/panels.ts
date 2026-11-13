@@ -8,7 +8,7 @@ export const PANELS = [
   { key: "F7", id: "vibe", label: "VIBE" },
   { key: "F8", id: "wire", label: "WIRE" },
   { key: "F9", id: "rebrands", label: "REBRANDS" },
-  { key: "F10", id: "brief", label: "BRIEF" },
+  { key: "F10", id: "brief", label: "FORECAST" },
   { key: "F11", id: "library", label: "LIBRARY" },
   { key: "F12", id: "history", label: "HISTORY" },
 ] as const;
@@ -18,7 +18,6 @@ export type PanelId = (typeof PANELS)[number]["id"];
 export const DORMANT: Partial<Record<PanelId, string>> = {
   vibe: "Mood clusters on a 2D map. Arrives with the crawler.",
   rebrands: "New identities, type and color extracted. Phase 2.",
-  brief: "Auto-written weekly market report. After 7 days of data.",
 };
 
 export function isoWeek(d = new Date()) {
