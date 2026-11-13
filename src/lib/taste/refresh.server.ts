@@ -1,6 +1,6 @@
 import {supabaseAnon} from "../mcp/supabase";
 import {loadTasteSites,pages,measuredPalette} from "./store.server";
-import {buildFontCatalog} from "./fonts";
+import {buildFontCatalog,isNonType} from "./fonts";
 import {normalizeFont} from "../library-diff";
 import {forecastSeries,type SeriesPoint} from "../forecast";
 import {SECTORS,obj} from "../library";
@@ -9,15 +9,20 @@ import type {Json} from "@/integrations/supabase/types";
 function jsonValue(value:unknown):Json {if(value===null||typeof value==='string'||typeof value==='boolean')return value;if(typeof value==='number')return Number.isFinite(value)?value:null;if(Array.isArray(value))return value.map(jsonValue);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([,v])=>v!==undefined).map(([k,v])=>[k,jsonValue(v)]));return null;}
 export async function refreshTaste(){
  const read=supabaseAnon(),{supabaseAdmin:db}=await import("@/integrations/supabase/client.server");
- const [sites,history,historySignals,latest,oldCatalog,setters]=await Promise.all([loadTasteSites(),pages(f=>read.from("library_site_history").select("domain,quarter,sector,h1_family").order("quarter").order("domain").range(f,f+999)),pages(f=>read.from("library_snapshots").select("domain,captured_at,signals,source").eq("page_type","home").eq("viewport","desktop").order("captured_at").order("id").range(f,f+999)),read.from("gfont_snapshots").select("captured_on").order("captured_on",{ascending:false}).limit(1),pages(f=>read.from("font_catalog").select("key,category").order("key").range(f,f+999)),read.from("trendsetters_latest").select("domain").order("rank").limit(30)]);
- if(latest.error||setters.error)throw latest.error??setters.error;const day=latest.data?.[0]?.captured_on;
+ // Sites first: running this read alongside the full snapshot scan hits the read statement timeout under load.
+ const rawSites=await loadTasteSites();
+ const [history,historySignals,latest,oldCatalog,setters]=await Promise.all([pages(f=>read.from("library_site_history").select("domain,quarter,sector,h1_family").order("quarter").order("domain").range(f,f+999)),pages(f=>read.from("library_snapshots").select("domain,captured_at,signals,source").eq("page_type","home").eq("viewport","desktop").order("captured_at").order("id").range(f,f+999)),read.from("gfont_snapshots").select("captured_on").order("captured_on",{ascending:false}).limit(1),pages(f=>read.from("font_catalog").select("key,category").order("key").range(f,f+999)),read.from("trendsetters_latest").select("domain").order("rank").limit(30)]);
+ if(latest.error||setters.error)throw latest.error??setters.error;
+ // Emoji/icon/symbol fonts are never faces: treat them as unmeasured so they leave usage, pairs and denominators.
+ const nonType=new Set<string>(),face=(v:string|null)=>{if(v&&isNonType(v)){nonType.add(normalizeFont(v));return null;}return v;};
+ const sites=rawSites.map(s=>({...s,h1:face(s.h1),body:face(s.body)}));const day=latest.data?.[0]?.captured_on;
  const google=day?await pages(f=>read.from("gfont_snapshots").select("family,category").eq("captured_on",day).order("family").range(f,f+999)):[];
  const allNames=[...sites.flatMap(s=>[s.h1,s.body]),...history.map(s=>s.h1_family),...historySignals.flatMap(s=>{const t=obj(obj(s.signals)['type']);return ['h1','body'].flatMap(r=>[obj(obj(t['rendered'])[r])['family'],obj(obj(t['declared'])[r])['family']]);})].filter((v):v is string=>typeof v==="string");
  const top=new Set(setters.data?.map(s=>s.domain)??[]),topSites=sites.filter(s=>top.has(s.domain));
  const crawlLatest=await read.from('crawl_latest').select('id').limit(1);if(crawlLatest.error)throw crawlLatest.error;
  const crawlFonts=crawlLatest.data?.[0]?.id?await pages(f=>read.from('crawl_sites').select('domain,index_name,type').eq('run_id',crawlLatest.data?.[0]?.id??'').eq('ok',true).order('domain').order('index_name').range(f,f+999)):[];
  // Every domain seen using each family across library, crawl and history (drives brand-token and single-site proprietary rules).
- const fontDomains=new Map<string,Set<string>>(),seenOn=(family:unknown,domain:string|null)=>{if(typeof family!=="string"||!domain)return;const key=normalizeFont(family);if(!key)return;const set=fontDomains.get(key)??new Set<string>();set.add(domain.replace(/^www\./,""));fontDomains.set(key,set);};
+ const fontDomains=new Map<string,Set<string>>(),seenOn=(family:unknown,domain:string|null)=>{if(typeof family!=="string"||!domain)return;if(isNonType(family)){nonType.add(normalizeFont(family));return;}const key=normalizeFont(family);if(!key)return;const set=fontDomains.get(key)??new Set<string>();set.add(domain.replace(/^www\./,""));fontDomains.set(key,set);};
  for(const s of sites){seenOn(s.h1,s.domain);seenOn(s.body,s.domain);}for(const h of history)seenOn(h.h1_family,h.domain);
  for(const snap of historySignals){const t=obj(obj(snap.signals)['type']);for(const r of ['h1','body']){seenOn(obj(obj(t['rendered'])[r])['family'],snap.domain);seenOn(obj(obj(t['declared'])[r])['family'],snap.domain);}}
  for(const c of crawlFonts){const t=obj(c.type);for(const r of ['h1','body']){seenOn(obj(obj(t['rendered'])[r])['family'],c.domain);seenOn(obj(obj(t['declared'])[r])['family'],c.domain);}}
@@ -30,7 +35,7 @@ export async function refreshTaste(){
  const usage: {key:string;scope:string;role:string;data:Record<string,unknown>}[]=[],colors:{key:string;scope:string;data:Record<string,unknown>}[]=[];
  for(const scope of ['all',...SECTORS]){const subset=sites.filter(s=>scope==="all"||s.sector===scope);
   for(const role of ['h1','body'] as const){const measured=subset.filter(s=>s[role]),keys=new Set(measured.map(s=>normalizeFont(s[role]??"")));for(const key of keys){const uses=measured.filter(s=>normalizeFont(s[role]??"")===key),all=sites.filter(s=>s[role]),allUses=all.filter(s=>normalizeFont(s[role]??"")===key),quarters=new Map<string,{n:number;used:number}>();
-   for(const snap of hs.values()){if(scope!=="all"&&sectorOf.get(snap.domain)!==scope)continue;const family=obj(obj(obj(obj(snap.signals)['type'])['rendered'])[role])['family'];if(typeof family!=="string")continue;const q=quarter(snap.captured_at),v=quarters.get(q)??{n:0,used:0};v.n++;if(normalizeFont(family)===key)v.used++;quarters.set(q,v);}
+   for(const snap of hs.values()){if(scope!=="all"&&sectorOf.get(snap.domain)!==scope)continue;const family=obj(obj(obj(obj(snap.signals)['type'])['rendered'])[role])['family'];if(typeof family!=="string"||isNonType(family))continue;const q=quarter(snap.captured_at),v=quarters.get(q)??{n:0,used:0};v.n++;if(normalizeFont(family)===key)v.used++;quarters.set(q,v);}
    const series:SeriesPoint[]=[...quarters].map(([q,v])=>({quarter:q,share:v.used/v.n,denom:v.n,coverage:v.n/Math.max(1,subset.length)})).sort((a,b)=>a.quarter.localeCompare(b.quarter)),fit=forecastSeries(series,scope);
    const trendsetterSites=topSites.filter(s=>normalizeFont(s[role]??"")===key).length,vanguard=crawlShare('vanguard',key,role),mainstream=crawlShare('mainstream',key,role);
    usage.push({key,scope,role,data:{sites:uses.length,denom:measured.length,share:uses.length/Math.max(1,measured.length),share_all:allUses.length/Math.max(1,all.length),stage:fit.status==="ok"?fit.stage:null,momentum:fit.status==="ok"?fit.momentum:null,series,trendsetter_sites:trendsetterSites,trendsetter_n:topSites.length,trendsetter_share:topSites.length?trendsetterSites/topSites.length:null,vanguard_spread:vanguard!==null&&mainstream!==null?(vanguard-mainstream)*100:null,used_by:uses.slice(0,5).map(s=>s.domain)}});}}
@@ -44,5 +49,8 @@ export async function refreshTaste(){
  const pairMap=new Map<string,typeof sites>();for(const s of sites)if(s.h1&&s.body){const key=`${normalizeFont(s.h1)}|${normalizeFont(s.body)}`;pairMap.set(key,[...pairMap.get(key)??[],s]);}
  const pairs=[...pairMap].map(([key,list])=>({key,data:{h1_key:normalizeFont(list[0]?.h1??""),body_key:normalizeFont(list[0]?.body??""),count:list.length,denom:sites.filter(s=>s.h1&&s.body).length,sectors:[...new Set(list.map(s=>s.sector))],domains:list.slice(0,5).map(s=>s.domain),sector_counts:Object.fromEntries(SECTORS.map(scope=>[scope,list.filter(s=>s.sector===scope).length]))}}));
  const palettes=sites.flatMap(s=>{const p=measuredPalette(s);return p?[{domain:s.domain,data:{...p,sector:s.sector,theme:s.theme,mode:s.mode,tags:s.tags,captured_at:s.captured_at}}]:[];});
- const result=await db.rpc("replace_taste_data",{p_catalog:jsonValue(catalog),p_usage:jsonValue(usage),p_pairs:jsonValue(pairs),p_colors:jsonValue(colors),p_palettes:jsonValue(palettes)});if(result.error)throw result.error;return {proprietary:catalog.filter(c=>c.license_hint==="proprietary").map(c=>`${c.family} (${c.license_reason})`),catalog:catalog.length,usage:usage.length,pairs:pairs.length,colors:colors.length,palettes:palettes.length,unknown:catalog.filter(c=>c.category==="unknown").length};
+ const result=await db.rpc("replace_taste_data",{p_catalog:jsonValue(catalog),p_usage:jsonValue(usage),p_pairs:jsonValue(pairs),p_colors:jsonValue(colors),p_palettes:jsonValue(palettes)});if(result.error)throw result.error;
+ // The summary RPC upserts the catalog; remove emoji/icon/symbol rows left from earlier refreshes so they are never faces.
+ const stale=oldCatalog.filter(o=>isNonType(o.key)||nonType.has(o.key)).map(o=>o.key);if(stale.length){const removed=await db.from("font_catalog").delete().in("key",stale);if(removed.error)throw removed.error;}
+ return {stale_non_type_removed:stale.length,proprietary:catalog.filter(c=>c.license_hint==="proprietary").map(c=>`${c.family} (${c.license_reason})`),system:catalog.filter(c=>c.license_hint==="system").length,non_type_dropped:[...nonType].filter(Boolean).sort(),catalog:catalog.length,usage:usage.length,pairs:pairs.length,colors:colors.length,palettes:palettes.length,unknown:catalog.filter(c=>c.category==="unknown").length};
 }

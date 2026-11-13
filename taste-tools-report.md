@@ -39,3 +39,14 @@ Pure/server modules: `src/lib/taste/*`; console call: `src/lib/taste.functions.t
 - `/api/public/crawl-requests` GET/POST with crawler secret (Bearer or existing x-crawl-secret), 64 KB, ≤25, retry to pending below 3 attempts.
 - LITE: on workerd (or any transport that never calls the pinned lookup) it fails with "LITE analysis unavailable on this host; URL queued for rendering" and queues the URL; no unpinned fallback. Not exercised in the published runtime.
 - Tests: 323 passed across 31 files (25 new).
+
+## Follow-up 2: system/fallback and non-type families, single-site rule removed
+- System list covers OS-bundled and fallback-stack families (system-ui, -apple-system, Segoe UI, Helvetica/Arial, DejaVu/Liberation, CJK OS faces, SF Pro/New York, Avenir, Ubuntu/Cantarell/Oxygen even though Google lists them; Roboto and Noto Sans stay free). recommend_type excludes system faces by default (`include_system`), pairs drop if either face is system; `receipts.eligibility.system_excluded` counts them.
+- Emoji/icon/symbol fonts are dropped from catalog, usage, pairs and denominators; leftover rows are removed after each refresh.
+- Proprietary is now curated bespoke or brand-token only; single-site families stay commercial and critique labels them "rare — seen only on this site".
+- A sector keeps its own ranking with ≥2 qualifying candidates (capped by limit).
+- Refresh now loads sites before the other reads, because running them together hit the read statement timeout.
+- Rerun: catalog 2,528 (1,939 free, 456 commercial, 99 proprietary = 87 brand-token + 12 curated, 34 system); 2 non-type families dropped this run (Apple Color Emoji, dcsymbols) plus 14 stale rows removed. Fintech headline still has 0 faces on ≥2 fintech sites and falls back to all.
+- Top 5 headline (fintech→all, identical to all): Geist 26, Oswald 3, Manrope 8, Figtree 6, Open Sans 14. Pair: Manrope/Inter 3, Geist/Geist 23, Fraunces/Inter 6, Space Grotesk/Inter 5, Inter/Inter 55. Body free: Instrument Sans 13, Inter 124, Open Sans 20, Geist 33, IBM Plex Sans 15.
+- Known brand-token false positive: a retail face sold from its own foundry domain (e.g. Mono Lisa on monolisa.dev) is labelled proprietary.
+- Tests: 328 passed across 31 files.
