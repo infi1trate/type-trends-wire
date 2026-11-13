@@ -1,0 +1,43 @@
+name: wayback-backfill
+# One-off / occasional: 5 years of archived homepages for the library, one capture per half-year.
+# Re-running is safe: captures already stored are skipped via /api/public/library-state.
+on:
+  workflow_dispatch:
+    inputs:
+      from_year: { description: "First year to backfill", default: "2021" }
+      limit: { description: "Only the first N sites per sector (0 = all)", default: "0" }
+      dry_run: { description: "1 = don't post", default: "0" }
+concurrency: { group: wayback, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  wayback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        sector: [ai, dev-tools, fintech, consumer-apps, commerce-dtc, media, studios, hardware, health, enterprise-saas]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Wayback backfill (${{ matrix.sector }})
+        env:
+          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          LIBRARY_MODE: wayback
+          SECTOR: ${{ matrix.sector }}
+          FROM_YEAR: ${{ inputs.from_year }}
+          LIMIT: ${{ inputs.limit }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          CONCURRENCY: "2"
+          WAYBACK_DELAY_MS: "2500"
+        run: npm run library
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: "wayback-${{ matrix.sector }}", path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }

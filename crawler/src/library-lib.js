@@ -71,3 +71,43 @@ export function signalsHash(s) {
   };
   return sha(JSON.stringify(pick));
 }
+
+// ---- Wayback ----
+/** "20230401123456" → ISO string (UTC). */
+export function waybackIso(ts) {
+  const t = ts.padEnd(14, "0");
+  return new Date(Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8), +t.slice(8, 10), +t.slice(10, 12), +t.slice(12, 14))).toISOString();
+}
+
+/** Half-year buckets from fromYear H1 up to (not including) the half-year containing `now`. */
+export function halfYearBuckets(fromYear, now = new Date()) {
+  const out = [];
+  for (let y = fromYear; y <= now.getUTCFullYear(); y++) for (const h of [0, 1]) {
+    const start = Date.UTC(y, h * 6, 1), end = Date.UTC(y, h * 6 + 6, 1);
+    if (end > now.getTime()) return out; // current half-year belongs to live crawls
+    out.push({ key: `${y}H${h + 1}`, start, end, mid: Date.UTC(y, h * 6 + 3, 1) });
+  }
+  return out;
+}
+
+/** From CDX JSON rows ([header, [timestamp, original, statuscode], ...]) pick one 200 capture per half-year,
+ *  the one closest to the bucket's midpoint. Skips timestamps already captured (ISO strings in `have`). */
+export function pickCaptures(rows, { fromYear = 2021, now = new Date(), have = [] } = {}) {
+  const body = (rows ?? []).slice(rows?.[0]?.[0] === "timestamp" ? 1 : 0).filter((r) => r && /^\d{8,14}$/.test(r[0]) && (r[2] === undefined || r[2] === "200"));
+  const haveSet = new Set(have.map((h) => new Date(h).toISOString()));
+  const picks = [];
+  for (const b of halfYearBuckets(fromYear, now)) {
+    let best = null;
+    for (const r of body) {
+      const t = Date.parse(waybackIso(r[0]));
+      if (t < b.start || t >= b.end) continue;
+      const d = Math.abs(t - b.mid);
+      if (!best || d < best.d) best = { d, timestamp: r[0], original: r[1] };
+    }
+    if (!best) continue;
+    const iso = waybackIso(best.timestamp);
+    if (haveSet.has(iso) || [...haveSet].some((h) => Date.parse(h) >= b.start && Date.parse(h) < b.end)) continue; // bucket already filled
+    picks.push({ bucket: b.key, timestamp: best.timestamp, original: best.original, iso });
+  }
+  return picks;
+}

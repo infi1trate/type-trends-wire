@@ -112,3 +112,50 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     assert.equal(sum3.tagged, 1);
   } finally { server.close(); }
 });
+
+test("wayback mode on a fake archive", { timeout: 120000 }, async () => {
+  const { createServer } = await import("node:http");
+  const html = readFileSync("test/fixtures/lib/index.html", "utf8");
+  let cdxCalls = 0;
+  const server = createServer((req, res) => {
+    if (req.url.startsWith("/cdx/")) {
+      cdxCalls++;
+      res.setHeader("content-type", "application/json");
+      return res.end(JSON.stringify([["timestamp", "original", "statuscode"], ["20220401000000", "https://wb.example/", "200"], ["20240915000000", "https://wb.example/", "200"], ["20240920000000", "https://wb.example/", "404"]]));
+    }
+    if (/^\/web\/\d+if_\//.test(req.url)) { res.setHeader("content-type", "text/html"); return res.end(html); }
+    res.statusCode = 404; res.end();
+  });
+  await new Promise((r) => server.listen(4831, r));
+  writeFileSync("/tmp/wb.csv", "domain,sector\nwb.example,studios\nother.example,ai\n");
+  try {
+    await run("node", ["src/library.js"], { env: { ...process.env, DRY_RUN: "1", RUN_ID: "libwb", LIBRARY_MODE: "wayback", SECTOR: "studios", WAYBACK_BASE: "http://localhost:4831", WAYBACK_DELAY_MS: "0", LIBRARY_FILE: "/tmp/wb.csv" } });
+    const lines = readFileSync("out/libwb.jsonl", "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    assert.equal(lines[0].sites.length, 2); // sync still sends the whole list
+    const snaps = lines.filter((l) => l.kind === "library_snapshots").flatMap((l) => l.snapshots);
+    assert.equal(cdxCalls, 1); // SECTOR filter: only wb.example
+    assert.deepEqual(snaps.map((s) => s.captured_at).sort(), ["2022-04-01T00:00:00.000Z", "2024-09-15T00:00:00.000Z"]);
+    for (const s of snaps) {
+      assert.equal(s.source, "wayback");
+      assert.equal(s.url, "https://wb.example/");
+      assert.equal(s.raw_text, undefined);
+      assert.equal(s.html_hash, null);
+      assert.match(s.signals.archive.wayback_url, /\/web\/\d+if_\/https:\/\/wb\.example\//);
+      assert.ok(s.signals.archive.bucket);
+    }
+    const tags = readFileSync("out/libwb.tags.jsonl", "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    assert.equal(tags.length, 2);
+    assert.ok(tags.every((t) => t.source === "wayback"));
+  } finally { server.close(); }
+});
+
+test("pickCaptures: one per half-year, skips filled buckets", async () => {
+  const { pickCaptures, halfYearBuckets } = await import("../src/library-lib.js");
+  const now = new Date("2026-11-12");
+  assert.equal(halfYearBuckets(2021, now).length, 11);
+  const rows = [["timestamp", "original", "statuscode"], ["20210115000000", "https://x.com/", "200"], ["20210402000000", "https://x.com/", "200"], ["20230930120000", "https://x.com/", "200"], ["20260801000000", "https://x.com/", "200"]];
+  const p = pickCaptures(rows, { now });
+  assert.deepEqual(p.map((x) => x.bucket), ["2021H1", "2023H2"]); // 2026H2 is the live half
+  assert.equal(p[0].timestamp, "20210402000000"); // nearest the Apr 1 midpoint
+  assert.equal(pickCaptures(rows, { now, have: ["2021-02-01T00:00:00Z"] }).length, 1);
+});

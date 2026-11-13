@@ -4,12 +4,15 @@
 //                               check = daily: fetch server HTML, snapshot only pages whose html_hash moved
 //                               tag   = one-off: re-snapshot every home page (desktop) and send it for AI tagging
 //      LIBRARY_FILE (default seeds/library.csv), LIMIT (first N sites), STATE_FILE (dry-run state), ALLOW_HTTP=1 (tests)
+//                               wayback = 5-year history: one archived homepage per half-year since FROM_YEAR (default 2021),
+//                                         rendered via the Wayback Machine, posted as source=wayback (+ tagged)
+//      SECTOR (only this sector), WAYBACK_BASE (tests), WAYBACK_DELAY_MS (default 2500, politeness between archive loads)
 //      LIBRARY_TAG=0 disables image capture/tagging (default on). Images go to /api/public/library-tag and are never stored.
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { VIEWPORTS, UA, makePoster, robotsOk, openPage, analyzePage, evalSettled, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
-import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash } from "./library-lib.js";
+import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash, pickCaptures } from "./library-lib.js";
 import sharp from "sharp";
 
 const MODE = process.env.LIBRARY_MODE ?? "full";
@@ -23,6 +26,21 @@ const RUN_ID = process.env.RUN_ID ?? `lib-${MODE}-${new Date().toISOString().sli
 const post = makePoster({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: RUN_ID });
 const TEXT_PAGES = new Set(["pricing", "changelog", "about", "home", "product"]);
 const TAG = process.env.LIBRARY_TAG !== "0";
+const SECTOR = process.env.SECTOR || null;
+const WAYBACK_BASE = (process.env.WAYBACK_BASE ?? "https://web.archive.org").replace(/\/$/, "");
+const WAYBACK_DELAY_MS = Number(process.env.WAYBACK_DELAY_MS ?? 2500);
+const FROM_YEAR = Number(process.env.FROM_YEAR ?? 2021);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function cdx(domain) {
+  const url = `${WAYBACK_BASE}/cdx/search/cdx?url=${encodeURIComponent(domain + "/")}&output=json&from=${FROM_YEAR}&filter=statuscode:200&filter=mimetype:text/html&collapse=timestamp:8&fl=timestamp,original,statuscode&limit=4000`;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const r = await fetch(url, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(45000) }).catch(() => null);
+    if (r?.ok) return r.json().catch(() => []);
+    await sleep(attempt * (r?.status === 429 ? 30000 : 5000));
+  }
+  throw new Error("cdx_unavailable");
+}
 
 /** Fold (960w) + up to 4 page sections below it (each 2 viewports tall, 720w) as JPEG data URLs, for transient
  *  AI tagging. Never written to disk; dropped from memory once the tag request returns. */
@@ -62,26 +80,27 @@ async function fetchHtmlHash(url) {
 }
 
 /** Render one URL in an open page and build a snapshot record (or { error }). */
-async function snapshot(page, { domain, page_type, viewport, url }) {
+async function snapshot(page, { domain, page_type, viewport, url, archive = null }) {
   const started = Date.now();
   const path = new URL(url).pathname || "/";
-  if (!(await robotsOk(new URL(url).origin, path))) return { error: "robots_disallow" };
+  if (!archive && !(await robotsOk(new URL(url).origin, path))) return { error: "robots_disallow" };
   try {
-    const err = await openPage(page, url);
+    const err = await openPage(page, archive ? archive.wayback_url : url);
     if (err) return { error: err };
     const a = await analyzePage(page, { started });
     if (!a.ok) return { error: a.error };
     const x = await evalSettled(page, extractLibraryExtras);
     const { ok, final_url, ...fields } = a;
-    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h } };
+    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h }, ...(archive ? { archive } : {}) };
     const images = TAG && page_type === "home" && viewport === "desktop" ? await captureImages(page).catch(() => null) : null;
     return {
       links: x.links, images,
       record: {
-        domain, page_type, viewport, source: "live", captured_at: new Date().toISOString(), url: final_url,
-        html_hash: await fetchHtmlHash(url), content_hash: contentHash(x.text), signals_hash: signalsHash(signals),
+        domain, page_type, viewport, source: archive ? "wayback" : "live",
+        captured_at: archive ? archive.iso : new Date().toISOString(), url: archive ? archive.original : final_url,
+        html_hash: archive ? null : await fetchHtmlHash(url), content_hash: contentHash(x.text), signals_hash: signalsHash(signals),
         signals,
-        ...(viewport === "desktop" && TEXT_PAGES.has(page_type) && x.text ? { raw_text: x.text } : {}),
+        ...(!archive && viewport === "desktop" && TEXT_PAGES.has(page_type) && x.text ? { raw_text: x.text } : {}),
       },
     };
   } catch (e) { return { error: errorCode(e) }; }
@@ -105,7 +124,30 @@ async function plan(site, latest, pages, origin) {
   return { discover: false, jobs, known };
 }
 
+async function crawlWayback(browser, site, st, emit, errors) {
+  const picks = pickCaptures(await cdx(site.domain), { fromYear: FROM_YEAR, have: st?.wayback ?? [] });
+  if (!picks.length) return { skipped: true };
+  const ctx = await browser.newContext({ ...VIEWPORTS.desktop, deviceScaleFactor: 1, locale: "en-US", reducedMotion: "reduce" });
+  const page = await ctx.newPage();
+  let n = 0;
+  try {
+    for (const p of picks) {
+      const wayback_url = `${WAYBACK_BASE}/web/${p.timestamp}if_/${p.original}`;
+      const r = await snapshot(page, { domain: site.domain, page_type: "home", viewport: "desktop", url: p.original, archive: { timestamp: p.timestamp, wayback_url, iso: p.iso, original: p.original, bucket: p.bucket } });
+      if (r.error) errors[`wayback:${r.error}`] = (errors[`wayback:${r.error}`] ?? 0) + 1;
+      else {
+        const { iso, original, ...archiveMeta } = r.record.signals.archive; // keep signals.archive = {timestamp, wayback_url, bucket}
+        r.record.signals.archive = archiveMeta;
+        await emit(r.record, r.images); n++;
+      }
+      await sleep(WAYBACK_DELAY_MS);
+    }
+    return n ? { snapshots: n } : { error: "no_archive_renders" };
+  } finally { await ctx.close().catch(() => {}); }
+}
+
 async function crawlSite(browser, site, st, emitRaw, errors) {
+  if (MODE === "wayback") return crawlWayback(browser, site, st, emitRaw, errors);
   const origin = (ALLOW_HTTP ? "http://" : "https://") + site.domain;
   // Unchanged since the last stored snapshot (same design signals and same text): don't store a duplicate.
   const emit = async (rec, images) => {
@@ -146,6 +188,7 @@ async function main() {
   if (!DRY && (!ENDPOINT || !SECRET)) throw new Error("Set CRAWL_ENDPOINT and CRAWL_SECRET, or DRY_RUN=1");
   let sites = parseLibrary(readFileSync(process.env.LIBRARY_FILE ?? new URL("../seeds/library.csv", import.meta.url).pathname, "utf8"));
   await post({ kind: "library_sync", sites });
+  if (SECTOR) sites = sites.filter((s) => s.sector === SECTOR);
   if (LIMIT) sites = sites.slice(0, LIMIT);
   const state = await getState();
   const byDomain = Object.fromEntries((state.sites ?? []).map((s) => [s.domain, s]));
@@ -160,7 +203,7 @@ async function main() {
   let tagBudgetOut = false;
   const tagOne = async (rec, imgs) => {
     if (tagBudgetOut) return;
-    const body = { domain: rec.domain, page_type: rec.page_type, viewport: rec.viewport, captured_at: rec.captured_at, signals_hash: rec.signals_hash, images: imgs };
+    const body = { domain: rec.domain, page_type: rec.page_type, viewport: rec.viewport, source: rec.source, captured_at: rec.captured_at, signals_hash: rec.signals_hash, images: imgs };
     if (DRY) { appendFileSync(`out/${RUN_ID}.tags.jsonl`, JSON.stringify({ ...body, images: { fold: imgs.fold.length, sections: imgs.sections.map((x) => x.length) } }) + "\n"); totals.tagged++; return; }
     for (let attempt = 1; attempt <= 3; attempt++) {
       const r = await fetch(new URL("library-tag", ENDPOINT), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": SECRET }, body: JSON.stringify(body) }).catch(() => null);

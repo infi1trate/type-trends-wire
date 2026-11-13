@@ -58,3 +58,7 @@ Tracks the 300 sites in `seeds/library.csv` (10 sectors × 30) over time. `.gith
 Each snapshot carries the index-crawl signals plus `css_features`, `nav` (label/href/depth), `skeleton` (≤400 boxes for a wireframe redraw — no screenshots are stored), and three hashes (`html_hash` server HTML minus volatile bits, `content_hash` visible text, `signals_hash` design-relevant fields). Desktop pages also send `raw_text` (≤50k chars) for later extraction; the terminal keeps it private. The terminal diffs consecutive snapshots into `library_events`.
 
 Env: `LIBRARY_MODE`, `LIMIT`, `LIBRARY_FILE`, `STATE_FILE` (dry runs), plus the shared `CRAWL_ENDPOINT` / `CRAWL_SECRET` / `DRY_RUN` / `CONCURRENCY`.
+
+## Wayback history (`LIBRARY_MODE=wayback`)
+
+`.github/workflows/wayback.yml` (manual) backfills each library homepage from the Wayback Machine: one archived capture per half-year since `FROM_YEAR` (default 2021), the one nearest the half's midpoint, rendered through `web.archive.org/web/{ts}if_/…` at desktop size and posted as `source: "wayback"` snapshots (captured_at = archive time, `signals.archive = {timestamp, wayback_url, bucket}`), then tagged like live homepages. One job per sector, two at a time, 2.5 s between archive loads. Halves already stored are skipped, so re-running fills gaps only. The current half-year is left to live crawls. Archived pages sometimes miss fonts or assets; the terminal flags low-coverage buckets.
