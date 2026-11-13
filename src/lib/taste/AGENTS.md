@@ -1,0 +1,2 @@
+- Font licensing (incl. proprietary brand-face rules) lives only in `fonts.ts`; ranking eligibility (min sites, scope fallback) only in `eligibility.ts`, so MCP, console and refresh agree.
+- LITE fails closed without address-pinned sockets (workerd, or a transport that skips the pinned lookup) and queues the URL; never add an unpinned fallback.

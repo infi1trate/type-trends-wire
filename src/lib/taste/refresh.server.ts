@@ -13,10 +13,15 @@ export async function refreshTaste(){
  if(latest.error||setters.error)throw latest.error??setters.error;const day=latest.data?.[0]?.captured_on;
  const google=day?await pages(f=>read.from("gfont_snapshots").select("family,category").eq("captured_on",day).order("family").range(f,f+999)):[];
  const allNames=[...sites.flatMap(s=>[s.h1,s.body]),...history.map(s=>s.h1_family),...historySignals.flatMap(s=>{const t=obj(obj(s.signals)['type']);return ['h1','body'].flatMap(r=>[obj(obj(t['rendered'])[r])['family'],obj(obj(t['declared'])[r])['family']]);})].filter((v):v is string=>typeof v==="string");
- const catalog=buildFontCatalog(allNames,google);for(const c of catalog){const old=oldCatalog.find(o=>o.key===c.key);if(c.category==="unknown"&&old&&old.category!=="unknown")c.category=old.category as typeof c.category;}
  const top=new Set(setters.data?.map(s=>s.domain)??[]),topSites=sites.filter(s=>top.has(s.domain));
  const crawlLatest=await read.from('crawl_latest').select('id').limit(1);if(crawlLatest.error)throw crawlLatest.error;
  const crawlFonts=crawlLatest.data?.[0]?.id?await pages(f=>read.from('crawl_sites').select('domain,index_name,type').eq('run_id',crawlLatest.data?.[0]?.id??'').eq('ok',true).order('domain').order('index_name').range(f,f+999)):[];
+ // Every domain seen using each family across library, crawl and history (drives brand-token and single-site proprietary rules).
+ const fontDomains=new Map<string,Set<string>>(),seenOn=(family:unknown,domain:string|null)=>{if(typeof family!=="string"||!domain)return;const key=normalizeFont(family);if(!key)return;const set=fontDomains.get(key)??new Set<string>();set.add(domain.replace(/^www\./,""));fontDomains.set(key,set);};
+ for(const s of sites){seenOn(s.h1,s.domain);seenOn(s.body,s.domain);}for(const h of history)seenOn(h.h1_family,h.domain);
+ for(const snap of historySignals){const t=obj(obj(snap.signals)['type']);for(const r of ['h1','body']){seenOn(obj(obj(t['rendered'])[r])['family'],snap.domain);seenOn(obj(obj(t['declared'])[r])['family'],snap.domain);}}
+ for(const c of crawlFonts){const t=obj(c.type);for(const r of ['h1','body']){seenOn(obj(obj(t['rendered'])[r])['family'],c.domain);seenOn(obj(obj(t['declared'])[r])['family'],c.domain);}}
+ const catalog=buildFontCatalog(allNames,google,fontDomains);for(const c of catalog){const old=oldCatalog.find(o=>o.key===c.key);if(c.category==="unknown"&&old&&old.category!=="unknown")c.category=old.category as typeof c.category;}
  const crawlShare=(index:string,key:string,role:string)=>{const list=crawlFonts.filter(s=>s.index_name===index&&typeof obj(obj(obj(s.type)['rendered'])[role])['family']==='string');return list.length?list.filter(s=>normalizeFont(String(obj(obj(obj(s.type)['rendered'])[role])['family']))===key).length/list.length:null;};
  const quarter=(date:string)=>`${date.slice(0,4)}Q${Math.floor((Number(date.slice(5,7))-1)/3)+1}`;
  // Latest sample per domain/quarter; prefer live, matching history facade semantics.
@@ -39,5 +44,5 @@ export async function refreshTaste(){
  const pairMap=new Map<string,typeof sites>();for(const s of sites)if(s.h1&&s.body){const key=`${normalizeFont(s.h1)}|${normalizeFont(s.body)}`;pairMap.set(key,[...pairMap.get(key)??[],s]);}
  const pairs=[...pairMap].map(([key,list])=>({key,data:{h1_key:normalizeFont(list[0]?.h1??""),body_key:normalizeFont(list[0]?.body??""),count:list.length,denom:sites.filter(s=>s.h1&&s.body).length,sectors:[...new Set(list.map(s=>s.sector))],domains:list.slice(0,5).map(s=>s.domain),sector_counts:Object.fromEntries(SECTORS.map(scope=>[scope,list.filter(s=>s.sector===scope).length]))}}));
  const palettes=sites.flatMap(s=>{const p=measuredPalette(s);return p?[{domain:s.domain,data:{...p,sector:s.sector,theme:s.theme,mode:s.mode,tags:s.tags,captured_at:s.captured_at}}]:[];});
- const result=await db.rpc("replace_taste_data",{p_catalog:jsonValue(catalog),p_usage:jsonValue(usage),p_pairs:jsonValue(pairs),p_colors:jsonValue(colors),p_palettes:jsonValue(palettes)});if(result.error)throw result.error;return {catalog:catalog.length,usage:usage.length,pairs:pairs.length,colors:colors.length,palettes:palettes.length,unknown:catalog.filter(c=>c.category==="unknown").length};
+ const result=await db.rpc("replace_taste_data",{p_catalog:jsonValue(catalog),p_usage:jsonValue(usage),p_pairs:jsonValue(pairs),p_colors:jsonValue(colors),p_palettes:jsonValue(palettes)});if(result.error)throw result.error;return {proprietary:catalog.filter(c=>c.license_hint==="proprietary").map(c=>`${c.family} (${c.license_reason})`),catalog:catalog.length,usage:usage.length,pairs:pairs.length,colors:colors.length,palettes:palettes.length,unknown:catalog.filter(c=>c.category==="unknown").length};
 }

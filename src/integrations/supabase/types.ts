@@ -118,19 +118,28 @@ export type Database = {
       }
       crawl_requests: {
         Row: {
+          attempts: number
           domain: string
+          done_at: string | null
+          last_error: string | null
           requested_at: string
           status: string
           url: string
         }
         Insert: {
+          attempts?: number
           domain: string
+          done_at?: string | null
+          last_error?: string | null
           requested_at?: string
           status?: string
           url: string
         }
         Update: {
+          attempts?: number
           domain?: string
+          done_at?: string | null
+          last_error?: string | null
           requested_at?: string
           status?: string
           url?: string

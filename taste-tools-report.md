@@ -30,3 +30,12 @@ Not published. Existing Lovable Cloud and public MCP service retained; no new au
 
 ## Files
 Pure/server modules: `src/lib/taste/*`; console call: `src/lib/taste.functions.ts`; UI: `src/components/terminal/TasteConsole.tsx`; four MCP tools under `src/lib/mcp/tools/`; storage/guards in migration 0029. Existing forecast job, data query options, index search parameters, F10 drawer, MCP overlay/methodology and catalog registration updated. Crawler code/workflow untouched.
+
+## Follow-up: bespoke faces, crawler queue, hosted LITE
+- Font catalog `license_hint` adds `proprietary` (curated bespoke list, a family containing a using domain's brand token, or a non-Google/non-curated family seen on exactly one domain). Refresh rerun: 454 proprietary (12 curated, 87 brand-token, 355 single-site). The single-site rule also catches many licensable retail and OS faces (e.g. Averta, Campton, Tobias, Whitney, Hiragino, Meiryo); they never reach rankings anyway because of the site minimum, but critique would label them bespoke.
+- recommend_type excludes proprietary faces unless `include_proprietary:true`; faces/pairs need ≥2 sites in a sector or ≥3 overall. Fintech had 0 qualifying headline faces, so it falls back to all and says so in why[] and `receipts.scope_fallback`.
+- Rerun fintech headline top 5 (fallback to all): System UI 89 sites, Geist 26, Oswald 3, SF Pro Display 3, Manrope 8. Pair top 5: Manrope/Inter 3, System UI/Segoe UI 51, System UI/Deja Vu Sans 8, System UI/Apple Color Emoji 8, Geist/Geist 23. Generic system stacks and fallback/emoji entries now surface; filtering them was not in scope.
+- Forecast traits carry no font families, so the open-territory exclusion is a guard rather than a visible change.
+- `/api/public/crawl-requests` GET/POST with crawler secret (Bearer or existing x-crawl-secret), 64 KB, ≤25, retry to pending below 3 attempts.
+- LITE: on workerd (or any transport that never calls the pinned lookup) it fails with "LITE analysis unavailable on this host; URL queued for rendering" and queues the URL; no unpinned fallback. Not exercised in the published runtime.
+- Tests: 323 passed across 31 files (25 new).

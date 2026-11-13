@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
+import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
 import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const LibraryDomainRoute = LibraryDomainRouteImport.update({
   id: '/library/$domain',
   path: '/library/$domain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCrawlRequestsRoute = ApiPublicCrawlRequestsRouteImport.update({
+  id: '/api/public/crawl-requests',
+  path: '/api/public/crawl-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicForecastRunRoute = ApiPublicForecastRunRouteImport.update({
@@ -88,6 +94,7 @@ const ApiPublicOauthProtectedResourceRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/library/$domain'
+    | '/api/public/crawl-requests'
     | '/api/public/forecast-run'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/library/$domain'
+    | '/api/public/crawl-requests'
     | '/api/public/forecast-run'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/library/$domain'
+    | '/api/public/crawl-requests'
     | '/api/public/forecast-run'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
@@ -176,6 +188,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
+  ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
   ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
@@ -202,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/library/$domain'
       fullPath: '/library/$domain'
       preLoaderRoute: typeof LibraryDomainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/crawl-requests': {
+      id: '/api/public/crawl-requests'
+      path: '/api/public/crawl-requests'
+      fullPath: '/api/public/crawl-requests'
+      preLoaderRoute: typeof ApiPublicCrawlRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/forecast-run': {
@@ -280,6 +300,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LibraryDomainRoute: LibraryDomainRoute,
+  ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
   ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,

@@ -110,6 +110,15 @@ This project was built with [Lovable](https://lovable.dev).
 
 **Live app**: https://type-trends-wire.lovable.app
 
+## Crawler queue endpoints
+
+The GitHub crawler (`crawler/`) renders URLs that LITE analysis could not cover. Both endpoints use the same crawler secret as `library-state` and `library-tag`: send `Authorization: Bearer <secret>` (the existing `x-crawl-secret` header is also accepted). The server compares a SHA-256 hash of the secret with the stored hash; a missing or wrong secret returns `401`. No secret values are stored in this repository.
+
+- `GET /api/public/crawl-requests?limit=N` — `N` is 1–25 (default 10). Returns `{"requests":[{"url","domain","requested_at"}]}`, oldest pending first.
+- `POST /api/public/crawl-requests` — body `{"results":[{"url","status":"done"|"error","error"?}]}`, at most 25 results, `error` ≤ 300 characters, body ≤ 64 KB, unknown fields rejected. Each result adds one attempt; `done` sets `done_at`; `error` records `last_error` and returns the URL to `pending` until it has been attempted 3 times, after which it stays `error`. Returns `{"updated":[{url,status,attempts}],"skipped":[{url,reason}]}` (`unknown`, `not_pending`, `conflict`).
+
+Rendered results are sent separately as ordinary crawl/library snapshot payloads.
+
 ## Build with Lovable
 
 Continue developing this project in the [Lovable editor](https://lovable.dev/projects/917ab2ab-52dd-46f4-9151-8504b8f1a60f).

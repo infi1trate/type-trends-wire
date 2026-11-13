@@ -85,3 +85,9 @@
 - [x] Four shared MCP/console tools, slash console, examples and methodology; limitations recorded in taste-tools-report.md.
 - [x] One font-classification pass, six real runs, 298 tests, MCP extraction and responsive checks; no publishing.
 - [ ] Hosted LITE address-pinning validation: waits on a published runtime; do not publish without owner instruction.
+# Phase 4 follow-up
+- [x] Proprietary/bespoke font classification; exclude from recommend_type (include_proprietary opt-in), differentiate and critique suggestions; min 2 sites per sector / 3 overall with fallback note.
+- [x] Crawler-secret GET/POST /api/public/crawl-requests with attempts/retry and docs.
+- [x] LITE fails closed on hosted workerd and still queues the URL; tests.
+- [x] Refresh rerun and fintech-headline / pair reruns reported; no publishing.
+
