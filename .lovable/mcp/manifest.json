@@ -514,7 +514,7 @@
       {
         "name": "recommend_type",
         "title": "Recommend type",
-        "description": "Rank real fonts and pairings with consensus bias, measured adoption and receipts.",
+        "description": "Rank real, licensable fonts and pairings with consensus bias, measured adoption and receipts. Bespoke brand faces are excluded unless include_proprietary is true; faces need ≥2 sites in a sector (≥3 overall).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -588,6 +588,10 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 10
+            },
+            "include_proprietary": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
