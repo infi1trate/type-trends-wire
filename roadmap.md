@@ -64,3 +64,9 @@
 - [x] Add public half-year signal/CSS/font/tag series and MCP history.
 - [x] Add Library history charts, archive wireframe strip and year-grouped timeline.
 - [x] Verify tests, public reads, endpoint contracts and responsive UI; do not publish.
+
+# Phase 2A — quarterly archive history
+- [x] Add quarterly state, chronological per-domain archive replay and declared-font fallback; extend the existing backfill deadline.
+- [x] Add quarterly public history, font ranks/redesign counts and MCP tools.
+- [x] Add F12 History and quarterly site filmstrip without changing crawler code.
+- [x] Verify replay, state/tag contracts, public reads, responsive UI and storage impact; do not publish.

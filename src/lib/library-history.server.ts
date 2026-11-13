@@ -6,10 +6,7 @@ async function pages<T>(fetchPage:(from:number)=>PromiseLike<{data:T[]|null;erro
 }
 export async function libraryHistory(input:z.infer<typeof historyInput>={}) {
  const db=supabaseAnon();
- const signals=()=>pages(from=>{let q=db.from("library_signal_history").select("*").order("bucket").order("sector");if(input.sector)q=q.eq("sector",input.sector);return q.range(from,from+999);});
- const css=()=>pages(from=>{let q=db.from("library_css_history").select("*").order("bucket").order("sector").order("feature");if(input.sector)q=q.eq("sector",input.sector);if(input.value)q=q.eq("feature",input.value);return q.range(from,from+999);});
- const fonts=()=>pages(from=>{let q=db.from("library_font_history").select("*").order("bucket").order("role").order("family");if(input.value)q=q.eq("family",input.value);return q.range(from,from+999);});
- const tags=()=>pages(from=>{let q=db.from("library_tag_history").select("*").order("bucket").order("sector").order("dimension").order("value");if(input.sector)q=q.eq("sector",input.sector);if(input.dimension)q=q.eq("dimension",input.dimension);if(input.value)q=q.eq("value",input.value);return q.range(from,from+999);});
- const [signalRows,cssRows,fontRows,tagRows]=await Promise.all([!input.dimension?signals():[],(!input.dimension||input.dimension==="css")&&!input.metric?css():[],(!input.dimension||input.dimension==="fonts")&&!input.metric?fonts():[],(!input.dimension||!["css","fonts"].includes(input.dimension))&&!input.metric?tags():[]]);
- return {signals:signalRows,css:cssRows,fonts:fontRows,tags:tagRows};
+ return pages(from=>{let q=db.from("library_history_share").select("*").order("quarter").order("sector").order("dimension").order("value");if(input.dimension)q=q.eq("dimension",input.dimension);if(input.value)q=q.eq("value",input.value);if(input.sector)q=q.eq("sector",input.sector);return q.range(from,from+999);});
 }
+export async function siteHistory(domain:string) {return pages(from=>supabaseAnon().from("library_site_history").select("*").eq("domain",domain).order("quarter").range(from,from+999));}
+export async function historyDashboard(){const db=supabaseAnon();const [series,fonts,redesigns,captures]=await Promise.all([libraryHistory(),pages(from=>db.from("library_history_fonts").select("*").order("year").order("role").order("rank").range(from,from+999)),pages(from=>db.from("library_redesigns").select("*").order("year").order("sector").order("source").range(from,from+999)),db.from("library_snapshots").select("id",{count:"exact",head:true}).eq("source","wayback").eq("page_type","home").eq("viewport","desktop")]);if(captures.error)throw captures.error;return {series,fonts,redesigns,captures:captures.count??0};}

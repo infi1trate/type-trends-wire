@@ -25,7 +25,9 @@ export async function authenticateCrawler(request: Request): Promise<boolean> {
 export async function handleLibraryState(request: Request): Promise<Response> {
   try {
     if (!await authenticateCrawler(request)) return Response.json({ error: "unauthorized" }, { status: 401 });
-    const { data, error } = await db.rpc("library_state");
+    const source=new URL(request.url).searchParams.get("source");
+    if(source!==null&&source!=="live"&&source!=="wayback")return Response.json({error:"Invalid source"},{status:400});
+    const { data, error } = await db.rpc(source==="wayback"?"library_archive_state":"library_state");
     if (error) throw new Error("Library state lookup failed");
     return Response.json(data, { headers: { "cache-control": "no-store" } });
   } catch {

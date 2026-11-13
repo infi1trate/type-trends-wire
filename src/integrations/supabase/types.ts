@@ -1572,6 +1572,16 @@ export type Database = {
         }
         Relationships: []
       }
+      library_history_fonts: {
+        Row: {
+          family: string | null
+          rank: number | null
+          role: string | null
+          sites: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
       library_history_samples: {
         Row: {
           bucket: string | null
@@ -1581,6 +1591,45 @@ export type Database = {
           sector: string | null
           signals: Json | null
           source: string | null
+        }
+        Relationships: []
+      }
+      library_history_share: {
+        Row: {
+          coverage: number | null
+          denom: number | null
+          dimension: string | null
+          quarter: string | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
+      library_history_share_live: {
+        Row: {
+          coverage: number | null
+          denom: number | null
+          dimension: string | null
+          quarter: string | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+          value: string | null
+        }
+        Relationships: []
+      }
+      library_history_share_mat: {
+        Row: {
+          coverage: number | null
+          denom: number | null
+          dimension: string | null
+          quarter: string | null
+          sector: string | null
+          share: number | null
+          sites: number | null
+          value: string | null
         }
         Relationships: []
       }
@@ -1639,6 +1688,15 @@ export type Database = {
           trial_share: number | null
           usage_based_share: number | null
           usd_sites: number | null
+        }
+        Relationships: []
+      }
+      library_redesigns: {
+        Row: {
+          redesigns: number | null
+          sector: string | null
+          source: string | null
+          year: number | null
         }
         Relationships: []
       }
@@ -1723,6 +1781,32 @@ export type Database = {
           webflow_share: number | null
           webfont_share: number | null
           webgl_hero_share: number | null
+        }
+        Relationships: []
+      }
+      library_site_history: {
+        Row: {
+          accent: string | null
+          ai_tags: Json | null
+          body_family: string | null
+          captured_at: string | null
+          css_features: Json | null
+          cta_radius_bucket: string | null
+          domain: string | null
+          frameworks: Json | null
+          grid_max_cols: number | null
+          h1_family: string | null
+          h1_tracking: number | null
+          hero_media: string | null
+          now: boolean | null
+          page_bg: string | null
+          quarter: string | null
+          sector: string | null
+          snapshot_id: number | null
+          source: string | null
+          theme: string | null
+          webfont: boolean | null
+          whitespace_ratio: number | null
         }
         Relationships: []
       }
@@ -1832,8 +1916,20 @@ export type Database = {
         Args: { p_code: string; p_job: number; p_token: string }
         Returns: boolean
       }
+      library_archive_input: { Args: { p_domain: string }; Returns: Json }
+      library_archive_replace: {
+        Args: { p_domain: string; p_expected: Json; p_history: Json }
+        Returns: boolean
+      }
+      library_archive_state: { Args: never; Returns: Json }
+      library_archive_store: { Args: { p_snapshot: Json }; Returns: number }
       library_half_year: { Args: { t: string }; Returns: string }
+      library_history_family: {
+        Args: { r: string; s: Json; source: string }
+        Returns: string
+      }
       library_number: { Args: { j: Json }; Returns: number }
+      library_quarter: { Args: { t: string }; Returns: string }
       library_replace_history: {
         Args: { p_history: Json; p_ids: number[] }
         Returns: Json

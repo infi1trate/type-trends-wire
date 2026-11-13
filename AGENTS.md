@@ -54,5 +54,5 @@ use the editor.
 - Vision sends the fold plus up to four labeled top-to-bottom sections; sections supersede the legacy page strip to bound inference at five images while retaining old callers.
 - Text workers incrementally claim at most three distinct-key jobs concurrently, stop claiming at 50 seconds, abort inference at 57 seconds for cleanup within 60 seconds, and cap runs at 25 during active backfill or 10 otherwise; validation failures get one durable correction retry.
 
-- Wayback measured confirmation stays source-keyed; archive AI uses a distinct internal baseline kind so live candidates cannot be altered by historical tagging. Historical allowlisted changes confirm once; all public event tapes are live-only.
-- Half-year history views select one desktop home sample per site/bucket, prioritize current live samples, flag sparse coverage, and share anonymous paginated reads between Library charts and MCP.
+- Wayback measured confirmation stays source-keyed; archive AI uses a distinct internal baseline kind so live candidates cannot be altered by historical tagging. Archive changes confirm through chronological per-domain two-capture replay; all public event tapes are live-only.
+- Quarterly history views select one desktop home sample per site/quarter, prioritize current live samples, flag sparse coverage, and share anonymous paginated reads between Library charts and MCP.

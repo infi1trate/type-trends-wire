@@ -1,20 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { halfYear, archiveVersions } from "./library-history";
-import { advance, confirmsOnce, diffLibrarySignals, type LibraryEventType } from "./library-diff";
-describe("Wayback confirmation",()=>{
- for(const type of ["type_change","theme_flip","redesign","stack_change","aesthetic_shift","imagery_shift"] as LibraryEventType[])it(`confirms ${type} with one archive capture`,()=>{expect(confirmsOnce("wayback",type)).toBe(true);expect(confirmsOnce("live",type)).toBe(false);});
- for(const type of ["palette_shift","layout_change","nav_change","message_pivot","pricing_change","new_surface"] as LibraryEventType[])it(`skips archive ${type}`,()=>expect(confirmsOnce("wayback",type)).toBe(false));
- it("immediately confirms historical theme with capture effective date, retaining live two-capture confirmation",()=>{
-  const context={page_type:"home",viewport:"desktop",source:"wayback"};
-  const baseline=advance(null,{}, {signals:{color:{theme:"light"}},snapshot_id:1,captured_at:"2021-01-01T00:00:00Z",context}).baseline;
-  const next={signals:{color:{theme:"dark"},layout:{hero_media:"video"},lexicon:{h1:"Different message"}},snapshot_id:2,captured_at:"2021-07-01T00:00:00Z",context};
-  const result=advance(baseline,{},next);expect(result.events).toMatchObject([{type:"theme_flip",effective_at:"2021-07-01T00:00:00Z"}]);expect(result.pending).toEqual({});
-  expect(advance(baseline,{}, {...next,context:{...context,source:"live"}}).events).toEqual([]);
- });
- it("never emits new_surface for archives",()=>expect(diffLibrarySignals(null,{}, {source:"wayback",page_type:"home",viewport:"desktop",new_surface:true,first_captured_at:"2021-01-01T00:00:00Z",captured_at:"2022-01-01T00:00:00Z"})).toEqual([]));
-});
-describe("UTC half-year sampling",()=>{
- it("assigns January and July boundaries",()=>{expect(halfYear("2021-06-30T23:59:59Z")).toBe("2021-01-01");expect(halfYear("2021-07-01T00:00:00Z")).toBe("2021-07-01");expect(halfYear("2021-12-31T23:59:59Z")).toBe("2021-07-01");});
- it("uses UTC even with offsets",()=>expect(halfYear("2021-07-01T00:30:00+02:00")).toBe("2021-01-01"));
- it("selects last archive desktop home capture in each half year",()=>{const common={source:"wayback",page_type:"home",viewport:"desktop"};expect(archiveVersions([{...common,captured_at:"2021-01-01T00:00:00Z"},{...common,captured_at:"2021-06-01T00:00:00Z"},{...common,source:"live",captured_at:"2021-06-02T00:00:00Z"},{...common,viewport:"mobile",captured_at:"2021-06-03T00:00:00Z"}]).map(s=>s.captured_at)).toEqual(["2021-06-01T00:00:00Z"]);});
+import {describe,it,expect} from "vitest";
+import {quarter,archiveVersions} from "./library-history";
+import {replayLibrary,type ReplaySnapshot} from "./library-replay";
+import {archiveFont} from "./library-archive";
+const make=(id:number,date:string,theme:string,source="wayback"):ReplaySnapshot=>({id,domain:"example.com",sector:"ai",page_type:"home",viewport:"desktop",source,captured_at:date,signals:{color:{theme},archive:{quarter:quarter(date)}}});
+describe("quarterly archive replay",()=>{
+ it("confirms only after two captures with first-change effective date",()=>{const rows=[make(1,"2021-01-01T00:00:00Z","light"),make(2,"2021-04-01T00:00:00Z","dark"),make(3,"2021-07-01T00:00:00Z","dark")];expect(replayLibrary(rows.slice(0,2)).events).toEqual([]);expect(replayLibrary(rows).events).toMatchObject([{source:"wayback",type:"theme_flip",effective_at:"2021-04-01T00:00:00Z"}]);});
+ it("out of order produces identical history",()=>{const rows=[make(1,"2021-01-01T00:00:00Z","light"),make(2,"2021-04-01T00:00:00Z","dark"),make(3,"2021-07-01T00:00:00Z","dark")];expect(replayLibrary([rows[2] as ReplaySnapshot,rows[0] as ReplaySnapshot,rows[1] as ReplaySnapshot])).toEqual(replayLibrary(rows));});
+ it("archive inputs cannot affect live baseline or events",()=>{const live=[make(4,"2026-01-01T00:00:00Z","dark","live"),make(5,"2026-04-01T00:00:00Z","light","live")];const all=replayLibrary([...live,make(1,"2021-01-01T00:00:00Z","light"),make(2,"2021-04-01T00:00:00Z","dark")]);expect(all.baselines.filter(r=>r.source==="live")).toEqual(replayLibrary(live).baselines);expect(all.events.filter(r=>r.source==="live")).toEqual(replayLibrary(live).events);});
+ it("font failures use normalized declared first family",()=>expect(archiveFont({archive:{fonts_failed:1},type:{declared:{h1:{stack:['"Canela Webfont"','serif']}},rendered:{h1:{family:"Arial",webfont:false,substituted:true}}}},"h1")["family"]).toBe("canela"));
+ it("non-webfont uses declared font even without failure count",()=>expect(archiveFont({type:{declared:{body:{stack:"Inter, sans-serif"}},rendered:{body:{family:"Arial",webfont:false}}}},"body")["family"]).toBe("inter"));
+ it("UTC quarter boundaries",()=>{expect(quarter("2021-03-31T23:59:59Z")).toBe("2021Q1");expect(quarter("2021-04-01T00:00:00Z")).toBe("2021Q2");expect(quarter("2021-04-01T00:30:00+02:00")).toBe("2021Q1");});
+ it("samples each quarter independently",()=>{const rows=[make(1,"2021-01-01T00:00:00Z","light"),make(2,"2021-04-01T00:00:00Z","dark")];expect(archiveVersions(rows)).toHaveLength(2);});
+ it("two captures in one quarter cannot confirm a change",()=>{const rows=[make(1,"2021-01-01T00:00:00Z","light"),make(2,"2021-04-01T00:00:00Z","dark"),make(3,"2021-05-01T00:00:00Z","dark")];expect(replayLibrary(rows).events).toEqual([]);});
 });

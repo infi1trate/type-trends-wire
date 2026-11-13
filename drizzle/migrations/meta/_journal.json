@@ -169,6 +169,20 @@
       "when": 1794538679744,
       "tag": "0023_library_history_empty_coverage",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794544108902,
+      "tag": "0024_library_quarterly_archive_replay",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794544164579,
+      "tag": "0025_library_quarterly_public_history",
+      "breakpoints": true
     }
   ]
 }

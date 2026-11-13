@@ -11,6 +11,10 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
       return { sector: "ai", latest_captured_at: prev?.["captured_at"] ?? null, baseline: state.baselines.get([row["domain"],row["page_type"],row["viewport"],row["source"]].join(":")) ?? null, prev: prev ? { id: prev['id'], signals: prev['signals'], content_hash: prev['content_hash'] ?? null } : null, first_captured_at: first, new_surface: !!first && Date.parse(String(row['captured_at'])) - Date.parse(first) > 86400000 && !state.snapshots.some(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type']) };
     };
     if (name === "refresh_library_history") return {data:null,error:null};
+    if(name==="library_archive_store"){state.snapshots.push({...row,id:state.snapshots.length+1});return {data:1,error:null};}
+    if(name==="library_archive_input")return {data:state.snapshots.filter(s=>s['domain']===args['p_domain']&&s['source']==="wayback").map(s=>({...s,sector:"ai"})),error:null};
+    if(name==="library_archive_replace")return {data:true,error:null};
+    if(name==="library_archive_state")return {data:{sites:[...state.sites.values()].filter(s=>s['active']).map(s=>({domain:s['domain'],wayback:state.snapshots.filter(r=>r['domain']===s['domain']&&r['source']==="wayback").sort((a,b)=>String(a['captured_at']).localeCompare(String(b['captured_at']))).map(r=>({captured_at:r['captured_at'],quarter:(r['signals'] as {archive:{quarter:string}}).archive.quarter}))}))},error:null};
     if (name === "library_sync") {
       const sites = args['p_sites'] as Record<string, unknown>[];
       for (const site of state.sites.values()) site['active'] = false;
@@ -57,6 +61,12 @@ it("authenticated sync → snapshots → events → state, duplicates are no-op"
   expect(data.sites[0].latest['home:desktop'].html_hash).toBe("hash-2");
   expect(data.sites[0].pages).toEqual({ pricing: "https://example.com/pricing" });
   expect(JSON.stringify(data)).not.toContain("private text");
+});
+it("quarterly state returns only active domains and capture/quarter pairs",async()=>{
+ state.sites.set("example.com",{domain:"example.com",active:true});state.sites.set("inactive.com",{domain:"inactive.com",active:false});
+ state.snapshots.push({...snapshot,source:"wayback",captured_at:"2021-04-03T00:00:00Z",signals:{archive:{quarter:"2021Q2"}}});
+ const response=await handleLibraryState(new Request("http://localhost/api/public/library-state?source=wayback",{headers:{"x-crawl-secret":credential}}));
+ expect(await response.json()).toEqual({sites:[{domain:"example.com",wayback:[{captured_at:"2021-04-03T00:00:00Z",quarter:"2021Q2"}]}]});
 });
 it("state rejects absent/wrong credentials with 401", async () => { for (const key of ["", "wrong"]) expect((await handleLibraryState(new Request("http://localhost/api/public/library-state", { headers: { "x-crawl-secret": key } }))).status).toBe(401); });
 it("sync deactivates omitted sites", async () => { state.sites.set("old.com", { domain: "old.com", active: true }); await handleCrawlIngest(request({ kind: "library_sync", sites: [] })); expect(state.sites.get("old.com")?.['active']).toBe(false); });

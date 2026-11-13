@@ -1,14 +1,19 @@
 import { advance, diffLibrarySignals, type Baseline, type Pending, type LibraryEvent } from "./library-diff";
+import { archiveSignals } from "./library-archive";
+import { quarter } from "./library-history";
 export type ReplaySnapshot = { id: number; domain: string; sector: string; page_type: string; viewport: string; source: string; captured_at: string; signals: Record<string, unknown> };
 export function replayLibrary(rows: ReplaySnapshot[]) {
   const baselines = new Map<string, { domain: string; page_type: string; viewport: string; source: string; baseline: Baseline; pending: Pending }>();
   const events: (LibraryEvent & { domain: string; page_type: string; viewport: string; snapshot_id: number; source: string; detected_at: string })[] = [];
   const first = new Map<string, string>(), surfaces = new Set<string>();
-  for (const row of [...rows].sort((a,b) => Date.parse(a.captured_at)-Date.parse(b.captured_at) || a.id-b.id)) {
+  const ordered=[...rows].sort((a,b) => Date.parse(a.captured_at)-Date.parse(b.captured_at) || a.id-b.id);
+  const archiveSamples=new Map<string,ReplaySnapshot>();
+  for(const row of ordered)if(row.source==="wayback")archiveSamples.set(JSON.stringify([row.domain,row.page_type,row.viewport,quarter(row.captured_at)]),row);
+  for (const row of ordered.filter(r=>r.source!=="wayback"||archiveSamples.get(JSON.stringify([r.domain,r.page_type,r.viewport,quarter(r.captured_at)]))?.id===r.id)) {
     const key = JSON.stringify([row.domain,row.page_type,row.viewport,row.source]), surface = `${row.domain}:${row.page_type}:${row.source}`;
     const prior = baselines.get(key);
     const context = { ...row, new_surface: !surfaces.has(surface), first_captured_at: first.get(row.domain) ?? null };
-    const result = advance(prior?.baseline ?? null, prior?.pending ?? {}, { signals: row.signals, snapshot_id: row.id, captured_at: row.captured_at, context });
+    const result = advance(prior?.baseline ?? null, prior?.pending ?? {}, { signals: row.source === "wayback" ? archiveSignals(row.signals) : row.signals, snapshot_id: row.id, captured_at: row.captured_at, context });
     result.events.push(...diffLibrarySignals(null, row.signals, context));
     events.push(...result.events.map(e => ({ ...e, domain: row.domain, page_type: row.page_type, viewport: row.viewport, snapshot_id: row.id, source: row.source, detected_at: row.captured_at })));
     baselines.set(key, { domain: row.domain, page_type: row.page_type, viewport: row.viewport, source: row.source, baseline: result.baseline, pending: result.pending });

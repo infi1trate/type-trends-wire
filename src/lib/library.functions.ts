@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { historyInput } from "./library-history";
-export const getLibraryHistory = createServerFn({method:"GET"}).inputValidator(historyInput).handler(async({data})=>{
- const {libraryHistory}=await import("./library-history.server");return libraryHistory(data);
+export const getLibraryHistory = createServerFn({method:"GET"}).inputValidator(historyInput).handler(async()=>{
+ const {historyDashboard}=await import("./library-history.server");return historyDashboard();
 });
 export const getLibrary = createServerFn({ method: "GET" }).handler(async () => {
   const { libraryRows, libraryEvents, librarySectors } = await import("./library-store.server");

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
 import { PANELS, type PanelId } from "./panels";
@@ -19,8 +19,10 @@ function Clock() {
 }
 
 export function FKeys({ active, onSelect }: { active: PanelId; onSelect: (p: PanelId) => void }) {
+  const nav=useRef<HTMLElement>(null);
+  useEffect(()=>{nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView({block:"nearest",inline:"nearest"});},[active]);
   return (
-    <nav aria-label="Panels" className="no-scrollbar flex h-full min-w-0 overflow-x-auto">
+    <nav ref={nav} aria-label="Panels" className="no-scrollbar flex h-full min-w-0 overflow-x-auto">
       {PANELS.map((p) => (
         <button
           key={p.id}

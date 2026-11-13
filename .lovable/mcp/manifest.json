@@ -335,8 +335,8 @@
       },
       {
         "name": "library_history",
-        "title": "Library design history",
-        "description": "Read public half-year design, CSS, font and AI-tag series with coverage; never returns private text or images.",
+        "title": "Library quarterly history",
+        "description": "Read quarterly public design shares with capture denominators and coverage.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -345,38 +345,10 @@
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
-            "metric": {
-              "type": "string",
-              "enum": [
-                "dark_theme_share",
-                "serif_h1_share",
-                "webfont_share",
-                "system_ui_body_share",
-                "median_whitespace",
-                "median_h1_px",
-                "tight_tracking_share",
-                "pill_cta_share",
-                "webgl_hero_share",
-                "video_hero_share",
-                "tailwind_share",
-                "framer_share",
-                "webflow_share",
-                "next_share"
-              ]
-            },
             "dimension": {
               "type": "string",
-              "enum": [
-                "css",
-                "fonts",
-                "imagery",
-                "aesthetic",
-                "components",
-                "hero_layout",
-                "ai_positioning",
-                "tone",
-                "color_mood"
-              ]
+              "minLength": 1,
+              "maxLength": 100
             },
             "value": {
               "type": "string",
@@ -407,6 +379,32 @@
               ]
             }
           },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "site_history",
+        "title": "Site quarterly history",
+        "description": "Read public quarterly site fingerprints and AI tags, without skeletons or private text.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 253,
+              "pattern": "^(?!www\\.)(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+            }
+          },
+          "required": [
+            "domain"
+          ],
           "additionalProperties": false
         },
         "outputSchema": null

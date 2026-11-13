@@ -10,6 +10,7 @@ export const PANELS = [
   { key: "F9", id: "rebrands", label: "REBRANDS" },
   { key: "F10", id: "brief", label: "BRIEF" },
   { key: "F11", id: "library", label: "LIBRARY" },
+  { key: "F12", id: "history", label: "HISTORY" },
 ] as const;
 
 export type PanelId = (typeof PANELS)[number]["id"];

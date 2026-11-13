@@ -4,8 +4,6 @@ export type Comparable = Record<string, unknown>;
 export type Pending = Record<string, { from: unknown; to: unknown; first_seen_snapshot_id: number | null; first_seen_at: string }>;
 export type Baseline = { signals: Comparable; snapshot_id: number | null; confirmed_at: string };
 export type DiffContext = { page_type: string; viewport: string; source?: string; sector?: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined; snapshot_id?: number | null };
-export const WAYBACK_EVENT_TYPES: readonly LibraryEventType[] = ["type_change", "theme_flip", "redesign", "stack_change", "aesthetic_shift", "imagery_shift"];
-export const confirmsOnce = (source: string | undefined, type: LibraryEventType) => source === "wayback" && WAYBACK_EVENT_TYPES.includes(type);
 const record = (value: unknown): Comparable => value && typeof value === "object" && !Array.isArray(value) ? value as Comparable : {};
 const at = (value: unknown, ...path: string[]): unknown => path.reduce((v, key) => record(v)[key], value);
 const text = (value: unknown) => typeof value === "string" ? value : null;
@@ -107,10 +105,6 @@ export function advance(baseline: Baseline | null, pending: Pending, next: { sig
     if (value == null || ignoreField(field, value, old)) { delete candidates[field]; continue; }
     if (old == null) { values[field] = value; delete candidates[field]; continue; }
     if (equalField(field, old, value)) { delete candidates[field]; continue; }
-    if (next.context.source === "wayback") {
-      if (confirmsOnce("wayback", eventType(field))) confirmed.push({ field, from: old, to: value, at: next.captured_at });
-      values[field] = value; delete candidates[field]; continue;
-    }
     const candidate = candidates[field];
     if (candidate && equalField(field, candidate.to, value)) {
       confirmed.push({ field, from: old, to: value, at: candidate.first_seen_at });

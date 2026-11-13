@@ -44,7 +44,7 @@ export async function librarySnapshots(domain?: string, sector?: string) {
 }
 export async function librarySector(sector: string) {
   const [stats, snapshots] = await Promise.all([librarySectors(), librarySnapshots(undefined, sector)]);
-  const latest = [...new Map([...snapshots].reverse().map(s => [s.domain, s])).values()];
+  const latest = [...new Map([...snapshots].filter(s=>s.source==="live").reverse().map(s => [s.domain, s])).values()];
   const fonts = (role: "h1_family" | "body_family") => {
     const counts = new Map<string, number>();
     for (const s of latest) { const family = fingerprint(s.signals)[role]; if (family) counts.set(family, (counts.get(family) ?? 0) + 1); }
@@ -60,7 +60,8 @@ export async function librarySite(domain: string) {
   if (!site) return null;
   const [snapshots, events, sector, pending] = await Promise.all([librarySnapshots(domain), siteTimeline(domain), librarySector(site.sector), libraryPending(domain)]);
   const { aiSite } = await import("./ai-public-store.server");
-  return { site, snapshots, events, sector, pending, ai: await aiSite(domain) };
+  const {siteHistory}=await import("./library-history.server");
+  return { site, snapshots, events, sector, pending, ai: await aiSite(domain),history:await siteHistory(domain) };
 }
 async function siteTimeline(domain:string) {
  const rows=[];
