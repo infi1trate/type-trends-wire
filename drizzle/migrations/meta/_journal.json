@@ -246,6 +246,13 @@
       "when": 1794666499154,
       "tag": "0034_showcase_vibe_map_chart_cards",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794676789258,
+      "tag": "0035_ai_provider_and_health_facts",
+      "breakpoints": true
     }
   ]
 }

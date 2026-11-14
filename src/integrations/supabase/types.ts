@@ -46,6 +46,7 @@ export type Database = {
           model: string
           ok: boolean
           output_tokens: number | null
+          provider: string | null
           scope: string
           snapshot_id: number | null
           state: string
@@ -60,6 +61,7 @@ export type Database = {
           model: string
           ok?: boolean
           output_tokens?: number | null
+          provider?: string | null
           scope: string
           snapshot_id?: number | null
           state?: string
@@ -74,6 +76,7 @@ export type Database = {
           model?: string
           ok?: boolean
           output_tokens?: number | null
+          provider?: string | null
           scope?: string
           snapshot_id?: number | null
           state?: string
@@ -978,6 +981,7 @@ export type Database = {
           html_hash: string | null
           id: number
           page_type: string
+          received_at: string | null
           run_id: string | null
           signals: Json
           signals_hash: string | null
@@ -992,6 +996,7 @@ export type Database = {
           html_hash?: string | null
           id?: number
           page_type: string
+          received_at?: string | null
           run_id?: string | null
           signals: Json
           signals_hash?: string | null
@@ -1006,6 +1011,7 @@ export type Database = {
           html_hash?: string | null
           id?: number
           page_type?: string
+          received_at?: string | null
           run_id?: string | null
           signals?: Json
           signals_hash?: string | null
@@ -2617,6 +2623,7 @@ export type Database = {
         Args: { p_add: boolean; p_rows: Json }
         Returns: number
       }
+      health_facts: { Args: never; Returns: Json }
       library_ai_claim: { Args: { p_token: string }; Returns: Json }
       library_ai_complete: {
         Args: {
