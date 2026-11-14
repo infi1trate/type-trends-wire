@@ -12,9 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
 import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
+import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public/discourse-terms'
 import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
+import { Route as ApiPublicIngestArenaRouteImport } from './routes/api/public/ingest-arena'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
+import { Route as ApiPublicIngestProducthuntRouteImport } from './routes/api/public/ingest-producthunt'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
 import { Route as ApiPublicLibraryAiWorkerRouteImport } from './routes/api/public/library-ai-worker'
 import { Route as ApiPublicLibraryRebuildRouteImport } from './routes/api/public/library-rebuild'
@@ -22,6 +25,7 @@ import { Route as ApiPublicLibraryStateRouteImport } from './routes/api/public/l
 import { Route as ApiPublicLibraryTagRouteImport } from './routes/api/public/library-tag'
 import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
 import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/api/public/oauth-protected-resource'
+import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public/seed-candidates'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -38,9 +42,19 @@ const ApiPublicCrawlRequestsRoute = ApiPublicCrawlRequestsRouteImport.update({
   path: '/api/public/crawl-requests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDiscourseTermsRoute = ApiPublicDiscourseTermsRouteImport.update({
+  id: '/api/public/discourse-terms',
+  path: '/api/public/discourse-terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicForecastRunRoute = ApiPublicForecastRunRouteImport.update({
   id: '/api/public/forecast-run',
   path: '/api/public/forecast-run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicIngestArenaRoute = ApiPublicIngestArenaRouteImport.update({
+  id: '/api/public/ingest-arena',
+  path: '/api/public/ingest-arena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIngestCrawlRoute = ApiPublicIngestCrawlRouteImport.update({
@@ -53,6 +67,12 @@ const ApiPublicIngestGfontsRoute = ApiPublicIngestGfontsRouteImport.update({
   path: '/api/public/ingest-gfonts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestProducthuntRoute =
+  ApiPublicIngestProducthuntRouteImport.update({
+    id: '/api/public/ingest-producthunt',
+    path: '/api/public/ingest-producthunt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIngestWireRoute = ApiPublicIngestWireRouteImport.update({
   id: '/api/public/ingest-wire',
   path: '/api/public/ingest-wire',
@@ -90,14 +110,22 @@ const ApiPublicOauthProtectedResourceRoute =
     path: '/api/public/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSeedCandidatesRoute = ApiPublicSeedCandidatesRouteImport.update({
+  id: '/api/public/seed-candidates',
+  path: '/api/public/seed-candidates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
+  '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
+  '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
+  '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
@@ -105,14 +133,18 @@ export interface FileRoutesByFullPath {
   '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
+  '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
+  '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
+  '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
+  '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
@@ -120,15 +152,19 @@ export interface FileRoutesByTo {
   '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
+  '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/library/$domain': typeof LibraryDomainRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
+  '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
+  '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
+  '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
@@ -136,6 +172,7 @@ export interface FileRoutesById {
   '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
+  '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -143,9 +180,12 @@ export interface FileRouteTypes {
     | '/'
     | '/library/$domain'
     | '/api/public/crawl-requests'
+    | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
+    | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
+    | '/api/public/ingest-producthunt'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
@@ -153,14 +193,18 @@ export interface FileRouteTypes {
     | '/api/public/library-tag'
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
+    | '/api/public/seed-candidates'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/library/$domain'
     | '/api/public/crawl-requests'
+    | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
+    | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
+    | '/api/public/ingest-producthunt'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
@@ -168,14 +212,18 @@ export interface FileRouteTypes {
     | '/api/public/library-tag'
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
+    | '/api/public/seed-candidates'
   id:
     | '__root__'
     | '/'
     | '/library/$domain'
     | '/api/public/crawl-requests'
+    | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
+    | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
+    | '/api/public/ingest-producthunt'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
@@ -183,15 +231,19 @@ export interface FileRouteTypes {
     | '/api/public/library-tag'
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
+    | '/api/public/seed-candidates'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
+  ApiPublicDiscourseTermsRoute: typeof ApiPublicDiscourseTermsRoute
   ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
+  ApiPublicIngestArenaRoute: typeof ApiPublicIngestArenaRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
+  ApiPublicIngestProducthuntRoute: typeof ApiPublicIngestProducthuntRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
   ApiPublicLibraryAiWorkerRoute: typeof ApiPublicLibraryAiWorkerRoute
   ApiPublicLibraryRebuildRoute: typeof ApiPublicLibraryRebuildRoute
@@ -199,6 +251,7 @@ export interface RootRouteChildren {
   ApiPublicLibraryTagRoute: typeof ApiPublicLibraryTagRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicOauthProtectedResourceRoute: typeof ApiPublicOauthProtectedResourceRoute
+  ApiPublicSeedCandidatesRoute: typeof ApiPublicSeedCandidatesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -224,11 +277,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCrawlRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/discourse-terms': {
+      id: '/api/public/discourse-terms'
+      path: '/api/public/discourse-terms'
+      fullPath: '/api/public/discourse-terms'
+      preLoaderRoute: typeof ApiPublicDiscourseTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forecast-run': {
       id: '/api/public/forecast-run'
       path: '/api/public/forecast-run'
       fullPath: '/api/public/forecast-run'
       preLoaderRoute: typeof ApiPublicForecastRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest-arena': {
+      id: '/api/public/ingest-arena'
+      path: '/api/public/ingest-arena'
+      fullPath: '/api/public/ingest-arena'
+      preLoaderRoute: typeof ApiPublicIngestArenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest-crawl': {
@@ -243,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ingest-gfonts'
       fullPath: '/api/public/ingest-gfonts'
       preLoaderRoute: typeof ApiPublicIngestGfontsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest-producthunt': {
+      id: '/api/public/ingest-producthunt'
+      path: '/api/public/ingest-producthunt'
+      fullPath: '/api/public/ingest-producthunt'
+      preLoaderRoute: typeof ApiPublicIngestProducthuntRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest-wire': {
@@ -294,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/seed-candidates': {
+      id: '/api/public/seed-candidates'
+      path: '/api/public/seed-candidates'
+      fullPath: '/api/public/seed-candidates'
+      preLoaderRoute: typeof ApiPublicSeedCandidatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -301,9 +382,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LibraryDomainRoute: LibraryDomainRoute,
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
+  ApiPublicDiscourseTermsRoute: ApiPublicDiscourseTermsRoute,
   ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,
+  ApiPublicIngestArenaRoute: ApiPublicIngestArenaRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
+  ApiPublicIngestProducthuntRoute: ApiPublicIngestProducthuntRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,
   ApiPublicLibraryAiWorkerRoute: ApiPublicLibraryAiWorkerRoute,
   ApiPublicLibraryRebuildRoute: ApiPublicLibraryRebuildRoute,
@@ -311,6 +395,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLibraryTagRoute: ApiPublicLibraryTagRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicOauthProtectedResourceRoute: ApiPublicOauthProtectedResourceRoute,
+  ApiPublicSeedCandidatesRoute: ApiPublicSeedCandidatesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

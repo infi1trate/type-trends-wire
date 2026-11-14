@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { librarySyncPayload, librarySnapshotsPayload } from "./library-payload";
+import { CRAWL_INDEXES, GALLERIES } from "./curation";
 
 export const CRAWL_BODY_LIMIT = 2 * 1024 * 1024;
 const runId = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
@@ -8,7 +9,8 @@ const object = z.record(z.string(), z.json());
 const site = z.object({
   run_id: runId,
   domain: z.string().min(1).max(253),
-  index: z.enum(["mainstream", "vanguard"]),
+  index: z.enum(CRAWL_INDEXES),
+  galleries: z.array(z.enum(GALLERIES)).max(10).optional(),
   crawled_at: iso,
   ok: z.boolean(),
   error: z.string().max(200).nullable().optional(),

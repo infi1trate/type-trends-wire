@@ -9,7 +9,8 @@ import {visionOutputSchema,cleanTags} from "../ai-schema";
 import {VISION_PROMPT} from "../ai-vision";
 import {CATEGORIES} from "./fonts";
 import {pages} from "./store.server";
-export class TasteError extends Error{constructor(message:string,public status=503){super(message);}}
+import {TasteError} from "./errors";
+export {TasteError};
 export async function publicInference<T>(kind:"taste_brief"|"taste_fonts"|"taste_vision",schema:z.ZodType<T>,text:string,image?:string){
  const {supabaseAdmin:db}=await import("@/integrations/supabase/client.server"),model=kind==="taste_vision"?AI_MODELS.vision:AI_MODELS.text,estimate=estimateCost({model,input_tokens:image?250000:15000,output_tokens:4096});
  const reserved=await db.rpc("ai_reserve",{p_snapshot_id:null as unknown as number,p_kind:kind,p_model:model,p_estimate:estimate,p_scope:"public"});if(reserved.error)throw new TasteError("Public AI reservation unavailable");const claim=z.object({ok:z.boolean(),id:z.number().optional(),code:z.string().optional()}).parse(reserved.data);if(!claim.ok||claim.id===undefined)throw new TasteError(claim.code??"Public AI budget reached",429);let accounted=false;

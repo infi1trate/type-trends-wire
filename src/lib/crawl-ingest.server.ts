@@ -97,6 +97,7 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
         title: entry.title ?? null, lang: entry.lang ?? null,
         type: entry.type ?? null, color: entry.color ?? null, layout: entry.layout ?? null,
         composition: entry.composition ?? null, lexicon: entry.lexicon ?? null, tech: entry.tech ?? null,
+        galleries: entry.galleries ? [...new Set(entry.galleries)] : null,
       }));
       const { error } = await db.from("crawl_sites").upsert(rows, { onConflict: "run_id,domain" });
       if (error) throw new Error("Crawler site write failed");

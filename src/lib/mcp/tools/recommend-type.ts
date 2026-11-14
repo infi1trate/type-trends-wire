@@ -1,4 +1,4 @@
 import {defineTool} from "@lovable.dev/mcp-js";
 import {typeInput} from "../../taste/schema";
-import {json,READ} from "./shared";
-export default defineTool({name:"recommend_type",title:"Recommend type",description:"Rank real, licensable fonts and pairings with consensus bias, measured adoption and receipts. Bespoke brand faces are excluded unless include_proprietary is true; faces need ≥2 sites in a sector (≥3 overall).",inputSchema:typeInput.shape,annotations:READ,handler:async input=>{const {recommendType}=await import("../../taste/tools.server");return json(await recommendType(input));}});
+import {READ,surfaced} from "./shared";
+export default defineTool({name:"recommend_type",title:"Recommend type",description:"Rank real, licensable fonts and pairings with consensus bias, measured adoption and receipts. Bespoke brand faces are excluded unless include_proprietary is true; faces need ≥2 sites in a sector (≥3 overall).",inputSchema:typeInput.shape,annotations:READ,handler:async input=>{const {recommendType}=await import("../../taste/tools.server");return surfaced(()=>recommendType(input));}});

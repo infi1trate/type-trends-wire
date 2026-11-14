@@ -1,19 +1,43 @@
-import { percent, spreadText } from "@/lib/crawl";
+import { spreadText } from "@/lib/crawl";
 import { CrawlControls, CrawlState, useCrawl } from "./CrawlControls";
 import { PanelHeader } from "./primitives";
 
+const share = (v: number | null | undefined) => (v == null ? "—" : String(Math.round(v * 100)));
+function Bar({ value }: { value: number | null | undefined }) {
+  const v = value ?? 0, w = Math.min(60, Math.abs(v)) / 60 * 50;
+  return <div className="relative mt-1 h-[3px] bg-g800" aria-hidden><span className="absolute left-1/2 h-full w-px bg-rule"/><span className={`absolute h-full ${v >= 0 ? "bg-signal" : "bg-compare-muted"}`} style={{ left: `${v >= 0 ? 50 : 50 - w}%`, width: `${w}%` }}/></div>;
+}
+
 export function Spread() {
-  const {scope}=useCrawl();
+  const { scope } = useCrawl();
   return <section className="crawler flex min-h-0 flex-1 flex-col" aria-label="Spread">
-    <PanelHeader title={`SPREAD · VANGUARD − MAINSTREAM · LANG ${scope.toUpperCase()}`}/>
+    <PanelHeader title={`SPREAD · VANGUARD / CURATED − MAINSTREAM · LANG ${scope.toUpperCase()}`}/>
     <CrawlControls/>
-    <div className="min-h-0 flex-1 md:overflow-y-auto"><CrawlState>{data=><>
-      <table className="w-full table-fixed text-label"><thead className="text-compare-muted"><tr><th className="p-2 text-left">SIGNAL</th><th className="w-[5ch] text-right">V%</th><th className="w-[5ch] text-right">M%</th><th className="w-[8ch] p-2 text-right">SPREAD</th><th className="w-[5ch] text-right">ΔWK</th></tr></thead><tbody>{data.spread.map(r=><tr key={r.signal} className="border-b border-rule"><th className="crawl-tip relative p-2 text-left font-normal"><span tabIndex={0} className="block truncate">{r.label}</span><span className="crawl-tooltip">{r.label}</span><div className="relative mt-1 h-[3px] bg-g800" aria-hidden><span className="absolute left-1/2 h-full w-px bg-rule"/><span className={`absolute h-full ${(r.spread_pts??0)>=0?"bg-signal":"bg-compare-muted"}`} style={{left:`${(r.spread_pts??0)>=0?50:50-Math.min(60,Math.abs(r.spread_pts??0))/60*50}%`,width:`${Math.min(60,Math.abs(r.spread_pts??0))/60*50}%`}}/></div></th><td className="num text-signal">{Math.round((r.vanguard_share??0)*100)}</td><td className="num text-compare-muted">{Math.round((r.mainstream_share??0)*100)}</td><td className={`num p-2 ${(r.spread_pts??0)>0?"text-signal":"text-compare-muted"}`}>{spreadText(r.spread_pts)}</td><td className="num text-compare-muted">{r.prev_spread_pts==null?"—":spreadText((r.spread_pts??0)-r.prev_spread_pts)}</td></tr>)}</tbody></table>
-      <p className="text-label p-3 text-compare-muted">Vanguard leads, mainstream follows. Positive = more common on design-forward sites.</p>
-    </>}</CrawlState></div>
+    <div className="min-h-0 flex-1 md:overflow-y-auto"><CrawlState>{data => {
+      const curated = data.sites.filter(s => s.index_name === "curated"), mix: Record<string, number> = {};
+      for (const s of curated) for (const g of new Set(s.galleries ?? [])) mix[g] = (mix[g] ?? 0) + 1;
+      const mixText = Object.entries(mix).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${g.toUpperCase()} ${n}`).join(" · ");
+      return <>
+        <table className="w-full table-fixed text-label">
+          <caption className="sr-only">Share of sites per index for each signal; spread = vanguard − mainstream, lead = curated − mainstream, in percentage points.</caption>
+          <thead className="text-compare-muted"><tr>
+            <th className="p-2 text-left">SIGNAL</th><th className="w-[4ch] text-right" title="Vanguard %">V%</th><th className="w-[4ch] text-right" title="Mainstream %">M%</th><th className="w-[4ch] text-right" title="Curated %">C%</th>
+            <th className="w-[8ch] p-2 text-right sm:w-[9ch]">SPREAD</th><th className="w-[8ch] pr-2 text-right sm:w-[9ch]" title="Curation lead: curated − mainstream">LEAD</th><th className="hidden w-[6ch] pr-2 text-right sm:table-cell" title="Spread change vs previous run">ΔWK</th>
+          </tr></thead>
+          <tbody>{data.spread.map(r => <tr key={r.signal} className="border-b border-rule">
+            <th className="crawl-tip relative p-2 text-left font-normal"><span tabIndex={0} className="block truncate">{r.label}</span><span className="crawl-tooltip">{r.label}{r.prev_curation_lead_pts != null ? ` · LEAD PREV ${spreadText(r.prev_curation_lead_pts)}` : ""}</span><Bar value={r.spread_pts}/></th>
+            <td className="num text-signal">{share(r.vanguard_share)}</td><td className="num text-compare-muted">{share(r.mainstream_share)}</td><td className="num text-ink">{share(r.curated_share)}</td>
+            <td className={`num p-2 ${(r.spread_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}`}>{spreadText(r.spread_pts)}</td>
+            <td className={`num pr-2 ${(r.curation_lead_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}`}>{spreadText(r.curation_lead_pts)}</td>
+            <td className="num hidden pr-2 text-compare-muted sm:table-cell">{r.prev_spread_pts == null ? "—" : spreadText((r.spread_pts ?? 0) - r.prev_spread_pts)}</td>
+          </tr>)}</tbody>
+        </table>
+        <p className="text-label p-3 text-compare-muted">Vanguard leads, mainstream follows. Positive = more common on design-forward sites. LEAD = curated galleries − mainstream.{curated.length ? ` CURATED ${curated.length} SITES · ${mixText || "NO GALLERY TAGS"}. Gallery picks are a biased sample.` : " NO CURATED RUN YET."}</p>
+      </>;
+    }}</CrawlState></div>
   </section>;
 }
 export function SpreadTicker() {
-  const {data}=useCrawl();
-  return <>{data?.spread.slice(0,4).map(r=><span key={r.signal} className="mr-8 inline-flex gap-2"><span className="text-ink">${r.signal?.replace(/_/g,"-").toUpperCase()}</span><span className="text-compare-muted">V{Math.round((r.vanguard_share??0)*100)} M{Math.round((r.mainstream_share??0)*100)}</span><span className={(r.spread_pts??0)>0?"text-signal":"text-compare-muted"}>{spreadText(r.spread_pts).replace(" PTS","PTS")}</span></span>)}</>;
+  const { data } = useCrawl();
+  return <>{data?.spread.slice(0, 4).map(r => <span key={r.signal} className="mr-8 inline-flex gap-2"><span className="text-ink">${r.signal?.replace(/_/g, "-").toUpperCase()}</span><span className="text-compare-muted">V{share(r.vanguard_share)} M{share(r.mainstream_share)}{r.curated_share != null ? ` C${share(r.curated_share)}` : ""}</span><span className={(r.spread_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}>{spreadText(r.spread_pts).replace(" PTS", "PTS")}</span></span>)}</>;
 }

@@ -205,6 +205,7 @@ export type Database = {
           domain: string
           error: string | null
           final_url: string | null
+          galleries: string[] | null
           index_name: string
           lang: string | null
           layout: Json | null
@@ -222,6 +223,7 @@ export type Database = {
           domain: string
           error?: string | null
           final_url?: string | null
+          galleries?: string[] | null
           index_name: string
           lang?: string | null
           layout?: Json | null
@@ -239,6 +241,7 @@ export type Database = {
           domain?: string
           error?: string | null
           final_url?: string | null
+          galleries?: string[] | null
           index_name?: string
           lang?: string | null
           layout?: Json | null
@@ -265,6 +268,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      discourse_counts: {
+        Row: {
+          design_posts: number
+          fatigue: number
+          n: number
+          sampled_posts: number
+          source: string
+          term: string
+          updated_at: string
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          design_posts?: number
+          fatigue?: number
+          n?: number
+          sampled_posts?: number
+          source: string
+          term: string
+          updated_at?: string
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          design_posts?: number
+          fatigue?: number
+          n?: number
+          sampled_posts?: number
+          source?: string
+          term?: string
+          updated_at?: string
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       font_catalog: {
         Row: {
@@ -1031,6 +1070,30 @@ export type Database = {
         }
         Relationships: []
       }
+      source_cursors: {
+        Row: {
+          etag: string | null
+          key: string
+          last_modified: string | null
+          state: Json | null
+          updated_at: string
+        }
+        Insert: {
+          etag?: string | null
+          key: string
+          last_modified?: string | null
+          state?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          etag?: string | null
+          key?: string
+          last_modified?: string | null
+          state?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tool_cache: {
         Row: {
           created_at: string
@@ -1144,7 +1207,9 @@ export type Database = {
           excerpt: string | null
           fetched_at: string
           id: number
+          link: string | null
           published_at: string
+          ref: string | null
           source: string
           source_kind: string
           tags: string[]
@@ -1155,7 +1220,9 @@ export type Database = {
           excerpt?: string | null
           fetched_at?: string
           id?: never
+          link?: string | null
           published_at: string
+          ref?: string | null
           source: string
           source_kind: string
           tags?: string[]
@@ -1166,7 +1233,9 @@ export type Database = {
           excerpt?: string | null
           fetched_at?: string
           id?: never
+          link?: string | null
           published_at?: string
+          ref?: string | null
           source?: string
           source_kind?: string
           tags?: string[]
@@ -1595,8 +1664,11 @@ export type Database = {
       }
       crawl_spread: {
         Row: {
+          curated_share: number | null
+          curation_lead_pts: number | null
           label: string | null
           mainstream_share: number | null
+          prev_curation_lead_pts: number | null
           prev_spread_pts: number | null
           scope: string | null
           signal: string | null
@@ -1607,8 +1679,11 @@ export type Database = {
       }
       crawl_spread_live: {
         Row: {
+          curated_share: number | null
+          curation_lead_pts: number | null
           label: string | null
           mainstream_share: number | null
+          prev_curation_lead_pts: number | null
           prev_spread_pts: number | null
           scope: string | null
           signal: string | null
@@ -1619,8 +1694,11 @@ export type Database = {
       }
       crawl_spread_mat: {
         Row: {
+          curated_share: number | null
+          curation_lead_pts: number | null
           label: string | null
           mainstream_share: number | null
+          prev_curation_lead_pts: number | null
           prev_spread_pts: number | null
           scope: string | null
           signal: string | null
@@ -1810,6 +1888,14 @@ export type Database = {
           data_cutoff_quarter: string | null
           model_card: Json | null
           run_id: number | null
+        }
+        Relationships: []
+      }
+      gfont_first_seen: {
+        Row: {
+          category: string | null
+          family: string | null
+          first_seen: string | null
         }
         Relationships: []
       }
@@ -2418,6 +2504,10 @@ export type Database = {
           p_state?: string
         }
         Returns: undefined
+      }
+      discourse_merge: {
+        Args: { p_add: boolean; p_rows: Json }
+        Returns: number
       }
       library_ai_claim: { Args: { p_token: string }; Returns: Json }
       library_ai_complete: {

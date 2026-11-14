@@ -59,17 +59,21 @@ export function keywordCount(trait: string, texts: string[]): number {
   return texts.filter(t => { const l = t.toLowerCase(); return keys.some(k => l.includes(k)); }).length;
 }
 
-export type Components = { gap: number | null; vanguard: number | null; momentum: number | null; corroboration: number | null };
+export const COMPONENT_KEYS = ["gap", "vanguard", "curation", "momentum", "corroboration", "discourse", "supply"] as const;
+export type ComponentKey = (typeof COMPONENT_KEYS)[number];
+export type Components = Record<ComponentKey, number | null>;
+export const emptyComponents = (c: Partial<Components> = {}): Components => ({ gap: null, vanguard: null, curation: null, momentum: null, corroboration: null, discourse: null, supply: null, ...c });
+export const presentComponents = (c: Components) => COMPONENT_KEYS.filter(k => c[k] !== null);
 export function zScores(values: (number | null)[]): (number | null)[] {
   const v = values.filter((x): x is number => x !== null); if (v.length < 2) return values.map(x => (x === null ? null : 0));
   const m = v.reduce((a, b) => a + b, 0) / v.length, sd = Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / v.length);
   return values.map(x => (x === null ? null : sd > 0 ? (x - m) / sd : 0));
 }
 // Weighted z-combo; missing components contribute 0 (the cohort mean).
-export function nextWaveScores(items: Components[]) {
-  const keys = ["gap", "vanguard", "momentum", "corroboration"] as const;
-  const z = Object.fromEntries(keys.map(k => [k, zScores(items.map(i => i[k]))])) as Record<typeof keys[number], (number | null)[]>;
-  return items.map((_, i) => ({ score: keys.reduce((s, k) => s + NEXT_WAVE_WEIGHTS[k] * (z[k]![i] ?? 0), 0), z: Object.fromEntries(keys.map(k => [k, z[k]![i]])) as Record<typeof keys[number], number | null> }));
+export function nextWaveScores(items: Partial<Components>[], weights: Partial<Record<ComponentKey, number>> = NEXT_WAVE_WEIGHTS) {
+  const keys = COMPONENT_KEYS.filter(k => weights[k] !== undefined);
+  const z = Object.fromEntries(keys.map(k => [k, zScores(items.map(i => i[k] ?? null))])) as Record<ComponentKey, (number | null)[]>;
+  return items.map((_, i) => ({ score: keys.reduce((s, k) => s + weights[k]! * (z[k]![i] ?? 0), 0), z: Object.fromEntries(keys.map(k => [k, z[k]![i]])) as Partial<Record<ComponentKey, number | null>> }));
 }
 
 // Next wave means "early and gaining with leaders": exclude mainstream, non-trait and barely-observed values.

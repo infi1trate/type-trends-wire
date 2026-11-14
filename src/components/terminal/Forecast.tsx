@@ -9,7 +9,7 @@ import { Overlay } from "./primitives";
 
 const AI_DIMS = new Set(["imagery", "aesthetic", "components", "hero_layout", "ai_positioning", "tone", "color_mood"]);
 const STAGES = ["emerging", "accelerating", "peaking", "declining"] as const;
-const COMPONENTS = [["gap", "TRENDSETTER GAP"], ["vanguard", "VANGUARD"], ["momentum", "MOMENTUM"], ["corroboration", "CORROBORATION"]] as const;
+const COMPONENTS = [["gap", "TRENDSETTER GAP"], ["vanguard", "VANGUARD"], ["curation", "CURATION"], ["momentum", "MOMENTUM"], ["corroboration", "CORROBORATION"], ["discourse", "DISCOURSE"], ["supply", "SUPPLY"]] as const;
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "—" : `${(v * 100).toFixed(d)}%`);
 const qi = (q: string) => Number(q.slice(0, 4)) * 4 + Number(q.slice(5)) - 1;
 const ql = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
@@ -60,8 +60,8 @@ export function ForecastPanel() {
   const setters = data.setters.filter(s => sector === "all" || s.sector === sector).slice(0, 20);
   const brief = data.briefs.find(b => b.week === week) ?? data.briefs[0];
   return <div className="library min-h-0 flex-1 md:overflow-y-auto">
-    <section aria-label="Model card" className="sticky top-0 z-10 grid grid-cols-2 border-b border-rule bg-void sm:grid-cols-5">
-      {[["DATA THROUGH", card?.data_through ?? "—"], ["MEDIAN MAE", card?.median_mae_pts == null ? `— (${card?.n_backtested ?? 0} BACKTESTED)` : `${card.median_mae_pts.toFixed(1)} PTS`], ["HIT-RATE", card?.hit_rate == null ? "—" : pct(card.hit_rate, 0)], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : "—"]].map(([l, v]) =>
+    <section aria-label="Model card" className="sticky top-0 z-10 grid grid-cols-2 border-b border-rule bg-void sm:grid-cols-3 lg:grid-cols-6">
+      {[["DATA THROUGH", card?.data_through ?? "—"], ["MEDIAN MAE", card?.median_mae_pts == null ? `— (${card?.n_backtested ?? 0} BACKTESTED)` : `${card.median_mae_pts.toFixed(1)} PTS`], ["HIT-RATE", card?.hit_rate == null ? "—" : pct(card.hit_rate, 0)], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : "—"], ["COMPONENT COVERAGE", card?.component_coverage ? COMPONENTS.map(([k]) => `${k.slice(0, 4).toUpperCase()} ${card.component_coverage?.[k] ?? 0}`).join(" · ") + ` / ${card.component_coverage["rows"] ?? 0}` : "—"]].map(([l, v]) =>
         <div key={l} className="min-w-0 border-r border-rule p-2"><div className="label text-compare-muted">{l}</div><div className="label break-words font-semibold">{v}</div></div>)}
     </section>
     {!card && <p className="p-3 text-compare-muted">FIRST FORECAST RUN PENDING</p>}
@@ -74,7 +74,7 @@ export function ForecastPanel() {
         <div className="label flex flex-wrap gap-x-3 text-compare-muted"><StageTag stage={s.stage} /><span>SHARE {pct(s.current_share)}</span><span>+4Q {s.proj_q4 == null ? "—" : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</span><span>MOM {s.momentum == null ? "—" : s.momentum.toFixed(2)}</span></div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">{COMPONENTS.map(([k, l]) => <span key={k} className="label inline-flex items-center gap-1 text-compare-muted">{l.split(" ")[0]}<ZBar z={a.components?.z?.[k]} label={l} /></span>)}<Cone quarters={s.quarters ?? []} proj={projOf(s)} /></div>
       </li>)}</ul>
-      <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[820px] text-left">
+      <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[1040px] text-left">
         <thead className="label text-compare-muted"><tr className="border-b border-rule">{["TRAIT", "STAGE", "SHARE", "+4Q (LO–HI)", "MOM PTS/Q", ...COMPONENTS.map(c => c[1]), "SCORE", "SERIES"].map(h => <th key={h} scope="col" className="p-2 font-normal">{h}</th>)}</tr></thead>
         <tbody>{wave.map(({ a, s }) => <tr key={key(a)} className="border-b border-rule align-middle">
           <td className="p-2"><Button variant="link" className="label h-auto p-0 text-left text-ink" onClick={() => setOpen(a)}>{traitLabel(a.dimension, a.value)}</Button></td>
@@ -137,11 +137,12 @@ function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) 
   </article>;
 }
 
-type DetailRow = { scope: string; status: string; model: string | null; evidence: unknown; backtest: unknown } & Parameters<typeof projOf>[0];
+type DetailRow = { scope: string; status: string; model: string | null; evidence: unknown; backtest: unknown; components?: unknown } & Parameters<typeof projOf>[0];
 function TraitDrawer({ dimension, value, onClose }: { dimension: string; value: string; onClose: () => void }) {
   const { data, isLoading } = useQuery(forecastDetailQuery(dimension, value));
   const rows = (data ?? []) as DetailRow[]; const main = rows.find(r => r.scope === "all");
   const ev = (main?.evidence ?? {}) as { quarters?: Pt[]; fitted?: { quarter: string; value: number }[]; sites?: { domain: string; lead: number; adopted: string }[]; usable?: number; crossed_20?: string | null };
+  const comp = (main?.components ?? {}) as DrawerComponents;
   const bt = (main?.backtest ?? {}) as { status?: string; mae_pts?: number; hit_rate?: number; predictions?: { quarter: string; predicted: number; actual: number }[] };
   const sectors = rows.filter(r => r.scope !== "all").map(r => ({ scope: r.scope, pts: ((r.evidence as { quarters?: Pt[] })?.quarters ?? []) }));
   return <Overlay title={traitLabel(dimension, value)} onClose={onClose}>
@@ -150,8 +151,26 @@ function TraitDrawer({ dimension, value, onClose }: { dimension: string; value: 
       <Cone large quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>
       <p className="label">BACKTEST {bt.status === "ok" ? `MAE ${bt.mae_pts?.toFixed(1)} PTS · HIT ${pct(bt.hit_rate, 0)}` : "INSUFFICIENT DATA BEFORE 2025Q2"}</p>
+      <Components comp={comp} />
       <div><h3 className="label text-compare-muted">LED BY</h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/library/$domain" params={{ domain: s.domain }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="label text-compare-muted">—</li>}</ul></div>
       <div className="overflow-x-auto"><table className="w-full text-left"><thead className="label text-compare-muted"><tr>{["QUARTER", "SHARE", "N", "COVERAGE"].map(h => <th key={h} scope="col" className="p-1 font-normal">{h}</th>)}</tr></thead><tbody>{(ev.quarters ?? []).filter(p => p.n > 0).map(p => <tr key={p.q} className={`label tabular-nums ${p.n < 15 || p.c < .25 ? "text-compare-muted" : ""}`}><td className="p-1">{p.q}</td><td className="p-1">{pct(p.s)}</td><td className="p-1">{p.n}</td><td className="p-1">{(p.c * 100).toFixed(0)}%</td></tr>)}</tbody></table></div>
     </div>}
   </Overlay>;
+}
+
+type DrawerComponents = { raw?: Record<string, number | null>; present?: string[]; why?: string[];
+  curation?: { lead_pts: number | null; prev_lead_pts?: number | null; n?: Record<string, number>; hits?: Record<string, number>; gallery_mix?: Record<string, number>; reason?: string };
+  discourse?: { z: number | null; rate_per_10k?: number | null; n_week?: number; n_9w?: number; baseline_weeks?: number; fatigue_ratio?: number | null; fatigue_flag?: boolean; spike?: boolean; terms?: string[]; reason?: string };
+  supply?: { value: number | null; category?: string; gf_additions?: { last90: number; prior90: number | null; note: string | null } | null; ph_sites?: number | null; ph_note?: string | null; reason?: string } };
+const num = (v: number | null | undefined, d = 1) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(d)}`);
+function Components({ comp }: { comp: DrawerComponents }) {
+  const present = new Set(comp.present ?? []), c = comp.curation, d = comp.discourse, s = comp.supply;
+  return <div className="space-y-2">
+    <h3 className="label text-compare-muted">COMPONENTS · {present.size}/{COMPONENTS.length} PRESENT · MISSING = COHORT MEAN</h3>
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4">{COMPONENTS.map(([k, l]) => <div key={k} className="min-w-0"><dt className={`label ${present.has(k) ? "text-ink" : "text-compare-muted"}`}>{l}</dt><dd className="label tabular-nums">{present.has(k) ? num(comp.raw?.[k], 2) : "ABSENT"}</dd></div>)}</dl>
+    <p className="label break-words text-compare-muted">CURATION {c?.lead_pts != null ? `${num(c.lead_pts)} PTS (PREV ${num(c.prev_lead_pts)}) · N ${["mainstream", "vanguard", "curated"].map(i => `${i[0]!.toUpperCase()} ${c.hits?.[i] ?? 0}/${c.n?.[i] ?? 0}`).join(" · ")}${c.gallery_mix && Object.keys(c.gallery_mix).length ? ` · GALLERIES ${Object.entries(c.gallery_mix).map(([g, n]) => `${g} ${n}`).join(", ")}` : ""}` : (c?.reason ?? "—").toUpperCase()}</p>
+    <p className="label break-words text-compare-muted">DISCOURSE {d && d.z !== undefined && !d.reason ? `Z ${num(d.z, 2)} · ${d.rate_per_10k ?? "—"}/10K POSTS · ${d.n_week ?? 0} THIS WEEK · ${d.n_9w ?? 0} IN 9 WK · BASELINE ${d.baseline_weeks ?? 0} WK · FATIGUE ${d.fatigue_ratio == null ? "—" : `${(d.fatigue_ratio * 100).toFixed(0)}%`}${d.fatigue_flag ? " · FLAG" : ""}${d.spike ? " · SPIKE" : ""}${d.terms?.length ? ` · TERMS ${d.terms.join(", ")}` : ""}` : (d?.reason ?? "—").toUpperCase()}</p>
+    <p className="label break-words text-compare-muted">SUPPLY {s?.category ? `${s.category.toUpperCase()} · ${s.value == null ? "NOT MEASURABLE YET" : num(s.value, 0)} · GF NEW 90D ${s.gf_additions?.last90 ?? "—"} VS PRIOR ${s.gf_additions?.prior90 ?? "—"}${s.gf_additions?.note ? ` (${s.gf_additions.note})` : ""} · PH SITES ${s.ph_sites ?? "—"}${s.ph_note ? ` (${s.ph_note})` : ""}` : (s?.reason ?? "—").toUpperCase()}</p>
+    {comp.why?.length ? <ul className="label space-y-1">{comp.why.map(w => <li key={w} className="text-ink">· {w}</li>)}</ul> : null}
+  </div>;
 }

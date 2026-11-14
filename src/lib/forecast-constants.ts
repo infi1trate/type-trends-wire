@@ -8,6 +8,9 @@ export const TRAIT_KEYWORDS: Record<string, string[]> = {
 };
 export const TRAIT_SPREAD: Record<string, string> = { "theme:dark": "dark_theme", "headline:serif": "serif_headline", "font:system": "system_font", "framework:tailwind": "tailwind", "tracking:tight": "tight_tracking", "hero_media:video": "video_hero", "hero_media:webgl": "webgl_hero" };
 export const TRAIT_GFONT_CATEGORY: Record<string, string> = { "headline:serif": "serif" };
-export const NEXT_WAVE_WEIGHTS = { gap: 0.35, vanguard: 0.2, momentum: 0.3, corroboration: 0.15 } as const;
+// Seven measured components (sum 1). Missing components contribute 0 (the cohort mean).
+export const NEXT_WAVE_WEIGHTS = { gap: 0.25, vanguard: 0.15, curation: 0.15, momentum: 0.25, corroboration: 0.08, discourse: 0.08, supply: 0.04 } as const;
+// Pre-Phase-5 weights, kept only to report the backtest before/after the component change.
+export const LEGACY_NEXT_WAVE_WEIGHTS = { gap: 0.35, vanguard: 0.2, momentum: 0.3, corroboration: 0.15 } as const;
 export const HYPE_WORDS = ["revolutionary", "game-changing", "game changing", "groundbreaking", "disruptive", "unprecedented"];
 export const EXCLUDED_DIMENSIONS = ["whitespace"]; // median measure, not a share

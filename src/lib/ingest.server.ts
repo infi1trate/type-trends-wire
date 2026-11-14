@@ -1,7 +1,8 @@
+import type { Database } from "@/integrations/supabase/types";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { DAY, FEEDS, HN_QUERIES, parseFeed, parseHn, recentUnique, snapshotRows, type Font, type WireItem } from "./ingest";
 
-async function logRun(job: string, started: Date, ok: boolean, rows: number, detail: Record<string, unknown>) {
+export async function logRun(job: string, started: Date, ok: boolean, rows: number, detail: Record<string, unknown>) {
   const { error } = await db.from("ingest_runs").insert({ job, started_at: started.toISOString(), finished_at: new Date().toISOString(), ok, rows_written: rows, detail: JSON.parse(JSON.stringify(detail)) });
   if (error) throw new Error(`Run receipt: ${error.message}`);
 }
@@ -39,6 +40,28 @@ export async function ingestFonts() {
     return Response.json({ ok: false, error }, { status: 500 });
   }
 }
+/** Insert new wire rows (dedupe by url) and add tracked-term counts for the rows actually inserted, per source kind. */
+export async function insertWireRows(items: Database["public"]["Tables"]["wire_items"]["Insert"][], failures: string[]) {
+  const inserted: { title: string; excerpt: string | null; source_kind: string; published_at: string }[] = [];
+  for (let i = 0; i < items.length; i += 500) {
+    const { data, error } = await db.from("wire_items").upsert(items.slice(i, i + 500), { onConflict: "url", ignoreDuplicates: true }).select("title,excerpt,source_kind,published_at");
+    if (error) throw new Error(error.message);
+    inserted.push(...(data ?? []));
+  }
+  let discourse_rows = 0;
+  if (inserted.length) {
+    try {
+      const { loadTerms, mergeCounts } = await import("./discourse.server");
+      const { dailyCountRows, DISCOURSE_SOURCES } = await import("./discourse");
+      const { terms } = await loadTerms(db);
+      for (const source of DISCOURSE_SOURCES) {
+        const list = inserted.filter(r => r.source_kind === source).map(r => ({ text: `${r.title} ${r.excerpt ?? ""}`, published_at: r.published_at }));
+        if (list.length) discourse_rows += await mergeCounts(db, dailyCountRows(source, list, terms), true);
+      }
+    } catch (e) { failures.push(`discourse counts: ${e instanceof Error ? e.message : String(e)}`); }
+  }
+  return { written: inserted.length, discourse_rows };
+}
 export async function ingestWire() {
   const started = new Date();
   const failures: string[] = [];
@@ -68,13 +91,10 @@ export async function ingestWire() {
     }
     const items = recentUnique(collected, started);
     if (failures.length === jobs.length) throw new Error("All wire sources failed");
-    for (let i = 0; i < items.length; i += 500) {
-      const { data, error } = await db.from("wire_items").upsert(items.slice(i, i + 500), { onConflict: "url", ignoreDuplicates: true }).select("id");
-      if (error) throw new Error(error.message);
-      written += data?.length ?? 0;
-    }
-    await logRun("ingest-wire", started, true, written, { failures, seen: items.length });
-    return Response.json({ ok: true, seen: items.length, rows_written: written, failures });
+    const result = await insertWireRows(items, failures);
+    written = result.written;
+    await logRun("ingest-wire", started, true, written, { failures, seen: items.length, discourse_rows: result.discourse_rows });
+    return Response.json({ ok: true, seen: items.length, rows_written: written, discourse_rows: result.discourse_rows, failures });
   } catch (e) {
     const error = e instanceof Error ? e.message : "Unknown ingestion error";
     await logRun("ingest-wire", started, false, written, { failures, error });

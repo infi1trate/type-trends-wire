@@ -29,9 +29,9 @@ export function CrawlControls({index,onIndex}:{index?:IndexFilter;onIndex?:(inde
   const errorText = errors ? JSON.stringify(errors,null,2) : "No crawl errors";
   return <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-rule p-3">
     <Toggle label="SCOPE" options={["EN","ALL"]} value={scope.toUpperCase()} onChange={v=>setScope(v==="EN"?"en":"all")} />
-    {index && onIndex && <Toggle label="INDEX" options={["BOTH","VANGUARD","MAINSTREAM"]} value={index} onChange={onIndex}/>}
+    {index && onIndex && <Toggle label="INDEX" options={["ALL","VANGUARD","MAINSTREAM","CURATED"]} value={index} onChange={onIndex}/>}
     {data && <div tabIndex={0} className="crawl-tip label relative ml-auto text-compare-muted">
-      SOURCE DSGN-CRAWLER · RUN {data.run.id} · {data.run.finished_at?.slice(0,10)} · V {data.sites.filter(s=>s.index_name==="vanguard").length} / M {data.sites.filter(s=>s.index_name==="mainstream").length} SITES · LANG {scope.toUpperCase()}
+      SOURCE DSGN-CRAWLER · RUN {data.run.id} · {data.run.finished_at?.slice(0,10)} · V {data.sites.filter(s=>s.index_name==="vanguard").length} / M {data.sites.filter(s=>s.index_name==="mainstream").length} / C {data.sites.filter(s=>s.index_name==="curated").length} SITES · LANG {scope.toUpperCase()}
       <pre className="crawl-tooltip whitespace-pre-wrap">{errorText}</pre>
     </div>}
   </div>;

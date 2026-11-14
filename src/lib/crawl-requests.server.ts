@@ -18,7 +18,7 @@ export async function authenticateQueueCaller(request: Request): Promise<boolean
   return !!data && constantTimeHashEqual(await sha256Hex(secret), data.secret_sha256);
 }
 
-async function boundedText(request: Request, limit: number): Promise<string | null> {
+export async function boundedText(request: Request, limit: number): Promise<string | null> {
   const length = request.headers.get("content-length");
   if (length && Number(length) > limit) return null;
   const reader = request.body?.getReader();

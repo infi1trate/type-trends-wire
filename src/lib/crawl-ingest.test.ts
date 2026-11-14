@@ -76,6 +76,13 @@ describe("crawler receiver", () => {
     expect(await (await handleCrawlIngest(request({ kind: "finish", run_id: "weekly_1", finished_at, stats: { ok: 1 } }))).json()).toEqual({ ok: true, written: 1 });
     expect(state.runs.get("weekly_1")).toMatchObject({ status: "finished", finished_at, stats: { ok: 1 } });
   });
+  it("stores curated-index sites with their deduplicated gallery slugs", async () => {
+    await handleCrawlIngest(request(start));
+    const curated = { ...site, domain: "gallery.example", index: "curated", galleries: ["godly", "awwwards", "godly"] };
+    expect((await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [curated, site] }))).status).toBe(200);
+    expect(state.sites.get("weekly_1/gallery.example")).toMatchObject({ index_name: "curated", galleries: ["godly", "awwwards"] });
+    expect(state.sites.get("weekly_1/example.com")).toMatchObject({ index_name: "vanguard", galleries: null });
+  });
   it("refreshes all aggregates only after the finish write succeeds", async () => {
     await handleCrawlIngest(request(start));
     expect(state.refreshes).toHaveLength(0);

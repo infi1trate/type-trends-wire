@@ -225,6 +225,20 @@
       "when": 1794612956792,
       "tag": "0031_rendered_crawl_requests_and_cache_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794614423386,
+      "tag": "0032_signal_breadth_curated_discourse_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794614748594,
+      "tag": "0033_supply_first_seen_and_source_state",
+      "breakpoints": true
     }
   ]
 }
