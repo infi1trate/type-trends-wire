@@ -7,6 +7,12 @@ on:
       per_index:
         description: "Sites per index (mainstream and vanguard)"
         default: "500"
+      indexes:
+        description: "Indexes to crawl (curated needs the Phase 5 terminal deploy)"
+        default: "mainstream,vanguard"
+      per_curated:
+        description: "Sites in the curated (gallery) index"
+        default: "300"
       dry_run:
         description: "1 = don't post, upload results as an artifact"
         default: "0"
@@ -30,6 +36,8 @@ jobs:
           CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           PER_INDEX: ${{ inputs.per_index || '500' }}
+          PER_CURATED: ${{ inputs.per_curated || '300' }}
+          INDEXES: ${{ inputs.indexes || 'mainstream,vanguard' }}  # add ",curated" once the terminal accepts it
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           CONCURRENCY: "8"
         run: npm run crawl

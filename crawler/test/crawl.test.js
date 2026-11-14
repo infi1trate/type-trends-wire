@@ -28,7 +28,7 @@ test("seed filters", () => {
 
 test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   const servers = await Promise.all([serve("test/fixtures/dark", 4801), serve("test/fixtures/light", 4802), serve("test/fixtures/blocked", 4803)]);
-  writeFileSync("/tmp/seeds.json", JSON.stringify({ mainstream: ["localhost:4801", "localhost:4803", "localhost:4999"], vanguard: ["localhost:4802"] }));
+  writeFileSync("/tmp/seeds.json", JSON.stringify({ mainstream: ["localhost:4801", "localhost:4803", "localhost:4999"], vanguard: ["localhost:4802"], curated: [{ domain: "localhost:4803", galleries: ["landbook", "arena"] }] }));
   rmSync("out", { recursive: true, force: true });
   try {
     await run("node", ["src/crawl.js"], { env: { ...process.env, DRY_RUN: "1", ALLOW_HTTP: "1", RUN_ID: "test", SEEDS_FILE: "/tmp/seeds.json", PER_INDEX: "5", CONCURRENCY: "2" } });
@@ -39,6 +39,9 @@ test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   const sites = lines.filter((l) => l.kind === "sites").flatMap((l) => l.sites);
   const by = Object.fromEntries(sites.map((s) => [s.domain, s]));
   assert.equal(by["localhost:4803"].error, "robots_disallow");
+  const cur = sites.find((s) => s.index === "curated");
+  assert.deepEqual(cur && { domain: cur.domain, galleries: cur.galleries }, { domain: "localhost:4803", galleries: ["landbook", "arena"] });
+  assert.equal(sites.filter((s) => s.index !== "curated").some((s) => "galleries" in s), false);
   assert.equal(by["localhost:4999"].ok, false);
 
   const dark = by["localhost:4801"];

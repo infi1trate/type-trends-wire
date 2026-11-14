@@ -1,0 +1,33 @@
+name: discourse-sampler
+# Samples Bluesky's public Jetstream for 30 minutes every 4 hours: design-post mention counts (incl. fatigue language)
+# and a capped set of design posts for the wire. Aggregates only feed the forecast's discourse signal.
+on:
+  schedule:
+    - cron: "7 */4 * * *"
+  workflow_dispatch:
+    inputs:
+      duration_min:
+        description: "Minutes to listen"
+        default: "30"
+      dry_run:
+        description: "1 = print, don't post"
+        default: "0"
+concurrency: { group: discourse-sampler, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Sample Jetstream
+        env:
+          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          DURATION_MIN: ${{ inputs.duration_min || '30' }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+        run: npm run jetstream

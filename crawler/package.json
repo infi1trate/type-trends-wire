@@ -8,7 +8,8 @@
     "crawl": "node src/crawl.js",
     "library": "node src/library.js",
     "wayback": "node src/wayback.js",
-    "requests": "node src/requests.js"
+    "requests": "node src/requests.js",
+    "jetstream": "node src/jetstream.js"
   },
   "keywords": [],
   "author": "",
