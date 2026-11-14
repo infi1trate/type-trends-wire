@@ -99,3 +99,9 @@
 - [x] Supply component and flooding note; seven-component score with per-row coverage; backtest before/after.
 - [x] Weekly wire alerts (≤10, 28-day trait dedupe), F8 source chips, MCP wire source_kind.
 - [x] Methodology sections, tests, alert dry run; no publishing.
+# Phase 5 — decisions
+- [x] Are.na hard-off (AUP): schedule removed, adapter refuses, stored rows deleted, no seeds, methodology note.
+- [x] Breakouts need share < 35% and stage not peaking/declining; alert dry run rerun.
+- [x] Render-failure note: "Couldn't render this site (3 attempts)"; no automatic retry.
+- [x] Godly removed from methodology gallery list (kept in enum).
+- [ ] Product Hunt stays dormant until Brandon adds PRODUCT_HUNT_TOKEN.

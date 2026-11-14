@@ -6,8 +6,8 @@ import { decodeEntities } from "@/lib/entities";
 import { Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
 
 const TAGS = ["ALL", "TYPE", "COLOR", "BRAND", "UI", "WEB", "MOTION", "AI"] as const;
-const KINDS = ["ALL", "RSS", "HN", "BSKY", "ARENA", "PH", "ALERT"] as const;
-const KIND_OF: Record<(typeof KINDS)[number], string | null> = { ALL: null, RSS: "rss", HN: "hn", BSKY: "bluesky", ARENA: "arena", PH: "producthunt", ALERT: "alert" };
+const KINDS = ["ALL", "RSS", "HN", "BSKY", "PH", "ALERT"] as const;
+const KIND_OF: Record<(typeof KINDS)[number], string | null> = { ALL: null, RSS: "rss", HN: "hn", BSKY: "bluesky", PH: "producthunt", ALERT: "alert" };
 const KIND_LABEL: Record<string, string> = { rss: "RSS", hn: "HN", bluesky: "BSKY", arena: "ARENA", producthunt: "PH", alert: "ALERT" };
 const pad = (n: number) => String(n).padStart(2, "0");
 const hhmm = (s: string) => {

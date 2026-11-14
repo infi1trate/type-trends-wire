@@ -88,8 +88,8 @@ describe("sampler reads", () => {
   });
   it("seed-candidates needs the secret and returns registrable domains", async () => {
     expect((await handleSeedCandidates(new Request("http://localhost/api/public/seed-candidates"))).status).toBe(401);
-    state.wireRows = [{ link: "https://studio.example/work", source_kind: "arena", fetched_at: "2026-11-12T00:00:00Z" }];
+    state.wireRows = [{ link: "https://studio.example/work", source_kind: "producthunt", fetched_at: "2026-11-12T00:00:00Z" }, { link: "https://arena-only.example/", source_kind: "arena", fetched_at: "2026-11-12T00:00:00Z" }];
     const body = await (await handleSeedCandidates(new Request("http://localhost/api/public/seed-candidates", { headers: { "x-crawl-secret": secret } }))).json();
-    expect(body).toEqual({ domains: [{ domain: "studio.example", sources: ["arena"], first_seen: "2026-11-12T00:00:00.000Z" }] });
+    expect(body).toEqual({ domains: [{ domain: "studio.example", sources: ["producthunt"], first_seen: "2026-11-12T00:00:00.000Z" }] });
   });
 });

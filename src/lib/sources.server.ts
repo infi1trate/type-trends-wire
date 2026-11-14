@@ -1,8 +1,8 @@
-// Polled wire sources on the managed schedule: Are.na (6-hourly) and Product Hunt (daily, dormant without a token).
+// Polled wire sources: Product Hunt (daily, dormant without a token). Are.na is hard-off (ARENA_ENABLED in sources.ts).
 // Only titles, links and channel names are stored; images are never fetched or persisted.
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { insertWireRows, logRun } from "./ingest.server";
-import { ARENA_BLOCKS_PER_CHANNEL, ARENA_MAX_REQUESTS, ARENA_QUERIES, PH_QUERY, arenaRows, cleanWebsite, parsePhPosts, phRows, pickArenaChannels, type ArenaChannel } from "./sources";
+import { ARENA_DISABLED_REASON, ARENA_ENABLED, ARENA_BLOCKS_PER_CHANNEL, ARENA_MAX_REQUESTS, ARENA_QUERIES, PH_QUERY, arenaRows, cleanWebsite, parsePhPosts, phRows, pickArenaChannels, type ArenaChannel } from "./sources";
 import type { WireRow } from "./wire-payload";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -42,6 +42,7 @@ class Poller {
 async function pool<T>(items: T[], size: number, run: (item: T) => Promise<void>) { for (let i = 0; i < items.length; i += size) await Promise.all(items.slice(i, i + size).map(run)); }
 
 export async function ingestArena() {
+  if (!ARENA_ENABLED) return Response.json({ ok: false, disabled: true, reason: ARENA_DISABLED_REASON }, { status: 403 });
   const started = new Date(), failures: string[] = [];
   let written = 0;
   try {

@@ -21,14 +21,19 @@ const signed = (v: number, d = 1) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.
 function quantile(values: number[], q: number) { if (!values.length) return Infinity; const s = [...values].sort((a, b) => a - b), i = (s.length - 1) * q, f = Math.floor(i); return s[f]! + (s[Math.min(s.length - 1, f + 1)]! - s[f]!) * (i - f); }
 
 /** All rule hits before dedupe. Breakout ranks across every ok row; trait-level rules use the library-wide ('all') row. */
+/** Breakout: top-decile momentum (cut over every ok row) on ≥3 sites, below saturation share and not yet peaking/declining — bias against consensus; saturation alerts cover the rest. */
+export function isBreakout(r: AlertInput, cut: number) {
+  return r.status === "ok" && r.momentum !== null && r.momentum > 0 && r.momentum >= cut && r.sites >= BREAKOUT_MIN_SITES
+    && r.current_share !== null && r.current_share < SATURATION_SHARE && r.stage !== "peaking" && r.stage !== "declining";
+}
 export function alertCandidates(rows: AlertInput[]): Alert[] {
   const out: Alert[] = [];
   const ok = rows.filter(r => r.status === "ok" && r.momentum !== null);
   const cut = quantile(ok.map(r => r.momentum!), BREAKOUT_QUANTILE);
   for (const r of rows) {
     const trait = `${r.dimension}:${r.value}`, t = ticker(r.dimension, r.value), base = `${r.sites} sites · share ${pct(r.current_share)} · stage ${r.stage ?? "n/a"}`;
-    if (r.status === "ok" && r.momentum !== null && r.momentum > 0 && r.momentum >= cut && r.sites >= BREAKOUT_MIN_SITES)
-      out.push({ kind: "breakout", trait, scope: r.scope, magnitude: r.momentum, title: `BREAKOUT ${t} ${signed(r.momentum)} pts/q in ${r.scope}`, excerpt: `Momentum ${signed(r.momentum, 2)} pts/q ≥ top-decile cut ${signed(cut, 2)} across ${ok.length} fitted rows · ${base}` });
+    if (isBreakout(r, cut))
+      out.push({ kind: "breakout", trait, scope: r.scope, magnitude: r.momentum, title: `BREAKOUT ${t} ${signed(r.momentum)} pts/q in ${r.scope}`, excerpt: `Momentum ${signed(r.momentum, 2)} pts/q ≥ top-decile cut ${signed(cut, 2)} across ${ok.length} fitted rows · share < 35%, not peaking/declining · ${base}` });
     if (r.scope !== "all") continue;
     const d = r.discourse;
     if (d?.fatigue_flag) out.push({ kind: "sentiment_turn", trait, scope: r.scope, magnitude: d.fatigue_ratio ?? 0, title: `SENTIMENT TURN ${t} fatigue ${pct(d.fatigue_ratio)} of mentions`, excerpt: `Fatigue language in ${pct(d.fatigue_ratio)} of mentions over 4 weeks (prior 4 weeks ${pct(d.prev_fatigue_ratio)}) · ${d.n_9w} mentions in 9 weeks · threshold 15%, n≥20 · ${base}` });

@@ -13,6 +13,12 @@ describe('alert rules', () => {
     expect(b.map(a => a.trait)).toEqual(['aesthetic:hot']);
     expect(b[0]!.title).toBe('BREAKOUT $HOT +4.1 pts/q in ai');
   });
+  it('breakout requires share < 35% and a stage other than peaking/declining', () => {
+    const base = Array.from({ length: 20 }, (_, i) => row(`v${i}`, { momentum: i * 0.1 }));
+    const hot = (value: string, o: Partial<AlertInput>) => row(value, { momentum: 5, ...o });
+    const b = alertCandidates([...base, hot('under', { current_share: 0.349 }), hot('at', { current_share: 0.35 }), hot('peak', { stage: 'peaking' }), hot('down', { stage: 'declining' }), hot('noshare', { current_share: null })]).filter(a => a.kind === 'breakout');
+    expect(b.map(a => a.trait)).toEqual(['aesthetic:under']);
+  });
   it('crossover needs a sign flip of at least 5 pts', () => {
     expect(kinds([row('a', { momentum: null, curation: { lead_pts: 3, prev_lead_pts: -4 } }), row('b', { momentum: null, curation: { lead_pts: 1, prev_lead_pts: -1 } })])).toEqual(['crossover:aesthetic:a:all']);
   });

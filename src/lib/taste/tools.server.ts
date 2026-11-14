@@ -48,7 +48,7 @@ export async function crawlStates(urls:string[],now=Date.now()):Promise<UrlState
 export async function analyzeUrl(url:string,data:Data,state?:UrlState):Promise<TasteSite>{const u=new URL(url),domain=u.hostname.replace(/^www\./,"");const found=data.sites.find(s=>s.domain.replace(/^www\./,"")===domain&&s.mode==="library");if(found)return found;
  if(state?.state==="rendered"&&state.row?.rendered_at)return {...siteFromSignals(domain,"unknown",state.row.rendered_at,state.row.signals,{},"rendered"),note:`Rendered by the crawler on ${state.row.rendered_at.slice(0,10)}`};
  const site=await liteAnalysis(url);
- if(state?.state==="error")return {...site,note:"Declared CSS only, not rendered fonts. Crawler rendering failed after 3 attempts; not re-queued."};
+ if(state?.state==="error")return {...site,note:"Declared CSS only, not rendered fonts. Couldn't render this site (3 attempts); not retried automatically."};
  if(state?.state==="done_empty")return {...site,note:"Declared CSS only, not rendered fonts. The crawler finished without usable signals."};
  return {...site,note:`Declared CSS only, not rendered fonts. No layout/component measurements. URL ${QUEUED_NOTE}.`};}
 /** Font traits (h1_font:/body_font:) naming a proprietary catalog face. */

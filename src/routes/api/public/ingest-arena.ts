@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { z } from "zod";
 
+// Are.na is hard-off (ARENA_ENABLED=false in src/lib/sources.ts, acceptable-use policy); this route refuses to run.
 export const Route = createFileRoute("/api/public/ingest-arena")({
   server: { handlers: { POST: async ({ request }) => {
     const denied = await authenticateCronRequest(request);

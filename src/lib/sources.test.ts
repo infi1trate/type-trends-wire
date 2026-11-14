@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { arenaRows, cleanWebsite, parsePhPosts, phRows, pickArenaChannels, seedCandidates, seedDomain } from './sources';
+import { ARENA_ENABLED, arenaRows, cleanWebsite, parsePhPosts, phRows, pickArenaChannels, seedCandidates, seedDomain } from './sources';
 
 const now = Date.parse('2026-11-14T00:00:00Z');
 describe('Are.na', () => {
@@ -35,6 +35,10 @@ describe('seed candidates', () => {
   });
   it('merges sources per domain with the first sighting', () => {
     expect(seedCandidates([{ link: 'https://a.studio/x', source_kind: 'arena', fetched_at: '2026-11-10T00:00:00Z' }, { link: 'https://www.a.studio/', source_kind: 'producthunt', fetched_at: '2026-11-08T00:00:00Z' }, { link: 'https://instagram.com/p', source_kind: 'arena', fetched_at: '2026-11-09T00:00:00Z' }]))
-      .toEqual([{ domain: 'a.studio', sources: ['arena', 'producthunt'], first_seen: '2026-11-08T00:00:00.000Z' }]);
+      .toEqual([{ domain: 'a.studio', sources: ['producthunt'], first_seen: '2026-11-08T00:00:00.000Z' }]);
+  });
+  it('Are.na is hard-off and never seeds domains', () => {
+    expect(ARENA_ENABLED).toBe(false);
+    expect(seedCandidates([{ link: 'https://only-arena.studio/', source_kind: 'arena', fetched_at: '2026-11-10T00:00:00Z' }])).toEqual([]);
   });
 });

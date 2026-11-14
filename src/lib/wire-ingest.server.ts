@@ -5,7 +5,7 @@ import { authenticateQueueCaller, boundedText } from "./crawl-requests.server";
 import { WIRE_INGEST_BODY_LIMIT, blueskyRows, mentionRows, wireIngestPayload } from "./wire-payload";
 import { FATIGUE_PHRASES } from "./discourse";
 import { loadTerms, mergeCounts } from "./discourse.server";
-import { SEED_WINDOW_DAYS, seedCandidates } from "./sources";
+import { SEED_SOURCES, SEED_WINDOW_DAYS, seedCandidates } from "./sources";
 
 const noStore = { "cache-control": "no-store" };
 const unauthorized = () => Response.json({ error: "unauthorized" }, { status: 401, headers: noStore });
@@ -60,7 +60,7 @@ export async function handleSeedCandidates(request: Request): Promise<Response> 
     if (!await authenticateQueueCaller(request)) return unauthorized();
     const since = new Date(Date.now() - SEED_WINDOW_DAYS * 864e5).toISOString(), rows: { link: string | null; source_kind: string; fetched_at: string }[] = [];
     for (let from = 0; from < 20000; from += 1000) {
-      const { data, error } = await db.from("wire_items").select("link,source_kind,fetched_at").in("source_kind", ["arena", "producthunt"]).not("link", "is", null)
+      const { data, error } = await db.from("wire_items").select("link,source_kind,fetched_at").in("source_kind", [...SEED_SOURCES]).not("link", "is", null)
         .gte("fetched_at", since).order("id").range(from, from + 999);
       if (error) throw new Error("Seed lookup failed");
       rows.push(...(data ?? [])); if (!data || data.length < 1000) break;

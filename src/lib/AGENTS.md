@@ -1,4 +1,5 @@
 - Curation lead, discourse, supply and alert rules stay pure in `curation.ts`, `discourse.ts`, `supply.ts` and `alerts.ts`; `forecast.server.ts` only loads data and stores components, so UI, MCP and tests read the same numbers.
 - `/api/public/ingest-wire` accepts either the crawler secret (sampler payloads) or the managed cron credential with an empty body, so the existing schedule keeps working.
-- External source polling (Are.na, Product Hunt) keeps conditional-request cursors in the private `source_cursors` table and stays within a per-run request budget.
+- Are.na stays hard-off (`ARENA_ENABLED` in `sources.ts`) because its acceptable-use policy forbids automated harvesting; nothing may write `arena` rows.
+- External source polling (Product Hunt) keeps conditional-request cursors in the private `source_cursors` table and stays within a per-run request budget.
 - Missing forecast components count as the cohort mean and are recorded per row; never backfill absent historical signals in the backtest.

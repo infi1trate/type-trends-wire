@@ -3,6 +3,14 @@ import { getDomain } from "tldts";
 import { stripHtml, tagText, WIRE_WINDOW_DAYS, DAY } from "./ingest";
 import type { WireRow } from "./wire-payload";
 
+/**
+ * HARD OFF. Are.na's acceptable-use policy (https://www.are.na/terms) prohibits automated crawling and
+ * structured data harvesting, so this app does not poll Are.na. The adapter is kept for reference only;
+ * do not flip this without written permission from Are.na.
+ */
+export const ARENA_ENABLED = false as boolean;
+export const ARENA_DISABLED_REASON = "Are.na polling is disabled: its acceptable-use policy prohibits automated crawling and structured data harvesting";
+export const SEED_SOURCES = ["producthunt"] as const;
 export const ARENA_QUERIES = ["web design", "typography", "type specimen", "brand identity", "ui design", "graphic design", "websites"] as const;
 export const ARENA_MAX_REQUESTS = 60, ARENA_CHANNELS_PER_QUERY = 2, ARENA_BLOCKS_PER_CHANNEL = 24;
 export type ArenaChannel = { slug: string; title: string; followers: number; updated_at: string | null };
@@ -73,13 +81,13 @@ export function seedDomain(url: string): string | null {
   if (EXCLUDED_DOMAINS.has(domain) || EXCLUDED_DOMAINS.has(host) || [...EXCLUDED_DOMAINS].some(d => host.endsWith(`.${d}`))) return null;
   return domain;
 }
-export type SeedCandidate = { domain: string; sources: ("arena" | "producthunt")[]; first_seen: string };
+export type SeedCandidate = { domain: string; sources: (typeof SEED_SOURCES[number])[]; first_seen: string };
 export function seedCandidates(rows: { link: string | null; source_kind: string; fetched_at: string }[], max = SEED_MAX): SeedCandidate[] {
-  const by = new Map<string, { sources: Set<"arena" | "producthunt">; first: string }>();
+  const by = new Map<string, { sources: Set<typeof SEED_SOURCES[number]>; first: string }>();
   for (const r of rows) {
-    if (!r.link || (r.source_kind !== "arena" && r.source_kind !== "producthunt")) continue;
+    if (!r.link || r.source_kind !== "producthunt") continue; // Are.na is not used (see ARENA_ENABLED)
     const d = seedDomain(r.link); if (!d) continue;
-    const e = by.get(d) ?? { sources: new Set(), first: r.fetched_at }; e.sources.add(r.source_kind); if (r.fetched_at < e.first) e.first = r.fetched_at; by.set(d, e);
+    const e = by.get(d) ?? { sources: new Set(), first: r.fetched_at }; e.sources.add(r.source_kind as typeof SEED_SOURCES[number]); if (r.fetched_at < e.first) e.first = r.fetched_at; by.set(d, e);
   }
   return [...by].map(([domain, e]) => ({ domain, sources: [...e.sources].sort(), first_seen: new Date(e.first).toISOString() }))
     .sort((a, b) => b.first_seen.localeCompare(a.first_seen) || a.domain.localeCompare(b.domain)).slice(0, max);
