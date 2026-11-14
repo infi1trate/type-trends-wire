@@ -239,6 +239,13 @@
       "when": 1794614748594,
       "tag": "0033_supply_first_seen_and_source_state",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794666499154,
+      "tag": "0034_showcase_vibe_map_chart_cards",
+      "breakpoints": true
     }
   ]
 }

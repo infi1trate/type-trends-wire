@@ -10,7 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChartIndexRouteImport } from './routes/chart.index'
+import { Route as ChartWeekRouteImport } from './routes/chart.$week'
+import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
+import { Route as ChartChar123weekChar125DotsvgRouteImport } from './routes/chart.{$week}[.]svg'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
+import { Route as ApiPublicChartCardRouteImport } from './routes/api/public/chart-card'
 import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
 import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public/discourse-terms'
 import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
@@ -32,9 +37,36 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChartIndexRoute = ChartIndexRouteImport.update({
+  id: '/chart/',
+  path: '/chart/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChartWeekRoute = ChartWeekRouteImport.update({
+  id: '/chart/$week',
+  path: '/chart/$week',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChartChar123weekChar125DotpngRoute =
+  ChartChar123weekChar125DotpngRouteImport.update({
+    id: '/chart/{$week}.png',
+    path: '/chart/{$week}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ChartChar123weekChar125DotsvgRoute =
+  ChartChar123weekChar125DotsvgRouteImport.update({
+    id: '/chart/{$week}.svg',
+    path: '/chart/{$week}.svg',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LibraryDomainRoute = LibraryDomainRouteImport.update({
   id: '/library/$domain',
   path: '/library/$domain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicChartCardRoute = ApiPublicChartCardRouteImport.update({
+  id: '/api/public/chart-card',
+  path: '/api/public/chart-card',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCrawlRequestsRoute = ApiPublicCrawlRequestsRouteImport.update({
@@ -118,7 +150,12 @@ const ApiPublicSeedCandidatesRoute = ApiPublicSeedCandidatesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chart/$week': typeof ChartWeekRoute
+  '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
+  '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/chart/': typeof ChartIndexRoute
+  '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
@@ -137,7 +174,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chart/$week': typeof ChartWeekRoute
+  '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
+  '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/chart': typeof ChartIndexRoute
+  '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
@@ -157,7 +199,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chart/$week': typeof ChartWeekRoute
+  '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
+  '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/chart/': typeof ChartIndexRoute
+  '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
@@ -178,7 +225,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chart/$week'
+    | '/chart/{$week}.png'
+    | '/chart/{$week}.svg'
     | '/library/$domain'
+    | '/chart/'
+    | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
@@ -197,7 +249,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chart/$week'
+    | '/chart/{$week}.png'
+    | '/chart/{$week}.svg'
     | '/library/$domain'
+    | '/chart'
+    | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
@@ -216,7 +273,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/chart/$week'
+    | '/chart/{$week}.png'
+    | '/chart/{$week}.svg'
     | '/library/$domain'
+    | '/chart/'
+    | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
@@ -236,7 +298,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChartWeekRoute: typeof ChartWeekRoute
+  ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
+  ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
+  ChartIndexRoute: typeof ChartIndexRoute
+  ApiPublicChartCardRoute: typeof ApiPublicChartCardRoute
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
   ApiPublicDiscourseTermsRoute: typeof ApiPublicDiscourseTermsRoute
   ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
@@ -263,11 +330,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chart/': {
+      id: '/chart/'
+      path: '/chart'
+      fullPath: '/chart/'
+      preLoaderRoute: typeof ChartIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chart/$week': {
+      id: '/chart/$week'
+      path: '/chart/$week'
+      fullPath: '/chart/$week'
+      preLoaderRoute: typeof ChartWeekRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chart/{$week}.png': {
+      id: '/chart/{$week}.png'
+      path: '/chart/{$week}.png'
+      fullPath: '/chart/{$week}.png'
+      preLoaderRoute: typeof ChartChar123weekChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chart/{$week}.svg': {
+      id: '/chart/{$week}.svg'
+      path: '/chart/{$week}.svg'
+      fullPath: '/chart/{$week}.svg'
+      preLoaderRoute: typeof ChartChar123weekChar125DotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/library/$domain': {
       id: '/library/$domain'
       path: '/library/$domain'
       fullPath: '/library/$domain'
       preLoaderRoute: typeof LibraryDomainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/chart-card': {
+      id: '/api/public/chart-card'
+      path: '/api/public/chart-card'
+      fullPath: '/api/public/chart-card'
+      preLoaderRoute: typeof ApiPublicChartCardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/crawl-requests': {
@@ -380,7 +482,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChartWeekRoute: ChartWeekRoute,
+  ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
+  ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
   LibraryDomainRoute: LibraryDomainRoute,
+  ChartIndexRoute: ChartIndexRoute,
+  ApiPublicChartCardRoute: ApiPublicChartCardRoute,
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
   ApiPublicDiscourseTermsRoute: ApiPublicDiscourseTermsRoute,
   ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,

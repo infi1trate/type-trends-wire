@@ -95,6 +95,33 @@ export type Database = {
           },
         ]
       }
+      chart_cards: {
+        Row: {
+          created_at: string
+          model: Json
+          origin: string
+          run_id: number
+          trait: string
+          week: string
+        }
+        Insert: {
+          created_at?: string
+          model: Json
+          origin: string
+          run_id: number
+          trait: string
+          week: string
+        }
+        Update: {
+          created_at?: string
+          model?: Json
+          origin?: string
+          run_id?: number
+          trait?: string
+          week?: string
+        }
+        Relationships: []
+      }
       color_tickers: {
         Row: {
           data: Json
@@ -1162,6 +1189,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vibe_clusters: {
+        Row: {
+          cluster: number
+          name: string
+          quarter: string
+          run_id: number
+          stats: Json
+        }
+        Insert: {
+          cluster: number
+          name: string
+          quarter: string
+          run_id: number
+          stats: Json
+        }
+        Update: {
+          cluster?: number
+          name?: string
+          quarter?: string
+          run_id?: number
+          stats?: Json
+        }
+        Relationships: []
+      }
+      vibe_maps: {
+        Row: {
+          computed_at: string
+          model: Json
+          quarter: string
+          run_id: number
+        }
+        Insert: {
+          computed_at?: string
+          model: Json
+          quarter: string
+          run_id: number
+        }
+        Update: {
+          computed_at?: string
+          model?: Json
+          quarter?: string
+          run_id?: number
+        }
+        Relationships: []
+      }
+      vibe_points: {
+        Row: {
+          cluster: number
+          current: boolean
+          domain: string
+          quarter: string
+          run_id: number
+          sector: string
+          tags: string[]
+          x: number
+          y: number
+        }
+        Insert: {
+          cluster: number
+          current?: boolean
+          domain: string
+          quarter: string
+          run_id: number
+          sector: string
+          tags?: string[]
+          x: number
+          y: number
+        }
+        Update: {
+          cluster?: number
+          current?: boolean
+          domain?: string
+          quarter?: string
+          run_id?: number
+          sector?: string
+          tags?: string[]
+          x?: number
+          y?: number
+        }
+        Relationships: []
       }
       weekly_briefs: {
         Row: {

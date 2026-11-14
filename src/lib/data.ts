@@ -5,6 +5,7 @@ import type { Scope } from "./crawl";
 import type { Database } from "@/integrations/supabase/types";
 import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functions";
 import {runTasteCommand} from "./taste.functions";
+import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
 export const libraryHistoryQuery = () => queryOptions({queryKey:["library-history"],staleTime:10*60_000,queryFn:()=>getLibraryHistory({data:{}})});
 
@@ -298,3 +299,9 @@ export const latestBriefQuery = () => queryOptions({ queryKey: ["brief-latest"],
   const { data, error } = await supabase.from("weekly_briefs").select("week,brief").order("week", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error; return data ? { week: data.week, headline: (data.brief as unknown as BriefDoc).headline } : null;
 } });
+
+// SHOWCASE (F9/F7/chart): server-function reads over the shared anonymous store.
+export type RebrandFilters = { sector?: string; source?: "live" | "archive"; year?: number; limit: number };
+export const rebrandsQuery = (f: RebrandFilters) => queryOptions({ queryKey: ["rebrands", f.sector ?? "all", f.source ?? "all", f.year ?? 0, f.limit], staleTime: 10 * 60_000, queryFn: () => getRebrands({ data: { ...(f.sector && f.sector !== "all" ? { sector: f.sector } : {}), ...(f.source ? { source: f.source } : {}), ...(f.year ? { year: f.year } : {}), offset: 0, limit: f.limit } }) });
+export const vibeQuery = () => queryOptions({ queryKey: ["vibe-map"], staleTime: 10 * 60_000, queryFn: () => getVibeMap() });
+export const chartCardQuery = (week: string | null) => queryOptions({ queryKey: ["chart-card", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getChartCard({ data: { week } }) });

@@ -15,10 +15,7 @@ export const PANELS = [
 
 export type PanelId = (typeof PANELS)[number]["id"];
 
-export const DORMANT: Partial<Record<PanelId, string>> = {
-  vibe: "Mood clusters on a 2D map. Arrives with the crawler.",
-  rebrands: "New identities, type and color extracted. Phase 2.",
-};
+export const DORMANT: Partial<Record<PanelId, string>> = {};
 
 export function isoWeek(d = new Date()) {
   const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));

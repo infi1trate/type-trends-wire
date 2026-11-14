@@ -3,7 +3,8 @@ import { z } from "zod";
 import { HYPE_WORDS } from "./forecast-constants";
 export const citationSchema = z.object({ kind: z.enum(["forecast", "event", "wire", "spread"]), id: z.string().min(1).max(120) });
 export const sectionSchema = z.object({ title: z.string().min(1).max(40), body: z.string().min(1).max(700), citations: z.array(citationSchema).max(12) });
-export const briefSchema = z.object({ week: z.string().regex(/^\d{4}-W\d{2}$/), headline: z.string().min(1).max(90), sections: z.array(sectionSchema).min(4).max(6), caveats: z.string().max(400) });
+export const watchSchema = z.object({ id: z.string().min(1).max(120), call: z.string().min(1).max(160) });
+export const briefSchema = z.object({ week: z.string().regex(/^\d{4}-W\d{2}$/), headline: z.string().min(1).max(90), sections: z.array(sectionSchema).min(4).max(6), caveats: z.string().max(400), watch: watchSchema.optional() });
 export type Brief = z.infer<typeof briefSchema>;
 export const SECTION_TITLES = ["Rising", "Peaking", "Fading", "Next wave", "Notable redesigns", "Pricing/product"];
 const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
@@ -17,7 +18,10 @@ export function validateBrief(raw: unknown, allowed: Set<string>): { ok: true; b
     if (bad) dropped.push(s.title); return !bad;
   });
   if (sections.length < 4) return { ok: false, reason: `too_few_valid_sections:${dropped.join(",")}` };
-  return { ok: true, brief: { ...p.data, sections }, dropped };
+  // The one call to watch must cite a forecast id from the evidence and stay hype-free; otherwise it is dropped (the card falls back to Next wave).
+  const watch = p.data.watch && allowed.has(`forecast:${p.data.watch.id}`) && !hype(p.data.watch.call) ? p.data.watch : undefined;
+  if (p.data.watch && !watch) dropped.push("watch");
+  return { ok: true, brief: { week: p.data.week, headline: p.data.headline, caveats: p.data.caveats, sections, ...(watch ? { watch } : {}) }, dropped };
 }
 export function isoWeekKey(d: Date) {
   const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())), day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);

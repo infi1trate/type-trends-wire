@@ -12,7 +12,9 @@ import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
 import { Library } from "@/components/terminal/Library";
-import { libraryQuery, libraryHistoryQuery, forecastQuery } from "@/lib/data";
+import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery } from "@/lib/data";
+import { VibeMap } from "@/components/terminal/VibeMap";
+import { RebrandDesk } from "@/components/terminal/Rebrands";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
 import { ForecastPanel } from "@/components/terminal/Forecast";
 import {TasteConsole} from "@/components/terminal/TasteConsole";
@@ -23,7 +25,7 @@ const DESC = "A live terminal for design trends: typefaces, color, layout and de
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?:string | undefined; trait?:string | undefined } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "overview", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0,cmd:typeof s['cmd']==='string'?s['cmd'].slice(0,4096):undefined,trait:typeof s['trait']==='string'?s['trait']:undefined }),
   loaderDeps: ({ search }) => ({ panel: search.panel }),
-  loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : deps.panel === "brief" ? context.queryClient.ensureQueryData(forecastQuery()).then(()=>undefined) : undefined,
+  loader: ({ context, deps }) => deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : deps.panel === "brief" ? Promise.all([context.queryClient.ensureQueryData(forecastQuery()), context.queryClient.ensureQueryData(chartCardQuery(null))]).then(()=>undefined) : deps.panel === "vibe" ? context.queryClient.ensureQueryData(vibeQuery()).then(()=>undefined) : deps.panel === "rebrands" ? context.queryClient.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 })).then(()=>undefined) : undefined,
   errorComponent: () => <div role="alert" className="p-3">LIBRARY DATA UNAVAILABLE</div>,
   notFoundComponent: () => <div className="p-3">NOT FOUND</div>,
   head: () => ({
@@ -53,6 +55,7 @@ function Terminal() {
   const navigate = Route.useNavigate();
   const panel = PANELS.find(p => p.id === search.panel)?.id ?? "overview";
   const setPanel = useCallback((p: PanelId) => { void navigate({ search: prev => ({ ...prev, panel: p }) }); }, [navigate]);
+  const setSector = useCallback((sector: string) => { void navigate({ search: prev => ({ ...prev, sector }) }); }, [navigate]);
   const [typeTab,setTypeTab]=useState("GOOGLE FONTS");
   const [overlay, setOverlay] = useState<null | "keys" | "method" | "mcp" | "taste">(null);
   useEffect(()=>{if(search.cmd)setOverlay('taste');},[search.cmd]);
@@ -98,8 +101,10 @@ function Terminal() {
         {panel === "library" && <Suspense fallback={<div className="p-3">▍</div>}><Library/></Suspense>}
         {panel === "history" && <Suspense fallback={<div className="p-3">▍</div>}><HistoryPanel/></Suspense>}
         {panel === "brief" && <Suspense fallback={<div className="p-3">▍</div>}><ForecastPanel/></Suspense>}
+        {panel === "vibe" && <Suspense fallback={<div className="p-3">▍</div>}><VibeMap sector={search.sector ?? "all"} onSector={setSector} onMethod={() => setOverlay("method")}/></Suspense>}
+        {panel === "rebrands" && <RebrandDesk sector={search.sector ?? "all"} onSector={setSector}/>}
         {(panel==="color"||panel==="layout"||panel==="composition"||panel==="lexicon") && <CrawlPanel key={panel} panel={panel}/>}
-        {!["overview", "type", "wire","color","layout","composition","lexicon","library","history","brief"].includes(panel) && <Dormant id={panel} />}
+        {!["overview", "type", "wire","color","layout","composition","lexicon","library","history","brief","vibe","rebrands"].includes(panel) && <Dormant id={panel} />}
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>

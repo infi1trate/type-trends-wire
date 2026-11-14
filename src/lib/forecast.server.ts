@@ -27,7 +27,12 @@ export async function runForecast(opts: { brief?: boolean; alerts?: "emit" | "dr
     if (old.data?.length) await db.from("forecast_runs").delete().in("id", old.data.map(r => r.id));
     let brief: unknown = null;
     if (opts.brief !== false) { const { generateWeeklyBrief } = await import("./forecast-brief.server"); brief = await generateWeeklyBrief(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "brief_failed" })); }
-    return { ok: true, run_id: runId, model_card: result.card, alerts, brief };
+    // Showcase outputs never fail the forecast run: vibe map coordinates, then the brief's Chart of the Week.
+    const { computeVibe } = await import("./vibe.server");
+    const vibe = await computeVibe(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "vibe_failed" }));
+    let chart: unknown = null;
+    if (opts.brief !== false) { const { generateChartCard } = await import("./chart/chart.server"); chart = await generateChartCard().catch(e => ({ ok: false, code: e instanceof Error ? e.message : "chart_failed" })); }
+    return { ok: true, run_id: runId, model_card: result.card, alerts, brief, vibe, chart };
   } catch (e) { await db.from("forecast_runs").update({ status: "error" }).eq("id", runId); throw e; }
 }
 
