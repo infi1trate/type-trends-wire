@@ -18,6 +18,6 @@ export function McpOverlay({onClose}:{onClose:()=>void}){
     <CopyLine label="CLAUDE CODE" value={COMMAND}/>
     <CopyLine label="CURSOR · MCP CONFIG" value={JSON.stringify({mcpServers:{dsgn:{url:ENDPOINT}}},null,2)}/>
     <div className="space-y-2 border-b border-rule py-3">{[['recommend_type',{sector:'fintech',role:'headline'}],['recommend_palette',{sector:'ai',theme:'dark'}],['differentiate',{sector:'dev-tools'}],['critique',{url:'https://linear.app'}]].map(([name,input])=><p key={String(name)} className="break-all"><span className="label text-g500">{String(name)}</span><br/>{JSON.stringify(input)}</p>)}</div>
-    <p className="py-3 text-ink"><span className="label text-g500">TOOLS</span><br/>get_trend · search_trends · wire · library_site · library_events · library_sector · crawl_spread<br/><span className="label text-g500">RESOURCE</span><br/>trend://methodology</p>
+    <p className="py-3 text-ink"><span className="label text-g500">TOOLS</span><br/>get_trend · search_trends · wire · library_site · library_events · library_sector · crawl_spread · library_trends · library_history · site_history · forecast · next_wave · trendsetters · weekly_brief · recommend_type · recommend_palette · differentiate · critique · rebrands · vibe_map<br/><span className="label text-g500">RESOURCE</span><br/>trend://methodology</p>
   </Overlay>;
 }

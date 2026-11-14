@@ -1,3 +1,4 @@
+import { SHOWCASE_METHODOLOGY } from '../showcase-methodology';
 import { computeBand, pointAtLeast, daysBetween, METHODOLOGY as BAND_RULES } from '../bands';
 export type FontRow = { captured_on: string; family: string; category: string; popularity_rank: number; trending_rank: number; is_variable: boolean };
 export function analyzeFamily(history: FontRow[]) {
@@ -40,5 +41,6 @@ export const METHODOLOGY = [
   'NEXT WAVE COMPONENTS: gap 0.25, vanguard 0.15, curation 0.15, momentum 0.25, corroboration 0.08, discourse 0.08, supply 0.04 over z-scores; a missing component counts as 0 (cohort mean). Each row records which components were present. The 2025Q2 next-wave backtest only has gap and momentum: curation, discourse and supply have no history and are not back-filled.',
   'ALERTS: the weekly forecast emits ≤10 wire items (source_kind alert), at most one per trait per 28 days, priority: sentiment turn (fatigue flag) > crossover (curation lead changes sign between the last two crawl runs with |Δ| ≥ 5 pts) > breakout (top-decile momentum among fitted rows, ≥3 sites) > discourse spike (this week ≥3× the 8-week median rate, n ≥ 15, ≥4 baseline weeks) > saturation (share crosses 35% or stage becomes peaking vs the previous run). Excerpts carry the numbers.',
   'SAMPLER ENDPOINTS (crawler secret): GET /api/public/discourse-terms → {version,terms:[{term,kind,trait?}] (≤600),fatigue}; POST /api/public/ingest-wire (≤256 KB) {kind:"items",items:[{source_kind:"bluesky",url,title≤300,author≤100,published_at,link?,terms?≤20}]≤200} or {kind:"mentions",window_start,window_end (≤7 days),sampled_posts,design_posts,counts:{term:{n,fatigue}} ≤600}; GET /api/public/seed-candidates → {domains:[{domain,sources,first_seen}]} (30 days, ≤300, registrable domains, no social/hosting/app stores).',
+  ...SHOWCASE_METHODOLOGY.map(m => `${m.title}: ${m.body}`),
   'Every tool response carries receipts. Headlines and links only; read the original source for full articles.'
 ].join('\n');

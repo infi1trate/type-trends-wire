@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { startTransition, useState, useTransition } from "react";
 import { Link } from "@tanstack/react-router";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { rebrandsQuery } from "@/lib/data";
 import { SECTORS } from "@/lib/library";
 import type { Rebrand, Side, TraitStage } from "@/lib/rebrands";
@@ -40,8 +40,10 @@ function Traits({ list }: { list: TraitStage[] }) {
   if (!shown.length) return null;
   return <div className="label flex flex-wrap gap-x-3 gap-y-1 text-compare-muted"><span>NEW TRAITS</span>{shown.map(t => <span key={t.trait}><span className="text-ink">{t.label.toUpperCase()}</span> {STAGE[t.stage ?? ""] ?? t.stage?.toUpperCase()}{t.share != null && ` · ${Math.round(t.share * 100)}% OF ${t.scope === "all" ? "LIBRARY" : t.scope.toUpperCase()}`}</span>)}</div>;
 }
+const NOT_TAGGED = <span className="text-compare-muted">NOT TAGGED</span>;
+const tagList = (s: Side, k: "aesthetic" | "tone") => (s.tags ? s.tags[k].map(words).join(" · ") || "—" : NOT_TAGGED);
 function Entry({ r }: { r: Rebrand }) {
-  const b = r.before, a = r.after;
+  const b = r.before, a = r.after, tagged = !!b.tags && !!a.tags;
   return <article className="border-b border-rule" aria-labelledby={`rb-${r.id}`}>
     <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 pt-3">
       <h3 id={`rb-${r.id}`} className="text-hero font-semibold"><Link to="/library/$domain" params={{ domain: r.domain }} search={{ viewport: "desktop", page_type: "home", a: "", b: "" }} className="hover:underline">{r.domain}</Link></h3>
@@ -57,9 +59,9 @@ function Entry({ r }: { r: Rebrand }) {
         <Row label="FONTS" before={<Fonts s={b} />} after={<Fonts s={a} />} changed={b.h1 !== a.h1 || b.body !== a.body} />
         <Row label="PALETTE" before={<Palette s={b} />} after={<Palette s={a} />} changed={!sameJson([b.bg, b.accent, b.palette], [a.bg, a.accent, a.palette])} />
         <Row label="THEME" before={words(b.theme)} after={words(a.theme)} changed={b.theme !== a.theme} />
-        <Row label="HERO" before={`${words(b.tags?.hero_layout)} · ${words(b.hero_media)} MEDIA`} after={`${words(a.tags?.hero_layout)} · ${words(a.hero_media)} MEDIA`} changed={b.hero_media !== a.hero_media || b.tags?.hero_layout !== a.tags?.hero_layout} />
-        <Row label="AESTHETIC" before={b.tags?.aesthetic.map(words).join(" · ") || "—"} after={a.tags?.aesthetic.map(words).join(" · ") || "—"} changed={!sameJson(b.tags?.aesthetic, a.tags?.aesthetic)} />
-        <Row label="TONE" before={b.tags?.tone.map(words).join(" · ") || "—"} after={a.tags?.tone.map(words).join(" · ") || "—"} changed={!sameJson(b.tags?.tone, a.tags?.tone)} />
+        <Row label="HERO" before={`${b.tags ? words(b.tags.hero_layout) : "NOT TAGGED"} · ${words(b.hero_media)} MEDIA`} after={`${a.tags ? words(a.tags.hero_layout) : "NOT TAGGED"} · ${words(a.hero_media)} MEDIA`} changed={b.hero_media !== a.hero_media || (tagged && b.tags?.hero_layout !== a.tags?.hero_layout)} />
+        <Row label="AESTHETIC" before={tagList(b, "aesthetic")} after={tagList(a, "aesthetic")} changed={tagged && !sameJson(b.tags?.aesthetic, a.tags?.aesthetic)} />
+        <Row label="TONE" before={tagList(b, "tone")} after={tagList(a, "tone")} changed={tagged && !sameJson(b.tags?.tone, a.tags?.tone)} />
       </tbody>
     </table>
     <div className="flex flex-col gap-2 p-3">
@@ -79,28 +81,27 @@ const SOURCES = ["ALL", "LIVE", "ARCHIVE"] as const;
 export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s: string) => void }) {
   const [source, setSource] = useState<(typeof SOURCES)[number]>("ALL"), [year, setYear] = useState("ALL"), [limit, setLimit] = useState(PAGE);
   const filters = { sector, ...(source !== "ALL" ? { source: source.toLowerCase() as "live" | "archive" } : {}), ...(year !== "ALL" ? { year: Number(year) } : {}), limit };
-  const q = useQuery({ ...rebrandsQuery(filters), placeholderData: keepPreviousData });
-  const d = q.data;
+  // Suspense query so SSR data hydrates deterministically; filter changes run in a transition to keep the current list visible.
+  const { data: d } = useSuspenseQuery(rebrandsQuery(filters));
+  const [pending, go] = useTransition();
   const reset = () => setLimit(PAGE);
-  return <section aria-label="Rebrand desk" className="flex min-h-0 flex-1 flex-col">
-    <PanelHeader title="F9 REBRAND DESK" meta={d ? <span className="num">{d.counts.total} REBRANDS SINCE 2021 · {d.counts.this_quarter} THIS QUARTER</span> : "…"} />
+  return <section aria-label="Rebrand desk" aria-busy={pending} className={`flex min-h-0 flex-1 flex-col ${pending ? "opacity-60" : ""}`}>
+    <PanelHeader title="F9 REBRAND DESK" meta={<span className="num">{d.counts.total}<span className="max-sm:hidden"> REBRANDS</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
     <div className="flex flex-wrap items-center gap-2 border-b border-rule p-3">
-      <Seg label="Source" options={SOURCES} value={source} onChange={v => { setSource(v); reset(); }} />
-      <Seg label="Year" options={["ALL", ...(d?.years ?? []).map(String)] as string[]} value={year} onChange={v => { setYear(v); reset(); }} />
+      <Seg label="Source" options={SOURCES} value={source} onChange={v => go(() => { setSource(v); reset(); })} />
+      <Seg label="Year" options={["ALL", ...d.years.map(String)] as string[]} value={year} onChange={v => go(() => { setYear(v); reset(); })} />
       <label className="label flex items-center gap-2 text-compare-muted">SECTOR
-        <select value={sector} onChange={e => { onSector(e.target.value); reset(); }} className="label h-10 border border-rule bg-void px-2 text-ink md:h-8">
+        <select value={sector} onChange={e => { const v = e.target.value; go(() => { onSector(v); reset(); }); }} className="label h-10 border border-rule bg-void px-2 text-ink md:h-8">
           <option value="all">ALL</option>{SECTORS.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
         </select>
       </label>
-      {d && <span className="label num text-compare-muted" aria-live="polite">{d.filtered.total} SHOWN BY FILTER · LIVE {d.filtered.live} · ARCHIVE {d.filtered.archive}</span>}
+      {<span className="label num text-compare-muted" aria-live="polite">{d.filtered.total} SHOWN BY FILTER · LIVE {d.filtered.live} · ARCHIVE {d.filtered.archive}</span>}
     </div>
     <div className="min-h-0 flex-1 md:overflow-y-auto">
-      {q.isError && <p role="alert" className="p-3">REBRAND DESK UNAVAILABLE</p>}
-      {!d && !q.isError && <p className="p-3">▍</p>}
-      {d && d.rows.length === 0 && <p className="p-3 text-compare-muted">NO CONFIRMED REBRANDS FOR THIS FILTER. Try ALL sources or another year — archive coverage is quarterly and uneven.</p>}
-      {d?.rows.map(r => <Entry key={r.id} r={r} />)}
-      {d && d.rows.length < d.filtered.total && <div className="p-3"><Button variant="outline" className="label" disabled={q.isFetching} onClick={() => setLimit(l => Math.min(l + PAGE, 200))}>{q.isFetching ? "LOADING…" : `MORE · ${d.filtered.total - d.rows.length} LEFT`}</Button></div>}
-      <p className="label border-t border-rule p-3 text-compare-muted">SOURCE: CONFIRMED LIBRARY CHANGES (TWO CAPTURES, DESKTOP HOME) · LIVE CRAWLER + WAYBACK QUARTERLY ARCHIVE · DATA THROUGH {day(d?.data_through ?? null)} · STAGES FROM THE LATEST FORECAST · LOGOS AND TEXT COLOR ARE NOT MEASURED</p>
+      {d.rows.length === 0 && <p className="p-3 text-compare-muted">NO CONFIRMED REBRANDS FOR THIS FILTER. Try ALL sources or another year — archive coverage is quarterly and uneven.</p>}
+      {d.rows.map(r => <Entry key={r.id} r={r} />)}
+      {d.rows.length < d.filtered.total && <div className="p-3"><Button variant="outline" className="label" disabled={pending} onClick={() => startTransition(() => setLimit(l => Math.min(l + PAGE, 500)))}>{pending ? "LOADING…" : `MORE · ${d.filtered.total - d.rows.length} LEFT`}</Button></div>}
+      <p className="label border-t border-rule p-3 text-compare-muted">SOURCE: CONFIRMED LIBRARY CHANGES (TWO CAPTURES, DESKTOP HOME) · LIVE CRAWLER + WAYBACK QUARTERLY ARCHIVE · DATA THROUGH {day(d.data_through)} · STAGES FROM THE LATEST FORECAST · LOGOS AND TEXT COLOR ARE NOT MEASURED</p>
     </div>
   </section>;
 }

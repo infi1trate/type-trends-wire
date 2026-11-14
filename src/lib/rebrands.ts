@@ -60,6 +60,7 @@ export function traitLabel(trait: string) {
   if (d === "theme") return `${w} theme`; if (d === "hero_media") return `${w} hero`; if (d === "aesthetic") return `${w} aesthetic`; if (d === "tone") return `${w} tone`; if (d === "hero_layout") return `${w} hero layout`;
   return w;
 }
+export const AI_TRAIT_DIMS = new Set(["aesthetic", "tone", "hero_layout", "imagery", "components", "color_mood", "ai_positioning"]);
 const sideTraits = (s: Side) => new Set(siteTraits({ domain: "", quarter: "", sector: "", theme: s.theme, h1_family: s.h1, hero_media: s.hero_media, ai_tags: s.tags ? { aesthetic: s.tags.aesthetic, tone: s.tags.tone, hero_layout: s.tags.hero_layout } : null }));
 function stageOf(trait: string, sector: string, fc: Map<string, ForecastIn>): TraitStage {
   const r = [fc.get(`${sector}|${trait}`), fc.get(`all|${trait}`)].find(x => x && x.status === "ok") ?? null;
@@ -67,7 +68,9 @@ function stageOf(trait: string, sector: string, fc: Map<string, ForecastIn>): Tr
 }
 /** Deterministic one-line read from forecast stages, e.g. "moved from peaking dark theme to rising serif headline — ahead of 82% of fintech". */
 export function readLine(before: Side, after: Side, sector: string, fc: Map<string, ForecastIn>) {
-  const b = sideTraits(before), a = sideTraits(after);
+  // AI-tag traits only count when both captures carry valid tags; a missing tag set is unknown, not a change.
+  const tagged = !!before.tags && !!after.tags, keep = (t: string) => tagged || !AI_TRAIT_DIMS.has(t.slice(0, t.indexOf(":")));
+  const b = new Set([...sideTraits(before)].filter(keep)), a = new Set([...sideTraits(after)].filter(keep));
   const rank = (order: string[]) => (x: TraitStage, y: TraitStage) => order.indexOf(x.stage ?? "") - order.indexOf(y.stage ?? "") || (y.momentum ?? 0) - (x.momentum ?? 0) || x.trait.localeCompare(y.trait);
   const gained = [...a].filter(t => !b.has(t)).map(t => stageOf(t, sector, fc)), lost = [...b].filter(t => !a.has(t)).map(t => stageOf(t, sector, fc));
   const g = gained.filter(t => t.stage).sort(rank(GAIN_ORDER))[0], l = lost.filter(t => t.stage).sort(rank(LOSS_ORDER))[0];
@@ -75,7 +78,9 @@ export function readLine(before: Side, after: Side, sector: string, fc: Map<stri
   const st = (t: TraitStage) => `${STAGE_WORD[t.stage ?? ""] ?? t.stage} ${t.label}`;
   let move = g && l ? `moved from ${st(l)} to ${st(g)}` : g ? `adopted ${st(g)}` : l ? `dropped ${st(l)}` : null;
   if (move && g && g.share != null) { const where = g.scope === "all" ? "the library" : g.scope; move += g.stage === "emerging" || g.stage === "accelerating" ? ` — ahead of ${Math.round((1 - g.share) * 100)}% of ${where}` : ` — joins ${Math.round(g.share * 100)}% of ${where}`; }
-  const read = [font ? `headline ${font}` : null, move].filter(Boolean).join("; ") || "identity change; no forecast trait moved";
+  const ha = hueOf(after.accent), hb = hueOf(before.accent);
+  const accent = ha && hb && ha !== hb ? `accent ${hb} → ${ha}` : null, theme = before.theme && after.theme && before.theme !== after.theme ? `${before.theme} → ${after.theme} theme` : null;
+  const read = [font ? `headline ${font}` : null, accent, theme, move].filter(Boolean).join("; ") || "identity change; no forecast trait moved";
   return { read: read.slice(0, 220), new_traits: gained.sort(rank(GAIN_ORDER)) };
 }
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

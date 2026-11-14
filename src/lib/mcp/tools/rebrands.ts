@@ -1,0 +1,13 @@
+import { defineTool } from "@lovable.dev/mcp-js";
+import { z } from "zod";
+import { librarySector } from "@/lib/library-payload";
+import { MAX_REBRAND_LIMIT } from "@/lib/rebrands";
+import { json, READ } from "./shared";
+export default defineTool({ name: "rebrands", title: "Rebrand desk", description: "Confirmed identity changes (fonts, accent/palette hue, theme, redesigns) across library sites, newest first, with before/after fields and the forecast stage of each new trait.",
+  inputSchema: { sector: librarySector.optional(), since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("ISO date; only rebrands confirmed on or after it."), limit: z.number().int().min(1).max(MAX_REBRAND_LIMIT).default(10) }, annotations: READ,
+  handler: async ({ sector, since, limit }) => {
+    const { rebrands } = await import("@/lib/rebrands.server");
+    const r = await rebrands({ sector, since: since ? `${since}T00:00:00Z` : undefined, limit }, MAX_REBRAND_LIMIT);
+    return json({ counts: r.counts, matched: r.filtered.total, rows: r.rows.map(x => ({ domain: x.domain, sector: x.sector, source: x.source, confirmed_at: x.confirmed_at, first_seen: x.effective_at, reasons: x.reasons, fields: x.fields, before: x.before, after: x.after, read: x.read, new_traits: x.new_traits, links: { library: `https://type-trends-wire.lovable.app${x.links.library}`, archive_before: x.links.archive_before, archive_after: x.links.archive }, covered_by: x.wire, receipts: { event_ids: x.event_ids, snapshots: [x.before.snapshot_id, x.after.snapshot_id] } })),
+      receipts: { source: "DSGN Library confirmed changes (live crawler + Wayback quarterly archive)", data_through: r.data_through, method: "trend://methodology#REBRAND DESK" } });
+  } });

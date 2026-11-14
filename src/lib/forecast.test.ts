@@ -85,6 +85,14 @@ describe("brief citations", () => {
   it("rejects when fewer than four sections survive", () => {
     expect(validateBrief({ ...base, sections: [sec("Rising", "5 sites", []), sec("Peaking", "6", []), sec("Fading", "x", []), sec("Next wave", "y", [])] }, allowed).ok).toBe(false);
   });
+  it("keeps a call to watch only when it cites a forecast in the evidence", () => {
+    const secs = [sec("Rising", "Dark.", []), sec("Peaking", "x", []), sec("Fading", "y", []), sec("Next wave", "z", [])];
+    const ok = validateBrief({ ...base, sections: secs, watch: { id: "theme:dark:all", call: "Dark theme at 41% keeps climbing." } }, allowed);
+    expect(ok.ok && ok.brief.watch).toEqual({ id: "theme:dark:all", call: "Dark theme at 41% keeps climbing." });
+    const bad = validateBrief({ ...base, sections: secs, watch: { id: "theme:light:all", call: "Light." } }, allowed);
+    expect(bad.ok && bad.brief.watch).toBeUndefined();
+    expect(bad.ok && bad.dropped).toContain("watch");
+  });
 });
 
 import { nextWaveIneligibleReason } from "./forecast-signals";

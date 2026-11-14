@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { forecastQuery, forecastDetailQuery, chartCardQuery, type ForecastRow, type BriefDoc } from "@/lib/data";
@@ -60,7 +60,6 @@ export function ForecastPanel() {
   const lagRows = all.filter(r => r.sectors && Object.values(r.sectors).some(Boolean)).sort((a, b) => Object.values(b.sectors!).filter(Boolean).length - Object.values(a.sectors!).filter(Boolean).length).slice(0, 20);
   const setters = data.setters.filter(s => sector === "all" || s.sector === sector).slice(0, 20);
   const brief = data.briefs.find(b => b.week === week) ?? data.briefs[0];
-  const { data: chart } = useQuery(chartCardQuery(brief?.week ?? null));
   return <div className="library min-h-0 flex-1 md:overflow-y-auto">
     <section aria-label="Model card" className="sticky top-0 z-10 grid grid-cols-2 border-b border-rule bg-void sm:grid-cols-3 lg:grid-cols-6">
       {[["DATA THROUGH", card?.data_through ?? "—"], ["MEDIAN MAE", card?.median_mae_pts == null ? `— (${card?.n_backtested ?? 0} BACKTESTED)` : `${card.median_mae_pts.toFixed(1)} PTS`], ["HIT-RATE", card?.hit_rate == null ? "—" : pct(card.hit_rate, 0)], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : "—"], ["COMPONENT COVERAGE", card?.component_coverage ? COMPONENTS.map(([k]) => `${k.slice(0, 4).toUpperCase()} ${card.component_coverage?.[k] ?? 0}`).join(" · ") + ` / ${card.component_coverage["rows"] ?? 0}` : "—"]].map(([l, v]) =>
@@ -115,7 +114,7 @@ export function ForecastPanel() {
       </LibraryBand>
     </div>
 
-    <LibraryBand title={`CHART OF THE WEEK · ${chart?.week ?? "—"}`}><ChartOfWeek card={chart ?? null} /></LibraryBand>
+    <LibraryBand title={`CHART OF THE WEEK · ${brief?.week ?? "—"}`}><Suspense fallback={<p className="p-3">▍</p>}><ChartBand week={brief?.week ?? null} /></Suspense></LibraryBand>
     <LibraryBand title={`BRIEF · ${brief?.week ?? "—"} · AI`}>
       {brief ? <BriefView brief={brief.brief} onTrait={(id) => { const [dimension, ...rest] = id.replace(/:all$/, "").split(":"); setOpen({ dimension: dimension ?? "", value: rest.join(":") }); }} /> : <p className="p-3 text-compare-muted">FIRST BRIEF PUBLISHES AFTER THE FIRST FORECAST RUN</p>}
       {data.briefs.length > 1 && <div className="flex flex-wrap gap-1 border-t border-rule p-3" aria-label="Brief archive"><span className="label text-compare-muted">ARCHIVE</span>{data.briefs.map(b => <Button key={b.week} variant="ghost" className={`label h-8 ${b.week === brief?.week ? "text-signal" : ""}`} aria-pressed={b.week === brief?.week} onClick={() => setWeek(b.week)}>{b.week}</Button>)}</div>}
@@ -124,6 +123,7 @@ export function ForecastPanel() {
   </div>;
 }
 
+function ChartBand({ week }: { week: string | null }) { const { data } = useSuspenseQuery(chartCardQuery(week)); return <ChartOfWeek card={data} />; }
 function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) => void }) {
   return <article className="p-3">
     <h3 className="text-hero font-semibold"><span className="label mr-2 text-signal">AI</span>{brief.headline}</h3>

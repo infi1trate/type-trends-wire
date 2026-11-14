@@ -7,6 +7,7 @@ import { TypeIndex } from "@/components/terminal/TypeIndex";
 import { Dormant, Overview } from "@/components/terminal/Views";
 import { Wire, useWireRealtime } from "@/components/terminal/Wire";
 import { METHODOLOGY } from "@/lib/bands";
+import { SHOWCASE_METHODOLOGY } from "@/lib/showcase-methodology";
 import { Button } from "@/components/ui/button";
 import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
@@ -102,7 +103,7 @@ function Terminal() {
         {panel === "history" && <Suspense fallback={<div className="p-3">▍</div>}><HistoryPanel/></Suspense>}
         {panel === "brief" && <Suspense fallback={<div className="p-3">▍</div>}><ForecastPanel/></Suspense>}
         {panel === "vibe" && <Suspense fallback={<div className="p-3">▍</div>}><VibeMap sector={search.sector ?? "all"} onSector={setSector} onMethod={() => setOverlay("method")}/></Suspense>}
-        {panel === "rebrands" && <RebrandDesk sector={search.sector ?? "all"} onSector={setSector}/>}
+        {panel === "rebrands" && <Suspense fallback={<div className="p-3">▍</div>}><RebrandDesk sector={search.sector ?? "all"} onSector={setSector}/></Suspense>}
         {(panel==="color"||panel==="layout"||panel==="composition"||panel==="lexicon") && <CrawlPanel key={panel} panel={panel}/>}
         {!["overview", "type", "wire","color","layout","composition","lexicon","library","history","brief","vibe","rebrands"].includes(panel) && <Dormant id={panel} />}
       </main>
@@ -135,6 +136,7 @@ function Terminal() {
           <ul className="flex flex-col gap-2">
             {METHODOLOGY.map((m) => (<li key={m} className="text-ink">{m}</li>))}
           </ul>
+          {SHOWCASE_METHODOLOGY.map(m => <section key={m.title}><h3 className="label mt-4 mb-2 text-ink">{m.title}</h3><p className="text-ink">{m.body}</p></section>)}
           <h3 className="label mt-4 mb-2 text-ink">CRAWLER</h3>
           <p className="text-ink">Mainstream: Chrome UX Report top origins. Vanguard: curated design-forward studios and startups plus Show HN launches. Language comparisons default to English; ALL includes every language. Shares use all successful sites within the selected language scope.</p>
           <p className="mt-2 text-ink">Desktop homepage first viewport, 1440×900. Robots.txt respected; adult and gambling sites filtered. Rendered fonts measured via Chromium. Derived data only; no screenshots stored. Weekly Sunday 03:23 UTC.</p>

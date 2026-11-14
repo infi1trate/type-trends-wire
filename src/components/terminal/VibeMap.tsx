@@ -61,7 +61,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
             {points.map(p => {
               const dim = sector !== "all" && p.sector !== sector, on = selected == null || p.cluster === selected, isFocus = p.domain === focus;
               return <rect key={p.domain} x={scale.X(p.x) - DOT / 2} y={scale.Y(p.y) - DOT / 2} width={DOT} height={DOT}
-                fill={isFocus ? "var(--signal)" : on && selected != null ? "var(--ink)" : "var(--g500)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
+                fill={isFocus ? "var(--signal)" : on && selected != null ? "var(--white)" : "var(--grey-500)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
                 onMouseEnter={() => setFocus(p.domain)} onClick={() => { setFocus(p.domain); setSelected(p.cluster); svgRef.current?.focus(); }} className="cursor-pointer"><title>{p.domain}</title></rect>;
             })}
           </svg>
@@ -78,7 +78,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
           return <li key={c.id} className="border-b border-rule">
             <button type="button" aria-pressed={selected === c.id} onClick={() => { setSelected(selected === c.id ? null : c.id); setFocus(null); }} className={`flex w-full flex-col gap-1 p-3 text-left ${selected === c.id ? "bg-g800" : "hover:bg-g900"}`}>
               <span className="flex justify-between gap-2"><span className="font-semibold text-ink">{c.name.toUpperCase()}</span><span className="num text-ink">{n}</span></span>
-              <span className="label num text-compare-muted">{pct(c.share)} OF MAP{c.momentum ? ` · ${c.momentum.delta_pts >= 0 ? "+" : ""}${c.momentum.delta_pts.toFixed(1)} PTS VS ${c.momentum.from_quarter} (N=${c.momentum.from_n})` : " · NO HISTORY BASE"}</span>
+              <span className="label tabular-nums text-compare-muted">{pct(c.share)} OF MAP{c.momentum ? ` · ${c.momentum.delta_pts >= 0 ? "+" : ""}${c.momentum.delta_pts.toFixed(1)} PTS VS ${c.momentum.from_quarter} (N=${c.momentum.from_n})` : " · NO HISTORY BASE"}</span>
               <span className="label text-compare-muted">{(c.top_sectors ?? []).slice(0, 3).map(s => `${s.sector.toUpperCase()} ${s.n}`).join(" · ")}</span>
             </button>
           </li>;
