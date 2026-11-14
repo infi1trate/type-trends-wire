@@ -22,7 +22,7 @@ function quantile(values: number[], q: number) { if (!values.length) return Infi
 
 /** All rule hits before dedupe. Breakout ranks across every ok row; trait-level rules use the library-wide ('all') row. */
 /** Breakout: top-decile momentum (cut over every ok row) on ≥3 sites, below saturation share and not yet peaking/declining — bias against consensus; saturation alerts cover the rest. */
-export function isBreakout(r: AlertInput, cut: number) {
+export function isBreakout(r: AlertInput, cut: number): r is AlertInput & { momentum: number } {
   return r.status === "ok" && r.momentum !== null && r.momentum > 0 && r.momentum >= cut && r.sites >= BREAKOUT_MIN_SITES
     && r.current_share !== null && r.current_share < SATURATION_SHARE && r.stage !== "peaking" && r.stage !== "declining";
 }

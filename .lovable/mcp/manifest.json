@@ -89,7 +89,7 @@
       {
         "name": "wire",
         "title": "Design news wire",
-        "description": "Recent design news (RSS, Hacker News, Bluesky, Are.na, Product Hunt) and DSGN/TERMINAL trend alerts. Filter by keyword, tag, source or source_kind.",
+        "description": "Recent design news (RSS, Hacker News, Bluesky, Product Hunt) and DSGN/TERMINAL trend alerts. Filter by keyword, tag, source or source_kind.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
