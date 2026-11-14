@@ -106,7 +106,7 @@
 - [x] Godly removed from methodology gallery list (kept in enum).
 - [ ] Product Hunt stays dormant until Brandon adds PRODUCT_HUNT_TOKEN.
 # Phase 6A — showcase (terminal side)
-- [ ] F9 Rebrand Desk: identity-change log from confirmed live + archive events, before/after rows, forecast read, wire match, filters, MCP `rebrands`, methodology.
-- [ ] F7 Vibe Map: pure tag-vector PCA + k-means with named clusters, weekly `vibe_points` storage, scatter UI with keyboard, MCP `vibe_map`, methodology.
-- [ ] Chart of the Week: stored card per brief, /chart and /chart/$week pages, SVG + PNG (1200×675, 1080×1350), og:image, F10 block; generate current card.
-- [ ] Tests (PCA/k-means determinism, naming, rebrand rules, SVG snapshot, routes) and report; no publishing.
+- [x] F9 Rebrand Desk: identity-change log from confirmed live + archive events, before/after rows, forecast read, wire match, filters, MCP `rebrands`, methodology.
+- [x] F7 Vibe Map: pure tag-vector PCA + k-means with named clusters, weekly `vibe_points` storage, scatter UI with keyboard, MCP `vibe_map`, methodology.
+- [x] Chart of the Week: stored card per brief, /chart and /chart/$week pages, SVG + PNG (1200×675, 1080×1350), og:image, F10 block; generate current card.
+- [x] Tests (PCA/k-means determinism, naming, rebrand rules, SVG snapshot, routes) and report; no publishing.

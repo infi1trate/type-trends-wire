@@ -3,3 +3,6 @@
 - Are.na stays hard-off (`ARENA_ENABLED` in `sources.ts`) because its acceptable-use policy forbids automated harvesting; nothing may write `arena` rows.
 - External source polling (Product Hunt) keeps conditional-request cursors in the private `source_cursors` table and stays within a per-run request budget.
 - Missing forecast components count as the cohort mean and are recorded per row; never backfill absent historical signals in the backtest.
+- Showcase math stays pure: rebrand detection/read lines in `rebrands.ts`, tag-space PCA/k-means in `vibe.ts`, card selection/layout in `chart/model.ts` + `chart/card.ts`; `*.server.ts` only load and store, so UI, MCP and tests share one result.
+- Chart PNGs use the pure-JS rasterizer (`chart/raster.ts` + generated `glyphs.gen.ts` from `scripts/build-glyph-atlas.py`) because WASM renderers can't be verified on the hosted runtime; `chart_cards` stores each week's model so published cards stay immutable.
+- Vibe map coordinates and the chart card are produced after the weekly forecast run and never fail it; `vibe_points` keep one run's projection per quarter.
