@@ -80,3 +80,11 @@ A third index next to mainstream and vanguard: sites design galleries are featur
 ## Discourse sampler (`npm run jetstream`)
 
 `.github/workflows/jetstream.yml` listens to Bluesky's public Jetstream for 30 minutes every 4 hours (~3,000 posts/min). English, non-reply posts that read as design talk count mentions of the terms the terminal tracks (`GET /api/public/discourse-terms`; font names match case-sensitively) and of fatigue phrases ("played out", "overdone", …). It posts aggregate counts plus at most 400 design posts (text ≤300 chars, post link, first external link) to `POST /api/public/ingest-wire`. It is a sample of windows, not the full firehose; counts travel with `sampled_posts`. Exits cleanly if the terminal hasn't deployed the endpoints yet.
+
+## Watchdog (`.github/workflows/watchdog.yml`)
+
+Failures become GitHub issues (GitHub emails the repo owner) and close themselves on recovery. Hourly, `src/watchdog.js` polls the terminal's public `/api/public/health`; while it isn't `ok` there is one open issue labelled `health` with the stale/failing jobs (updated only when the table changes). After every run of weekly-crawl, library-crawl, wayback-backfill, render-queue and discourse-sampler, a failure opens (or keeps) one `workflow-failure` issue per workflow; the next success closes it. Uses the built-in `GITHUB_TOKEN`; no extra secrets.
+
+## Library replacements (Nov 2026)
+
+27 sites that blocked the crawler (403/429/bot walls, no live capture in 5+ days) were swapped for same-sector peers that passed a robots + render probe with the crawler's own code. Removed sites are deactivated by `library_sync`, so their history stays.

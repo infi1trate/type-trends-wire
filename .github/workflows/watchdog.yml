@@ -1,0 +1,41 @@
+name: watchdog
+# Turns failures into GitHub issues (GitHub emails the repo owner) and closes them on recovery:
+#  - hourly: polls the terminal's /api/public/health (wire, crawl, forecast, AI worker, render queue, sampler…)
+#  - after every run of the crawler workflows: one issue per failing workflow, closed by its next success.
+on:
+  schedule:
+    - cron: "11 * * * *"
+  workflow_dispatch:
+  workflow_run:
+    workflows: [weekly-crawl, library-crawl, wayback-backfill, render-queue, discourse-sampler]
+    types: [completed]
+permissions:
+  issues: write
+  contents: read
+concurrency: { group: watchdog-${{ github.event_name }}-${{ github.event.workflow_run.name || 'health' }}, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Health check
+        if: github.event_name != 'workflow_run'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WATCH_MODE: health
+        run: node src/watchdog.js
+      - name: Workflow result
+        if: github.event_name == 'workflow_run'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WATCH_MODE: workflow
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: node src/watchdog.js
