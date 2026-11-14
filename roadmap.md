@@ -92,10 +92,10 @@
 - [x] Refresh rerun and fintech-headline / pair reruns reported; no publishing.
 - [x] Rendered crawl results: accept signals, rendered mode in critique/differentiate, 30-day re-queue, cache clearing on refresh and per URL.
 # Phase 5 — signal breadth
-- [ ] MCP surfaces known tool errors (taste, LITE, budget, input) verbatim; unknown stay generic.
-- [ ] Curated index: payload/galleries, curation lead in spread, forecast `curation` component, third column in crawler UI.
-- [ ] Discourse: terms endpoint, ingest-wire items/mentions, discourse_counts, RSS/HN counting, forecast `discourse` + fatigue flag.
-- [ ] Are.na (6h) and Product Hunt (daily, dormant without token) sources; seed-candidates endpoint.
-- [ ] Supply component and flooding note; seven-component score with per-row coverage; backtest before/after.
-- [ ] Weekly wire alerts (≤10, 28-day trait dedupe), F8 source chips, MCP wire source_kind.
-- [ ] Methodology sections, tests, alert dry run; no publishing.
+- [x] MCP surfaces known tool errors (taste, LITE, budget, input) verbatim; unknown stay generic.
+- [x] Curated index: payload/galleries, curation lead in spread, forecast `curation` component, third column in crawler UI.
+- [x] Discourse: terms endpoint, ingest-wire items/mentions, discourse_counts, RSS/HN counting, forecast `discourse` + fatigue flag.
+- [x] Are.na (6h) and Product Hunt (daily, dormant without token) sources; seed-candidates endpoint.
+- [x] Supply component and flooding note; seven-component score with per-row coverage; backtest before/after.
+- [x] Weekly wire alerts (≤10, 28-day trait dedupe), F8 source chips, MCP wire source_kind.
+- [x] Methodology sections, tests, alert dry run; no publishing.

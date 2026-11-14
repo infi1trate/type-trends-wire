@@ -5,7 +5,7 @@ describe("crawler comparisons", () => {
   it("formats positive spreads in points", () => expect(spreadText(33)).toBe("+33 PTS"));
   it("formats negative spreads in points", () => expect(spreadText(-12)).toBe("-12 PTS"));
   it("keeps prior-run gaps unknown", () => expect(spreadText(null)).toBe("—"));
-  it("orders comparisons by vanguard share", () => expect(compare([{index_name:"mainstream",share:.9,k:"a"},{index_name:"vanguard",share:.2,k:"a"},{index_name:"vanguard",share:.8,k:"b"}], r=>r.k)).toEqual([{label:"b",v:.8,m:0},{label:"a",v:.2,m:.9}]));
+  it("orders comparisons by vanguard share and keeps curated as a third column", () => expect(compare([{index_name:"mainstream",share:.9,k:"a"},{index_name:"vanguard",share:.2,k:"a"},{index_name:"curated",share:.5,k:"a"},{index_name:"vanguard",share:.8,k:"b"}], r=>r.k)).toEqual([{label:"b",v:.8,m:0,c:0},{label:"a",v:.2,m:.9,c:.5}]));
 });
 describe("language scope persistence", () => {
   it("defaults to English", () => expect(readScope({getItem:()=>null})).toBe("en"));

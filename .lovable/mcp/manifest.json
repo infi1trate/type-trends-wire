@@ -89,7 +89,7 @@
       {
         "name": "wire",
         "title": "Design news wire",
-        "description": "Recent design news from design publications (RSS) and Hacker News. Filter by keyword, tag or source.",
+        "description": "Recent design news (RSS, Hacker News, Bluesky, Are.na, Product Hunt) and DSGN/TERMINAL trend alerts. Filter by keyword, tag, source or source_kind.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -119,6 +119,18 @@
               "description": "e.g. 'Dezeen', 'Hacker News'",
               "type": "string",
               "maxLength": 100
+            },
+            "source_kind": {
+              "description": "'alert' = weekly breakout/crossover/saturation/sentiment/discourse alerts with numbers in the excerpt",
+              "type": "string",
+              "enum": [
+                "rss",
+                "hn",
+                "bluesky",
+                "arena",
+                "producthunt",
+                "alert"
+              ]
             },
             "since_hours": {
               "default": 72,

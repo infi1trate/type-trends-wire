@@ -119,6 +119,18 @@ The GitHub crawler (`crawler/`) renders URLs that LITE analysis could not cover.
 
 A `done` result may carry `signals` (the crawler's rendered page analysis object); `signals` on an `error` result is rejected. Signals are stored privately with `rendered_at` and are never exposed publicly. `critique` and `differentiate` use a rendered result for a non-library URL (exact URL, or the same host+path ignoring `www.` and trailing slashes) when it is at most 30 days old; older results are re-queued when the URL is analysed again, keeping the old signals until replaced. A new rendered result clears cached responses for that URL.
 
+## Signal-breadth endpoints (Phase 5)
+
+Same crawler-secret check as above (`Authorization: Bearer` or `x-crawl-secret`).
+
+- `/api/public/ingest-crawl` — `index` is `mainstream` | `vanguard` | `curated`; a site may carry `galleries` (≤10 of `godly, landbook, awwwards, minimalgallery, onepagelove, cssda, saaslandingpage, arena, producthunt`; duplicates collapsed).
+- `GET /api/public/discourse-terms` — `{"version","terms":[{"term","kind","trait"?}],"fatigue":[...]}`, ≤600 terms. Font terms match case-sensitively; other terms case-insensitively on word boundaries. `version` changes when the list changes.
+- `POST /api/public/ingest-wire` (body ≤256 KB, unknown fields rejected):
+  - `{"kind":"items","items":[{"source_kind":"bluesky","url":"https://bsky.app/profile/<did-or-handle>/post/<rkey>","title"≤300,"author"≤100,"published_at","link"?,"terms"?≤20}]}` ≤200 items; deduped by `url`; items older than 7 days or >1 hour in the future are skipped. Public output is headline + source + link only; `terms` is accepted but not stored.
+  - `{"kind":"mentions","window_start","window_end","sampled_posts","design_posts","counts":{"<term>":{"n","fatigue"}}}` — window ≤7 days, ≤600 keys, `design_posts ≤ sampled_posts`, `n ≤ sampled_posts`, `fatigue ≤ n`, key `*` reserved. Re-posting the same window replaces its counts.
+  - The managed 15-minute schedule still POSTs `{}` with its own credential to poll RSS/HN.
+- `GET /api/public/seed-candidates` — `{"domains":[{"domain","sources":["arena"|"producthunt"],"first_seen"}]}`, last 30 days, ≤300, registrable domains only, social/hosting/app-store hosts excluded.
+
 ## Build with Lovable
 
 Continue developing this project in the [Lovable editor](https://lovable.dev/projects/917ab2ab-52dd-46f4-9151-8504b8f1a60f).

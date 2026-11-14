@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { forecastSeries, fitLogistic, logistic, classifyStage, backtestSeries, qLabel, qIndex, type SeriesPoint } from "./forecast";
 import { trendsetterScores, crossingQuarter, nextWaveScores } from "./forecast-signals";
+import { LEGACY_NEXT_WAVE_WEIGHTS, NEXT_WAVE_WEIGHTS } from "./forecast-constants";
 import { validateBrief } from "./forecast-brief";
 const series = (fn: (t: number) => number, n = 12, denom = 100, start = "2021Q1"): SeriesPoint[] => Array.from({ length: n }, (_, t) => ({ quarter: qLabel(qIndex(start) + t), share: fn(t), denom, coverage: 0.8 }));
 describe("forecast model", () => {
@@ -62,7 +63,15 @@ describe("leading indicators", () => {
   });
   it("next-wave score exposes weighted z components", () => {
     const r = nextWaveScores([{ gap: 10, vanguard: null, momentum: 2, corroboration: 0 }, { gap: -10, vanguard: null, momentum: -2, corroboration: 0 }]);
-    expect(r[0]!.score).toBeCloseTo(0.65); expect(r[1]!.score).toBeCloseTo(-0.65); expect(r[0]!.z.vanguard).toBeNull();
+    expect(r[0]!.score).toBeCloseTo(0.5); expect(r[1]!.score).toBeCloseTo(-0.5); expect(r[0]!.z.vanguard).toBeNull(); expect(r[0]!.z.curation).toBeNull();
+    const legacy = nextWaveScores([{ gap: 10, momentum: 2 }, { gap: -10, momentum: -2 }], LEGACY_NEXT_WAVE_WEIGHTS);
+    expect(legacy[0]!.score).toBeCloseTo(0.65);
+  });
+  it("uses seven weights summing to 1 and scores curation/discourse/supply", () => {
+    expect(Object.values(NEXT_WAVE_WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+    expect(Object.keys(NEXT_WAVE_WEIGHTS)).toEqual(["gap", "vanguard", "curation", "momentum", "corroboration", "discourse", "supply"]);
+    const r = nextWaveScores([{ curation: 20, discourse: 2, supply: 3 }, { curation: -20, discourse: -2, supply: -3 }]);
+    expect(r[0]!.score).toBeCloseTo(0.15 + 0.08 + 0.04);
   });
 });
 describe("brief citations", () => {
