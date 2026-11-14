@@ -12,7 +12,9 @@ on:
 permissions:
   issues: write
   contents: read
-concurrency: { group: watchdog-${{ github.event_name }}-${{ github.event.workflow_run.name || 'health' }}, cancel-in-progress: false }
+concurrency:
+  group: watchdog-${{ github.event_name }}-${{ github.event.workflow_run.name || 'health' }}
+  cancel-in-progress: false
 defaults:
   run:
     working-directory: crawler
