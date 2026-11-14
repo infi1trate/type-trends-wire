@@ -8,8 +8,8 @@ on:
         description: "Sites per index (mainstream and vanguard)"
         default: "500"
       indexes:
-        description: "Indexes to crawl (curated needs the Phase 5 terminal deploy)"
-        default: "mainstream,vanguard"
+        description: "Indexes to crawl"
+        default: "mainstream,vanguard,curated"
       per_curated:
         description: "Sites in the curated (gallery) index"
         default: "300"
@@ -37,7 +37,7 @@ jobs:
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           PER_INDEX: ${{ inputs.per_index || '500' }}
           PER_CURATED: ${{ inputs.per_curated || '300' }}
-          INDEXES: ${{ inputs.indexes || 'mainstream,vanguard' }}  # add ",curated" once the terminal accepts it
+          INDEXES: ${{ inputs.indexes || 'mainstream,vanguard,curated' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           CONCURRENCY: "8"
         run: npm run crawl
