@@ -19,6 +19,7 @@ import { RebrandDesk } from "@/components/terminal/Rebrands";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
 import { ForecastPanel } from "@/components/terminal/Forecast";
 import {TasteConsole} from "@/components/terminal/TasteConsole";
+import { HealthLine } from "@/components/terminal/Health";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: typefaces, color, layout and design news, measured weekly.";
@@ -110,6 +111,7 @@ function Terminal() {
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>
         <div className="flex shrink-0 items-center">
+          <HealthLine />
           <Button variant="link" aria-label="Open taste console" onClick={()=>setOverlay('taste')} className="label h-6 px-2 text-ink max-md:h-10">/</Button>
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
           <Button variant="link" onClick={() => setOverlay("method")} className="label h-6 px-2 text-ink max-md:h-10">METHODOLOGY</Button>

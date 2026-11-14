@@ -19,6 +19,7 @@ import { Route as ApiPublicChartCardRouteImport } from './routes/api/public/char
 import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
 import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public/discourse-terms'
 import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicIngestArenaRouteImport } from './routes/api/public/ingest-arena'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
@@ -82,6 +83,11 @@ const ApiPublicDiscourseTermsRoute = ApiPublicDiscourseTermsRouteImport.update({
 const ApiPublicForecastRunRoute = ApiPublicForecastRunRouteImport.update({
   id: '/api/public/forecast-run',
   path: '/api/public/forecast-run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicIngestArenaRoute = ApiPublicIngestArenaRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
+    | '/api/public/health'
     | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
+    | '/api/public/health'
     | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
+    | '/api/public/health'
     | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
@@ -307,6 +319,7 @@ export interface RootRouteChildren {
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
   ApiPublicDiscourseTermsRoute: typeof ApiPublicDiscourseTermsRoute
   ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestArenaRoute: typeof ApiPublicIngestArenaRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/forecast-run'
       fullPath: '/api/public/forecast-run'
       preLoaderRoute: typeof ApiPublicForecastRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest-arena': {
@@ -491,6 +511,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
   ApiPublicDiscourseTermsRoute: ApiPublicDiscourseTermsRoute,
   ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestArenaRoute: ApiPublicIngestArenaRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,

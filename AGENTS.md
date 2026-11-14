@@ -19,8 +19,10 @@ use the editor.
   Ask Lovable to change the schema.
 - **Generated files.** Do not edit a file whose header says it is automatically
   generated.
-- **AI gateway.** Keep model calls on Lovable's gateway, and keep
-  `LOVABLE_API_KEY` out of browser code.
+- **AI provider.** Model calls go through `src/lib/ai-provider.server.ts`:
+  `AI_PROVIDER=lovable` (default, Lovable gateway) or `google` (Gemini API
+  direct with `GEMINI_API_KEY`, failing closed without it). Keep
+  `LOVABLE_API_KEY` and `GEMINI_API_KEY` out of browser code.
 - **Connectors.** Lovable provides native connectors. `list_connectors` shows
   which are enabled; `add_connector` only returns the dashboard link. When a
   connector is enabled, calls go through the connector gateway and need
@@ -47,9 +49,9 @@ use the editor.
 - Library state uses a service-role-only DISTINCT ON RPC after crawler-secret verification; public views exclude raw text, which lives in an RLS-locked separate table.
 - Library UI queries use server functions wrapped by `src/lib/data.ts` query options with a shared anonymous SELECT-only store; MCP reuses the store and returns projected fingerprints without skeleton or private text.
 - Baseline surface eligibility is computed in transactional snapshot context and checked by pure diffs; require an existing domain capture strictly more than 24 hours earlier to prevent first-run noise.
-- AI inference uses the Gateway SDK with atomic cost reservations; vision unknown outcomes are never replayed, while interrupted idempotent text jobs retry below three attempts only after charging orphan reservations in full.
+- AI inference uses the provider layer with atomic cost reservations; vision unknown outcomes are never replayed, while interrupted idempotent text jobs retry below three attempts only after charging orphan reservations in full.
 - AI confirmation uses a separate private baseline keyed by domain/page/viewport/kind and the existing pure advance function, so late AI output cannot clear measured pending changes or count one snapshot twice.
-- Vision inference sends image data directly to the Gateway in memory; never persist images or log request/provider bodies, so app storage contains derived tags only.
+- Vision inference sends image data directly to the configured AI provider in memory; never persist images or log request/provider bodies, so app storage contains derived tags only.
 - Vision quality is normalized before persistence; blocked or low-confidence captures break AI change confirmation and are excluded after latest-snapshot selection from trend denominators and reuse.
 - Vision sends the fold plus up to four labeled top-to-bottom sections; sections supersede the legacy page strip to bound inference at five images while retaining old callers.
 - Text workers incrementally claim at most three distinct-key jobs concurrently, stop claiming at 50 seconds, abort inference at 57 seconds for cleanup within 60 seconds, and cap runs at 25 during active backfill or 10 otherwise; validation failures get one durable correction retry.

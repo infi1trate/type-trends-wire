@@ -115,7 +115,7 @@ export function ForecastPanel() {
     </div>
 
     <LibraryBand title={`CHART OF THE WEEK · ${brief?.week ?? "—"}`}><Suspense fallback={<p className="p-3">▍</p>}><ChartBand week={brief?.week ?? null} /></Suspense></LibraryBand>
-    <LibraryBand title={`BRIEF · ${brief?.week ?? "—"} · AI`}>
+    <LibraryBand title={`BRIEF · ${brief?.week ?? "—"} · AI VIA ${brief?.brief.provider === "google" ? "GOOGLE AI STUDIO" : "LOVABLE AI"}`}>
       {brief ? <BriefView brief={brief.brief} onTrait={(id) => { const [dimension, ...rest] = id.replace(/:all$/, "").split(":"); setOpen({ dimension: dimension ?? "", value: rest.join(":") }); }} /> : <p className="p-3 text-compare-muted">FIRST BRIEF PUBLISHES AFTER THE FIRST FORECAST RUN</p>}
       {data.briefs.length > 1 && <div className="flex flex-wrap gap-1 border-t border-rule p-3" aria-label="Brief archive"><span className="label text-compare-muted">ARCHIVE</span>{data.briefs.map(b => <Button key={b.week} variant="ghost" className={`label h-8 ${b.week === brief?.week ? "text-signal" : ""}`} aria-pressed={b.week === brief?.week} onClick={() => setWeek(b.week)}>{b.week}</Button>)}</div>}
     </LibraryBand>

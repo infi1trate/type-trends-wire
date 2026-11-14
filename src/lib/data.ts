@@ -6,6 +6,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functions";
 import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
+import { getHealth } from "./health.functions";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
 export const libraryHistoryQuery = () => queryOptions({queryKey:["library-history"],staleTime:10*60_000,queryFn:()=>getLibraryHistory({data:{}})});
 
@@ -277,8 +278,8 @@ export type CrawlData = {
 // FORECAST (F10): public SELECT-only reads of the latest finished run.
 const FORECAST_COLS = "dimension,value,scope,status,stage,model,current_share,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi,momentum,next_wave_score,components,quarters:evidence->quarters,sectors:evidence->sectors,crossed:evidence->crossed_20";
 export type ForecastRow = { dimension: string; value: string; scope: string; status: string; stage: string | null; model: string | null; current_share: number | null; proj_q1: number | null; proj_q1_lo: number | null; proj_q1_hi: number | null; proj_q2: number | null; proj_q2_lo: number | null; proj_q2_hi: number | null; proj_q4: number | null; proj_q4_lo: number | null; proj_q4_hi: number | null; momentum: number | null; next_wave_score: number | null; components: { z?: Record<string, number | null>; raw?: Record<string, number | null> } | null; quarters: { q: string; s: number | null; n: number; c: number }[] | null; sectors: Record<string, string | null> | null; crossed: string | null };
-export type ModelCard = { data_through: string | null; backtest_cutoff: string; median_mae_pts: number | null; hit_rate: number | null; n_backtested: number; n_traits: number; n_forecast_ok: number; n_insufficient: number; usable_quarters_all: string[]; next_wave_backtest: { ranked: number; grew_5pts: number; status?: string; hit_rate?: number | null }; next_wave_backtest_legacy_weights?: { ranked: number; grew_5pts: number; hit_rate?: number | null }; component_coverage?: Record<string, number> };
-export type BriefDoc = { week: string; headline: string; caveats: string; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: "forecast" | "event" | "wire" | "spread"; id: string }[] }[] };
+export type ModelCard = { data_through: string | null; ai_provider?: "lovable" | "google" | "misconfigured"; backtest_cutoff: string; median_mae_pts: number | null; hit_rate: number | null; n_backtested: number; n_traits: number; n_forecast_ok: number; n_insufficient: number; usable_quarters_all: string[]; next_wave_backtest: { ranked: number; grew_5pts: number; status?: string; hit_rate?: number | null }; next_wave_backtest_legacy_weights?: { ranked: number; grew_5pts: number; hit_rate?: number | null }; component_coverage?: Record<string, number> };
+export type BriefDoc = { week: string; headline: string; caveats: string; provider?: "lovable" | "google"; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: "forecast" | "event" | "wire" | "spread"; id: string }[] }[] };
 export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleTime: 10 * 60_000, queryFn: async () => {
   const [card, rows, setters, briefs] = await Promise.all([
     supabase.from("forecast_model_card").select("*").maybeSingle(),
@@ -305,3 +306,4 @@ export type RebrandFilters = { sector?: string; source?: "live" | "archive"; yea
 export const rebrandsQuery = (f: RebrandFilters) => queryOptions({ queryKey: ["rebrands", f.sector ?? "all", f.source ?? "all", f.year ?? 0, f.limit], staleTime: 10 * 60_000, queryFn: () => getRebrands({ data: { ...(f.sector && f.sector !== "all" ? { sector: f.sector } : {}), ...(f.source ? { source: f.source } : {}), ...(f.year ? { year: f.year } : {}), offset: 0, limit: f.limit } }) });
 export const vibeQuery = () => queryOptions({ queryKey: ["vibe-map"], staleTime: 10 * 60_000, queryFn: () => getVibeMap() });
 export const chartCardQuery = (week: string | null) => queryOptions({ queryKey: ["chart-card", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getChartCard({ data: { week } }) });
+export const healthQuery = () => queryOptions({ queryKey: ["health"], staleTime: 60_000, refetchInterval: 120_000, queryFn: () => getHealth() });

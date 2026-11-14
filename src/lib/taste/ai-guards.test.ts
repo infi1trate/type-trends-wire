@@ -1,7 +1,7 @@
 // @vitest-environment node
 import {describe,it,expect,vi,beforeEach} from 'vitest';
 const mock=vi.hoisted(()=>({rpc:vi.fn(),generate:vi.fn(),stored:new Map<string,unknown>(),updates:vi.fn()}));
-vi.mock('@lovable.dev/ai-gateway',()=>({generateChatCompletion:mock.generate}));
+vi.mock('@lovable.dev/ai-gateway',()=>({generateChatCompletion:mock.generate,GatewayError:class extends Error{}}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{rpc:mock.rpc,from:(table:string)=>table==='tool_cache'?{select:()=>({eq:(_k:string,hash:string)=>({gt:()=>({maybeSingle:async()=>({data:mock.stored.has(hash)?{response:mock.stored.get(hash)}:null,error:null})})})}),upsert:async(row:{hash:string;response:unknown})=>{mock.stored.set(row.hash,row.response);return {error:null};}}:{update:()=>({eq:mock.updates})}}}));
 import {parseTasteBrief,publicInference} from './ai.server';
 import {briefSchema} from './schema';

@@ -110,3 +110,9 @@
 - [x] F7 Vibe Map: pure tag-vector PCA + k-means with named clusters, weekly `vibe_points` storage, scatter UI with keyboard, MCP `vibe_map`, methodology.
 - [x] Chart of the Week: stored card per brief, /chart and /chart/$week pages, SVG + PNG (1200×675, 1080×1350), og:image, F10 block; generate current card.
 - [x] Tests (PCA/k-means determinism, naming, rebrand rules, SVG snapshot, routes) and report; no publishing.
+# Phase 7A — hardening
+- [x] Provider layer (lovable | google) used by library, brief and taste calls; fail closed; per-provider prices; provider on ai_usage, brief and model card; tests.
+- [x] Parity script (`bun scripts/ai-parity.ts`), dry; skips without GEMINI_API_KEY.
+- [ ] Run parity + models.list on Google: waits on Brandon adding GEMINI_API_KEY (paid-tier project). Do not flip AI_PROVIDER.
+- [x] GET /api/public/health + status-bar HEALTH line and job table; staleness/status/safety tests.
+- [ ] Direct cron timeout check: platform blocks SQL reads of scheduler internals; health infers cut-offs instead. 90 s timeout fix stays with Brandon.

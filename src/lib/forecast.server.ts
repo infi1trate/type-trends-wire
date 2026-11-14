@@ -7,6 +7,7 @@ import { discourseSignal, traitTermMap, weeklyBuckets, DISCOURSE_WEEKS, type Dis
 import { gfAdditions, supplyValue, isFlooding, FLOODING_NOTE, type FirstSeen } from "./supply";
 import { alertCandidates, alertRow, selectAlerts, ALERT_DEDUPE_DAYS, type Alert, type AlertInput } from "./alerts";
 import { SECTORS } from "./library";
+import { providerLabel } from "./ai-provider";
 type Db = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 async function pages<T>(f: (from: number) => PromiseLike<{ data: T[] | null; error: unknown }>) { const out: T[] = []; for (let from = 0; ; from += 1000) { const { data, error } = await f(from); if (error) throw error; out.push(...(data ?? [])); if (!data || data.length < 1000) break; } return out; }
 const CUTOFF = "2025Q2", KEEP_RUNS = 12, MIN_OBSERVED = 3;
@@ -170,7 +171,7 @@ async function compute(db: Db, runId: number) {
     usable_quarters_all: Object.entries(quarterCoverage).filter(([, v]) => v.denom >= 15 && v.coverage >= 0.25).map(([q]) => q), next_wave_backtest: nwBacktest, next_wave_backtest_legacy_weights: nwLegacy, weights: NEXT_WAVE_WEIGHTS,
     component_coverage: { rows: allRows.length, scored: allRows.filter(r => r.next_wave_score != null).length, ...Object.fromEntries(COMPONENT_KEYS.map(k => [k, allRows.filter(r => ((r.components as { raw?: Components }).raw?.[k] ?? null) !== null).length])) },
     crawl: { run: crawlIds[0] ?? null, prev_run: crawlIds[1] ?? null, n: Object.fromEntries(["mainstream", "vanguard", "curated"].map(i => [i, latestCrawl.filter(s => s.index_name === i).length])), gallery_mix: mix },
-    discourse_rows: discourseRows.length, thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
+    discourse_rows: discourseRows.length, ai_provider: providerLabel(process.env), thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
   return { cutoff: latestAll, coverage: quarterCoverage, card, alertInputs };
 }
 

@@ -1,0 +1,110 @@
+// Job health: pure staleness + status rules over timestamps from the public health_facts() RPC.
+// Shared by GET /api/public/health and the terminal status bar so both always agree.
+import { z } from "zod";
+
+export type Every = "15m" | "6h" | "1d" | "7d";
+export const EVERY_MS: Record<Every, number> = { "15m": 15 * 60_000, "6h": 6 * 3_600_000, "1d": 86_400_000, "7d": 7 * 86_400_000 };
+export const STALE_FACTOR = 2;
+export const QUEUE_MAX_AGE_MS = 6 * 3_600_000;
+export const DISCOURSE_MAX_AGE_MS = 10 * 3_600_000;
+export const WAYBACK_ACTIVE_MS = 14 * 86_400_000;
+export const CHART_MAX_AGE_MS = 14 * 86_400_000;
+export const STUCK_RUN_MS = 15 * 60_000;
+export const MIN_CRAWL_OK_RATE = 0.7;
+export const CORE_JOBS = ["wire", "crawl", "forecast"] as const;
+export const TIMEOUT_NOTE = "callback timeout 5s — worker may be cut off";
+
+export type HealthStatus = "ok" | "degraded" | "down";
+export type JobHealth = { job: string; last_ok_at: string | null; last_run_at: string | null; last_status: string; expected_every: Every; stale: boolean; consecutive_failures: number; note?: string };
+export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[] };
+
+const ts = z.string().nullable().optional().transform(v => v ?? null);
+const num = z.coerce.number().nullable().optional().transform(v => v ?? 0);
+const ingest = z.object({ last_run_at: ts, last_ok_at: ts, last_ok: z.boolean().nullable().optional(), failures_since_ok: num }).partial();
+export const healthFactsSchema = z.object({
+  now: z.string().optional(),
+  ingest: z.record(z.string(), ingest).nullable().optional().transform(v => v ?? {}),
+  library_check_at: ts, library_full_at: ts, wayback_received_at: ts,
+  crawl_runs: z.array(z.object({ status: z.string().nullable().optional(), started_at: ts, finished_at: ts, ok: z.coerce.number().nullable().optional(), tried: z.coerce.number().nullable().optional() })).nullable().optional().transform(v => v ?? []),
+  forecast_runs: z.array(z.object({ status: z.string().nullable().optional(), computed_at: ts })).nullable().optional().transform(v => v ?? []),
+  ai_jobs: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts, last_activity_at: ts, paused: z.boolean().nullable().optional() }).nullable().optional(),
+  ai_interrupted_24h: num,
+  render_queue: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts }).nullable().optional(),
+  bluesky_window_end: ts, taste_refreshed_at: ts,
+  brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),
+  // Optional cron-introspection flags (job name → has callback timeout). Not available on managed Cloud.
+  timeouts: z.array(z.object({ job: z.string(), has_timeout: z.boolean() })).nullable().optional().transform(v => v ?? []),
+});
+export type HealthFacts = z.input<typeof healthFactsSchema>;
+
+const ms = (iso: string | null | undefined) => { if (!iso) return null; const t = Date.parse(iso); return Number.isFinite(t) ? t : null; };
+/** True when there is no successful run, or the last one is older than maxAgeMs. */
+export function olderThan(lastOk: string | null | undefined, maxAgeMs: number, now: number): boolean { const t = ms(lastOk); return t === null || now - t > maxAgeMs; }
+/** Stale = last ok older than 2× the expected interval (or never ok). */
+export function isStale(lastOk: string | null | undefined, every: Every, now: number): boolean { return olderThan(lastOk, STALE_FACTOR * EVERY_MS[every], now); }
+
+/** down if any core job (wire, crawl, forecast) is stale; degraded if any other job is stale or flagged. */
+export function overallStatus(jobs: Pick<JobHealth, "job" | "stale" | "last_status">[]): HealthStatus {
+  if (jobs.some(j => j.stale && (CORE_JOBS as readonly string[]).includes(j.job))) return "down";
+  if (jobs.some(j => j.stale || j.last_status === "low_ok_rate")) return "degraded";
+  return "ok";
+}
+
+const age = (iso: string | null, now: number) => { const t = ms(iso); if (t === null) return "—"; const m = Math.max(0, Math.round((now - t) / 60_000)); return m < 120 ? `${m}m` : m < 2880 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
+const notes = (...n: (string | false | null | undefined)[]) => { const s = n.filter(Boolean).join("; "); return s ? { note: s } : {}; };
+
+export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
+  const f = healthFactsSchema.parse(raw), t = now.getTime();
+  const timeoutMissing = (cronJob: string) => f.timeouts.some(x => x.job === cronJob && !x.has_timeout);
+  const jobs: JobHealth[] = [];
+  for (const [job, key, every] of [["wire", "ingest-wire", "15m"], ["gfonts", "ingest-gfonts", "1d"]] as const) {
+    const r = f.ingest[key] ?? {};
+    jobs.push({ job, last_ok_at: r.last_ok_at ?? null, last_run_at: r.last_run_at ?? null, last_status: r.last_ok == null ? "never" : r.last_ok ? "ok" : "error", expected_every: every, stale: isStale(r.last_ok_at, every, t), consecutive_failures: r.failures_since_ok ?? 0 });
+  }
+  jobs.push({ job: "library_check", last_ok_at: f.library_check_at, last_run_at: f.library_check_at, last_status: f.library_check_at ? "ok" : "never", expected_every: "1d", stale: isStale(f.library_check_at, "1d", t), consecutive_failures: 0, note: "newest live capture (daily check or Saturday full)" });
+  jobs.push({ job: "library_full", last_ok_at: f.library_full_at, last_run_at: f.library_full_at, last_status: f.library_full_at ? "ok" : "never", expected_every: "7d", stale: isStale(f.library_full_at, "7d", t), consecutive_failures: 0, note: "newest Saturday full capture" });
+  {
+    // Older rows only carry a day-level receipt (run id date at 00:00 UTC): count it as end of that day.
+    const wb = f.wayback_received_at, w = ms(wb);
+    const dayLevel = w !== null && new Date(w).toISOString().endsWith("T00:00:00.000Z");
+    const effective = w === null ? null : new Date(dayLevel ? Math.min(t, w + 86_399_999) : w).toISOString();
+    const active = effective !== null && !olderThan(effective, WAYBACK_ACTIVE_MS, t);
+    jobs.push(active
+      ? { job: "wayback", last_ok_at: wb, last_run_at: wb, last_status: "ok", expected_every: "6h", stale: isStale(effective, "6h", t), consecutive_failures: 0, ...notes("backfill active", dayLevel && "day-level receipt (run date only); counted as end of that day") }
+      : { job: "wayback", last_ok_at: wb, last_run_at: wb, last_status: "idle", expected_every: "6h", stale: false, consecutive_failures: 0, note: "backfill idle (no archive captures in 14 days) — ignored" });
+  }
+  {
+    const runs = f.crawl_runs, latest = runs[0], i = runs.findIndex(r => r.status === "finished"), fin = i >= 0 ? runs[i] : undefined;
+    const failures = (i >= 0 ? runs.slice(0, i) : runs).filter(r => r.status !== "running").length;
+    const rate = fin && fin.tried ? (fin.ok ?? 0) / fin.tried : null, low = rate !== null && rate < MIN_CRAWL_OK_RATE;
+    jobs.push({ job: "crawl", last_ok_at: fin?.finished_at ?? null, last_run_at: latest?.started_at ?? null, last_status: low ? "low_ok_rate" : latest?.status ?? "never", expected_every: "7d", stale: isStale(fin?.finished_at, "7d", t), consecutive_failures: failures,
+      ...notes(rate !== null && `last finished run ok-rate ${Math.round(rate * 100)}% (${fin!.ok}/${fin!.tried})${low ? " — below 70%" : ""}`) });
+  }
+  {
+    const runs = f.forecast_runs, latest = runs[0], i = runs.findIndex(r => r.status === "ok"), ok = i >= 0 ? runs[i] : undefined;
+    const stuck = latest?.status === "running" && olderThan(latest.computed_at, STUCK_RUN_MS, t);
+    jobs.push({ job: "forecast", last_ok_at: ok?.computed_at ?? null, last_run_at: latest?.computed_at ?? null, last_status: stuck ? "stuck" : latest?.status ?? "never", expected_every: "7d", stale: isStale(ok?.computed_at, "7d", t), consecutive_failures: (i >= 0 ? runs.slice(0, i) : runs).filter(r => r.status === "error").length,
+      ...notes(stuck && "latest run never finished — callback may be cut off", timeoutMissing("forecast-weekly") && TIMEOUT_NOTE) });
+  }
+  {
+    const q = f.ai_jobs, pending = q?.pending ?? 0, oldest = q?.oldest_pending_at ?? null;
+    jobs.push({ job: "library_ai", last_ok_at: q?.last_done_at ?? null, last_run_at: q?.last_activity_at ?? null, last_status: q?.paused ? "paused" : pending ? "pending" : "ok", expected_every: "6h", stale: pending > 0 && olderThan(oldest, QUEUE_MAX_AGE_MS, t), consecutive_failures: 0,
+      ...notes(`${pending} pending${pending ? `, oldest ${age(oldest, t)}` : ""}`, f.ai_interrupted_24h > 0 && `${f.ai_interrupted_24h} text jobs interrupted in 24h — callback may be cut off`, timeoutMissing("dsgn-library-ai-worker") && TIMEOUT_NOTE) });
+  }
+  {
+    const q = f.render_queue, pending = q?.pending ?? 0, oldest = q?.oldest_pending_at ?? null;
+    jobs.push({ job: "render_queue", last_ok_at: q?.last_done_at ?? null, last_run_at: q?.last_done_at ?? null, last_status: pending ? "pending" : "ok", expected_every: "6h", stale: pending > 0 && olderThan(oldest, QUEUE_MAX_AGE_MS, t), consecutive_failures: 0, note: `${pending} pending${pending ? `, oldest ${age(oldest, t)}` : ""}` });
+  }
+  jobs.push({ job: "discourse", last_ok_at: f.bluesky_window_end, last_run_at: f.bluesky_window_end, last_status: f.bluesky_window_end ? "ok" : "never", expected_every: "6h", stale: olderThan(f.bluesky_window_end, DISCOURSE_MAX_AGE_MS, t), consecutive_failures: 0, note: "Bluesky sampler; stale after 10h" });
+  jobs.push({ job: "taste_refresh", last_ok_at: f.taste_refreshed_at, last_run_at: f.taste_refreshed_at, last_status: f.taste_refreshed_at ? "ok" : "never", expected_every: "7d", stale: isStale(f.taste_refreshed_at, "7d", t), consecutive_failures: 0 });
+  {
+    const b = f.brief;
+    jobs.push(!b
+      ? { job: "chart_card", last_ok_at: null, last_run_at: null, last_status: "never", expected_every: "7d", stale: true, consecutive_failures: 0, note: "no weekly brief yet" }
+      : { job: "chart_card", last_ok_at: b.card_at, last_run_at: b.card_at ?? b.created_at, last_status: b.card_at ? "ok" : "missing", expected_every: "7d", stale: !b.card_at || olderThan(b.card_at, CHART_MAX_AGE_MS, t), consecutive_failures: 0, note: b.card_at ? `latest brief ${b.week}` : `no card for latest brief ${b.week}` });
+  }
+  return { status: overallStatus(jobs), checked_at: now.toISOString(), jobs };
+}
+
+/** Fallback when the facts cannot be read at all. */
+export function unavailableHealth(now: Date): HealthPayload { return { status: "down", checked_at: now.toISOString(), jobs: [] }; }
