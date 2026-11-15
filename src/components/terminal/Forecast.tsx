@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useState } from "react";
+import { AddToWatch } from "./Watch";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { forecastQuery, forecastDetailQuery, chartCardQuery, discourseSinceQuery, type ForecastRow, type BriefDoc } from "@/lib/data";
@@ -22,7 +23,7 @@ const ql = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
 export const traitLabel = (dimension: string, value: string) => label(`${dimension}:${value}`).name;
 function TraitName({ dimension, value }: { dimension: string; value: string }) { const l = label(`${dimension}:${value}`); return <><span className="normal-case">{l.name}</span> <DimTag d={l.dimension} /></>; }
 /** Secondary link to the editorial explainer; terminal navigation (drawer) is unchanged. */
-function Explainer({ dimension, value }: { dimension: string; value: string }) { return <Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="label ml-2 whitespace-nowrap text-compare-muted underline-offset-2 hover:text-ink hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">EXPLAINER →</Link>; }
+function Explainer({ dimension, value }: { dimension: string; value: string }) { return <span className="inline-flex items-center"><Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="label ml-2 whitespace-nowrap text-compare-muted underline-offset-2 hover:text-ink hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">EXPLAINER →</Link><AddToWatch target={`${dimension}:${value}`} name={label(`${dimension}:${value}`).name} /></span>; }
 const key = (r: { dimension: string; value: string }) => `${r.dimension}:${r.value}`;
 
 type Pt = { q: string; s: number | null; n: number; c: number };

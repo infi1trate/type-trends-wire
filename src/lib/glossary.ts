@@ -22,6 +22,7 @@ const PANELS: Row[] = [
   ["p-rebrands", "Rebrand desk", "Confirmed identity changes on library sites: fonts, colors, theme and the traits they adopted.", "Each card compares before and after, with the forecast stage of what they moved to.", "m-rebrand-desk"],
   ["p-forecast", "Forecast", "Projected adoption for every trait, the weekly brief and the model's track record.", "Read stage and momentum first; the score ranks what may grow next.", "m-forecast"],
   ["p-library", "Library", "300 tracked sites in 10 sectors, with their current fingerprint and confirmed changes.", "Filter by sector, then open a domain for its full record.", "m-library"],
+  ["p-watch", "Watchlists", "A saved set of sites and signals with an RSS feed of every confirmed change, stage change and alert. No account: the view, edit and feed links are the keys.", "Press W for the lists on this device; in the console use watch new, watch add and audit.", "m-watchlists"],
   ["p-history", "History", "Quarterly design shares since 2021 from archived homepages.", "Use it to see whether a trait is new or a comeback.", "m-history"],
   ["p-spread", "Spread", "How much more (or less) design-led and curated sites use a signal than mainstream sites.", "Positive spread means leaders are ahead; watch it before the mainstream catches up.", "m-crawler"],
   ["p-event-tape", "Event tape", "The latest confirmed changes across the library, newest first.", "A change counts only after two captures agree.", "m-library"],

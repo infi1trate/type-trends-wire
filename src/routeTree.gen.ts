@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as AuditIndexRouteImport } from './routes/audit.index'
+import { Route as AuditNewRouteImport } from './routes/audit.new'
 import { Route as ChartIndexRouteImport } from './routes/chart.index'
 import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
@@ -24,6 +27,8 @@ import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
 import { Route as ThumbsSplatRouteImport } from './routes/thumbs.$'
 import { Route as TraitKeyRouteImport } from './routes/trait.$key'
 import { Route as TraitChar123keyChar125DotpngRouteImport } from './routes/trait.{$key}[.]png'
+import { Route as WatchIdRouteImport } from './routes/watch.$id'
+import { Route as WatchNewRouteImport } from './routes/watch.new'
 import { Route as ApiPublicChartCardRouteImport } from './routes/api/public/chart-card'
 import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
 import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public/discourse-terms'
@@ -43,15 +48,31 @@ import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
 import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/api/public/oauth-protected-resource'
 import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public/seed-candidates'
 import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/thumb-optout'
+import { Route as ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport } from './routes/api/public/watch-feed.{$token}[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuditDotpngRoute = AuditDotpngRouteImport.update({
+  id: '/audit.png',
+  path: '/audit.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditIndexRoute = AuditIndexRouteImport.update({
+  id: '/audit/',
+  path: '/audit/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditNewRoute = AuditNewRouteImport.update({
+  id: '/audit/new',
+  path: '/audit/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChartIndexRoute = ChartIndexRouteImport.update({
@@ -123,6 +144,16 @@ const TraitChar123keyChar125DotpngRoute =
     path: '/trait/{$key}.png',
     getParentRoute: () => rootRouteImport,
   } as any)
+const WatchIdRoute = WatchIdRouteImport.update({
+  id: '/watch/$id',
+  path: '/watch/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchNewRoute = WatchNewRouteImport.update({
+  id: '/watch/new',
+  path: '/watch/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicChartCardRoute = ApiPublicChartCardRouteImport.update({
   id: '/api/public/chart-card',
   path: '/api/public/chart-card',
@@ -221,10 +252,18 @@ const ApiPublicThumbOptoutRoute = ApiPublicThumbOptoutRouteImport.update({
   path: '/api/public/thumb-optout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
+  ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport.update({
+    id: '/api/public/watch-feed/{$token}.xml',
+    path: '/api/public/watch-feed/{$token}.xml',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/audit.png': typeof AuditDotpngRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -236,6 +275,9 @@ export interface FileRoutesByFullPath {
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/watch/new': typeof WatchNewRoute
+  '/audit/': typeof AuditIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/digest/': typeof DigestIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
@@ -257,10 +299,13 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/audit.png': typeof AuditDotpngRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -272,6 +317,9 @@ export interface FileRoutesByTo {
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/watch/new': typeof WatchNewRoute
+  '/audit': typeof AuditIndexRoute
   '/chart': typeof ChartIndexRoute
   '/digest': typeof DigestIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
@@ -293,11 +341,14 @@ export interface FileRoutesByTo {
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/audit.png': typeof AuditDotpngRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -309,6 +360,9 @@ export interface FileRoutesById {
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/watch/new': typeof WatchNewRoute
+  '/audit/': typeof AuditIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/digest/': typeof DigestIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
@@ -330,12 +384,15 @@ export interface FileRoutesById {
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/audit.png'
     | '/robots.txt'
+    | '/audit/new'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -347,6 +404,9 @@ export interface FileRouteTypes {
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
+    | '/watch/$id'
+    | '/watch/new'
+    | '/audit/'
     | '/chart/'
     | '/digest/'
     | '/api/public/chart-card'
@@ -368,10 +428,13 @@ export interface FileRouteTypes {
     | '/api/public/oauth-protected-resource'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/api/public/watch-feed/{$token}.xml'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/audit.png'
     | '/robots.txt'
+    | '/audit/new'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -383,6 +446,9 @@ export interface FileRouteTypes {
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
+    | '/watch/$id'
+    | '/watch/new'
+    | '/audit'
     | '/chart'
     | '/digest'
     | '/api/public/chart-card'
@@ -404,10 +470,13 @@ export interface FileRouteTypes {
     | '/api/public/oauth-protected-resource'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/api/public/watch-feed/{$token}.xml'
   id:
     | '__root__'
     | '/'
+    | '/audit.png'
     | '/robots.txt'
+    | '/audit/new'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -419,6 +488,9 @@ export interface FileRouteTypes {
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
+    | '/watch/$id'
+    | '/watch/new'
+    | '/audit/'
     | '/chart/'
     | '/digest/'
     | '/api/public/chart-card'
@@ -440,11 +512,14 @@ export interface FileRouteTypes {
     | '/api/public/oauth-protected-resource'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/api/public/watch-feed/{$token}.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuditDotpngRoute: typeof AuditDotpngRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  AuditNewRoute: typeof AuditNewRoute
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
@@ -456,6 +531,9 @@ export interface RootRouteChildren {
   ThumbsSplatRoute: typeof ThumbsSplatRoute
   TraitKeyRoute: typeof TraitKeyRoute
   TraitChar123keyChar125DotpngRoute: typeof TraitChar123keyChar125DotpngRoute
+  WatchIdRoute: typeof WatchIdRoute
+  WatchNewRoute: typeof WatchNewRoute
+  AuditIndexRoute: typeof AuditIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
   DigestIndexRoute: typeof DigestIndexRoute
   ApiPublicChartCardRoute: typeof ApiPublicChartCardRoute
@@ -477,6 +555,7 @@ export interface RootRouteChildren {
   ApiPublicOauthProtectedResourceRoute: typeof ApiPublicOauthProtectedResourceRoute
   ApiPublicSeedCandidatesRoute: typeof ApiPublicSeedCandidatesRoute
   ApiPublicThumbOptoutRoute: typeof ApiPublicThumbOptoutRoute
+  ApiPublicWatchFeedChar123tokenChar125DotxmlRoute: typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -488,11 +567,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/audit.png': {
+      id: '/audit.png'
+      path: '/audit.png'
+      fullPath: '/audit.png'
+      preLoaderRoute: typeof AuditDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/robots.txt': {
       id: '/robots.txt'
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audit/': {
+      id: '/audit/'
+      path: '/audit'
+      fullPath: '/audit/'
+      preLoaderRoute: typeof AuditIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audit/new': {
+      id: '/audit/new'
+      path: '/audit/new'
+      fullPath: '/audit/new'
+      preLoaderRoute: typeof AuditNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chart/': {
@@ -584,6 +684,20 @@ declare module '@tanstack/react-router' {
       path: '/trait/{$key}.png'
       fullPath: '/trait/{$key}.png'
       preLoaderRoute: typeof TraitChar123keyChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watch/$id': {
+      id: '/watch/$id'
+      path: '/watch/$id'
+      fullPath: '/watch/$id'
+      preLoaderRoute: typeof WatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watch/new': {
+      id: '/watch/new'
+      path: '/watch/new'
+      fullPath: '/watch/new'
+      preLoaderRoute: typeof WatchNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/chart-card': {
@@ -719,12 +833,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicThumbOptoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/watch-feed/{$token}.xml': {
+      id: '/api/public/watch-feed/{$token}.xml'
+      path: '/api/public/watch-feed/{$token}.xml'
+      fullPath: '/api/public/watch-feed/{$token}.xml'
+      preLoaderRoute: typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuditDotpngRoute: AuditDotpngRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  AuditNewRoute: AuditNewRoute,
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
@@ -736,6 +859,9 @@ const rootRouteChildren: RootRouteChildren = {
   ThumbsSplatRoute: ThumbsSplatRoute,
   TraitKeyRoute: TraitKeyRoute,
   TraitChar123keyChar125DotpngRoute: TraitChar123keyChar125DotpngRoute,
+  WatchIdRoute: WatchIdRoute,
+  WatchNewRoute: WatchNewRoute,
+  AuditIndexRoute: AuditIndexRoute,
   ChartIndexRoute: ChartIndexRoute,
   DigestIndexRoute: DigestIndexRoute,
   ApiPublicChartCardRoute: ApiPublicChartCardRoute,
@@ -757,6 +883,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOauthProtectedResourceRoute: ApiPublicOauthProtectedResourceRoute,
   ApiPublicSeedCandidatesRoute: ApiPublicSeedCandidatesRoute,
   ApiPublicThumbOptoutRoute: ApiPublicThumbOptoutRoute,
+  ApiPublicWatchFeedChar123tokenChar125DotxmlRoute:
+    ApiPublicWatchFeedChar123tokenChar125DotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

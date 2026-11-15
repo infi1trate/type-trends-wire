@@ -11,7 +11,7 @@ export async function handleMcp(req:Request):Promise<Response>{
   if(!allowed(ip))return rpcError('Rate limited',-32000,429);
   try{
     if(req.method==='OPTIONS')return new Response(null,{status:204,headers:CORS});
-     if(req.method==='GET'&&!(req.headers.get('accept')??'').includes('text/event-stream'))return Response.json({name:definition.name,version:definition.version,transport:'streamable-http',tools:['get_trend','search_trends','wire','library_site','library_events','library_sector','crawl_spread','library_trends','library_history','site_history','forecast','next_wave','trendsetters','weekly_brief','recommend_type','recommend_palette','differentiate','critique'],resources:['trend://methodology']},{headers:CORS});
+     if(req.method==='GET'&&!(req.headers.get('accept')??'').includes('text/event-stream'))return Response.json({name:definition.name,version:definition.version,transport:'streamable-http',tools:['get_trend','search_trends','wire','library_site','library_events','library_sector','crawl_spread','library_trends','library_history','site_history','forecast','next_wave','trendsetters','weekly_brief','recommend_type','recommend_palette','differentiate','critique','rebrands','vibe_map','audit_sites','watchlist_changes'],resources:['trend://methodology']},{headers:CORS});
     // The SDK supports tools/app resources, but not arbitrary read-only resources.
     // This compatibility layer adds only the requested methodology resource.
     let method:unknown;

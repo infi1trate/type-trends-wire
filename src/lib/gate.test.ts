@@ -125,7 +125,7 @@ describe("site gate", () => {
     expect(isOpenPath("/digest/rss.xml")).toBe(false);
     // Any other server route must be a deliberate decision: share images/thumbs/robots open, RSS gated.
     const otherServer = routes.filter(f => f.endsWith(".ts") && !f.startsWith("api/public/")).map(toPath).sort();
-    expect(otherServer.filter(isOpenPath)).toEqual(["/chart/2026-W46.png", "/chart/2026-W46.svg", "/digest/2026-W46.png", "/robots.txt", "/thumbs/vercel.com/2026-11-15-desktop.webp", "/trait/css%3Asubgrid.png"]);
+    expect(otherServer.filter(isOpenPath)).toEqual(["/audit.png", "/chart/2026-W46.png", "/chart/2026-W46.svg", "/digest/2026-W46.png", "/robots.txt", "/thumbs/vercel.com/2026-11-15-desktop.webp", "/trait/css%3Asubgrid.png"]);
     expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/digest/rss.xml"]);
     expect(OPEN_PATHS.every(o => o.why.length > 10)).toBe(true);
   });

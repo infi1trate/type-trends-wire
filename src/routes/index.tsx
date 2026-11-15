@@ -23,6 +23,8 @@ import { ForecastPanel } from "@/components/terminal/Forecast";
 import {TasteConsole, type LocalCommand} from "@/components/terminal/TasteConsole";
 import { HealthLine } from "@/components/terminal/Health";
 import { GATE_ENABLED } from "@/lib/gate";
+import { WatchPanel } from "@/components/terminal/Watch";
+import { parseAuditSites } from "@/lib/agency/audit";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: what moved today in type, color, layout and vibe, with receipts for every number.";
@@ -69,7 +71,9 @@ function Terminal() {
   // First visit to TODAY: show the tour once (dsgn.tour.done).
   useEffect(() => { if (panel === "today" && !window.location.hash && !search.cmd && !tourStore().done()) setTour(true); }, [panel, search.cmd]);
   const startTour = useCallback(() => { setOverlay(null); tourStore().reset(); setPanel("today"); setTour(true); }, [setOverlay, setPanel]);
-  const onLocal = useCallback((c: LocalCommand) => { setOverlay(null); if (c === "digest") { void navigate({ to: "/digest" }); return; } if (c === "today") setPanel("today"); else if (c === "signals") setPanel("overview"); else if (c === "tour") startTour(); else setOverlay("glossary"); }, [setOverlay, setPanel, startTour, navigate]);
+  const onLocal = useCallback((c: LocalCommand) => { setOverlay(null); if (c === "digest") { void navigate({ to: "/digest" }); return; }
+    if (c === "watch") { setPanel("watch"); return; }
+    if (typeof c === "object") { if (c.kind === "watch-open") void navigate({ to: "/watch/$id", params: { id: c.id }, search: { k: undefined, range: "week" } }); else { const p = parseAuditSites(c.sites); if (p.ok) void navigate({ to: "/audit", search: { sites: p.domains.join(","), sector: undefined } }); else void navigate({ to: "/audit/new", search: { sites: c.sites.join(",") || undefined } }); } return; } if (c === "today") setPanel("today"); else if (c === "signals") setPanel("overview"); else if (c === "tour") startTour(); else setOverlay("glossary"); }, [setOverlay, setPanel, startTour, navigate]);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
 
   useWireRealtime(
@@ -92,6 +96,7 @@ function Terminal() {
       if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || e.metaKey || e.ctrlKey || e.altKey) return;
       if (/^[0-9]$/.test(e.key)) { const target = FKEY_PANELS[e.key === "0" ? 9 : Number(e.key) - 1]; if (target) setPanel(target.id); return; }
       if (e.key === "t" || e.key === "T") { e.preventDefault(); setPanel("today"); return; }
+      if (e.key === "w" || e.key === "W") { e.preventDefault(); setPanel("watch"); return; }
       if (e.key === "?") { e.preventDefault(); setOverlay("glossary"); return; }
       if (e.key === "d" || e.key === "D") { e.preventDefault(); void navigate({ to: "/digest" }); return; }
       if (e.key === "/") { e.preventDefault(); setOverlay('taste'); }
@@ -116,8 +121,9 @@ function Terminal() {
         {panel === "brief" && <Suspense fallback={<div className="p-3">▍</div>}><ForecastPanel/></Suspense>}
         {panel === "vibe" && <Suspense fallback={<div className="p-3">▍</div>}><VibeMap sector={search.sector ?? "all"} onSector={setSector} onMethod={() => setOverlay("method")}/></Suspense>}
         {panel === "rebrands" && <Suspense fallback={<div className="p-3">▍</div>}><RebrandDesk sector={search.sector ?? "all"} onSector={setSector}/></Suspense>}
+        {panel === "watch" && <WatchPanel />}
         {(panel==="color"||panel==="layout"||panel==="composition"||panel==="lexicon") && <CrawlPanel key={panel} panel={panel}/>}
-        {!["today", "overview", "type", "wire","color","layout","composition","lexicon","library","history","brief","vibe","rebrands"].includes(panel) && <Dormant id={panel} />}
+        {!["today", "overview", "type", "wire","color","layout","composition","lexicon","library","history","brief","vibe","rebrands","watch"].includes(panel) && <Dormant id={panel} />}
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>

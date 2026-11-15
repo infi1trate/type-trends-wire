@@ -1,4 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
+import { getWatchView, getWatchOptions, getAudit } from "./agency.functions";
+import { parseAuditSites } from "./agency/audit";
+import type { WatchRange } from "./agency/watch-feed";
 import { supabase } from "@/integrations/supabase/client";
 import { computeBand, type BandResult, type RankPoint } from "./bands";
 import type { Scope } from "./crawl";
@@ -369,3 +372,11 @@ export const siteThumbQuery = (domain: string) => queryOptions({ queryKey: ["sit
   if (error) throw error;
   return data ?? [];
 } });
+
+// Agency workflow (gated pages): watchlists read through server functions (the table is service-role only); audits are cached per normalized site list.
+export const watchViewQuery = (id: string, range: WatchRange) => queryOptions({ queryKey: ["watch-view", id, range], staleTime: 60_000, queryFn: () => getWatchView({ data: { id, range } }) });
+export const watchOptionsQuery = () => queryOptions({ queryKey: ["watch-options"], staleTime: 10 * 60_000, queryFn: () => getWatchOptions() });
+export function auditQuery(sites: string, sector: string | null) {
+  const p = parseAuditSites(sites), key = p.ok ? p.domains.join(",") : sites.slice(0, 800);
+  return queryOptions({ queryKey: ["audit", key, sector ?? ""], staleTime: 10 * 60_000, queryFn: () => getAudit({ data: { sites: key, sector } }) });
+}

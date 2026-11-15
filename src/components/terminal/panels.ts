@@ -12,11 +12,12 @@ export const PANELS = [
   { key: "F10", id: "brief", label: "FORECAST" },
   { key: "F11", id: "library", label: "LIBRARY" },
   { key: "F12", id: "history", label: "HISTORY" },
+  { key: "W", id: "watch", label: "WATCH" },
 ] as const;
 
 export type PanelId = (typeof PANELS)[number]["id"];
 
-/** Panels reachable by F-keys and digit keys 1–0 (TODAY has its own letter key). */
+/** Panels reachable by F-keys and digit keys 1–0 (TODAY and WATCH have their own letter keys). */
 export const FKEY_PANELS = PANELS.filter(p => p.key.startsWith("F"));
 /** Old and alternative names still open the right panel (muscle memory, shared links). */
 export const PANEL_ALIASES: Record<string, PanelId> = { ticker: "overview", signals: "overview", overview: "overview", forecast: "brief" };

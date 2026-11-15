@@ -1343,6 +1343,48 @@ export type Database = {
         }
         Relationships: []
       }
+      watchlists: {
+        Row: {
+          created_at: string
+          edit_token_sha256: string
+          feed_token: string
+          id: string
+          last_viewed_at: string | null
+          name: string
+          pending_sites: string[]
+          sectors: string[]
+          sites: string[]
+          traits: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          edit_token_sha256: string
+          feed_token: string
+          id: string
+          last_viewed_at?: string | null
+          name: string
+          pending_sites?: string[]
+          sectors?: string[]
+          sites?: string[]
+          traits?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          edit_token_sha256?: string
+          feed_token?: string
+          id?: string
+          last_viewed_at?: string | null
+          name?: string
+          pending_sites?: string[]
+          sectors?: string[]
+          sites?: string[]
+          traits?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       weekly_briefs: {
         Row: {
           brief: Json
