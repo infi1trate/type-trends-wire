@@ -1,0 +1,65 @@
+import { Link } from "@tanstack/react-router";
+import type { TraitPage } from "@/lib/digest/trait";
+import { pct, pts } from "@/lib/digest/copy";
+import { DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, pr } from "./Editorial";
+
+export function TraitView({ page: p }: { page: TraitPage }) {
+  const footer = { methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/", contact: null };
+  let n = 0; const next = () => String(++n).padStart(2, "0");
+  return <DigestShell label={`${p.name} explainer`}>
+    <article aria-labelledby="ed-trait">
+      <header className="ed-wrap ed-grid pt-10 md:pt-14">
+        <div className="lg:col-span-8">
+          <p className="ed-kicker">Signal explainer · {p.dimension}</p>
+          <h1 id="ed-trait" className="ed-cover mt-3">{p.name}</h1>
+          <p className="ed-data mt-4 flex flex-wrap items-center gap-x-3 gap-y-2"><Dim d={p.dimension} /><StageWord stage={p.stage} />
+            {p.share != null && <span>{pct(p.share, 1)} of tracked homepages</span>}
+            {p.momentum != null && <span>{p.momentum >= 0 ? "gaining" : "losing"} {pts(p.momentum)}</span>}
+          </p>
+          <p className="ed-standfirst mt-6">{p.definition}</p>
+        </div>
+        <aside className="lg:col-span-4 lg:self-end" aria-label="How to read it">
+          {p.stage && p.stageNote && <p className="ed-small"><span className="ed-kicker">Stage · {p.stage}</span><br />{p.stageNote}</p>}
+          {p.dimensionNote && <p className="ed-small mt-4"><span className="ed-kicker">Dimension · {p.dimension}</span><br />{p.dimensionNote}</p>}
+          <p className="ed-data mt-4"><Link to="/" search={{ panel: "brief", trait: p.key, sector: "all" }} className="ed-tap" {...pr(p.terminal)}>Open in terminal →</Link></p>
+        </aside>
+      </header>
+
+      <section aria-labelledby="ed-t-chart" className="ed-wrap mt-12">
+        <SectionHead n={next()} id="ed-t-chart" title="Share by quarter" />
+        {p.card ? <Figure card={p.card} label={`${p.name}: share of tracked homepages by quarter, with the forecast band`} caption={<>Solid line measured, band forecast (80% interval). Source: forecast run {p.runId ?? "—"}, data through {p.dataThrough ?? "—"}. Only quarters with at least 15 sites and 25% archive coverage are drawn.</>} />
+          : <p className="ed-body">{p.chartNote}</p>}
+      </section>
+
+      {p.sectors.length > 0 && <section aria-labelledby="ed-t-sectors" className="ed-wrap mt-16">
+        <SectionHead n={next()} id="ed-t-sectors" title="Where it leads" kicker="Sectors whose share is above the all-sector share." />
+        <ul className="grid grid-cols-1 gap-6 md:grid-cols-3">{p.sectors.map(s => <li key={s.sector} className="ed-hair pt-3">
+          <p className="ed-h3">{s.sector}</p>
+          <p className="ed-data mt-1 flex flex-wrap items-center gap-2">{pct(s.share, 1)} <span className="ed-muted">(+{(s.lead * 100).toFixed(1)} pts vs all)</span><StageWord stage={s.stage} /></p>
+        </li>)}</ul>
+      </section>}
+
+      {p.receipts.length > 0 && <section aria-labelledby="ed-t-receipts" className="ed-wrap mt-16">
+        <SectionHead n={next()} id="ed-t-receipts" title="How we know" kicker="The parts of the forecast behind this signal, in words. Each links to its method." />
+        <dl className="ed-body space-y-4">{p.receipts.map(r => <div key={r.term} className="ed-hair grid grid-cols-1 gap-1 pt-3 md:grid-cols-[12rem_1fr]">
+          <dt className="ed-kicker">{r.term}</dt>
+          <dd className="ed-small">{r.text} <a href={`/#${r.anchor}`} className="ed-data whitespace-nowrap" {...pr(`/#${r.anchor}`)}>Method →</a></dd>
+        </div>)}</dl>
+      </section>}
+
+      {p.examples.length > 0 && <section aria-labelledby="ed-t-examples" className="ed-wrap mt-16">
+        <SectionHead n={next()} id="ed-t-examples" title="Example sites" kicker="Library sites that adopted it early, ranked by how many quarters they led." />
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-4">{p.examples.map(e => <SiteCard key={e.domain} domain={e.domain} name={e.name} sector={e.sector} thumb={e.thumb} lines={e.adopted ? [`adopted ${e.adopted}`] : []} />)}</div>
+      </section>}
+
+      {p.related.length > 0 && <section aria-labelledby="ed-t-related" className="ed-wrap mt-16">
+        <SectionHead n={next()} id="ed-t-related" title="Related signals" kicker={`Other ${p.dimension} signals, by share.`} />
+        <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">{p.related.map(r => <li key={r.key} className="ed-hair pt-3">
+          <Link to="/trait/$key" params={{ key: r.key }} className="ed-h3 no-underline hover:underline" {...pr(r.href)}>{r.name}</Link>
+          <p className="ed-data mt-1 flex flex-wrap items-center gap-2"><StageWord stage={r.stage} />{r.share != null && <span>{pct(r.share, 0)}</span>}</p>
+        </li>)}</ul>
+      </section>}
+    </article>
+    <DigestFooter footer={footer} />
+  </DigestShell>;
+}

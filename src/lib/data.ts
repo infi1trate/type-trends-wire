@@ -7,6 +7,7 @@ import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functio
 import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 import { getHealth } from "./health.functions";
+import { getIssue, getArchive, getTrait } from "./digest.functions";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
@@ -357,4 +358,14 @@ export const discourseSinceQuery = () => queryOptions({ queryKey: ["discourse-si
   const { data, error } = await supabase.from("discourse_counts").select("updated_at").order("updated_at").limit(1);
   if (error) throw error;
   return data?.[0]?.updated_at ?? null;
+} });
+
+// The Digest + trait explainers (public, same 10-minute TTL as the other showcase reads).
+export const issueQuery = (week: string | null) => queryOptions({ queryKey: ["digest-issue", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getIssue({ data: { week } }) });
+export const archiveQuery = () => queryOptions({ queryKey: ["digest-archive"], staleTime: 10 * 60_000, queryFn: () => getArchive() });
+export const traitPageQuery = (key: string) => queryOptions({ queryKey: ["trait-page", key], staleTime: 10 * 60_000, queryFn: () => getTrait({ data: { key } }) });
+export const siteThumbQuery = (domain: string) => queryOptions({ queryKey: ["site-thumb", domain], staleTime: 10 * 60_000, queryFn: async () => {
+  const { data, error } = await supabase.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", domain).order("captured_at", { ascending: false }).limit(4);
+  if (error) throw error;
+  return data ?? [];
 } });

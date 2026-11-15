@@ -35,7 +35,11 @@ export const stageWord = (s: string | null) => stageName(s)?.toUpperCase() ?? "T
 /** Render-time display text for a card: label-map name, dimension tag and a ticker-free call line. */
 export const cardText = (m: CardModel) => { const l = traitLabel(m.trait); return { name: l.name, dimension: l.dimension, scope: scopeText(m.scope), call: m.origin === "alert" ? alertDisplayTitle(m.call, m.trait) : m.call }; };
 
-function chart(m: CardModel, x0: number, y0: number, w: number, h: number): Prim[] {
+/** Share-by-quarter plot primitives (actual series, gap bridges, forecast band). Shared by cards, Digest figures and OG images. */
+export function chartPrims(m: Pick<CardModel, "series" | "forecast">, x0: number, y0: number, w: number, h: number): Prim[] {
+  return chart(m, x0, y0, w, h);
+}
+function chart(m: Pick<CardModel, "series" | "forecast">, x0: number, y0: number, w: number, h: number): Prim[] {
   const out: Prim[] = [], series = m.series, fc = m.forecast;
   if (!series.length) { out.push({ k: "text", x: x0, y: y0 + h / 2 - 14, text: "NO USABLE SERIES", size: 22, weight: 400, fill: COLORS.g500 }); return out; }
   const first = qIdx(series[0]!.q), lastActual = qIdx(series.at(-1)!.q), last = Math.max(lastActual, ...fc.map(f => qIdx(f.q)));
@@ -72,11 +76,11 @@ export const footerText = (m: CardModel) => `DSGN/TERMINAL · ${CARD_HOST} · da
 const footerLines = (m: CardModel) => [`DSGN/TERMINAL · ${CARD_HOST}`, `data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`];
 
 /** Display list for one card size. Deterministic: same model → same primitives. */
-export function cardScene(m: CardModel, size: CardSize): { w: number; h: number; prims: Prim[] } {
+export function cardScene(m: CardModel, size: CardSize, opts: { head?: string } = {}): { w: number; h: number; prims: Prim[] } {
   const { w, h } = CARD_SIZES[size], portrait = size === "1080x1350", pad = portrait ? 60 : 48, inner = w - pad * 2;
   const prims: Prim[] = [{ k: "rect", x: 0, y: 0, w, h, fill: COLORS.bg }];
   const t = (x: number, y: number, text: string, sz: 22 | 28 | 44 | 96, weight: 400 | 600, fill: string, anchor?: "end") => prims.push({ k: "text", x, y, text, size: sz, weight, fill, ...(anchor ? { anchor } : {}) });
-  const head = `CHART OF THE WEEK · ${m.week}${m.origin === "alert" ? " · BREAKOUT ALERT" : ""}`;
+  const head = opts.head ?? `CHART OF THE WEEK · ${m.week}${m.origin === "alert" ? " · BREAKOUT ALERT" : ""}`;
   t(pad, pad - 8, fit(head, 22, inner), 22, 400, COLORS.g500);
   const txt = cardText(m);
   t(pad, pad + 24, fit(txt.name, 44, inner), 44, 600, COLORS.ink);
@@ -99,13 +103,25 @@ export function cardScene(m: CardModel, size: CardSize): { w: number; h: number;
 }
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 /** SVG serialization of the scene. Text y is top-of-line; baseline = y + ascent·size, matching the rasterizer. */
+/** Serialize primitives. `palette` remaps chrome colors (e.g. a light editorial figure); data colors pass through. */
+export function renderPrimsSvg(w: number, h: number, prims: Prim[], o: { label: string; palette?: Partial<Record<string, string>>; style?: string; className?: string }): string {
+  const c = (x: string) => o.palette?.[x] ?? x;
+  const body = prims.map(p => {
+    if (p.k === "rect") return `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${c(p.fill)}"${p.opacity != null ? ` fill-opacity="${p.opacity}"` : ""}/>`;
+    if (p.k === "poly") return `<path d="M${p.pts.map(q => q.join(",")).join(" L")} Z" fill="${c(p.fill)}" fill-opacity="${p.opacity}"/>`;
+    if (p.k === "line") return `<polyline points="${p.pts.map(q => q.join(",")).join(" ")}" fill="none" stroke="${c(p.stroke)}" stroke-width="${p.width}" stroke-linejoin="round" stroke-linecap="round"${p.dash ? ` stroke-dasharray="${p.dash.join(" ")}"` : ""}/>`;
+    return `<text x="${p.x}" y="${r1(p.y + GLYPH_ASCENT * p.size)}" font-size="${p.size}" font-weight="${p.weight}" fill="${c(p.fill)}"${p.anchor === "end" ? ` text-anchor="end"` : ""}>${esc(p.text)}</text>`;
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg"${o.className ? ` class="${o.className}"` : ""} width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.label)}">${o.style ? `<style>${o.style}</style>` : ""}${body}</svg>`;
+}
+/** SVG serialization of the scene. Text y is top-of-line; baseline = y + ascent·size, matching the rasterizer. */
 export function renderCardSvg(m: CardModel, size: CardSize): string {
   const { w, h, prims } = cardScene(m, size);
-  const body = prims.map(p => {
-    if (p.k === "rect") return `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${p.fill}"${p.opacity != null ? ` fill-opacity="${p.opacity}"` : ""}/>`;
-    if (p.k === "poly") return `<path d="M${p.pts.map(q => q.join(",")).join(" L")} Z" fill="${p.fill}" fill-opacity="${p.opacity}"/>`;
-    if (p.k === "line") return `<polyline points="${p.pts.map(q => q.join(",")).join(" ")}" fill="none" stroke="${p.stroke}" stroke-width="${p.width}" stroke-linejoin="round" stroke-linecap="round"${p.dash ? ` stroke-dasharray="${p.dash.join(" ")}"` : ""}/>`;
-    return `<text x="${p.x}" y="${r1(p.y + GLYPH_ASCENT * p.size)}" font-size="${p.size}" font-weight="${p.weight}" fill="${p.fill}"${p.anchor === "end" ? ` text-anchor="end"` : ""}>${esc(p.text)}</text>`;
-  }).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(`${cardText(m).name} share by quarter with forecast band. ${cardText(m).call}`)}"><style>@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;display=swap');text{font-family:'Geist Mono',ui-monospace,monospace;white-space:pre}</style>${body}</svg>`;
+  return renderPrimsSvg(w, h, prims, { label: `${cardText(m).name} share by quarter with forecast band. ${cardText(m).call}`, style: "@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;display=swap');text{font-family:'Geist Mono',ui-monospace,monospace;white-space:pre}" });
+}
+/** Light chrome for editorial pages; the data line and band keep the card's signal color. */
+export const LIGHT_PALETTE: Record<string, string> = { [COLORS.bg]: "#ffffff", [COLORS.rule]: "#d6d6d6", [COLORS.g500]: "#5c5c5c", [COLORS.muted]: "#6b6b6b", [COLORS.ink]: "#111111" };
+/** Chart-only figure (no card chrome) for Digest and explainer pages. */
+export function figureSvg(m: Pick<CardModel, "series" | "forecast">, w: number, h: number, label: string): string {
+  return renderPrimsSvg(w, h, [{ k: "rect", x: 0, y: 0, w, h, fill: COLORS.bg }, ...chart(m, 0, 8, w, h - 8)], { label, palette: LIGHT_PALETTE, className: "digest-figure" });
 }

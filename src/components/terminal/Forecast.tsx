@@ -21,6 +21,8 @@ const ql = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
 /** Trait display name from the shared label map; kept as an export for older imports. */
 export const traitLabel = (dimension: string, value: string) => label(`${dimension}:${value}`).name;
 function TraitName({ dimension, value }: { dimension: string; value: string }) { const l = label(`${dimension}:${value}`); return <><span className="normal-case">{l.name}</span> <DimTag d={l.dimension} /></>; }
+/** Secondary link to the editorial explainer; terminal navigation (drawer) is unchanged. */
+function Explainer({ dimension, value }: { dimension: string; value: string }) { return <Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="label ml-2 whitespace-nowrap text-compare-muted underline-offset-2 hover:text-ink hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">EXPLAINER →</Link>; }
 const key = (r: { dimension: string; value: string }) => `${r.dimension}:${r.value}`;
 
 type Pt = { q: string; s: number | null; n: number; c: number };
@@ -83,14 +85,14 @@ export function ForecastPanel() {
 
     <LibraryBand g="p-next-wave" title={`NEXT WAVE · TOP 15 · ${sector === "all" ? "ALL SECTORS" : sector}`}>
       <ul className="divide-y divide-rule md:hidden">{wave.map(({ a, s }) => <li key={key(a)} className="space-y-1 p-2">
-        <div className="flex items-baseline justify-between gap-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><span className="label tabular-nums">{a.next_wave_score?.toFixed(2)}</span></div>
+        <div className="flex items-baseline justify-between gap-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><Explainer {...a} /><span className="label tabular-nums">{a.next_wave_score?.toFixed(2)}</span></div>
         <div className="label flex flex-wrap gap-x-3 text-compare-muted"><StageTag stage={s.stage} /><span>SHARE {pct(s.current_share)}</span><span>+4Q {s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</span><span>MOM {s.momentum == null ? "not measured" : s.momentum.toFixed(2)}</span></div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">{COMPONENTS.map(([k, l]) => <span key={k} className="label inline-flex items-center gap-1 text-compare-muted">{l.split(" ")[0]}<ZBar z={a.components?.z?.[k]} label={l} /></span>)}<Cone quarters={s.quarters ?? []} proj={projOf(s)} /></div>
       </li>)}</ul>
       <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[1040px] text-left">
         <thead className="label text-compare-muted"><tr className="border-b border-rule">{[{ h: "TRAIT", g: "trait" }, { h: "STAGE", g: "stage" }, { h: "SHARE", g: "share" }, { h: "+4Q (LO–HI)", g: "projection" }, { h: "MOM PTS/Q", g: "momentum" }, ...COMPONENTS.map(c => ({ h: c[1], g: COMPONENT_G[c[0]]! })), { h: "SCORE", g: "next-wave-score" }, { h: "SERIES", g: "series" }].map(({ h, g }) => <th key={h} scope="col" className="p-2 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead>
         <tbody>{wave.map(({ a, s }) => <tr key={key(a)} className="border-b border-rule align-middle">
-          <td className="p-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button></td>
+          <td className="p-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><Explainer {...a} /></td>
           <td className="p-2"><StageTag stage={s.stage} /></td>
           <td className="label p-2 tabular-nums">{pct(s.current_share)}</td>
           <td className="label p-2 tabular-nums">{s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</td>
@@ -164,6 +166,7 @@ function TraitDrawer({ dimension, value, onClose }: { dimension: string; value: 
   const tl = label(`${dimension}:${value}`);
   return <Overlay title={`${tl.name} [${tl.dimension}]`} onClose={onClose}>
     {isLoading || !main ? <p className="label">▍</p> : <div className="space-y-3">
+      <p className="label"><Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>
       <p className="label text-compare-muted">{main.status === "ok" ? `MODEL ${main.model?.toUpperCase()} · ${ev.usable} USABLE QUARTERS` : `Not fitted yet: ${ev.usable ?? 0} of the 4 usable quarters a curve needs`}{ev.crossed_20 ? ` · CROSSED 20% ${ev.crossed_20}` : ""}</p>
       <Cone large quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>

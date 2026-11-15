@@ -15,6 +15,13 @@
 
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: var(--font-mono);
+  /* The Digest + explainers only: display serif for headlines, text serif for reading; mono stays for data. */
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-text: "Newsreader", Georgia, "Times New Roman", serif;
+  --color-ed-paper: var(--ed-paper);
+  --color-ed-ink: var(--ed-ink);
+  --color-ed-muted: var(--ed-muted);
+  --color-ed-rule: var(--ed-rule);
 
   --text-label: 11px;
   --text-label--line-height: 16px;
@@ -67,7 +74,17 @@
   --paper: #f2f2f2;
   --signal: #ff4f00;
   --compare-muted: #9a9a9a;
+  /* Editorial paper: black and white only; color on the page comes from the data (swatches, chart lines). */
+  --ed-paper: #ffffff;
+  --ed-ink: #0b0b0b;
+  --ed-muted: #595959;
+  --ed-rule: #d4d4d4;
+  /* Modular scale (×1.25 from 18px text), measure and leading. */
+  --ed-caption: 13px; --ed-small: 15px; --ed-body: 18px; --ed-standfirst: 22px; --ed-h3: 28px; --ed-h2: 36px; --ed-h1: 44px; --ed-cover: 52px; --ed-mast: 56px;
+  --ed-measure: 66ch;
 }
+@media (min-width: 768px) { :root { --ed-body: 19px; --ed-standfirst: 25px; --ed-h3: 30px; --ed-h2: 44px; --ed-h1: 60px; --ed-cover: 72px; --ed-mast: 88px; } }
+@media (min-width: 1440px) { :root { --ed-cover: 92px; --ed-mast: 120px; } }
 
 @layer base {
   * {
@@ -172,3 +189,57 @@
 .info-btn::after { content: ""; position: absolute; inset: -4px; }
 @media (pointer: coarse) { .info-btn::after { inset: -15px; } }
 .tour-target { outline: 1px solid var(--white) !important; outline-offset: 2px; }
+
+@layer components {
+/* ——— The Digest + trait explainers (editorial edition). The terminal never uses these classes. ——— */
+.digest { background: var(--ed-paper); color: var(--ed-ink); font-family: var(--font-text); font-size: var(--ed-body); line-height: 1.6; font-optical-sizing: auto; -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+.digest a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.digest nav a { text-decoration-line: none; }
+.digest a:focus-visible, .digest button:focus-visible { outline: 2px solid var(--ed-ink); outline-offset: 2px; }
+.digest .ed-wrap { margin-inline: auto; max-width: 1360px; padding-inline: 20px; }
+@media (min-width: 1024px) { .digest .ed-wrap { padding-inline: 40px; } }
+.digest .ed-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+@media (min-width: 1024px) { .digest .ed-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 32px; } }
+.digest .ed-data, .digest .ed-kicker, .digest .ed-caption, .digest .ed-nav { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.digest .ed-kicker { font-size: 11px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.digest .ed-data { font-size: 13px; line-height: 20px; }
+.digest .ed-caption { font-size: 11px; line-height: 16px; color: var(--ed-muted); }
+.digest .ed-mast { font-family: var(--font-display); font-size: var(--ed-mast); line-height: .9; font-weight: 400; font-style: italic; letter-spacing: -.02em; }
+.digest .ed-cover { font-family: var(--font-display); font-size: var(--ed-cover); line-height: 1.02; font-weight: 500; letter-spacing: -.015em; text-wrap: balance; }
+.digest .ed-h1 { font-family: var(--font-display); font-size: var(--ed-h1); line-height: 1.05; font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+.digest .ed-h2 { font-family: var(--font-display); font-size: var(--ed-h2); line-height: 1.1; font-weight: 500; text-wrap: balance; }
+.digest .ed-h3 { font-family: var(--font-display); font-size: var(--ed-h3); line-height: 1.15; font-weight: 500; text-wrap: balance; }
+.digest .ed-standfirst { font-size: var(--ed-standfirst); line-height: 1.4; font-weight: 300; max-width: 44ch; text-wrap: pretty; }
+.digest .ed-body { max-width: var(--ed-measure); text-wrap: pretty; }
+.digest .ed-body p + p { margin-top: 1em; }
+.digest .ed-small { font-size: var(--ed-small); line-height: 1.5; }
+.digest .ed-pull { font-family: var(--font-display); font-style: italic; font-size: var(--ed-h3); line-height: 1.25; border-top: 2px solid var(--ed-ink); border-bottom: 1px solid var(--ed-ink); padding-block: 16px; text-wrap: balance; }
+.digest .ed-rule { border-top: 1px solid var(--ed-ink); }
+.digest .ed-hair { border-top: 1px solid var(--ed-rule); }
+.digest .ed-badge { display: inline-block; font-family: var(--font-mono); font-size: 11px; line-height: 14px; letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--ed-ink); padding: 2px 6px; white-space: nowrap; }
+.digest .ed-muted { color: var(--ed-muted); }
+.digest .ed-swatch { display: block; width: 100%; aspect-ratio: 1; border: 1px solid var(--ed-rule); }
+.digest .ed-tap { min-height: 44px; display: inline-flex; align-items: center; }
+@media (min-width: 1024px) { .digest .ed-tap { min-height: 0; } }
+.digest .ed-thumb { display: block; width: 100%; height: auto; border: 1px solid var(--ed-ink); background: var(--ed-paper); filter: none; }
+.digest .ed-typo { border: 1px solid var(--ed-ink); aspect-ratio: 16 / 10; display: flex; flex-direction: column; justify-content: space-between; padding: 16px; }
+.digest .ed-figure svg.digest-figure { display: block; width: 100%; height: auto; }
+.digest svg.digest-figure text { font-family: var(--font-mono); white-space: pre; }
+/* Didone hairlines vanish at display optical sizes; cap opsz so hyphens, dashes and serifs stay visible. */
+.digest .ed-cover, .digest .ed-h1 { font-variation-settings: "opsz" 48; }
+.digest .ed-h2, .digest .ed-h3, .digest .ed-pull { font-variation-settings: "opsz" 20; }
+.digest .ed-specimen { font-size: clamp(36px, 7vw, 72px); line-height: 1.05; overflow-wrap: anywhere; }
+@media (max-width: 1023px) { .digest .ed-bleed { margin-inline: -20px; } }
+@media (prefers-reduced-motion: reduce) { .digest * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+.library .site-thumb { display: block; width: 100%; max-width: 320px; height: auto; border: 1px solid var(--rule); }
+
+}
+@media print {
+  @page { margin: 16mm 14mm; }
+  .digest { background: #fff; color: #000; font-size: 11pt; }
+  .digest .no-print { display: none !important; }
+  .digest a[data-print]::after { content: " (" attr(data-print) ")"; font-family: var(--font-mono); font-size: 8pt; color: #444; word-break: break-all; }
+  .digest section, .digest figure, .digest li { break-inside: avoid; }
+  .digest .ed-thumb, .digest img { max-width: 100% !important; }
+  .digest .ed-wrap { max-width: none; padding: 0; }
+}

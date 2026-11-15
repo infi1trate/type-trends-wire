@@ -14,7 +14,15 @@ import { Route as ChartIndexRouteImport } from './routes/chart.index'
 import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
 import { Route as ChartChar123weekChar125DotsvgRouteImport } from './routes/chart.{$week}[.]svg'
+import { Route as DigestIndexRouteImport } from './routes/digest.index'
+import { Route as DigestWeekRouteImport } from './routes/digest.$week'
+import { Route as DigestArchiveRouteImport } from './routes/digest.archive'
+import { Route as DigestRssDotxmlRouteImport } from './routes/digest.rss[.]xml'
+import { Route as DigestChar123weekChar125DotpngRouteImport } from './routes/digest.{$week}[.]png'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
+import { Route as ThumbsSplatRouteImport } from './routes/thumbs.$'
+import { Route as TraitKeyRouteImport } from './routes/trait.$key'
+import { Route as TraitChar123keyChar125DotpngRouteImport } from './routes/trait.{$key}[.]png'
 import { Route as ApiPublicChartCardRouteImport } from './routes/api/public/chart-card'
 import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
 import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public/discourse-terms'
@@ -24,6 +32,7 @@ import { Route as ApiPublicIngestArenaRouteImport } from './routes/api/public/in
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestProducthuntRouteImport } from './routes/api/public/ingest-producthunt'
+import { Route as ApiPublicIngestThumbsRouteImport } from './routes/api/public/ingest-thumbs'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
 import { Route as ApiPublicLibraryAiWorkerRouteImport } from './routes/api/public/library-ai-worker'
 import { Route as ApiPublicLibraryRebuildRouteImport } from './routes/api/public/library-rebuild'
@@ -32,6 +41,7 @@ import { Route as ApiPublicLibraryTagRouteImport } from './routes/api/public/lib
 import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
 import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/api/public/oauth-protected-resource'
 import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public/seed-candidates'
+import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/thumb-optout'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -60,11 +70,53 @@ const ChartChar123weekChar125DotsvgRoute =
     path: '/chart/{$week}.svg',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DigestIndexRoute = DigestIndexRouteImport.update({
+  id: '/digest/',
+  path: '/digest/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigestWeekRoute = DigestWeekRouteImport.update({
+  id: '/digest/$week',
+  path: '/digest/$week',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigestArchiveRoute = DigestArchiveRouteImport.update({
+  id: '/digest/archive',
+  path: '/digest/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigestRssDotxmlRoute = DigestRssDotxmlRouteImport.update({
+  id: '/digest/rss.xml',
+  path: '/digest/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DigestChar123weekChar125DotpngRoute =
+  DigestChar123weekChar125DotpngRouteImport.update({
+    id: '/digest/{$week}.png',
+    path: '/digest/{$week}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LibraryDomainRoute = LibraryDomainRouteImport.update({
   id: '/library/$domain',
   path: '/library/$domain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThumbsSplatRoute = ThumbsSplatRouteImport.update({
+  id: '/thumbs/$',
+  path: '/thumbs/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraitKeyRoute = TraitKeyRouteImport.update({
+  id: '/trait/$key',
+  path: '/trait/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraitChar123keyChar125DotpngRoute =
+  TraitChar123keyChar125DotpngRouteImport.update({
+    id: '/trait/{$key}.png',
+    path: '/trait/{$key}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicChartCardRoute = ApiPublicChartCardRouteImport.update({
   id: '/api/public/chart-card',
   path: '/api/public/chart-card',
@@ -111,6 +163,11 @@ const ApiPublicIngestProducthuntRoute =
     path: '/api/public/ingest-producthunt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicIngestThumbsRoute = ApiPublicIngestThumbsRouteImport.update({
+  id: '/api/public/ingest-thumbs',
+  path: '/api/public/ingest-thumbs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestWireRoute = ApiPublicIngestWireRouteImport.update({
   id: '/api/public/ingest-wire',
   path: '/api/public/ingest-wire',
@@ -153,14 +210,27 @@ const ApiPublicSeedCandidatesRoute = ApiPublicSeedCandidatesRouteImport.update({
   path: '/api/public/seed-candidates',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicThumbOptoutRoute = ApiPublicThumbOptoutRouteImport.update({
+  id: '/api/public/thumb-optout',
+  path: '/api/public/thumb-optout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/digest/$week': typeof DigestWeekRoute
+  '/digest/archive': typeof DigestArchiveRoute
+  '/digest/rss.xml': typeof DigestRssDotxmlRoute
+  '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/thumbs/$': typeof ThumbsSplatRoute
+  '/trait/$key': typeof TraitKeyRoute
+  '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/chart/': typeof ChartIndexRoute
+  '/digest/': typeof DigestIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
@@ -170,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
+  '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
@@ -178,14 +249,23 @@ export interface FileRoutesByFullPath {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
+  '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/digest/$week': typeof DigestWeekRoute
+  '/digest/archive': typeof DigestArchiveRoute
+  '/digest/rss.xml': typeof DigestRssDotxmlRoute
+  '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/thumbs/$': typeof ThumbsSplatRoute
+  '/trait/$key': typeof TraitKeyRoute
+  '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/chart': typeof ChartIndexRoute
+  '/digest': typeof DigestIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
@@ -195,6 +275,7 @@ export interface FileRoutesByTo {
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
+  '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
@@ -203,6 +284,7 @@ export interface FileRoutesByTo {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
+  '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -210,8 +292,16 @@ export interface FileRoutesById {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/digest/$week': typeof DigestWeekRoute
+  '/digest/archive': typeof DigestArchiveRoute
+  '/digest/rss.xml': typeof DigestRssDotxmlRoute
+  '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/thumbs/$': typeof ThumbsSplatRoute
+  '/trait/$key': typeof TraitKeyRoute
+  '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/chart/': typeof ChartIndexRoute
+  '/digest/': typeof DigestIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
@@ -221,6 +311,7 @@ export interface FileRoutesById {
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
+  '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
   '/api/public/library-rebuild': typeof ApiPublicLibraryRebuildRoute
@@ -229,6 +320,7 @@ export interface FileRoutesById {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
+  '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,8 +329,16 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/digest/$week'
+    | '/digest/archive'
+    | '/digest/rss.xml'
+    | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/thumbs/$'
+    | '/trait/$key'
+    | '/trait/{$key}.png'
     | '/chart/'
+    | '/digest/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
@@ -248,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
+    | '/api/public/ingest-thumbs'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
@@ -256,14 +357,23 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
     | '/api/public/seed-candidates'
+    | '/api/public/thumb-optout'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/digest/$week'
+    | '/digest/archive'
+    | '/digest/rss.xml'
+    | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/thumbs/$'
+    | '/trait/$key'
+    | '/trait/{$key}.png'
     | '/chart'
+    | '/digest'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
@@ -273,6 +383,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
+    | '/api/public/ingest-thumbs'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
@@ -281,14 +392,23 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
     | '/api/public/seed-candidates'
+    | '/api/public/thumb-optout'
   id:
     | '__root__'
     | '/'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/digest/$week'
+    | '/digest/archive'
+    | '/digest/rss.xml'
+    | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/thumbs/$'
+    | '/trait/$key'
+    | '/trait/{$key}.png'
     | '/chart/'
+    | '/digest/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
@@ -298,6 +418,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
+    | '/api/public/ingest-thumbs'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
     | '/api/public/library-rebuild'
@@ -306,6 +427,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/oauth-protected-resource'
     | '/api/public/seed-candidates'
+    | '/api/public/thumb-optout'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -313,8 +435,16 @@ export interface RootRouteChildren {
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
+  DigestWeekRoute: typeof DigestWeekRoute
+  DigestArchiveRoute: typeof DigestArchiveRoute
+  DigestRssDotxmlRoute: typeof DigestRssDotxmlRoute
+  DigestChar123weekChar125DotpngRoute: typeof DigestChar123weekChar125DotpngRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
+  ThumbsSplatRoute: typeof ThumbsSplatRoute
+  TraitKeyRoute: typeof TraitKeyRoute
+  TraitChar123keyChar125DotpngRoute: typeof TraitChar123keyChar125DotpngRoute
   ChartIndexRoute: typeof ChartIndexRoute
+  DigestIndexRoute: typeof DigestIndexRoute
   ApiPublicChartCardRoute: typeof ApiPublicChartCardRoute
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
   ApiPublicDiscourseTermsRoute: typeof ApiPublicDiscourseTermsRoute
@@ -324,6 +454,7 @@ export interface RootRouteChildren {
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestProducthuntRoute: typeof ApiPublicIngestProducthuntRoute
+  ApiPublicIngestThumbsRoute: typeof ApiPublicIngestThumbsRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
   ApiPublicLibraryAiWorkerRoute: typeof ApiPublicLibraryAiWorkerRoute
   ApiPublicLibraryRebuildRoute: typeof ApiPublicLibraryRebuildRoute
@@ -332,6 +463,7 @@ export interface RootRouteChildren {
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicOauthProtectedResourceRoute: typeof ApiPublicOauthProtectedResourceRoute
   ApiPublicSeedCandidatesRoute: typeof ApiPublicSeedCandidatesRoute
+  ApiPublicThumbOptoutRoute: typeof ApiPublicThumbOptoutRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -371,11 +503,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChartChar123weekChar125DotsvgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/digest/': {
+      id: '/digest/'
+      path: '/digest'
+      fullPath: '/digest/'
+      preLoaderRoute: typeof DigestIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digest/$week': {
+      id: '/digest/$week'
+      path: '/digest/$week'
+      fullPath: '/digest/$week'
+      preLoaderRoute: typeof DigestWeekRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digest/archive': {
+      id: '/digest/archive'
+      path: '/digest/archive'
+      fullPath: '/digest/archive'
+      preLoaderRoute: typeof DigestArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digest/rss.xml': {
+      id: '/digest/rss.xml'
+      path: '/digest/rss.xml'
+      fullPath: '/digest/rss.xml'
+      preLoaderRoute: typeof DigestRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/digest/{$week}.png': {
+      id: '/digest/{$week}.png'
+      path: '/digest/{$week}.png'
+      fullPath: '/digest/{$week}.png'
+      preLoaderRoute: typeof DigestChar123weekChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/library/$domain': {
       id: '/library/$domain'
       path: '/library/$domain'
       fullPath: '/library/$domain'
       preLoaderRoute: typeof LibraryDomainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/thumbs/$': {
+      id: '/thumbs/$'
+      path: '/thumbs/$'
+      fullPath: '/thumbs/$'
+      preLoaderRoute: typeof ThumbsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trait/$key': {
+      id: '/trait/$key'
+      path: '/trait/$key'
+      fullPath: '/trait/$key'
+      preLoaderRoute: typeof TraitKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trait/{$key}.png': {
+      id: '/trait/{$key}.png'
+      path: '/trait/{$key}.png'
+      fullPath: '/trait/{$key}.png'
+      preLoaderRoute: typeof TraitChar123keyChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/chart-card': {
@@ -441,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestProducthuntRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingest-thumbs': {
+      id: '/api/public/ingest-thumbs'
+      path: '/api/public/ingest-thumbs'
+      fullPath: '/api/public/ingest-thumbs'
+      preLoaderRoute: typeof ApiPublicIngestThumbsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest-wire': {
       id: '/api/public/ingest-wire'
       path: '/api/public/ingest-wire'
@@ -497,6 +692,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSeedCandidatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/thumb-optout': {
+      id: '/api/public/thumb-optout'
+      path: '/api/public/thumb-optout'
+      fullPath: '/api/public/thumb-optout'
+      preLoaderRoute: typeof ApiPublicThumbOptoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -505,8 +707,16 @@ const rootRouteChildren: RootRouteChildren = {
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
+  DigestWeekRoute: DigestWeekRoute,
+  DigestArchiveRoute: DigestArchiveRoute,
+  DigestRssDotxmlRoute: DigestRssDotxmlRoute,
+  DigestChar123weekChar125DotpngRoute: DigestChar123weekChar125DotpngRoute,
   LibraryDomainRoute: LibraryDomainRoute,
+  ThumbsSplatRoute: ThumbsSplatRoute,
+  TraitKeyRoute: TraitKeyRoute,
+  TraitChar123keyChar125DotpngRoute: TraitChar123keyChar125DotpngRoute,
   ChartIndexRoute: ChartIndexRoute,
+  DigestIndexRoute: DigestIndexRoute,
   ApiPublicChartCardRoute: ApiPublicChartCardRoute,
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
   ApiPublicDiscourseTermsRoute: ApiPublicDiscourseTermsRoute,
@@ -516,6 +726,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestProducthuntRoute: ApiPublicIngestProducthuntRoute,
+  ApiPublicIngestThumbsRoute: ApiPublicIngestThumbsRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,
   ApiPublicLibraryAiWorkerRoute: ApiPublicLibraryAiWorkerRoute,
   ApiPublicLibraryRebuildRoute: ApiPublicLibraryRebuildRoute,
@@ -524,6 +735,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicOauthProtectedResourceRoute: ApiPublicOauthProtectedResourceRoute,
   ApiPublicSeedCandidatesRoute: ApiPublicSeedCandidatesRoute,
+  ApiPublicThumbOptoutRoute: ApiPublicThumbOptoutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

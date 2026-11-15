@@ -1,0 +1,89 @@
+// Shared building blocks for the Digest and trait explainers: editorial type, black and white, mono only for data.
+import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { SITE_URL, DIGEST_NAME } from "@/lib/site";
+import { figureSvg, type CardModel } from "@/lib/chart/card";
+import type { Thumb } from "@/lib/thumbs";
+import type { StageName } from "@/lib/labels";
+
+/** Absolute URL printed after a link in the print stylesheet. */
+export const pr = (href: string) => ({ "data-print": href.startsWith("http") || href.startsWith("mailto:") ? href : `${SITE_URL}${href}` });
+
+export function DigestShell({ children, label }: { children: ReactNode; label: string }) {
+  return <div className="digest">
+    <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the issue</a>
+    <nav aria-label={`${DIGEST_NAME} navigation`} className="ed-nav no-print border-b border-ed-ink">
+      <div className="ed-wrap flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
+        <Link to="/digest" className="ed-tap py-2 font-semibold no-underline">DSGN/TERMINAL · {DIGEST_NAME}</Link>
+        <span className="flex flex-wrap items-center gap-x-4">
+          <Link to="/digest/archive" className="ed-tap py-2">Archive</Link>
+          <a href="/digest/rss.xml" className="ed-tap py-2">RSS</a>
+          <Link to="/" className="ed-tap py-2">Open the terminal →</Link>
+        </span>
+      </div>
+    </nav>
+    <main id="ed-main" aria-label={label}>{children}</main>
+  </div>;
+}
+
+export function StageWord({ stage }: { stage: StageName | null }) {
+  return stage ? <span className="ed-badge" title="Stage">{stage}</span> : <span className="ed-badge ed-muted">Not staged yet</span>;
+}
+export const Dim = ({ d }: { d: string }) => <span className="ed-data ed-muted">[{d}]</span>;
+
+export function SectionHead({ n, title, kicker, id }: { n: string; title: string; kicker?: string; id: string }) {
+  return <header className="ed-rule mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 pt-3">
+    <span className="ed-kicker">{n}</span>
+    <h2 id={id} className="ed-h2">{title}</h2>
+    {kicker && <p className="ed-caption w-full max-w-[60ch]">{kicker}</p>}
+  </header>;
+}
+
+/** Lead chart at two sizes: wide for ≥768, compact for phones (keeps axis labels legible). */
+export function Figure({ card, label, caption }: { card: Pick<CardModel, "series" | "forecast">; label: string; caption: ReactNode }) {
+  return <figure className="ed-figure ed-bleed">
+    <div className="hidden md:block" dangerouslySetInnerHTML={{ __html: figureSvg(card, 1280, 520, label) }} />
+    <div className="md:hidden" dangerouslySetInnerHTML={{ __html: figureSvg(card, 640, 480, label) }} />
+    <figcaption className="ed-caption mt-2 px-5 md:px-0">{caption}</figcaption>
+  </figure>;
+}
+
+/** Thumbnail with caption and links, or a typographic card when none is stored (or the site opted out). */
+export function SiteCard({ domain, name, sector, lines, thumb, sizes = "(min-width: 1024px) 25vw, 100vw" }: { domain: string; name: string | null; sector: string; lines: string[]; thumb: Thumb | null; sizes?: string }) {
+  return <article className="flex flex-col gap-2">
+    {thumb ? <figure>
+      <a href={thumb.live} target="_blank" rel="noopener" {...pr(thumb.live)}><img src={thumb.src} srcSet={thumb.srcSet} sizes={sizes} width={thumb.width} height={thumb.height} loading="lazy" decoding="async" alt={thumb.alt} className="ed-thumb" /></a>
+      <figcaption className="ed-caption mt-1">{thumb.caption}</figcaption>
+    </figure> : <div className="ed-typo" role="img" aria-label={`${domain}, ${sector}: ${lines.join(", ")}`}>
+      <span className="ed-kicker ed-muted">{sector}</span>
+      <span className="ed-h3 break-words">{domain}</span>
+      <span className="ed-caption">{lines.join(" · ")}</span>
+    </div>}
+    <h3 className="ed-small font-medium">{name ?? domain}</h3>
+    {thumb && <p className="ed-caption">{lines.join(" · ")}</p>}
+    <p className="ed-data flex flex-wrap gap-x-3"><Link to="/library/$domain" params={{ domain }} className="ed-tap" {...pr(`/library/${domain}`)}>Terminal page →</Link><a href={`https://${domain}`} target="_blank" rel="noopener" className="ed-tap" {...pr(`https://${domain}`)}>Live site ↗</a></p>
+  </article>;
+}
+
+export function Swatches({ colors, label }: { colors: { hex: string; name: string }[]; label: string }) {
+  const single = colors.length === 1;
+  return <ul aria-label={label} className={`grid gap-2 ${single ? "grid-cols-1" : "grid-cols-5"}`}>{colors.map((c, i) => <li key={`${c.hex}${i}`} className="min-w-0">
+    <span className={`ed-swatch ${single ? "aspect-[3/2]" : ""}`} style={{ background: c.hex }} aria-hidden="true" />
+    <span className={`ed-caption mt-1 block ${single ? "" : "truncate"}`} title={c.name}>{c.name}</span>
+    <span className="ed-data block text-[11px]">{c.hex}</span>
+  </li>)}</ul>;
+}
+
+export function DigestFooter({ footer }: { footer: { methodology: string; glossary: string; rss: string; terminal: string; contact: string | null } }) {
+  return <footer className="ed-rule mt-16 pb-16 pt-6">
+    <div className="ed-wrap ed-data flex flex-wrap gap-x-6 gap-y-1">
+      <a href={footer.methodology} className="ed-tap" {...pr(footer.methodology)}>Methodology</a>
+      <a href={footer.glossary} className="ed-tap" {...pr(footer.glossary)}>Glossary</a>
+      <a href={footer.rss} className="ed-tap" {...pr(footer.rss)}>RSS</a>
+      <Link to="/" className="ed-tap" {...pr("/")}>Open the terminal</Link>
+      <Link to="/digest/archive" className="ed-tap">All issues</Link>
+    </div>
+    {footer.contact && <p className="ed-wrap ed-caption mt-3">Spotted an error? <a href={footer.contact}>Write to the editor</a>.</p>}
+    <p className="ed-wrap ed-caption mt-3 max-w-[72ch]">Every number links to its receipts in the terminal. Thumbnails are small homepage crops, credited and linked to the site; owners can ask for removal and the site is then shown by name only.</p>
+  </footer>;
+}

@@ -1106,6 +1106,51 @@ export type Database = {
         }
         Relationships: []
       }
+      site_thumbs: {
+        Row: {
+          bytes: number
+          captured_at: string
+          created_at: string
+          domain: string
+          height: number
+          id: number
+          path: string
+          removed_at: string | null
+          source_run_id: string | null
+          variants: Json
+          viewport: string
+          width: number
+        }
+        Insert: {
+          bytes: number
+          captured_at: string
+          created_at?: string
+          domain: string
+          height: number
+          id?: never
+          path: string
+          removed_at?: string | null
+          source_run_id?: string | null
+          variants?: Json
+          viewport: string
+          width: number
+        }
+        Update: {
+          bytes?: number
+          captured_at?: string
+          created_at?: string
+          domain?: string
+          height?: number
+          id?: never
+          path?: string
+          removed_at?: string | null
+          source_run_id?: string | null
+          variants?: Json
+          viewport?: string
+          width?: number
+        }
+        Relationships: []
+      }
       source_cursors: {
         Row: {
           etag: string | null
@@ -1127,6 +1172,24 @@ export type Database = {
           last_modified?: string | null
           state?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      thumb_optouts: {
+        Row: {
+          created_at: string
+          domain: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          note?: string | null
         }
         Relationships: []
       }

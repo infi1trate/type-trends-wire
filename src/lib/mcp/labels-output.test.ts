@@ -11,8 +11,10 @@ describe('MCP output labels',()=>{
  it('font trends carry a label and FONT dimension, never a $ ticker',async()=>{const text=await call('get_trend',{family:'Inter'});expect(text).not.toMatch(TICKER);expect(JSON.parse(text)).toMatchObject({family:'Inter',label:'Inter',dimension:'FONT',stage_label:null});});
  it('adds label next to keys without overwriting raw categories',()=>{const out=JSON.parse(json({rows:[{dimension:'css',value:'subgrid',stage:'accelerating'},{trait:'components:bento_grid',stage:'flat'},{signal:'dark_theme',label:'Dark theme'}],note:'was $LOGO-WALL, costs $50',palette:{tickers:['amber·muted·dark']}}).content[0]!.text);
   expect(out.palette.color_labels).toEqual(['Muted dark amber']);
-  expect(out.rows[0]).toEqual({dimension:'css',value:'subgrid',stage:'accelerating',label:'Subgrid layouts',label_dimension:'LAYOUT',stage_label:'Rising'});
-  expect(out.rows[1]).toEqual({trait:'components:bento_grid',stage:'flat',label:'Bento grids',dimension:'LAYOUT',stage_label:'Steady'});
+  expect(out.rows[0]).toEqual({dimension:'css',value:'subgrid',stage:'accelerating',label:'Subgrid layouts',explainer_url:'https://type-trends-wire.lovable.app/trait/css%3Asubgrid',label_dimension:'LAYOUT',stage_label:'Rising'});
+  expect(out.rows[1]).toEqual({trait:'components:bento_grid',stage:'flat',label:'Bento grids',explainer_url:'https://type-trends-wire.lovable.app/trait/components%3Abento_grid',dimension:'LAYOUT',stage_label:'Steady'});
   expect(out.rows[2]).toMatchObject({signal:'dark_theme',label:'Dark theme',dimension:'COLOR'});
   expect(out.note).toBe('was Logo walls [LAYOUT], costs $50');});
+ it('MCP tool output carries explainer_url next to label for forecast traits only',async()=>{const item=JSON.parse(await call('wire',{source_kind:'alert'})).items[0];expect(item).toMatchObject({trait:'css:subgrid',label:'Subgrid layouts',explainer_url:'https://type-trends-wire.lovable.app/trait/css%3Asubgrid'});
+  const out=JSON.parse(json({a:{trait:'family:Inter'},b:{signal:'pill_cta'}}).content[0]!.text);expect(out.a.explainer_url).toBeUndefined();expect(out.b.explainer_url).toBeUndefined();});
 });

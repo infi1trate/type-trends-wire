@@ -6,7 +6,7 @@ export type MethodSection = { id: string; title: string; lines: string[] };
 const slug = (t: string) => t.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const CRAWLER_NOTES = [
   "Mainstream: Chrome UX Report top origins. Vanguard: curated design-forward studios and startups plus Show HN launches. Language comparisons default to English; ALL includes every language. Shares use all successful sites within the selected language scope.",
-  "Desktop homepage first viewport, 1440×900. Robots.txt respected; adult and gambling sites filtered. Rendered fonts measured via Chromium. Derived data only; no screenshots stored. Weekly Sunday 03:23 UTC.",
+  "Desktop homepage first viewport, 1440×900. Robots.txt respected; adult and gambling sites filtered. Rendered fonts measured via Chromium. Derived data only; the crawl itself stores no screenshots (Digest thumbnails are separate small crops, see Thumbnails). Weekly Sunday 03:23 UTC.",
 ];
 
 export function methodologySections(): MethodSection[] {

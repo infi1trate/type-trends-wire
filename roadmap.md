@@ -130,3 +130,12 @@
 - [x] First-visit tour (once, replayable via glossary and console `tour`)
 - [x] Glossary (`?`, console `glossary`, footer link), deep links `#g-<id>`
 - [x] Readable early and empty states, model-card coverage as sentences
+
+# Phase 9 — The Digest
+- [x] Routes /digest, /digest/$week, /digest/archive (+ not-found), issue No. 1 = 2026-W46; terminal footer link, key D, console `digest`
+- [x] Pure issueModel(rows) with sections (masthead, cover, movers, specimens, palette, in the wild, rebrands, numbers, footer); historical rows per week
+- [x] Thumbnails: site-thumbs bucket, site_thumbs + thumb_optouts tables, /api/public/ingest-thumbs, opt-out endpoint, typographic fallback, terminal site page thumb
+- [x] Trait explainer pages /trait/$key + MCP explainer_url + terminal "Explainer →"
+- [x] Editorial type system + 12-col grid + print stylesheet (Digest/trait only)
+- [x] RSS /digest/rss.xml + OG images per issue and trait
+- [x] Tests + report (ingest contract, opt-out how-to, fonts)

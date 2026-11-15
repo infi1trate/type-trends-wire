@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { MobileKeys, Ticker, TopBar } from "@/components/terminal/Chrome";
 import { FKEY_PANELS, resolvePanel, type PanelId } from "@/components/terminal/panels";
@@ -20,7 +20,7 @@ import { VibeMap } from "@/components/terminal/VibeMap";
 import { RebrandDesk } from "@/components/terminal/Rebrands";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
 import { ForecastPanel } from "@/components/terminal/Forecast";
-import {TasteConsole} from "@/components/terminal/TasteConsole";
+import {TasteConsole, type LocalCommand} from "@/components/terminal/TasteConsole";
 import { HealthLine } from "@/components/terminal/Health";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
@@ -68,7 +68,7 @@ function Terminal() {
   // First visit to TODAY: show the tour once (dsgn.tour.done).
   useEffect(() => { if (panel === "today" && !window.location.hash && !search.cmd && !tourStore().done()) setTour(true); }, [panel, search.cmd]);
   const startTour = useCallback(() => { setOverlay(null); tourStore().reset(); setPanel("today"); setTour(true); }, [setOverlay, setPanel]);
-  const onLocal = useCallback((c: "today" | "signals" | "tour" | "glossary") => { setOverlay(null); if (c === "today") setPanel("today"); else if (c === "signals") setPanel("overview"); else if (c === "tour") startTour(); else setOverlay("glossary"); }, [setOverlay, setPanel, startTour]);
+  const onLocal = useCallback((c: LocalCommand) => { setOverlay(null); if (c === "digest") { void navigate({ to: "/digest" }); return; } if (c === "today") setPanel("today"); else if (c === "signals") setPanel("overview"); else if (c === "tour") startTour(); else setOverlay("glossary"); }, [setOverlay, setPanel, startTour, navigate]);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
 
   useWireRealtime(
@@ -92,6 +92,7 @@ function Terminal() {
       if (/^[0-9]$/.test(e.key)) { const target = FKEY_PANELS[e.key === "0" ? 9 : Number(e.key) - 1]; if (target) setPanel(target.id); return; }
       if (e.key === "t" || e.key === "T") { e.preventDefault(); setPanel("today"); return; }
       if (e.key === "?") { e.preventDefault(); setOverlay("glossary"); return; }
+      if (e.key === "d" || e.key === "D") { e.preventDefault(); void navigate({ to: "/digest" }); return; }
       if (e.key === "/") { e.preventDefault(); setOverlay('taste'); }
     };
     window.addEventListener("keydown", h);
@@ -125,6 +126,7 @@ function Terminal() {
           <Button variant="link" onClick={() => setOverlay("glossary")} className="label h-6 px-2 text-ink max-md:h-11">GLOSSARY</Button>
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
           <Button variant="link" onClick={() => setOverlay("method")} className="label h-6 px-2 text-ink max-md:h-10">METHODOLOGY</Button>
+          <Link to="/digest" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">THE DIGEST →</Link>
         </div>
         <a href="https://brandon.wtf" target="_blank" rel="noopener" className="text-ink hover:underline">BRANDON.WTF</a>
       </footer>

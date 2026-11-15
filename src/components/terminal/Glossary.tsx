@@ -4,7 +4,7 @@ import { QueryBar } from "./primitives";
 import { methodLink } from "./Info";
 
 const GROUPS: [GlossaryKind, string][] = [["stage", "STAGES"], ["dimension", "DIMENSIONS"], ["metric", "MEASURES"], ["panel", "PANELS"], ["column", "COLUMNS"]];
-export const KEYS: [string, string][] = [["T", "Today"], ["F1–F12", "Switch panel (F1 Signals)"], ["1–0", "Switch panel"], ["/", "Console (today, tour, glossary, ticker work there too)"], ["?", "Glossary"], ["ESC", "Close card, sheet or overlay"], ["ENTER", "Open focused row"]];
+export const KEYS: [string, string][] = [["T", "Today"], ["D", "The Digest (weekly issue)"], ["F1–F12", "Switch panel (F1 Signals)"], ["1–0", "Switch panel"], ["/", "Console (today, tour, glossary, digest, ticker work there too)"], ["?", "Glossary"], ["ESC", "Close card, sheet or overlay"], ["ENTER", "Open focused row"]];
 
 /** Searchable glossary: side panel on desktop, full-screen sheet on mobile. Entries deep-link as #g-<id>. */
 export function Glossary({ onClose, onTour, focus }: { onClose: () => void; onTour: () => void; focus?: string | null }) {

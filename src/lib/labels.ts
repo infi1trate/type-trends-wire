@@ -1,5 +1,6 @@
-// One human label map for every trait key the app knows. Pure and dependency-free:
+// One human label map for every trait key the app knows. Pure (only the site URL constant is imported):
 // UI, brief context, chart cards, alerts and MCP all format trait names through this module only.
+import { SITE_URL } from "./site";
 
 export const DIMENSIONS = ["FONT", "COLOR", "LAYOUT", "VIBE"] as const;
 export type Dimension = (typeof DIMENSIONS)[number];
@@ -156,9 +157,18 @@ export function alertDisplayTitle(title: string, ref: string | null | undefined)
   return `${m[1]} · ${name}${rest ? ` ${rest}` : ""}`;
 }
 
+/** Trait categories the weekly forecast stages; each of their keys has an explainer page at /trait/<key>. */
+export const FORECAST_CATEGORIES = new Set(["aesthetic", "ai_positioning", "color_mood", "components", "css", "font", "framework", "headline", "hero_layout", "hero_media", "imagery", "theme", "tone", "tracking"]);
+export const explainerPath = (key: string) => `/trait/${encodeURIComponent(canonical(key))}`;
+/** Absolute explainer URL for forecast traits; null for keys the forecast does not stage (fonts, colors, crawl-only signals). */
+export function explainerUrl(key: string): string | null {
+  const k = canonical(key), cat = k.slice(0, Math.max(0, k.indexOf(":")));
+  return FORECAST_CATEGORIES.has(cat) ? `${SITE_URL}${explainerPath(k)}` : null;
+}
+
 /** Strings: any leftover "$TICKER" becomes "Name [DIM]". Prices ("$50") are untouched because tickers start with a letter. */
 export const untick = (s: string) => s.replace(/\$([A-Z][A-Z0-9-]+)/g, (_, t: string) => traitText(t));
-/** Output decoration for agents: stable keys stay; human label/dimension/stage_label are added next to them. Pure, recursive. */
+/** Output decoration for agents: stable keys stay; human label/dimension/stage_label (and explainer_url for forecast traits) are added next to them. Pure, recursive. */
 export function withLabels<T>(data: T): T {
   const walk = (v: unknown): unknown => {
     if (typeof v === "string") return untick(v);
@@ -172,6 +182,8 @@ export function withLabels<T>(data: T): T {
     if (key) {
       const l = label(key);
       if (!("label" in o)) o["label"] = l.name;
+      const url = explainerUrl(key);
+      if (url && !("explainer_url" in o)) o["explainer_url"] = url;
       if ("dimension" in o && o["dimension"] !== l.dimension) o["label_dimension"] = l.dimension; else o["dimension"] = l.dimension;
     }
     if (Array.isArray(o["tickers"]) && !("color_labels" in o)) o["color_labels"] = (o["tickers"] as unknown[]).map(t => (typeof t === "string" ? colorName(t) : t));
