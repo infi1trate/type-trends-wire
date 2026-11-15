@@ -8,12 +8,15 @@
 //                                         rendered via the Wayback Machine, posted as source=wayback (+ tagged)
 //      SECTOR (only this sector), WAYBACK_BASE (tests), WAYBACK_DELAY_MS (default 2500, politeness between archive loads)
 //      LIBRARY_TAG=0 disables image capture/tagging (default on). Images go to /api/public/library-tag and are never stored.
+//      THUMBS=0 disables Digest thumbnails (default on in full mode): one small above-the-fold WebP per live homepage
+//      (desktop + mobile) to /api/public/ingest-thumbs, the only stored images. robots.txt is honored (checked before load).
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { VIEWPORTS, UA, makePoster, robotsOk, openPage, analyzePage, evalSettled, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
 import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash, pickCaptures } from "./library-lib.js";
 import sharp from "sharp";
+import { encodeThumb, captureBody, makeThumbSender } from "./thumbs.js";
 
 const MODE = process.env.LIBRARY_MODE ?? "full";
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 6);
@@ -30,6 +33,8 @@ const SECTOR = process.env.SECTOR || null;
 const WAYBACK_BASE = (process.env.WAYBACK_BASE ?? "https://web.archive.org").replace(/\/$/, "");
 const WAYBACK_DELAY_MS = Number(process.env.WAYBACK_DELAY_MS ?? 2500);
 const FROM_YEAR = Number(process.env.FROM_YEAR ?? 2021);
+const THUMBS = process.env.THUMBS !== "0" && MODE === "full";
+let thumbs = null; // sender, set in main
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function cdx(domain) {
@@ -64,6 +69,15 @@ async function captureImages(page) {
   return { fold: url(await sharp(fold).resize({ width: 960 }).jpeg({ quality: 70 }).toBuffer()), sections };
 }
 
+/** Visible viewport only (never full page), downscaled to ≤1280×800 WebP; queued for /api/public/ingest-thumbs. */
+async function captureThumb(page, domain, viewport) {
+  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
+  const { width, height } = page.viewportSize();
+  const shot = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width, height } });
+  const enc = await encodeThumb(shot);
+  if (enc) thumbs.add(captureBody(domain, viewport, new Date().toISOString(), enc));
+}
+
 async function getState() {
   if (DRY) return process.env.STATE_FILE ? JSON.parse(readFileSync(process.env.STATE_FILE, "utf8")) : { sites: [] };
   const r = await fetch(new URL("library-state", ENDPOINT), { headers: { "x-crawl-secret": SECRET } });
@@ -93,6 +107,7 @@ async function snapshot(page, { domain, page_type, viewport, url, archive = null
     const { ok, final_url, ...fields } = a;
     const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h }, ...(archive ? { archive } : {}) };
     const images = TAG && page_type === "home" && viewport === "desktop" ? await captureImages(page).catch(() => null) : null;
+    if (thumbs && !archive && page_type === "home") await captureThumb(page, domain, viewport).catch(() => {});
     return {
       links: x.links, images,
       record: {
@@ -211,6 +226,7 @@ async function main() {
   console.log(`run ${RUN_ID}: mode=${MODE}, ${sites.length} sites, state for ${Object.keys(byDomain).length}`);
 
   if (DRY) mkdirSync("out", { recursive: true });
+  if (THUMBS) thumbs = makeThumbSender({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: RUN_ID });
   const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
   let buffer = [], bufBytes = 0;
   const totals = { snapshots: 0, unchanged: 0, events: 0, sites_ok: 0, sites_failed: 0, sites_skipped: 0, tagged: 0, tag_reused: 0, tag_failed: 0 };
@@ -258,8 +274,9 @@ async function main() {
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   await flush();
+  if (thumbs) await thumbs.flush();
   await browser.close();
-  const summary = { run_id: RUN_ID, mode: MODE, ...totals, errors };
+  const summary = { run_id: RUN_ID, mode: MODE, ...totals, ...(thumbs ? { thumbs: thumbs.totals } : {}), errors };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
   console.log("done", JSON.stringify(summary));
 }

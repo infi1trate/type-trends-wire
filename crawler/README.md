@@ -88,3 +88,13 @@ Failures become GitHub issues (GitHub emails the repo owner) and close themselve
 ## Library replacements (Nov 2026)
 
 27 sites that blocked the crawler (403/429/bot walls, no live capture in 5+ days) were swapped for same-sector peers that passed a robots + render probe with the crawler's own code. Removed sites are deactivated by `library_sync`, so their history stays.
+
+## Digest thumbnails
+
+The Saturday full library run (`LIBRARY_MODE=full`) also captures one small above-the-fold crop per live homepage, desktop and mobile, for The Digest. This is the only image the project stores. The policy is small crops that are credited and linked to the site, and removable on request.
+
+- **What's captured:** the visible viewport only, never the full page. It is downscaled to fit 1280×800, or 1024 or 800 wide when a busy page won't fit, and encoded as WebP of at most 150 KB, plus 640w and 320w variants. Code: `src/thumbs.js`.
+- **Where it goes:** batches of up to 12 captures per request, under 4 MB, are posted to `/api/public/ingest-thumbs` with `x-crawl-secret`. The server validates them, refuses opted-out domains, and keeps the latest 2 per domain and viewport.
+- **robots.txt:** checked before the page loads, the same check as every snapshot.
+- **Turning it off:** set `THUMBS=0`. Dry runs count captures without posting.
+- **Opt-outs:** `POST /api/public/thumb-optout` with `{"domain":"example.com","note":"owner request"}` and the same secret header. This deletes the site's stored captures and refuses future ones. Send `"action":"remove"` to lift the opt-out.
