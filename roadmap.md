@@ -150,3 +150,11 @@
 - [x] Competitive audit: pure auditModel, /audit, /audit/new, print, /audit.png (open), console `audit`, Compare with…, Audit these sites
 - [x] MCP audit_sites + watchlist_changes, methodology lines
 - [x] Tests + screenshots + report
+
+# Phase 11 — proof and reach (Labs launch on hold: build/link nothing for it)
+- [ ] Step 0: run Google parity; switch AI_PROVIDER only if the script's pass threshold is met; run Product Hunt ingest once and report
+- [ ] Forecast ledger: append-only forecast_calls, one selection rule constant, pure resolution, first-call-stands, backfill, hit rate (<20 → sentence)
+- [ ] Ledger surfaces: /ledger (gated, editorial), terminal model card + console `ledger`, Digest Numbers hit rate at ≥20, trait explainer past calls, MCP forecast_ledger, methodology LEDGER
+- [ ] Embeds: /embed/trait/$key, /embed/chart/$week (open, frame-ancestors * only there, 404 card), Embed panel on trait + chart pages, oEmbed endpoint + link tags
+- [ ] MCP keys: mcp_keys + mcp_key_usage, Bearer dsgn_ keys raise limit, 401 for revoked/unknown, admin endpoint (crawler-secret auth), docs, MCP overlay "Using a key"
+- [ ] Tests + screenshots (/ledger, embed 320/800) + report
