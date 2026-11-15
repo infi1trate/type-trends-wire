@@ -1,3 +1,4 @@
+import { tagPhrase } from "./labels";
 // F7 Vibe Map: pure, deterministic tag-space projection. No I/O, no AI, no images.
 // Vector = closed-vocab AI tags + theme/serif/mono → TF-IDF-ish weights → PCA (power iteration) → k-means.
 export const VIBE_DIMS = ["aesthetic", "tone", "imagery", "hero_layout", "color_mood", "components"] as const;
@@ -31,14 +32,8 @@ export function siteTokens(row: { theme?: string | null; h1_family?: string | nu
   return [...out].sort();
 }
 
-const SHORT: Record<string, string> = {
-  "aesthetic:neo_brutalist": "soft brutalism", "aesthetic:brutalist": "brutalism", "aesthetic:swiss_grid": "swiss grid", "aesthetic:dark_tech": "dark tech", "aesthetic:retro_futurist": "retro-futurist", "aesthetic:terminal_mono": "terminal", "aesthetic:y2k": "y2k",
-  "imagery:product_ui": "product UI", "imagery:photography_people": "people photos", "imagery:photography_product": "product photos", "imagery:photography_lifestyle": "lifestyle photos", "imagery:3d_render": "3D", "imagery:illustration_flat": "flat illustration", "imagery:illustration_hand_drawn": "hand-drawn", "imagery:abstract_gradient": "gradients", "imagery:abstract_shapes": "abstract shapes", "imagery:generative_art": "generative", "imagery:data_viz": "data viz", "imagery:video_still": "video", "imagery:typographic_only": "type-only", "imagery:pixel_art": "pixel art",
-  "hero_layout:centered_stack": "centered hero", "hero_layout:split_left_text": "split hero", "hero_layout:split_right_text": "split hero (right)", "hero_layout:full_bleed_media": "full-bleed", "hero_layout:text_only": "text-only hero", "hero_layout:grid_collage": "grid collage", "hero_layout:product_first": "product-first",
-  "color_mood:high_contrast": "high contrast", "color_mood:earthy": "warm", "headline:serif": "serif", "type:mono": "mono", "theme:dark": "dark", "theme:light": "light",
-};
-/** Human phrase for a token; deterministic template, never an LLM. */
-export const tagPhrase = (token: string) => SHORT[token] ?? (token.split(":")[1] ?? token).replace(/_/g, " ");
+/** Human phrase for a token; deterministic template, never an LLM. Lives in labels.ts with every other trait name. */
+export { tagPhrase };
 export const axisLabel = (a: VibeAxis) => `← ${a.negative.map(tagPhrase).join(" · ")}   ${a.positive.map(tagPhrase).join(" · ")} →`;
 
 /** Deterministic PRNG (mulberry32). */
