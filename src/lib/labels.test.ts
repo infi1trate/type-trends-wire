@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fixture from "./__fixtures__/trait-keys.json";
-import { CATEGORY_DIMENSION, DIMENSIONS, KEY_DIMENSION, NAMES, STAGES, alertDisplayTitle, colorName, label, resolveLabel, stageName, tagPhrase, traitText } from "./labels";
+import { CATEGORY_DIMENSION, DIMENSIONS, KEY_DIMENSION, NAMES, STAGES, alertDisplayTitle, briefDisplay, colorName, label, resolveLabel, stageName, tagPhrase, traitText } from "./labels";
 
 describe("trait labels", () => {
   it("resolves every stored trait key without the fallback", () => {
@@ -70,5 +70,18 @@ describe("alert titles", () => {
   it("leaves new titles alone", () => {
     const t = `BREAKOUT · ${traitText("css:subgrid")} +4.8 pts/q · all sectors`;
     expect(alertDisplayTitle(t, "css:subgrid")).toBe(t);
+  });
+});
+
+describe("brief rendering", () => {
+  it("never shows $ tickers, names cited traits, keeps the stored prose", () => {
+    const stored = { headline: "Subgrid Momentum, Dropbox Pivots", caveats: "Small N for $SUBGRID.", refs: { "forecast:css:subgrid:all": { label: "css:subgrid" }, "wire:12": { label: "Why $BENTO-GRID is everywhere" } },
+      sections: [{ title: "Rising", body: "$SUBGRID keeps climbing; plans cost $49 a month.", citations: [{ kind: "forecast", id: "css:subgrid:all" }, { kind: "spread", id: "dark_theme" }, { kind: "wire", id: "12" }] }] };
+    const d = briefDisplay(stored);
+    const all = JSON.stringify(d);
+    expect(all).not.toMatch(/\$[A-Z][A-Z0-9-]+/);
+    expect(d.headline).toBe("Subgrid Momentum, Dropbox Pivots");
+    expect(d.sections[0]!.body).toBe("Subgrid layouts [LAYOUT] keeps climbing; plans cost $49 a month.");
+    expect(d.sections[0]!.citations.map(c => c.text)).toEqual(["FORECAST · Subgrid layouts", "SPREAD · Dark mode", "WIRE · Why Bento grids [LAYOUT] is everywhere"]);
   });
 });

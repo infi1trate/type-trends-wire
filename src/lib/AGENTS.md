@@ -10,3 +10,6 @@
 - Wide JSON scans read by the anonymous client page below 1000 rows and select JSON paths, because each page must finish within the anonymous statement timeout.
 - All model calls use `aiClient()` from `ai-provider.server.ts`, resolved before `ai_reserve` so price table, `ai_usage.provider` and the call agree; request mapping/parsing stays pure in `ai-provider.ts`, and a misconfigured provider fails closed with no fallback.
 - Job health rules stay pure in `health.ts` over the anonymous `health_facts()` facade; the public endpoint and status bar share `health.server.ts`, and the platform blocks cron introspection, so callback cut-offs are inferred from interrupted or stuck runs.
+- Trait display names, dimensions (FONT/COLOR/LAYOUT/VIBE) and the five stage words live only in pure `labels.ts`; UI, alerts, chart cards, brief context and MCP (`withLabels` in the shared `json()`) import it, and stored text is rewritten only at render time so history rows stay untouched.
+- Info cards, the glossary panel and tour copy share pure `glossary.ts`; UI headings reference entries as `g="id"` so `glossary.test.ts` can scan for missing ids, and methodology anchors come from `methodology.ts`.
+- TODAY lines are built by pure `today.ts` from public SELECT reads in `todayQuery` (no AI per view); tour state is pure `tour.ts` with injected storage and an in-memory fallback.

@@ -2,7 +2,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { forecastQuery, forecastDetailQuery, chartCardQuery, discourseSinceQuery, type ForecastRow, type BriefDoc } from "@/lib/data";
-import { label, stageName, STAGES } from "@/lib/labels";
+import { briefDisplay, label, stageName, STAGES } from "@/lib/labels";
 import { coverageSentences } from "@/lib/model-card-copy";
 import { DimTag, Info, StageBadge } from "./Info";
 import { stageId } from "@/lib/glossary";
@@ -137,18 +137,19 @@ export function ForecastPanel() {
 
 function ChartBand({ week }: { week: string | null }) { const { data } = useSuspenseQuery(chartCardQuery(week)); return <ChartOfWeek card={data} />; }
 function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) => void }) {
+  const shown = briefDisplay(brief);
   return <article className="p-3">
-    <h3 className="text-hero font-semibold"><span className="label mr-2 text-signal">AI</span>{brief.headline}</h3>
-    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{brief.sections.map(s => <section key={s.title} className="min-w-0 border border-rule p-3">
+    <h3 className="text-hero font-semibold"><span className="label mr-2 text-signal">AI</span>{shown.headline}</h3>
+    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{shown.sections.map(s => <section key={s.title} className="min-w-0 border border-rule p-3">
       <h4 className="label font-semibold">{s.title.toUpperCase()}</h4><p className="mt-1">{s.body}</p>
-      <div className="mt-2 flex flex-wrap gap-1">{s.citations.map(c => { const ref = brief.refs?.[`${c.kind}:${c.id}`]; const text = `${c.kind.toUpperCase()} · ${c.kind === "forecast" ? label(c.id.replace(/:all$/, "")).name : c.kind === "spread" ? label(`spread:${c.id}`).name : ref?.label ?? c.id}`; const cls = "label inline-flex h-6 items-center border border-rule px-2 text-compare-muted hover:text-ink";
+      <div className="mt-2 flex flex-wrap gap-1">{s.citations.map(c => { const ref = brief.refs?.[`${c.kind}:${c.id}`]; const text = c.text; const cls = "label inline-flex h-6 items-center border border-rule px-2 text-compare-muted hover:text-ink";
         if (c.kind === "forecast") return <button key={c.kind + c.id} type="button" className={cls} onClick={() => onTrait(c.id)}>{text}</button>;
         if (c.kind === "event" && ref?.domain) return <Link key={c.kind + c.id} to="/library/$domain" params={{ domain: ref.domain }} className={cls}>{text}</Link>;
         if (c.kind === "wire" && ref?.url) return <a key={c.kind + c.id} href={ref.url} target="_blank" rel="noreferrer" className={cls}>{text}</a>;
         if (c.kind === "spread") return <Link key={c.kind + c.id} to="/" search={{ panel: "overview" }} className={cls}>{text}</Link>;
         return <span key={c.kind + c.id} className={cls}>{text}</span>; })}</div>
     </section>)}</div>
-    <p className="label mt-3 text-compare-muted">CAVEATS · {brief.caveats}</p>
+    <p className="label mt-3 text-compare-muted">CAVEATS · {shown.caveats}</p>
   </article>;
 }
 

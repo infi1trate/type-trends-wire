@@ -174,8 +174,19 @@ export function withLabels<T>(data: T): T {
       if (!("label" in o)) o["label"] = l.name;
       if ("dimension" in o && o["dimension"] !== l.dimension) o["label_dimension"] = l.dimension; else o["dimension"] = l.dimension;
     }
+    if (Array.isArray(o["tickers"]) && !("color_labels" in o)) o["color_labels"] = (o["tickers"] as unknown[]).map(t => (typeof t === "string" ? colorName(t) : t));
     if (typeof o["stage"] === "string" || o["stage"] === null) { if ("stage" in o && !("stage_label" in o)) o["stage_label"] = stageName(o["stage"] as string | null); }
     return o;
   };
   return walk(data) as T;
+}
+
+/** Display copy for a stored brief: text stays as stored except leftover $TICKERs; citations name traits through the label map. */
+export type BriefLike = { headline: string; caveats: string; refs?: Record<string, { label: string }> | undefined; sections: { title: string; body: string; citations: { kind: string; id: string }[] }[] };
+export function citationText(c: { kind: string; id: string }, refLabel?: string) {
+  const name = c.kind === "forecast" ? label(c.id.split(":").slice(0, 2).join(":")).name : c.kind === "spread" ? label(`spread:${c.id}`).name : untick(refLabel ?? c.id);
+  return `${c.kind.toUpperCase()} · ${name}`;
+}
+export function briefDisplay<T extends BriefLike>(b: T) {
+  return { headline: untick(b.headline), caveats: untick(b.caveats), sections: b.sections.map(s => ({ title: s.title, body: untick(s.body), citations: s.citations.map(c => ({ ...c, text: citationText(c, b.refs?.[`${c.kind}:${c.id}`]?.label) })) })) };
 }

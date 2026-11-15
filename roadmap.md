@@ -121,3 +121,12 @@
 - [x] Root cause: taste refresh read timed out (anonymous statement timeout) and failed the whole run; smaller JSON-path pages, memoized loops, taste/brief/vibe/chart non-fatal after the run is stored.
 - [x] forecast_runs.error (≤300, sanitized) + health note; stale/missing crawl drops crawl components; tests.
 - [x] Real weekly run with brief, alerts and chart card.
+
+# Phase 8 — launch polish
+- [x] Drop $ tickers: one label map (names + FONT/COLOR/LAYOUT/VIBE), alerts, chart cards, briefs, MCP label/dimension fields
+- [x] (i) cards on panel and column headings from one glossary
+- [x] Five stage word badges (Emerging, Rising, Peaking, Fading, Steady)
+- [x] TODAY landing panel (key T, console `today`), F1 renamed SIGNALS (`ticker` alias kept)
+- [x] First-visit tour (once, replayable via glossary and console `tour`)
+- [x] Glossary (`?`, console `glossary`, footer link), deep links `#g-<id>`
+- [x] Readable early and empty states, model-card coverage as sentences

@@ -1,3 +1,4 @@
+import { untick } from "@/lib/labels";
 import { useQuery } from "@tanstack/react-query";
 import { typeIndexQuery, wire24hQuery, latestBriefQuery } from "@/lib/data";
 import { DORMANT, PANELS, isoWeek, type PanelId } from "./panels";
@@ -49,7 +50,7 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
       </div>
       <section className="shrink-0 bg-paper p-3 text-void" aria-label="Weekly brief">
         <h2 className="label flex items-center font-semibold">WEEKLY BRIEF · {brief?.week ?? `WEEK ${String(isoWeek()).padStart(2, "0")}`} · AI</h2>
-        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{brief.headline}</span><button type="button" className="label underline underline-offset-2" onClick={() => go("brief")}>OPEN F10 FORECAST →</button></p> : <p className="mt-1">No brief yet: the first one is written after the next Sunday forecast.</p>}
+        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2" onClick={() => go("brief")}>OPEN F10 FORECAST →</button></p> : <p className="mt-1">No brief yet: the first one is written after the next Sunday forecast.</p>}
       </section>
     </div>
   );

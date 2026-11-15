@@ -9,7 +9,8 @@ const call=async(name:string,args:unknown)=>{const res=await handleMcp(new Reque
 describe('MCP output labels',()=>{
  it('wire alerts read as plain names with the stable trait key',async()=>{const text=await call('wire',{source_kind:'alert'});expect(text).not.toMatch(TICKER);const item=JSON.parse(text).items[0];expect(item.title).toBe('BREAKOUT · Subgrid layouts [LAYOUT] +4.8 pts/q · all sectors');expect(item).toMatchObject({trait:'css:subgrid',label:'Subgrid layouts',dimension:'LAYOUT'});});
  it('font trends carry a label and FONT dimension, never a $ ticker',async()=>{const text=await call('get_trend',{family:'Inter'});expect(text).not.toMatch(TICKER);expect(JSON.parse(text)).toMatchObject({family:'Inter',label:'Inter',dimension:'FONT',stage_label:null});});
- it('adds label next to keys without overwriting raw categories',()=>{const out=JSON.parse(json({rows:[{dimension:'css',value:'subgrid',stage:'accelerating'},{trait:'components:bento_grid',stage:'flat'},{signal:'dark_theme',label:'Dark theme'}],note:'was $LOGO-WALL, costs $50'}).content[0]!.text);
+ it('adds label next to keys without overwriting raw categories',()=>{const out=JSON.parse(json({rows:[{dimension:'css',value:'subgrid',stage:'accelerating'},{trait:'components:bento_grid',stage:'flat'},{signal:'dark_theme',label:'Dark theme'}],note:'was $LOGO-WALL, costs $50',palette:{tickers:['amber·muted·dark']}}).content[0]!.text);
+  expect(out.palette.color_labels).toEqual(['Muted dark amber']);
   expect(out.rows[0]).toEqual({dimension:'css',value:'subgrid',stage:'accelerating',label:'Subgrid layouts',label_dimension:'LAYOUT',stage_label:'Rising'});
   expect(out.rows[1]).toEqual({trait:'components:bento_grid',stage:'flat',label:'Bento grids',dimension:'LAYOUT',stage_label:'Steady'});
   expect(out.rows[2]).toMatchObject({signal:'dark_theme',label:'Dark theme',dimension:'COLOR'});
