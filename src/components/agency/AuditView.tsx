@@ -16,11 +16,11 @@ function Trait({ t }: { t: TraitRef }) {
     <a href={t.receipt} className="ed-data ed-muted" {...pr(t.receipt)}>{pct(t.share)} of sites</a>
   </li>;
 }
-function MatrixTable({ m, caption }: { m: Matrix; caption: string }) {
+function MatrixTable({ m, caption, head }: { m: Matrix; caption: string; head: string }) {
   return <div className="overflow-x-auto">
     <table className="ed-data w-full min-w-[480px] border-collapse text-left">
       <caption className="ed-caption mb-2 text-left">{caption}</caption>
-      <thead><tr className="border-b border-ed-ink"><th scope="col" className="py-2 pr-4 font-semibold">Component</th>{m.domains.map(d => <th key={d} scope="col" className="py-2 pr-3 font-semibold">{d}</th>)}</tr></thead>
+      <thead><tr className="border-b border-ed-ink"><th scope="col" className="py-2 pr-4 font-semibold">{head}</th>{m.domains.map(d => <th key={d} scope="col" className="py-2 pr-3 font-semibold">{d}</th>)}</tr></thead>
       <tbody>{m.rows.map(r => <tr key={r.trait} className="ed-hair">
         <th scope="row" className="py-2 pr-4 font-normal"><a href={`/trait/${encodeURIComponent(r.trait)}`}>{r.name}</a></th>
         {r.cells.map((c, i) => <td key={m.domains[i]} className="py-2 pr-3" aria-label={c == null ? "no data" : c ? "yes" : "no"}>{c == null ? "·" : c ? "✓" : "–"}</td>)}
@@ -92,10 +92,10 @@ export function AuditView({ a }: { a: Audit }) {
       <div className="overflow-x-auto"><table className="ed-data w-full min-w-[560px] border-collapse text-left">
         <thead><tr className="border-b border-ed-ink">{["Site", "Hero", "Media", "Headline", "Grid", "Buttons", "Stack"].map(h => <th key={h} scope="col" className="py-2 pr-3 font-semibold">{h}</th>)}</tr></thead>
         <tbody>{a.layout.sites.map(s => <tr key={s.domain} className="ed-hair align-top">
-          <th scope="row" className="py-2 pr-3 font-normal">{s.domain}</th><td className="py-2 pr-3">{s.heroLayout ?? "—"}</td><td className="py-2 pr-3">{s.heroMedia ?? "—"}</td><td className="py-2 pr-3">{s.align ?? "—"}</td><td className="py-2 pr-3">{s.gridCols ? `${s.gridCols} cols` : "—"}</td><td className="py-2 pr-3">{s.buttons ?? "—"}</td><td className="py-2 pr-3">{s.stack.join(", ") || "—"}</td>
+          <th scope="row" className="py-2 pr-3 font-normal">{s.domain}</th><td className="py-2 pr-3">{s.heroLayout ? traitLabel(`hero_layout:${s.heroLayout}`).name : "—"}</td><td className="py-2 pr-3">{s.heroMedia ? traitLabel(`hero_media:${s.heroMedia}`).name : "—"}</td><td className="py-2 pr-3">{s.align ?? "—"}</td><td className="py-2 pr-3">{s.gridCols ? `${s.gridCols} cols` : "—"}</td><td className="py-2 pr-3">{s.buttons ?? "—"}</td><td className="py-2 pr-3">{s.stack.join(", ") || "—"}</td>
         </tr>)}</tbody></table></div>
-      {a.layout.components && <div className="mt-8"><MatrixTable m={a.layout.components} caption="Components present (AI-tagged estimates): ✓ present, – not seen, · no confident read" /></div>}
-      {a.layout.css && <div className="mt-8"><MatrixTable m={a.layout.css} caption="Modern CSS features in use (measured): ✓ used, – not used, · not measured" /></div>}
+      {a.layout.components && <div className="mt-8"><MatrixTable m={a.layout.components} head="Component" caption="Components present (AI-tagged estimates): ✓ present, – not seen, · no confident read" /></div>}
+      {a.layout.css && <div className="mt-8"><MatrixTable m={a.layout.css} head="CSS feature" caption="Modern CSS features in use (measured): ✓ used, – not used, · not measured" /></div>}
     </section>}
 
     {a.vibe && <section className="ed-wrap mt-14" aria-labelledby="a-vibe">

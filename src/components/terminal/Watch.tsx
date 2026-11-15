@@ -1,7 +1,7 @@
 // WATCH panel (key W), the console's `watch …` / `audit …` commands, and the +WATCH action on site pages and trait rows.
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { PanelHeader, Seg } from "./primitives";
@@ -16,9 +16,10 @@ import { SITE_URL } from "@/lib/site";
 
 const KIND: Record<string, string> = { site: "SITE", rebrand: "REBRAND", stage: "STAGE", alert: "ALERT", summary: "WEEK" };
 function useLocalList() {
+  const qc = useQueryClient();
   const [list, setList] = useState<LocalWatch[]>([]), [current, setCurrent] = useState<string | null>(null);
   const refresh = () => { const s = localWatches(); const l = s.list(); setList(l); setCurrent(s.current() ?? l[0]?.id ?? null); };
-  useEffect(() => { refresh(); const on = () => refresh(); window.addEventListener("dsgn-watch", on); window.addEventListener("storage", on); return () => { window.removeEventListener("dsgn-watch", on); window.removeEventListener("storage", on); }; }, []);
+  useEffect(() => { refresh(); const on = () => { refresh(); void qc.invalidateQueries({ queryKey: ["watch-view"] }); }; window.addEventListener("dsgn-watch", on); window.addEventListener("storage", on); return () => { window.removeEventListener("dsgn-watch", on); window.removeEventListener("storage", on); }; }, []);
   return { list, current, select: (id: string) => { localWatches().setCurrent(id); setCurrent(id); }, refresh };
 }
 export const notifyWatch = () => { try { window.dispatchEvent(new Event("dsgn-watch")); } catch { /* SSR */ } };

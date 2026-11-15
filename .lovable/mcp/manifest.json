@@ -840,6 +840,78 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "audit_sites",
+        "title": "Competitive audit",
+        "description": "Compare 2–6 sites side by side: at a glance, type (faces, sizes, shared faces), color (palettes with readable names, overlap), layout and components (sites × components matrix, CSS features, stack), vibe and voice (AI-tagged estimates), versus the market (rising/emerging traits each site already shows and fading ones it still uses, read in its own sector), recent moves (90 days) and white space (traits rising in the set's main sector that none of them use). Untracked domains are listed as pending. Each trait keeps its stable key and adds label, dimension and explainer_url; audit_url opens the printable page.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "domains": {
+              "minItems": 2,
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 253
+              },
+              "description": "Domains such as linear.app; protocol and www. are ignored."
+            },
+            "sector": {
+              "description": "Read open territory in this sector instead of the set's most common one.",
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            }
+          },
+          "required": [
+            "domains"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "watchlist_changes",
+        "title": "Watchlist changes",
+        "description": "The same items as a watchlist's RSS feed: the last 30 days of confirmed site changes, rebrands, stage changes and alerts for its sites and signals (newest first, at most 50), plus weekly summaries. Needs the feed token from the feed URL (/api/public/watch-feed/<feed_token>.xml); rotated or unknown tokens return an error. Traits keep their stable key and add label, dimension and explainer_url.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "feed_token": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{22}$",
+              "description": "The token in the watchlist's feed URL."
+            }
+          },
+          "required": [
+            "feed_token"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }

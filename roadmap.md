@@ -144,9 +144,9 @@
 - [x] Server-side gate, /unlock + /lock, throttle, robots/noindex, Lock links, tests
 
 # Phase 10 — agency workflow
-- [ ] Watchlists table (capability ids, hashed edit token, feed token), server create/edit/rotate/delete with per-IP limit, render-queue offer
-- [ ] /watch/new, /watch/$id (week / 30 days, feed URL, rotate), local device list, WATCH panel (key W), console `watch …`, Add to watchlist on site pages + trait rows
-- [ ] Per-watchlist RSS /api/public/watch-feed/<token>.xml (open, in OPEN_PATHS with reason), weekly summary items
-- [ ] Competitive audit: pure auditModel, /audit, /audit/new, print, /audit.png (open), console `audit`, Compare with…, Audit these sites
-- [ ] MCP audit_sites + watchlist_changes, methodology lines
-- [ ] Tests + screenshots + report
+- [x] Watchlists table (capability ids, hashed edit token, feed token), server create/edit/rotate/delete with per-IP limit, render-queue offer
+- [x] /watch/new, /watch/$id (week / 30 days, feed URL, rotate), local device list, WATCH panel (key W), console `watch …`, Add to watchlist on site pages + trait rows
+- [x] Per-watchlist RSS /api/public/watch-feed/<token>.xml (open, in OPEN_PATHS with reason), weekly summary items
+- [x] Competitive audit: pure auditModel, /audit, /audit/new, print, /audit.png (open), console `audit`, Compare with…, Audit these sites
+- [x] MCP audit_sites + watchlist_changes, methodology lines
+- [x] Tests + screenshots + report

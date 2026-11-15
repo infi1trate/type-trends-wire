@@ -63,6 +63,16 @@ describe("site gate", () => {
       expect(await gate(get(p), cfg), p).toBeNull();
   });
 
+  it("watch and audit pages are gated; the audit share card and per-watchlist feed are open", async () => {
+    const cfg = await cfgFor(), id = "A".repeat(22);
+    for (const p of [`/watch/${id}`, `/watch/${id}?k=${"B".repeat(22)}`, "/watch/new", "/audit?sites=linear.app,vercel.com", "/audit/new"]) expect((await gate(get(p), cfg))!.status, p).toBe(401);
+    for (const p of ["/audit.png?sites=linear.app,vercel.com", `/api/public/watch-feed/${"F".repeat(22)}.xml`]) expect(await gate(get(p), cfg), p).toBeNull();
+    const feed = OPEN_PATHS.find(o => o.pattern?.test(`/api/public/watch-feed/${"F".repeat(22)}.xml`))!;
+    expect(feed.why).toMatch(/capability URL/);
+    expect(feed.pattern!.test("/api/public/watch-feed/short.xml")).toBe(false);
+    expect(OPEN_PATHS.find(o => o.exact === "/audit.png")!.why).toMatch(/domain names and capture date only/);
+  });
+
   it("RSS and server functions answer 401 text when locked", async () => {
     const cfg = await cfgFor();
     for (const p of ["/digest/rss.xml", "/_serverFn/abc"]) {

@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { checkWatchEdit, editWatchlist } from "@/lib/agency.functions";
 import type { WatchView, WatchRange } from "@/lib/agency/watch-feed";
 import type { Classified, Op } from "@/lib/agency/watch";
-import { AUDIT_MAX, auditPath } from "@/lib/agency/audit";
+import { AUDIT_MAX } from "@/lib/agency/audit";
 import { localWatches } from "@/lib/agency/watch-local";
 import { SITE_URL } from "@/lib/site";
 import { SectionHead, SiteCard, StageWord, Dim, pr } from "@/components/digest/Editorial";
@@ -46,7 +46,7 @@ export function WatchPage({ v, k }: { v: WatchView; k?: string | undefined }) {
       if ("deleted" in r) { localWatches().remove(v.id); navigate({ to: "/watch/new", search: { add: undefined, name: undefined } }); return; }
       setReport(op.op === "add" ? { c: r.classified, q: r.queued } : null);
       if (op.op === "rename") localWatches().save({ id: v.id, name: r.watch.name });
-      setMsg(op.op === "rotate_feed" ? "New feed link made. The old one now returns “not found”; update your RSS reader." : "Saved.");
+      setMsg(op.op === "rotate_feed" ? `New feed link made: ${r.feed_url}. The old one now returns “not found”; update your RSS reader.` : "Saved.");
       setAdd("");
       await qc.invalidateQueries({ queryKey: ["watch-view", v.id] }); await router.invalidate();
     } catch { setMsg("That didn't go through. Try again in a minute."); }
@@ -134,4 +134,3 @@ export function WatchPage({ v, k }: { v: WatchView; k?: string | undefined }) {
     {msg && <p role="status" className="ed-wrap ed-small mt-6">{msg}</p>}
   </AgencyShell>;
 }
-export const watchAuditPath = (v: WatchView) => auditPath(v.sites.map(s => s.domain).slice(0, AUDIT_MAX));
