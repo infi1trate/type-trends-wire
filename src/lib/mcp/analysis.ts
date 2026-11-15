@@ -1,4 +1,5 @@
 import { SHOWCASE_METHODOLOGY } from '../showcase-methodology';
+import { label, stageName } from '../labels';
 import { computeBand, pointAtLeast, daysBetween, METHODOLOGY as BAND_RULES } from '../bands';
 export type FontRow = { captured_on: string; family: string; category: string; popularity_rank: number; trending_rank: number; is_variable: boolean };
 export function analyzeFamily(history: FontRow[]) {
@@ -7,12 +8,12 @@ export function analyzeFamily(history: FontRow[]) {
   if (!first || !cur) return null;
   const p7 = pointAtLeast(sorted, cur.captured_on, 7), p28 = pointAtLeast(sorted, cur.captured_on, 28);
   const band = computeBand(sorted);
-  return { ticker: '$' + cur.family.toUpperCase().replace(/[^A-Z0-9]/g, '-'), family: cur.family, category: cur.category, is_variable: cur.is_variable,
+  return { family: cur.family, label: label(`family:${cur.family}`).name, dimension: 'FONT' as const, category: cur.category, is_variable: cur.is_variable,
     as_of: cur.captured_on, popularity_rank: cur.popularity_rank, trending_rank: cur.trending_rank,
     change: { popularity_7d: p7 ? p7.popularity_rank-cur.popularity_rank : null, popularity_28d: p28 ? p28.popularity_rank-cur.popularity_rank : null,
       trending_7d: p7 ? p7.trending_rank-cur.trending_rank : null, trending_28d: p28 ? p28.trending_rank-cur.trending_rank : null,
       note: 'Positive = climbed that many places. null = not enough history yet.' },
-    band: band.band, band_reason: band.reason, days_of_history: daysBetween(first.captured_on, cur.captured_on),
+    band: band.band, stage_label: stageName(band.band), band_reason: band.reason, days_of_history: daysBetween(first.captured_on, cur.captured_on),
     history: sorted.map(r => ({ d: r.captured_on, pop: r.popularity_rank, trend: r.trending_rank })) };
 }
 export function movers(latest: FontRow[], earlier: FontRow[], opts: {direction: 'rising'|'falling'|'trending'; category?: string | undefined; limit: number}) {
@@ -42,5 +43,6 @@ export const METHODOLOGY = [
   'ALERTS: the weekly forecast emits ≤10 wire items (source_kind alert), at most one per trait per 28 days, priority: sentiment turn (fatigue flag) > crossover (curation lead changes sign between the last two crawl runs with |Δ| ≥ 5 pts) > breakout (top-decile momentum among fitted rows, ≥3 sites) > discourse spike (this week ≥3× the 8-week median rate, n ≥ 15, ≥4 baseline weeks) > saturation (share crosses 35% or stage becomes peaking vs the previous run). Excerpts carry the numbers.',
   'SAMPLER ENDPOINTS (crawler secret): GET /api/public/discourse-terms → {version,terms:[{term,kind,trait?}] (≤600),fatigue}; POST /api/public/ingest-wire (≤256 KB) {kind:"items",items:[{source_kind:"bluesky",url,title≤300,author≤100,published_at,link?,terms?≤20}]≤200} or {kind:"mentions",window_start,window_end (≤7 days),sampled_posts,design_posts,counts:{term:{n,fatigue}} ≤600}; GET /api/public/seed-candidates → {domains:[{domain,sources,first_seen}]} (30 days, ≤300, registrable domains, no social/hosting/app stores).',
   ...SHOWCASE_METHODOLOGY.map(m => `${m.title}: ${m.body}`),
+  'LABELS: every trait keeps its stable machine key (e.g. css:subgrid) and carries label ("Subgrid layouts") and dimension (FONT, COLOR, LAYOUT or VIBE); objects that already have a raw dimension category get label_dimension instead. Stages carry stage_label: Emerging, Rising, Peaking, Fading or Steady (accelerating → Rising, declining → Fading, flat → Steady). Signals are never shown as $ tickers.',
   'Every tool response carries receipts. Headlines and links only; read the original source for full articles.'
 ].join('\n');

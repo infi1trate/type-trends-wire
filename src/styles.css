@@ -167,3 +167,8 @@
   .library-table td { display: block; min-width: 0; padding: 8px 12px; }
   .library-table td::before { content: attr(data-label); display: block; font-size: 11px; color: var(--compare-muted); }
 }
+
+/* (i) buttons: 14px glyph, 44px hit area on touch screens. */
+.info-btn::after { content: ""; position: absolute; inset: -4px; }
+@media (pointer: coarse) { .info-btn::after { inset: -15px; } }
+.tour-target { outline: 1px solid var(--white) !important; outline-offset: 2px; }

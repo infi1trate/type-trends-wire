@@ -18,7 +18,8 @@ describe("chart of the week", () => {
     expect(model.origin).toBe("call");
     expect(model.series.map(s => s.q)).toEqual(["2021Q1", "2022Q1", "2023Q1", "2026Q4"]);
     expect(model.forecast.map(f => f.q)).toEqual(["2027Q1", "2027Q2", "2027Q4"]);
-    expect(model.ticker).toBe("$PHOTOGRAPHY-PRODUCT");
+    expect(model.ticker).toBeUndefined();
+    expect(model.label).toBe("Product photography");
     expect(model.n).toBe(251);
   });
   it("falls back to the newest breakout alert when the call has no series", () => {
@@ -29,6 +30,16 @@ describe("chart of the week", () => {
     expect(m.scope).toBe("studios");
     expect(m.call).toBe("BREAKOUT $ANCHOR-POSITIONING +2.3 pts/q in studios");
     expect(pickCard({ week: "2026-W46", run_id: 7, brief: { headline: "h", sections: [] }, rows: [], alerts: [], data_through: null })).toBeNull();
+  });
+  it("never renders $ tickers, even for cards stored before labels", () => {
+    const old = { ...model, ticker: "$PHOTOGRAPHY-PRODUCT", label: "AI · IMAGERY: PHOTOGRAPHY PRODUCT", origin: "alert" as const, call: "BREAKOUT $PHOTOGRAPHY-PRODUCT +1.1 pts/q in studios" };
+    for (const m of [model, old]) for (const size of ["1200x675", "1080x1350"] as const) {
+      const svg = renderCardSvg(m, size);
+      expect(svg).not.toMatch(/\$[A-Z][A-Z0-9-]+/);
+      expect(svg).toContain("Product photography");
+      expect(svg).toContain("[VIBE]");
+    }
+    expect(renderCardSvg(old, "1200x675")).toContain("BREAKOUT · Product photography [VIBE] +1.1 pts/q · studios");
   });
   it("renders a stable SVG card", () => {
     expect(renderCardSvg(model, "1200x675")).toMatchSnapshot();

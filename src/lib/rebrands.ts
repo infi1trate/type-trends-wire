@@ -1,5 +1,6 @@
 // F9 Rebrand Desk: pure identity-change detection over confirmed (two-capture) library events. No I/O.
 import { colorTicker } from "./taste/color";
+import { inSentence, label, stageName } from "./labels";
 import { siteTraits } from "./forecast-signals";
 
 export const REBRAND_SINCE = "2021-01-01T00:00:00Z";
@@ -52,21 +53,16 @@ export function identityChanges(events: EventIn[]) {
   return out;
 }
 
-const STAGE_WORD: Record<string, string> = { emerging: "emerging", accelerating: "rising", flat: "flat", peaking: "peaking", declining: "fading" };
 const GAIN_ORDER = ["emerging", "accelerating", "flat", "peaking", "declining"], LOSS_ORDER = ["peaking", "declining", "flat", "accelerating", "emerging"];
-export function traitLabel(trait: string) {
-  const [d = "", v = ""] = trait.split(":"), w = v.replace(/_/g, " ");
-  if (trait === "headline:serif") return "serif headline";
-  if (d === "theme") return `${w} theme`; if (d === "hero_media") return `${w} hero`; if (d === "aesthetic") return `${w} aesthetic`; if (d === "tone") return `${w} tone`; if (d === "hero_layout") return `${w} hero layout`;
-  return w;
-}
+/** Trait name for read lines and new-trait chips; one label map for the whole app. */
+export const traitLabel = (trait: string) => inSentence(label(trait).name);
 export const AI_TRAIT_DIMS = new Set(["aesthetic", "tone", "hero_layout", "imagery", "components", "color_mood", "ai_positioning"]);
 const sideTraits = (s: Side) => new Set(siteTraits({ domain: "", quarter: "", sector: "", theme: s.theme, h1_family: s.h1, hero_media: s.hero_media, ai_tags: s.tags ? { aesthetic: s.tags.aesthetic, tone: s.tags.tone, hero_layout: s.tags.hero_layout } : null }));
 function stageOf(trait: string, sector: string, fc: Map<string, ForecastIn>): TraitStage {
   const r = [fc.get(`${sector}|${trait}`), fc.get(`all|${trait}`)].find(x => x && x.status === "ok") ?? null;
   return { trait, label: traitLabel(trait), scope: r?.scope ?? "all", stage: r?.stage ?? null, share: r?.current_share ?? null, momentum: r?.momentum ?? null };
 }
-/** Deterministic one-line read from forecast stages, e.g. "moved from peaking dark theme to rising serif headline — ahead of 82% of fintech". */
+/** Deterministic one-line read from forecast stages, e.g. "moved from peaking dark mode to rising serif headlines — ahead of 82% of fintech". */
 export function readLine(before: Side, after: Side, sector: string, fc: Map<string, ForecastIn>) {
   // AI-tag traits only count when both captures carry valid tags; a missing tag set is unknown, not a change.
   const tagged = !!before.tags && !!after.tags, keep = (t: string) => tagged || !AI_TRAIT_DIMS.has(t.slice(0, t.indexOf(":")));
@@ -75,7 +71,7 @@ export function readLine(before: Side, after: Side, sector: string, fc: Map<stri
   const gained = [...a].filter(t => !b.has(t)).map(t => stageOf(t, sector, fc)), lost = [...b].filter(t => !a.has(t)).map(t => stageOf(t, sector, fc));
   const g = gained.filter(t => t.stage).sort(rank(GAIN_ORDER))[0], l = lost.filter(t => t.stage).sort(rank(LOSS_ORDER))[0];
   const font = before.h1 && after.h1 && norm(before.h1) !== norm(after.h1) ? `${before.h1} → ${after.h1}` : null;
-  const st = (t: TraitStage) => `${STAGE_WORD[t.stage ?? ""] ?? t.stage} ${t.label}`;
+  const st = (t: TraitStage) => `${stageName(t.stage)?.toLowerCase() ?? "unstaged"} ${t.label}`;
   let move = g && l ? `moved from ${st(l)} to ${st(g)}` : g ? `adopted ${st(g)}` : l ? `dropped ${st(l)}` : null;
   if (move && g && g.share != null) { const where = g.scope === "all" ? "the library" : g.scope; move += g.stage === "emerging" || g.stage === "accelerating" ? ` — ahead of ${Math.round((1 - g.share) * 100)}% of ${where}` : ` — joins ${Math.round(g.share * 100)}% of ${where}`; }
   const ha = hueOf(after.accent), hb = hueOf(before.accent);

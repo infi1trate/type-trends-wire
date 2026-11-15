@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { analyzeFamily } from '../analysis';
 import * as store from '../store.server';
 import {json,daysBefore,READ,receipt} from './shared';
-export default defineTool({ name:'get_trend',title:"Get a typeface's trend",description:'Usage rank, trending rank, 7- and 28-day rank changes, band and daily history for one Google Fonts family.',
+export default defineTool({ name:'get_trend',title:"Get a typeface's trend",description:'Usage rank, trending rank, 7- and 28-day rank changes, band and daily history for one Google Fonts family. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).',
   inputSchema:{family:z.string().min(2).max(200).describe("Family name, e.g. 'Inter', 'Instrument Serif'")},annotations:READ,
   handler:async({family})=>{ const latest=await store.latestFontDate(); if(!latest) return json({error:'No snapshots yet.',receipts:receipt});
     const history=await store.fontHistory(family,daysBefore(latest,90)), r=analyzeFamily(history);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { familyHistoryQuery, sparkQuery, typeIndexQuery, type FamilyRow } from "@/lib/data";
 import { computeBand } from "@/lib/bands";
+import { Info } from "./Info";
 import { BandTag, Delta, Empty, LineChart, Loading, PanelHeader, QueryBar, Seg, Sparkline } from "./primitives";
 
 const CATS = ["ALL", "SANS", "SERIF", "DISPLAY", "HAND", "MONO"] as const;
@@ -66,6 +67,7 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
     <section ref={section} className="flex min-h-0 flex-1 flex-col" aria-label="Type index">
       <PanelHeader
         title={compact ? "TYPE INDEX" : "F2 TYPE INDEX"}
+        g="p-type-index"
         meta={data?.latest ? <>SNAPSHOT {data.latest} · {data.rows.length} FAMILIES</> : null}
       />
       {!compact && (
@@ -78,24 +80,23 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
       {isLoading ? (
         <div className="p-3"><Loading /></div>
       ) : error ? (
-        <div className="label p-3 text-signal">ERR · {String((error as Error).message)}</div>
+        <div role="alert" className="p-3 text-signal">The type index couldn’t load ({String((error as Error).message)}). Try again in a minute.</div>
       ) : !data || data.rows.length === 0 ? (
-        <Empty />
+        <Empty why="No Google Fonts snapshot yet. Rankings are collected once a day, so the index fills in after the next daily run." />
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full border-collapse text-body">
             <thead>
               <tr>
-                <th scope="col" className={`${th} text-right`}>RANK</th>
-                <th scope="col" className={`${th} text-left`}>TICKER</th>
-                <th scope="col" className={`${th} text-left ${compact ? "hidden xl:table-cell" : ""}`}>FAMILY</th>
-                {!compact && <th scope="col" className={`${th} text-left ${hideSm}`}>CAT</th>}
-                {!compact && <th scope="col" className={`${th} text-center ${hideSm}`}>VF</th>}
-                <th scope="col" className={`${th} text-right ${hideSm}`}>POP Δ7D</th>
-                <th scope="col" className={`${th} text-right`}>{compact ? "Δ28D" : "POP Δ28D"}</th>
-                <th scope="col" className={`${th} text-right`}>TRND</th>
-                {!compact && <th scope="col" className={`${th} text-left`}>BAND</th>}
-                <th scope="col" className={`${th} text-left ${hideSm}`}>28D</th>
+                <th scope="col" className={`${th} text-right`}>RANK<Info g="rank" /></th>
+                <th scope="col" className={`${th} text-left`}>FAMILY<Info g="family" /></th>
+                {!compact && <th scope="col" className={`${th} text-left ${hideSm}`}>CAT<Info g="category" /></th>}
+                {!compact && <th scope="col" className={`${th} text-center ${hideSm}`}>VF<Info g="variable" /></th>}
+                <th scope="col" className={`${th} text-right ${hideSm}`}>POP Δ7D<Info g="pop-7d" /></th>
+                <th scope="col" className={`${th} text-right`}>{compact ? "Δ28D" : "POP Δ28D"}<Info g="pop-28d" /></th>
+                <th scope="col" className={`${th} text-right`}>TRND<Info g="trending" /></th>
+                {!compact && <th scope="col" className={`${th} text-left`}>STAGE<Info g="stage" /></th>}
+                <th scope="col" className={`${th} text-left ${hideSm}`}>28D<Info g="sparkline-28d" /></th>
               </tr>
             </thead>
             <tbody>
@@ -110,8 +111,7 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
                   className="h-10 cursor-pointer border-b border-rule hover:bg-g900 focus-visible:bg-g900 md:h-8"
                 >
                   <td className="num px-2 text-g500">{r.popularity_rank}</td>
-                  <td className="px-2 font-semibold text-ink">{r.ticker}</td>
-                  <td className={`truncate px-2 text-ink ${compact ? "hidden xl:table-cell" : ""}`}>{r.family}</td>
+                  <td className="truncate px-2 font-semibold text-ink">{r.family}</td>
                   {!compact && <td className={`label px-2 text-g500 ${hideSm}`}>{catShort(r.category)}</td>}
                   {!compact && <td className={`px-2 text-center text-ink ${hideSm}`}>{r.is_variable ? "●" : ""}</td>}
                   <td className={`num px-2 ${hideSm}`}><Delta v={r.delta7} /></td>
@@ -172,8 +172,8 @@ function Drawer({ row, latest, onClose }: { row: FamilyRow; latest: string; onCl
           <button autoFocus onClick={onClose} className="label h-10 px-2 text-g500 hover:text-ink md:h-8">ESC ✕</button>
         </div>
         <div className="border-b border-rule p-3">
-          <div className="text-mega font-semibold text-ink break-all">{row.ticker}</div>
-          <div className="mt-2 text-body text-ink">{row.family} <span className="label text-g500">· {row.category.toUpperCase()}{row.is_variable ? " · VARIABLE" : ""}</span></div>
+          <div className="text-hero font-semibold text-ink break-words md:text-mega">{row.family}</div>
+          <div className="label mt-2 text-g500">[FONT] · {row.category.toUpperCase()}{row.is_variable ? " · VARIABLE" : ""}</div>
         </div>
         <dl className="grid grid-cols-4 border-b border-rule">
           {[

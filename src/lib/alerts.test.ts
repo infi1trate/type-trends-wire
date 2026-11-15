@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { alertCandidates, alertRow, selectAlerts, ticker, MAX_ALERTS, type AlertInput } from './alerts';
+import { alertCandidates, alertRow, selectAlerts, MAX_ALERTS, type AlertInput } from './alerts';
 import type { DiscourseSignal } from './discourse';
 
 const row = (value: string, o: Partial<AlertInput> = {}): AlertInput => ({ dimension: 'aesthetic', value, scope: 'all', status: 'ok', stage: 'accelerating', momentum: 1, current_share: 0.1, sites: 10, ...o });
@@ -11,7 +11,7 @@ describe('alert rules', () => {
     const rows = [...Array.from({ length: 9 }, (_, i) => row(`v${i}`, { momentum: i * 0.1 })), row('hot', { momentum: 4.1, scope: 'ai' }), row('thin', { momentum: 5, sites: 2 })];
     const b = alertCandidates(rows).filter(a => a.kind === 'breakout');
     expect(b.map(a => a.trait)).toEqual(['aesthetic:hot']);
-    expect(b[0]!.title).toBe('BREAKOUT $HOT +4.1 pts/q in ai');
+    expect(b[0]!.title).toBe('BREAKOUT · Hot [VIBE] +4.1 pts/q · ai');
   });
   it('breakout requires share < 35% and a stage other than peaking/declining', () => {
     const base = Array.from({ length: 20 }, (_, i) => row(`v${i}`, { momentum: i * 0.1 }));
@@ -44,5 +44,10 @@ describe('alert selection', () => {
     expect(r).toMatchObject({ source_kind: 'alert', ref: 'aesthetic:a', tags: ['alert', 'sentiment_turn'], url: 'https://type-trends-wire.lovable.app/?panel=brief&trait=aesthetic%3Aa&sector=all&alert=42-sentiment_turn' });
     expect(r.excerpt).toContain('run 42');
   });
-  it('tickers prefix ambiguous dimensions', () => { expect(ticker('theme', 'dark')).toBe('$THEME-DARK'); expect(ticker('components', 'bento_grid')).toBe('$BENTO-GRID'); });
+  it('titles use the label map, never $ tickers', () => {
+    const titles = alertCandidates([...Array.from({ length: 9 }, (_, i) => row(`v${i}`, { momentum: i * 0.1 })), { ...row('subgrid', { momentum: 4.8 }), dimension: 'css' }, { ...row('bento_grid', { momentum: 2.3, scope: 'fintech' }), dimension: 'components' }]).map(a => a.title);
+    expect(titles).toContain('BREAKOUT · Subgrid layouts [LAYOUT] +4.8 pts/q · all sectors');
+    expect(titles).toContain('BREAKOUT · Bento grids [LAYOUT] +2.3 pts/q · fintech');
+    for (const t of titles) expect(t).not.toMatch(/\$[A-Z][A-Z0-9-]+/);
+  });
 });

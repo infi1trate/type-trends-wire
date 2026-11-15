@@ -2,6 +2,7 @@
 import { isCrossover } from "./curation";
 import type { DiscourseSignal } from "./discourse";
 import { SITE_URL } from "./site";
+import { scopeText, stageName, traitText } from "./labels";
 
 export const ALERT_KINDS = ["sentiment_turn", "crossover", "breakout", "discourse_spike", "saturation"] as const; // priority order
 export type AlertKind = (typeof ALERT_KINDS)[number];
@@ -14,8 +15,6 @@ export type AlertInput = {
 };
 export type Alert = { kind: AlertKind; trait: string; scope: string; magnitude: number; title: string; excerpt: string };
 
-const VALUE_ONLY = new Set(["aesthetic", "imagery", "components", "tone", "color_mood", "hero_layout", "framework", "css", "ai_positioning"]);
-export const ticker = (dimension: string, value: string) => `$${(VALUE_ONLY.has(dimension) ? value : `${dimension}-${value}`).toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 const pct = (v: number | null | undefined) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
 const signed = (v: number, d = 1) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(d)}`;
 function quantile(values: number[], q: number) { if (!values.length) return Infinity; const s = [...values].sort((a, b) => a - b), i = (s.length - 1) * q, f = Math.floor(i); return s[f]! + (s[Math.min(s.length - 1, f + 1)]! - s[f]!) * (i - f); }
@@ -31,19 +30,19 @@ export function alertCandidates(rows: AlertInput[]): Alert[] {
   const ok = rows.filter(r => r.status === "ok" && r.momentum !== null);
   const cut = quantile(ok.map(r => r.momentum!), BREAKOUT_QUANTILE);
   for (const r of rows) {
-    const trait = `${r.dimension}:${r.value}`, t = ticker(r.dimension, r.value), base = `${r.sites} sites · share ${pct(r.current_share)} · stage ${r.stage ?? "n/a"}`;
+    const trait = `${r.dimension}:${r.value}`, t = traitText(trait), where = scopeText(r.scope), base = `${r.sites} sites · share ${pct(r.current_share)} · stage ${stageName(r.stage) ?? "not staged yet"}`;
     if (isBreakout(r, cut))
-      out.push({ kind: "breakout", trait, scope: r.scope, magnitude: r.momentum, title: `BREAKOUT ${t} ${signed(r.momentum)} pts/q in ${r.scope}`, excerpt: `Momentum ${signed(r.momentum, 2)} pts/q ≥ top-decile cut ${signed(cut, 2)} across ${ok.length} fitted rows · share < 35%, not peaking/declining · ${base}` });
+      out.push({ kind: "breakout", trait, scope: r.scope, magnitude: r.momentum, title: `BREAKOUT · ${t} ${signed(r.momentum)} pts/q · ${where}`, excerpt: `Momentum ${signed(r.momentum, 2)} pts/q ≥ top-decile cut ${signed(cut, 2)} across ${ok.length} fitted rows · share < 35%, not peaking/declining · ${base}` });
     if (r.scope !== "all") continue;
     const d = r.discourse;
-    if (d?.fatigue_flag) out.push({ kind: "sentiment_turn", trait, scope: r.scope, magnitude: d.fatigue_ratio ?? 0, title: `SENTIMENT TURN ${t} fatigue ${pct(d.fatigue_ratio)} of mentions`, excerpt: `Fatigue language in ${pct(d.fatigue_ratio)} of mentions over 4 weeks (prior 4 weeks ${pct(d.prev_fatigue_ratio)}) · ${d.n_9w} mentions in 9 weeks · threshold 15%, n≥20 · ${base}` });
+    if (d?.fatigue_flag) out.push({ kind: "sentiment_turn", trait, scope: r.scope, magnitude: d.fatigue_ratio ?? 0, title: `SENTIMENT TURN · ${t} fatigue ${pct(d.fatigue_ratio)} of mentions · ${where}`, excerpt: `Fatigue language in ${pct(d.fatigue_ratio)} of mentions over 4 weeks (prior 4 weeks ${pct(d.prev_fatigue_ratio)}) · ${d.n_9w} mentions in 9 weeks · threshold 15%, n≥20 · ${base}` });
     const c = r.curation;
-    if (c && isCrossover(c.prev_lead_pts, c.lead_pts)) out.push({ kind: "crossover", trait, scope: r.scope, magnitude: Math.abs(c.lead_pts! - c.prev_lead_pts!), title: `CROSSOVER ${t} curation lead ${signed(c.prev_lead_pts!)} → ${signed(c.lead_pts!)} pts`, excerpt: `Curated − mainstream share moved ${signed(c.lead_pts! - c.prev_lead_pts!)} pts between the last two crawl runs (sign flip, |Δ| ≥ 5) · ${base}` });
-    if (d?.spike) out.push({ kind: "discourse_spike", trait, scope: r.scope, magnitude: d.spike_ratio ?? 0, title: `DISCOURSE SPIKE ${t} ${d.spike_ratio === null ? "new" : `${d.spike_ratio.toFixed(1)}×`} 8-week median`, excerpt: `${d.n_week} mentions this week · ${d.rate_per_10k ?? "—"} per 10k sampled posts · ${d.spike_ratio === null ? "no prior mentions" : `${d.spike_ratio.toFixed(2)}× the 8-week median rate`} · z ${d.z ?? "—"} · ${base}` });
+    if (c && isCrossover(c.prev_lead_pts, c.lead_pts)) out.push({ kind: "crossover", trait, scope: r.scope, magnitude: Math.abs(c.lead_pts! - c.prev_lead_pts!), title: `CROSSOVER · ${t} curation lead ${signed(c.prev_lead_pts!)} → ${signed(c.lead_pts!)} pts · ${where}`, excerpt: `Curated − mainstream share moved ${signed(c.lead_pts! - c.prev_lead_pts!)} pts between the last two crawl runs (sign flip, |Δ| ≥ 5) · ${base}` });
+    if (d?.spike) out.push({ kind: "discourse_spike", trait, scope: r.scope, magnitude: d.spike_ratio ?? 0, title: `DISCOURSE SPIKE · ${t} ${d.spike_ratio === null ? "new" : `${d.spike_ratio.toFixed(1)}×`} 8-week median · ${where}`, excerpt: `${d.n_week} mentions this week · ${d.rate_per_10k ?? "—"} per 10k sampled posts · ${d.spike_ratio === null ? "no prior mentions" : `${d.spike_ratio.toFixed(2)}× the 8-week median rate`} · z ${d.z ?? "—"} · ${base}` });
     const p = r.prev;
     if (p && r.status === "ok") {
       const crossed = p.current_share !== null && p.current_share < SATURATION_SHARE && (r.current_share ?? 0) >= SATURATION_SHARE, peaked = p.stage !== "peaking" && r.stage === "peaking";
-      if (crossed || peaked) out.push({ kind: "saturation", trait, scope: r.scope, magnitude: r.current_share ?? 0, title: `SATURATION ${t} ${crossed ? `${pct(r.current_share)} share` : "stage peaking"}`, excerpt: `${crossed ? `Share crossed 35% (${pct(p.current_share)} → ${pct(r.current_share)})` : `Stage ${p.stage ?? "n/a"} → peaking`} · ${base}` });
+      if (crossed || peaked) out.push({ kind: "saturation", trait, scope: r.scope, magnitude: r.current_share ?? 0, title: `SATURATION · ${t} ${crossed ? `${pct(r.current_share)} share` : "now Peaking"} · ${where}`, excerpt: `${crossed ? `Share crossed 35% (${pct(p.current_share)} → ${pct(r.current_share)})` : `Stage ${stageName(p.stage) ?? "not staged"} → Peaking`} · ${base}` });
     }
   }
   return out;

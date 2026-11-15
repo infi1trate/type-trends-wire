@@ -7,6 +7,8 @@ import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functio
 import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 import { getHealth } from "./health.functions";
+import type { StageRow, TodayInput } from "./today";
+import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
 export const libraryHistoryQuery = () => queryOptions({queryKey:["library-history"],staleTime:10*60_000,queryFn:()=>getLibraryHistory({data:{}})});
 
@@ -15,7 +17,6 @@ const PAGE = 1000;
 export const libraryQuery = () => queryOptions({ queryKey: ["library"], staleTime: 5 * 60_000, queryFn: () => getLibrary() });
 export const librarySiteQuery = (domain: string) => queryOptions({ queryKey: ["library-site", domain], staleTime: 5 * 60_000, queryFn: () => getLibrarySite({ data: { domain } }) });
 
-export const toTicker = (family: string) => "$" + family.toUpperCase().replace(/[^A-Z0-9]/g, "-");
 
 const shiftDate = (date: string, days: number) =>
   new Date(Date.parse(`${date}T00:00:00Z`) - days * 86_400_000).toISOString().slice(0, 10);
@@ -55,7 +56,6 @@ const rowsOn = (date: string) =>
   );
 
 export interface FamilyRow extends SnapRow, BandResult {
-  ticker: string;
 }
 
 export interface TypeIndex {
@@ -96,7 +96,7 @@ async function fetchTypeIndex(): Promise<TypeIndex> {
       })
       .filter((x): x is RankPoint => !!x);
     history.push({ captured_on: latest, popularity_rank: r.popularity_rank, trending_rank: r.trending_rank });
-    return { ...r, ticker: toTicker(r.family), ...computeBand(history, { firstDate }) };
+    return { ...r, ...computeBand(history, { firstDate }) };
   });
 
   // Snapshot day count: rows for the #1 family (present every day) — cheap proxy for distinct dates.
@@ -164,6 +164,7 @@ export interface WireItem {
   excerpt: string | null;
   link: string | null;
   tags: string[];
+  ref?: string | null;
 }
 
 export const wireQuery = () =>
@@ -173,7 +174,7 @@ export const wireQuery = () =>
     queryFn: async (): Promise<WireItem[]> => {
       const { data, error } = await supabase
         .from("wire_items")
-        .select("id,url,title,source,source_kind,published_at,excerpt,link,tags")
+        .select("id,url,title,source,source_kind,published_at,excerpt,link,tags,ref")
         .order("published_at", { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -307,3 +308,53 @@ export const rebrandsQuery = (f: RebrandFilters) => queryOptions({ queryKey: ["r
 export const vibeQuery = () => queryOptions({ queryKey: ["vibe-map"], staleTime: 10 * 60_000, queryFn: () => getVibeMap() });
 export const chartCardQuery = (week: string | null) => queryOptions({ queryKey: ["chart-card", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getChartCard({ data: { week } }) });
 export const healthQuery = () => queryOptions({ queryKey: ["health"], staleTime: 60_000, refetchInterval: 120_000, queryFn: () => getHealth() });
+
+/** TODAY inputs: latest two ok forecast runs (scope all), recent alerts, wire freshness, latest live library change and crawl. */
+export const todayQuery = () => queryOptions({
+  queryKey: ["today"],
+  staleTime: STALE,
+  queryFn: async (): Promise<Omit<TodayInput, "type">> => {
+    const now = new Date().toISOString(), since = new Date(Date.now() - 864e5).toISOString();
+    const runsRes = await supabase.from("forecast_runs").select("id,computed_at").eq("status", "ok").order("id", { ascending: false }).limit(2);
+    if (runsRes.error) throw runsRes.error;
+    const [latest, previous] = runsRes.data ?? [];
+    const stageRows = async (runId: number | undefined) => {
+      const out: StageRow[] = [];
+      if (runId === undefined) return out;
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase.from("forecasts").select("dimension,value,stage,momentum,current_share").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(from, from + PAGE - 1);
+        if (error) throw error;
+        out.push(...(data ?? []));
+        if ((data ?? []).length < PAGE) return out;
+      }
+    };
+    const [lat, prev, alerts, count, wireLatest, event, crawl] = await Promise.all([
+      stageRows(latest?.id), stageRows(previous?.id),
+      latest ? supabase.from("wire_items").select("title,url,source,published_at,ref").eq("source_kind", "alert").gte("published_at", new Date(Date.parse(latest.computed_at) - 36e5).toISOString()).order("published_at", { ascending: false }).order("id").limit(10) : Promise.resolve({ data: [], error: null }),
+      supabase.from("wire_items").select("id", { count: "exact", head: true }).neq("source_kind", "alert").gte("published_at", since),
+      supabase.from("wire_items").select("title,url,source,published_at").neq("source_kind", "alert").lte("published_at", now).order("published_at", { ascending: false }).limit(1),
+      supabase.from("library_event_feed").select("domain,summary,detected_at,sector").eq("source", "live").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(1),
+      supabase.from("crawl_runs").select("finished_at,stats").eq("status", "finished").order("finished_at", { ascending: false }).limit(1),
+    ]);
+    for (const r of [alerts, count, wireLatest, event, crawl]) if (r.error) throw r.error;
+    const c = crawl.data?.[0], stats = (c?.stats ?? {}) as Record<string, { ok?: number } | unknown>;
+    const sites = Object.values(stats).reduce<number>((n, v) => n + (v && typeof v === "object" && typeof (v as { ok?: unknown }).ok === "number" ? (v as { ok: number }).ok : 0), 0);
+    const e = event.data?.[0];
+    return {
+      now,
+      runs: { latest: latest ?? null, previous: previous ?? null },
+      stages: { latest: lat, previous: prev },
+      alerts: (alerts.data ?? []).map(a => ({ ...a, title: decodeEntities(a.title) })),
+      wire: { count24h: count.count ?? 0, latest: wireLatest.data?.[0] ? { ...wireLatest.data[0], title: decodeEntities(wireLatest.data[0].title) } : null },
+      event: e?.domain && e.detected_at ? { domain: e.domain, summary: e.summary ?? "page changed", detected_at: e.detected_at, sector: e.sector ?? null } : null,
+      crawl: c?.finished_at ? { finished_at: c.finished_at, sites } : null,
+    };
+  },
+});
+
+/** First discourse sample, for "fills in after N weeks" copy. */
+export const discourseSinceQuery = () => queryOptions({ queryKey: ["discourse-since"], staleTime: 60 * 60_000, queryFn: async () => {
+  const { data, error } = await supabase.from("discourse_counts").select("updated_at").order("updated_at").limit(1);
+  if (error) throw error;
+  return data?.[0]?.updated_at ?? null;
+} });

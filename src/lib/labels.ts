@@ -127,6 +127,8 @@ export const traitKey = (dimension: string, value: string) => `${dimension}:${va
 export const traitText = (key: string) => { const l = label(key); return `${l.name} [${l.dimension}]`; };
 /** Vibe-map phrase: the short form when one exists, else the value in plain words. */
 export const tagPhrase = (token: string) => VIBE_SHORT[token] ?? (token.split(":")[1] ?? token).replace(/_/g, " ");
+/** Name for mid-sentence use: lowercases a leading capital unless it starts an acronym or proper noun ("3D", "OKLCH", "Next.js" stay). */
+export const inSentence = (name: string) => (/^[A-Z][a-z]/.test(name) && !/^(Next|Framer|Webflow|Tailwind|Shopify|Wix|Nuxt|Gatsby|Astro|Squarespace|WordPress|SvelteKit|Lottie|Y2K|Inter)\b/.test(name) ? name[0]!.toLowerCase() + name.slice(1) : name);
 export const scopeText = (scope: string | null | undefined) => (!scope || scope === "all" ? "all sectors" : scope);
 
 // STAGES — exactly five words, shown as outlined badges.
@@ -152,4 +154,28 @@ export function alertDisplayTitle(title: string, ref: string | null | undefined)
   const name = ref ? traitText(ref) : "signal";
   const rest = (m[2] ?? "").replace(/ in ([a-z][a-z0-9-]*)$/, (_, s: string) => ` · ${scopeText(s)}`);
   return `${m[1]} · ${name}${rest ? ` ${rest}` : ""}`;
+}
+
+/** Strings: any leftover "$TICKER" becomes "Name [DIM]". Prices ("$50") are untouched because tickers start with a letter. */
+export const untick = (s: string) => s.replace(/\$([A-Z][A-Z0-9-]+)/g, (_, t: string) => traitText(t));
+/** Output decoration for agents: stable keys stay; human label/dimension/stage_label are added next to them. Pure, recursive. */
+export function withLabels<T>(data: T): T {
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") return untick(v);
+    if (Array.isArray(v)) return v.map(walk);
+    if (!v || typeof v !== "object") return v;
+    const o: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) o[k] = walk(x);
+    const key = typeof o["trait"] === "string" && (o["trait"] as string).includes(":") ? (o["trait"] as string)
+      : typeof o["dimension"] === "string" && typeof o["value"] === "string" && (o["dimension"] as string) in CATEGORY_DIMENSION ? `${o["dimension"]}:${o["value"]}`
+      : typeof o["signal"] === "string" && SPREAD_ALIAS[o["signal"] as string] ? `spread:${o["signal"]}` : null;
+    if (key) {
+      const l = label(key);
+      if (!("label" in o)) o["label"] = l.name;
+      if ("dimension" in o && o["dimension"] !== l.dimension) o["label_dimension"] = l.dimension; else o["dimension"] = l.dimension;
+    }
+    if (typeof o["stage"] === "string" || o["stage"] === null) { if ("stage" in o && !("stage_label" in o)) o["stage_label"] = stageName(o["stage"] as string | null); }
+    return o;
+  };
+  return walk(data) as T;
 }

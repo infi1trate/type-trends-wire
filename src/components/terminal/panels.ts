@@ -1,5 +1,6 @@
 export const PANELS = [
-  { key: "F1", id: "overview", label: "OVERVIEW" },
+  { key: "T", id: "today", label: "TODAY" },
+  { key: "F1", id: "overview", label: "SIGNALS" },
   { key: "F2", id: "type", label: "TYPE" },
   { key: "F3", id: "color", label: "COLOR" },
   { key: "F4", id: "layout", label: "LAYOUT" },
@@ -14,6 +15,12 @@ export const PANELS = [
 ] as const;
 
 export type PanelId = (typeof PANELS)[number]["id"];
+
+/** Panels reachable by F-keys and digit keys 1–0 (TODAY has its own letter key). */
+export const FKEY_PANELS = PANELS.filter(p => p.key.startsWith("F"));
+/** Old and alternative names still open the right panel (muscle memory, shared links). */
+export const PANEL_ALIASES: Record<string, PanelId> = { ticker: "overview", signals: "overview", overview: "overview", forecast: "brief" };
+export const resolvePanel = (id: string | undefined): PanelId => PANELS.find(p => p.id === id)?.id ?? (id ? PANEL_ALIASES[id.toLowerCase()] : undefined) ?? "today";
 
 export const DORMANT: Partial<Record<PanelId, string>> = {};
 

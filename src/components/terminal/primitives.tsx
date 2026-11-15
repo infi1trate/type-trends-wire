@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 import type { Band } from "@/lib/bands";
+import { Info, StageBadge } from "./Info";
 
 export function Loading({ className = "" }: { className?: string }) {
   return (
@@ -9,13 +10,9 @@ export function Loading({ className = "" }: { className?: string }) {
   );
 }
 
-export function Empty() {
-  return (
-    <div className="p-3">
-      <div className="label text-ink">NO DATA · AWAITING FIRST INGEST</div>
-      <div className="text-g500">Collection runs daily (type) and every 15 min (wire).</div>
-    </div>
-  );
+/** Empty state: one plain sentence saying why it's empty and when it fills in. */
+export function Empty({ why = "Nothing collected here yet. Type data is collected daily and the wire every 15 minutes, so this fills in after the next run." }: { why?: string }) {
+  return <p className="p-3 text-g500">{why}</p>;
 }
 
 /** Digits roll vertically when the value changes. */
@@ -46,9 +43,10 @@ export function Delta({ v }: { v: number | null }) {
   return <span className="text-g500">0</span>;
 }
 
+/** Google Fonts band as a stage word badge; BASELINE means the 42-day baseline is still being collected. */
 export function BandTag({ band }: { band: Band }) {
-  const cls = band === "RISING" ? "text-signal" : band === "BASELINE" ? "text-g500" : "text-ink";
-  return <span className={`label ${cls}`}>{band}</span>;
+  if (band === "BASELINE") return <span className="label text-g500" title="Fewer than 42 days of history; a stage is assigned once the baseline is complete.">Collecting</span>;
+  return <StageBadge stage={band} />;
 }
 
 export const QueryBar = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { label: string }>(
@@ -104,10 +102,10 @@ export function Seg<T extends string>({
   );
 }
 
-export function PanelHeader({ title, meta }: { title: string; meta?: React.ReactNode }) {
+export function PanelHeader({ title, meta, g }: { title: string; meta?: React.ReactNode; g?: string }) {
   return (
     <div className="flex h-8 items-center justify-between border-b border-rule bg-g900 px-3">
-      <h2 className="label font-semibold text-ink">{title}</h2>
+      <h2 className="label flex min-w-0 items-center font-semibold text-ink"><span className="truncate">{title}</span>{g && <Info g={g} />}</h2>
       {meta && <div className="label text-g500">{meta}</div>}
     </div>
   );
@@ -131,7 +129,7 @@ export function Sparkline({ ranks }: { ranks: number[] | undefined }) {
 }
 
 export function LineChart({ points }: { points: { date: string; rank: number }[] }) {
-  if (points.length < 2) return <div className="label py-6 text-g500">INSUFFICIENT HISTORY · {points.length} POINT</div>;
+  if (points.length < 2) return <p className="py-6 text-g500">Only {points.length} daily snapshot so far; the line draws once a second day is collected.</p>;
   const w = 456, h = 160, pl = 36, pb = 18, pt = 6;
   const first = points[0]!, lastP = points[points.length - 1]!;
   const ranks = points.map((p) => p.rank);

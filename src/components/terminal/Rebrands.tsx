@@ -7,23 +7,24 @@ import type { Rebrand, Side, TraitStage } from "@/lib/rebrands";
 import { PanelHeader, Seg } from "./primitives";
 import { WildFamily } from "./CrawlPanels";
 import { Button } from "@/components/ui/button";
+import { Info, StageBadge, DimTag } from "./Info";
+import { label as traitLabel } from "@/lib/labels";
 
 const PAGE = 20;
-const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");
-const words = (v: string | null | undefined) => (v ? v.replace(/_/g, " ").toUpperCase() : "—");
-const STAGE: Record<string, string> = { emerging: "EMERGING", accelerating: "RISING", flat: "FLAT", peaking: "PEAKING", declining: "FADING" };
+const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "undated");
+const words = (v: string | null | undefined) => (v ? v.replace(/_/g, " ").toUpperCase() : "NOT MEASURED");
 
 function Chip({ hex }: { hex: string | null }) {
   if (!hex) return null;
   return <span className="inline-flex items-center gap-1"><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill={hex} stroke="var(--rule)" /></svg><span className="num">{hex.toUpperCase()}</span></span>;
 }
 function Fonts({ s }: { s: Side }) {
-  if (!s.h1 && !s.body) return <>—</>;
+  if (!s.h1 && !s.body) return <span className="text-compare-muted">No fonts measured on this capture</span>;
   return <span className="flex flex-col">{s.h1 && <span><span className="label text-compare-muted">H1 </span><WildFamily family={s.h1} google={s.h1_google} /></span>}{s.body && <span><span className="label text-compare-muted">BODY </span><WildFamily family={s.body} google={s.body_google} /></span>}</span>;
 }
 function Palette({ s }: { s: Side }) {
   const top = s.palette.filter(h => h !== s.bg && h !== s.accent);
-  if (!s.bg && !s.accent && !top.length) return <>—</>;
+  if (!s.bg && !s.accent && !top.length) return <span className="text-compare-muted">No colors measured on this capture</span>;
   return <span className="flex flex-col gap-1">{s.bg && <span><span className="label text-compare-muted">BG </span><Chip hex={s.bg} /></span>}{s.accent && <span><span className="label text-compare-muted">ACCENT </span><Chip hex={s.accent} /></span>}{top.length > 0 && <span className="flex flex-wrap gap-x-2"><span className="label text-compare-muted">TOP</span>{top.map(h => <Chip key={h} hex={h} />)}</span>}</span>;
 }
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -38,10 +39,10 @@ function Row({ label, before, after, changed }: { label: string; before: React.R
 function Traits({ list }: { list: TraitStage[] }) {
   const shown = list.filter(t => t.stage).slice(0, 4);
   if (!shown.length) return null;
-  return <div className="label flex flex-wrap gap-x-3 gap-y-1 text-compare-muted"><span>NEW TRAITS</span>{shown.map(t => <span key={t.trait}><span className="text-ink">{t.label.toUpperCase()}</span> {STAGE[t.stage ?? ""] ?? t.stage?.toUpperCase()}{t.share != null && ` · ${Math.round(t.share * 100)}% OF ${t.scope === "all" ? "LIBRARY" : t.scope.toUpperCase()}`}</span>)}</div>;
+  return <div className="label flex flex-wrap gap-x-3 gap-y-1 text-compare-muted"><span>NEW TRAITS</span>{shown.map(t => { const l = traitLabel(t.trait); return <span key={t.trait} className="inline-flex flex-wrap items-center gap-1"><span className="normal-case text-ink">{l.name}</span><DimTag d={l.dimension} /><StageBadge stage={t.stage} />{t.share != null && <span>{Math.round(t.share * 100)}% OF {t.scope === "all" ? "LIBRARY" : t.scope.toUpperCase()}</span>}</span>; })}</div>;
 }
 const NOT_TAGGED = <span className="text-compare-muted">NOT TAGGED</span>;
-const tagList = (s: Side, k: "aesthetic" | "tone") => (s.tags ? s.tags[k].map(words).join(" · ") || "—" : NOT_TAGGED);
+const tagList = (s: Side, k: "aesthetic" | "tone") => (s.tags ? s.tags[k].map(words).join(" · ") || "NONE" : NOT_TAGGED);
 function Entry({ r }: { r: Rebrand }) {
   const b = r.before, a = r.after, tagged = !!b.tags && !!a.tags;
   return <article className="border-b border-rule" aria-labelledby={`rb-${r.id}`}>
@@ -54,7 +55,7 @@ function Entry({ r }: { r: Rebrand }) {
     </header>
     <table className="mt-2 w-full table-fixed text-body">
       <caption className="sr-only">Before and after for {r.domain}</caption>
-      <thead className="label text-compare-muted"><tr><th className="w-[11ch] p-2 text-left font-normal">FIELD</th><th className="p-2 text-left font-normal">BEFORE · {day(b.captured_at)}</th><th className="w-[2ch]" /><th className="p-2 text-left font-normal">AFTER · {day(a.captured_at)}</th></tr></thead>
+      <thead className="label text-compare-muted"><tr><th className="w-[11ch] p-2 text-left font-normal">FIELD<Info g="field" /></th><th className="p-2 text-left font-normal">BEFORE · {day(b.captured_at)}<Info g="before-after" /></th><th className="w-[2ch]" /><th className="p-2 text-left font-normal">AFTER · {day(a.captured_at)}</th></tr></thead>
       <tbody>
         <Row label="FONTS" before={<Fonts s={b} />} after={<Fonts s={a} />} changed={b.h1 !== a.h1 || b.body !== a.body} />
         <Row label="PALETTE" before={<Palette s={b} />} after={<Palette s={a} />} changed={!sameJson([b.bg, b.accent, b.palette], [a.bg, a.accent, a.palette])} />
@@ -86,7 +87,7 @@ export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s
   const [pending, go] = useTransition();
   const reset = () => setLimit(PAGE);
   return <section aria-label="Rebrand desk" aria-busy={pending} className={`flex min-h-0 flex-1 flex-col ${pending ? "opacity-60" : ""}`}>
-    <PanelHeader title="F9 REBRAND DESK" meta={<span className="num">{d.counts.total}<span className="max-sm:hidden"> REBRANDS</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
+    <PanelHeader g="p-rebrands" title="F9 REBRAND DESK" meta={<span className="num">{d.counts.total}<span className="max-sm:hidden"> REBRANDS</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
     <div className="flex flex-wrap items-center gap-2 border-b border-rule p-3">
       <Seg label="Source" options={SOURCES} value={source} onChange={v => go(() => { setSource(v); reset(); })} />
       <Seg label="Year" options={["ALL", ...d.years.map(String)] as string[]} value={year} onChange={v => go(() => { setYear(v); reset(); })} />
@@ -98,7 +99,7 @@ export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s
       {<span className="label num text-compare-muted" aria-live="polite">{d.filtered.total} SHOWN BY FILTER · LIVE {d.filtered.live} · ARCHIVE {d.filtered.archive}</span>}
     </div>
     <div className="min-h-0 flex-1 md:overflow-y-auto">
-      {d.rows.length === 0 && <p className="p-3 text-compare-muted">NO CONFIRMED REBRANDS FOR THIS FILTER. Try ALL sources or another year — archive coverage is quarterly and uneven.</p>}
+      {d.rows.length === 0 && <p className="p-3 text-compare-muted">No confirmed rebrands match these filters. Try ALL sources or another year: archive coverage is quarterly and uneven, and live rebrands appear once two captures agree.</p>}
       {d.rows.map(r => <Entry key={r.id} r={r} />)}
       {d.rows.length < d.filtered.total && <div className="p-3"><Button variant="outline" className="label" disabled={pending} onClick={() => startTransition(() => setLimit(l => Math.min(l + PAGE, 500)))}>{pending ? "LOADING…" : `MORE · ${d.filtered.total - d.rows.length} LEFT`}</Button></div>}
       <p className="label border-t border-rule p-3 text-compare-muted">SOURCE: CONFIRMED LIBRARY CHANGES (TWO CAPTURES, DESKTOP HOME) · LIVE CRAWLER + WAYBACK QUARTERLY ARCHIVE · DATA THROUGH {day(d.data_through)} · STAGES FROM THE LATEST FORECAST · LOGOS AND TEXT COLOR ARE NOT MEASURED</p>

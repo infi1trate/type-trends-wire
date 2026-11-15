@@ -1,6 +1,8 @@
 import { ToolError } from '@lovable.dev/mcp-js';
+import { withLabels } from '../../labels';
 export const GF = 'Google Fonts Developer API (daily snapshot)';
-export const json = (data: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(data,null,2) }] });
+/** Every tool answers through here, so each trait keeps its stable key and gains `label` + `dimension` (or `label_dimension` when a raw `dimension` is already present) and stages gain `stage_label`. */
+export const json = (data: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(withLabels(data),null,2) }] });
 export const daysBefore = (date:string,n:number) => new Date(Date.parse(`${date}T00:00:00Z`)-n*86400000).toISOString().slice(0,10);
 export const READ = {readOnlyHint:true,openWorldHint:false} as const;
 export const receipt = {source:GF,method:'trend://methodology',terminal:'https://type-trends-wire.lovable.app'};

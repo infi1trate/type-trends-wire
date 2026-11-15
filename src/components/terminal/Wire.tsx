@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { wireQuery, type WireItem } from "@/lib/data";
 import { decodeEntities } from "@/lib/entities";
+import { alertDisplayTitle } from "@/lib/labels";
 import { Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
 
 const TAGS = ["ALL", "TYPE", "COLOR", "BRAND", "UI", "WEB", "MOTION", "AI"] as const;
@@ -45,7 +46,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
 
   const sources = useMemo(() => [...new Set((data ?? []).map((d) => d.source))].sort(), [data]);
   const rows = useMemo(() => {
-    const all = (data ?? []).map(r => ({ ...r, title: decodeEntities(r.title), excerpt: r.excerpt ? decodeEntities(r.excerpt) : null }));
+    const all = (data ?? []).map(r => ({ ...r, title: r.source_kind === "alert" ? alertDisplayTitle(decodeEntities(r.title), r.ref) : decodeEntities(r.title), excerpt: r.excerpt ? alertDisplayTitle(decodeEntities(r.excerpt), r.ref) : null }));
     if (compact) return all;
     const ql = q.trim().toLowerCase();
     return all.filter(
@@ -59,7 +60,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
 
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label="Wire">
-      <PanelHeader title={compact ? "WIRE" : "F8 WIRE"} meta={<span aria-live="polite">{rows.length} ITEMS</span>} />
+      <PanelHeader g="p-wire" title={compact ? "WIRE" : "F8 WIRE"} meta={<span aria-live="polite">{rows.length} ITEMS</span>} />
       {!compact && (
         <div className="flex flex-col gap-2 border-b border-rule p-3 lg:flex-row lg:items-center">
           <Seg label="Source kind" options={KINDS} value={kind} onChange={setKind} />
@@ -83,9 +84,9 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
       {isLoading ? (
         <div className="p-3"><Loading /></div>
       ) : error ? (
-        <div className="label p-3 text-signal">ERR · {String((error as Error).message)}</div>
+        <div role="alert" className="p-3 text-signal">The wire couldn’t load ({String((error as Error).message)}). Try again in a minute.</div>
       ) : rows.length === 0 ? (
-        (data ?? []).length === 0 ? <Empty /> : <div className="label p-3 text-g500">NO MATCHES</div>
+        (data ?? []).length === 0 ? <Empty why="No news collected yet. Feeds are checked every 15 minutes, so headlines appear after the next check." /> : <p className="p-3 text-g500">Nothing on the wire matches these filters. Clear the filter or pick ALL to see every item.</p>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {rows.map((r) => (

@@ -1,12 +1,14 @@
 // Chart of the Week: pure card model + display list. One scene feeds both the SVG and the PNG rasterizer.
 import { GLYPH_ADVANCE, GLYPH_ASCENT } from "./glyphs.gen";
+import { alertDisplayTitle, label as traitLabel, scopeText, stageName } from "../labels";
 export const CARD_SIZES = { "1200x675": { w: 1200, h: 675 }, "1080x1350": { w: 1080, h: 1350 } } as const;
 export type CardSize = keyof typeof CARD_SIZES;
 export const COLORS = { bg: "#000000", rule: "#262626", g500: "#6b6b6b", muted: "#9a9a9a", ink: "#ededed", signal: "#ff4f00" } as const;
 export const CARD_HOST = "type-trends-wire.lovable.app";
 export type CardPoint = { q: string; s: number; n: number };
 export type CardModel = {
-  week: string; run_id: number; origin: "call" | "alert"; trait: string; scope: string; ticker: string; label: string;
+  /** `ticker` only exists on cards stored before labels; names are always computed from `trait` at render time. */
+  week: string; run_id: number; origin: "call" | "alert"; trait: string; scope: string; ticker?: string; label?: string;
   stage: string | null; momentum_pts_q: number | null; share: number | null; n: number | null; call: string; data_through: string | null;
   series: CardPoint[]; forecast: { q: string; mid: number; lo: number; hi: number }[]; source_ref: string; forecast_run?: number | null;
 };
@@ -29,7 +31,9 @@ export function wrap(text: string, size: number, width: number, maxLines: number
 }
 const pct = (v: number | null, d = 1) => (v == null ? "—" : `${(v * 100).toFixed(d)}%`);
 const r1 = (v: number) => Math.round(v * 10) / 10;
-export const stageWord = (s: string | null) => (s == null ? "NO FIT" : ({ accelerating: "RISING", declining: "FADING" } as Record<string, string>)[s] ?? s.toUpperCase());
+export const stageWord = (s: string | null) => stageName(s)?.toUpperCase() ?? "TOO NEW";
+/** Render-time display text for a card: label-map name, dimension tag and a ticker-free call line. */
+export const cardText = (m: CardModel) => { const l = traitLabel(m.trait); return { name: l.name, dimension: l.dimension, scope: scopeText(m.scope), call: m.origin === "alert" ? alertDisplayTitle(m.call, m.trait) : m.call }; };
 
 function chart(m: CardModel, x0: number, y0: number, w: number, h: number): Prim[] {
   const out: Prim[] = [], series = m.series, fc = m.forecast;
@@ -74,9 +78,10 @@ export function cardScene(m: CardModel, size: CardSize): { w: number; h: number;
   const t = (x: number, y: number, text: string, sz: 22 | 28 | 44 | 96, weight: 400 | 600, fill: string, anchor?: "end") => prims.push({ k: "text", x, y, text, size: sz, weight, fill, ...(anchor ? { anchor } : {}) });
   const head = `CHART OF THE WEEK · ${m.week}${m.origin === "alert" ? " · BREAKOUT ALERT" : ""}`;
   t(pad, pad - 8, fit(head, 22, inner), 22, 400, COLORS.g500);
-  t(pad, pad + 24, fit(m.ticker, 44, inner), 44, 600, COLORS.ink);
-  t(pad, pad + 80, fit(`${m.label} · ${m.scope === "all" ? "ALL SECTORS" : m.scope.toUpperCase()}`, 22, inner), 22, 400, COLORS.muted);
-  const callLines = wrap(m.call, 28, inner, portrait ? 4 : 2);
+  const txt = cardText(m);
+  t(pad, pad + 24, fit(txt.name, 44, inner), 44, 600, COLORS.ink);
+  t(pad, pad + 80, fit(`[${txt.dimension}] · ${txt.scope.toUpperCase()}`, 22, inner), 22, 400, COLORS.muted);
+  const callLines = wrap(txt.call, 28, inner, portrait ? 4 : 2);
   callLines.forEach((line, i) => t(pad, pad + 124 + i * 38, line, 28, 400, COLORS.ink));
   const st = stats(m);
   if (portrait) {
@@ -102,5 +107,5 @@ export function renderCardSvg(m: CardModel, size: CardSize): string {
     if (p.k === "line") return `<polyline points="${p.pts.map(q => q.join(",")).join(" ")}" fill="none" stroke="${p.stroke}" stroke-width="${p.width}" stroke-linejoin="round" stroke-linecap="round"${p.dash ? ` stroke-dasharray="${p.dash.join(" ")}"` : ""}/>`;
     return `<text x="${p.x}" y="${r1(p.y + GLYPH_ASCENT * p.size)}" font-size="${p.size}" font-weight="${p.weight}" fill="${p.fill}"${p.anchor === "end" ? ` text-anchor="end"` : ""}>${esc(p.text)}</text>`;
   }).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(`${m.ticker} share by quarter with forecast band. ${m.call}`)}"><style>@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;display=swap');text{font-family:'Geist Mono',ui-monospace,monospace;white-space:pre}</style>${body}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(`${cardText(m).name} share by quarter with forecast band. ${cardText(m).call}`)}"><style>@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;display=swap');text{font-family:'Geist Mono',ui-monospace,monospace;white-space:pre}</style>${body}</svg>`;
 }

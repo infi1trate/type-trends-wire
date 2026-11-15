@@ -43,7 +43,7 @@ describe("rebrand detection", () => {
   });
   it("writes the read line from forecast stages", () => {
     const [r] = run([ev({ before: { h1: "Inter" }, after: { h1: "Fraunces" } })]);
-    expect(r!.read).toBe("headline Inter → Fraunces; adopted rising serif headline — ahead of 82% of fintech");
+    expect(r!.read).toBe("headline Inter → Fraunces; adopted rising serif headlines — ahead of 82% of fintech");
   });
   it("does not treat missing AI tags as a change", () => {
     const [r] = run([ev({ before: { h1: "Inter" }, after: { h1: "Fraunces" } })], [side({ tags: null }), side({ id: 20, captured_at: "2026-11-12T00:00:00Z", h1: "Fraunces", tags: { hero_layout: "split_left_text", aesthetic: ["editorial"], tone: ["premium"] } })]);

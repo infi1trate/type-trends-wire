@@ -1,5 +1,6 @@
 import { INDEXES, compare, median, percent, type IndexFilter } from "@/lib/crawl";
 import type { CrawlSite } from "@/lib/data";
+import { Info } from "./Info";
 
 export const indexClass = (index:string) => index==="vanguard"?"text-signal":index==="curated"?"text-ink":"text-compare-muted";
 export const indexBar = (index:string) => index==="vanguard"?"bg-signal":index==="curated"?"bg-ink":"bg-ink/60";
@@ -8,7 +9,7 @@ const pick = (r:{v:number;m:number;c:number},i:string) => i==="vanguard"?r.v:i==
 export function CompareBlock({title,glyph="",rows,index="ALL",present}:{title:string;glyph?:string;rows:{label:string;v:number;m:number;c:number}[];index?:IndexFilter;present?:readonly string[]}) {
   const shown=shownIndexes(index,present);
   return <section className="min-w-0 border-b border-rule p-3">
-    <h3 className="label mb-3 text-ink">{title} <span className="text-compare-muted">{glyph}</span></h3>
+    <h3 className="label mb-3 flex items-center gap-1 text-ink">{title} <span className="text-compare-muted">{glyph}</span><Info g="p-compare" /></h3>
     <div className="flex flex-col gap-3" aria-hidden>{rows.map(r=><div key={r.label} className="grid grid-cols-[14ch_minmax(0,1fr)] items-center gap-2">
       <span className="text-compare-muted truncate" title={r.label}>{r.label}</span>
       <div className="flex flex-col gap-1">{shown.map(i=><div key={i} className="flex items-center gap-2"><span className={`label w-[1ch] ${indexClass(i)}`}>{i[0]!.toUpperCase()}</span><div className="relative h-[6px] min-w-0 flex-1 bg-g800"><div className={`h-full ${indexBar(i)}`} style={{width:percent(pick(r,i))}}/></div><span className={`label w-[6ch] text-right ${indexClass(i)}`}>{percent(pick(r,i))}</span></div>)}</div>
@@ -22,7 +23,7 @@ export function Scatter({sites}:{sites:CrawlSite[]}) {
   const x=(v:number)=>48+Math.min(1,Math.max(0,v))*640;
   const y=(v:number)=>620-Math.min(1,Math.max(0,v)/ceiling)*560;
   return <section className="min-w-0 p-3">
-    <h3 className="label text-compare-muted">WHITESPACE × TEXT DENSITY</h3>
+    <h3 className="label flex items-center text-compare-muted">WHITESPACE × TEXT DENSITY<Info g="p-density" /></h3>
     <svg viewBox="0 0 730 690" className="w-full md:max-h-[calc(100dvh-240px)]" role="img" aria-label="Whitespace and text density by site">
       {[0,.25,.5,.75,1].map(t=><g key={t}><path d={`M${x(t)} 60V620 M48 ${y(t*ceiling)}H688`} className="stroke-rule" fill="none"/><text x={x(t)} y={645} textAnchor="middle" className="fill-compare-muted" fontSize="11">{t*100}%</text><text x={40} y={y(t*ceiling)} textAnchor="end" className="fill-compare-muted" fontSize="11">{(t*ceiling).toFixed(1)}</text></g>)}
       <text x="48" y="32" className="fill-compare-muted" fontSize="11">CHARS / 10K PX²</text><text x="365" y="675" textAnchor="middle" className="fill-compare-muted" fontSize="11">WHITESPACE</text>

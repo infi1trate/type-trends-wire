@@ -60,10 +60,10 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
           <span className="text-ink">LIVE</span>
         </span>
         <Clock />
-        <span className="hidden text-g500 xl:inline">
+        <span className="hidden text-g500 2xl:inline">
           LAST WIRE INGEST <span className="text-ink">{ingestStr}</span>
         </span>
-        <span className="hidden text-g500 xl:inline">TYPE SNAPSHOT <span className="text-ink">{snapshot ?? "—"}</span></span>
+        <span className="hidden text-g500 2xl:inline">TYPE SNAPSHOT <span className="text-ink">{snapshot ?? "—"}</span></span>
       </div>
     </header>
   );
@@ -78,29 +78,29 @@ export function Ticker() {
       return [...data.rows]
         .sort((a, b) => a.trending_rank - b.trending_rank)
         .slice(0, 12)
-        .map((r) => ({ t: r.ticker, d: null as number | null, extra: `TRND #${r.trending_rank}` }));
+        .map((r) => ({ t: r.family, d: null as number | null, extra: `TRND #${r.trending_rank}` }));
     }
     return [...movers]
       .sort((a, b) => b.delta7! - a.delta7!)
       .slice(0, 12)
-      .map((r) => ({ t: r.ticker, d: r.delta7, extra: `#${r.popularity_rank}` }));
+      .map((r) => ({ t: r.family, d: r.delta7, extra: `#${r.popularity_rank}` }));
   }, [data]);
 
   const content = items ? (
     items.map((i) => (
       <span key={i.t} className="mr-8 inline-flex gap-2">
-        <span className="font-semibold text-ink">{i.t}</span>
+        <span className="font-semibold normal-case text-ink">{i.t}</span><span className="text-g500">[FONT]</span>
         {i.d !== null &&
           (i.d >= 0 ? <span className="text-signal">▲{i.d}</span> : <span className="text-g500">▼{-i.d}</span>)}
         <span className="text-g500">{i.extra}</span>
       </span>
     ))
   ) : (
-    <span className="mr-8 text-g500">AWAITING FIRST INGEST · DATA COLLECTION BEGINS ON DEPLOY ·</span>
+    <span className="mr-8 text-g500">No font signals yet — the first Google Fonts snapshot lands after the daily collection runs ·</span>
   );
 
   return (
-    <div className="relative h-7 overflow-hidden border-b border-rule bg-void" aria-label="Top movers ticker">
+    <div className="relative h-7 overflow-hidden border-b border-rule bg-void" aria-label="Top moving signals">
       <div className="animate-crawl label flex h-7 w-max items-center whitespace-nowrap" style={{ ["--crawl-duration" as string]: "50s" }}>
         {[0, 1].map((k) => (
           <div key={k} aria-hidden={k === 1} className="flex items-center pl-8">
@@ -118,8 +118,8 @@ export function Ticker() {
 
 export function MobileKeys({ active, onSelect }: { active: PanelId; onSelect: (p: PanelId) => void }) {
   const [more, setMore] = useState(false);
-  const primary = PANELS.filter((p) => ["overview", "type", "wire"].includes(p.id));
-  const rest = PANELS.filter((p) => !["overview", "type", "wire"].includes(p.id));
+  const primary = PANELS.filter((p) => ["today", "overview", "wire"].includes(p.id));
+  const rest = PANELS.filter((p) => !["today", "overview", "wire"].includes(p.id));
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 md:hidden">
       {more && (
