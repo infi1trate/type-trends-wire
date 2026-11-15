@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { GATE_ENABLED } from "../lib/gate";
 
 function NotFoundComponent() {
   return (
@@ -88,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "A live terminal for design trends: typefaces, color, layout and design news, measured weekly." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      ...(GATE_ENABLED ? [{ name: "robots", content: "noindex" }] : []),
           ],
     links: [
       {

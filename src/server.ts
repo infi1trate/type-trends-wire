@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { gate } from "./lib/gate";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -50,6 +51,9 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Shared-password gate runs before any SSR so locked visitors get no page data or meta.
+      const gated = await gate(request);
+      if (gated) return gated;
       if (new URL(request.url).pathname === "/api/public/mcp") {
         const { handleMcp } = await import("./lib/mcp/server.server");
         return await handleMcp(request);

@@ -139,3 +139,6 @@
 - [x] Editorial type system + 12-col grid + print stylesheet (Digest/trait only)
 - [x] RSS /digest/rss.xml + OG images per issue and trait
 - [x] Tests + report (ingest contract, opt-out how-to, fonts)
+
+## Site password gate
+- [x] Server-side gate, /unlock + /lock, throttle, robots/noindex, Lock links, tests

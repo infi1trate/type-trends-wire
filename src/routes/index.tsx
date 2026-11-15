@@ -22,6 +22,7 @@ import { HistoryPanel } from "@/components/terminal/LibraryHistory";
 import { ForecastPanel } from "@/components/terminal/Forecast";
 import {TasteConsole, type LocalCommand} from "@/components/terminal/TasteConsole";
 import { HealthLine } from "@/components/terminal/Health";
+import { GATE_ENABLED } from "@/lib/gate";
 
 const TITLE = "DSGN/TERMINAL — design trend terminal";
 const DESC = "A live terminal for design trends: what moved today in type, color, layout and vibe, with receipts for every number.";
@@ -127,6 +128,7 @@ function Terminal() {
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
           <Button variant="link" onClick={() => setOverlay("method")} className="label h-6 px-2 text-ink max-md:h-10">METHODOLOGY</Button>
           <Link to="/digest" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">THE DIGEST →</Link>
+          {GATE_ENABLED && <form method="post" action="/lock" className="contents"><button type="submit" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">LOCK</button></form>}
         </div>
         <a href="https://brandon.wtf" target="_blank" rel="noopener" className="text-ink hover:underline">BRANDON.WTF</a>
       </footer>

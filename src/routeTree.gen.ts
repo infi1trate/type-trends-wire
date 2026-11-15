@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ChartIndexRouteImport } from './routes/chart.index'
 import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
@@ -46,6 +47,11 @@ import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/th
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChartIndexRoute = ChartIndexRouteImport.update({
@@ -218,6 +224,7 @@ const ApiPublicThumbOptoutRoute = ApiPublicThumbOptoutRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -289,6 +297,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/robots.txt'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/robots.txt'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/robots.txt'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -432,6 +444,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
@@ -473,6 +486,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chart/': {
@@ -704,6 +724,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,

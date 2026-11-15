@@ -5,6 +5,7 @@ import { SITE_URL, DIGEST_NAME } from "@/lib/site";
 import { figureSvg, type CardModel } from "@/lib/chart/card";
 import type { Thumb } from "@/lib/thumbs";
 import type { StageName } from "@/lib/labels";
+import { GATE_ENABLED } from "@/lib/gate";
 
 /** Absolute URL printed after a link in the print stylesheet. */
 export const pr = (href: string) => ({ "data-print": href.startsWith("http") || href.startsWith("mailto:") ? href : `${SITE_URL}${href}` });
@@ -82,6 +83,7 @@ export function DigestFooter({ footer }: { footer: { methodology: string; glossa
       <a href={footer.rss} className="ed-tap" {...pr(footer.rss)}>RSS</a>
       <Link to="/" className="ed-tap" {...pr("/")}>Open the terminal</Link>
       <Link to="/digest/archive" className="ed-tap">All issues</Link>
+      {GATE_ENABLED && <form method="post" action="/lock" className="no-print contents"><button type="submit" className="ed-tap cursor-pointer underline">Lock</button></form>}
     </div>
     {footer.contact && <p className="ed-wrap ed-caption mt-3">Spotted an error? <a href={footer.contact}>Write to the editor</a>.</p>}
     <p className="ed-wrap ed-caption mt-3 max-w-[72ch]">Every number links to its receipts in the terminal. Thumbnails are small homepage crops, credited and linked to the site; owners can ask for removal and the site is then shown by name only.</p>
