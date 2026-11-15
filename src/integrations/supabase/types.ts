@@ -409,6 +409,7 @@ export type Database = {
           computed_at: string
           coverage: Json
           data_cutoff_quarter: string | null
+          error: string | null
           id: number
           model_card: Json
           status: string
@@ -417,6 +418,7 @@ export type Database = {
           computed_at?: string
           coverage?: Json
           data_cutoff_quarter?: string | null
+          error?: string | null
           id?: number
           model_card?: Json
           status?: string
@@ -425,6 +427,7 @@ export type Database = {
           computed_at?: string
           coverage?: Json
           data_cutoff_quarter?: string | null
+          error?: string | null
           id?: number
           model_card?: Json
           status?: string

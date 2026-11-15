@@ -1,18 +1,21 @@
 import {supabaseAnon} from "../mcp/supabase";
-import {loadTasteSites,pages,measuredPalette} from "./store.server";
+import {loadTasteSites,pages,measuredPalette,WIDE_PAGE} from "./store.server";
 import {buildFontCatalog,isNonType} from "./fonts";
 import {invalidateTasteCache} from "./cache.server";
-import {normalizeFont} from "../library-diff";
+import {normalizeFont as normalizeFontRaw} from "../library-diff";
 import {forecastSeries,type SeriesPoint} from "../forecast";
 import {SECTORS,obj} from "../library";
-import {colorTicker,oklch} from "./color";
+import {colorTicker as colorTickerRaw,oklch as oklchRaw} from "./color";
+// Pure per-string conversions are memoized: the scope × key × snapshot loops below call them hundreds of millions of times otherwise.
+const memo=<T,>(f:(s:string)=>T)=>{const m=new Map<string,T>();return (s:string):T=>{if(m.has(s))return m.get(s) as T;const v=f(s);m.set(s,v);return v;};};
+const normalizeFont=memo(normalizeFontRaw),colorTicker=memo(colorTickerRaw),oklch=memo(oklchRaw);
 import type {Json} from "@/integrations/supabase/types";
 function jsonValue(value:unknown):Json {if(value===null||typeof value==='string'||typeof value==='boolean')return value;if(typeof value==='number')return Number.isFinite(value)?value:null;if(Array.isArray(value))return value.map(jsonValue);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([,v])=>v!==undefined).map(([k,v])=>[k,jsonValue(v)]));return null;}
 export async function refreshTaste(){
  const read=supabaseAnon(),{supabaseAdmin:db}=await import("@/integrations/supabase/client.server");
  // Sites first: running this read alongside the full snapshot scan hits the read statement timeout under load.
  const rawSites=await loadTasteSites();
- const [history,historySignals,latest,oldCatalog,setters]=await Promise.all([pages(f=>read.from("library_site_history").select("domain,quarter,sector,h1_family").order("quarter").order("domain").range(f,f+999)),pages(f=>read.from("library_snapshots").select("domain,captured_at,signals,source").eq("page_type","home").eq("viewport","desktop").order("captured_at").order("id").range(f,f+999)),read.from("gfont_snapshots").select("captured_on").order("captured_on",{ascending:false}).limit(1),pages(f=>read.from("font_catalog").select("key,category").order("key").range(f,f+999)),read.from("trendsetters_latest").select("domain").order("rank").limit(30)]);
+ const [history,historySignals,latest,oldCatalog,setters]=await Promise.all([pages(f=>read.from("library_site_history").select("domain,quarter,sector,h1_family").order("quarter").order("domain").range(f,f+999)),pages((f,t)=>read.from("library_snapshots").select("domain,captured_at,source,type:signals->type,color:signals->color").eq("page_type","home").eq("viewport","desktop").order("captured_at").order("id").range(f,t),WIDE_PAGE).then(rows=>rows.map(({type,color,...r})=>({...r,signals:{type,color}}))),read.from("gfont_snapshots").select("captured_on").order("captured_on",{ascending:false}).limit(1),pages(f=>read.from("font_catalog").select("key,category").order("key").range(f,f+999)),read.from("trendsetters_latest").select("domain").order("rank").limit(30)]);
  if(latest.error||setters.error)throw latest.error??setters.error;
  // Emoji/icon/symbol fonts are never faces: treat them as unmeasured so they leave usage, pairs and denominators.
  const nonType=new Set<string>(),face=(v:string|null)=>{if(v&&isNonType(v)){nonType.add(normalizeFont(v));return null;}return v;};
@@ -33,16 +36,19 @@ export async function refreshTaste(){
  // Latest sample per domain/quarter; prefer live, matching history facade semantics.
  const hs=new Map<string,typeof historySignals[number]>();for(const s of historySignals){const k=`${s.domain}|${quarter(s.captured_at)}`,p=hs.get(k);if(!p||p.source!=="live"||s.source==="live")hs.set(k,s);}
  const sectorOf=new Map(sites.map(s=>[s.domain,s.sector]));
+ // Per-sample facts computed once: quarter, measured family per role (undefined = not counted), color tickers (null = no valid hex).
+ const samples=[...hs.values()].map(snap=>{const t=obj(obj(snap.signals)['type']),fam=(role:string)=>{const f=obj(obj(t['rendered'])[role])['family'];return typeof f==="string"&&!isNonType(f)?normalizeFont(f):undefined;};const c=obj(obj(snap.signals)['color']),palette=Array.isArray(c['palette'])?c['palette'].map(p=>obj(p)['hex']):[],hexes=[c['accent'],...palette].filter((v):v is string=>typeof v==="string"&&/^#[\da-f]{6}$/i.test(v));
+  return {domain:snap.domain,q:quarter(snap.captured_at),h1:fam('h1'),body:fam('body'),colorKeys:hexes.length?new Set(hexes.map(colorTicker)):null};});
  const usage: {key:string;scope:string;role:string;data:Record<string,unknown>}[]=[],colors:{key:string;scope:string;data:Record<string,unknown>}[]=[];
  for(const scope of ['all',...SECTORS]){const subset=sites.filter(s=>scope==="all"||s.sector===scope);
   for(const role of ['h1','body'] as const){const measured=subset.filter(s=>s[role]),keys=new Set(measured.map(s=>normalizeFont(s[role]??"")));for(const key of keys){const uses=measured.filter(s=>normalizeFont(s[role]??"")===key),all=sites.filter(s=>s[role]),allUses=all.filter(s=>normalizeFont(s[role]??"")===key),quarters=new Map<string,{n:number;used:number}>();
-   for(const snap of hs.values()){if(scope!=="all"&&sectorOf.get(snap.domain)!==scope)continue;const family=obj(obj(obj(obj(snap.signals)['type'])['rendered'])[role])['family'];if(typeof family!=="string"||isNonType(family))continue;const q=quarter(snap.captured_at),v=quarters.get(q)??{n:0,used:0};v.n++;if(normalizeFont(family)===key)v.used++;quarters.set(q,v);}
+   for(const snap of samples){if(scope!=="all"&&sectorOf.get(snap.domain)!==scope)continue;const family=snap[role];if(family===undefined)continue;const q=snap.q,v=quarters.get(q)??{n:0,used:0};v.n++;if(family===key)v.used++;quarters.set(q,v);}
    const series:SeriesPoint[]=[...quarters].map(([q,v])=>({quarter:q,share:v.used/v.n,denom:v.n,coverage:v.n/Math.max(1,subset.length)})).sort((a,b)=>a.quarter.localeCompare(b.quarter)),fit=forecastSeries(series,scope);
    const trendsetterSites=topSites.filter(s=>normalizeFont(s[role]??"")===key).length,vanguard=crawlShare('vanguard',key,role),mainstream=crawlShare('mainstream',key,role);
    usage.push({key,scope,role,data:{sites:uses.length,denom:measured.length,share:uses.length/Math.max(1,measured.length),share_all:allUses.length/Math.max(1,all.length),stage:fit.status==="ok"?fit.stage:null,momentum:fit.status==="ok"?fit.momentum:null,series,trendsetter_sites:trendsetterSites,trendsetter_n:topSites.length,trendsetter_share:topSites.length?trendsetterSites/topSites.length:null,vanguard_spread:vanguard!==null&&mainstream!==null?(vanguard-mainstream)*100:null,used_by:uses.slice(0,5).map(s=>s.domain)}});}}
   const measured=subset.filter(s=>s.accent||s.palette.length),keys=new Set(measured.flatMap(s=>[s.accent,...s.palette].filter((c):c is string=>!!c).map(colorTicker)));
   for(const key of keys){const has=(s:typeof sites[number])=>[s.accent,...s.palette].some(c=>c&&colorTicker(c)===key),uses=measured.filter(has),quarters=new Map<string,{n:number;used:number}>();
-   for(const snap of hs.values()){if(scope!=="all"&&sectorOf.get(snap.domain)!==scope)continue;const c=obj(obj(snap.signals)['color']),palette=Array.isArray(c['palette'])?c['palette'].map(p=>obj(p)['hex']):[],hexes=[c['accent'],...palette].filter((v):v is string=>typeof v==="string"&&/^#[\da-f]{6}$/i.test(v));if(!hexes.length)continue;const q=quarter(snap.captured_at),v=quarters.get(q)??{n:0,used:0};v.n++;if(hexes.some(h=>colorTicker(h)===key))v.used++;quarters.set(q,v);}
+   for(const snap of samples){if(scope!=="all"&&sectorOf.get(snap.domain)!==scope)continue;if(!snap.colorKeys)continue;const q=snap.q,v=quarters.get(q)??{n:0,used:0};v.n++;if(snap.colorKeys.has(key))v.used++;quarters.set(q,v);}
    const series=[...quarters].map(([q,v])=>({quarter:q,share:v.used/v.n,denom:v.n,coverage:v.n/Math.max(1,subset.length)})).sort((a,b)=>a.quarter.localeCompare(b.quarter)),fit=forecastSeries(series,scope),hexes=[...new Set(uses.flatMap(s=>[s.accent,...s.palette].filter((c):c is string=>!!c&&colorTicker(c)===key)))];
    const distance=(a:string,b:string)=>{const x=oklch(a),y=oklch(b);return Math.hypot(x.L-y.L,x.C-y.C,Math.min(Math.abs(x.h-y.h),360-Math.abs(x.h-y.h))/360);};const medoid=hexes.sort((a,b)=>hexes.reduce((n,x)=>n+distance(a,x)-distance(b,x),0))[0]??null;
    colors.push({key,scope,data:{share:uses.length/Math.max(1,measured.length),sites:uses.length,denom:measured.length,series,stage:fit.status==="ok"?fit.stage:null,momentum:fit.status==="ok"?fit.momentum:null,example_hex:medoid,example_domains:uses.slice(0,5).map(s=>s.domain)}});}

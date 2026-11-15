@@ -58,3 +58,11 @@ describe("wayback day-level receipts", () => {
     expect(j.stale).toBe(false); expect(j.last_ok_at).toBe("2026-11-14T00:00:00Z"); expect(j.note).toContain("day-level");
   });
 });
+describe("forecast failure note", () => {
+  it("shows the stored error of a failed latest run", () => {
+    const j = job({ ...fresh, forecast_runs: [{ status: "error", computed_at: ago(H), error: "taste: 57014 canceling statement due to statement timeout" }, { status: "ok", computed_at: ago(D) }] }, "forecast");
+    expect(j.note).toBe("last run failed: taste: 57014 canceling statement due to statement timeout"); expect(j.consecutive_failures).toBe(1);
+  });
+  it("says no detail when an older failed run has no error text", () => expect(job({ ...fresh, forecast_runs: [{ status: "error", computed_at: ago(H) }] }, "forecast").note).toBe("last run failed: no detail recorded"));
+  it("no failure note when the latest run is ok", () => expect(job(fresh, "forecast").note).toBeUndefined());
+});

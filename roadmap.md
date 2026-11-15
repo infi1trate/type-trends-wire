@@ -116,3 +116,8 @@
 - [ ] Run parity + models.list on Google: waits on Brandon adding GEMINI_API_KEY (paid-tier project). Do not flip AI_PROVIDER.
 - [x] GET /api/public/health + status-bar HEALTH line and job table; staleness/status/safety tests.
 - [ ] Direct cron timeout check: platform blocks SQL reads of scheduler internals; health infers cut-offs instead. 90 s timeout fix stays with Brandon.
+# Bugfix — weekly forecast
+- [x] forecast-run body parsed as JSON (zod strict, any whitespace), 64 KB cap, auth first; tests.
+- [x] Root cause: taste refresh read timed out (anonymous statement timeout) and failed the whole run; smaller JSON-path pages, memoized loops, taste/brief/vibe/chart non-fatal after the run is stored.
+- [x] forecast_runs.error (≤300, sanitized) + health note; stale/missing crawl drops crawl components; tests.
+- [x] Real weekly run with brief, alerts and chart card.

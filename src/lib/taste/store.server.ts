@@ -4,7 +4,9 @@ import { siteTraits } from "../forecast-signals";
 import { normalizeFont } from "../library-diff";
 import { colorTicker, contrast } from "./color";
 import {cached} from "./cache.server";
-export async function pages<T>(f:(from:number)=>PromiseLike<{data:T[]|null;error:unknown}>){const rows:T[]=[];for(let n=0;;n+=1000){const r=await f(n);if(r.error)throw r.error;rows.push(...r.data??[]);if(!r.data||r.data.length<1000)break;}return rows;}
+// size < 1000 for wide JSON scans: each page is one statement under the anonymous role's short statement timeout.
+export async function pages<T>(f:(from:number,to:number)=>PromiseLike<{data:T[]|null;error:unknown}>,size=1000){const rows:T[]=[];for(let n=0;;n+=size){const r=await f(n,n+size-1);if(r.error)throw r.error;rows.push(...r.data??[]);if(!r.data||r.data.length<size)break;}return rows;}
+export const WIDE_PAGE=250;
 export type TasteSite={domain:string;sector:string;captured_at:string;mode:"library"|"crawl"|"lite"|"rendered"|"image";h1:string|null;body:string|null;traits:string[];bg:string|null;fg:string|null;accent:string|null;palette:string[];theme:string|null;tags:Record<string,unknown>;note?:string};
 export function siteFromSignals(domain:string,sector:string,captured_at:string,signals:unknown,tags:unknown={},mode:TasteSite["mode"]="library"):TasteSite{
   const fp=fingerprint(signals), s=obj(signals), t=obj(tags), valid=t['low_confidence']!==true&&!t['blocked_reason']&&Number(t['confidence']??1)>=.4?t:{};
@@ -18,7 +20,7 @@ export function siteFromSignals(domain:string,sector:string,captured_at:string,s
 export async function loadTasteSites(){
   const db=supabaseAnon();const [sites,snaps,tags,latest,extractions]=await Promise.all([
     pages(f=>db.from("library_sites").select("domain,sector").eq("active",true).order("domain").range(f,f+999)),
-    pages(f=>db.from("library_snapshots").select("id,domain,captured_at,signals").eq("source","live").eq("page_type","home").eq("viewport","desktop").order("captured_at",{ascending:false}).order("id",{ascending:false}).range(f,f+999)),
+    pages((f,t)=>db.from("library_snapshots").select("id,domain,captured_at,signals").eq("source","live").eq("page_type","home").eq("viewport","desktop").order("captured_at",{ascending:false}).order("id",{ascending:false}).range(f,t),WIDE_PAGE),
     pages(f=>db.from("library_tags").select("snapshot_id,tags").order("snapshot_id").range(f,f+999)),
     db.from("crawl_latest").select("id").limit(1),
     pages(f=>db.from("library_ai_extraction_history").select("domain,kind,data,captured_at").eq("kind","pricing").order("captured_at",{ascending:false}).order("domain").range(f,f+999))]);

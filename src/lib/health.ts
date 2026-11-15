@@ -26,7 +26,7 @@ export const healthFactsSchema = z.object({
   ingest: z.record(z.string(), ingest).nullable().optional().transform(v => v ?? {}),
   library_check_at: ts, library_full_at: ts, wayback_received_at: ts,
   crawl_runs: z.array(z.object({ status: z.string().nullable().optional(), started_at: ts, finished_at: ts, ok: z.coerce.number().nullable().optional(), tried: z.coerce.number().nullable().optional() })).nullable().optional().transform(v => v ?? []),
-  forecast_runs: z.array(z.object({ status: z.string().nullable().optional(), computed_at: ts })).nullable().optional().transform(v => v ?? []),
+  forecast_runs: z.array(z.object({ status: z.string().nullable().optional(), computed_at: ts, error: z.string().nullable().optional() })).nullable().optional().transform(v => v ?? []),
   ai_jobs: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts, last_activity_at: ts, paused: z.boolean().nullable().optional() }).nullable().optional(),
   ai_interrupted_24h: num,
   render_queue: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts }).nullable().optional(),
@@ -84,7 +84,7 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
     const runs = f.forecast_runs, latest = runs[0], i = runs.findIndex(r => r.status === "ok"), ok = i >= 0 ? runs[i] : undefined;
     const stuck = latest?.status === "running" && olderThan(latest.computed_at, STUCK_RUN_MS, t);
     jobs.push({ job: "forecast", last_ok_at: ok?.computed_at ?? null, last_run_at: latest?.computed_at ?? null, last_status: stuck ? "stuck" : latest?.status ?? "never", expected_every: "7d", stale: isStale(ok?.computed_at, "7d", t), consecutive_failures: (i >= 0 ? runs.slice(0, i) : runs).filter(r => r.status === "error").length,
-      ...notes(stuck && "latest run never finished — callback may be cut off", timeoutMissing("forecast-weekly") && TIMEOUT_NOTE) });
+      ...notes(stuck && "latest run never finished — callback may be cut off", latest?.status === "error" && `last run failed: ${(latest.error ?? "no detail recorded").slice(0, 300)}`, timeoutMissing("forecast-weekly") && TIMEOUT_NOTE) });
   }
   {
     const q = f.ai_jobs, pending = q?.pending ?? 0, oldest = q?.oldest_pending_at ?? null;

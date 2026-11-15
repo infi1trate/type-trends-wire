@@ -253,6 +253,13 @@
       "when": 1794676789258,
       "tag": "0035_ai_provider_and_health_facts",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794756246290,
+      "tag": "0036_forecast_run_error",
+      "breakpoints": true
     }
   ]
 }

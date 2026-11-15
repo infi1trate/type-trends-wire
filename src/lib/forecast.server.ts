@@ -8,6 +8,7 @@ import { gfAdditions, supplyValue, isFlooding, FLOODING_NOTE, type FirstSeen } f
 import { alertCandidates, alertRow, selectAlerts, ALERT_DEDUPE_DAYS, type Alert, type AlertInput } from "./alerts";
 import { SECTORS } from "./library";
 import { providerLabel } from "./ai-provider";
+import { crawlCoverage, runErrorText } from "./forecast-run";
 type Db = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 async function pages<T>(f: (from: number) => PromiseLike<{ data: T[] | null; error: unknown }>) { const out: T[] = []; for (let from = 0; ; from += 1000) { const { data, error } = await f(from); if (error) throw error; out.push(...(data ?? [])); if (!data || data.length < 1000) break; } return out; }
 const CUTOFF = "2025Q2", KEEP_RUNS = 12, MIN_OBSERVED = 3;
@@ -17,24 +18,34 @@ export async function runForecast(opts: { brief?: boolean; alerts?: "emit" | "dr
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
   const run = await db.from("forecast_runs").insert({ status: "running" }).select("id").single();
   if (run.error) throw run.error; const runId = run.data.id;
+  let stage = "compute";
   try {
     const result = await compute(db, runId);
-    const { refreshTaste } = await import("./taste/refresh.server");
-    await refreshTaste();
+    stage = "store";
     const fin = await db.from("forecast_runs").update({ status: "ok", data_cutoff_quarter: result.cutoff, coverage: result.coverage, model_card: result.card }).eq("id", runId);
     if (fin.error) throw fin.error;
+    stage = "alerts";
     const alerts = opts.alerts === "off" ? null : await emitAlerts(db, runId, result.alertInputs, opts.alerts === "dry");
+    stage = "prune";
     const old = await db.from("forecast_runs").select("id").order("id", { ascending: false }).range(KEEP_RUNS, KEEP_RUNS + 500);
     if (old.data?.length) await db.from("forecast_runs").delete().in("id", old.data.map(r => r.id));
+    // Derived outputs never fail a stored forecast: taste tables (own health job), brief, vibe map, then the brief's Chart of the Week.
+    const { refreshTaste } = await import("./taste/refresh.server");
+    const taste = await refreshTaste().then(() => ({ ok: true }), e => { console.error("forecast taste refresh failed:", runErrorText("taste", e)); return { ok: false, code: runErrorText("taste", e) }; });
     let brief: unknown = null;
     if (opts.brief !== false) { const { generateWeeklyBrief } = await import("./forecast-brief.server"); brief = await generateWeeklyBrief(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "brief_failed" })); }
-    // Showcase outputs never fail the forecast run: vibe map coordinates, then the brief's Chart of the Week.
     const { computeVibe } = await import("./vibe.server");
     const vibe = await computeVibe(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "vibe_failed" }));
     let chart: unknown = null;
     if (opts.brief !== false) { const { generateChartCard } = await import("./chart/chart.server"); chart = await generateChartCard().catch(e => ({ ok: false, code: e instanceof Error ? e.message : "chart_failed" })); }
-    return { ok: true, run_id: runId, model_card: result.card, alerts, brief, vibe, chart };
-  } catch (e) { await db.from("forecast_runs").update({ status: "error" }).eq("id", runId); throw e; }
+    return { ok: true, run_id: runId, model_card: result.card, alerts, taste, brief, vibe, chart };
+  } catch (e) {
+    const error = runErrorText(stage, e);
+    console.error("forecast run failed:", error);
+    // A run already stored as ok stays ok (alerts/prune failures are reported, not rewritten).
+    if (stage === "compute" || stage === "store") await db.from("forecast_runs").update({ status: "error", error }).eq("id", runId);
+    throw e;
+  }
 }
 
 async function compute(db: Db, runId: number) {
@@ -52,7 +63,15 @@ async function compute(db: Db, runId: number) {
   const now = Date.now();
   const crawlLatest = await db.from("crawl_latest").select("id,prev_id").limit(1);
   if (crawlLatest.error) throw crawlLatest.error;
-  const crawlIds = [crawlLatest.data[0]?.id, crawlLatest.data[0]?.prev_id].filter((x): x is string => !!x);
+  const latestId = crawlLatest.data[0]?.id ?? null;
+  const [crawlRun, curatedCount] = latestId ? await Promise.all([
+    db.from("crawl_runs").select("finished_at").eq("id", latestId).maybeSingle(),
+    db.from("crawl_sites").select("domain", { count: "exact", head: true }).eq("run_id", latestId).eq("index_name", "curated").eq("ok", true),
+  ]) : [null, null];
+  if (crawlRun?.error || curatedCount?.error) throw crawlRun?.error ?? curatedCount?.error;
+  // Stale or missing crawl data drops the crawl-derived components (vanguard, curation) for this run; the run itself still succeeds.
+  const crawlCov = crawlCoverage({ run: latestId, finished_at: crawlRun?.data?.finished_at ?? null, curated_sites: curatedCount?.count ?? 0 }, now);
+  const crawlIds = crawlCov.use ? [crawlLatest.data[0]?.id, crawlLatest.data[0]?.prev_id].filter((x): x is string => !!x) : [];
   const [crawlRows, discourseRows, firstSeen, prevRunRes] = await Promise.all([
     crawlIds.length ? pages(f => db.from("crawl_sites").select("run_id,domain,index_name,type,color,layout,tech,galleries").in("run_id", crawlIds).eq("ok", true).order("run_id").order("domain").range(f, f + 999)) : Promise.resolve([]),
     pages(f => db.from("discourse_counts").select("window_start,term,n,fatigue,sampled_posts").gte("window_start", new Date(now - DISCOURSE_WEEKS * 7 * 864e5).toISOString()).order("window_start").order("source").order("term").range(f, f + 999)),
@@ -61,6 +80,9 @@ async function compute(db: Db, runId: number) {
   ]);
   if (prevRunRes.error) throw prevRunRes.error;
   const prevRunId = prevRunRes.data[0]?.id ?? null;
+  const failedRes = await db.from("forecast_runs").select("id,computed_at,error").eq("status", "error").gt("id", prevRunId ?? 0).lt("id", runId).order("id").limit(10);
+  if (failedRes.error) throw failedRes.error;
+  const failedSince = (failedRes.data ?? []).map(r => ({ run_id: r.id, at: r.computed_at, error: r.error ?? null }));
   const prevRows = prevRunId ? await pages(f => db.from("forecasts").select("dimension,value,scope,current_share,stage").eq("run_id", prevRunId).eq("scope", "all").order("dimension").order("value").range(f, f + 999)) : [];
   const prevByTrait = new Map(prevRows.map(r => [`${r.dimension}:${r.value}`, r]));
   const latestCrawl = crawlRows.filter(r => r.run_id === crawlIds[0]) as CrawlTraitSite[], prevCrawl = crawlRows.filter(r => r.run_id === crawlIds[1]) as CrawlTraitSite[];
@@ -100,7 +122,7 @@ async function compute(db: Db, runId: number) {
       const [dimension, value] = [t.slice(0, t.indexOf(":")), t.slice(t.indexOf(":") + 1)];
       const f = forecastSeries(pts, scope), b = backtestSeries(pts, scope, CUTOFF);
       if (b.status === "ok" && scope === "all") bt.push({ mae: b.mae_pts, hit: b.hit_rate });
-      const spKey = TRAIT_SPREAD[t], sp = spKey ? spread.data.find(s => s.signal === spKey) : undefined;
+      const spKey = TRAIT_SPREAD[t], sp = spKey && crawlCov.use ? spread.data.find(s => s.signal === spKey) : undefined;
       const cat = TRAIT_GFONT_CATEGORY[t], gf = cat && gfTop.length ? gfTop.filter(g => g.category === cat).length / gfTop.length * 100 : null;
       const w30 = keywordCount(t, texts30), w90 = keywordCount(t, texts90);
       const cur = scope === "all" ? curNow.get(t) : undefined, prv = scope === "all" ? curPrev.get(t) : undefined;
@@ -122,7 +144,7 @@ async function compute(db: Db, runId: number) {
         proj_q1: proj(1)?.mid ?? null, proj_q1_lo: proj(1)?.lo ?? null, proj_q1_hi: proj(1)?.hi ?? null, proj_q2: proj(2)?.mid ?? null, proj_q2_lo: proj(2)?.lo ?? null, proj_q2_hi: proj(2)?.hi ?? null, proj_q4: proj(4)?.mid ?? null, proj_q4_lo: proj(4)?.lo ?? null, proj_q4_hi: proj(4)?.hi ?? null,
         components: { raw: c, present: presentComponents(c), wire30: w30, wire90: w90, gfont_category_share: gf, spread: sp ?? null, why,
           ...(scope === "all" ? {
-            curation: cur ? { lead_pts: cur.curation_lead_pts, prev_lead_pts: prv?.curation_lead_pts ?? null, vanguard_spread_pts: cur.vanguard_spread_pts, n: Object.fromEntries(Object.entries(cur.indexes).map(([k, v]) => [k, v.n])), hits: Object.fromEntries(Object.entries(cur.indexes).map(([k, v]) => [k, v.hits])), gallery_mix: mix, run: crawlIds[0] ?? null, prev_run: crawlIds[1] ?? null } : { lead_pts: null, reason: crawlIds.length ? "trait not measured by the crawl" : "no finished crawl run" },
+            curation: cur ? { lead_pts: cur.curation_lead_pts, prev_lead_pts: prv?.curation_lead_pts ?? null, vanguard_spread_pts: cur.vanguard_spread_pts, n: Object.fromEntries(Object.entries(cur.indexes).map(([k, v]) => [k, v.n])), hits: Object.fromEntries(Object.entries(cur.indexes).map(([k, v]) => [k, v.hits])), gallery_mix: mix, run: crawlIds[0] ?? null, prev_run: crawlIds[1] ?? null } : { lead_pts: null, reason: !crawlCov.run ? "no finished crawl run" : crawlCov.stale ? "crawl stale" : crawlCov.curated_sites === 0 ? "no curated index in the latest crawl" : "trait not measured by the crawl" },
             discourse: disc ? { ...disc, terms: [...termSet!].slice(0, 12) } : { z: null, reason: "no tracked terms map to this trait" },
             supply: cat ? { value: supply, category: cat, gf_additions: gfAdd, ph_sites: phSites, ph_note: phCrawled ? null : "no Product Hunt sites crawled yet" } : { value: null, reason: "not a font category trait" },
           } : {}) },
@@ -170,8 +192,8 @@ async function compute(db: Db, runId: number) {
   const card = { data_through: latestAll, backtest_cutoff: CUTOFF, median_mae_pts: median(bt.map(b => b.mae)), hit_rate: median(bt.map(b => b.hit)), n_backtested: bt.length, n_traits: traits.length, n_forecast_ok: allRows.filter(r => r.status === "ok").length, n_insufficient: allRows.filter(r => r.status !== "ok").length,
     usable_quarters_all: Object.entries(quarterCoverage).filter(([, v]) => v.denom >= 15 && v.coverage >= 0.25).map(([q]) => q), next_wave_backtest: nwBacktest, next_wave_backtest_legacy_weights: nwLegacy, weights: NEXT_WAVE_WEIGHTS,
     component_coverage: { rows: allRows.length, scored: allRows.filter(r => r.next_wave_score != null).length, ...Object.fromEntries(COMPONENT_KEYS.map(k => [k, allRows.filter(r => ((r.components as { raw?: Components }).raw?.[k] ?? null) !== null).length])) },
-    crawl: { run: crawlIds[0] ?? null, prev_run: crawlIds[1] ?? null, n: Object.fromEntries(["mainstream", "vanguard", "curated"].map(i => [i, latestCrawl.filter(s => s.index_name === i).length])), gallery_mix: mix },
-    discourse_rows: discourseRows.length, ai_provider: providerLabel(process.env), thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
+    crawl: { run: crawlCov.run, used: crawlCov.use, finished_at: crawlCov.finished_at, age_days: crawlCov.age_days, stale: crawlCov.stale, notes: crawlCov.notes, prev_run: crawlIds[1] ?? null, n: Object.fromEntries(["mainstream", "vanguard", "curated"].map(i => [i, latestCrawl.filter(s => s.index_name === i).length])), gallery_mix: mix },
+    failed_runs_since_last_ok: failedSince, discourse_rows: discourseRows.length, ai_provider: providerLabel(process.env), thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
   return { cutoff: latestAll, coverage: quarterCoverage, card, alertInputs };
 }
 
