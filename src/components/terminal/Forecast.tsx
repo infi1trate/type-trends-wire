@@ -72,7 +72,7 @@ export function ForecastPanel() {
   const { data: discourseSince } = useQuery(discourseSinceQuery());
   const coverage = coverageSentences(card, { discourseSince });
   const { data: ledger } = useQuery(ledgerQuery());
-  const ls = ledger?.summary, liveRecord = !ls ? "Loading…" : ls.rate != null ? `${Math.round(ls.rate * 100)}% · N=${ls.resolved}` : `${ls.hits} OF ${ls.resolved} LANDED · ${ls.open} OPEN`;
+  const ls = ledger?.summary, liveRecord = !ls ? "Loading…" : ls.rate != null ? `${Math.round(ls.rate * 100)}% · N=${ls.resolved}` : ls.resolved ? `${ls.hits} OF ${ls.resolved} LANDED · ${ls.open} OPEN` : `NONE RESOLVED · ${ls.open} OPEN`;
   return <div className="library min-h-0 flex-1 md:overflow-y-auto">
     <section aria-label="Model card" className="border-b border-rule bg-void">
       <h2 className="label flex items-center border-b border-rule bg-g900 px-3 py-2 font-semibold">MODEL CARD<Info g="p-model-card" /></h2>

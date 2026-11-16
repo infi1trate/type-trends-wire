@@ -56,8 +56,8 @@ export function LedgerView({ ledger: l }: { ledger: Ledger }) {
 
       <section aria-labelledby="ed-l-numbers" className="ed-wrap mt-14">
         <SectionHead n="02" id="ed-l-numbers" title="Hit rate" kicker={s.rate == null ? "Shown as a percentage once 20 calls have resolved." : `Hits ÷ (hits + misses), n = ${s.resolved}.`} />
-        <p className="ed-data text-[32px] leading-[40px] md:text-[44px] md:leading-[48px]">{s.rate == null ? `${s.hits} of ${s.resolved}` : `${Math.round(s.rate * 100)}%`}</p>
-        <p className="ed-caption mt-1">{s.rate == null ? "resolved calls landed" : `${s.hits} hits, ${s.misses} misses`}</p>
+        <p className="ed-data text-[32px] leading-[40px] md:text-[44px] md:leading-[48px]">{s.rate != null ? `${Math.round(s.rate * 100)}%` : s.resolved ? `${s.hits} of ${s.resolved}` : "None yet"}</p>
+        <p className="ed-caption mt-1">{s.rate != null ? `${s.hits} hits, ${s.misses} misses` : s.resolved ? "resolved calls landed" : `${s.open} calls open${s.nextResolution ? `; the first resolve on ${longDay(s.nextResolution)}` : ""}`}</p>
         <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2"><Breakdown title="By dimension" rows={s.byDimension} /><Breakdown title="By stage at call" rows={s.byStage} /></div>
       </section>
 

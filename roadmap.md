@@ -104,7 +104,7 @@
 - [x] Breakouts need share < 35% and stage not peaking/declining; alert dry run rerun.
 - [x] Render-failure note: "Couldn't render this site (3 attempts)"; no automatic retry.
 - [x] Godly removed from methodology gallery list (kept in enum).
-- [ ] Product Hunt stays dormant until Brandon adds PRODUCT_HUNT_TOKEN.
+- [ ] Product Hunt: stored PRODUCT_HUNT_TOKEN is rejected (401 invalid_oauth_token); waits on Brandon pasting the Developer Token.
 # Phase 6A — showcase (terminal side)
 - [x] F9 Rebrand Desk: identity-change log from confirmed live + archive events, before/after rows, forecast read, wire match, filters, MCP `rebrands`, methodology.
 - [x] F7 Vibe Map: pure tag-vector PCA + k-means with named clusters, weekly `vibe_points` storage, scatter UI with keyboard, MCP `vibe_map`, methodology.
@@ -113,7 +113,7 @@
 # Phase 7A — hardening
 - [x] Provider layer (lovable | google) used by library, brief and taste calls; fail closed; per-provider prices; provider on ai_usage, brief and model card; tests.
 - [x] Parity script (`bun scripts/ai-parity.ts`), dry; skips without GEMINI_API_KEY.
-- [ ] Run parity + models.list on Google: waits on Brandon adding GEMINI_API_KEY (paid-tier project). Do not flip AI_PROVIDER.
+- [x] Run parity + models.list on Google (2026-11-16). Script has no pass threshold, so AI_PROVIDER stays lovable until Brandon decides.
 - [x] GET /api/public/health + status-bar HEALTH line and job table; staleness/status/safety tests.
 - [ ] Direct cron timeout check: platform blocks SQL reads of scheduler internals; health infers cut-offs instead. 90 s timeout fix stays with Brandon.
 # Bugfix — weekly forecast
@@ -152,9 +152,9 @@
 - [x] Tests + screenshots + report
 
 # Phase 11 — proof and reach (Labs launch on hold: build/link nothing for it)
-- [ ] Step 0: run Google parity; switch AI_PROVIDER only if the script's pass threshold is met; run Product Hunt ingest once and report
-- [ ] Forecast ledger: append-only forecast_calls, one selection rule constant, pure resolution, first-call-stands, backfill, hit rate (<20 → sentence)
-- [ ] Ledger surfaces: /ledger (gated, editorial), terminal model card + console `ledger`, Digest Numbers hit rate at ≥20, trait explainer past calls, MCP forecast_ledger, methodology LEDGER
-- [ ] Embeds: /embed/trait/$key, /embed/chart/$week (open, frame-ancestors * only there, 404 card), Embed panel on trait + chart pages, oEmbed endpoint + link tags
-- [ ] MCP keys: mcp_keys + mcp_key_usage, Bearer dsgn_ keys raise limit, 401 for revoked/unknown, admin endpoint (crawler-secret auth), docs, MCP overlay "Using a key"
-- [ ] Tests + screenshots (/ledger, embed 320/800) + report
+- [x] Step 0: run Google parity; switch AI_PROVIDER only if the script's pass threshold is met; run Product Hunt ingest once and report
+- [x] Forecast ledger: append-only forecast_calls, one selection rule constant, pure resolution, first-call-stands, backfill, hit rate (<20 → sentence)
+- [x] Ledger surfaces: /ledger (gated, editorial), terminal model card + console `ledger`, Digest Numbers hit rate at ≥20, trait explainer past calls, MCP forecast_ledger, methodology LEDGER
+- [x] Embeds: /embed/trait/$key, /embed/chart/$week (open, frame-ancestors * only there, 404 card), Embed panel on trait + chart pages, oEmbed endpoint + link tags
+- [x] MCP keys: mcp_keys + mcp_key_usage, Bearer dsgn_ keys raise limit, 401 for revoked/unknown, admin endpoint (crawler-secret auth), docs, MCP overlay "Using a key"
+- [x] Tests + screenshots (/ledger, embed 320/800) + report
