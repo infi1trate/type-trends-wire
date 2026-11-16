@@ -999,6 +999,78 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "stories",
+        "title": "Stories",
+        "description": "Published DSGN/TERMINAL stories, newest first: what the product judged newsworthy from its own data (brand moves, rebrands, stage shifts, breakouts, first sightings, crossovers, counter-moves, white space, roundups, news naming a tracked brand). Each story has a type, headline, deck, facts with receipts (basis measured or ai), an optional why-it-matters line (basis ai, validated against the facts) or the deterministic so-what (basis measured), the newsworthiness score with its four components, and urls. Signals in signal_keys keep their stable key and add a plain-English label.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "type": {
+              "description": "Only this story type.",
+              "type": "string",
+              "enum": [
+                "move",
+                "rebrand",
+                "shift",
+                "breakout",
+                "first_seen",
+                "crossover",
+                "counter_move",
+                "white_space",
+                "roundup",
+                "launch",
+                "news"
+              ]
+            },
+            "sector": {
+              "type": "string",
+              "enum": [
+                "ai",
+                "dev-tools",
+                "fintech",
+                "consumer-apps",
+                "commerce-dtc",
+                "media",
+                "studios",
+                "hardware",
+                "health",
+                "enterprise-saas"
+              ]
+            },
+            "signal": {
+              "description": "Trait key, e.g. headline:serif.",
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 120
+            },
+            "domain": {
+              "description": "A tracked brand's domain.",
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 253
+            },
+            "since": {
+              "description": "ISO date; only stories that happened on or after it.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "limit": {
+              "default": 20,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
