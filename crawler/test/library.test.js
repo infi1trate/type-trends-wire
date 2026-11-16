@@ -104,6 +104,9 @@ test("library dry run on fixture site", { timeout: 120000 }, async () => {
     const sum2 = JSON.parse(readFileSync("out/libfull2.summary.json", "utf8"));
     assert.equal(sum2.snapshots, 1);
     assert.equal(sum2.unchanged, 3);
+    // section crops: at least the hero of the desktop homepage is captured (dry runs count without posting)
+    assert.ok(sum2.crops.captured >= 1 && sum2.crops.by_section.hero === 1);
+    assert.equal(sum2.crops.failed, 0);
 
     // tag mode: home desktop only, forced even when unchanged
     await run("node", ["src/library.js"], { env: { ...process.env, DRY_RUN: "1", ALLOW_HTTP: "1", RUN_ID: "libtag", LIBRARY_MODE: "tag", STATE_FILE: "/tmp/state.json", LIBRARY_FILE: "/tmp/lib.csv", LIMIT: "1" } });

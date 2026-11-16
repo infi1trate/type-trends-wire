@@ -91,10 +91,21 @@ Failures become GitHub issues (GitHub emails the repo owner) and close themselve
 
 ## Digest thumbnails
 
-The Saturday full library run (`LIBRARY_MODE=full`) also captures one small above-the-fold crop per live homepage, desktop and mobile, for The Digest. This is the only image the project stores. The policy is small crops that are credited and linked to the site, and removable on request.
+The Saturday full library run (`LIBRARY_MODE=full`) also captures one small above-the-fold crop per live homepage, desktop and mobile, for The Digest. Thumbnails and section crops (below) are the only images the project stores. The policy is small crops that are credited and linked to the site, and removable on request.
 
 - **What's captured:** the visible viewport only, never the full page. It is downscaled to fit 1280×800, or 1024 or 800 wide when a busy page won't fit, and encoded as WebP of at most 150 KB, plus 640w and 320w variants. Code: `src/thumbs.js`.
 - **Where it goes:** batches of up to 12 captures per request, under 4 MB, are posted to `/api/public/ingest-thumbs` with `x-crawl-secret`. The server validates them, refuses opted-out domains, and keeps the latest 2 per domain and viewport.
 - **robots.txt:** checked before the page loads, the same check as every snapshot.
 - **Turning it off:** set `THUMBS=0`. Dry runs count captures without posting.
 - **Opt-outs:** `POST /api/public/thumb-optout` with `{"domain":"example.com","note":"owner request"}` and the same secret header. This deletes the site's stored captures and refuses future ones. Send `"action":"remove"` to lift the opt-out.
+
+## Section crops
+
+The same full library run also crops named sections of each live desktop homepage, so the site can show before and after for a move and real examples on pattern pages. The policy is the thumbnail policy: small crops, credited and linked to the site, removable on request.
+
+- **What's captured:** up to five sections per homepage: `hero` (the first viewport), `nav`, `pricing`, `cta` and `footer`. Sections are found in the page by plain layout rules, so a homepage with no pricing band has no pricing crop. Each crop fits 1280×1600 and 150 KB as WebP. Code: `src/crops.js`.
+- **The hash:** each crop carries a 64-character hash. The first 48 characters are a perceptual hash of the pixels, which ignores compression and sub-pixel noise. The last 16 are a digest of the section's fonts and colors, never its copy, so a new typeface or palette makes a new version even when the layout looks the same.
+- **Where it goes:** batches of up to 12 crops per request, under 4 MB, are posted to `/api/public/ingest-crops` with `x-crawl-secret`. The server stores a new version only when the hash differs from the newest crop of that domain and section, and keeps a bounded history.
+- **robots.txt and archives:** checked before the page loads, like every snapshot. Archive (Wayback) renders are never cropped.
+- **Turning it off:** set `CROPS=0`. Dry runs count crops without posting; the run summary reports them under `crops`.
+- **Opt-outs:** the thumbnail opt-out covers crops too.
