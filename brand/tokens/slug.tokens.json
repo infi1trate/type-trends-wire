@@ -129,7 +129,8 @@
   "font": {
     "display": "'Big Shoulders', 'Arial Narrow', Impact, sans-serif",
     "text": "'Newsreader', Georgia, 'Times New Roman', serif",
-    "google": "https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@700;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap"
+    "mono": "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+    "google": "https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap"
   },
   "type": {
     "display": {
@@ -213,6 +214,14 @@
       "leading": 0.9,
       "numeric": "tabular-nums",
       "unit-weight": 700
+    },
+    "data": {
+      "family": "mono",
+      "weight": 400,
+      "size": 13,
+      "leading": 1.5,
+      "numeric": "tabular-nums",
+      "scope": "terminal, console and code-like values only"
     }
   },
   "space": [

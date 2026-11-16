@@ -52,10 +52,11 @@ Modes: **light** (paper page, white cards), **dark** (ink page, `#1D1B18` cards,
 
 ## Type
 
-Two families and the mark.
+Two families and the mark, plus one utility face for the terminal.
 
 - **Big Shoulders** 900 for headlines and figures, 700 for labels. Capitals. It states the fact.
 - **Newsreader** 400 (italic for quotes) for decks, body and captions. It explains the fact.
+- **IBM Plex Mono** 400 and 600 is a utility face. It is used only in the terminal and for code-like values: the console, signal keys, hex colours, domains and dense data tables. It never sets a headline, a label on a Read page or a sentence.
 
 | Role | Face | Size / leading | Notes |
 |---|---|---|---|
@@ -70,8 +71,20 @@ Two families and the mark.
 | Quote | Newsreader italic | 34 / 1.15 | |
 | Figure | Big Shoulders 900 | 96 / 0.9 | Tabular; the unit in 700 |
 | Caption | Newsreader 400 | 14 / 1.4 | Muted |
+| Data | IBM Plex Mono 400, 600 | 13 / 1.5 | Terminal, console and code-like values only; tabular figures |
 
 Rules: capitals are for headlines only. Every number a reader should remember is set in Big Shoulders. Headlines are set tight, text is set loose. Balance headline lines; avoid one-word last lines in text.
+
+## The terminal
+
+The terminal is the same brand at its densest: the night desk.
+
+- Dark mode, Loud density: ink page, `#1D1B18` panels, paper text, 8 px gaps, 1.5 px paper rules. The mark sits on its pink slab.
+- Panel titles and column heads are Big Shoulders 700, tracked capitals. The one figure a panel exists to show is Big Shoulders 900.
+- Table cells, keys, hex values, domains and the console are IBM Plex Mono 13 / 1.5 with tabular figures, so columns align and codes read exactly.
+- Any full sentence (a story line, a why-it-matters, help text) is Newsreader.
+- Colour does the same jobs as everywhere else: yellow for focus, selection and the cursor; green rising, red live and peaking, pink for the lead row or the active story. No other colours, no gradients, no gumballs, no stickers and no illustration in the terminal.
+- Motion: the live tick and the cursor only. No ooze, no wipes.
 
 ## Containers
 
@@ -135,5 +148,5 @@ Easings: Ooze `cubic-bezier(0.3, 1.5, 0.5, 1)`, Cut `cubic-bezier(0.7, 0, 0.3, 1
 ## Credits and licences
 
 - Wordmark letterforms derived from Shrikhand by Jonny Pinhorn, SIL Open Font License 1.1.
-- Big Shoulders and Newsreader are served from Google Fonts under the SIL Open Font License.
+- Big Shoulders, Newsreader and IBM Plex Mono are served from Google Fonts under the SIL Open Font License.
 - Photographs on the boards are from Unsplash and are placeholders, credited on the boards.

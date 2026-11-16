@@ -11,6 +11,7 @@
   --slug-muted: #4A463D;
   --slug-font-display: 'Big Shoulders', 'Arial Narrow', Impact, sans-serif;
   --slug-font-text: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --slug-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --slug-space-1: 4px;
   --slug-space-2: 8px;
   --slug-space-3: 16px;
@@ -109,3 +110,4 @@
 .slug-caption { font-family: var(--slug-font-text); font-weight: 400; font-size: 14px; line-height: 1.4; text-wrap: pretty; }
 .slug-quote { font-family: var(--slug-font-text); font-weight: 400; font-size: 34px; line-height: 1.15; font-style: italic; text-wrap: pretty; }
 .slug-figure { font-family: var(--slug-font-display); font-weight: 900; font-size: 96px; line-height: 0.9; font-variant-numeric: tabular-nums; text-wrap: balance; }
+.slug-data { font-family: var(--slug-font-mono); font-weight: 400; font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; text-wrap: pretty; }
