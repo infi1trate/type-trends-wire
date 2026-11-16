@@ -13,7 +13,6 @@ The idea in one line: loud tabloid bones, four spot inks, and things that look l
 | `tokens` | `slug.tokens.css` (CSS variables, three modes, type classes), `slug.tokens.json`, `slug.theme.ts`. |
 | `motion` | `slug-motion.css`: timing tokens, easings and the five reference animations. |
 | `illustration` | `slug-filters.svg`: paper, grain, pencil, soft-object, trail and one-ink photo filters. |
-| `boards` | The five brand boards as images: mark, system, compositions, illustration, motion. |
 
 ## The mark
 
@@ -44,7 +43,7 @@ Paper and ink carry the brand. Four inks do one job each.
 
 Supporting: newsprint `#CFC7B4` for quiet fills and the Steady stage; muted `#4A463D` for captions.
 
-Contrast against ink: paper 16.8, white 19.8, pink 9.4, yellow 15.6, green 7.4, red 4.8. Red text on paper is 3.8, so large type only.
+Contrast against ink: paper 16.8, white 19.8, pink 9.4, yellow 15.6, green 7.4, red 4.6. Red on paper is 3.6, so large type and marks only. Red on pink is 2.0: in vibes mode the live dot sits on the ink bar and nowhere else.
 
 Stage colours: Emerging pink, Rising green, Peaking red, Fading ink with paper text, Steady newsprint.
 
@@ -149,4 +148,4 @@ Easings: Ooze `cubic-bezier(0.3, 1.5, 0.5, 1)`, Cut `cubic-bezier(0.7, 0, 0.3, 1
 
 - Wordmark letterforms derived from Shrikhand by Jonny Pinhorn, SIL Open Font License 1.1.
 - Big Shoulders, Newsreader and IBM Plex Mono are served from Google Fonts under the SIL Open Font License.
-- Photographs on the boards are from Unsplash and are placeholders, credited on the boards.
+- Photographs on the brand boards (kept outside this repo) are from Unsplash and are placeholders, credited on the boards.
