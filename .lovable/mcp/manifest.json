@@ -1129,6 +1129,30 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "data_stories",
+        "title": "Data stories",
+        "description": "slug data stories: one question about how brands look on the web, answered step by step from stored captures. Without slug: the numbered list with status. With slug: the question, every step as text with its figures and receipts, and what the numbers are based on.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "description": "A data story slug from the list, e.g. who-went-big-first.",
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9-]+$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
