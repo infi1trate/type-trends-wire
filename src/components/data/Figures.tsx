@@ -94,7 +94,7 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
         <text x={m.l} y={m.t - 2} className="tk-svg-text tk-svg-muted">↑ {f.axes.y.label}</text>
         <line x1={sx(f.centre.x)} x2={sx(f.centre.x)} y1={m.t} y2={H - m.b} stroke={v.focus === "centre" ? ACC : MUTED} strokeDasharray="3 3" />
         <line x1={m.l} x2={W - m.r} y1={sy(f.centre.y)} y2={sy(f.centre.y)} stroke={v.focus === "centre" ? ACC : MUTED} strokeDasharray="3 3" />
-        <text x={sx(f.centre.x) + 4} y={H - m.b - 4} className="tk-svg-text tk-svg-muted">Sector centre {fx(f.centre.x)} · {fy(f.centre.y)}</text>
+        <text x={sx(f.centre.x) + (sx(f.centre.x) > W / 2 ? -4 : 4)} y={H - m.b - 4} textAnchor={sx(f.centre.x) > W / 2 ? "end" : "start"} className="tk-svg-text tk-svg-muted">Sector centre {fx(f.centre.x)} · {fy(f.centre.y)}</text>
         {f.points.map(p => { const hot = on.has(p.domain), px = sx(p.x), py = sy(p.y), right = px < W - 120;
           return <g key={p.domain} tabIndex={0} role="img" aria-label={`${p.name}: ${f.axes.x.label} ${fx(p.x)}, ${f.axes.y.label} ${fy(p.y)}`} className={`tk-mark ${fade}`} opacity={any && !hot ? 0.35 : 1}>
             <circle cx={px} cy={py} r={hot ? 5 : 3.5} fill={hot ? ACC : INK} className="tk-svg-dot" />

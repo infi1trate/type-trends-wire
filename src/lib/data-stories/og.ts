@@ -15,7 +15,7 @@ export function dataStoryOgScene(s: { number: number; slug: string; question: st
   lines.forEach((line, n) => t(pad, pad + 76 + n * 56, line, 44, 600, INK));
   const top = pad + 76 + lines.length * 56 + 40;
   t(pad, top + 70, fit(s.key.n, 96, inner), 96, 600, INK);
-  t(pad, top + 112, fit(s.key.label, 22, inner), 22, 400, MUTED);
+  t(pad, top + 180, fit(s.key.label, 28, inner), 28, 400, MUTED);
   prims.push({ k: "rect", x: pad, y: h - pad - 18, w: inner, h: 1, fill: RULE });
   t(pad, h - pad - 4, fit(`${BRAND_NAME} · ${CARD_HOST}/data/${s.slug}`, 22, inner), 22, 400, MUTED);
   return { w, h, prims };

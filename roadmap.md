@@ -235,3 +235,13 @@
 - [x] story_numbers table + backfill (No. 1–48) + shown on front, story page, Morning Line, Digest, RSS, MCP; /stories/no/$number redirect
 - [x] Small fixes: /tools tool count from registry; /terminal hydration (SSR query hand-off); StoryRow light mode; font-flow labels on dark
 - [x] Tests, screenshots, report
+
+# Phase 19a — data stories: framework, templates, first stories (don't publish)
+- [x] Live column and terminal story list show "No. N" on every row
+- [x] Registry, pure models, stepper (keys, buttons, scroll, ?step=, live region, reduced motion, no-JS sequence, print), ending block
+- [x] Six views (adoption, before/after, multiples, field, drift, strip) + /kit examples
+- [x] Four checks run on stored data: a, b, d live; c draft (5 of 8 quarters)
+- [x] /data/where-you-sit (tracked brands only; untracked → audit)
+- [x] Gated share image + one-step embed behind DATA_STORIES_PUBLIC = false; MCP data_stories (27 tools)
+- [x] ia.ts, formats, front shelf; tests, screenshots, report
+- [ ] Story c (fintech colour) — waits on more quarterly archive coverage (needs 8 well-covered quarters, has 5)

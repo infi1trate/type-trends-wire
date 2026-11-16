@@ -1,3 +1,4 @@
+// Runs the four data story "is there a story" checks against stored data and prints their figures (bun scripts/data-story-checks.ts). Read-only.
 import { dataInput } from "@/lib/data-stories/data.server";
 import { softwareFigures, softwareVerdict, bigTypeFigures, bigTypeVerdict, fintechFigures, fintechVerdict, sectorMindsFigures, sectorMindsVerdict } from "@/lib/data-stories/checks";
 import { compositeSeries, quarterCoverage } from "@/lib/data-stories/series";
