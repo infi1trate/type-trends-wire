@@ -266,3 +266,14 @@
 - [x] Share images + embeds in vibes with Big Shoulders / Newsreader atlases
 - [x] Tests, screenshots, report
 - [ ] Terminal: story lines, help text and the tour still set sentences in mono (README wants Newsreader); listed for Brandon, not changed
+
+# Phase 20 — browse: brand page, pattern gallery + collections, signals index, audits and watchlists (don't publish)
+- [ ] Polish: data-story figures fill their column; sub-navs one scrolling row; Ledger number column (No. + 900 figure); gate field one ring at rest; terminal sentences in Newsreader + muted type labels; /what-we-show slugbot + DSGNTerminalBot
+- [ ] Brand page: identity card, moves timeline with before/after pairs, sector field + where-you-sit, similar brands (pure Jaccard), Raised actions
+- [ ] /brands index: Ledger, search, lens, sortable columns in URL
+- [ ] /patterns wall: tiles (crop or frame ≤60 boxes), filters in URL, count line, 48 per page + More + no-JS links, server-cached model
+- [ ] Collections registry (5), /collections + /collections/$slug, ia.ts, front Explore shelf, data-story links both ways
+- [ ] /signals: ranked Ledger by tier, archive fold, lens, sorts, dimension filter, URL state
+- [ ] Audit/watch: rule-box forms + inline errors; audit report (Quiet); watch Ledger with feed copy; voice empty states
+- [ ] MCP: collections tool + brand similar (28 tools)
+- [ ] Tests, screenshots, report
