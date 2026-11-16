@@ -5,6 +5,9 @@ import { headlineOnly, ofTier, type Signal } from "@/lib/signals";
 import { judgment, TIERS, TIER_WORD, type Tier } from "@/lib/tiers";
 import { type Dimension } from "@/lib/labels";
 import { signalList } from "@/lib/what-we-show";
+import { useSearch } from "@tanstack/react-router";
+import { lensSignals } from "@/lib/sector-lens";
+import { sectorName } from "@/lib/labels";
 import { TraitDrawer } from "./Forecast";
 import { Empty, Loading, PanelHeader, Seg } from "./primitives";
 import { SignalTable, useTierChoice } from "./SignalBits";
@@ -21,11 +24,14 @@ const byMomentum = (a: Signal, b: Signal) => (b.momentum_index ?? -1) - (a.momen
 export function HeadlineStrip({ dims, title, g, max, match }: { dims: Dimension[]; title: string; g: string; max?: number; match?: (key: string) => boolean }) {
   const { data } = useSuspenseQuery(signalsQuery()), isLoading = false;
   const drawer = useSignalDrawer();
-  const rows = useMemo(() => headlineOnly(data?.signals ?? []).filter(s => dims.includes(s.dimension) && (!match || match(s.key))).sort(byMomentum).slice(0, max ?? 999), [data, dims, max, match]);
+  const { sector } = useSearch({ strict: false });
+  const lens = useMemo(() => lensSignals(data.snap.rows, data.tiers, sector), [data, sector]);
+  const rows = useMemo(() => headlineOnly(lens.signals).filter(s => dims.includes(s.dimension) && (!match || match(s.key))).sort(byMomentum).slice(0, max ?? 999), [lens, dims, max, match]);
   return <section aria-label={title} className="shrink-0 border-b border-rule">
-    <PanelHeader title={title} g={g} meta={data ? <>{rows.length} HEADLINE · RUN {data.snap.run_id}</> : null} />
+    <PanelHeader title={title} g={g} meta={data ? <>{rows.length} HEADLINE · {sectorName(lens.scope).toUpperCase()} · RUN {data.snap.run_id}</> : null} />
+    {lens.note && <p className="border-b border-rule px-3 py-2 text-g500">{lens.note}</p>}
     {isLoading ? <div className="p-3"><Loading /></div> : rows.length ? <div className="max-h-[50vh] overflow-auto"><SignalTable rows={rows} onOpen={drawer.open} caption={title} /></div>
-      : <Empty why="No headline signal in this dimension this week: nothing here is visible, decision-worthy, well measured and moving at once. Supporting and archive signals stay in All signals on F1." />}
+      : <Empty why="No headline signal in this dimension this week: nothing here is visible, decision-worthy, well measured and moving at once. Supporting and archive signals stay in Signals › All signals (F2)." />}
     {drawer.node}
   </section>;
 }
@@ -35,14 +41,17 @@ export function AllSignals({ compact = false }: { compact?: boolean }) {
   const { data } = useSuspenseQuery(signalsQuery()), isLoading = false;
   const [tier, setTier] = useTierChoice();
   const drawer = useSignalDrawer();
+  const { sector } = useSearch({ strict: false });
+  const lens = useMemo(() => lensSignals(data.snap.rows, data.tiers, sector), [data, sector]);
   const counts = useMemo(() => Object.fromEntries(TIERS.map(t => [t, 0])) as Record<Tier, number>, []);
-  const signals = data?.signals ?? [];
+  const signals = lens.signals;
   for (const t of TIERS) counts[t] = ofTier(signals, t).length;
   const rows = useMemo(() => ofTier(signals, tier).sort(byMomentum), [signals, tier]);
   const unstaged = useMemo(() => { if (tier === "headline" || !data) return []; const staged = new Set(signals.map(s => s.key)); return signalList(data.tiers).filter(r => r.tier === tier && !staged.has(r.key)); }, [data, signals, tier]);
   const opts = TIERS.map(t => `${TIER_WORD[t]} ${counts[t]}`) as unknown as readonly string[];
   return <section aria-label="All signals" className="flex min-h-0 flex-1 flex-col">
-    <PanelHeader title={compact ? "SIGNALS" : "F1 ALL SIGNALS"} g="p-all-signals" meta={data?.snap.run_id ? <>RUN {data.snap.run_id}</> : null} />
+    <PanelHeader title={compact ? "SIGNALS" : "ALL SIGNALS"} g="p-all-signals" meta={data?.snap.run_id ? <>{sectorName(lens.scope).toUpperCase()} · RUN {data.snap.run_id}</> : null} />
+    {lens.note && <p className="border-b border-rule px-3 py-2 text-g500">{lens.note}</p>}
     <div className="flex flex-wrap items-center gap-2 border-b border-rule p-2">
       <Seg label="Tier" options={opts} value={opts[TIERS.indexOf(tier)]!} onChange={v => setTier(TIERS[opts.indexOf(v)]!)} />
       <span className="label text-g500">{tier === "headline" ? "Shown by default everywhere." : tier === "supporting" ? "Evidence: shown inside headline signals." : "Collected, never deleted, not shown by default."}</span>

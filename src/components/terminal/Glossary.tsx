@@ -3,9 +3,11 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { GLOSSARY, searchGlossary, type GlossaryKind } from "@/lib/glossary";
 import { QueryBar } from "./primitives";
 import { methodLink } from "./Info";
+import { KEY_MAP, SECTIONS } from "@/lib/ia";
 
 const GROUPS: [GlossaryKind, string][] = [["stage", "STAGES"], ["dimension", "DIMENSIONS"], ["metric", "MEASURES"], ["panel", "PANELS"], ["column", "COLUMNS"]];
-export const KEYS: [string, string][] = [["T", "Today"], ["W", "Watchlists on this device"], ["D", "The Digest (weekly issue)"], ["F1–F12", "Switch panel (F1 Signals)"], ["1–0", "Switch panel"], ["/", "Console (today, tour, glossary, digest, ticker, watch …, audit … work there too)"], ["?", "Glossary"], ["ESC", "Close card, sheet or overlay"], ["ENTER", "Open focused row"]];
+/** Keys come from the one IA registry (src/lib/ia.ts): F1–F6 sections, old keys as aliases. */
+export const KEYS: [string, string][] = [["F1–F6", "Sections: " + SECTIONS.map(s => `${s.key} ${s.label}`).join(" · ") + " (also 1–6)"], ...KEY_MAP.filter(k => k.alias).map(k => [k.key, `${k.label} (old key)`] as [string, string]), ...KEY_MAP.filter(k => !k.alias && "action" in k.target).map(k => [k.key, k.label] as [string, string]), ["ENTER", "Open the focused row"]];
 
 /** Searchable glossary: side panel on desktop, full-screen sheet on mobile. Entries deep-link as #g-<id>. */
 export function Glossary({ onClose, onTour, focus }: { onClose: () => void; onTour: () => void; focus?: string | null }) {

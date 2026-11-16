@@ -14,8 +14,8 @@ const nm = <span className="text-g500" title={NM}>not measured</span>;
 
 export function Library() {
   const { data } = useSuspenseQuery(libraryQuery());
-  const { sector = "all", q = "", sort = "domain", desc = false, page = 0 } = useSearch({ from: "/" });
-  const navigate = useNavigate({ from: "/" });
+  const { sector = "all", q = "", sort = "domain", desc = false, page = 0 } = useSearch({ from: "/terminal" });
+  const navigate = useNavigate({ from: "/terminal" });
   const update = (next: Partial<{ sector: string; q: string; sort: string; desc: boolean; page: number }>) => navigate({ search: prev => ({ ...prev, ...next }) });
   const keys = ["domain", "sector", "h1_family", "body_family", "theme", "accent", "hero_media", "whitespace_ratio", "last_change_at", "events_30d"] as const;
   const sortKey = keys.find(k => k === sort) ?? "domain";

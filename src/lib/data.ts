@@ -15,6 +15,7 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard } from "./read.functions";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
@@ -392,3 +393,12 @@ const EMPTY_SNAPSHOT: SignalSnapshot = { run_id: null, computed_at: null, prev_r
 /** Read with useSuspenseQuery so SSR and hydration render the same headline set; a failed read degrades to an empty snapshot instead of throwing. */
 export const signalsQuery = () => queryOptions({ queryKey: ["signals"], staleTime: 10 * 60_000, queryFn: () => getSignalSnapshot().catch(() => EMPTY_SNAPSHOT), select: deriveSignals });
 export const ledgerQuery = () => queryOptions({ queryKey: ["ledger"], staleTime: 10 * 60_000, queryFn: () => getLedger({ data: {} }) });
+
+// Read mode (Phase 13): the same objects as the terminal, server-assembled with the public 10-minute TTL.
+export const liveQuery = (sector: string, page: number) => queryOptions({ queryKey: ["live", sector, page], staleTime: 5 * 60_000, queryFn: () => getLive({ data: { sector, page } }) });
+export const brandQuery = (domain: string) => queryOptions({ queryKey: ["brand", domain], staleTime: 10 * 60_000, queryFn: () => getBrand({ data: { domain } }) });
+export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime: 10 * 60_000, queryFn: () => getBrands() });
+export const patternsQuery = (sector: string) => queryOptions({ queryKey: ["patterns", sector], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector } }) });
+export const patternQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern", key, sector], staleTime: 10 * 60_000, queryFn: () => getPattern({ data: { key, sector } }) });
+export const signalSeriesQuery = (scope: string) => queryOptions({ queryKey: ["signal-series", scope], staleTime: 10 * 60_000, queryFn: () => getSignalSeries({ data: { scope } }) });
+export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], staleTime: 10 * 60_000, queryFn: () => getModelCard() });

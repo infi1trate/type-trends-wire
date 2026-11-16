@@ -12,11 +12,15 @@ import type { Tier, TierResult } from "../tiers";
 import { evidenceKeys } from "../tiers";
 import { compositeOf, ruleText } from "../composites";
 import { soWhat } from "./copy";
+import { OBJECT_BLOCKS, brandPath, consoleHref, terminalHref, type Block } from "../ia";
+import type { Story } from "../stories";
 export type EvidenceItem = { key: string; name: string; dimension: Dimension; basis: Basis; tier: Tier | null; stage: StageName | null; share: number | null; href: string };
 
 type Raw = Record<string, unknown> | null;
 export type TRow = ForecastLike & { status: string; next_wave_score: number | null; components: Raw; lead_sites: { domain: string; adopted?: string | null; lead?: number | null }[] | null; computed_at: string };
-export type TraitRows = { key: string; signal?: Signal | null; tier?: TierResult | null; evidence?: EvidenceItem[]; headline?: string[] | null; rows: TRow[]; peers: { dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }[]; sites: { domain: string; sector: string; name: string | null }[]; thumbs: ThumbRow[]; data_through: string | null; calls?: StoredCall[] };
+export type TraitRows = { key: string; signal?: Signal | null; tier?: TierResult | null; evidence?: EvidenceItem[]; headline?: string[] | null; rows: TRow[]; peers: { dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }[]; sites: { domain: string; sector: string; name: string | null }[]; thumbs: ThumbRow[]; data_through: string | null; calls?: StoredCall[];
+  /** Brands whose current homepage shows this signal (site-trait index), and recent stories naming it. */
+  showing?: { domain: string; name: string | null; sector: string }[]; stories?: Story[] };
 export type TraitPage = {
   key: string; name: string; dimension: Dimension; stage: StageName | null; share: number | null; momentum: number | null; nextWave: number | null;
   definition: string; stageNote: string | null; dimensionNote: string | null; card: CardModel | null; chartNote: string | null;
@@ -30,6 +34,9 @@ export type TraitPage = {
   basis: Basis; tier: Tier | null; tierReasons: string[]; momentumIndex: number | null; direction: string | null; confidence: string | null; confidenceReason: string | null; soWhat: string | null;
   /** Supporting evidence: a composite's members, or the composites this signal belongs to. */
   evidence: EvidenceItem[]; rule: string | null; evidenceTitle: string;
+  /** Stage and share in every scope (the sector lens reads its own). */
+  byScope: { scope: string; stage: StageName | null; share: number | null }[];
+  showing: { domain: string; name: string | null; sector: string; href: string }[]; showingTotal: number; stories: Story[]; whoUses: string; blocks: readonly Block[];
 };
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
@@ -73,12 +80,15 @@ export function traitModel(t: TraitRows): TraitPage | null {
     key, name: l.name, dimension: l.dimension, stage, share: all.current_share, momentum: all.momentum, nextWave: num(all.next_wave_score),
     definition: traitDefinition(key), stageNote: stage ? g(stageId(stage))?.measures ?? null : null, dimensionNote: g(dimensionId(l.dimension))?.measures ?? null,
     card, chartNote: card ? null : "Not enough usable quarters for a chart yet: a trait needs two quarters with at least 15 sites and 25% archive coverage.",
-    sectors, receipts, examples, related, terminal: `/?panel=brief&trait=${encodeURIComponent(key)}&sector=all`, dataThrough: quarter(t.data_through), runId: all.run_id ?? null, computedAt: all.computed_at ?? null,
+    sectors, receipts, examples, related, terminal: terminalHref("brief", { trait: key }), dataThrough: quarter(t.data_through), runId: all.run_id ?? null, computedAt: all.computed_at ?? null,
     calls: (t.calls ?? []).slice(0, 24).map(ledgerItem),
     basis: basis(key), tier: t.tier?.tier ?? null, tierReasons: t.tier?.reasons ?? [], momentumIndex: t.signal?.momentum_index ?? null, direction: t.signal?.direction ?? null,
     confidence: t.signal?.confidence ?? null, confidenceReason: t.signal?.confidence_reason ?? null, soWhat: t.tier?.tier === "headline" ? soWhat(key, all.stage) : null,
     evidence: t.evidence ?? evidenceKeys(key).map(k => { const m = label(k); return { key: k, name: m.name, dimension: m.dimension, basis: basis(k), tier: null, stage: null, share: null, href: explainerPath(k) }; }),
     rule: compositeOf(key) ? ruleText(compositeOf(key)!) : null, evidenceTitle: compositeOf(key) ? "Member signals" : "Part of",
+    byScope: t.rows.map(r => ({ scope: r.scope, stage: stageName(r.stage), share: r.current_share })),
+    showing: (t.showing ?? []).slice(0, 12).map(s => ({ ...s, href: brandPath(s.domain) })), showingTotal: (t.showing ?? []).length,
+    stories: (t.stories ?? []).filter(s => s.signalKeys.includes(key)).slice(0, 5), whoUses: consoleHref(`q ${key} AND all`), blocks: OBJECT_BLOCKS,
   };
 }
 export const traitSummary = (p: TraitPage) => [p.stage ? `${p.stage}` : "Not staged yet", pct(p.share, 1) ? `${pct(p.share, 1)} of tracked homepages` : null, p.momentum != null ? `${p.momentum >= 0 ? "gaining" : "losing"} ${pts(p.momentum)}` : null].filter(Boolean).join(" · ");

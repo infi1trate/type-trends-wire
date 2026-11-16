@@ -1,0 +1,306 @@
+// One information architecture: six sections, four object types, two modes. Pure.
+// Every page route, old terminal panel, terminal tab, key and console command family resolves through this file (ia.test.ts checks for orphans).
+
+export type SectionId = "live" | "signals" | "brands" | "patterns" | "digest" | "tools";
+export type Mode = "read" | "terminal";
+export type Section = { id: SectionId; label: string; purpose: string; read: string; terminal: TabId; key: string };
+
+/** The four object types; every object page renders the same four blocks in this order. */
+export const OBJECT_TYPES = ["signal", "brand", "story", "pattern"] as const;
+export type ObjectType = (typeof OBJECT_TYPES)[number];
+export const OBJECT_BLOCKS = ["headline", "evidence", "so-what", "related"] as const;
+export type Block = (typeof OBJECT_BLOCKS)[number];
+export const BLOCK_TITLE: Record<Block, string> = { headline: "Headline", evidence: "Evidence", "so-what": "So what", related: "Related" };
+
+/** Terminal tabs, grouped by section. Old panel ids stay as tab ids so every stored link keeps resolving. */
+export const TABS = [
+  { id: "today", section: "live", label: "TODAY" },
+  { id: "wire", section: "live", label: "WIRE" },
+  { id: "overview", section: "signals", label: "ALL SIGNALS" },
+  { id: "type", section: "signals", label: "TYPE" },
+  { id: "color", section: "signals", label: "COLOR" },
+  { id: "layout", section: "signals", label: "LAYOUT" },
+  { id: "lexicon", section: "signals", label: "VOICE" },
+  { id: "vibe", section: "signals", label: "VIBE MAP" },
+  { id: "brief", section: "signals", label: "FORECAST" },
+  { id: "library", section: "brands", label: "DIRECTORY" },
+  { id: "rebrands", section: "brands", label: "MOVES" },
+  { id: "history", section: "brands", label: "HISTORY" },
+  { id: "patterns", section: "patterns", label: "PATTERNS" },
+  { id: "digest", section: "digest", label: "ISSUES" },
+  { id: "watch", section: "tools", label: "WATCH" },
+  { id: "audit", section: "tools", label: "AUDIT" },
+  { id: "ledger", section: "tools", label: "LEDGER" },
+  { id: "console", section: "tools", label: "CONSOLE" },
+] as const satisfies readonly { id: string; section: SectionId; label: string }[];
+export type TabId = (typeof TABS)[number]["id"];
+/** A terminal view: a tab, or a sub-view inside one (Composition lives inside the Layout tab). */
+export type ViewId = TabId | "composition";
+export const SUB_VIEWS: Record<"composition", TabId> = { composition: "layout" };
+
+export const SECTIONS: readonly Section[] = [
+  { id: "live", label: "Live", purpose: "What is changing right now: the story stream, newest first.", read: "/", terminal: "today", key: "F1" },
+  { id: "signals", label: "Signals", purpose: "The design signals worth a decision, ranked, each with its receipts.", read: "/signals", terminal: "overview", key: "F2" },
+  { id: "brands", label: "Brands", purpose: "Who is doing it: tracked brands, their identity and every confirmed move.", read: "/brands", terminal: "library", key: "F3" },
+  { id: "patterns", label: "Patterns", purpose: "Signals seen as examples: the brands that show each layout pattern.", read: "/patterns", terminal: "patterns", key: "F4" },
+  { id: "digest", label: "Digest", purpose: "The weekly edition: movers, specimens, palettes and rebrands of the week.", read: "/digest", terminal: "digest", key: "F5" },
+  { id: "tools", label: "Tools", purpose: "Where to act: audits, watchlists, the forecast ledger and agent access.", read: "/tools", terminal: "watch", key: "F6" },
+];
+
+/** The fourteen panels the terminal had before Phase 13, with their old keys (kept for aliases and tests). */
+export const LEGACY_PANELS = [
+  { key: "T", id: "today", label: "TODAY" },
+  { key: "F1", id: "overview", label: "SIGNALS" },
+  { key: "F2", id: "type", label: "TYPE" },
+  { key: "F3", id: "color", label: "COLOR" },
+  { key: "F4", id: "layout", label: "LAYOUT" },
+  { key: "F5", id: "composition", label: "COMPOSITION" },
+  { key: "F6", id: "lexicon", label: "LEXICON" },
+  { key: "F7", id: "vibe", label: "VIBE" },
+  { key: "F8", id: "wire", label: "WIRE" },
+  { key: "F9", id: "rebrands", label: "REBRANDS" },
+  { key: "F10", id: "brief", label: "FORECAST" },
+  { key: "F11", id: "library", label: "LIBRARY" },
+  { key: "F12", id: "history", label: "HISTORY" },
+  { key: "W", id: "watch", label: "WATCH" },
+] as const;
+
+/** Other names that still open the right view (muscle memory, shared links, section ids). */
+export const VIEW_ALIASES: Record<string, ViewId> = {
+  ticker: "overview", signals: "overview", forecast: "brief", spread: "overview", voice: "lexicon", directory: "library", moves: "rebrands",
+  issues: "digest", live: "today", brands: "library", tools: "watch", help: "console", stories: "today",
+};
+const isView = (v: string): v is ViewId => v === "composition" || TABS.some(t => t.id === v);
+export function resolveView(id: unknown): ViewId {
+  if (typeof id !== "string" || !id) return "today";
+  const v = id.toLowerCase();
+  return isView(v) ? v : VIEW_ALIASES[v] ?? "today";
+}
+export const tabOf = (v: ViewId): TabId => (v === "composition" ? SUB_VIEWS.composition : v);
+export const sectionOf = (v: ViewId): SectionId => TABS.find(t => t.id === tabOf(v))!.section;
+export const sectionById = (id: SectionId) => SECTIONS.find(s => s.id === id)!;
+export const tabsIn = (s: SectionId) => TABS.filter(t => t.section === s);
+/** Next/previous tab inside the view's section, wrapping. */
+export function stepTab(v: ViewId, dir: 1 | -1): TabId {
+  const tabs = tabsIn(sectionOf(v)), i = tabs.findIndex(t => t.id === tabOf(v));
+  return tabs[(i + dir + tabs.length) % tabs.length]!.id;
+}
+
+// KEYS — F1–F6 (and 1–6) open sections; old keys are aliases to where their panel now lives.
+export type KeyTarget = { section: SectionId } | { view: ViewId } | { action: "glossary" | "console" | "mode" | "prev-tab" | "next-tab" | "close" };
+export type KeyDef = { key: string; target: KeyTarget; label: string; alias?: true };
+export const KEY_MAP: readonly KeyDef[] = [
+  ...SECTIONS.map(s => ({ key: s.key, target: { section: s.id }, label: s.label })),
+  { key: "T", target: { view: "today" }, label: "Live · Today", alias: true },
+  { key: "F7", target: { view: "vibe" }, label: "Signals · Vibe map", alias: true },
+  { key: "F8", target: { view: "wire" }, label: "Live · Wire", alias: true },
+  { key: "F9", target: { view: "rebrands" }, label: "Brands · Moves", alias: true },
+  { key: "F10", target: { view: "brief" }, label: "Signals · Forecast", alias: true },
+  { key: "F11", target: { view: "library" }, label: "Brands · Directory", alias: true },
+  { key: "F12", target: { view: "history" }, label: "Brands · History", alias: true },
+  { key: "W", target: { view: "watch" }, label: "Tools · Watch", alias: true },
+  { key: "D", target: { section: "digest" }, label: "Digest", alias: true },
+  { key: "[", target: { action: "prev-tab" }, label: "Previous tab (also ←)" },
+  { key: "]", target: { action: "next-tab" }, label: "Next tab (also →)" },
+  { key: "`", target: { action: "mode" }, label: "Switch Read ⇄ Terminal" },
+  { key: "?", target: { action: "glossary" }, label: "Glossary" },
+  { key: "/", target: { action: "console" }, label: "Console" },
+  { key: "Esc", target: { action: "close" }, label: "Close overlay" },
+];
+/** A pressed key (event.key) → its definition. Letters are case-insensitive; digits 1–6 open sections; ArrowLeft/Right step tabs. */
+export function resolveKey(key: string): KeyDef | null {
+  if (/^[1-6]$/.test(key)) return KEY_MAP.find(k => k.key === `F${key}`) ?? null;
+  if (key === "ArrowLeft") return KEY_MAP.find(k => k.key === "[") ?? null;
+  if (key === "ArrowRight") return KEY_MAP.find(k => k.key === "]") ?? null;
+  if (key === "Escape") return KEY_MAP.find(k => k.key === "Esc") ?? null;
+  const k = key.length === 1 ? key.toUpperCase() : key;
+  return KEY_MAP.find(d => d.key === k) ?? null;
+}
+/** The view a key opens (sections open their first tab), or null for actions. */
+export const keyView = (d: KeyDef | null): ViewId | null => (!d ? null : "view" in d.target ? d.target.view : "section" in d.target ? sectionById(d.target.section).terminal : null);
+
+// URLS — the terminal lives at /terminal; `/` is always Read.
+export type TerminalSearch = { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?: string | undefined; trait?: string | undefined };
+const enc = encodeURIComponent;
+const qs = (o: Record<string, string | number | boolean | undefined | null>) => {
+  const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "" && v !== false).map(([k, v]) => `${k}=${enc(String(v))}`);
+  return p.length ? `?${p.join("&")}` : "";
+};
+const lensOf = (s: Record<string, unknown>) => (typeof s["sector"] === "string" && s["sector"] && s["sector"] !== "all" ? (s["sector"] as string) : undefined);
+export const terminalHref = (view: ViewId, extra: { trait?: string | undefined; sector?: string | undefined; cmd?: string | undefined } = {}) =>
+  `/terminal${qs({ panel: view, trait: extra.trait, sector: extra.sector && extra.sector !== "all" ? extra.sector : undefined, cmd: extra.cmd })}`;
+/** A console command opened in Terminal mode, prefilled. */
+export const consoleHref = (cmd: string, sector?: string) => terminalHref("console", { cmd, sector });
+export const signalPath = (key: string) => `/signals/${enc(key)}`;
+export const brandPath = (domain: string) => `/brands/${enc(domain)}`;
+export const patternPath = (key: string) => `/patterns/${enc(key)}`;
+
+/** Search params only the old terminal at `/` used; any of them on `/` means an old terminal link. */
+export const LEGACY_PARAMS = ["panel", "trait", "cmd", "q", "sort", "desc", "alert"] as const;
+/** Old `/?panel=…` links → the matching /terminal search (panel resolved through the alias map), or null when `/` should render Live. */
+export function legacyTerminalSearch(raw: Record<string, unknown>): TerminalSearch | null {
+  if (!LEGACY_PARAMS.some(k => raw[k] !== undefined && raw[k] !== "")) return null;
+  const s = (k: string) => (typeof raw[k] === "string" && raw[k] !== "" ? (raw[k] as string) : undefined);
+  const out: TerminalSearch = { panel: resolveView(s("panel") ?? "today") };
+  for (const k of ["sector", "q", "sort", "cmd", "trait"] as const) { const v = s(k); if (v !== undefined) out[k] = v; }
+  if (raw["desc"] === true || raw["desc"] === "true") out.desc = true;
+  if (typeof raw["page"] === "number") out.page = raw["page"]; else if (typeof raw["page"] === "string" && /^\d+$/.test(raw["page"])) out.page = Number(raw["page"]);
+  return out;
+}
+/** Which mode a path belongs to. */
+export const modeOf = (pathname: string): Mode => (pathname === "/terminal" || pathname.startsWith("/terminal/") || pathname.startsWith("/library/") ? "terminal" : "read");
+
+/** Backtick / mode switch: the same object or section in the other mode, keeping the sector lens. */
+export function toggleHref(pathname: string, search: Record<string, unknown> = {}): string {
+  const sector = lensOf(search), seg = pathname.split("/").filter(Boolean).map(x => { try { return decodeURIComponent(x); } catch { return x; } });
+  if (modeOf(pathname) === "terminal") {
+    if (seg[0] === "library" && seg[1]) return `${brandPath(seg[1])}${qs({ sector })}`;
+    const view = resolveView(search["panel"]), trait = typeof search["trait"] === "string" && search["trait"] ? (search["trait"] as string) : undefined;
+    if (trait) return `${view === "patterns" ? patternPath(trait) : signalPath(trait)}${qs({ sector })}`;
+    if (view === "rebrands") return `/brands${qs({ tab: "moves", sector })}`;
+    if (view === "ledger") return "/ledger";
+    if (view === "audit") return "/audit/new";
+    return `${sectionById(sectionOf(view)).read}${qs({ sector })}`;
+  }
+  const t = (v: ViewId, trait?: string) => terminalHref(v, { trait, sector });
+  switch (seg[0]) {
+    case undefined: return t("today");
+    case "signals": case "trait": return seg[1] ? t("brief", seg[1]) : t("overview");
+    case "what-we-show": return t("overview");
+    case "brands": return seg[1] ? `/library/${enc(seg[1])}` : t(search["tab"] === "moves" ? "rebrands" : "library");
+    case "patterns": return seg[1] ? t("patterns", seg[1]) : t("patterns");
+    case "digest": case "chart": return t("digest");
+    case "watch": return t("watch");
+    case "audit": return t("audit");
+    case "ledger": return t("ledger");
+    case "tools": case "status": return t("watch");
+    default: return t("today");
+  }
+}
+/** The Read section a path belongs to (for the active nav item). */
+export function readSectionOf(pathname: string): SectionId | null {
+  const s = pathname.split("/").filter(Boolean)[0];
+  if (!s) return "live";
+  if (s === "signals" || s === "trait" || s === "what-we-show") return "signals";
+  if (s === "brands") return "brands";
+  if (s === "patterns") return "patterns";
+  if (s === "digest" || s === "chart") return "digest";
+  if (["tools", "status", "watch", "audit", "ledger"].includes(s)) return "tools";
+  return null;
+}
+
+// SURFACES — every route file, old panel, terminal tab, overlay and console command family.
+export type Surface = { section: SectionId; mode: Mode | "both"; status: "shown" | "quiet"; note: string };
+const S = (section: SectionId, mode: Surface["mode"], status: Surface["status"], note: string): Surface => ({ section, mode, status, note });
+/** Keys: route files relative to src/routes without extension ("signals.$key"), "family/*" for route families, "panel:<id>", "overlay:<id>", "cmd:<verb>". */
+export const SURFACES: Record<string, Surface> = {
+  // Read pages
+  "index": S("live", "read", "shown", "The front page: lead story, story stream, moving now, chart of the week, new launches. Old /?panel= links redirect to /terminal."),
+  "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
+  "signals.$key": S("signals", "read", "shown", "Signal object page (was the trait explainer)."),
+  "trait.$key": S("signals", "read", "quiet", "Redirects to /signals/<key>; kept so old links and share cards work."),
+  "trait.{$key}[.]png": S("signals", "both", "quiet", "Signal share image (open for link previews); used by /signals pages too."),
+  "what-we-show": S("signals", "read", "shown", "What we show and why, with Where things live from this registry."),
+  "brands.index": S("brands", "read", "shown", "Searchable brand directory with sector filter and a Moves tab."),
+  "brands.$domain": S("brands", "read", "shown", "Brand object page; links to its dense terminal record."),
+  "library.$domain": S("brands", "terminal", "shown", "Dense brand record (Terminal view of a brand)."),
+  "patterns.index": S("patterns", "read", "shown", "Headline layout and composite signals with at least three example brands."),
+  "patterns.$key": S("patterns", "read", "shown", "Pattern object page: example brands as a grid, filterable by sector."),
+  "digest.index": S("digest", "read", "shown", "Latest issue."),
+  "digest.$week": S("digest", "read", "shown", "One issue."),
+  "digest.archive": S("digest", "read", "shown", "Every issue."),
+  "digest.rss[.]xml": S("digest", "read", "quiet", "Digest RSS feed (gated)."),
+  "digest.{$week}[.]png": S("digest", "both", "quiet", "Issue share image (open)."),
+  "chart.index": S("digest", "terminal", "quiet", "Chart of the week, latest (linked from Live and the Digest)."),
+  "chart.$week": S("digest", "terminal", "quiet", "Chart of the week page."),
+  "chart.{$week}[.]png": S("digest", "both", "quiet", "Chart share image (open)."),
+  "chart.{$week}[.]svg": S("digest", "both", "quiet", "Chart vector image (open)."),
+  "tools": S("tools", "read", "shown", "One page linking every ACT tool."),
+  "status": S("tools", "read", "quiet", "Health, model card and ops details; out of the reader's path."),
+  "audit.index": S("tools", "read", "shown", "Competitive audit."),
+  "audit.new": S("tools", "read", "shown", "Start an audit."),
+  "audit[.]png": S("tools", "both", "quiet", "Audit share card (open)."),
+  "watch.$id": S("tools", "read", "shown", "A watchlist (capability link)."),
+  "watch.new": S("tools", "read", "shown", "Create a watchlist."),
+  "ledger": S("tools", "read", "shown", "Forecast ledger and hit rate."),
+  "terminal": S("live", "terminal", "shown", "Terminal mode: the same six sections, dense, keyboard-first."),
+  "embed.trait.$key": S("tools", "both", "quiet", "Embeddable signal widget (open)."),
+  "embed.chart.$week": S("tools", "both", "quiet", "Embeddable chart widget (open)."),
+  "robots[.]txt": S("tools", "both", "quiet", "Crawler instructions."),
+  "thumbs.$": S("brands", "both", "quiet", "Credited homepage thumbnails."),
+  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 23 tools (agent access)."),
+  "api/public/oembed": S("tools", "both", "quiet", "oEmbed provider for signal and chart pages."),
+  "api/public/watch-feed.{$token}[.]xml": S("tools", "both", "quiet", "Per-watchlist RSS."),
+  "api/public/health": S("tools", "both", "quiet", "Machine-readable health; shown in words on /status."),
+  "api/public/*": S("tools", "both", "quiet", "Machine endpoints: cron callbacks, crawler/thumb ingest, opt-out, MCP keys admin, OAuth metadata."),
+  // Old terminal panels and new tabs
+  "panel:today": S("live", "terminal", "shown", "Live · Today (key T)."),
+  "panel:wire": S("live", "terminal", "shown", "Live · Wire (old F8)."),
+  "panel:overview": S("signals", "terminal", "shown", "Signals · All signals (old F1)."),
+  "panel:type": S("signals", "terminal", "shown", "Signals · Type (old F2)."),
+  "panel:color": S("signals", "terminal", "shown", "Signals · Color (old F3)."),
+  "panel:layout": S("signals", "terminal", "shown", "Signals · Layout (old F4), with Composition as a sub-tab."),
+  "panel:composition": S("signals", "terminal", "shown", "Signals · Layout › Composition (old F5)."),
+  "panel:lexicon": S("signals", "terminal", "shown", "Signals · Voice (old F6 Lexicon)."),
+  "panel:vibe": S("signals", "terminal", "shown", "Signals · Vibe map (old F7)."),
+  "panel:brief": S("signals", "terminal", "shown", "Signals · Forecast: stage board, next wave, model card (old F10)."),
+  "panel:library": S("brands", "terminal", "shown", "Brands · Directory (old F11 Library)."),
+  "panel:rebrands": S("brands", "terminal", "shown", "Brands · Moves: rebrands and recent changes (old F9)."),
+  "panel:history": S("brands", "terminal", "shown", "Brands · History (old F12)."),
+  "panel:patterns": S("patterns", "terminal", "shown", "Patterns: dense pattern list."),
+  "panel:digest": S("digest", "terminal", "shown", "Digest issues in terminal density (key D)."),
+  "panel:watch": S("tools", "terminal", "shown", "Tools · Watch (key W)."),
+  "panel:audit": S("tools", "terminal", "shown", "Tools · Audit launcher."),
+  "panel:ledger": S("tools", "terminal", "shown", "Tools · Ledger summary."),
+  "panel:console": S("tools", "terminal", "shown", "Tools · Console help."),
+  // Overlays
+  "overlay:glossary": S("tools", "both", "shown", "Glossary (?), in both modes."),
+  "overlay:methodology": S("tools", "both", "shown", "Methodology (#m-…), in both modes."),
+  "overlay:mcp": S("tools", "terminal", "shown", "MCP guide; linked from Tools."),
+  "overlay:health": S("tools", "terminal", "quiet", "Health line in the terminal footer; details on /status. Never in the Read shell."),
+  "overlay:tour": S("live", "both", "shown", "First-visit tour, once per mode per device."),
+  // Console command families
+  "cmd:today": S("live", "terminal", "shown", "Open Live · Today."),
+  "cmd:signals": S("signals", "terminal", "shown", "Open Signals · All signals (also ticker)."),
+  "cmd:tour": S("live", "terminal", "shown", "Restart the tour."),
+  "cmd:glossary": S("tools", "terminal", "shown", "Open the glossary."),
+  "cmd:digest": S("digest", "terminal", "shown", "Open the Digest."),
+  "cmd:watch": S("tools", "terminal", "shown", "watch, watch new/add/rm/open."),
+  "cmd:audit": S("tools", "terminal", "shown", "audit <sites>."),
+  "cmd:ledger": S("tools", "terminal", "shown", "The live record inline."),
+  "cmd:read": S("live", "terminal", "shown", "Switch to Read mode (same object)."),
+  "cmd:type": S("tools", "terminal", "quiet", "Recommend type; offered in context on brand pages."),
+  "cmd:palette": S("tools", "terminal", "quiet", "Recommend a palette."),
+  "cmd:diff": S("tools", "terminal", "quiet", "Differentiate; offered on brand pages."),
+  "cmd:critique": S("tools", "terminal", "quiet", "Critique a URL; audit pending sites link here."),
+  "cmd:q": S("tools", "terminal", "quiet", "Query signals; 'Who uses this well' on signal pages."),
+  "cmd:help": S("tools", "terminal", "shown", "List commands."),
+};
+/** Surface for a route file key, falling back to its "family/*" entry. */
+export function surfaceOf(key: string): Surface | null {
+  if (SURFACES[key]) return SURFACES[key]!;
+  const fam = Object.keys(SURFACES).filter(k => k.endsWith("/*") && key.startsWith(k.slice(0, -1))).sort((a, b) => b.length - a.length)[0];
+  return fam ? SURFACES[fam]! : null;
+}
+/** "Where things live" for /what-we-show: each section with its shown and quiet surfaces. */
+export function whereThingsLive() {
+  return SECTIONS.map(s => {
+    const items = Object.entries(SURFACES).filter(([, v]) => v.section === s.id);
+    return { ...s, shown: items.filter(([, v]) => v.status === "shown").map(([k, v]) => ({ key: k, ...v })), quiet: items.filter(([, v]) => v.status === "quiet").map(([k, v]) => ({ key: k, ...v })) };
+  });
+}
+
+// SIGNAL INDEX TABS — /signals groups headline signals by dimension; Voice is the tone/positioning slice of VIBE (the old Lexicon panel's headline set).
+export const SIGNAL_TABS = [
+  { id: "all", label: "All" }, { id: "type", label: "Type" }, { id: "color", label: "Color" }, { id: "layout", label: "Layout" }, { id: "voice", label: "Voice" }, { id: "vibe", label: "Vibe" },
+] as const;
+export type SignalTab = (typeof SIGNAL_TABS)[number]["id"];
+const VOICE = (k: string) => /^(tone|ai_positioning):/.test(k) || k === "combo:ai_forward" || k === "combo:playful_brand";
+/** Which /signals tab a signal belongs to (besides All). */
+export function signalTabOf(key: string, dimension: string): Exclude<SignalTab, "all"> {
+  if (dimension === "FONT") return "type";
+  if (dimension === "COLOR") return "color";
+  if (dimension === "LAYOUT") return "layout";
+  return VOICE(key) ? "voice" : "vibe";
+}
+export const resolveSignalTab = (v: unknown): SignalTab => (SIGNAL_TABS.some(t => t.id === v) ? (v as SignalTab) : "all");

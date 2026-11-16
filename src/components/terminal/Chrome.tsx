@@ -1,7 +1,10 @@
 import { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
-import { PANELS, type PanelId } from "./panels";
+import { type PanelId } from "./panels";
+import { SECTIONS, sectionById, sectionOf, tabOf, tabsIn } from "@/lib/ia";
+import { LENS_SECTORS, showingText } from "@/lib/sector-lens";
+import { sectorName } from "@/lib/labels";
 import { SpreadTicker } from "./Spread";
 import { LibraryTicker } from "./Library";
 
@@ -18,24 +21,50 @@ function Clock() {
   return <time className="tabular-nums text-ink" aria-label="UTC time">{s} <span className="text-g500">UTC</span></time>;
 }
 
+/** F1–F6: the six sections (old F7–F12, T, W and D stay as aliases; see src/lib/ia.ts). */
 export function FKeys({ active, onSelect }: { active: PanelId; onSelect: (p: PanelId) => void }) {
-  const nav=useRef<HTMLElement>(null);
+  const nav=useRef<HTMLElement>(null), current = sectionOf(active);
   useEffect(()=>{nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView({block:"nearest",inline:"nearest"});},[active]);
   return (
-    <nav ref={nav} aria-label="Panels" className="no-scrollbar flex h-full min-w-0 overflow-x-auto">
-      {PANELS.map((p) => (
+    <nav ref={nav} aria-label="Sections" className="no-scrollbar flex h-full min-w-0 overflow-x-auto">
+      {SECTIONS.map((s) => (
         <button
-          key={p.id}
-          onClick={() => onSelect(p.id)}
-          aria-current={active === p.id ? "page" : undefined}
+          key={s.id}
+          onClick={() => onSelect(s.terminal)}
+          aria-current={current === s.id ? "page" : undefined}
           className={`label h-full shrink-0 border-l border-rule px-2 last:border-r ${
-            active === p.id ? "bg-ink text-void" : "text-g500 hover:text-ink"
+            current === s.id ? "bg-ink text-void" : "text-g500 hover:text-ink"
           }`}
         >
-          <span className={active === p.id ? "" : "text-ink"}>{p.key}</span> {p.label}
+          <span className={current === s.id ? "" : "text-ink"}>{s.key}</span> {s.label.toUpperCase()}
         </button>
       ))}
     </nav>
+  );
+}
+
+/** The current section's tabs (←/→ or [ ] move between them), the sector lens and the Read switch. */
+export function TabRow({ active, onSelect, sector, onSector, readHref, onRead }: { active: PanelId; onSelect: (p: PanelId) => void; sector: string; onSector: (s: string) => void; readHref: string; onRead: () => void }) {
+  const tabs = tabsIn(sectionOf(active)), tab = tabOf(active);
+  return (
+    <div className="flex min-h-8 flex-wrap items-stretch border-b border-rule bg-void">
+      <div role="tablist" aria-label={`${sectionById(sectionOf(active)).label} tabs`} className="no-scrollbar flex min-w-0 flex-1 basis-full overflow-x-auto border-b border-rule md:basis-0 md:border-b-0">
+        {tabs.map(t => (
+          <button key={t.id} role="tab" aria-selected={tab === t.id} tabIndex={tab === t.id ? 0 : -1} onClick={() => onSelect(t.id)}
+            className={`label min-h-11 shrink-0 border-r border-rule px-3 md:min-h-8 ${tab === t.id ? "text-ink underline decoration-signal decoration-2 underline-offset-4" : "text-g500 hover:text-ink"}`}>{t.label}</button>
+        ))}
+        <span className="label hidden items-center px-3 text-g500 lg:flex">[ ] OR ← → · ` READ</span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 px-3">
+        <label className="label flex items-center gap-1 text-g500">SECTOR
+          <select value={sector} onChange={e => onSector(e.target.value)} className="label min-h-11 border border-rule bg-void px-1 text-ink md:min-h-6">
+            {LENS_SECTORS.map(s => <option key={s} value={s}>{sectorName(s).toUpperCase()}</option>)}
+          </select>
+        </label>
+        <span className="label hidden text-ink sm:inline" aria-live="polite">{showingText(sector).toUpperCase()}</span>
+        <a href={readHref} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); onRead(); }} className="label inline-flex min-h-11 items-center border border-rule px-2 text-ink hover:bg-ink hover:text-void md:min-h-6" title="Switch to Read mode (`)">READ ⇄</a>
+      </div>
+    </div>
   );
 }
 
@@ -116,43 +145,27 @@ export function Ticker() {
   );
 }
 
-export function MobileKeys({ active, onSelect }: { active: PanelId; onSelect: (p: PanelId) => void }) {
-  const [more, setMore] = useState(false);
-  const primary = PANELS.filter((p) => ["today", "overview", "wire"].includes(p.id));
-  const rest = PANELS.filter((p) => !["today", "overview", "wire"].includes(p.id));
+export function MobileKeys({ active, onSelect, onRead }: { active: PanelId; onSelect: (p: PanelId) => void; onRead: () => void }) {
+  const [more, setMore] = useState(false), current = sectionOf(active);
+  const primary = SECTIONS.slice(0, 3), rest = SECTIONS.slice(3);
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 md:hidden">
       {more && (
         <div className="grid grid-cols-2 border-t border-rule bg-void">
-          {rest.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => { onSelect(p.id); setMore(false); }}
-              className={`label h-10 border-b border-r border-rule text-left px-3 ${active === p.id ? "bg-ink text-void" : "text-ink"}`}
-            >
-              {p.key} {p.label}
-            </button>
+          {rest.map((s) => (
+            <button key={s.id} onClick={() => { onSelect(s.terminal); setMore(false); }}
+              className={`label h-11 border-b border-r border-rule px-3 text-left ${current === s.id ? "bg-ink text-void" : "text-ink"}`}>{s.key} {s.label.toUpperCase()}</button>
           ))}
+          <button onClick={() => { setMore(false); onRead(); }} className="label h-11 border-b border-r border-rule px-3 text-left text-ink">` READ MODE</button>
         </div>
       )}
-      <nav aria-label="Panels" className="grid h-10 grid-cols-4 border-t border-rule bg-g900">
-        {primary.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => { onSelect(p.id); setMore(false); }}
-            aria-current={active === p.id ? "page" : undefined}
-            className={`label h-10 border-r border-rule ${active === p.id ? "bg-ink text-void" : "text-ink"}`}
-          >
-            {p.key} {p.label}
-          </button>
+      <nav aria-label="Sections" className="grid h-11 grid-cols-4 border-t border-rule bg-g900">
+        {primary.map((s) => (
+          <button key={s.id} onClick={() => { onSelect(s.terminal); setMore(false); }} aria-current={current === s.id ? "page" : undefined}
+            className={`label h-11 border-r border-rule ${current === s.id ? "bg-ink text-void" : "text-ink"}`}>{s.key} {s.label.toUpperCase()}</button>
         ))}
-        <button
-          onClick={() => setMore((m) => !m)}
-          aria-expanded={more}
-          className={`label h-10 ${more || rest.some((r) => r.id === active) ? "bg-ink text-void" : "text-ink"}`}
-        >
-          MORE
-        </button>
+        <button onClick={() => setMore((m) => !m)} aria-expanded={more}
+          className={`label h-11 ${more || rest.some((r) => r.id === current) ? "bg-ink text-void" : "text-ink"}`}>MORE</button>
       </nav>
     </div>
   );

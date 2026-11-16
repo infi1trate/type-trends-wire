@@ -101,7 +101,7 @@ export function auditModel(r: AuditRows): Audit {
   const fc = new Map(r.forecasts.map(f => [`${f.scope}|${f.dimension}:${f.value}`, f]));
   const ref = (trait: string, scope: string): TraitRef => {
     const f = fc.get(`${scope}|${trait}`), l = label(trait);
-    return { trait, name: l.name, dimension: l.dimension, basis: basis(trait), stage: stageName(f?.stage), share: f?.current_share ?? null, explainer: explainerPath(trait), receipt: `/?panel=brief&trait=${encodeURIComponent(trait)}&sector=${scope}` };
+    return { trait, name: l.name, dimension: l.dimension, basis: basis(trait), stage: stageName(f?.stage), share: f?.current_share ?? null, explainer: explainerPath(trait), receipt: `/terminal?panel=brief&trait=${encodeURIComponent(trait)}&sector=${scope}` };
   };
 
   const eventsBy = (d: string) => r.events.filter(e => e.domain === d).sort((a, b) => b.detected_at.localeCompare(a.detected_at));
@@ -162,7 +162,7 @@ export function auditModel(r: AuditRows): Audit {
   const since = new Date(Date.parse(r.now) - MOVES_DAYS * 864e5).toISOString();
   const moveSites = sites.map(s => ({ domain: s.domain, items: [
     ...eventsBy(s.domain).filter(e => e.detected_at >= since).map(e => ({ at: e.detected_at, text: eventSentence(e), href: `/library/${s.domain}` })),
-    ...r.rebrands.filter(x => x.domain === s.domain && x.confirmed_at >= since).map(x => ({ at: x.confirmed_at, text: `${rebrandSentence(x)}. ${x.read}`, href: "/?panel=rebrands" })),
+    ...r.rebrands.filter(x => x.domain === s.domain && x.confirmed_at >= since).map(x => ({ at: x.confirmed_at, text: `${rebrandSentence(x)}. ${x.read}`, href: "/terminal?panel=rebrands" })),
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 12) })).filter(m => m.items.length);
   const moves = moveSites.length ? { sites: moveSites } : null;
 

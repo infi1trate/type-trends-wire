@@ -82,7 +82,7 @@ export function renderEmbedNotFound(theme: Theme): string {
 
 /** Path of the embed for a trait or chart page URL path (also accepts the embed paths themselves). */
 export function embedTarget(pathname: string): { kind: "trait"; key: string } | { kind: "chart"; week: string } | null {
-  const t = /^\/(?:embed\/)?trait\/([^/]+)$/.exec(pathname), c = /^\/(?:embed\/)?chart\/(\d{4}-W\d{2})$/.exec(pathname);
+  const t = /^\/(?:embed\/)?(?:trait|signals)\/([^/]+)$/.exec(pathname), c = /^\/(?:embed\/)?chart\/(\d{4}-W\d{2})$/.exec(pathname);
   if (t) { try { const key = canonical(decodeURIComponent(t[1]!)); return /^[a-z0-9_]+:[^\s]{1,80}$/i.test(key) ? { kind: "trait", key } : null; } catch { return null; } }
   return c ? { kind: "chart", week: c[1]! } : null;
 }

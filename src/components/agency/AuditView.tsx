@@ -22,7 +22,7 @@ function MatrixTable({ m, caption, head }: { m: Matrix; caption: string; head: s
       <caption className="ed-caption mb-2 text-left">{caption}</caption>
       <thead><tr className="border-b border-ed-ink"><th scope="col" className="py-2 pr-4 font-semibold">{head}</th>{m.domains.map(d => <th key={d} scope="col" className="py-2 pr-3 font-semibold">{d}</th>)}</tr></thead>
       <tbody>{m.rows.map(r => <tr key={r.trait} className="ed-hair">
-        <th scope="row" className="py-2 pr-4 font-normal"><a href={`/trait/${encodeURIComponent(r.trait)}`}>{r.name}</a> <BasisWord b={r.basis} /></th>
+        <th scope="row" className="py-2 pr-4 font-normal"><a href={`/signals/${encodeURIComponent(r.trait)}`}>{r.name}</a> <BasisWord b={r.basis} /></th>
         {r.cells.map((c, i) => <td key={m.domains[i]} className="py-2 pr-3" aria-label={c == null ? "no data" : c ? "yes" : "no"}>{c == null ? "·" : c ? "✓" : "–"}</td>)}
       </tr>)}</tbody>
     </table>

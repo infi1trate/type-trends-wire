@@ -42,16 +42,16 @@ export function buildToday(i: TodayInput): Today {
   const head = i.headline ?? null, isHead = (k: string | null | undefined) => !head || (!!k && head.has(canonical(k)));
   if (i.runs.latest && i.runs.previous) for (const s of stageChanges(i.stages.latest, i.stages.previous).filter(s => isHead(s.trait)).slice(0, 2)) {
     const l = label(s.trait);
-    add(0, { id: `stage:${s.trait}`, text: `${l.name} moved from ${s.from} to ${s.to} across all sectors${s.share != null ? ` (${pct(s.share)} of sites)` : ""}`, href: `/?panel=brief&trait=${encodeURIComponent(s.trait)}`, at: i.runs.latest.computed_at, dimension: l.dimension, basis: basis(s.trait), target: "trait" });
+    add(0, { id: `stage:${s.trait}`, text: `${l.name} moved from ${s.from} to ${s.to} across all sectors${s.share != null ? ` (${pct(s.share)} of sites)` : ""}`, href: `/terminal?panel=brief&trait=${encodeURIComponent(s.trait)}`, at: i.runs.latest.computed_at, dimension: l.dimension, basis: basis(s.trait), target: "trait" });
   }
   const alerts = i.alerts.filter(a => !head || !a.ref || isHead(a.ref)), a = alerts[0];
-  if (a) add(1, { id: `alert:${a.url}`, text: `New alert: ${alertDisplayTitle(a.title, a.ref)}${alerts.length > 1 ? ` (1 of ${alerts.length} from the ${day(a.published_at)} forecast)` : ""}`, href: a.url.replace(SITE, "") || "/?panel=wire", at: a.published_at, ...(a.ref ? { target: "trait" as const, basis: basis(a.ref) } : {}) });
+  if (a) add(1, { id: `alert:${a.url}`, text: `New alert: ${alertDisplayTitle(a.title, a.ref)}${alerts.length > 1 ? ` (1 of ${alerts.length} from the ${day(a.published_at)} forecast)` : ""}`, href: a.url.replace(SITE, "") || "/terminal?panel=wire", at: a.published_at, ...(a.ref ? { target: "trait" as const, basis: basis(a.ref) } : {}) });
   if (i.event) add(2, { id: `site:${i.event.domain}`, text: `${i.event.domain} changed: ${i.event.summary}${i.event.sector ? ` (${i.event.sector.replace(/-/g, " ")})` : ""}`, href: `/library/${encodeURIComponent(i.event.domain)}`, at: i.event.detected_at, target: "site" });
-  if (!head && i.type && i.type.delta7 > 0) add(3, { id: `type:${i.type.family}`, text: `${i.type.family} climbed ${i.type.delta7} places on Google Fonts this week, the biggest climb in the ${i.type.snapshot} snapshot`, href: "/?panel=type", at: `${i.type.snapshot}T23:59:59Z`, dimension: "FONT" });
-  if (i.wire.latest) add(4, { id: "wire", text: i.wire.count24h > 0 ? `${i.wire.count24h} new design ${i.wire.count24h === 1 ? "story" : "stories"} in the last 24 hours; the latest is “${i.wire.latest.title}” from ${i.wire.latest.source}` : `Latest design story: “${i.wire.latest.title}” from ${i.wire.latest.source}`, href: "/?panel=wire", at: i.wire.latest.published_at });
+  if (!head && i.type && i.type.delta7 > 0) add(3, { id: `type:${i.type.family}`, text: `${i.type.family} climbed ${i.type.delta7} places on Google Fonts this week, the biggest climb in the ${i.type.snapshot} snapshot`, href: "/terminal?panel=type", at: `${i.type.snapshot}T23:59:59Z`, dimension: "FONT" });
+  if (i.wire.latest) add(4, { id: "wire", text: i.wire.count24h > 0 ? `${i.wire.count24h} new design ${i.wire.count24h === 1 ? "story" : "stories"} in the last 24 hours; the latest is “${i.wire.latest.title}” from ${i.wire.latest.source}` : `Latest design story: “${i.wire.latest.title}” from ${i.wire.latest.source}`, href: "/terminal?panel=wire", at: i.wire.latest.published_at });
   if (i.crawl) {
     const age = Math.floor((now - Date.parse(i.crawl.finished_at)) / DAY);
-    add(5, { id: "crawl", text: `The weekly crawl measured ${i.crawl.sites.toLocaleString("en-US")} sites, finished ${day(i.crawl.finished_at)}${age > 7 ? ` (${age} days ago; the next crawl runs Sunday)` : ""}`, href: "/?panel=layout", at: i.crawl.finished_at });
+    add(5, { id: "crawl", text: `The weekly crawl measured ${i.crawl.sites.toLocaleString("en-US")} sites, finished ${day(i.crawl.finished_at)}${age > 7 ? ` (${age} days ago; the next crawl runs Sunday)` : ""}`, href: "/terminal?panel=layout", at: i.crawl.finished_at });
   }
   const changed = c.filter(l => l.fresh).length;
   const lines = [...c].sort((x, y) => Number(y.fresh) - Number(x.fresh) || (x.fresh ? x.p - y.p : Date.parse(y.at) - Date.parse(x.at) || x.p - y.p))

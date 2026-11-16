@@ -5,6 +5,7 @@ import type { TierResult } from "@/lib/tiers";
 import { TIERS, TIER_WORD, tierCounts } from "@/lib/tiers";
 import { COMPOSITES, DROPPED_COMPOSITES, ruleText } from "@/lib/composites";
 import { BASIS_LINE, COMPOSITE_LINE, CONFIDENCE_LINE, JOBS, MOMENTUM_LINE, OPEN_CATEGORIES, QUESTIONS, TIER_LINES, signalList } from "@/lib/what-we-show";
+import { whereThingsLive } from "@/lib/ia";
 import { BasisWord, Dim, DigestFooter, DigestShell, SectionHead, StageWord, pr } from "./Editorial";
 
 const pct = (v: number | null | undefined) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
@@ -18,7 +19,7 @@ export function WhatWeShowView({ tiers, signals, runId }: { tiers: Map<string, T
   const byKey = useMemo(() => new Map(signals.map(s => [s.key, s])), [signals]);
   const ql = q.trim().toLowerCase();
   const shown = list.filter(r => !ql || r.name.toLowerCase().includes(ql) || r.key.includes(ql) || r.dimension.toLowerCase() === ql || r.reasons.join(" ").toLowerCase().includes(ql));
-  const footer = { methodology: "/#m-tiers", glossary: "/#g-tier-headline", rss: "/digest/rss.xml", terminal: "/?panel=overview", contact: null };
+  const footer = { methodology: "/#m-tiers", glossary: "/#g-tier-headline", rss: "/digest/rss.xml", terminal: "/terminal?panel=overview", contact: null };
   return <DigestShell label="What we show and why">
     <article aria-labelledby="ed-wws">
       <header className="ed-wrap ed-grid pt-10 md:pt-14">
@@ -51,7 +52,7 @@ export function WhatWeShowView({ tiers, signals, runId }: { tiers: Map<string, T
       <section aria-labelledby="ed-w-combo" className="ed-wrap mt-14">
         <SectionHead n="04" id="ed-w-combo" title="Composite signals" kicker={COMPOSITE_LINE} />
         <ul className="ed-grid gap-y-6">{COMPOSITES.map(c => { const s = byKey.get(c.key), t = tiers.get(c.key); return <li key={c.key} className="ed-hair min-w-0 pt-3 md:col-span-6 lg:col-span-4">
-          <p className="ed-h3"><Link to="/trait/$key" params={{ key: c.key }} className="no-underline hover:underline" {...pr(`/trait/${c.key}`)}>{c.name}</Link> <Dim d={c.dimension} /></p>
+          <p className="ed-h3"><Link to="/signals/$key" params={{ key: c.key }} className="no-underline hover:underline" {...pr(`/signals/${c.key}`)}>{c.name}</Link> <Dim d={c.dimension} /></p>
           <p className="ed-data mt-1 flex flex-wrap items-center gap-2"><BasisWord b={c.basis} /><StageWord stage={s?.stage ?? null} /><span>{t ? TIER_WORD[t.tier] : "—"}</span><span className="ed-muted">{pct(s?.share)}</span></p>
           <p className="ed-small mt-2">{c.definition}</p>
           <p className="ed-caption mt-1">{c.rule === "all" ? "All of" : "Any of"}: {ruleText(c)}.</p>
@@ -71,8 +72,18 @@ export function WhatWeShowView({ tiers, signals, runId }: { tiers: Map<string, T
         <div className="ed-body ed-small space-y-3"><p>{MOMENTUM_LINE}</p><p>{CONFIDENCE_LINE}</p></div>
       </section>
 
+      <section aria-labelledby="ed-w-where" className="ed-wrap mt-14">
+        <SectionHead n="07" id="ed-w-where" title="Where things live" kicker="Six sections, the same in both modes. Generated from the site's one map of pages and panels." />
+        <ul className="ed-grid gap-y-6">{whereThingsLive().map(x => <li key={x.id} className="ed-hair min-w-0 pt-3 md:col-span-6 lg:col-span-4">
+          <h3 className="ed-h3">{x.label}</h3>
+          <p className="ed-data mt-1">Read {x.read} · Terminal {x.key}</p>
+          <p className="ed-small mt-1">{x.purpose}</p>
+          {x.quiet.length > 0 && <p className="ed-caption mt-2">Quiet here (out of the reader's path): {x.quiet.map(q => q.note.replace(/\.$/, "")).join("; ")}.</p>}
+        </li>)}</ul>
+      </section>
+
       <section aria-labelledby="ed-w-all" className="ed-wrap mt-14">
-        <SectionHead n="07" id="ed-w-all" title="Every signal, by tier" kicker="Each with the reason for its tier. Search by name, key, dimension or reason." />
+        <SectionHead n="08" id="ed-w-all" title="Every signal, by tier" kicker="Each with the reason for its tier. Search by name, key, dimension or reason." />
         <label className="ed-data flex max-w-md items-center gap-2 border border-ed-ink px-2"><span className="sr-only">Search signals</span><span aria-hidden>⌕</span><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search signals" className="min-h-11 w-full bg-transparent outline-none" /></label>
         <p className="ed-caption mt-2" aria-live="polite">{shown.length} of {list.length} signals</p>
         {TIERS.map(t => { const rows = shown.filter(r => r.tier === t); return rows.length ? <div key={t} className="mt-8"><h3 className="ed-kicker">{TIER_WORD[t]} · {rows.length}</h3>

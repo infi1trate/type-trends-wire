@@ -25,6 +25,6 @@ export function ChartOfWeek({ card, heading = true }: { card: { week: string; mo
       <Button asChild variant="outline" className="label"><a href={u.portrait} download={`dsgn-terminal-${m.week}-1080x1350.png`}>DOWNLOAD PNG 1080×1350</a></Button>
       <Button asChild variant="outline" className="label"><a href={u.svg} target="_blank" rel="noopener">SVG</a></Button>
     </div>
-    <p className="label num text-compare-muted">{t.name} [{t.dimension}] · SHARE {pct(m.share)} · N={m.n ?? "—"} · DATA THROUGH {m.data_through ?? "—"} · FORECAST RUN {m.forecast_run ?? m.run_id} · {m.origin === "call" ? `BRIEF ${m.week} CALL` : "FALLBACK: TOP BREAKOUT ALERT"} · SERIES {m.series.map(s => `${s.q} ${pct(s.s)} (N=${s.n})`).join(" · ")} · <Link to="/" search={{ panel: "brief", trait: m.trait }} className="text-ink underline">TRAIT DRAWER</Link></p>
+    <p className="label num text-compare-muted">{t.name} [{t.dimension}] · SHARE {pct(m.share)} · N={m.n ?? "—"} · DATA THROUGH {m.data_through ?? "—"} · FORECAST RUN {m.forecast_run ?? m.run_id} · {m.origin === "call" ? `BRIEF ${m.week} CALL` : "FALLBACK: TOP BREAKOUT ALERT"} · SERIES {m.series.map(s => `${s.q} ${pct(s.s)} (N=${s.n})`).join(" · ")} · <Link to="/terminal" search={{ panel: "brief", trait: m.trait }} className="text-ink underline">TRAIT DRAWER</Link></p>
   </div>;
 }

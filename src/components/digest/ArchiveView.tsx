@@ -19,6 +19,6 @@ export function ArchiveView({ issues }: { issues: ArchiveEntry[] }) {
         {i.lead && <p className="ed-caption mt-1">Lead signal: {i.lead.name} [{i.lead.dimension}]</p>}
       </Link>
     </li>)}</ol> : <p className="ed-wrap ed-body mt-8">No issues yet. The first issue is assembled after the Sunday forecast and brief are stored.</p>}
-    <DigestFooter footer={{ methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/", contact: null }} />
+    <DigestFooter footer={{ methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/terminal", contact: null }} />
   </DigestShell>;
 }

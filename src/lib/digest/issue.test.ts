@@ -50,7 +50,7 @@ describe("issueModel", () => {
     expect(issue.cover.headline).toBe("Subgrid Momentum, Dropbox Pivots, and the End of Maximalism");
     expect(issue.cover.standfirst).toBe("Subgrid usage is accelerating, gaining 4.84 momentum points per quarter. Variable fonts are also accelerating.");
     expect(issue.cover.body[0]!.body).toBe("Subgrid layouts [LAYOUT] leads the layout desk.");
-    expect(issue.cover.lead).toMatchObject({ key: "css:subgrid", name: label("css:subgrid").name, dimension: "LAYOUT", stage: "Rising", href: "/trait/css%3Asubgrid" });
+    expect(issue.cover.lead).toMatchObject({ key: "css:subgrid", name: label("css:subgrid").name, dimension: "LAYOUT", stage: "Rising", href: "/signals/css%3Asubgrid" });
     expect(issue.cover.why).toBe("For page structure and component choices: at 26% of tracked homepages and gaining 4.8 points a quarter, this signal is past the experiment stage and spreading, so it belongs in briefs and templates now.");
     expect(issue.cover.body[1]!.citations).toEqual([{ text: "EVENT · dropbox.com · message_pivot", href: "/library/dropbox.com" }]);
   });

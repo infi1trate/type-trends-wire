@@ -13,9 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as TerminalRouteImport } from './routes/terminal'
+import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as WhatWeShowRouteImport } from './routes/what-we-show'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
+import { Route as BrandsIndexRouteImport } from './routes/brands.index'
+import { Route as BrandsDomainRouteImport } from './routes/brands.$domain'
 import { Route as ChartIndexRouteImport } from './routes/chart.index'
 import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
@@ -26,6 +31,10 @@ import { Route as DigestArchiveRouteImport } from './routes/digest.archive'
 import { Route as DigestRssDotxmlRouteImport } from './routes/digest.rss[.]xml'
 import { Route as DigestChar123weekChar125DotpngRouteImport } from './routes/digest.{$week}[.]png'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
+import { Route as PatternsIndexRouteImport } from './routes/patterns.index'
+import { Route as PatternsKeyRouteImport } from './routes/patterns.$key'
+import { Route as SignalsIndexRouteImport } from './routes/signals.index'
+import { Route as SignalsKeyRouteImport } from './routes/signals.$key'
 import { Route as ThumbsSplatRouteImport } from './routes/thumbs.$'
 import { Route as TraitKeyRouteImport } from './routes/trait.$key'
 import { Route as TraitChar123keyChar125DotpngRouteImport } from './routes/trait.{$key}[.]png'
@@ -76,6 +85,21 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/terminal',
+  path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WhatWeShowRoute = WhatWeShowRouteImport.update({
   id: '/what-we-show',
   path: '/what-we-show',
@@ -89,6 +113,16 @@ const AuditIndexRoute = AuditIndexRouteImport.update({
 const AuditNewRoute = AuditNewRouteImport.update({
   id: '/audit/new',
   path: '/audit/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandsIndexRoute = BrandsIndexRouteImport.update({
+  id: '/brands/',
+  path: '/brands/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandsDomainRoute = BrandsDomainRouteImport.update({
+  id: '/brands/$domain',
+  path: '/brands/$domain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChartIndexRoute = ChartIndexRouteImport.update({
@@ -142,6 +176,26 @@ const DigestChar123weekChar125DotpngRoute =
 const LibraryDomainRoute = LibraryDomainRouteImport.update({
   id: '/library/$domain',
   path: '/library/$domain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatternsIndexRoute = PatternsIndexRouteImport.update({
+  id: '/patterns/',
+  path: '/patterns/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatternsKeyRoute = PatternsKeyRouteImport.update({
+  id: '/patterns/$key',
+  path: '/patterns/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalsIndexRoute = SignalsIndexRouteImport.update({
+  id: '/signals/',
+  path: '/signals/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalsKeyRoute = SignalsKeyRouteImport.update({
+  id: '/signals/$key',
+  path: '/signals/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ThumbsSplatRoute = ThumbsSplatRouteImport.update({
@@ -300,8 +354,12 @@ export interface FileRoutesByFullPath {
   '/audit.png': typeof AuditDotpngRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/status': typeof StatusRoute
+  '/terminal': typeof TerminalRoute
+  '/tools': typeof ToolsRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
+  '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -310,14 +368,19 @@ export interface FileRoutesByFullPath {
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
   '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/patterns/$key': typeof PatternsKeyRoute
+  '/signals/$key': typeof SignalsKeyRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
   '/audit/': typeof AuditIndexRoute
+  '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/digest/': typeof DigestIndexRoute
+  '/patterns/': typeof PatternsIndexRoute
+  '/signals/': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
@@ -348,8 +411,12 @@ export interface FileRoutesByTo {
   '/audit.png': typeof AuditDotpngRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/status': typeof StatusRoute
+  '/terminal': typeof TerminalRoute
+  '/tools': typeof ToolsRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
+  '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -358,14 +425,19 @@ export interface FileRoutesByTo {
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
   '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/patterns/$key': typeof PatternsKeyRoute
+  '/signals/$key': typeof SignalsKeyRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
   '/audit': typeof AuditIndexRoute
+  '/brands': typeof BrandsIndexRoute
   '/chart': typeof ChartIndexRoute
   '/digest': typeof DigestIndexRoute
+  '/patterns': typeof PatternsIndexRoute
+  '/signals': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
@@ -397,8 +469,12 @@ export interface FileRoutesById {
   '/audit.png': typeof AuditDotpngRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/status': typeof StatusRoute
+  '/terminal': typeof TerminalRoute
+  '/tools': typeof ToolsRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
+  '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
@@ -407,14 +483,19 @@ export interface FileRoutesById {
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
   '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/patterns/$key': typeof PatternsKeyRoute
+  '/signals/$key': typeof SignalsKeyRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
   '/audit/': typeof AuditIndexRoute
+  '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/digest/': typeof DigestIndexRoute
+  '/patterns/': typeof PatternsIndexRoute
+  '/signals/': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
@@ -447,8 +528,12 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/ledger'
     | '/robots.txt'
+    | '/status'
+    | '/terminal'
+    | '/tools'
     | '/what-we-show'
     | '/audit/new'
+    | '/brands/$domain'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -457,14 +542,19 @@ export interface FileRouteTypes {
     | '/digest/rss.xml'
     | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/patterns/$key'
+    | '/signals/$key'
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
     | '/watch/$id'
     | '/watch/new'
     | '/audit/'
+    | '/brands/'
     | '/chart/'
     | '/digest/'
+    | '/patterns/'
+    | '/signals/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
@@ -495,8 +585,12 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/ledger'
     | '/robots.txt'
+    | '/status'
+    | '/terminal'
+    | '/tools'
     | '/what-we-show'
     | '/audit/new'
+    | '/brands/$domain'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -505,14 +599,19 @@ export interface FileRouteTypes {
     | '/digest/rss.xml'
     | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/patterns/$key'
+    | '/signals/$key'
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
     | '/watch/$id'
     | '/watch/new'
     | '/audit'
+    | '/brands'
     | '/chart'
     | '/digest'
+    | '/patterns'
+    | '/signals'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
@@ -543,8 +642,12 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/ledger'
     | '/robots.txt'
+    | '/status'
+    | '/terminal'
+    | '/tools'
     | '/what-we-show'
     | '/audit/new'
+    | '/brands/$domain'
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
@@ -553,14 +656,19 @@ export interface FileRouteTypes {
     | '/digest/rss.xml'
     | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/patterns/$key'
+    | '/signals/$key'
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
     | '/watch/$id'
     | '/watch/new'
     | '/audit/'
+    | '/brands/'
     | '/chart/'
     | '/digest/'
+    | '/patterns/'
+    | '/signals/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
     | '/api/public/discourse-terms'
@@ -592,8 +700,12 @@ export interface RootRouteChildren {
   AuditDotpngRoute: typeof AuditDotpngRoute
   LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  StatusRoute: typeof StatusRoute
+  TerminalRoute: typeof TerminalRoute
+  ToolsRoute: typeof ToolsRoute
   WhatWeShowRoute: typeof WhatWeShowRoute
   AuditNewRoute: typeof AuditNewRoute
+  BrandsDomainRoute: typeof BrandsDomainRoute
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
@@ -602,14 +714,19 @@ export interface RootRouteChildren {
   DigestRssDotxmlRoute: typeof DigestRssDotxmlRoute
   DigestChar123weekChar125DotpngRoute: typeof DigestChar123weekChar125DotpngRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
+  PatternsKeyRoute: typeof PatternsKeyRoute
+  SignalsKeyRoute: typeof SignalsKeyRoute
   ThumbsSplatRoute: typeof ThumbsSplatRoute
   TraitKeyRoute: typeof TraitKeyRoute
   TraitChar123keyChar125DotpngRoute: typeof TraitChar123keyChar125DotpngRoute
   WatchIdRoute: typeof WatchIdRoute
   WatchNewRoute: typeof WatchNewRoute
   AuditIndexRoute: typeof AuditIndexRoute
+  BrandsIndexRoute: typeof BrandsIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
   DigestIndexRoute: typeof DigestIndexRoute
+  PatternsIndexRoute: typeof PatternsIndexRoute
+  SignalsIndexRoute: typeof SignalsIndexRoute
   ApiPublicChartCardRoute: typeof ApiPublicChartCardRoute
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
   ApiPublicDiscourseTermsRoute: typeof ApiPublicDiscourseTermsRoute
@@ -666,6 +783,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminal': {
+      id: '/terminal'
+      path: '/terminal'
+      fullPath: '/terminal'
+      preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tools': {
+      id: '/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/what-we-show': {
       id: '/what-we-show'
       path: '/what-we-show'
@@ -685,6 +823,20 @@ declare module '@tanstack/react-router' {
       path: '/audit/new'
       fullPath: '/audit/new'
       preLoaderRoute: typeof AuditNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brands/': {
+      id: '/brands/'
+      path: '/brands'
+      fullPath: '/brands/'
+      preLoaderRoute: typeof BrandsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brands/$domain': {
+      id: '/brands/$domain'
+      path: '/brands/$domain'
+      fullPath: '/brands/$domain'
+      preLoaderRoute: typeof BrandsDomainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chart/': {
@@ -755,6 +907,34 @@ declare module '@tanstack/react-router' {
       path: '/library/$domain'
       fullPath: '/library/$domain'
       preLoaderRoute: typeof LibraryDomainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patterns/': {
+      id: '/patterns/'
+      path: '/patterns'
+      fullPath: '/patterns/'
+      preLoaderRoute: typeof PatternsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patterns/$key': {
+      id: '/patterns/$key'
+      path: '/patterns/$key'
+      fullPath: '/patterns/$key'
+      preLoaderRoute: typeof PatternsKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signals/': {
+      id: '/signals/'
+      path: '/signals'
+      fullPath: '/signals/'
+      preLoaderRoute: typeof SignalsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signals/$key': {
+      id: '/signals/$key'
+      path: '/signals/$key'
+      fullPath: '/signals/$key'
+      preLoaderRoute: typeof SignalsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/thumbs/$': {
@@ -968,8 +1148,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuditDotpngRoute: AuditDotpngRoute,
   LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  StatusRoute: StatusRoute,
+  TerminalRoute: TerminalRoute,
+  ToolsRoute: ToolsRoute,
   WhatWeShowRoute: WhatWeShowRoute,
   AuditNewRoute: AuditNewRoute,
+  BrandsDomainRoute: BrandsDomainRoute,
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
@@ -978,14 +1162,19 @@ const rootRouteChildren: RootRouteChildren = {
   DigestRssDotxmlRoute: DigestRssDotxmlRoute,
   DigestChar123weekChar125DotpngRoute: DigestChar123weekChar125DotpngRoute,
   LibraryDomainRoute: LibraryDomainRoute,
+  PatternsKeyRoute: PatternsKeyRoute,
+  SignalsKeyRoute: SignalsKeyRoute,
   ThumbsSplatRoute: ThumbsSplatRoute,
   TraitKeyRoute: TraitKeyRoute,
   TraitChar123keyChar125DotpngRoute: TraitChar123keyChar125DotpngRoute,
   WatchIdRoute: WatchIdRoute,
   WatchNewRoute: WatchNewRoute,
   AuditIndexRoute: AuditIndexRoute,
+  BrandsIndexRoute: BrandsIndexRoute,
   ChartIndexRoute: ChartIndexRoute,
   DigestIndexRoute: DigestIndexRoute,
+  PatternsIndexRoute: PatternsIndexRoute,
+  SignalsIndexRoute: SignalsIndexRoute,
   ApiPublicChartCardRoute: ApiPublicChartCardRoute,
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
   ApiPublicDiscourseTermsRoute: ApiPublicDiscourseTermsRoute,

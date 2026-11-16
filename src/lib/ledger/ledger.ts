@@ -187,7 +187,7 @@ export function ledgerItem(c: StoredCall): LedgerItem {
     origin: c.origin, selected_by: c.selected_by, said: callSentence(c), direction: c.direction, share_at_call: c.share_at_call, band: c.band_lo != null && c.band_hi != null ? [c.band_lo, c.band_hi] : null,
     target_quarter: c.target_quarter, target_text: quarterText(c.target_quarter), resolves_on: c.outcome == null && c.target_quarter ? resolvesOn(c.target_quarter) : null,
     outcome: c.outcome, outcome_word: outcomeWord(c.outcome), outcome_reason: c.outcome_reason, actual_share: c.actual_share, actual_n: c.actual_n, resolved_at: c.resolved_at,
-    backfilled: c.backfilled, run_id: c.run_id, explainer_path: `/trait/${encodeURIComponent(c.trait)}`, receipts_path: `/?panel=brief&trait=${encodeURIComponent(c.trait)}&sector=${encodeURIComponent(c.scope)}` };
+    backfilled: c.backfilled, run_id: c.run_id, explainer_path: `/signals/${encodeURIComponent(c.trait)}`, receipts_path: `/terminal?panel=brief&trait=${encodeURIComponent(c.trait)}&sector=${encodeURIComponent(c.scope)}` };
 }
 /** Calls as they stood at `asOf`: resolutions written later count as still open (keeps old Digest issues unchanged). */
 export const asOf = <T extends Pick<CallRecord, "made_at" | "resolved_at" | "outcome">>(calls: T[], iso: string): T[] =>

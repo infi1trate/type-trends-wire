@@ -28,7 +28,7 @@ const ql = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
 export const traitLabel = (dimension: string, value: string) => label(`${dimension}:${value}`).name;
 function TraitName({ dimension, value }: { dimension: string; value: string }) { const l = label(`${dimension}:${value}`); return <><span className="normal-case">{l.name}</span> <DimTag d={l.dimension} /></>; }
 /** Secondary link to the editorial explainer; terminal navigation (drawer) is unchanged. */
-function Explainer({ dimension, value }: { dimension: string; value: string }) { return <span className="inline-flex items-center"><Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="label ml-2 whitespace-nowrap text-compare-muted underline-offset-2 hover:text-ink hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">EXPLAINER →</Link><AddToWatch target={`${dimension}:${value}`} name={label(`${dimension}:${value}`).name} /></span>; }
+function Explainer({ dimension, value }: { dimension: string; value: string }) { return <span className="inline-flex items-center"><Link to="/signals/$key" params={{ key: `${dimension}:${value}` }} className="label ml-2 whitespace-nowrap text-compare-muted underline-offset-2 hover:text-ink hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">EXPLAINER →</Link><AddToWatch target={`${dimension}:${value}`} name={label(`${dimension}:${value}`).name} /></span>; }
 const key = (r: { dimension: string; value: string }) => `${r.dimension}:${r.value}`;
 
 type Pt = { q: string; s: number | null; n: number; c: number };
@@ -61,10 +61,10 @@ function ZBar({ z, label }: { z: number | null | undefined; label: string }) {
 function StageTag({ stage }: { stage: string | null }) { return <StageBadge stage={stage} />; }
 
 export function ForecastPanel() {
-  const { sector = "all" } = useSearch({ from: "/" }); const navigate = useNavigate({ from: "/" });
+  const { sector = "all" } = useSearch({ from: "/terminal" }); const navigate = useNavigate({ from: "/terminal" });
   const { data } = useSuspenseQuery(forecastQuery());
   const [open, setOpen] = useState<{ dimension: string; value: string } | null>(null);
-  const {trait}=useSearch({from:"/"});
+  const {trait}=useSearch({from:"/terminal"});
   useEffect(()=>{if(trait){const [dimension,...parts]=trait.split(':');if(dimension&&parts.length)setOpen({dimension,value:parts.join(':')});}},[trait]);
   const [week, setWeek] = useState<string | null>(null);
   const card = data.card;
@@ -162,7 +162,7 @@ function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) 
         if (c.kind === "forecast") return <button key={c.kind + c.id} type="button" className={cls} onClick={() => onTrait(c.id)}>{text}</button>;
         if (c.kind === "event" && ref?.domain) return <Link key={c.kind + c.id} to="/library/$domain" params={{ domain: ref.domain }} className={cls}>{text}</Link>;
         if (c.kind === "wire" && ref?.url) return <a key={c.kind + c.id} href={ref.url} target="_blank" rel="noreferrer" className={cls}>{text}</a>;
-        if (c.kind === "spread") return <Link key={c.kind + c.id} to="/" search={{ panel: "overview" }} className={cls}>{text}</Link>;
+        if (c.kind === "spread") return <Link key={c.kind + c.id} to="/terminal" search={{ panel: "overview" }} className={cls}>{text}</Link>;
         return <span key={c.kind + c.id} className={cls}>{text}</span>; })}</div>
     </section>)}</div>
     <p className="label mt-3 text-compare-muted">CAVEATS · {shown.caveats}</p>
@@ -189,7 +189,7 @@ export function TraitDrawer({ dimension, value, onClose }: { dimension: string; 
       {signal && <p className="label break-words text-compare-muted">RECEIPT · {signal.confidence_reason} · NEXT-WAVE SCORE {signal.next_wave_score == null ? "not scored" : signal.next_wave_score.toFixed(2)} · MOMENTUM {signal.momentum == null ? "not measured" : `${signal.momentum > 0 ? "+" : ""}${signal.momentum.toFixed(2)} PTS/Q`}</p>}
       {tier && <ul className="label space-y-1 text-compare-muted" aria-label="Why this tier">{tier.reasons.map(r => <li key={r}>· {r}</li>)}</ul>}
       <Evidence k={k} signals={sig?.signals ?? []} />
-      <p className="label"><Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>
+      <p className="label"><Link to="/signals/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>
       <p className="label text-compare-muted">{main.status === "ok" ? `MODEL ${main.model?.toUpperCase()} · ${ev.usable} USABLE QUARTERS` : `Not fitted yet: ${ev.usable ?? 0} of the 4 usable quarters a curve needs`}{ev.crossed_20 ? ` · CROSSED 20% ${ev.crossed_20}` : ""}</p>
       <Cone large quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>
@@ -227,7 +227,7 @@ function Evidence({ k, signals }: { k: string; signals: Signal[] }) {
   return <div><h3 className="label flex items-center text-compare-muted">{combo ? "EVIDENCE · MEMBER SIGNALS" : "PART OF"}<Info g={combo ? "composite" : "tier-supporting"} /></h3>
     {combo && <p className="label text-compare-muted">RULE · {ruleText(combo)}</p>}
     <ul className="mt-1 divide-y divide-rule border-y border-rule">{keys.map(m => { const x = by.get(m), l = label(m); return <li key={m} className="flex flex-wrap items-baseline gap-x-2 py-1">
-      <Link to="/trait/$key" params={{ key: m }} className="text-ink underline-offset-2 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">{l.name}</Link><DimTag d={l.dimension} /><BasisChip k={m} />
+      <Link to="/signals/$key" params={{ key: m }} className="text-ink underline-offset-2 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">{l.name}</Link><DimTag d={l.dimension} /><BasisChip k={m} />
       <span className="label text-compare-muted">{x ? `${x.tier.toUpperCase()} · ${pctOr(x.share)} · ${x.stage ?? "not staged"}` : "measured per site; not forecast on its own"}</span>
     </li>; })}</ul>
   </div>;

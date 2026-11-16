@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { availableSteps, tourStore, type TourStep } from "@/lib/tour";
+import { availableSteps, modeTour, stepsFor, type TourStep } from "@/lib/tour";
+import type { Mode } from "@/lib/ia";
 
 /** Four-step first-visit tour over real elements. No blocking backdrop; → / Enter next, Esc skips. */
-export function Tour({ onDone }: { onDone: () => void }) {
+export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?: Mode }) {
   const [steps, setSteps] = useState<TourStep[] | null>(null), [i, setI] = useState(0);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null), [mobile, setMobile] = useState(false);
   const box = useRef<HTMLDivElement>(null), next = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let tries = 0, raf = 0;
-    const look = () => { const s = availableSteps(sel => !!document.querySelector(sel)); if (s.length >= 4 || tries++ > 160) setSteps(s); else raf = window.setTimeout(look, 50); };
+    const look = () => { const s = availableSteps(sel => !!document.querySelector(sel), stepsFor(mode)); if (s.length >= 4 || tries++ > 160) setSteps(s); else raf = window.setTimeout(look, 50); };
     look(); return () => clearTimeout(raf);
-  }, []);
-  const finish = useCallback(() => { tourStore().finish(); onDone(); }, [onDone]);
+  }, [mode]);
+  const finish = useCallback(() => { modeTour(mode).finish(); onDone(); }, [onDone, mode]);
   const step = steps?.[i];
   const advance = useCallback(() => { if (!steps) return; if (i + 1 >= steps.length) finish(); else setI(i + 1); }, [i, steps, finish]);
   useEffect(() => { if (steps && steps.length === 0) finish(); }, [steps, finish]);

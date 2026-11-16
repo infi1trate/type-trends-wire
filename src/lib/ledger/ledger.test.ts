@@ -120,7 +120,7 @@ describe("ledger copy", () => {
     const stored: StoredCall = { ...c, id: 1 };
     const text = JSON.stringify([ledgerItem(stored), ledgerItem({ ...stored, outcome: "void", outcome_reason: "x", direction: null }), ledgerSummary([c]), LEDGER_RULE_TEXT, backtestOf({ backtest_cutoff: "2025Q2", hit_rate: 0.6, n_backtested: 12, median_mae_pts: 1.2, next_wave_backtest: { ranked: 10, grew_5pts: 3 } })]);
     expect(text).not.toMatch(/\$[A-Z]/);
-    expect(ledgerItem(stored)).toMatchObject({ name: "Subgrid layouts", dimension: "LAYOUT", outcome_word: "Open", target_text: "Q1 2027", explainer_path: "/trait/css%3Asubgrid" });
+    expect(ledgerItem(stored)).toMatchObject({ name: "Subgrid layouts", dimension: "LAYOUT", outcome_word: "Open", target_text: "Q1 2027", explainer_path: "/signals/css%3Asubgrid" });
   });
   it("keeps the backtest apart and labelled as a replay", () => {
     expect(backtestOf({ backtest_cutoff: "2025Q2", hit_rate: 0.6, n_backtested: 12, median_mae_pts: 1.2 })!.text).toMatch(/^Trained on data through Q2 2025 and replayed/);

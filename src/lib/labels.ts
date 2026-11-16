@@ -140,6 +140,9 @@ export const tagPhrase = (token: string) => VIBE_SHORT[token] ?? (token.split(":
 /** Name for mid-sentence use: lowercases a leading capital unless it starts an acronym or proper noun ("3D", "OKLCH", "Next.js" stay). */
 export const inSentence = (name: string) => (/^[A-Z][a-z]/.test(name) && !/^(Next|Framer|Webflow|Tailwind|Shopify|Wix|Nuxt|Gatsby|Astro|Squarespace|WordPress|SvelteKit|Lottie|Y2K|Inter)\b/.test(name) ? name[0]!.toLowerCase() + name.slice(1) : name);
 export const scopeText = (scope: string | null | undefined) => (!scope || scope === "all" ? "all sectors" : scope);
+/** Library sector names for the sector lens and brand pages. */
+export const SECTOR_NAMES: Record<string, string> = { all: "All sectors", ai: "AI", "dev-tools": "Dev tools", fintech: "Fintech", "consumer-apps": "Consumer apps", "commerce-dtc": "Commerce & DTC", media: "Media", studios: "Studios", hardware: "Hardware", health: "Health", "enterprise-saas": "Enterprise SaaS" };
+export const sectorName = (s: string | null | undefined) => (!s ? "All sectors" : SECTOR_NAMES[s] ?? s.replace(/-/g, " ").replace(/^./, c => c.toUpperCase()));
 
 // STAGES — exactly five words, shown as outlined badges.
 export const STAGES = ["Emerging", "Rising", "Peaking", "Fading", "Steady"] as const;
@@ -166,7 +169,7 @@ export function alertDisplayTitle(title: string, ref: string | null | undefined)
   return `${m[1]} · ${name}${rest ? ` ${rest}` : ""}`;
 }
 
-/** Trait categories the weekly forecast stages; each of their keys has an explainer page at /trait/<key>. */
+/** Trait categories the weekly forecast stages; each of their keys has a signal page at /signals/<key>. */
 export const FORECAST_CATEGORIES = new Set(["aesthetic", "ai_positioning", "color_mood", "combo", "components", "css", "font", "framework", "headline", "hero_layout", "hero_media", "imagery", "theme", "tone", "tracking"]);
 
 // BASIS — measured from page code and rendered styles, or estimated by the AI tagger. One word chip, no color, everywhere a value shows.
@@ -184,13 +187,17 @@ export function basis(traitKey: string): Basis {
   return AI_CATEGORIES.has(cat) ? "ai" : "measured";
 }
 export const basisWord = (traitKey: string) => BASIS_WORD[basis(traitKey)];
-export const explainerPath = (key: string) => `/trait/${encodeURIComponent(canonical(key))}`;
+/** Signal object page (Phase 13: /signals/<key>; old /trait/<key> links redirect there). */
+export const explainerPath = (key: string) => `/signals/${encodeURIComponent(canonical(key))}`;
 /** Absolute explainer URL for forecast traits; null for keys the forecast does not stage (fonts, colors, crawl-only signals). */
 export function explainerUrl(key: string): string | null {
   const k = canonical(key), cat = k.slice(0, Math.max(0, k.indexOf(":")));
   return FORECAST_CATEGORIES.has(cat) ? `${SITE_URL}${explainerPath(k)}` : null;
 }
 
+const BRAND_DOMAIN = /^(?=.{3,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+/** Absolute brand page URL for a site (MCP `brand_url`). */
+export const brandUrl = (domain: string) => `${SITE_URL}/brands/${encodeURIComponent(domain)}`;
 /** Strings: any leftover "$TICKER" becomes "Name [DIM]". Prices ("$50") are untouched because tickers start with a letter. */
 export const untick = (s: string) => s.replace(/\$([A-Z][A-Z0-9-]+)/g, (_, t: string) => traitText(t));
 /** Output decoration for agents: stable keys stay; human label/dimension/basis/stage_label (and explainer_url for forecast traits) are added next to them; `extra` adds per-key fields (tier, momentum_index, confidence). Pure, recursive. */
@@ -214,6 +221,8 @@ export function withLabels<T>(data: T, extra?: (key: string) => Record<string, u
       if (url && !("explainer_url" in o)) o["explainer_url"] = url;
       if ("dimension" in o && o["dimension"] !== l.dimension) o["label_dimension"] = l.dimension; else o["dimension"] = l.dimension;
     }
+    // Any object that names a site gets its brand page (Phase 13).
+    if (typeof o["domain"] === "string" && BRAND_DOMAIN.test(o["domain"] as string) && !("brand_url" in o)) o["brand_url"] = brandUrl(o["domain"] as string);
     if (Array.isArray(o["tickers"]) && !("color_labels" in o)) o["color_labels"] = (o["tickers"] as unknown[]).map(t => (typeof t === "string" ? colorName(t) : t));
     if (typeof o["stage"] === "string" || o["stage"] === null) { if ("stage" in o && !("stage_label" in o)) o["stage_label"] = stageName(o["stage"] as string | null); }
     return o;

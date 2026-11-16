@@ -52,7 +52,7 @@ describe("auditModel", () => {
     expect(l.ahead.map(t => t.trait)).toEqual(["css:has", "css:container-queries"]);
     expect(l.behind.map(t => t.trait)).toEqual(["theme:dark"]);
     expect(l.sentence).toBe("linear.app already shows 2 signals that are rising or emerging in dev-tools: Has, Container queries. It still uses 1 fading signal: Dark mode.");
-    for (const t of l.ahead) expect(t.explainer).toMatch(/^\/trait\//);
+    for (const t of l.ahead) expect(t.explainer).toMatch(/^\/signals\//);
   });
   it("white space: rising in the main sector, used by none, strongest momentum first", () => {
     expect(a.whitespace!.traits.map(t => t.trait)).toEqual(["components:pricing_table", "css:subgrid", "headline:serif"]);

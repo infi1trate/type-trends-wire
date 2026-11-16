@@ -89,7 +89,7 @@ describe("/what-we-show", () => {
     expect(JOBS.map(j => j.word)).toEqual(["Spot", "Prove", "Act"]);
     expect(QUESTIONS).toHaveLength(4);
     const m = methodologyLines();
-    expect(m.map(l => l.split(":")[0])).toEqual(["TIERS", "COMPOSITES", "MOMENTUM AND CONFIDENCE"]);
+    expect(m.map(l => l.split(":")[0])).toEqual(["TIERS", "COMPOSITES", "WHERE THINGS LIVE", "MOMENTUM AND CONFIDENCE"]);
     for (const l of m) expect(l).not.toMatch(TICKER);
   });
 });

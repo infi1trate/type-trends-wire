@@ -100,7 +100,7 @@ export function WatchPage({ v, k }: { v: WatchView; k?: string | undefined }) {
       <SectionHead n="03" title="Signals" id="w-traits" kicker="Stage and share across all sectors in the latest forecast." />
       <ul className="grid gap-x-10 md:grid-cols-2">{v.traits.map(t => <li key={t.trait} className="ed-hair flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
         <a href={t.explainer} {...pr(t.explainer)}>{t.name}</a> <Dim d={t.dimension} /> <BasisWord b={basis(t.trait)} /> <StageWord stage={t.stage} />
-        <a href={`/?panel=brief&trait=${encodeURIComponent(t.trait)}`} className="ed-data ed-muted">{pct(t.share)} of sites</a>
+        <a href={`/terminal?panel=brief&trait=${encodeURIComponent(t.trait)}`} className="ed-data ed-muted">{pct(t.share)} of sites</a>
         {editable && <button type="button" disabled={busy} onClick={() => run({ op: "remove", traits: [t.trait] })} className="ed-kicker no-print ml-auto min-h-[44px] px-2 underline" aria-label={`Remove ${t.name}`}>Remove</button>}
       </li>)}</ul>
     </section>}

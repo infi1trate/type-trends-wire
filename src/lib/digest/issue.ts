@@ -77,7 +77,7 @@ export function citationHref(c: { kind: string; id: string }, refs: StoredBrief[
   if (c.kind === "forecast") return explainerPath(c.id.split(":").slice(0, 2).join(":"));
   if (c.kind === "event" && r?.domain) return `/library/${r.domain}`;
   if (c.kind === "wire" && r?.url) return r.url;
-  if (c.kind === "spread") return "/?panel=spread";
+  if (c.kind === "spread") return "/terminal?panel=spread";
   return null;
 }
 const ref = (key: string, stage: string | null): TraitRef => { const l = label(key); return { key, name: l.name, dimension: l.dimension, basis: basis(key), stage: stageName(stage), href: explainerPath(key) }; };

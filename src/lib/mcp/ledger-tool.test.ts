@@ -13,7 +13,7 @@ describe("MCP forecast_ledger", () => {
     expect(res.isError).toBeFalsy();
     expect(load).toHaveBeenCalledWith({ trait: "css:subgrid", scope: "all", outcome: "open", since: "2026-11-01T00:00:00Z", limit: 5 });
     const out = JSON.parse(res.content[0].text);
-    expect(out.calls[0]).toMatchObject({ trait: "css:subgrid", label: "Subgrid layouts", dimension: "LAYOUT", explainer_url: "https://type-trends-wire.lovable.app/trait/css%3Asubgrid", outcome: "open", target_quarter: "2027Q1", backfilled: true, said: expect.stringMatching(/^Subgrid layouts: rising/) });
+    expect(out.calls[0]).toMatchObject({ trait: "css:subgrid", label: "Subgrid layouts", dimension: "LAYOUT", explainer_url: "https://type-trends-wire.lovable.app/signals/css%3Asubgrid", outcome: "open", target_quarter: "2027Q1", backfilled: true, said: expect.stringMatching(/^Subgrid layouts: rising/) });
     expect(out.summary).toMatchObject({ total: 1, open: 1, rate: null });
     expect(out.backtest.label).toMatch(/not part of the live record/);
     expect(res.content[0].text).not.toMatch(/\$[A-Z]/);

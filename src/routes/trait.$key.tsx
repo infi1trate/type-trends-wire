@@ -1,24 +1,10 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { traitPageQuery } from "@/lib/data";
-import { traitHead } from "@/lib/digest/meta";
-import { TraitView } from "@/components/digest/TraitView";
-import { DigestNotFound } from "@/components/digest/NotFound";
-
+import { createFileRoute, redirect } from "@tanstack/react-router";
+// Old trait explainer URLs: the signal page moved to /signals/<key>. Permanent redirect, search kept (share images stay at /trait/<key>.png).
 export const Route = createFileRoute("/trait/$key")({
-  loader: async ({ context, params }) => {
-    if (!/^[a-z0-9_]+:[^\s]{1,80}$/i.test(params.key)) throw notFound();
-    const page = await context.queryClient.ensureQueryData(traitPageQuery(params.key));
-    if (!page) throw notFound();
-    return { page };
+  beforeLoad: ({ params, location }) => {
+    const raw = location.search as Record<string, unknown>;
+    throw redirect({ to: "/signals/$key", params: { key: params.key }, search: { sector: typeof raw["sector"] === "string" ? raw["sector"] : undefined }, statusCode: 301 });
   },
-  head: ({ loaderData }) => loaderData?.page ? traitHead(loaderData.page) : { meta: [{ title: "Signal not found — DSGN/TERMINAL" }, { name: "robots", content: "noindex" }] },
-  component: Trait,
-  notFoundComponent: () => <DigestNotFound title="No explainer for this signal" body="We only write explainers for signals in the latest weekly forecast. The key may be misspelled, or the signal may have dropped out of the forecast." />,
-  errorComponent: () => <DigestNotFound title="This explainer didn't load" body="The data behind it couldn't be read just now. Try again in a minute." />,
+  head: () => ({ meta: [{ title: "Moved — DSGN/TERMINAL" }, { name: "description", content: "This signal page moved to /signals." }, { property: "og:title", content: "Moved — DSGN/TERMINAL" }, { property: "og:description", content: "This signal page moved to /signals." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
+  component: () => null,
 });
-function Trait() {
-  const { key } = Route.useParams();
-  const { data } = useSuspenseQuery(traitPageQuery(key));
-  return data ? <TraitView page={data} /> : null;
-}

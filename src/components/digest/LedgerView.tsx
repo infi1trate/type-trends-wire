@@ -12,7 +12,7 @@ const FILTERS: { id: "all" | Outcome | "open"; label: string }[] = [{ id: "all",
 export function LedgerCall({ c, showName = true }: { c: LedgerItem; showName?: boolean }) {
   return <li className="ed-hair grid grid-cols-1 gap-x-8 gap-y-2 pt-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
     <div className="min-w-0">
-      {showName && <p className="ed-h3"><Link to="/trait/$key" params={{ key: c.trait }} className="no-underline hover:underline" {...pr(c.explainer_path)}>{c.name}</Link> <Dim d={c.dimension} /> <BasisWord b={basis(c.trait)} /></p>}
+      {showName && <p className="ed-h3"><Link to="/signals/$key" params={{ key: c.trait }} className="no-underline hover:underline" {...pr(c.explainer_path)}>{c.name}</Link> <Dim d={c.dimension} /> <BasisWord b={basis(c.trait)} /></p>}
       <p className="ed-data ed-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1"><span>{c.scope_text}</span><span>called {longDay(c.made_at)}</span><StageWord stage={stageName(c.stage_at_call)} />{c.origin === "alert" && <span>alert</span>}{c.backfilled && <span title="Recorded from a run stored before the ledger existed">backfilled</span>}</p>
     </div>
     <div className="min-w-0">
@@ -33,7 +33,7 @@ function Breakdown({ title, rows }: { title: string; rows: LedgerSummary["byDime
 export function LedgerView({ ledger: l }: { ledger: Ledger }) {
   const [f, setF] = useState<(typeof FILTERS)[number]["id"]>("all");
   const s = l.summary, shown = l.calls.filter(c => f === "all" || (f === "open" ? c.outcome == null : c.outcome === f));
-  const footer = { methodology: "/#m-ledger", glossary: "/#g-ledger", rss: "/digest/rss.xml", terminal: "/?panel=brief", contact: null };
+  const footer = { methodology: "/#m-ledger", glossary: "/#g-ledger", rss: "/digest/rss.xml", terminal: "/terminal?panel=brief", contact: null };
   return <DigestShell label="The forecast ledger">
     <article aria-labelledby="ed-ledger">
       <header className="ed-wrap ed-grid pt-10 md:pt-14">

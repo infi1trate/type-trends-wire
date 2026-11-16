@@ -52,9 +52,9 @@ describe("share cards", () => {
   });
   it("trait pages reuse the trait's chart card as og:image", () => {
     const head = traitHead(traitModel(traitFixture())!);
-    expect(get(head.meta, "og:title")).toBe("Subgrid layouts [LAYOUT] — explainer · DSGN/TERMINAL");
+    expect(get(head.meta, "og:title")).toBe("Subgrid layouts [LAYOUT] — signal · DSGN/TERMINAL");
     expect(get(head.meta, "og:image")).toBe("https://type-trends-wire.lovable.app/trait/css%3Asubgrid.png");
     expect(get(head.meta, "twitter:card")).toBe("summary_large_image");
-    expect(head.links[0]).toEqual({ rel: "canonical", href: "https://type-trends-wire.lovable.app/trait/css%3Asubgrid" });
+    expect(head.links[0]).toEqual({ rel: "canonical", href: "https://type-trends-wire.lovable.app/signals/css%3Asubgrid" });
   });
 });

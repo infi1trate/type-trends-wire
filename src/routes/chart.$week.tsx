@@ -32,7 +32,7 @@ function WeekChart() {
   const { week } = Route.useParams();
   const { data } = useSuspenseQuery(chartCardQuery(week));
   return <main className="min-h-dvh bg-void">
-    <header className="flex h-8 items-center justify-between border-b border-rule bg-g900 px-3"><h1 className="label font-semibold">CHART OF THE WEEK · {week}</h1><Link to="/" search={{ panel: "brief" }} className="label text-ink hover:underline">← F10 FORECAST</Link></header>
+    <header className="flex h-8 items-center justify-between border-b border-rule bg-g900 px-3"><h1 className="label font-semibold">CHART OF THE WEEK · {week}</h1><Link to="/terminal" search={{ panel: "brief" }} className="label text-ink hover:underline">← F10 FORECAST</Link></header>
     <ChartOfWeek card={data} />
     {data && <div className="border-t border-rule p-3"><EmbedPanel variant="terminal" target={{ kind: "chart", week }} title={`${cardText(data.model).name} [${cardText(data.model).dimension}]`} /></div>}
   </main>;

@@ -168,3 +168,12 @@
 - [x] MCP fields (tier, basis, momentum_index, confidence) + tier filter + methodology sections
 - [x] /what-we-show page (gated) + links (glossary, terminal footer, Digest footer)
 - [x] Dev forecast run (brief:false, alerts:"off", ledger:false) + tests + screenshots + report
+
+# Phase 13 — one information architecture (structure only; reuse Digest type + terminal chrome)
+- [x] ia.ts registry (six sections, SURFACES, tabs, key + panel aliases, mode toggle, legacy redirects) + no-orphan test
+- [x] Four objects with one anatomy (ObjectPage): Signal /signals/$key (+ /trait redirect), Brand /brands/$domain, Story model (stories.ts + StoryCard/StoryRow), Pattern /patterns(/$key)
+- [x] Read shell + Live front page (/), /signals, /brands, /patterns, /tools, /status; Digest/agency pages inside the shell
+- [x] Terminal at /terminal: six section views with tabs, F1–F6, [ ] / ←→, old keys + panel ids as aliases, backtick mode toggle, `read` command
+- [x] Sector lens (?sector=, remembered per device, scope fallback note)
+- [x] Help: glossary entries, read-mode tour, MCP explainer_url → /signals + brand_url, embeds/oEmbed accept /signals, /what-we-show "Where things live"
+- [x] Tests + screenshots + report

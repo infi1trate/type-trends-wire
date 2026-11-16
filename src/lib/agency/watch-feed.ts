@@ -38,7 +38,7 @@ export function watchItems(r: WatchRows, sinceIso: string): WatchItem[] {
   for (const e of r.events) if (sites.has(e.domain) && e.detected_at > sinceIso)
     items.push({ guid: `event-${e.id}`, kind: "site", at: e.detected_at, title: eventSentence(e), detail: eventDetail(e), href: `/library/${e.domain}`, domain: e.domain });
   for (const b of r.rebrands) if (sites.has(b.domain) && b.confirmed_at > sinceIso)
-    items.push({ guid: `rebrand-${b.domain}-${b.confirmed_at}`, kind: "rebrand", at: b.confirmed_at, title: rebrandSentence(b), detail: b.read, href: "/?panel=rebrands", domain: b.domain });
+    items.push({ guid: `rebrand-${b.domain}-${b.confirmed_at}`, kind: "rebrand", at: b.confirmed_at, title: rebrandSentence(b), detail: b.read, href: "/terminal?panel=rebrands", domain: b.domain });
 
   // Traits: those named on the list plus those its sites show. Sites' traits are read across all sectors; named traits also in the list's sectors.
   const shownBy = new Map<string, string[]>();
@@ -58,11 +58,11 @@ export function watchItems(r: WatchRows, sinceIso: string): WatchItem[] {
       if (!to || !from || to === from) continue;
       const l = label(key), by = shownBy.get(key);
       items.push({ guid: `stage-${cur.id}-${s.scope}-${key}`, kind: "stage", at: cur.computed_at, title: `${l.name} [${l.dimension}] moved from ${from} to ${to} in ${scopeText(s.scope)}${pctText(s.current_share)}`,
-        detail: named.has(key) ? "A signal on this watchlist" : `Shown by ${by!.slice(0, 4).join(", ")}${by!.length > 4 ? ` and ${by!.length - 4} more` : ""}`, href: `/?panel=brief&trait=${encodeURIComponent(key)}&sector=${s.scope}`, trait: key });
+        detail: named.has(key) ? "A signal on this watchlist" : `Shown by ${by!.slice(0, 4).join(", ")}${by!.length > 4 ? ` and ${by!.length - 4} more` : ""}`, href: `/terminal?panel=brief&trait=${encodeURIComponent(key)}&sector=${s.scope}`, trait: key });
     }
   }
   for (const a of r.alerts) if (a.ref && (named.has(a.ref) || shownBy.has(a.ref)) && a.published_at > sinceIso)
-    items.push({ guid: `alert-${a.id}`, kind: "alert", at: a.published_at, title: `Alert: ${alertDisplayTitle(a.title, a.ref)}`, detail: named.has(a.ref) ? "A signal on this watchlist" : `Shown by ${shownBy.get(a.ref)!.slice(0, 4).join(", ")}`, href: a.url.replace(/^https?:\/\/[^/]+/, "") || "/?panel=wire", trait: a.ref });
+    items.push({ guid: `alert-${a.id}`, kind: "alert", at: a.published_at, title: `Alert: ${alertDisplayTitle(a.title, a.ref)}`, detail: named.has(a.ref) ? "A signal on this watchlist" : `Shown by ${shownBy.get(a.ref)!.slice(0, 4).join(", ")}`, href: a.url.replace(/^https?:\/\/[^/]+/, "") || "/terminal?panel=wire", trait: a.ref });
 
   // Weekly summary after each weekly (brief) forecast run, when anything changed in the 7 days before it.
   for (const run of runs) {

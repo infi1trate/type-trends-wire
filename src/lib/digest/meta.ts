@@ -23,7 +23,8 @@ export function issueHead(i: Issue, path: string, specimenLinks: { rel: string; 
   return { meta: card(title, desc, url, `${SITE_URL}/digest/${i.week}.png`, 1200, 630, "article"), links: [{ rel: "canonical", href: url }, rss, ...fontLinks(), ...specimenLinks] };
 }
 export function traitHead(p: TraitPage) {
-  const path = `/trait/${encodeURIComponent(p.key)}`, url = `${SITE_URL}${path}`, title = `${p.name} [${p.dimension}] — explainer · DSGN/TERMINAL`;
+  // Canonical is the signal page (/signals/<key>); the share image stays at the open /trait/<key>.png path.
+  const path = `/signals/${encodeURIComponent(p.key)}`, url = `${SITE_URL}${path}`, title = `${p.name} [${p.dimension}] — signal · DSGN/TERMINAL`;
   const desc = `${traitSummary(p)}. ${p.definition}`.slice(0, 300);
   return { meta: card(title, desc, url, `${SITE_URL}/trait/${encodeURIComponent(p.key)}.png`, 1200, 675, "article"), links: [{ rel: "canonical", href: url }, rss, oembedLink(url, `${p.name} [${p.dimension}]`), ...fontLinks()] };
 }

@@ -7,12 +7,12 @@ import { traitModel } from "./trait";
 import { traitFixture } from "./__fixtures__/trait";
 import { traitDefinition } from "./copy";
 import { explainerUrl, explainerPath } from "../labels";
-import { TraitView } from "@/components/digest/TraitView";
+import { SignalView } from "@/components/read/SignalView";
 
 describe("trait explainer", () => {
   it("known key: name, stage, definition, sectors, receipts, examples, related and terminal deep link", () => {
     const p = traitModel(traitFixture())!;
-    expect(p).toMatchObject({ key: "css:subgrid", name: "Subgrid layouts", dimension: "LAYOUT", stage: "Rising", dataThrough: "Q4 2026", terminal: "/?panel=brief&trait=css%3Asubgrid&sector=all" });
+    expect(p).toMatchObject({ key: "css:subgrid", name: "Subgrid layouts", dimension: "LAYOUT", stage: "Rising", dataThrough: "Q4 2026", terminal: "/terminal?panel=brief&trait=css%3Asubgrid" });
     expect(p.definition).toBe("Subgrid layouts tracks the share of homepages whose stylesheets use subgrid layouts. It is measured directly from each page's code and rendered styles.");
     expect(p.sectors).toEqual([{ sector: "dev-tools", share: 0.567, stage: "Peaking", lead: expect.closeTo(0.307, 3) }]);
     expect(p.receipts.map(r => r.term)).toEqual(["Sample", "Momentum", "Gap", "Curation", "Corroboration", "Discourse", "Next-wave score"]);
@@ -30,7 +30,7 @@ describe("trait explainer", () => {
   });
   it("renders the page with the chart and typographic example card", async () => {
     const page = traitModel(traitFixture())!;
-    const root = createRootRoute({ component: () => createElement(TraitView, { page }) });
+    const root = createRootRoute({ component: () => createElement(SignalView, { page, sector: "all" }) });
     const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
     await router.load();
     const html = renderToString(createElement(RouterProvider, { router } as never));
@@ -40,8 +40,8 @@ describe("trait explainer", () => {
     expect(html).not.toMatch(/\$[A-Z][A-Z0-9-]+/);
   });
   it("explainer URLs use the stable key on SITE_URL, only for forecast traits", () => {
-    expect(explainerPath("css:subgrid:all")).toBe("/trait/css%3Asubgrid");
-    expect(explainerUrl("spread:tight_tracking")).toBe("https://type-trends-wire.lovable.app/trait/tracking%3Atight");
+    expect(explainerPath("css:subgrid:all")).toBe("/signals/css%3Asubgrid");
+    expect(explainerUrl("spread:tight_tracking")).toBe("https://type-trends-wire.lovable.app/signals/tracking%3Atight");
     expect(explainerUrl("family:Inter")).toBeNull();
   });
 });

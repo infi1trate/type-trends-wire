@@ -1,4 +1,5 @@
 // "What we show and why": copy generated from tiers.ts, composites.ts and momentum.ts, shared by /what-we-show and the MCP methodology. Pure.
+import { whereThingsLive } from "./ia";
 import { CATEGORY_JUDGMENT, COVERAGE_MIN_SITES, KEY_OVERRIDES, MOVES_DEADBAND_PTS, TIERS, classifyAll, type Tier, type TierResult } from "./tiers";
 import { COMPOSITES, DROPPED_COMPOSITES, ruleText } from "./composites";
 import { CONFIDENCE, DIRECTION_CUTS } from "./momentum";
@@ -39,5 +40,6 @@ export const OVERRIDE_COUNT = Object.keys(KEY_OVERRIDES).length;
 export const methodologyLines = () => [
   `TIERS: one file (tiers.ts) decides what is shown by default. Four questions per trait: ${QUESTIONS.map(q => `${q.word.toUpperCase()} — ${q.line}`).join(" ")} headline = all four; supporting = visible + decision but failing coverage or moves, plus fine measurement buckets; archive = everything else. ${TIER_LINES.archive} Tools that list signals accept an optional tier filter; outputs carry tier.`,
   `COMPOSITES: ${COMPOSITE_LINE} Current set: ${COMPOSITES.map(c => `${c.name} (combo:${c.id}, ${c.dimension}, ${c.rule === "all" ? "all of" : "any of"}: ${ruleText(c)})`).join("; ")}. Left out: ${DROPPED_COMPOSITES.map(d => `${d.name} — ${d.why}`).join(" ")}`,
+  `WHERE THINGS LIVE: ${whereThingsLive().map(x => `${x.label} (${x.read}, terminal ${x.key}) — ${x.purpose}`).join(" ")} Every object page (signal, brand, pattern) has four blocks in order: Headline, Evidence, So what, Related. Backtick switches Read ⇄ Terminal on the same object; one sector lens (?sector=) applies in both. Outputs that name a forecast trait carry explainer_url (/signals/<key>; old /trait/<key> links redirect); outputs that name a site carry brand_url (/brands/<domain>).`,
   `MOMENTUM AND CONFIDENCE: ${MOMENTUM_LINE} ${CONFIDENCE_LINE} Display only: no forecast number changes. ${BASIS_LINE}`,
 ];

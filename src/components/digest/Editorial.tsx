@@ -6,25 +6,24 @@ import { figureSvg, type CardModel } from "@/lib/chart/card";
 import type { Thumb } from "@/lib/thumbs";
 import { BASIS_WORD, type Basis, type StageName } from "@/lib/labels";
 import { GATE_ENABLED } from "@/lib/gate";
+import type { SectionId } from "@/lib/ia";
+import { ReadShell } from "@/components/read/ReadShell";
 
 /** Absolute URL printed after a link in the print stylesheet. */
 export const pr = (href: string) => ({ "data-print": href.startsWith("http") || href.startsWith("mailto:") ? href : `${SITE_URL}${href}` });
 
-export function DigestShell({ children, label }: { children: ReactNode; label: string }) {
-  return <div className="digest">
-    <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the issue</a>
-    <nav aria-label={`${DIGEST_NAME} navigation`} className="ed-nav no-print border-b border-ed-ink">
-      <div className="ed-wrap flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
-        <Link to="/digest" className="ed-tap py-2 font-semibold no-underline">DSGN/TERMINAL · {DIGEST_NAME}</Link>
-        <span className="flex flex-wrap items-center gap-x-4">
-          <Link to="/digest/archive" className="ed-tap py-2">Archive</Link>
-          <a href="/digest/rss.xml" className="ed-tap py-2">RSS</a>
-          <Link to="/" className="ed-tap py-2">Open the terminal →</Link>
-        </span>
-      </div>
-    </nav>
-    <main id="ed-main" aria-label={label}>{children}</main>
-  </div>;
+/** Digest, explainer and ledger pages sit inside the shared Read shell; Digest pages keep their own Archive / RSS sub-nav. */
+export function DigestShell({ children, label, section = "digest", lens = false, note = null, tour = false }: { children: ReactNode; label: string; section?: SectionId; lens?: boolean; note?: string | null; tour?: boolean }) {
+  const sub = section === "digest" ? <nav aria-label={`${DIGEST_NAME} navigation`} className="ed-nav no-print mt-2 border-y border-ed-ink">
+    <div className="ed-wrap flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
+      <Link to="/digest" className="ed-tap py-2 font-semibold no-underline">{DIGEST_NAME}</Link>
+      <span className="flex flex-wrap items-center gap-x-4">
+        <Link to="/digest/archive" className="ed-tap py-2">Archive</Link>
+        <a href="/digest/rss.xml" className="ed-tap py-2">RSS</a>
+      </span>
+    </div>
+  </nav> : undefined;
+  return <ReadShell label={label} section={section} lens={lens} note={note} sub={sub} tour={tour}>{children}</ReadShell>;
 }
 
 export function StageWord({ stage }: { stage: StageName | null }) {
@@ -64,7 +63,7 @@ export function SiteCard({ domain, name, sector, lines, thumb, sizes = "(min-wid
     </div>}
     <h3 className="ed-small font-medium">{name ?? domain}</h3>
     {thumb && <p className="ed-caption">{lines.join(" · ")}</p>}
-    <p className="ed-data flex flex-wrap gap-x-3"><Link to="/library/$domain" params={{ domain }} className="ed-tap" {...pr(`/library/${domain}`)}>Terminal page →</Link><a href={`https://${domain}`} target="_blank" rel="noopener" className="ed-tap" {...pr(`https://${domain}`)}>Live site ↗</a></p>
+    <p className="ed-data flex flex-wrap gap-x-3"><Link to="/brands/$domain" params={{ domain }} className="ed-tap" data-tour="r-brand" {...pr(`/brands/${domain}`)}>Brand page →</Link><a href={`https://${domain}`} target="_blank" rel="noopener" className="ed-tap" {...pr(`https://${domain}`)}>Live site ↗</a></p>
   </article>;
 }
 
@@ -83,7 +82,8 @@ export function DigestFooter({ footer }: { footer: { methodology: string; glossa
       <a href={footer.methodology} className="ed-tap" {...pr(footer.methodology)}>Methodology</a>
       <a href={footer.glossary} className="ed-tap" {...pr(footer.glossary)}>Glossary</a>
       <a href={footer.rss} className="ed-tap" {...pr(footer.rss)}>RSS</a>
-      <Link to="/" className="ed-tap" {...pr("/")}>Open the terminal</Link>
+      <Link to="/terminal" className="ed-tap" {...pr("/terminal")}>Open the terminal</Link>
+      <Link to="/tools" className="ed-tap">Tools</Link>
       <Link to="/digest/archive" className="ed-tap">All issues</Link>
       <Link to="/what-we-show" className="ed-tap" {...pr("/what-we-show")}>What we show and why</Link>
       {GATE_ENABLED && <form method="post" action="/lock" className="no-print contents"><button type="submit" className="ed-tap cursor-pointer underline">Lock</button></form>}

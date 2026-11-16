@@ -3,6 +3,7 @@
  * Entry ids are referenced from the UI as `g="<id>"`; glossary.test.ts checks every id used exists here.
  */
 import { DIMENSIONS, STAGES, type Dimension, type StageName } from "./labels";
+import { SECTIONS } from "./ia";
 
 export type GlossaryKind = "panel" | "column" | "metric" | "stage" | "dimension";
 export type GlossaryEntry = { id: string; term: string; measures: string; howToRead: string; methodologyAnchor: string; kind: GlossaryKind };
@@ -59,6 +60,20 @@ const PANELS: Row[] = [
   ["p-components", "Score parts", "The pieces of the next-wave score for this trait.", "Each bar is how far above or below average that part is.", "m-next-wave-components"],
   ["p-compare", "Index comparison", "Share of sites in each group using each value: V vanguard, M mainstream, C curated.", "Longer V bars than M bars mean design-led sites are ahead.", "m-crawler"],
   ["p-console", "Console (/)", "Ask for type, palettes, differentiation or a critique in plain commands.", "Type help to see commands; every answer carries receipts.", "m-taste-tools"],
+];
+
+/** Phase 13: the six sections, four objects, the sector lens and the two modes. */
+const IA: Row[] = [
+  ["sections", "Six sections", `Everything lives in one of six sections, in both modes: ${SECTIONS.map(s => s.label).join(", ")}.`, "Read mode shows them as pages; Terminal mode as F1–F6 with tabs.", "m-where-things-live"],
+  ...SECTIONS.map((s): Row => [`s-${s.id}`, `${s.label} (${s.key})`, s.purpose, `Read: ${s.read}. Terminal: ${s.key}.`, "m-where-things-live"]),
+  ["objects", "Four objects", "Signals, brands, stories and patterns. Every object page has the same four blocks in the same order: Headline, Evidence, So what, Related.", "Read top to bottom: what it is now, the receipts, why it matters, where to go next.", "m-where-things-live"],
+  ["o-signal", "Signal (object)", "A design trait we watch for movement, with its stage, Momentum, Confidence and basis.", "Open /signals/<key>; in the terminal it is the signal drawer.", "m-where-things-live"],
+  ["o-brand", "Brand (object)", "A tracked site: its identity, every confirmed move and how it sits against its sector.", "Open /brands/<domain>; the dense record is /library/<domain>.", "m-where-things-live"],
+  ["o-story", "Story (object)", "One thing that happened: a stage change, breakout, alert, brand move, rebrand, launch or news item, with a time and a receipts link.", "Live lists stories newest first; each card links to its proof.", "m-where-things-live"],
+  ["o-pattern", "Pattern (object)", "A headline layout or composite signal seen as examples: the brands whose current homepage shows it.", "Filter by sector; thumbnails appear where a credited crop is stored, typographic cards otherwise.", "m-where-things-live"],
+  ["sector-lens", "Sector lens", "One sector switch for both modes (All plus the library's ten sectors), kept in the address (?sector=) and remembered on this device.", "Signal lists use that sector's numbers (or say when they fall back to all sectors); brand lists filter; Live ranks that sector's stories first.", "m-where-things-live"],
+  ["mode-read", "Read mode", "The editorial view: the front page and object pages, set like the Digest.", "Press ` (backtick) or use the Terminal switch for the dense view of the same page.", "m-where-things-live"],
+  ["mode-terminal", "Terminal mode", "The dense, keyboard-first pro view at /terminal: F1–F6 sections with tabs, the console and every panel.", "Press ` or READ to return to the same object in Read mode.", "m-where-things-live"],
 ];
 
 const METRICS: Row[] = [
@@ -162,6 +177,7 @@ export const dimensionId = (d: Dimension) => `dim-${d.toLowerCase()}`;
 
 export const GLOSSARY: GlossaryEntry[] = [
   ...PANELS.map(mk("panel")),
+  ...IA.map(mk("panel")),
   ...METRICS.map(mk("metric")),
   ...COLUMNS.map(mk("column")),
   ...STAGES.map(s => ({ id: stageId(s), term: s, measures: STAGE_COPY[s][0], howToRead: STAGE_COPY[s][1], methodologyAnchor: "m-forecast", kind: "stage" as const })),

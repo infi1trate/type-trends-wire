@@ -4,7 +4,7 @@ import { signalsQuery, wire24hQuery, latestBriefQuery } from "@/lib/data";
 import { headlineOnly } from "@/lib/signals";
 import { tierCounts } from "@/lib/tiers";
 import { AllSignals } from "./Signals";
-import { DORMANT, PANELS, isoWeek, type PanelId } from "./panels";
+import { isoWeek, type PanelId } from "./panels";
 import { Loading, Roll } from "./primitives";
 import { Info } from "./Info";
 import { Wire } from "./Wire";
@@ -28,7 +28,7 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
   const dash = <span className="text-body font-normal text-g500">Fills in after the next Sunday forecast</span>;
   return (
     <div className="flex min-h-0 flex-1 flex-col" aria-label="Signals">
-      <h2 className="sr-only">F1 Signals</h2>
+      <h2 className="sr-only">Signals · All signals</h2>
       <div className="grid shrink-0 grid-cols-2 border-b border-rule xl:grid-cols-4">
         <Stat label="HEADLINE SIGNALS" g="tier-headline">{isLoading ? <Loading /> : head.length ? <Roll value={String(head.length)} /> : dash}</Stat>
         <Stat label="SUPPORTING · ARCHIVE" g="tier-supporting">{isLoading ? <Loading /> : counts ? <span>{counts.supporting} · {counts.archive}</span> : dash}</Stat>
@@ -53,23 +53,8 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
       </div>
       <section className="shrink-0 bg-paper p-3 text-void" aria-label="Weekly brief">
         <h2 className="label flex items-center font-semibold">WEEKLY BRIEF · {brief?.week ?? `WEEK ${String(isoWeek()).padStart(2, "0")}`} · AI</h2>
-        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2" onClick={() => go("brief")}>OPEN F10 FORECAST →</button></p> : <p className="mt-1">No brief yet: the first one is written after the next Sunday forecast.</p>}
+        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2" onClick={() => go("brief")}>OPEN FORECAST →</button></p> : <p className="mt-1">No brief yet: the first one is written after the next Sunday forecast.</p>}
       </section>
     </div>
-  );
-}
-
-export function Dormant({ id }: { id: PanelId }) {
-  const p = PANELS.find((x) => x.id === id)!;
-  return (
-    <section className="hatch flex min-h-[calc(100vh-120px)] flex-1 items-center justify-center p-3" aria-label={p.label}>
-      <div className="max-w-md border border-rule bg-g800 p-3">
-        <div className="label text-g500">{p.key}</div>
-        <h2 className="text-hero font-semibold text-ink">{p.label}</h2>
-        <div className="label mt-2 text-ink">STATUS <span className="text-g500">OFFLINE</span></div>
-        <p className="mt-2 text-ink">{DORMANT[id]}</p>
-        <p className="mt-3 text-g500">This panel is offline for now; it switches on when its data source is connected.</p>
-      </div>
-    </section>
   );
 }
