@@ -34,5 +34,5 @@ function Page() {
   const { sites, sector } = Route.useSearch();
   const { data } = useSuspenseQuery(auditQuery(sites, sector ?? null));
   if (!data.ok) return <AgencyShell label="Competitive audit" crumb="Competitive audit"><div className="ed-wrap py-16"><h1 className="ed-h1">{sites ? "This audit needs a different set of sites" : "Start a competitive audit"}</h1><p className="ed-body mt-4">{sites ? data.error : "Choose 2–6 sites to compare."}</p><p className="ed-data mt-6"><Link to="/audit/new" search={{ sites: data.domains.join(",") || undefined }}>Choose sites →</Link></p></div></AgencyShell>;
-  return <AuditView a={data.audit} />;
+  return <AuditView a={data.audit} field={data.field} />;
 }

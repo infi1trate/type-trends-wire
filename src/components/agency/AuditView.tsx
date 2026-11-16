@@ -6,6 +6,10 @@ import { scopeText, label as traitLabel } from "@/lib/labels";
 import { BasisWord, SectionHead, SiteCard, StageWord, Swatches, Dim, pr } from "@/components/digest/Editorial";
 import { AgencyShell, Btn, CopyField, day } from "./Shell";
 import { BRAND_NAME } from "@/lib/brand";
+import type { FieldFig } from "@/lib/data-stories/types";
+import { auditFindings, reportFigure } from "@/lib/agency/report";
+import { Ledger } from "@/components/brand/Ledger";
+import { FigureView } from "@/components/data/Figures";
 
 const pct = (x: number | null) => (x == null ? "—" : `${Math.round(x * 100)}%`);
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
@@ -39,15 +43,21 @@ function FaceLine({ role, f }: { role: string; f: NonNullable<Audit["type"]>["si
   </div>;
 }
 
-export function AuditView({ a }: { a: Audit }) {
+const FIND_TAG = { ahead: "Ahead", behind: "Behind", open: "Open", shared: "Shared" } as const;
+export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | null }) {
+  const fig = reportFigure(a), findings = auditFindings(a), placed = field ? a.domains.filter(d => field.points.some(p => p.domain === d)) : [];
   const n = a.domains.length, where = scopeText(a.sector);
   const latest = a.glance.map(g => g.captured).filter((x): x is string => !!x).sort().at(-1) ?? null;
   const num = (k: string) => String(a.sections.indexOf(k) + 1).padStart(2, "0");
   return <AgencyShell label={`Competitive audit of ${list(a.domains)}`} crumb="Competitive audit">
-    <header className="ed-wrap pb-10 pt-10">
+    <header className="ed-wrap pb-10 pt-10" data-composition="report">
       <p className="ed-kicker">Competitive audit · <span className="normal-case">{BRAND_NAME}</span></p>
       <h1 className="ed-cover mt-4 break-words">{list(a.domains)}</h1>
       <p className="ed-standfirst mt-6">{n} sites compared on type, color, layout and voice, read against {where}{a.sectorSource === "majority" ? " (their most common sector)" : a.sectorSource === "chosen" ? "" : ""}.</p>
+      <figure className="mt-8 flex flex-wrap items-end gap-x-4 gap-y-1" data-report-figure="">
+        <span className="ed-display tabular-nums" style={{ fontFamily: "var(--tk-font-display)", fontWeight: 900, fontSize: "clamp(4rem, 12vw, 8rem)", lineHeight: 0.85 }}>{fig.value}</span>
+        <figcaption className="pb-2"><span className="ed-h3 block">{fig.unit}</span><span className="ed-caption block max-w-[44ch]">{fig.caption}</span></figcaption>
+      </figure>
       <p className="ed-data mt-4">{latest ? `Latest capture ${day(latest)}` : "No captures yet"}{a.dataThrough ? ` · forecast data through ${a.dataThrough}` : ""} · prepared {day(a.now)}</p>
       {a.pending.length > 0 && <p className="ed-small mt-3">Pending: {list(a.pending)} {a.pending.length === 1 ? "is" : "are"} not tracked yet and {a.pending.length === 1 ? "is" : "are"} left out of the comparisons until rendered.</p>}
       <div className="no-print mt-6 flex flex-wrap gap-3">
@@ -57,6 +67,17 @@ export function AuditView({ a }: { a: Audit }) {
       </div>
       <nav aria-label="Sections" className="no-print ed-data mt-6 flex flex-wrap gap-x-4">{a.sections.map(k => <a key={k} href={`#a-${k}`} className="ed-tap">{num(k)} {TITLES[k]}</a>)}</nav>
     </header>
+
+    <section className="ed-wrap mb-14" aria-labelledby="a-findings">
+      <SectionHead n="·" title="Findings" id="a-findings" kicker="Each finding from the numbers below, with whether it was measured or is an AI estimate." />
+      {findings.length ? <Ledger label="Findings" rows={findings.map((f, k) => ({ key: f.key, href: f.href, number: k + 1, title: f.text, tags: [FIND_TAG[f.kind]], facts: [<BasisWord key="b" b={f.basis} />] }))} />
+        : <p className="ed-body">No finding yet: none of these sites has enough measured signals in a staged forecast. Add a tracked site or try again after the next weekly run.</p>}
+    </section>
+
+    {field && <section className="ed-wrap mb-14" aria-labelledby="a-field">
+      <SectionHead n="·" title={`Where each page sits in ${scopeText(a.sector)}`} id="a-field" kicker={placed.length ? `${list(placed)} marked among every ${scopeText(a.sector)} brand by headline size and white space.` : "None of these pages is tracked in this sector, so none can be placed; the field shows the sector as it stands."} />
+      <div className="max-w-3xl"><FigureView fig={field} view={{ figure: "field", highlight: placed, focus: null }} /></div>
+    </section>}
 
     <section className="ed-wrap" aria-labelledby="a-glance">
       <SectionHead n={num("glance")} title="At a glance" id="a-glance" />

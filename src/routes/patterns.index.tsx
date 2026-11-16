@@ -1,25 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { patternsQuery } from "@/lib/data";
-import { resolveSector } from "@/lib/sector-lens";
+import { galleryQuery } from "@/lib/data";
+import { gallerySearch, parseGallerySearch, type GallerySearch } from "@/lib/gallery";
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
-import { PatternsIndexView } from "@/components/read/PatternViews";
+import { GalleryView } from "@/components/read/GalleryView";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = `Patterns — signals seen as examples · ${BRAND_NAME}`;
-const DESC = "Headline layout and composite design signals, each with the tracked brands that show it.";
+const TITLE = `Patterns — the gallery · ${BRAND_NAME}`;
+const DESC = "A wall of stored homepage captures showing each headline layout pattern, filterable by sector, pattern, period and how it was read.";
 export const Route = createFileRoute("/patterns/")({
-  validateSearch: (s: Record<string, unknown>): { sector?: string | undefined; illustrated?: string | undefined } => ({ ...(typeof s["sector"] === "string" ? { sector: s["sector"] } : {}), ...(s["illustrated"] === "1" || s["illustrated"] === 1 ? { illustrated: "1" } : {}) }),
-  loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), illustrated: search.illustrated === "1" }),
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(patternsQuery(deps.sector, deps.illustrated)).then(() => undefined),
+  validateSearch: (s: Record<string, unknown>): GallerySearch => gallerySearch(parseGallerySearch(s)),
+  loaderDeps: ({ search }) => ({ search }),
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(galleryQuery(deps.search)).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/patterns` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/patterns` }, ...fontLinks()] }),
   component: Patterns,
-  errorComponent: () => <DigestNotFound title="Patterns didn't load" body="The examples couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound title="The gallery didn't load" body="The stored captures couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound title="No such view" body="That gallery view doesn't exist. Start from all patterns." />,
 });
 function Patterns() {
-  const { sector, illustrated } = Route.useSearch();
-  const { data } = useSuspenseQuery(patternsQuery(resolveSector(sector), illustrated === "1"));
-  return <PatternsIndexView patterns={data.patterns} sector={data.sector} illustrated={data.illustrated} total={data.total} illustratedCount={data.illustratedCount} />;
+  return <GalleryView search={Route.useSearch()} />;
 }

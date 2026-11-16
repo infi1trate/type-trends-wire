@@ -38,8 +38,11 @@ export const getAudit = createServerFn({ method: "GET" }).inputValidator(z.objec
   const { parseAuditSites } = await import("./agency/audit");
   const p = parseAuditSites(data.sites);
   if (!p.ok) return { ok: false as const, error: p.error, domains: p.domains };
-  const { loadAudit } = await import("./agency/audit.server");
-  return { ok: true as const, audit: await loadAudit(p.domains, data.sector) };
+  const [{ loadAudit }, { dataInput }, { sectorField }] = await Promise.all([import("./agency/audit.server"), import("./data-stories/data.server"), import("./data-stories/stories")]);
+  const audit = await loadAudit(p.domains, data.sector);
+  // The audited pages placed in their sector's brand field (tracked pages only: the field reads stored captures).
+  const field = audit.sector && audit.sector !== "all" ? await dataInput().then(i => sectorField(i, audit.sector)).catch(() => null) : null;
+  return { ok: true as const, audit, field };
 });
 export const checkAuditDomains = createServerFn({ method: "POST" }).inputValidator(z.object({ domains: z.array(z.string().max(300)).min(1).max(12) }).strict()).handler(async ({ data }) => {
   const { normDomain } = await import("./agency/watch");

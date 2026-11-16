@@ -188,8 +188,11 @@ export type FrontInput = {
   editions: EditionsIn; archiveMoves: ArchiveMove[]; patternKeys: Set<string>; brandNames: Map<string, string | null>;
   /** Live data stories (registry status); the shelf is absent when there are none. */
   dataStories?: DataShelfItem[];
+  /** Live collections (registry status); the Collections box on the Explore shelf is absent when there are none. */
+  collections?: CollectionShelfItem[];
 };
 export type DataShelfItem = { slug: string; number: number; question: string; href: string };
+export type CollectionShelfItem = { slug: string; number: number; title: string; href: string };
 export function frontModel(i: FrontInput) {
   const stream = streamOf(i.stories) as Numbered[], ranked = stream.filter(s => s.type !== "launch");
   const state = pageState(ranked.map(s => s.happened_at), i.now);
@@ -214,15 +217,16 @@ export function frontModel(i: FrontInput) {
   const movingShown = surfaceShows(i.format, "moving-now");
   const strip = surfaceShows(i.format, "your-sector") ? sectorStrip(i.sector, i.lens, stream) : null;
   const dataStories = surfaceShows(i.format, "data-stories") ? (i.dataStories ?? []) : [];
+  const collections = shows(i.format, "explore") ? (i.collections ?? []) : [];
   return {
     now: new Date(i.now).toISOString(), today: utcDay(i.now), sector: i.sector, format: i.format, state,
     ticker: tickerOf(i.signals), freshness: i.freshness,
     lead,
     moving: movingShown ? { items: i.moving.items, line: movingLine(i.moving), comparison: i.moving.pair ? `Between forecast run ${i.moving.pair.earlier.id} and run ${i.moving.pair.latest.id}, ${i.moving.pair.days} days apart, across all sectors.` : null } : null,
     column: { items, quiet, groups: groupColumn(items, i.now, { sector: i.sector, quiet }) },
-    archive, chart, launches, strip, editions, explore, dataStories, footer: FRONT_FOOTER,
+    archive, chart, launches, strip, editions, explore, dataStories, collections, footer: FRONT_FOOTER,
     /** Which sections render. Absent sections are left out of the page, never shown empty. */
-    sections: { lead: !!lead, moving: movingShown, chart: !!chart, launches: launches.length > 0, strip: !!strip, editions: editions.length > 0, explore: explore.length > 0, archive: archive.length > 0, dataStories: dataStories.length > 0 },
+    sections: { lead: !!lead, moving: movingShown, chart: !!chart, launches: launches.length > 0, strip: !!strip, editions: editions.length > 0, explore: explore.length > 0, archive: archive.length > 0, dataStories: dataStories.length > 0, collections: collections.length > 0 },
   };
 }
 export type FrontModel = ReturnType<typeof frontModel>;

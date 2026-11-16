@@ -1,4 +1,5 @@
 // Ties registry entries to their builders and checks. Pure over DataInput + captures.
+import { collectionForStory } from "../collections/registry";
 import { CHECKS } from "./checks";
 import { DATA_STORIES, WHERE_YOU_SIT, entryOf, relatedFor, templateName, type Entry } from "./registry";
 import { bigTypeStory, mindsBrand, sectorMindsStory, softwareStory, whereYouSit, type Captures, type Meta } from "./stories";
@@ -26,7 +27,7 @@ export function indexRows(i: DataInput | null, dataThrough: string | null): Inde
   const rows = DATA_STORIES.map(e => { const s = statusOf(e, i); return { slug: e.slug, number: e.number, question: e.question, deck: e.deck, template: templateName(e), ...s, dataThrough, href: s.status === "live" ? `/data/${e.slug}` : null }; });
   return [...rows, { slug: WHERE_YOU_SIT.slug, number: WHERE_YOU_SIT.number, question: WHERE_YOU_SIT.question, deck: WHERE_YOU_SIT.deck, template: templateName(WHERE_YOU_SIT), status: "live" as const, reason: null, dataThrough, href: `/data/${WHERE_YOU_SIT.slug}` }].sort((a, b) => a.number - b.number);
 }
-const metaOf = (e: Entry, live: Entry[]): Meta => ({ slug: e.slug, number: e.number, question: e.question, deck: e.deck, template: templateName(e), collection: e.collection, related: relatedFor(e.slug, live) });
+const metaOf = (e: Entry, live: Entry[]): Meta => ({ slug: e.slug, number: e.number, question: e.question, deck: e.deck, template: templateName(e), collection: collectionForStory(e.slug) ?? e.collection, related: relatedFor(e.slug, live) });
 export const liveNow = (i: DataInput | null) => DATA_STORIES.filter(e => statusOf(e, i).status === "live");
 export function buildStory(slug: string, i: DataInput, caps: Captures): StoryModel | null {
   const e = entryOf(slug), b = BUILDERS[slug];

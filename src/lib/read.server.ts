@@ -99,6 +99,14 @@ export async function runComparison() {
   return { real: runs, pair, next: nextComparison(runs, Date.now()) };
 }
 
+/** Signals similarity may compare: headline tier and measured (the brand page and MCP `library_site` share this). */
+const similarEligible = (signals: { key: string; tier: string; basis: string }[]) => new Set(signals.filter(s => s.tier === "headline" && s.basis === "measured").map(s => s.key));
+/** The similar brands for one tracked domain, for MCP. */
+export async function similarFor(domain: string) {
+  const [{ similarBrands }, index, { signals }] = await Promise.all([import("./similar"), siteTraitIndex(), latestSignals("all")]);
+  return similarBrands(domain, index, similarEligible(signals));
+}
+
 /** /brands/<domain>: null when the domain is not an active library brand. */
 export async function loadBrand(domain: string) {
   const db = supabaseAnon();
@@ -116,7 +124,7 @@ export async function loadBrand(domain: string) {
     dataInput().catch(() => null),
   ]);
   const own = index.find(s => s.domain === domain);
-  const eligible = new Set(signals.filter(s => s.tier === "headline" && s.basis === "measured").map(s => s.key));
+  const eligible = similarEligible(signals);
   const storyOf: [string, string][] = [...storyForSource(all)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
   const field = input && own ? sectorField(input, own.sector) : null;
   const contrast = input ? signalContrast(input, domain) : null;

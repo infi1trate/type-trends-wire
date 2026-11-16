@@ -685,3 +685,4 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 }
 /* The terminal: full sentences outside tables (help, tour, empty states) are set in Newsreader; cells and the console stay mono. */
 .t-say { font-family: var(--tk-font-text); font-size: 15px; line-height: 1.45; letter-spacing: 0; text-transform: none; font-variant-numeric: normal; }
+@layer components { .wall-ink { filter: grayscale(1) contrast(1.15); mix-blend-mode: multiply; } }

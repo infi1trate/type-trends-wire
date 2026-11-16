@@ -1,7 +1,7 @@
 // Loads the pattern gallery and collections: anonymous SELECT-only reads of stored captures, cached; the pure models in gallery.ts and
 // collections/registry.ts decide everything. Frames are drawn from stored skeletons only for the tiles on the requested page.
 import { supabaseAnon } from "./mcp/supabase";
-import { galleryModel, tileFrame, type GalleryChange, type GalleryFilter, type GalleryIn, type GalleryPattern, type Tile } from "./gallery";
+import { galleryModel, tileFrame, type GalleryChange, type GalleryFilter, type GalleryIn, type GalleryPattern, type GalleryTile } from "./gallery";
 import { COLLECTIONS, collectionOf, collectionStatus, type Collection, type CollectionStatus } from "./collections/registry";
 import { isPatternSignal } from "./patterns";
 import { basis, label } from "./labels";
@@ -73,7 +73,6 @@ async function framesFor(tiles: { snapshot: number; domain: string }[], crops: G
   if (frameCache.size > 4000) for (const key of [...frameCache.keys()].slice(0, 1000)) frameCache.delete(key);
   return new Map(tiles.map(t => [t.snapshot, frameCache.get(t.snapshot) ?? null]));
 }
-export type GalleryTile = Tile & { frame: Frame | null };
 const viewCache = new Map<string, { at: number; v: Promise<unknown> }>();
 function cached<T>(key: string, load: () => Promise<T>): Promise<T> {
   const hit = viewCache.get(key);
@@ -90,7 +89,7 @@ export function loadGallery(f: GalleryFilter) {
     return { ...m, tiles: m.tiles.map((t): GalleryTile => ({ ...t, frame: t.crop ? null : frames.get(t.snapshot) ?? null })) };
   });
 }
-export type CollectionRow = Pick<Collection, "slug" | "number" | "title" | "deck" | "pairs"> & CollectionStatus & { count: number; href: string | null };
+export type CollectionRow = { slug: string; number: number; title: string; deck: string; pairs: Collection["pairs"] } & CollectionStatus & { count: number; href: string | null };
 /** Status at read time: the registry's status, re-checked against today's count. */
 export function statusNow(c: Collection, count: number): CollectionStatus {
   if (c.status === "draft") return { status: "draft", reason: c.reason };

@@ -1,53 +1,64 @@
-// /signals: headline signals ranked by Momentum, grouped by dimension tabs; a tier switch reaches supporting and archive.
+// /signals (Steady): one ranked Ledger grouped by tier — Headline, Supporting, then Archive folded behind one control. Each row: rank,
+// name, stage, share now, an unfiltered sparkline of well-covered quarters, Momentum and the basis mark. The sector lens reorders by
+// that sector's share and shows it against all sectors; sort, dimension filter and lens live in the URL.
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { signalSeriesQuery, signalsQuery } from "@/lib/data";
-import { SIGNAL_TABS, signalTabOf, type SignalTab } from "@/lib/ia";
+import { SIGNAL_TABS } from "@/lib/ia";
 import { lensSignals } from "@/lib/sector-lens";
-import { TIERS, TIER_WORD, type Tier } from "@/lib/tiers";
+import { SIGNAL_SORTS, signalsIndex, signalsSearch, type SignalsGroup, type SignalsRow, type SignalsView } from "@/lib/signals-index";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
-import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/Editorial";
+import { BasisWord, DigestShell, StageWord, pr } from "@/components/digest/Editorial";
+import { Ledger } from "@/components/brand/Ledger";
+import { RuleBox } from "@/components/brand/Containers";
 import { ReadFooter, Spark } from "./Bits";
+import { ScrollRow } from "./ScrollRow";
 
-const byMomentum = <T extends { momentum_index: number | null; share: number | null; name: string }>(a: T, b: T) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || (b.share ?? 0) - (a.share ?? 0) || a.name.localeCompare(b.name);
-const TIER_NOTE: Record<Tier, string> = { headline: "Shown by default everywhere: visible, decision-worthy, well measured and moving.", supporting: "Evidence: shown inside headline signals, audits and drawers.", archive: "Collected, never deleted, not shown by default." };
+const TIER_NOTE: Record<SignalsGroup["tier"], string> = { headline: "Shown by default everywhere: visible, decision-worthy, well measured and moving.", supporting: "Evidence: shown inside headline signals, audits and drawers.", archive: "Collected, never deleted, not shown by default." };
+const signed = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pts`);
 
-export function SignalsIndexView({ tab, tier, sector }: { tab: SignalTab; tier: Tier; sector: string }) {
+function rowsOf(g: SignalsGroup, scoped: boolean, sector: string, lensQ: string | undefined) {
+  return g.rows.map((r: SignalsRow) => ({
+    key: r.key, href: `/signals/${encodeURIComponent(r.key)}${lensQ ? `?sector=${lensQ}` : ""}`, number: r.rank, title: r.name,
+    line: <span className="inline-flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /><Spark points={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>,
+    facts: [
+      <span key="s" className="tabular-nums">{scoped ? <>{pct(r.share, 1) ?? "—"} <span className="ledger-muted">{sectorName(sector)} · {pct(r.allShare, 1) ?? "—"} all</span></> : pct(r.share, 1) ?? "—"}</span>,
+      `Momentum ${r.momentum ?? "—"}`, signed(r.change),
+    ],
+  }));
+}
+
+export function SignalsIndexView({ v }: { v: SignalsView }) {
   const { data } = useSuspenseQuery(signalsQuery());
-  const lens = useMemo(() => lensSignals(data.snap.rows, data.tiers, sector), [data, sector]);
-  const { data: series } = useQuery(signalSeriesQuery(lens.scope));
-  const lensQ = sector === "all" ? undefined : sector, tierQ = tier === "headline" ? undefined : tier;
-  const inTier = lens.signals.filter(s => s.tier === tier);
-  const rows = inTier.filter(s => tab === "all" || signalTabOf(s.key, s.dimension) === tab).sort(byMomentum);
-  const count = (t: SignalTab) => inTier.filter(s => t === "all" || signalTabOf(s.key, s.dimension) === t).length;
-  return <DigestShell label="Signals" section="signals" lens note={lens.note}>
+  const { data: series } = useSuspenseQuery(signalSeriesQuery("all"));
+  const idx = useMemo(() => {
+    const lens = lensSignals(data.snap.rows, data.tiers, v.sector), all = v.sector === "all" ? lens.signals : lensSignals(data.snap.rows, data.tiers, "all").signals;
+    return signalsIndex({ all, lens, series }, v);
+  }, [data, series, v]);
+  const lensQ = v.sector === "all" ? undefined : v.sector;
+  return <DigestShell label="Signals" section="signals" lens note={idx.note}>
     <header className="ed-wrap pt-8 md:pt-12">
-      <p className="ed-kicker">Signals · {sectorName(lens.scope)} · forecast run {data.snap.run_id ?? "—"}</p>
+      <p className="ed-kicker">Signals · {sectorName(idx.scope)} · forecast run {data.snap.run_id ?? "—"}</p>
       <h1 className="ed-cover mt-3">What deserves your attention</h1>
-      <p className="ed-standfirst mt-5">Headline signals ranked by Momentum: each is visible to visitors, worth a brand decision, measured on enough sites and moving.</p>
+      <p className="ed-standfirst mt-5 max-w-[62ch]">Every signal we measure, ranked within its tier{idx.scoped ? ` by ${sectorName(v.sector)}'s share, shown against all sectors` : ""}. Headline signals are visible to visitors, worth a brand decision, measured on enough sites and moving.</p>
     </header>
-    <div className="ed-wrap mt-8 flex flex-col gap-4 border-y border-ed-ink py-2 md:flex-row md:items-center md:justify-between">
-      <nav aria-label="Dimensions" className="ed-data flex flex-wrap gap-x-5">{SIGNAL_TABS.map(t => <Link key={t.id} to="/signals" search={{ tab: t.id === "all" ? undefined : t.id, tier: tierQ, sector: lensQ }} aria-current={tab === t.id ? "page" : undefined} className={`ed-tap no-underline ${tab === t.id ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>{t.label}<span className="ed-muted ml-1.5">{count(t.id)}</span></Link>)}</nav>
-      <nav aria-label="Tier" className="ed-data flex flex-wrap items-center gap-x-4"><span className="ed-kicker">Tier</span>{TIERS.map(t => <Link key={t} to="/signals" search={{ tab: tab === "all" ? undefined : tab, tier: t === "headline" ? undefined : t, sector: lensQ }} aria-current={tier === t ? "true" : undefined} className={`ed-tap no-underline ${tier === t ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>{TIER_WORD[t].toLowerCase().replace(/^./, c => c.toUpperCase())}</Link>)}</nav>
-    </div>
-    <p className="ed-wrap ed-caption mt-2">{TIER_NOTE[tier]} <Link to="/what-we-show" className="ed-tap" {...pr("/what-we-show")}>What we show and why →</Link> <Link to="/data" className="ed-tap">Data stories →</Link></p>
-    <section aria-label={`${TIER_WORD[tier]} signals`} className="ed-wrap mt-6">
-      {rows.length ? <ol>{rows.map((s, i) => <li key={s.key} className="ed-hair grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 gap-y-1 py-4 md:grid-cols-[2.5rem_minmax(0,5fr)_minmax(0,3fr)_minmax(0,4fr)]">
-        <span className="ed-data ed-muted pt-1">{String(i + 1).padStart(2, "0")}</span>
-        <div className="min-w-0">
-          <Link to="/signals/$key" params={{ key: s.key }} search={{ sector: lensQ }} className="ed-h3 no-underline hover:underline" data-tour={i === 0 ? "r-signal" : undefined}>{s.name}</Link>
-          <p className="ed-data mt-1 flex flex-wrap items-center gap-2"><Dim d={s.dimension} /><BasisWord b={s.basis} /><StageWord stage={s.stage} />{s.share != null && <span>{pct(s.share, 1)}</span>}</p>
-        </div>
-        <dl className="ed-data col-start-2 flex flex-wrap items-center gap-x-4 md:col-start-auto">
-          <div><dt className="ed-kicker">Momentum</dt><dd>{s.momentum_index ?? "—"}{s.direction ? ` · ${s.direction}` : ""}</dd></div>
-          <div><dt className="ed-kicker">Confidence</dt><dd title={s.confidence_reason}>{s.confidence}</dd></div>
-          <div className="self-end"><Spark points={series?.[s.key]} label={s.name} /></div>
-        </dl>
-        <p className="ed-small col-start-2 md:col-start-auto">{s.so_what ?? <span className="ed-caption">{s.reasons.join(" ")}</span>}</p>
-      </li>)}</ol> : <p className="ed-body py-6">No {TIER_WORD[tier].toLowerCase()} signal in this dimension{lens.scope !== "all" ? ` for ${sectorName(lens.scope)}` : ""} this week.</p>}
+    <section aria-label="Sort and filter" className="ed-wrap mt-8">
+      <RuleBox className="grid gap-3 p-4">
+        <nav aria-label="Dimension"><ScrollRow className="ed-data gap-x-5"><span className="ed-kicker">Dimension</span>{SIGNAL_TABS.map(t => <Link key={t.id} to="/signals" search={signalsSearch({ ...v, tab: t.id })} resetScroll={false} aria-current={v.tab === t.id ? "page" : undefined} className={`ed-tap no-underline ${v.tab === t.id ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>{t.label}</Link>)}</ScrollRow></nav>
+        <nav aria-label="Sort"><ScrollRow className="ed-data gap-x-5"><span className="ed-kicker">Sort</span>{SIGNAL_SORTS.map(t => <Link key={t.id} to="/signals" search={signalsSearch({ ...v, sort: t.id })} resetScroll={false} aria-current={v.sort === t.id ? "true" : undefined} className={`ed-tap no-underline ${v.sort === t.id ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>{t.id === "share" && idx.scoped ? `${sectorName(v.sector)} share` : t.label}</Link>)}</ScrollRow></nav>
+      </RuleBox>
+      <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine} Change is from the first to the latest well-covered quarter (15+ sites, 25% coverage), all sectors. <Link to="/what-we-show" className="ed-tap" {...pr("/what-we-show")}>What we show and why →</Link></p>
     </section>
+    {idx.groups.map(g => {
+      const head = <><h2 id={`sig-${g.tier}`} className="ed-h3 inline">{g.title} · {g.rows.length}</h2><p className="ed-caption mt-1">{TIER_NOTE[g.tier]}</p></>;
+      const body = g.rows.length ? <Ledger className="mt-3" label={`${g.title} signals`} rows={rowsOf(g, idx.scoped, v.sector, lensQ)} />
+        : <p className="ed-body mt-3">No {g.title.toLowerCase()} signal in this dimension{idx.scoped ? ` for ${sectorName(v.sector)}` : ""} this week. Pick another dimension or switch the lens to All.</p>;
+      return g.tier === "archive"
+        ? <section key={g.tier} aria-labelledby={`sig-${g.tier}`} className="ed-wrap mt-12"><details open={!g.folded} data-archive-fold=""><summary className="ed-tap cursor-pointer list-none">{head}<span className="ed-data mt-2 block underline">{g.folded ? `Show the ${g.rows.length} archive signals` : "Fold the archive"}</span></summary>{body}</details></section>
+        : <section key={g.tier} aria-labelledby={`sig-${g.tier}`} className="ed-wrap mt-12">{head}{body}</section>;
+    })}
     <ReadFooter terminal="/terminal?panel=overview" />
   </DigestShell>;
 }

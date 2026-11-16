@@ -9,9 +9,10 @@ import type { Classified, Op } from "@/lib/agency/watch";
 import { AUDIT_MAX } from "@/lib/agency/audit";
 import { localWatches } from "@/lib/agency/watch-local";
 import { SITE_URL } from "@/lib/site";
-import { BasisWord, SectionHead, SiteCard, StageWord, Dim, pr } from "@/components/digest/Editorial";
+import { BasisWord, SectionHead, StageWord, Dim, pr } from "@/components/digest/Editorial";
 import { basis } from "@/lib/labels";
 import { AgencyShell, Btn, CopyField, FORM_BOX, day } from "./Shell";
+import { Ledger } from "@/components/brand/Ledger";
 import { TargetsInput, splitList } from "./Targets";
 import { ClassifiedReport } from "./Report";
 
@@ -86,28 +87,23 @@ export function WatchPage({ v, k }: { v: WatchView; k?: string | undefined }) {
 
     {(v.sites.length > 0 || v.pending.length > 0) && <section className="ed-wrap mt-14" aria-labelledby="w-sites">
       <SectionHead n="02" title="Sites" id="w-sites" />
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        {v.sites.map(s => <div key={s.domain} className="flex flex-col gap-1">
-          <SiteCard domain={s.domain} name={s.name} sector={s.sector} thumb={s.thumb} lines={[s.sector, s.lastChange ? `last change ${day(s.lastChange)}` : "no changes yet"]} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" />
-          {editable && <Btn disabled={busy} onClick={() => run({ op: "remove", sites: [s.domain] })}>Remove {s.domain}</Btn>}
-        </div>)}
-        {v.pending.map(d => <div key={d} className="flex flex-col gap-2"><div className="ed-typo"><span className="ed-kicker ed-muted">Pending</span><span className="ed-h3 break-words">{d}</span><span className="ed-caption">Not tracked yet — joins once tracked</span></div>
-          {editable && <Btn disabled={busy} onClick={() => run({ op: "remove", sites: [d] })}>Remove {d}</Btn>}</div>)}
-      </div>
+      <Ledger label="Watched sites" rows={[
+        ...v.sites.map(s => ({ key: s.domain, href: `/brands/${s.domain}`, title: s.name ?? s.domain, line: <span className="ed-code">{s.domain}</span>, facts: [s.sector, s.lastChange ? `Changed ${day(s.lastChange)}` : "No changes yet"] })),
+        ...v.pending.map(d => ({ key: d, href: "/what-we-show", title: d, line: "Not tracked yet; joins the feed once tracked.", tags: ["Pending"] })),
+      ]} />
+      {editable && <div className="no-print mt-4 flex flex-wrap gap-2">{[...v.sites.map(s => s.domain), ...v.pending].map(d => <Btn key={d} disabled={busy} onClick={() => run({ op: "remove", sites: [d] })}>Remove {d}</Btn>)}</div>}
     </section>}
 
     {v.traits.length > 0 && <section className="ed-wrap mt-14" aria-labelledby="w-traits">
       <SectionHead n="03" title="Signals" id="w-traits" kicker="Stage and share across all sectors in the latest forecast." />
-      <ul className="grid gap-x-10 md:grid-cols-2">{v.traits.map(t => <li key={t.trait} className="ed-hair flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-        <a href={t.explainer} {...pr(t.explainer)}>{t.name}</a> <Dim d={t.dimension} /> <BasisWord b={basis(t.trait)} /> <StageWord stage={t.stage} />
-        <a href={`/terminal?panel=brief&trait=${encodeURIComponent(t.trait)}`} className="ed-data ed-muted">{pct(t.share)} of sites</a>
-        {editable && <button type="button" disabled={busy} onClick={() => run({ op: "remove", traits: [t.trait] })} className="ed-kicker no-print ml-auto min-h-[44px] px-2 underline" aria-label={`Remove ${t.name}`}>Remove</button>}
-      </li>)}</ul>
+      <Ledger label="Watched signals" rows={v.traits.map(t => ({ key: t.trait, href: t.explainer, title: t.name, line: <span className="inline-flex flex-wrap items-center gap-2"><Dim d={t.dimension} /><BasisWord b={basis(t.trait)} /><StageWord stage={t.stage} /></span>, facts: [`${pct(t.share)} of sites`] }))} />
+      {editable && <div className="no-print mt-4 flex flex-wrap gap-2">{v.traits.map(t => <Btn key={t.trait} disabled={busy} onClick={() => run({ op: "remove", traits: [t.trait] })}>Remove {t.name}</Btn>)}</div>}
     </section>}
 
     <section className="ed-wrap mt-14" aria-labelledby="w-feed">
       <SectionHead n="04" title="RSS alerts" id="w-feed" kicker="Paste this into any RSS reader. It needs no password; anyone with the link can read the changes, so rotate it if it leaks." />
-      <div className="max-w-2xl"><CopyField label="Feed link" value={v.feedUrl} /></div>
+      <p className="ed-code break-all" data-feed-address="">{v.feedUrl}</p>
+      <div className="mt-3 max-w-2xl"><CopyField label="Feed link" value={v.feedUrl} /></div>
       {editable && <div className="no-print mt-4"><Btn disabled={busy} onClick={() => run({ op: "rotate_feed" }, "Make a new feed link? The current one stops working immediately.")}>Rotate feed link</Btn></div>}
       <div className="mt-6 max-w-2xl"><CopyField label="View link" value={`${SITE_URL}/watch/${v.id}`} note="Opens this page (behind the site password). Editing needs the separate edit link." /></div>
     </section>

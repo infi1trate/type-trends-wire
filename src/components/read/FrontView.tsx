@@ -150,6 +150,12 @@ export function FrontView({ m }: { m: FrontModel }) {
             <p className="ed-caption mt-1">Brand and pattern pages behind this week's stories.</p>
             <Ledger className="mt-2" small rows={m.explore.map(explore)} label="Brand and pattern pages" />
           </RuleBox></section>}
+          {m.sections.collections && <section aria-labelledby="front-collections" data-shelf="collections"><RuleBox>
+            <Kicker id="front-collections">Collections</Kicker>
+            <p className="ed-caption mt-1">Numbered walls of homepage captures from the pattern gallery.</p>
+            <Ledger className="mt-2" small rows={m.collections.map(c => ({ key: c.slug, href: c.href, number: c.number, title: c.title }))} label="Collections" />
+            <p className="ed-data mt-3"><Receipt href="/collections" className="ed-tap">All collections →</Receipt></p>
+          </RuleBox></section>}
         </aside>
       </div>
       {m.sections.editions && <section aria-labelledby="front-editions"><RuleBox>

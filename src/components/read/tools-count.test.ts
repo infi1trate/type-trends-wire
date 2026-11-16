@@ -11,10 +11,10 @@ describe("/tools MCP tool count", () => {
     expect(src).toContain("${MCP_TOOL_COUNT} read-only tools");
     expect(src).not.toMatch(/\b\d+ read-only tools/);
   });
-  it("registry and name list agree on 27 tools", () => {
+  it("registry and name list agree on 28 tools", () => {
     const index = readFileSync("src/lib/mcp/index.ts", "utf8");
     const listed = index.match(/tools:\[([^\]]+)\]/)?.[1]?.split(",").map(t => t.trim()).filter(Boolean) ?? [];
     expect(listed).toHaveLength(MCP_TOOL_NAMES.length);
-    expect(MCP_TOOL_COUNT).toBe(27);
+    expect(MCP_TOOL_COUNT).toBe(28);
   });
 });

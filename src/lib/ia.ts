@@ -200,7 +200,7 @@ export function readSectionOf(pathname: string): SectionId | null {
   if (!s || s === "stories") return "live";
   if (s === "signals" || s === "trait" || s === "what-we-show" || s === "data") return "signals";
   if (s === "brands") return "brands";
-  if (s === "patterns") return "patterns";
+  if (s === "patterns" || s === "collections") return "patterns";
   if (["digest", "chart", "morning", "sectors", "editions"].includes(s)) return "digest";
   if (["tools", "status", "watch", "audit", "ledger", "desk", "welcome", "kit", "brand"].includes(s)) return "tools";
   return null;
@@ -230,7 +230,9 @@ export const SURFACES: Record<string, Surface> = {
   "brands.index": S("brands", "read", "shown", "Searchable brand directory with sector filter and a Moves tab."),
   "brands.$domain": S("brands", "read", "shown", "Brand object page; links to its dense terminal record."),
   "library.$domain": S("brands", "terminal", "shown", "Dense brand record (Terminal view of a brand)."),
-  "patterns.index": S("patterns", "read", "shown", "Headline layout and composite signals with at least three example brands."),
+  "patterns.index": S("patterns", "read", "shown", "The pattern gallery: a wall of stored captures showing headline patterns, filters in the URL."),
+  "collections.index": S("patterns", "read", "shown", "Numbered collections: saved gallery filters, live at 12 or more tiles."),
+  "collections.$slug": S("patterns", "read", "shown", "One collection as a wall, paired with its data story or signal."),
   "patterns.$key": S("patterns", "read", "shown", "Pattern object page: example brands as a grid, filterable by sector."),
   "digest.index": S("digest", "read", "shown", "Latest issue."),
   "digest.$week": S("digest", "read", "shown", "One issue."),
@@ -331,8 +333,8 @@ export const DENSITIES = ["quiet", "steady", "loud"] as const;
 export type Density = (typeof DENSITIES)[number];
 export const DENSITY: Record<string, Density | "none"> = {
   index: "steady", "signals.index": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
-  "sectors.index": "steady", "data.index": "steady", tools: "steady", "audit.index": "steady", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
-  ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "morning.index": "quiet", "morning.$date": "quiet",
+  "sectors.index": "steady", "data.index": "steady", tools: "steady", "audit.index": "quiet", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
+  ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",
   "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet",
   "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
   "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.space": "quiet",

@@ -39,8 +39,9 @@ export type GalleryFilter = { sectors: string[]; pattern: string | null; period:
 export const NO_FILTER: GalleryFilter = { sectors: [], pattern: null, period: null, since: null, basis: null, section: null, changed: null, page: 1 };
 
 export type Tile = { id: string; snapshot: number; domain: string; name: string; sector: string; at: string; day: string; quarter: string | null; source: "live" | "wayback"; label: string; href: string; size: "lg" | "sm"; crop: Crop | null; note: string | null };
+export type GalleryTile = Tile & { frame: Frame | null };
 /** The URL search a gallery view is shared with (only non-default fields). */
-export type GallerySearch = { sector?: string; pattern?: string; period?: string; basis?: string; section?: string; page?: number };
+export type GallerySearch = { sector?: string | undefined; pattern?: string | undefined; period?: string | undefined; basis?: string | undefined; section?: string | undefined; page?: number | undefined };
 
 const Q = /^(\d{4})Q([1-4])$/;
 const qNum = (q: string) => { const m = Q.exec(q); return m ? Number(m[1]) * 4 + Number(m[2]) : NaN; };

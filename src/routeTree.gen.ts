@@ -39,6 +39,8 @@ import { Route as ChartIndexRouteImport } from './routes/chart.index'
 import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
 import { Route as ChartChar123weekChar125DotsvgRouteImport } from './routes/chart.{$week}[.]svg'
+import { Route as CollectionsIndexRouteImport } from './routes/collections.index'
+import { Route as CollectionsSlugRouteImport } from './routes/collections.$slug'
 import { Route as CropsSplatRouteImport } from './routes/crops.$'
 import { Route as DataIndexRouteImport } from './routes/data.index'
 import { Route as DataSlugRouteImport } from './routes/data.$slug'
@@ -247,6 +249,16 @@ const ChartChar123weekChar125DotsvgRoute =
     path: '/chart/{$week}.svg',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
+  id: '/collections/',
+  path: '/collections/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectionsSlugRoute = CollectionsSlugRouteImport.update({
+  id: '/collections/$slug',
+  path: '/collections/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CropsSplatRoute = CropsSplatRouteImport.update({
   id: '/crops/$',
   path: '/crops/$',
@@ -557,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/collections/$slug': typeof CollectionsSlugRoute
   '/crops/$': typeof CropsSplatRoute
   '/data/$slug': typeof DataSlugRoute
   '/data/where-you-sit': typeof DataWhereYouSitRoute
@@ -581,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
+  '/collections/': typeof CollectionsIndexRoute
   '/data/': typeof DataIndexRoute
   '/digest/': typeof DigestIndexRoute
   '/morning/': typeof MorningIndexRoute
@@ -644,6 +658,7 @@ export interface FileRoutesByTo {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/collections/$slug': typeof CollectionsSlugRoute
   '/crops/$': typeof CropsSplatRoute
   '/data/$slug': typeof DataSlugRoute
   '/data/where-you-sit': typeof DataWhereYouSitRoute
@@ -668,6 +683,7 @@ export interface FileRoutesByTo {
   '/brand': typeof BrandIndexRoute
   '/brands': typeof BrandsIndexRoute
   '/chart': typeof ChartIndexRoute
+  '/collections': typeof CollectionsIndexRoute
   '/data': typeof DataIndexRoute
   '/digest': typeof DigestIndexRoute
   '/morning': typeof MorningIndexRoute
@@ -732,6 +748,7 @@ export interface FileRoutesById {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/collections/$slug': typeof CollectionsSlugRoute
   '/crops/$': typeof CropsSplatRoute
   '/data/$slug': typeof DataSlugRoute
   '/data/where-you-sit': typeof DataWhereYouSitRoute
@@ -756,6 +773,7 @@ export interface FileRoutesById {
   '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
+  '/collections/': typeof CollectionsIndexRoute
   '/data/': typeof DataIndexRoute
   '/digest/': typeof DigestIndexRoute
   '/morning/': typeof MorningIndexRoute
@@ -821,6 +839,7 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/collections/$slug'
     | '/crops/$'
     | '/data/$slug'
     | '/data/where-you-sit'
@@ -845,6 +864,7 @@ export interface FileRouteTypes {
     | '/brand/'
     | '/brands/'
     | '/chart/'
+    | '/collections/'
     | '/data/'
     | '/digest/'
     | '/morning/'
@@ -908,6 +928,7 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/collections/$slug'
     | '/crops/$'
     | '/data/$slug'
     | '/data/where-you-sit'
@@ -932,6 +953,7 @@ export interface FileRouteTypes {
     | '/brand'
     | '/brands'
     | '/chart'
+    | '/collections'
     | '/data'
     | '/digest'
     | '/morning'
@@ -995,6 +1017,7 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/collections/$slug'
     | '/crops/$'
     | '/data/$slug'
     | '/data/where-you-sit'
@@ -1019,6 +1042,7 @@ export interface FileRouteTypes {
     | '/brand/'
     | '/brands/'
     | '/chart/'
+    | '/collections/'
     | '/data/'
     | '/digest/'
     | '/morning/'
@@ -1083,6 +1107,7 @@ export interface RootRouteChildren {
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
+  CollectionsSlugRoute: typeof CollectionsSlugRoute
   CropsSplatRoute: typeof CropsSplatRoute
   DataSlugRoute: typeof DataSlugRoute
   DataWhereYouSitRoute: typeof DataWhereYouSitRoute
@@ -1107,6 +1132,7 @@ export interface RootRouteChildren {
   BrandIndexRoute: typeof BrandIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
+  CollectionsIndexRoute: typeof CollectionsIndexRoute
   DataIndexRoute: typeof DataIndexRoute
   DigestIndexRoute: typeof DigestIndexRoute
   MorningIndexRoute: typeof MorningIndexRoute
@@ -1354,6 +1380,20 @@ declare module '@tanstack/react-router' {
       path: '/chart/{$week}.svg'
       fullPath: '/chart/{$week}.svg'
       preLoaderRoute: typeof ChartChar123weekChar125DotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collections/': {
+      id: '/collections/'
+      path: '/collections'
+      fullPath: '/collections/'
+      preLoaderRoute: typeof CollectionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collections/$slug': {
+      id: '/collections/$slug'
+      path: '/collections/$slug'
+      fullPath: '/collections/$slug'
+      preLoaderRoute: typeof CollectionsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crops/$': {
@@ -1771,6 +1811,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
+  CollectionsSlugRoute: CollectionsSlugRoute,
   CropsSplatRoute: CropsSplatRoute,
   DataSlugRoute: DataSlugRoute,
   DataWhereYouSitRoute: DataWhereYouSitRoute,
@@ -1795,6 +1836,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrandIndexRoute: BrandIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,
   ChartIndexRoute: ChartIndexRoute,
+  CollectionsIndexRoute: CollectionsIndexRoute,
   DataIndexRoute: DataIndexRoute,
   DigestIndexRoute: DigestIndexRoute,
   MorningIndexRoute: MorningIndexRoute,

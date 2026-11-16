@@ -1,9 +1,8 @@
-// PATTERNS: /patterns (headline layout + composite signals with ≥3 example brands) and /patterns/<key> (the example grid).
+// PATTERN object page: /patterns/<key> (the example grid). The /patterns gallery lives in GalleryView.
 import { Link } from "@tanstack/react-router";
-import type { PatternPage, PatternRow } from "@/lib/patterns";
+import type { PatternPage } from "@/lib/patterns";
 import type { Story } from "@/lib/stories";
 import { RelatedStories } from "./StoryCard";
-import { PATTERN_MIN_EXAMPLES } from "@/lib/patterns";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
 import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/Editorial";
@@ -13,7 +12,6 @@ import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { useSectorLens } from "./lens";
 import { CropFallback, CropFigure } from "./Evidence";
-import { ILLUSTRATED_MIN } from "@/lib/crops";
 import type { PatternExample } from "@/lib/patterns";
 
 /** One example brand: its section crop when current, else the typographic card with the honest line. */
@@ -24,32 +22,6 @@ function Example({ e, section }: { e: PatternExample; section: string }) {
     <p className="ed-caption">{e.sectorName} · {e.crop ? `captured ${e.crop.captured_at.slice(0, 10)}` : e.captured ? `measured ${e.captured.slice(0, 10)}` : "capture date unknown"}</p>
     <p className="ed-data flex flex-wrap gap-x-3"><Link to="/brands/$domain" params={{ domain: e.domain }} className="ed-tap" {...pr(`/brands/${e.domain}`)}>Brand page →</Link><a href={`https://${e.domain}`} target="_blank" rel="noopener" className="ed-tap" {...pr(`https://${e.domain}`)}>Live site ↗</a></p>
   </article>;
-}
-
-export function PatternsIndexView({ patterns, sector, illustrated = false, total, illustratedCount }: { patterns: PatternRow[]; sector: string; illustrated?: boolean; total: number; illustratedCount: number }) {
-  const sec = sector === "all" ? undefined : sector;
-  return <DigestShell label="Patterns" section="patterns" lens>
-    <header className="ed-wrap pt-8 md:pt-12">
-      <p className="ed-kicker">Patterns · {sectorName(sector)}</p>
-      <h1 className="ed-cover mt-3">Signals, seen as examples</h1>
-      <p className="ed-standfirst mt-5">Headline layout and composite signals with at least {PATTERN_MIN_EXAMPLES} example brands{sector !== "all" ? ` in ${sectorName(sector)}` : ""}. Open one for the brands that show it.</p>
-      <nav aria-label="Filter patterns by captures" className="ed-data mt-6 flex flex-wrap gap-x-5">
-        <Link to="/patterns" search={{ sector: sec, illustrated: undefined }} className={`ed-tap ${!illustrated ? "font-semibold underline" : ""}`} aria-current={!illustrated ? "page" : undefined}>All patterns <span className="ed-muted">{total}</span></Link>
-        <Link to="/patterns" search={{ sector: sec, illustrated: "1" }} className={`ed-tap ${illustrated ? "font-semibold underline" : ""}`} aria-current={illustrated ? "page" : undefined}>Illustrated <span className="ed-muted">{illustratedCount}</span></Link>
-      </nav>
-      <p className="ed-caption mt-1">Illustrated: at least {ILLUSTRATED_MIN} example brands have a current capture of the section that shows the pattern.</p>
-    </header>
-    <section aria-label="Patterns" className="ed-wrap mt-10">
-      {patterns.length ? <ul className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">{patterns.map(p => <li key={p.key} className="ed-hair pt-4">
-        <p className="ed-data flex flex-wrap items-center gap-2"><Dim d={p.dimension} /><BasisWord b={p.basis} /><StageWord stage={p.stage} /></p>
-        <h2 className="ed-h3 mt-2"><Link to="/patterns/$key" params={{ key: p.key }} search={{ sector: sector === "all" ? undefined : sector }} className="no-underline hover:underline">{p.name}</Link></h2>
-        <p className="ed-data mt-1">{p.examples} examples · {p.withCaptures} with {p.withCaptures === 1 ? "a capture" : "captures"} · Momentum {p.momentum_index ?? "—"} · Confidence {p.confidence}</p>
-        {p.so_what && <p className="ed-small mt-2">{p.so_what}</p>}
-        <p className="ed-caption mt-2">{p.sample.join(" · ")}</p>
-      </li>)}</ul> : <p className="ed-body">{illustrated ? `No pattern is illustrated yet: none has ${ILLUSTRATED_MIN} example brands with a current capture${sector !== "all" ? ` in ${sectorName(sector)}` : ""}. Crops arrive when the crawler sends them.` : `No headline layout or composite signal has ${PATTERN_MIN_EXAMPLES} example brands${sector !== "all" ? ` in ${sectorName(sector)}` : ""} yet.`}</p>}
-    </section>
-    <ReadFooter terminal="/terminal?panel=patterns" />
-  </DigestShell>;
 }
 
 export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {

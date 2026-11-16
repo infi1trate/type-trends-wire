@@ -87,11 +87,12 @@ describe("compositions", () => {
     expect(r.querySelectorAll('section[id^="ed-"] [data-container="rulebox"]').length).toBeGreaterThan(2);
     checkComposition(r, "digest");
   });
-  it("brand: H1, a facts row, a tile wall, history as a Ledger", async () => {
+  it("brand: an identity card with the H1, the moves as Ledger rows", async () => {
     const b = brandModel({ domain: "vercel.com", audit: { ...auditFixture(), domains: ["vercel.com"] }, events: auditFixture().events, peers: [], tiers: [["css:has", "headline"]] });
     const r = await html(() => createElement(BrandView, { b }), "/brands/vercel.com");
     expect(r.querySelector("h1")!.className).toContain("ed-h1");
-    expect(r.querySelector("[data-facts-row]")).not.toBeNull();
+    expect(r.querySelector("[data-identity-card] h1")).not.toBeNull();
+    expect(r.querySelector("[data-brand-actions] .c-raised")).not.toBeNull();
     checkComposition(r, "brand");
   });
 });

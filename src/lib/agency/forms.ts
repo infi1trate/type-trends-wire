@@ -3,7 +3,7 @@
 import { AUDIT_MAX, AUDIT_MIN } from "./audit";
 import { WATCH_LIMITS, isTraitInput, normDomain, splitTargets } from "./watch";
 
-export type FieldErrors<K extends string> = Partial<Record<K, string>>;
+export type FieldErrors<K extends string> = { [P in K]?: string | undefined };
 const list = (xs: string[]) => xs.slice(0, 3).map(x => `“${x}”`).join(", ") + (xs.length > 3 ? ` and ${xs.length - 3} more` : "");
 
 export const AUDIT_TEXT = {

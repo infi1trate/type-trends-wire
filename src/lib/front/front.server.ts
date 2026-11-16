@@ -15,6 +15,7 @@ import { readerRunId } from "../real-runs";
 import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, type FrontModel } from "./front";
 import { resolveFormat, type FormatFilter } from "./formats";
 import { streamOf } from "../stories/view";
+import { collectionPath, liveCollections } from "../collections/registry";
 
 /** Quarter series (with quarter labels) for every library-wide row of the reader run: chart of the day and the lead's sparkline. */
 let seriesCache: { at: number; v: Promise<QuarterSeries[]> } | null = null;
@@ -61,6 +62,7 @@ async function build(sector: string, format: FormatFilter): Promise<FrontModel> 
     },
     archiveMoves, patternKeys: new Set(signals.filter(isPatternSignal).map(s => s.key)), brandNames: new Map(index.map(s => [s.domain, s.name])),
     dataStories: dataShelf(),
+    collections: liveCollections().map(c => ({ slug: c.slug, number: c.number, title: c.title, href: collectionPath(c.slug) })),
   };
   let model = frontModel(input);
   // The lead's evidence slot: before/after crops when two captures straddle the change; otherwise the model falls back to the sparkline or nothing.
