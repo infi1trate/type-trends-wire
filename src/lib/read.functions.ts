@@ -16,6 +16,10 @@ export const getStoryQueue = createServerFn({ method: "GET" }).inputValidator(z.
   const { loadQueue } = await import("./stories/page.server");
   return loadQueue(data.day ?? null, data.fresh);
 });
+export const getRunComparison = createServerFn({ method: "GET" }).handler(async () => {
+  const { runComparison } = await import("./read.server");
+  return runComparison();
+});
 export const getBrand = createServerFn({ method: "GET" }).inputValidator(z.object({ domain: z.string().min(3).max(253) })).handler(async ({ data }) => {
   const { loadBrand } = await import("./read.server");
   return loadBrand(data.domain.toLowerCase());

@@ -1,7 +1,8 @@
 // /tools (every ACT tool, one line each) and /status (health, model card and ops details, out of the reader's path).
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { healthQuery, modelCardQuery } from "@/lib/data";
+import { healthQuery, modelCardQuery, runComparisonQuery } from "@/lib/data";
+import { realRunLine } from "@/lib/run-gap";
 import { coverageSentences } from "@/lib/model-card-copy";
 import { storyTime } from "@/lib/stories";
 import { SITE_URL } from "@/lib/site";
@@ -38,7 +39,7 @@ export function ToolsView() {
 }
 
 export function StatusView() {
-  const { data: health } = useQuery(healthQuery()), { data: mc } = useQuery(modelCardQuery());
+  const { data: health } = useQuery(healthQuery()), { data: mc } = useQuery(modelCardQuery()), { data: runs } = useQuery(runComparisonQuery());
   const card = mc?.card as Parameters<typeof coverageSentences>[0] & { data_through?: string; median_mae_pts?: number | null; n_forecast_ok?: number; n_traits?: number; ai_provider?: string } | undefined;
   return <DigestShell label="Status" section="tools">
     <header className="ed-wrap pt-8 md:pt-12">
@@ -58,6 +59,7 @@ export function StatusView() {
     <section aria-labelledby="st-desk" className="ed-wrap mt-14">
       <h2 id="st-desk" className="ed-h2 ed-rule pt-3">Story desk</h2>
       <p className="ed-small mt-3 max-w-[72ch]">What the story engine ran today, what it held and why, with score components and the editor's log.</p>
+      <p className="ed-small mt-3 max-w-[72ch]" data-testid="real-runs">{runs ? realRunLine(runs) : "Checking which forecast runs count…"}</p>
       <p className="ed-data mt-3"><Link to="/desk" className="ed-tap">Open the editor's desk →</Link></p>
     </section>
     <section aria-labelledby="st-model" className="ed-wrap mt-14">

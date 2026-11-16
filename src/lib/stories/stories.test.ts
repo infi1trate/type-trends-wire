@@ -8,7 +8,7 @@ import {
   rebrandCandidate, roundupCandidates, shiftCandidates, traitDelta, whiteSpaceCandidates, noDollar, type BuildInput, type SiteNow,
 } from "./candidates";
 import { COMPONENT_MAX, DAILY_CAP, NEWS_DAILY_CAP, PUBLISH_MIN, WEIGHTS, brandComponent, lensScore, noveltyComponent, planStories, relevanceComponent, sizeComponent, total, type ScoreCtx } from "./score";
-import { validateWhy, knownFrom, WHY_MAX_CHARS } from "./why";
+import { validateWhy, knownFrom, WHY_LINE_MAX, WHY_MAX_CHARS } from "./why";
 import { applyEdits, foldedIds, overlay, type EditRow, type StoredStory } from "./edits";
 import { runBuild, toRow, type StoryRowOut } from "./build.server";
 
@@ -74,11 +74,11 @@ describe("story types", () => {
     const b = breakoutCandidates(ctx, alerts);
     expect(b.map(x => x.id)).toEqual(["breakout:theme:dark:all:13"]); expect(b[0]!.headline).toContain(label("theme:dark").name);
   });
-  it("FIRST SEEN: 2 brands, or 1 brand on a headline signal; the archive must measure that kind of signal", () => {
+  it("FIRST SEEN: library-wide 2 brands, or 1 brand on a headline signal; the archive must measure that kind of signal", () => {
     const one = base({ sites: [...sites(), { domain: "solo.com", name: null, sector: "fintech", captured: NOW, traits: ["headline:serif"] }] });
     const noHistory = firstSeenCandidates(context(one), []);
     expect(noHistory).toEqual([]); // nothing in the archive measures headline:* → no claim
-    const arch = [{ domain: "old.com", sector: "fintech", traits: ["headline:sans", "theme:light"] }];
+    const arch = Array.from({ length: 8 }, (_, i) => ({ domain: `old${i}.com`, sector: "fintech", quarter: `2024Q${(i % 4) + 1}`, traits: ["headline:sans", "theme:light"], measured: ["headline", "theme"] }));
     const f = firstSeenCandidates(context(one), arch);
     expect(f.map(x => x.id)).toContain("first:headline:serif:all");
     expect(f.find(x => x.id === "first:headline:serif:all")!.firstSeen).toBe(true);
@@ -86,7 +86,7 @@ describe("story types", () => {
   it("CROSSOVER: second sector passes the floor with brands named", () => {
     const x = crossoverCandidates(context(base({ sites: sites().map(s => (s.sector === "fintech" && s.domain === "fintech1.com" ? { ...s, traits: [...s.traits, "theme:dark"] } : s)) })));
     const c = x.find(y => y.id === "crossover:theme:dark:fintech:13")!;
-    expect(c.headline).toBe(`Fintech picks up ${label("theme:dark").name.toLowerCase()}`); expect(c.domains).toEqual(["fintech1.com"]);
+    expect(c.headline).toBe(`${label("theme:dark").name} reaches fintech`); expect(c.domains).toEqual(["fintech1.com"]);
   });
   it("COUNTER-MOVE: adopting a Fading signal", () => {
     const e = ev(9, "ai3.com", "ai", "layout_change", { hero_media: "image" }, { hero_media: "video" });
@@ -203,6 +203,7 @@ describe("why-it-matters validator", () => {
     expect(validateWhy("Worth $ to agencies.", story, known)).toMatchObject({ ok: false, reason: "contains $" });
     expect(validateWhy("A revolutionary moment for AI brands.", story, known)).toMatchObject({ ok: false, reason: "superlative: revolutionary" });
     expect(validateWhy("x".repeat(WHY_MAX_CHARS + 1), story, known)).toMatchObject({ ok: false });
+    expect(validateWhy("x".repeat(WHY_LINE_MAX + 1), story, known)).toMatchObject({ ok: false, reason: `over ${WHY_LINE_MAX} characters` });
     expect(validateWhy(null, story, known)).toMatchObject({ ok: false });
   });
 });

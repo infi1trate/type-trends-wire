@@ -4,7 +4,7 @@ import { buildToday, stageChanges, type TodayInput } from "./today";
 const NOW = "2026-11-15T18:00:00Z";
 const base: TodayInput = {
   now: NOW,
-  runs: { latest: { id: 13, computed_at: "2026-11-15T15:33:00Z" }, previous: { id: 9, computed_at: "2026-11-14T00:35:00Z" } },
+  runs: { latest: { id: 13, computed_at: "2026-11-15T15:33:00Z" }, previous: { id: 9, computed_at: "2026-11-08T15:33:00Z" } },
   stages: {
     latest: [{ dimension: "css", value: "subgrid", stage: "peaking", momentum: 4.8, current_share: 0.12 }, { dimension: "components", value: "bento_grid", stage: "accelerating", momentum: 1.2, current_share: 0.3 }, { dimension: "theme", value: "dark", stage: "flat", momentum: 0, current_share: 0.36 }],
     previous: [{ dimension: "css", value: "subgrid", stage: "accelerating", momentum: 3, current_share: 0.1 }, { dimension: "components", value: "bento_grid", stage: "emerging", momentum: 1, current_share: 0.25 }, { dimension: "theme", value: "dark", stage: "flat", momentum: 0, current_share: 0.35 }],
@@ -17,6 +17,12 @@ const base: TodayInput = {
 };
 
 describe("TODAY", () => {
+  it("shows no stage lines when the two runs are under six days apart, and says why", () => {
+    const t = buildToday({ ...base, runs: { latest: base.runs.latest, previous: { id: 9, computed_at: "2026-11-14T00:35:00Z" } } });
+    expect(t.lines.some(l => l.id.startsWith("stage:"))).toBe(false);
+    expect(t.stageNote).toBe("No stage changes yet. The first week-over-week comparison lands after the next weekly forecast.");
+    expect(buildToday(base).stageNote).toBeNull();
+  });
   it("is deterministic and leads with stage moves in plain words", () => {
     const t = buildToday(base);
     expect(buildToday(base)).toEqual(t);

@@ -2,12 +2,14 @@
  * TODAY: 3–5 plain-English lines about what moved, built deterministically from public data (no AI per view). Pure.
  * Every line links to the panel, trait or site that proves it.
  */
+import { gapOk, NO_COMPARISON_TEXT } from "./run-gap";
 import { alertDisplayTitle, basis, canonical, label, stageName, type Basis, type Dimension, type StageName } from "./labels";
 
 export type StageRow = { dimension: string; value: string; stage: string | null; momentum: number | null; current_share: number | null };
 export type WireLite = { title: string; url: string; source: string; published_at: string; ref?: string | null };
 export type TodayInput = {
   now: string;
+  /** latest = latest real run; previous = the most recent real run at least MIN_RUN_GAP_DAYS older (null when none). */
   runs: { latest: { id: number; computed_at: string } | null; previous: { id: number; computed_at: string } | null };
   stages: { latest: StageRow[]; previous: StageRow[] };
   alerts: WireLite[];
@@ -19,7 +21,8 @@ export type TodayInput = {
   headline?: Set<string> | null;
 };
 export type TodayLine = { id: string; text: string; href: string; at: string; fresh: boolean; dimension?: Dimension; basis?: Basis; target?: "trait" | "site" };
-export type Today = { date: string; asOf: string | null; lines: TodayLine[]; changed: number; note: string | null };
+/** stageNote: set when there is no valid week-over-week run pair, so stage lines are absent on purpose. */
+export type Today = { date: string; asOf: string | null; lines: TodayLine[]; changed: number; note: string | null; stageNote: string | null };
 
 const DAY = 86_400_000, MAX = 5, MIN = 3; // always up to five lines: fresh changes first, then the freshest older data
 const day = (iso: string) => iso.slice(0, 10);
@@ -40,7 +43,9 @@ export function buildToday(i: TodayInput): Today {
   const c: (TodayLine & { p: number })[] = [];
   const add = (p: number, l: Omit<TodayLine, "fresh">) => c.push({ ...l, fresh: fresh(l.at), p });
   const head = i.headline ?? null, isHead = (k: string | null | undefined) => !head || (!!k && head.has(canonical(k)));
-  if (i.runs.latest && i.runs.previous) for (const s of stageChanges(i.stages.latest, i.stages.previous).filter(s => isHead(s.trait)).slice(0, 2)) {
+  // Stage lines need a valid week-over-week pair: runs closer than MIN_RUN_GAP_DAYS are a rerun, not a change.
+  const paired = !!i.runs.latest && !!i.runs.previous && gapOk(i.runs.latest.computed_at, i.runs.previous.computed_at);
+  if (paired && i.runs.latest) for (const s of stageChanges(i.stages.latest, i.stages.previous).filter(s => isHead(s.trait)).slice(0, 2)) {
     const l = label(s.trait);
     add(0, { id: `stage:${s.trait}`, text: `${l.name} moved from ${s.from} to ${s.to} across all sectors${s.share != null ? ` (${pct(s.share)} of sites)` : ""}`, href: `/terminal?panel=brief&trait=${encodeURIComponent(s.trait)}`, at: i.runs.latest.computed_at, dimension: l.dimension, basis: basis(s.trait), target: "trait" });
   }
@@ -61,5 +66,5 @@ export function buildToday(i: TodayInput): Today {
     : c.length === 0 ? "No data has arrived yet. The first lines appear after the daily font snapshot and the 15-minute news check."
     : changed === 0 ? "Nothing new in the last 24 hours, so here is the freshest data we have."
     : `Only ${changed} ${changed === 1 ? "thing" : "things"} changed in the last 24 hours, so the freshest data fills the rest.`;
-  return { date: day(i.now), asOf, lines, changed, note };
+  return { date: day(i.now), asOf, lines, changed, note, stageNote: paired ? null : NO_COMPARISON_TEXT };
 }

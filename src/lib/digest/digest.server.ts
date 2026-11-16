@@ -1,4 +1,6 @@
 // Digest + explainer loaders: anonymous SELECT-only reads of stored rows for one week (never today's data for an old issue).
+import { comparisonPair } from "../run-gap";
+import { fetchRealRuns, fetchStageRows } from "../real-runs";
 import { supabaseAnon } from "../mcp/supabase";
 import { DIGEST_FIRST_WEEK } from "../site";
 import { weekRange } from "./week";
@@ -63,6 +65,10 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
     prevRun ? pages<FRow>((f, t) => db.from("forecasts").select("dimension,value,stage,momentum,current_share").eq("run_id", prevRun.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never) : Promise.resolve([]),
     prev2Run ? pages<FRow>((f, t) => db.from("forecasts").select("dimension,value,stage").eq("run_id", prev2Run.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never) : Promise.resolve([]),
   ]);
+  // Movers compare this run only with the most recent real run at least MIN_RUN_GAP_DAYS older (closer runs are reruns, not a week).
+  const real = runId == null ? [] : await fetchRealRuns(db, { upTo: runId, extra: [runId] });
+  const pair = comparisonPair(real), partner = pair && pair.latest.id === runId ? pair.earlier.id : null;
+  const compare: FRow[] = partner == null ? [] : partner === prevRun?.id ? previous : (await fetchStageRows(db, partner)).map(r => ({ ...r, scope: "all" }));
   // Tiers as of this issue's run (and its two previous runs), so an old issue's selection never changes with newer data.
   const prevStages = new Map<string, (string | null)[]>();
   for (const [i, list] of [previous, previous2].entries()) for (const p of list) { const k = `${p.dimension}:${p.value}`, a = prevStages.get(k) ?? [null, null]; a[i] = p.stage; prevStages.set(k, a); }
@@ -79,7 +85,7 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   return {
     week: b.week, brief: b.brief as unknown as StoredBrief,
     run: run ? { id: run.id, computed_at: run.computed_at, data_through: (run as { data_through: string | null }).data_through } : null,
-    card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous, alerts: alerts ?? [], headline: [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key), fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
+    card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous: compare, alerts: alerts ?? [], headline: [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key), fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
     numbers: { ledger: { rate: ledger.rate, hits: ledger.hits, resolved: ledger.resolved }, library_sites: libCount.count ?? null, crawl: crawl?.finished_at && crawlSites ? { finished_at: crawl.finished_at, sites: crawlSites } : null, wire_stories: wire.count ?? 0 },
   };
 }

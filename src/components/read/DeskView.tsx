@@ -66,7 +66,7 @@ export function DeskView({ q, onDay }: { q: QueueModel; onDay: (d: string | null
       <p className="ed-standfirst mt-5">What the engine ran, what it held and why. Everyone inside the site can read this; only the editor key can pin, kill, correct or restore, and every action is logged.</p>
       <nav aria-label="Days" className="ed-data mt-6 flex flex-wrap gap-x-1 gap-y-1">
         <button type="button" onClick={() => onDay(null)} aria-current={q.day === null ? "true" : undefined} className={`ed-tap min-h-11 border px-3 ${q.day === null ? "border-ed-ink font-semibold" : "border-transparent"}`}>Last 7 days</button>
-        {q.days.map(d => <button key={d.day} type="button" onClick={() => onDay(d.day)} aria-current={q.day === d.day ? "true" : undefined} className={`ed-tap min-h-11 gap-2 border px-3 ${q.day === d.day ? "border-ed-ink font-semibold" : "border-transparent"}`}>{d.day}<span className="ed-muted">{d.published} ran · {d.held} held</span></button>)}
+        {q.days.map(d => <button key={d.day} type="button" onClick={() => onDay(d.day)} aria-current={q.day === d.day ? "true" : undefined} className={`ed-tap min-h-11 gap-2 border px-3 ${q.day === d.day ? "border-ed-ink font-semibold" : "border-transparent"}`}>{d.day}<span className="ed-muted">{d.published} ran · {d.held} held{d.killed ? ` · ${d.killed} killed` : ""}</span></button>)}
       </nav>
       <div className="ed-data mt-6 flex flex-wrap items-center gap-2">
         {unlocked ? <><span>Editor key accepted for this tab.</span><button type="button" className="ed-tap min-h-11 border border-ed-ink px-3" onClick={() => { setKey(""); setUnlocked(false); }}>Lock</button></>

@@ -9,16 +9,29 @@ import { isoWeek } from "../digest/week";
 import { rowKey, tiersFrom, type SignalRow } from "../signals";
 import { SECTOR_COVERAGE_MIN } from "../sector-lens";
 import type { Tier } from "../tiers";
+import { comparisonPair } from "../run-gap";
 import {
   AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
-  REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
+  REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
   WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, countWord, type Candidate, type Fact,
 } from "./types";
 
 export type RunRows = { id: number; at: string; rows: SignalRow[] };
 export type WireIn = { id: number; title: string; url: string; source: string; source_kind: string; published_at: string; excerpt: string | null; ref?: string | null };
 export type SiteNow = { domain: string; name: string | null; sector: string; captured: string | null; traits: string[] };
-export type ArchiveRow = { domain: string; sector: string; traits: string[] };
+/** One archive capture: its traits and the kinds of signal (categories) the capture actually measured, positive or not. */
+export type ArchiveRow = { domain: string; sector: string; quarter: string; traits: string[]; measured: string[] };
+/** Categories an archive capture measured: a field that was read at all (light theme and sans headlines count as measured). */
+export function archiveMeasured(r: Pick<SiteRow, "theme" | "h1_family" | "webfont" | "h1_tracking" | "hero_media" | "frameworks">): string[] {
+  const out: string[] = [];
+  if (r.theme) out.push("theme");
+  if (r.h1_family) out.push("headline");
+  if (typeof r.webfont === "boolean") out.push("font");
+  if (typeof r.h1_tracking === "number") out.push("tracking");
+  if (r.hero_media) out.push("hero_media");
+  if (r.frameworks && typeof r.frameworks === "object" && Object.keys(r.frameworks as object).length) out.push("framework");
+  return out;
+}
 export type BuildInput = {
   now: string;
   events: EventRow[]; rebrands: RebrandRow[];
@@ -70,7 +83,9 @@ export function context(input: BuildInput) {
   };
   /** Stage for a brand's sector when covered, else all sectors. */
   const stageFor = (key: string, sector: string | null) => { const s = sector && covered(sector) ? row(cur, key, sector) : null; return s?.status === "ok" ? { stage: s.stage, scope: sector! } : { stage: row(cur, key)?.stage ?? null, scope: "all" }; };
-  return { runs, cur, tiers, headline, row, sites, bySector, rank, byRank, showing, covered, stageFor, now: input.now };
+  /** The one valid run-to-run comparison (latest real run vs the most recent real run at least MIN_RUN_GAP_DAYS older), or null. */
+  const pair = comparisonPair(runs);
+  return { runs, cur, pair, tiers, headline, row, sites, bySector, rank, byRank, showing, covered, stageFor, now: input.now };
 }
 const tierOf = (ctx: Ctx, key: string): Tier | null => ctx.tiers.get(canonical(key)) ?? null;
 const shown = (ctx: Ctx, key: string) => { const t = tierOf(ctx, key); return t === "headline" || t === "supporting"; };
@@ -101,7 +116,30 @@ export function traitDelta(e: Pick<EventRow, "type" | "before" | "after" | "doma
   const b = new Set(siteTraits(side(e.before))), a = new Set(siteTraits(side(e.after)));
   return { gained: [...a].filter(k => !b.has(k)).sort(), dropped: [...b].filter(k => !a.has(k)).sort() };
 }
+/** Layout fields in plain words through labels.ts: "Video hero" → "video", "Left-aligned headlines" → "left-aligned". */
+const LAYOUT_WHAT: Record<string, string> = { hero_media: "Hero", h1_align: "Headlines" };
+const layoutValue = (field: string, v: unknown) => {
+  if (v == null || v === "" || v === "none") return field === "hero_media" ? "no media" : "none";
+  const name = label(`${field}:${String(v)}`).name;
+  return field === "hero_media" ? (/^No hero media$/i.test(name) ? "no media" : inline(name.replace(/ hero$/i, ""))) : inline(name.replace(/ headlines$/i, ""));
+};
+const layoutName = (field: string, v: unknown) => (v == null || v === "" ? (field === "hero_media" ? "No hero media" : "No alignment") : label(`${field}:${String(v)}`).name);
+function layoutMove(e: EventRow): Candidate {
+  const b = obj(e.before), a = obj(e.after), fields = [...MOVE_LAYOUT_FIELDS].filter(f => f in a || f in b);
+  const lines = fields.map(f => `${LAYOUT_WHAT[f]} changed from ${layoutValue(f, b[f])} to ${layoutValue(f, a[f])}`), brand = brandPath(e.domain);
+  const facts: Fact[] = [
+    ...(fields.length === 1 ? [{ text: `Before: ${layoutName(fields[0]!, b[fields[0]!])}`, href: brand, basis: "measured" as const, kind: "before" as const }, { text: `After: ${layoutName(fields[0]!, a[fields[0]!])}`, href: brand, basis: "measured" as const, kind: "after" as const }] : []),
+    ...lines.map(t => ({ text: t, href: brand, basis: "measured" as const })),
+    { text: `Confirmed on a second capture, ${shortDate(e.detected_at)}`, href: `/library/${encodeURIComponent(e.domain)}`, basis: "measured", kind: "date" },
+  ];
+  const what = fields.includes("hero_media") ? (fields.length > 1 ? "hero and headline alignment" : "hero") : "headline alignment";
+  return { id: `move:${e.id}`, type: "move", kicker: `Move · ${EVENT_KIND[e.type] ?? "Change"}${e.sector ? ` · ${sectorName(e.sector)}` : ""}`, headline: `${e.domain} changed its ${what}`,
+    deck: `${lines.join("; ")}. Confirmed ${shortDate(e.detected_at)}.`, facts, sector: e.sector ?? null, signalKeys: [], domains: [e.domain],
+    evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `/library/${encodeURIComponent(e.domain)}` }], sourceIds: [`event:${e.id}`], basis: "measured", happenedAt: e.detected_at,
+    magnitude: Math.max(1, fields.length) };
+}
 export function moveCandidate(e: EventRow): Candidate {
+  if (e.type === "layout_change") return layoutMove(e);
   const sentence = dedupeList(untick(eventSentence(e))), cut = sentence.indexOf(": ");
   // "x.com changed its palette to A, B, C" keeps the headline short and moves the list into the after line.
   const to = cut > 0 ? null : /^(.+? changed its [a-z ]+?) to (.+)$/.exec(sentence);
@@ -120,12 +158,17 @@ export function moveCandidate(e: EventRow): Candidate {
 }
 
 // REBRAND ------------------------------------------------------------------------------------------
+/** One templated sentence from the reasons and the date (never the rebrand desk's stored read). */
+export const rebrandDeck = (r: Pick<RebrandRow, "reasons" | "confirmed_at">) => {
+  const reasons = r.reasons.map(x => REBRAND_WORDS[x] ?? x), n = reasons.length;
+  return n ? `${countWord(n)} identity change${n === 1 ? "" : "s"} confirmed ${n === 1 ? "" : "together "}on ${shortDate(r.confirmed_at)}: ${listOf(reasons, 5)}.` : `Identity change confirmed on ${shortDate(r.confirmed_at)}.`;
+};
 export function rebrandCandidate(r: RebrandRow, moves: { c: Candidate; e: EventRow }[]): Candidate {
   const at = Date.parse(r.confirmed_at), reasons = r.reasons.map(x => REBRAND_WORDS[x] ?? x);
   const members = moves.filter(m => m.e.domain === r.domain && Date.parse(m.e.detected_at) >= at - REBRAND_FOLD_BEFORE_DAYS * day && Date.parse(m.e.detected_at) <= at + REBRAND_FOLD_AFTER_DAYS * day).map(m => m.c);
   const brand = brandPath(r.domain);
   return { id: `rebrand:${r.domain}:${r.confirmed_at.slice(0, 10)}`, type: "rebrand", kicker: `Rebrand · ${sectorName(r.sector)}`,
-    headline: `${r.domain} rebranded: new ${listOf(reasons, 4) || "identity"}`, deck: clip(untick(r.read), 220),
+    headline: `${r.domain} rebranded: new ${listOf(reasons, 4) || "identity"}`, deck: rebrandDeck(r),
     facts: [{ text: `Changed: ${listOf(reasons, 5) || "identity"}`, href: brand, basis: "measured" }, { text: `Confirmed ${shortDate(r.confirmed_at)}`, href: `/brands?tab=moves`, basis: "measured", kind: "date" },
       ...members.map(m => ({ text: m.headline, href: brand, basis: m.basis, kind: "member" as const }))],
     sector: r.sector, signalKeys: [], domains: [r.domain], evidence: [{ label: "Brand page", href: brand }, { label: "Rebrand desk", href: "/brands?tab=moves" }],
@@ -136,12 +179,14 @@ export function rebrandCandidate(r: RebrandRow, moves: { c: Candidate; e: EventR
 export const stageDistance = (from: string | null, to: string | null) => { const a = stageName(from), b = stageName(to); return a && b ? Math.abs(STAGE_ORDER[a]! - STAGE_ORDER[b]!) : 1; };
 export function shiftCandidates(ctx: Ctx): Candidate[] {
   const out: Candidate[] = [];
-  for (let i = 1; i < ctx.runs.length; i++) {
-    const prev = ctx.runs[i - 1]!, cur = ctx.runs[i]!;
+  // Only the latest real run against the most recent real run at least MIN_RUN_GAP_DAYS older; closer runs are reruns.
+  if (ctx.pair) {
+    const prev = ctx.pair.earlier, cur = ctx.pair.latest;
     for (const r of cur.rows) {
       const key = rowKey(r);
       if (r.scope !== "all" || !ctx.headline.has(key)) continue;
-      const before = stageName(ctx.row(prev, key)?.stage), after = stageName(r.stage);
+      const was = ctx.row(prev, key); if (!was) continue; // a signal new since the earlier run is not a shift
+      const before = stageName(was.stage), after = stageName(r.stage);
       if (!before || !after || before === after) continue;
       const l = label(key), ex = ctx.showing(key);
       out.push({ id: `shift:${key}:${cur.id}`, type: "shift", kicker: `Shift · ${l.dimension}`, headline: `${l.name} moved from ${before} to ${after}`,
@@ -184,14 +229,21 @@ export function breakoutCandidates(ctx: Ctx, alerts: WireIn[]): Candidate[] {
 
 // FIRST SEEN ---------------------------------------------------------------------------------------
 const category = (k: string) => k.slice(0, Math.max(0, k.indexOf(":")));
-export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[] {
-  const out: Candidate[] = [], cats = new Set<string>(), all = new Set<string>(), bySector = new Map<string, { traits: Set<string>; cats: Set<string> }>();
-  for (const a of archive) {
-    const s = bySector.get(a.sector) ?? { traits: new Set(), cats: new Set() };
-    for (const t of a.traits) { all.add(t); cats.add(category(t)); s.traits.add(t); s.cats.add(category(t)); }
-    bySector.set(a.sector, s);
+/** Can this kind of signal be first-seen at all? Only categories the archive measures from stored HTML/CSS (FIRST_SEEN_DIMENSIONS). */
+export const firstSeenEligible = (key: string) => Object.hasOwn(FIRST_SEEN_DIMENSIONS, category(key));
+/** Archive depth per sector ("all" = library-wide) and category: brands and distinct quarters where the category was measured. */
+export function archiveDepth(archive: ArchiveRow[]) {
+  const m = new Map<string, { brands: Set<string>; quarters: Set<string> }>();
+  for (const a of archive) for (const c of a.measured) for (const scope of [a.sector, "all"]) {
+    const k = `${scope}|${c}`, x = m.get(k) ?? { brands: new Set(), quarters: new Set() }; x.brands.add(a.domain); x.quarters.add(a.quarter); m.set(k, x);
   }
-  const keys = [...new Set(ctx.sites.flatMap(s => s.traits))].filter(k => shown(ctx, k)).sort();
+  return (sector: string | null, cat: string) => { const x = m.get(`${sector ?? "all"}|${cat}`); return { brands: x?.brands.size ?? 0, quarters: x?.quarters.size ?? 0 }; };
+}
+export const deepEnough = (d: { brands: number; quarters: number }) => d.brands >= FIRST_SEEN_ARCHIVE_MIN_BRANDS && d.quarters >= FIRST_SEEN_ARCHIVE_MIN_QUARTERS;
+export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[] {
+  const out: Candidate[] = [], all = new Set<string>(), bySector = new Map<string, Set<string>>(), depth = archiveDepth(archive);
+  for (const a of archive) { const s = bySector.get(a.sector) ?? new Set(); for (const t of a.traits) { all.add(t); s.add(t); } bySector.set(a.sector, s); }
+  const keys = [...new Set(ctx.sites.flatMap(s => s.traits))].filter(k => shown(ctx, k) && firstSeenEligible(k)).sort();
   const make = (key: string, sector: string | null, domains: string[]): Candidate => {
     const l = label(key), at = ctx.sites.filter(s => domains.includes(s.domain)).map(s => s.captured ?? ctx.now).sort()[0] ?? ctx.now;
     const w = sector ? `in ${inline(sectorName(sector))}` : "in the library";
@@ -201,14 +253,16 @@ export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[
       sector, signalKeys: [key], domains: domains.slice(0, 6), evidence: [{ label: "Signal page", href: signalPath(key) }, { label: "Pattern", href: patternPath(key) }],
       sourceIds: domains.map(d => `site:${d}`), basis: basis(key), happenedAt: at, magnitude: domains.length, firstSeen: true, stage: ctx.row(ctx.cur, key)?.stage ?? null };
   };
-  const enough = (key: string, n: number) => n <= FIRST_SEEN_MAX_BRANDS && (n >= FIRST_SEEN_MIN_BRANDS || (n >= 1 && ctx.headline.has(key)));
+  // Library-wide: 2 brands, or 1 brand on a headline signal. In a sector: always 2 brands (no single-brand exception).
+  const enoughAll = (key: string, n: number) => n <= FIRST_SEEN_MAX_BRANDS && (n >= FIRST_SEEN_MIN_BRANDS || (n >= 1 && ctx.headline.has(key)));
+  const enoughSector = (n: number) => n <= FIRST_SEEN_MAX_BRANDS && n >= FIRST_SEEN_MIN_BRANDS;
   for (const key of keys) {
-    // The archive must measure this kind of signal at all, or "first" would only mean "unmeasured".
-    if (!cats.has(category(key))) continue;
-    if (!all.has(key)) { const d = ctx.showing(key); if (enough(key, d.length)) out.push(make(key, null, d)); continue; }
-    for (const [sector, arch] of bySector) {
-      if (arch.traits.has(key) || !arch.cats.has(category(key))) continue;
-      const d = ctx.showing(key, sector); if (enough(key, d.length)) out.push(make(key, sector, d));
+    // The archive must have measured this kind of signal deeply enough, or "first" would only mean "unmeasured".
+    if (!deepEnough(depth(null, category(key)))) continue;
+    if (!all.has(key)) { const d = ctx.showing(key); if (enoughAll(key, d.length)) out.push(make(key, null, d)); continue; }
+    for (const [sector, traits] of [...bySector].sort(([a], [b]) => a.localeCompare(b))) {
+      if (traits.has(key) || !deepEnough(depth(sector, category(key)))) continue;
+      const d = ctx.showing(key, sector); if (enoughSector(d.length)) out.push(make(key, sector, d));
     }
   }
   return out;
@@ -217,19 +271,20 @@ export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[
 // CROSSOVER ----------------------------------------------------------------------------------------
 export function crossoverCandidates(ctx: Ctx): Candidate[] {
   const out: Candidate[] = [];
-  for (let i = 1; i < ctx.runs.length; i++) {
-    const prev = ctx.runs[i - 1]!, cur = ctx.runs[i]!, bySignal = new Map<string, SignalRow[]>();
+  if (ctx.pair) {
+    const prev = ctx.pair.earlier, cur = ctx.pair.latest, bySignal = new Map<string, SignalRow[]>();
     for (const r of cur.rows) if (r.scope !== "all" && r.status === "ok" && r.current_share != null && shown(ctx, rowKey(r))) bySignal.set(rowKey(r), [...(bySignal.get(rowKey(r)) ?? []), r]);
     for (const [key, rows] of bySignal) {
       const lead = [...rows].sort((a, b) => b.current_share! - a.current_share! || a.scope.localeCompare(b.scope))[0]!;
       if (lead.current_share! < CROSSOVER_LEAD_MIN) continue;
       for (const r of rows) {
         if (r.scope === lead.scope) continue;
+        if (!ctx.row(prev, key)) continue; // the signal did not exist in the earlier run
         const before = ctx.row(prev, key, r.scope)?.current_share;
         if (before == null || before >= CROSSOVER_FLOOR || r.current_share! < CROSSOVER_FLOOR) continue;
         const d = ctx.showing(key, r.scope); if (!d.length) continue;
         const l = label(key), s = inline(sectorName(r.scope));
-        out.push({ id: `crossover:${key}:${r.scope}:${cur.id}`, type: "crossover", kicker: `Crossover · ${l.dimension} · ${sectorName(r.scope)}`, headline: `${sectorName(r.scope)} picks up ${inline(l.name)}`,
+        out.push({ id: `crossover:${key}:${r.scope}:${cur.id}`, type: "crossover", kicker: `Crossover · ${l.dimension} · ${sectorName(r.scope)}`, headline: `${l.name} reaches ${s}`,
           deck: `Led by ${inline(sectorName(lead.scope))} at ${pct(lead.current_share, 1)}, it now sits on ${pct(r.current_share, 1)} of ${s} homepages, up from ${pct(before, 1)}.`,
           facts: [
             { text: `${sectorName(lead.scope)}: ${pct(lead.current_share, 1)} of homepages (the leading sector)`, href: signalPath(key), basis: basis(key), kind: "share" },

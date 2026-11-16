@@ -115,9 +115,10 @@ export function queueModel(all: StoryRecord[], day: string | null, now: number) 
   const days = [...new Set(all.map(s => dayOf(s.happened_at)))].filter(d => d >= since && d <= today).sort().reverse();
   const pick = day ?? null, rows = all.filter(s => (pick ? dayOf(s.happened_at) === pick : dayOf(s.happened_at) >= since)).sort((a, b) => b.happened_at.localeCompare(a.happened_at) || b.score - a.score);
   const item = (s: StoryRecord) => ({ ...toStory(s), state: s.state, reason: s.reason, whyRan: s.why_ran, components: asComponents(s.components), whyLine: s.why_line, pinnedUntil: s.pinnedUntil, killReason: s.killReason, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note, payload: e.payload as Record<string, string> })) });
-  const pubDay = (d: string) => all.filter(s => s.status === "published" && s.type !== "launch" && dayOf(s.happened_at) === d).length;
+  // Counts read the overlay: a killed story no longer counts as ran.
+  const count = (d: string, st: StoryRecord["state"]) => all.filter(s => s.state === st && (st !== "published" || s.type !== "launch") && dayOf(s.happened_at) === d).length;
   return {
-    day: pick, today, days: days.map(d => ({ day: d, published: pubDay(d), held: all.filter(s => s.state === "held" && dayOf(s.happened_at) === d).length })),
+    day: pick, today, days: days.map(d => ({ day: d, published: count(d, "published"), held: count(d, "held"), killed: count(d, "killed") })),
     published: rows.filter(s => s.state === "published").map(item), held: rows.filter(s => s.state === "held").map(item), killed: rows.filter(s => s.state === "killed").map(item),
     edits: all.flatMap(s => s.edits.map(e => ({ story: s.id, headline: s.stored.headline, action: e.action, at: e.at, note: e.note }))).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 40),
   };

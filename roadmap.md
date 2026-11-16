@@ -186,3 +186,11 @@
 - [x] Surfaces: /stories/$id (ObjectPage, ia.ts, backtick), Live lead/stream/type chips/lens, related stories on signal/brand/pattern, brand timeline links, Terminal Today held toggle, MCP `stories` (24 tools)
 - [x] Editor's desk: /api/public/desk (crawler-secret Bearer, rate limited, story_edits only), /desk page (key in memory), docs/editor-desk.md
 - [x] Tests + backfill + screenshots + report
+
+# Phase 14b — make the story engine honest (small, surgical; don't publish)
+- [x] MIN_RUN_GAP_DAYS gap rule for SHIFT, CROSSOVER, Moving now, TODAY and Digest movers; skip signals missing from the earlier run; honest empty states
+- [x] FIRST SEEN: archive-measurable allowlist, sector rule (2 brands, archive ≥8 brands and ≥4 quarters)
+- [x] scripts/retire-stories.ts: kill rows for rule breakers, correct rows for fixed wording; run once
+- [x] Wording: crossover "<signal> reaches <sector>", layout moves in plain words, templated rebrand decks, new AI prompt + banned hedges
+- [x] /status real-runs line; /what-we-show "What makes a story"
+- [x] Tests, screenshots, report

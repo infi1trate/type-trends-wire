@@ -29,6 +29,7 @@ export function Today({ go, onTour, onGlossary, focus }: { go: (p: PanelId) => v
           <p className="text-g500">New here? Each line says what moved and links to the proof. <button type="button" onClick={onTour} className="text-ink underline underline-offset-2 max-md:min-h-11">Take the 4-step tour →</button> <button type="button" onClick={onGlossary} className="text-ink underline underline-offset-2 max-md:min-h-11">Glossary (?)</button></p>
         </div>
         {t.note && <p className="border-b border-rule p-3 text-g500">{t.note}</p>}
+        {t.stageNote && <p className="border-b border-rule p-3 text-g500">{t.stageNote}</p>}
         <ol className="flex flex-col">
           {t.lines.map((l, i) => <StoryRow key={l.id} s={fromToday(l)} n={i + 1} tour={l.id === firstTrait ? "trait" : l.id === firstSite ? "site" : undefined} />)}
         </ol>

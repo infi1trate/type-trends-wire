@@ -5,7 +5,9 @@ import { forecastSiteTraits, type SiteRow } from "../forecast-signals";
 import { canonical, label } from "../labels";
 import type { EventRow, RebrandRow } from "../agency/changes";
 import type { SignalRow } from "../signals";
-import { allCandidates, type BuildInput, type RunRows } from "./candidates";
+import { allCandidates, archiveMeasured, type BuildInput, type RunRows } from "./candidates";
+import { comparisonPair } from "../run-gap";
+import { fetchRealRuns } from "../real-runs";
 import { planStories, type Existing, type Planned } from "./score";
 import { knownFrom, validateWhy, whyFacts, whyPrompt, WHY_KIND, WHY_PER_BUILD, WHY_PER_DAY, WHY_SYSTEM, WHY_TOOL } from "./why";
 import { soWhatOf } from "./view";
@@ -14,8 +16,7 @@ import { soWhatOf } from "./view";
 export const BUILD_BUDGET_MS = 20_000;
 /** Incremental builds look back 7 days; the backfill script asks for 30. */
 export const BUILD_DAYS = 7;
-/** Rule: a forecast run is real when the weekly brief, chart card or ledger recorded it — DEV runs write none of those. */
-export const REAL_RUN_RULE = "A run is real when weekly_briefs, chart_cards or forecast_calls reference it (DEV runs write none of them).";
+export { REAL_RUN_RULE } from "../run-gap";
 
 export type StoryRowOut = {
   id: string; type: string; status: "published" | "held"; reason: string; score: number; components: unknown; why_ran: string; kicker: string; headline: string; deck: string | null;
@@ -88,19 +89,11 @@ async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[]
 export async function loadInput(o: { days: number; allRuns: boolean; realRunIds: number[] }): Promise<BuildInput> {
   const { supabaseAnon } = await import("../mcp/supabase");
   const db = supabaseAnon(), now = Date.now(), since = new Date(now - o.days * 864e5).toISOString();
-  const okRuns = await db.from("forecast_runs").select("id,computed_at").eq("status", "ok").order("id", { ascending: false }).limit(20);
-  if (okRuns.error) throw okRuns.error;
-  const ids = (okRuns.data ?? []).map(r => r.id);
-  const [briefs, charts, calls] = await Promise.all([
-    db.from("weekly_briefs").select("run_id").in("run_id", ids), db.from("chart_cards").select("run_id").in("run_id", ids),
-    Promise.all(ids.map(id => db.from("forecast_calls").select("run_id").eq("run_id", id).limit(1))),
-  ]);
-  const real = new Set<number>(o.realRunIds);
-  for (const r of [...(briefs.data ?? []), ...(charts.data ?? []), ...calls.flatMap(c => c.data ?? [])]) if (r.run_id != null) real.add(r.run_id);
-  const realRuns = (okRuns.data ?? []).filter(r => real.has(r.id));
-  // Pairs need the run before the window too; incremental builds read only the latest three real runs.
+  // Real runs, newest first: the latest three (tiers read the two before the latest) plus the gap partner for shifts and crossovers.
+  const realRuns = (await fetchRealRuns(db, { extra: o.realRunIds })).map(r => ({ id: r.id, computed_at: r.at })).reverse();
+  const pair = comparisonPair(realRuns.map(r => ({ id: r.id, at: r.computed_at })));
   const inWindow = realRuns.filter(r => r.computed_at >= since), pick = o.allRuns ? realRuns.slice(0, inWindow.length + 1) : realRuns.slice(0, 3);
-  const chosen = (pick.length >= 2 ? pick : realRuns.slice(0, 2)).sort((a, b) => a.id - b.id);
+  const chosen = [...new Map([...pick, ...realRuns.filter(r => r.id === pair?.earlier.id)].map(r => [r.id, r])).values()].sort((a, b) => a.id - b.id);
   const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await pages<SignalRow>((f, t) => db.from("forecasts").select(COLS).eq("run_id", r.id).order("scope").order("dimension").order("value").range(f, t) as never, 1000)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
   const latest = chosen.at(-1)?.id ?? null;
   const [events, alerts, wire, launches, sites, now_, archive, setters, rebrands] = await Promise.all([
@@ -122,7 +115,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since) as unknown as RebrandRow[],
     alerts: (alerts.data ?? []).map(a => dec({ ...a, ref: a.ref ?? null })) as BuildInput["alerts"], wire: wire.map(dec), launches: (launches.data ?? []).map(dec) as BuildInput["launches"],
     sites: sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; }),
-    archive: archive.map(r => ({ domain: r.domain, sector: r.sector, traits: [...new Set(forecastSiteTraits(r))] })),
+    archive: archive.map(r => ({ domain: r.domain, sector: r.sector, quarter: r.quarter, traits: [...new Set(forecastSiteTraits(r))], measured: archiveMeasured(r) })),
     trendsetters: (setters.data ?? []) as { domain: string; rank: number }[],
   };
 }

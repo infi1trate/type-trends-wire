@@ -1,4 +1,5 @@
 // LIVE (/): the reader's front page — lead story, the stream newest first (30 a page), moving now, chart of the week, new on the scene.
+import { NO_COMPARISON_TEXT } from "@/lib/run-gap";
 import { Link } from "@tanstack/react-router";
 import type { loadLive } from "@/lib/read.server";
 import { pct } from "@/lib/digest/copy";
@@ -40,11 +41,11 @@ export function LiveView({ d }: { d: LiveData }) {
       <aside className="space-y-12 lg:col-span-4" aria-label="Moving now, chart of the week and launches">
         <section aria-labelledby="live-moving">
           <h2 id="live-moving" className="ed-kicker ed-rule pt-3">Moving now</h2>
-          <p className="ed-caption mt-1">Headline signals that changed stage in the latest forecast{d.runAt ? ` (${storyTime(d.runAt)})` : ""}, across all sectors.</p>
+          <p className="ed-caption mt-1">{d.comparison ? `Headline signals that changed stage between forecast run ${d.comparison.earlier.id} (${storyTime(d.comparison.earlier.at)}) and run ${d.comparison.latest.id} (${storyTime(d.comparison.latest.at)}), across all sectors.` : "Headline signals that changed stage week over week, across all sectors."}</p>
           {d.moving.length ? <ul className="mt-3 space-y-4">{d.moving.map((m, i) => <li key={m.key} className="ed-hair pt-3">
             <Link to="/signals/$key" params={{ key: m.key }} className="ed-h3 no-underline hover:underline" data-tour={i === 0 ? "r-signal" : undefined} {...pr(m.href)}>{m.name}</Link>
             <p className="ed-data mt-1 flex flex-wrap items-center gap-2"><Dim d={m.dimension} /><BasisWord b={m.basis} /><span>{m.from} → </span><StageWord stage={m.to} />{m.share != null && <span>{pct(m.share, 1)}</span>}{m.momentum_index != null && <span className="ed-muted">Momentum {m.momentum_index}</span>}</p>
-          </li>)}</ul> : <p className="ed-small mt-3">No headline signal changed stage in the latest forecast. <Link to="/signals" className="ed-tap" data-tour="r-signal">See every headline signal →</Link></p>}
+          </li>)}</ul> : <p className="ed-small mt-3">{d.comparison ? `No headline signal changed stage between run ${d.comparison.earlier.id} and run ${d.comparison.latest.id}.` : NO_COMPARISON_TEXT} <Link to="/signals" className="ed-tap" data-tour="r-signal">See every headline signal →</Link></p>}
         </section>
         {d.chart && <section aria-labelledby="live-chart">
           <h2 id="live-chart" className="ed-kicker ed-rule pt-3">Chart of the week · {d.chart.week}</h2>

@@ -15,7 +15,9 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison } from "./read.functions";
+import { comparisonPair } from "./run-gap";
+import { fetchRealRuns, fetchStageRows } from "./real-runs";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
@@ -318,27 +320,18 @@ export const vibeQuery = () => queryOptions({ queryKey: ["vibe-map"], staleTime:
 export const chartCardQuery = (week: string | null) => queryOptions({ queryKey: ["chart-card", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getChartCard({ data: { week } }) });
 export const healthQuery = () => queryOptions({ queryKey: ["health"], staleTime: 60_000, refetchInterval: 120_000, queryFn: () => getHealth() });
 
-/** TODAY inputs: latest two ok forecast runs (scope all), recent alerts, wire freshness, latest live library change and crawl. */
+/** TODAY inputs: the latest real forecast run and its week-over-week partner (scope all; none when closer than MIN_RUN_GAP_DAYS), recent alerts, wire freshness, latest live library change and crawl. */
 export const todayQuery = () => queryOptions({
   queryKey: ["today"],
   staleTime: STALE,
   queryFn: async (): Promise<Omit<TodayInput, "type">> => {
     const now = new Date().toISOString(), since = new Date(Date.now() - 864e5).toISOString();
-    const runsRes = await supabase.from("forecast_runs").select("id,computed_at").eq("status", "ok").order("id", { ascending: false }).limit(2);
-    if (runsRes.error) throw runsRes.error;
-    const [latest, previous] = runsRes.data ?? [];
-    const stageRows = async (runId: number | undefined) => {
-      const out: StageRow[] = [];
-      if (runId === undefined) return out;
-      for (let from = 0; ; from += PAGE) {
-        const { data, error } = await supabase.from("forecasts").select("dimension,value,stage,momentum,current_share").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(from, from + PAGE - 1);
-        if (error) throw error;
-        out.push(...(data ?? []));
-        if ((data ?? []).length < PAGE) return out;
-      }
-    };
+    // Real runs only; stage lines compare the latest real run with the most recent real run at least MIN_RUN_GAP_DAYS older.
+    const real = await fetchRealRuns(supabase), pair = comparisonPair(real), last = real.at(-1);
+    const latest = last ? { id: last.id, computed_at: last.at } : undefined, previous = pair ? { id: pair.earlier.id, computed_at: pair.earlier.at } : undefined;
+    const stageRows = async (runId: number | undefined): Promise<StageRow[]> => (runId === undefined ? [] : fetchStageRows(supabase, runId));
     const [lat, prev, alerts, count, wireLatest, event, crawl] = await Promise.all([
-      stageRows(latest?.id), stageRows(previous?.id),
+      stageRows(previous ? latest?.id : undefined), stageRows(previous?.id),
       latest ? supabase.from("wire_items").select("title,url,source,published_at,ref").eq("source_kind", "alert").gte("published_at", new Date(Date.parse(latest.computed_at) - 36e5).toISOString()).order("published_at", { ascending: false }).order("id").limit(10) : Promise.resolve({ data: [], error: null }),
       supabase.from("wire_items").select("id", { count: "exact", head: true }).neq("source_kind", "alert").gte("published_at", since),
       supabase.from("wire_items").select("title,url,source,published_at").neq("source_kind", "alert").lte("published_at", now).order("published_at", { ascending: false }).limit(1),
@@ -399,6 +392,8 @@ export type LiveTypeFilter = "all" | "moves" | "signals" | "openings" | "news";
 export const liveQuery = (sector: string, page: number, type: LiveTypeFilter = "all") => queryOptions({ queryKey: ["live", sector, page, type], staleTime: 60_000, queryFn: () => getLive({ data: { sector, page, type } }) });
 export const storyQuery = (id: string) => queryOptions({ queryKey: ["story", id], staleTime: 60_000, queryFn: () => getStory({ data: { id } }) });
 /** Today's queue (published, held, killed) for the desk and Terminal › Live › Today; `fresh` skips the server's short cache. */
+/** Real runs, the valid week-over-week pair (or null) and when the next one can land (/status). */
+export const runComparisonQuery = () => queryOptions({ queryKey: ["run-comparison"], staleTime: 5 * 60_000, queryFn: () => getRunComparison() });
 export const storyQueueQuery = (day: string | null, fresh = false) => queryOptions({ queryKey: ["story-queue", day ?? "recent", fresh], staleTime: fresh ? 0 : 60_000, queryFn: () => getStoryQueue({ data: { ...(day ? { day } : {}), fresh } }) });
 export const brandQuery = (domain: string) => queryOptions({ queryKey: ["brand", domain], staleTime: 10 * 60_000, queryFn: () => getBrand({ data: { domain } }) });
 export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime: 10 * 60_000, queryFn: () => getBrands() });

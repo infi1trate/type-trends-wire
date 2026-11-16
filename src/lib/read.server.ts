@@ -2,8 +2,7 @@
 import { supabaseAnon } from "./mcp/supabase";
 import { forecastSiteTraits, type SiteRow } from "./forecast-signals";
 import { latestSignals } from "./signals.server";
-import { rowKey } from "./signals";
-import { label, basis, stageName } from "./labels";
+import { label, basis } from "./labels";
 import { fromEvent, fromRebrand, type Story } from "./stories";
 import { storyIndex } from "./stories/read.server";
 import { liveModel, resolveTypeFilter, storiesAbout, storyForSource, storyPath } from "./stories/view";
@@ -12,6 +11,9 @@ import { patternIndex, patternModel, type PatternSite } from "./patterns";
 import { lensSignals, resolveSector } from "./sector-lens";
 import { signalPath } from "./ia";
 import { decodeEntities } from "./entities";
+import { comparisonPair, nextComparison } from "./run-gap";
+import { fetchRealRuns, fetchStageRows } from "./real-runs";
+import { stageChanges } from "./today";
 import type { ThumbRow } from "./thumbs";
 import type { EventRow, RebrandRow } from "./agency/changes";
 
@@ -56,16 +58,28 @@ export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
 
 /** `/` Live: lead story, the stored story stream (30 a page, type chips), moving now, chart of the week, new on the scene. */
 export async function loadLive(sector: string, page: number, type: string = "all") {
-  const [all, { snap, tiers }, chart] = await Promise.all([storyIndex(), latestSignals("all"), import("./chart/chart.server").then(m => m.chartCard(null)).catch(() => null)]);
+  const [all, { snap, tiers }, chart, moves] = await Promise.all([storyIndex(), latestSignals("all"), import("./chart/chart.server").then(m => m.chartCard(null)).catch(() => null), movingRuns()]);
   const headline = new Set([...tiers.values()].filter(t => t.tier === "headline").map(t => t.key));
   const s = resolveSector(sector);
   const live = liveModel(all, { sector: s, page, type: resolveTypeFilter(type), now: Date.now() });
-  const lens = lensSignals(snap.rows, tiers, s), byKey = new Map(lens.signals.map(x => [x.key, x])), prev = new Map(snap.prev);
-  const moving = snap.rows.filter(r => r.scope === "all" && headline.has(rowKey(r))).flatMap(r => {
-    const before = stageName(prev.get(rowKey(r))?.[0] ?? null), to = stageName(r.stage), k = rowKey(r), x = byKey.get(k);
-    return before && to && before !== to ? [{ key: k, name: label(k).name, dimension: label(k).dimension, basis: basis(k), from: before, to, share: r.current_share, momentum_index: x?.momentum_index ?? null, href: signalPath(k) }] : [];
-  }).sort((a, b) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || a.name.localeCompare(b.name));
-  return { sector: s, ...live, moving, chart: chart ? { week: chart.week, trait: chart.trait, model: chart.model } : null, runAt: snap.computed_at, runId: snap.run_id };
+  const lens = lensSignals(snap.rows, tiers, s), byKey = new Map(lens.signals.map(x => [x.key, x]));
+  // Stage changes only between the latest real run and the most recent real run at least MIN_RUN_GAP_DAYS older.
+  const moving = moves.pair ? stageChanges(moves.latest, moves.earlier).filter(c => headline.has(c.trait)).map(c => {
+    const x = byKey.get(c.trait);
+    return { key: c.trait, name: label(c.trait).name, dimension: label(c.trait).dimension, basis: basis(c.trait), from: c.from, to: c.to, share: c.share, momentum_index: x?.momentum_index ?? null, href: signalPath(c.trait) };
+  }).sort((a, b) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || a.name.localeCompare(b.name)) : [];
+  return { sector: s, ...live, moving, comparison: moves.pair, nextComparison: moves.next, chart: chart ? { week: chart.week, trait: chart.trait, model: chart.model } : null, runAt: snap.computed_at, runId: snap.run_id };
+}
+/** The valid comparison for Moving now: real runs, the gap pair and both runs' library-wide stages (cached like other public reads). */
+const movingRuns = memo(TTL, async () => {
+  const db = supabaseAnon(), runs = await fetchRealRuns(db), pair = comparisonPair(runs), next = nextComparison(runs, Date.now());
+  if (!pair) return { pair: null, next, latest: [], earlier: [] };
+  const [latest, earlier] = await Promise.all([fetchStageRows(db, pair.latest.id), fetchStageRows(db, pair.earlier.id)]);
+  return { pair: { latest: pair.latest, earlier: pair.earlier, days: pair.days }, next, latest, earlier };
+});
+export async function runComparison() {
+  const runs = await fetchRealRuns(supabaseAnon()), pair = comparisonPair(runs);
+  return { real: runs, pair, next: nextComparison(runs, Date.now()) };
 }
 
 /** /brands/<domain>: null when the domain is not an active library brand. */
