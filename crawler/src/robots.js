@@ -1,7 +1,9 @@
 // Minimal robots.txt check: is `path` allowed for our UA (or *)? Longest match wins; Allow wins ties.
+// Rules addressed to either of our names count: slugbot, or DSGNTerminalBot (the name published first).
+export const BOT_TOKENS = "slugbot dsgnterminalbot";
 const ruleRe = (p) => new RegExp("^" + p.replace(/[.+?^{}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\\\$$|\$$/, "$"));
 
-export function homepageAllowed(robotsTxt, ua = "dsgnterminalbot", path = "/") {
+export function homepageAllowed(robotsTxt, ua = BOT_TOKENS, path = "/") {
   if (!robotsTxt) return true;
   const groups = [];
   let cur = null;

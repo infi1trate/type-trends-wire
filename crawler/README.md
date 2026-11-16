@@ -1,6 +1,6 @@
-# dsgn-crawler
+# slug crawler
 
-Weekly crawler for DSGN/TERMINAL (type-trends-wire.lovable.app). It renders homepages in headless Chromium, pulls out design signals, and posts them to the terminal. It stores derived data only: no screenshots, no page copy beyond headlines and button labels.
+Crawler for slug (slug.global). It renders homepages in headless Chromium, pulls out design signals, and posts them to the terminal. It stores derived data only: no screenshots, no page copy beyond headlines and button labels.
 
 ## Two indexes
 

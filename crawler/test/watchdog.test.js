@@ -21,6 +21,6 @@ test("health verdicts", () => {
 });
 
 test("issue titles are stable", () => {
-  assert.equal(HEALTH_TITLE, "DSGN/TERMINAL health check failing");
+  assert.equal(HEALTH_TITLE, "slug health check failing");
   assert.equal(workflowTitle("crawl"), "Workflow failing: crawl");
 });

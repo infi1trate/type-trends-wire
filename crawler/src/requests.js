@@ -1,4 +1,4 @@
-// DSGN/TERMINAL render queue: renders URLs the public "critique" tool could only analyse in LITE mode
+// slug render queue: renders URLs the public "critique" tool could only analyse in LITE mode
 // (declared CSS), and reports rendered design signals back so later critiques use real measurements.
 // Env: CRAWL_ENDPOINT (…/api/public/ingest-crawl; the queue lives next to it at crawl-requests), CRAWL_SECRET,
 //      LIMIT (1..25, default 10), DRY_RUN=1 (read the queue, render, print; post nothing), QUEUE_FILE (tests: JSON

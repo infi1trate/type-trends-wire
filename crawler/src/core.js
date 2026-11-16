@@ -5,8 +5,10 @@ import { paletteFromScreenshot, pickAccent, parseCssColor, contrast, rgbToHex } 
 import { homepageAllowed } from "./robots.js";
 import { resolveFonts } from "./fonts.js";
 
-export const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36 DSGNTerminalBot/0.1 (+https://type-trends-wire.lovable.app)";
-export const UA_MOBILE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1 DSGNTerminalBot/0.1 (+https://type-trends-wire.lovable.app)";
+// The bot announces both names: slugbot (the product is now slug) and DSGNTerminalBot, the token published first, which
+// site owners may already match in robots.txt. robots.js honours rules written for either.
+export const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36 DSGNTerminalBot/0.1 slugbot/0.1 (+https://slug.global)";
+export const UA_MOBILE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1 DSGNTerminalBot/0.1 slugbot/0.1 (+https://slug.global)";
 export const VIEWPORTS = {
   desktop: { userAgent: UA, viewport: { width: 1440, height: 900 } },
   mobile: { userAgent: UA_MOBILE, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },

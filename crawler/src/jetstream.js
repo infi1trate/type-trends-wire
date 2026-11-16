@@ -1,4 +1,4 @@
-// DSGN/TERMINAL discourse sampler: listens to Bluesky's public Jetstream (every new post, no key) for a fixed window,
+// slug discourse sampler: listens to Bluesky's public Jetstream (every new post, no key) for a fixed window,
 // keeps design posts, counts mentions of the terms the terminal tracks (fonts, aesthetics, layout, color, tech) and
 // "fatigue" language, then posts aggregate counts plus a capped set of design posts (text ≤300 chars + link) to the wire.
 // Env: CRAWL_ENDPOINT (…/api/public/ingest-crawl; siblings discourse-terms and ingest-wire), CRAWL_SECRET,

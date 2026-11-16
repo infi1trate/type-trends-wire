@@ -13,6 +13,8 @@ test("robots", () => {
   assert.equal(homepageAllowed("User-agent: *\nDisallow: /admin"), true);
   assert.equal(homepageAllowed("User-agent: *\nDisallow:"), true);
   assert.equal(homepageAllowed("User-agent: DSGNTerminalBot\nDisallow: /\n\nUser-agent: *\nAllow: /"), false);
+  assert.equal(homepageAllowed("User-agent: slugbot\nDisallow: /\n\nUser-agent: *\nAllow: /"), false);
+  assert.equal(homepageAllowed("User-agent: otherbot\nDisallow: /\n\nUser-agent: *\nAllow: /"), true);
   assert.equal(homepageAllowed("User-agent: *\nDisallow: /\nAllow: /$"), true);
   assert.equal(homepageAllowed(""), true);
 });

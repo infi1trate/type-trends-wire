@@ -1,4 +1,4 @@
-// DSGN/TERMINAL library crawler: snapshots the 300 tracked sites over time; the terminal diffs snapshots into events.
+// slug library crawler: snapshots the 300 tracked sites over time; the terminal diffs snapshots into events.
 // Env: CRAWL_ENDPOINT, CRAWL_SECRET (same as crawl.js), DRY_RUN=1, CONCURRENCY (default 6),
 //      LIBRARY_MODE=full|check  full = weekly: discover pages, snapshot everything (desktop all pages, mobile home)
 //                               check = daily: fetch server HTML, snapshot only pages whose html_hash moved

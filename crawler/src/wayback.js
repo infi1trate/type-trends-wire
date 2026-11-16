@@ -1,4 +1,4 @@
-// DSGN/TERMINAL history backfill: renders archived homepages (Internet Archive) once per quarter since 2021
+// slug history backfill: renders archived homepages (Internet Archive) once per quarter since 2021
 // and posts them as source:"wayback" library snapshots. Resumable: each run asks the terminal which
 // quarters exist and works through the rest, coarse-first, until its time budget runs out.
 // Env: CRAWL_ENDPOINT, CRAWL_SECRET, DRY_RUN=1, LIMIT (first N sites), PASS_MAX (1..3, default 3),

@@ -1,4 +1,4 @@
-// DSGN/TERMINAL crawler: renders homepages, extracts design signals, posts them to the terminal.
+// slug crawler: renders homepages, extracts design signals, posts them to the terminal.
 // Env: CRAWL_ENDPOINT, CRAWL_SECRET, PER_INDEX (default 500), PER_CURATED (default 300), CONCURRENCY (default 6),
 //      INDEXES (default "mainstream,vanguard,curated"), DRY_RUN=1 (write out/*.jsonl instead of posting),
 //      SEEDS_FILE (JSON {mainstream:[], vanguard:[], curated?:[{domain,galleries}]} to skip seed fetch)

@@ -1,4 +1,4 @@
-// DSGN/TERMINAL watchdog: turns failures into GitHub issues and closes them on recovery.
+// slug watchdog: turns failures into GitHub issues and closes them on recovery.
 // Two modes (WATCH_MODE):
 //   health   — poll the terminal's public /api/public/health; one open issue labelled `health` while it's not ok.
 //   workflow — called from workflow_run: one open issue per failing workflow (label `workflow-failure`), closed on success.
@@ -9,7 +9,7 @@ const REPO = process.env.GITHUB_REPOSITORY;
 const TOKEN = process.env.GITHUB_TOKEN;
 const DRY = process.env.DRY_RUN === "1";
 
-export const HEALTH_TITLE = "DSGN/TERMINAL health check failing";
+export const HEALTH_TITLE = "slug health check failing";
 export const workflowTitle = (name) => `Workflow failing: ${name}`;
 
 /** Pure: health payload (or fetch failure) → {state:'ok'|'alert'|'skip', body?}. */
