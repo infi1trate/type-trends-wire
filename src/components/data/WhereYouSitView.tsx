@@ -23,7 +23,7 @@ export function WhereYouSitView({ brands, result, step, onStep }: { brands: Bran
         <label htmlFor="sit-q" className="ed-kicker block">Pick one of the {brands.length} tracked brands</label>
         <input id="sit-q" className="tk-input tk-t-data mt-2 w-full max-w-[40ch]" value={q} onChange={e => { setQ(e.target.value); setMiss(null); }} placeholder="Search by name or domain" autoComplete="off" aria-describedby="sit-hint" />
         <p id="sit-hint" className="ed-small ed-muted mt-1">Only tracked brands; nothing is crawled on demand.</p>
-        {q.trim() && <ul className="mt-2 grid max-w-[60ch] gap-1 sm:grid-cols-2" aria-label="Matching brands">{hits.map(b => <li key={b.domain}><button type="button" onClick={() => choose(b.domain)} className="tk-btn tk-t-data w-full justify-start text-left" data-variant="secondary">{b.name} <span className="tk-c-muted ml-2">{b.domain}</span></button></li>)}
+        {q.trim() && <ul className="mt-2 grid max-w-[60ch] gap-1 sm:grid-cols-2" aria-label="Matching brands">{hits.map(b => <li key={b.domain}><button type="button" onClick={() => choose(b.domain)} className="tk-btn tk-t-kicker w-full justify-start text-left" data-variant="secondary">{b.name} <span className="tk-c-muted ml-2">{b.domain}</span></button></li>)}
           {!hits.length && <li className="ed-small">No tracked brand matches. <Link to="/audit/new" className="ed-tap">Run an audit instead →</Link></li>}</ul>}
         {miss && <p className="ed-small mt-2" role="status">“{miss}” isn't one of the tracked brands. <Link to="/audit/new" className="ed-tap">Run an audit instead →</Link></p>}
       </form>

@@ -163,9 +163,9 @@ function BeforeAfter({ f, v, live }: { f: BeforeAfterFig; v: View; live: boolean
       </div>
       {live && <div className="no-print mt-2 flex flex-wrap items-center gap-2">
         <label htmlFor={`${id}-r`} className="sr-only">Slide between before and after</label>
-        <button type="button" className="tk-btn tk-t-data" data-variant="secondary" aria-pressed={pos === 100} onClick={() => setPos(100)}>Before · {dayText(f.before.at)}</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" aria-pressed={pos === 100} onClick={() => setPos(100)}>Before · {dayText(f.before.at)}</button>
         <input id={`${id}-r`} type="range" min={0} max={100} step={5} value={pos} onChange={e => setPos(Number(e.target.value))} className="min-h-11 min-w-0 flex-1" style={{ accentColor: ACC }} aria-valuetext={pos === 100 ? "All before" : pos === 0 ? "All after" : `${pos}% before`} />
-        <button type="button" className="tk-btn tk-t-data" data-variant="secondary" aria-pressed={pos === 0} onClick={() => setPos(0)}>After · {dayText(f.after.at)}</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" aria-pressed={pos === 0} onClick={() => setPos(0)}>After · {dayText(f.after.at)}</button>
       </div>}
       {f.diffs.length > 0 ? <table className="tk-t-data mt-3 w-full border-collapse text-left"><caption className="tk-t-caption tk-c-muted text-left">Measured differences</caption>
         <thead><tr className="tk-c-muted"><th scope="col" className="py-1 font-normal">Field</th><th scope="col" className="py-1 font-normal">Before</th><th scope="col" className="py-1 font-normal">After</th></tr></thead>
@@ -196,9 +196,9 @@ function Strip({ f, v, live }: { f: StripFig; v: View; live: boolean }) {
           </li>; })}
       </ol>
       {live && <div className="no-print mt-2 flex flex-wrap items-center gap-2">
-        <button type="button" className="tk-btn tk-t-data" data-variant="secondary" onClick={() => { setPlay(false); setK(x => Math.max(0, x - 1)); }} disabled={k === 0}>← Earlier</button>
-        <button type="button" className="tk-btn tk-t-data" data-variant="secondary" aria-pressed={play} onClick={() => { if (k >= f.frames.length - 1) setK(0); setPlay(p => !p); }}>{play ? "Pause" : "Play"}</button>
-        <button type="button" className="tk-btn tk-t-data" data-variant="secondary" onClick={() => { setPlay(false); setK(x => Math.min(f.frames.length - 1, x + 1)); }} disabled={k >= f.frames.length - 1}>Later →</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" onClick={() => { setPlay(false); setK(x => Math.max(0, x - 1)); }} disabled={k === 0}>← Earlier</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" aria-pressed={play} onClick={() => { if (k >= f.frames.length - 1) setK(0); setPlay(p => !p); }}>{play ? "Pause" : "Play"}</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" onClick={() => { setPlay(false); setK(x => Math.min(f.frames.length - 1, x + 1)); }} disabled={k >= f.frames.length - 1}>Later →</button>
       </div>}
     </div>}
   </ChartFrame>;

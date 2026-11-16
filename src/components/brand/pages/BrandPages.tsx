@@ -64,7 +64,7 @@ export function BrandOverview() {
       <p className="ed-standfirst">{BRAND_INTRO.idea}</p>
       <p className="ed-body mt-4">Approved {BRAND_INTRO.approved}. Paper and ink carry the brand; four inks do one job each; two families set the words and one utility face sets the code.</p>
     </Screen>
-    <Screen id="b-pages" label="The pages" title="Nine pages, one idea each">
+    <Screen id="b-pages" label="The pages" title="Eight pages, one idea each">
       <Ledger rows={BRAND_PAGES.slice(1).map((p, i) => ({ key: p.slug, href: p.path, number: i + 1, title: p.title, line: p.line }))} />
       <p className="ed-data mt-4"><Link to="/kit" className="ed-tap">Every shared component, on live data: the kit →</Link></p>
     </Screen>
@@ -166,7 +166,7 @@ export function BrandColour() {
       <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1">{COLOUR_ROLES.map(r => <li key={r.id} className="ed-data">{r.name} <span className="ed-muted">about {r.share}%</span></li>)}</ul>
     </Screen>
     <Screen id="c-roles" label="Roles" title="One job each">
-      <table className="w-full border-collapse" data-roles="">
+      <table className="brand-roles w-full border-collapse" data-roles="">
         <thead><tr className="ed-kicker text-left"><th scope="col" className="pb-2 pr-4">Colour</th><th scope="col" className="pb-2 pr-4">Hex</th><th scope="col" className="pb-2 pr-4">The job</th><th scope="col" className="pb-2">The limit</th></tr></thead>
         <tbody>{[...COLOUR_ROLES.map(r => ({ id: r.id as string, name: r.name as string, limit: r.limit as string })), ...SUPPORTING.map(id => ({ id: id as string, name: id === "newsprint" ? "Newsprint" : "Muted", limit: "Supporting: never a lead." }))].map(r => <tr key={r.id} className="border-t-[1.5px] border-ed-ink align-top" data-role={r.id}>
           <th scope="row" className="py-3 pr-4 text-left"><span className="flex items-center gap-3"><span className="inline-block h-8 w-8 shrink-0 border-[1.5px] border-ed-ink" style={{ background: C[r.id as keyof typeof C] }} aria-hidden="true" /><span className="ed-h4">{r.name}</span></span></th>

@@ -67,7 +67,7 @@
   --color-accent-foreground: var(--tk-text-primary);
   --color-secondary: var(--tk-surface-card);
   --color-secondary-foreground: var(--tk-text-primary);
-  --color-destructive: var(--tk-accent-1);
+  --color-destructive: var(--tk-live);
   --color-input: var(--tk-rule-hairline);
 }
 
@@ -287,16 +287,19 @@
   .tk-panel { background: var(--tk-surface-page); color: var(--tk-text-primary); border: var(--tk-border-hairline) solid var(--tk-rule-hairline); padding: var(--tk-space-3); font-family: var(--tk-type-body-family); font-size: var(--tk-type-body-size); line-height: var(--tk-type-body-leading); }
   .tk-panel :focus-visible, .tk-chart :focus-visible { outline: var(--tk-focus-width) solid var(--tk-focus-ring); outline-offset: var(--tk-focus-offset); }
 
-  .tk-btn { min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-3); border: var(--tk-border-hairline) solid var(--tk-rule-strong); border-radius: var(--tk-radius-sm); cursor: pointer;
+  .tk-btn { min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-3); border: var(--tk-border-strong) solid var(--tk-rule-strong); border-radius: var(--tk-radius-sm); cursor: pointer;
     transition: transform var(--tk-motion-fast) var(--tk-motion-ease), box-shadow var(--tk-motion-fast) var(--tk-motion-ease); }
-  .tk-btn[data-variant="primary"] { background: var(--tk-accent-1); color: var(--tk-on-accent-1); border-color: var(--tk-accent-1); }
+  /* Primary is ink with paper type (pink stays the lead plate's alone); pressed things that matter use .c-raised. */
+  .tk-btn[data-variant="primary"] { background: var(--tk-surface-inverse); color: var(--tk-text-inverse); border-color: var(--tk-surface-inverse); }
+  .tk-btn[aria-pressed="true"] { background: var(--tk-highlight-bg); color: var(--tk-highlight-fg); }
+  .tk-btn:disabled { opacity: .45; cursor: default; }
   .tk-btn[data-variant="secondary"] { background: var(--tk-surface-page); color: var(--tk-text-primary); }
   .tk-btn[data-variant="raised"] { background: var(--tk-surface-raised); color: var(--tk-text-on-accent); }
   .tk-btn[data-variant="link"] { background: none; border-color: transparent; padding: 0; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
   .tk-live { color: var(--tk-mark-live); border-color: var(--tk-mark-live); }
   .tk-tick-dot { background: var(--tk-mark-live); animation: pulse-dot var(--tk-motion-tick) var(--tk-motion-tick-ease) infinite; }
   .tk-tick-value { transition: color var(--tk-motion-base) var(--tk-motion-ease); }
-  .tk-tick-value[data-flash] { color: var(--tk-accent-1); }
+  .tk-tick-value[data-flash] { background: var(--tk-highlight-bg); color: var(--tk-highlight-fg); }
   .tk-input { min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-2); background: var(--tk-surface-sunken); color: var(--tk-text-primary); border: var(--tk-border-hairline) solid var(--tk-rule-strong); border-radius: var(--tk-radius-sm); }
   .tk-input::placeholder { color: var(--tk-text-muted); }
   .tk-seg { border: var(--tk-border-hairline) solid var(--tk-rule-strong); border-radius: var(--tk-radius-pill); }
@@ -304,7 +307,7 @@
   .tk-seg-btn[aria-pressed="true"] { background: var(--tk-surface-inverse); color: var(--tk-text-inverse); }
   .tk-tabs { border-bottom: var(--tk-border-hairline) solid var(--tk-rule-hairline); }
   .tk-tab { min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-3); background: transparent; color: var(--tk-text-muted); border-bottom: var(--tk-border-strong) solid transparent; cursor: pointer; }
-  .tk-tab[aria-selected="true"] { color: var(--tk-text-primary); border-bottom-color: var(--tk-accent-1); }
+  .tk-tab[aria-selected="true"] { color: var(--tk-text-primary); border-bottom-color: var(--tk-rule-strong); }
 
 
   .tk-chart { color: var(--tk-text-primary); font-variant-numeric: tabular-nums; }
@@ -472,4 +475,17 @@
   .brand-mark-full .wordmark, .brand-mark-full .wordmark > svg { width: 100%; height: auto; }
   .brand-photo { background-color: var(--tk-gumball-green-base); background-image: radial-gradient(circle at 30% 30%, var(--tk-gumball-ink-base) 0 1.4px, transparent 1.6px); background-size: 6px 6px; }
   .brand-dont { position: relative; }
+}
+@layer components {
+  /* "Not staged yet" and other quiet badges: an outlined muted word, never muted text on an ink chip. */
+  .digest .ed-badge.ed-muted { background: transparent; color: var(--tk-text-muted); border-color: var(--tk-text-muted); }
+}
+@layer components {
+  /* The colour roles table stacks on narrow screens: swatch and name, then hex, job and limit under it. */
+  @media (max-width: 767px) {
+    .brand-roles thead { display: none; }
+    .brand-roles tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--tk-space-3); padding: var(--tk-space-2) 0; }
+    .brand-roles :is(th, td) { display: block; padding: 0 !important; }
+    .brand-roles td:nth-child(3), .brand-roles td:nth-child(4) { grid-column: 1 / -1; margin-top: var(--tk-space-1); }
+  }
 }

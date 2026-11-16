@@ -4,7 +4,7 @@ import type { IndexRow } from "@/lib/data-stories/build";
 import { dayText } from "@/lib/data-stories/text";
 import { DigestShell } from "@/components/digest/Editorial";
 import { ReadFooter } from "@/components/read/Bits";
-import { Receipt } from "@/components/read/StoryCard";
+import { Ledger } from "@/components/brand/Ledger";
 
 export function DataIndexView({ rows }: { rows: IndexRow[] }) {
   return <DigestShell label="Data stories" section="signals">
@@ -13,15 +13,10 @@ export function DataIndexView({ rows }: { rows: IndexRow[] }) {
       <h1 className="ed-h1 mt-3">Questions the data can answer</h1>
       <p className="ed-standfirst mt-4 max-w-[60ch]">Each one is a question a brand or marketing lead would ask, answered by a picture you step through, built from stored captures. Every number links to its receipt.</p>
     </header>
-    <ol className="ed-wrap mt-10" data-index="">{rows.map(r => <li key={r.slug} className="ed-hair grid gap-x-6 gap-y-1 py-5 md:grid-cols-[12ch_1fr_auto]" data-status={r.status}>
-      <span className="ed-kicker">Data story {r.number}</span>
-      <div className="min-w-0">
-        <h2 className="ed-h3">{r.href ? <Receipt href={r.href} className="no-underline hover:underline">{r.question}</Receipt> : r.question}</h2>
-        <p className="ed-small mt-1 max-w-[62ch]">{r.deck}</p>
-        {r.status === "draft" && <p className="ed-small ed-muted mt-2 max-w-[62ch]"><span className="ed-badge mr-2">Draft</span>{r.reason}</p>}
-      </div>
-      <p className="ed-data ed-muted md:text-right">{r.template}{r.dataThrough && <><br />Data through {dayText(r.dataThrough)}</>}</p>
-    </li>)}</ol>
+    {/* The index is a ledger: numbered, ruled rows; the question in the serif, facts in Big Shoulders, the template and status as tags. */}
+    <div className="ed-wrap mt-10" data-index=""><Ledger label="Data stories" rows={rows.map(r => ({ key: r.slug, href: r.href ?? `/data/${r.slug}`, number: r.number,
+      title: r.question, line: r.status === "draft" ? `Draft: ${r.reason}` : r.deck, tags: [r.template, ...(r.status === "draft" ? ["Draft"] : [])],
+      ...(r.dataThrough ? { facts: [`Data through ${dayText(r.dataThrough)}`] } : {}) }))} /></div>
     <ReadFooter terminal="/terminal?panel=history" />
   </DigestShell>;
 }

@@ -245,3 +245,15 @@
 - [x] Gated share image + one-step embed behind DATA_STORIES_PUBLIC = false; MCP data_stories (27 tools)
 - [x] ia.ts, formats, front shelf; tests, screenshots, report
 - [ ] Story c (fintech colour) — waits on more quarterly archive coverage (needs 8 well-covered quarters, has 5)
+
+# Phase 17b-1 — the brand everywhere, part 1 (don't publish)
+- [x] Before screenshots (front, story, signal, Digest, terminal, gate × 1440/360)
+- [x] "slug" theme from brand/tokens (three modes), contract extended, default everywhere; legacy kept unregistered; one font link (Big Shoulders, Newsreader, IBM Plex Mono)
+- [x] Contrast test; fonts-only-from-theme and removed-faces tests
+- [x] Drawn mark (generated module + test), cuts by height, ground/slab rules, s monogram; favicon, apple-touch and app icon from the kit; gate, error pages, share images, feeds and embeds use the mark
+- [x] Eight containers, page density in ia.ts, Ledger; tests (shadow tokens, one Plate, densities)
+- [x] Chrome (slab header, live dot + UTC, Read/Terminal, freshness line, slab footer, slab ticker); front page composition A
+- [x] Charts restyle (ink axes, dashed grid, Big Shoulders labels, gumballs, double-stroke lines)
+- [x] Brand pages (/brand + 8) behind BRAND_PUBLIC = false; gated /brand/files downloads
+- [x] Tests, after screenshots, report
+- [ ] Part 2: page-specific art direction (story, signal, brand, pattern, Digest, sector report, data-story pages), share-image typography, illustration and motion

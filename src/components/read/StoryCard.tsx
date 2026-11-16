@@ -6,6 +6,7 @@ import { AppLink } from "@/components/terminal/AppLink";
 import { BasisWord } from "@/components/digest/Editorial";
 import { BasisChip } from "@/components/terminal/SignalBits";
 import { numberLabel } from "@/lib/stories/numbers";
+import { Ledger } from "@/components/brand/Ledger";
 
 export function Receipt({ href, children, ...rest }: { href: string; children: ReactNode } & AnchorHTMLAttributes<HTMLAnchorElement>) {
   return href.startsWith("/") ? <AppLink href={href} {...rest}>{children}</AppLink> : <a href={href} target="_blank" rel="noopener" {...rest}>{children}</a>;
@@ -18,9 +19,10 @@ export function StoryCard({ s, lead = false, tour }: { s: Story; lead?: boolean;
     <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time>{s.corrected && <span>Corrected {s.corrected.slice(0, 10)}</span>}<Receipt href={s.evidence} className="ed-tap">{s.evidence.startsWith("/") ? "Receipts →" : "Source ↗"}</Receipt></p>
   </article>;
 }
-/** RELATED block list on signal, brand and pattern pages. */
+/** RELATED block on signal, brand and pattern pages: a Ledger (lists are ruled tables, not stacks of cards). */
 export function RelatedStories({ stories, empty }: { stories: Story[]; empty: string }) {
-  return stories.length ? <div className="grid grid-cols-1 gap-8 md:grid-cols-2">{stories.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-small">{empty}</p>;
+  return stories.length ? <Ledger label="Related stories" rows={stories.map(s => ({ key: s.id, href: s.evidence, number: s.number != null ? <span data-story-number="" className="whitespace-nowrap"><span className="ledger-num-sm">No.</span> {s.number}</span> : "·",
+    title: <>{s.headline}{s.basis && <> <BasisWord b={s.basis} /></>}</>, line: s.deck ?? null, tags: [s.kicker], time: <time dateTime={s.at}>{storyTime(s.at)}</time> }))} /> : <p className="ed-small">{empty}</p>;
 }
 /** The compact story card (terminal row): one token-driven rendering for every mode, so it reads right on the dark terminal, the Read
  * pages and the kit. `kicker`, `line` and `time` let the front page's live column add its type chip, one line and relative time. */

@@ -82,9 +82,9 @@ export function Stepper({ s, step, onStep }: { s: StoryModel; step: number; onSt
     <div className="sticky top-0 z-10 self-start border-b py-3 lg:top-4 lg:border-b-0" style={{ background: "var(--tk-surface-page)", borderColor: "var(--tk-rule-hairline)" }}>
       <div className="max-h-[46vh] overflow-y-auto lg:max-h-none lg:overflow-visible">{fig && <FigureView fig={fig} view={cur.view} live />}</div>
       <div className="no-print mt-3 flex items-center gap-2" role="group" aria-label="Step through the story">
-        <button type="button" className="tk-btn tk-t-data" data-variant="secondary" onClick={() => go(k - 1)} disabled={k === 0} aria-label="Previous step">← Previous</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" onClick={() => go(k - 1)} disabled={k === 0} aria-label="Previous step">← Previous</button>
         <span className="tk-t-data min-w-[8ch] text-center" data-counter="">{counter(k, n)}</span>
-        <button type="button" className="tk-btn tk-t-data" data-variant="primary" onClick={() => go(k + 1)} disabled={k >= n - 1} aria-label="Next step">Next →</button>
+        <button type="button" className="tk-btn tk-t-kicker" data-variant="primary" onClick={() => go(k + 1)} disabled={k >= n - 1} aria-label="Next step">Next →</button>
         <span className="tk-t-caption tk-c-muted ml-auto hidden md:inline">← → or J K to step · Home / End</span>
       </div>
       <p className="ed-small mt-2 lg:hidden" aria-hidden="true" data-current-caption=""><CaptionText c={cur.caption} /></p>
