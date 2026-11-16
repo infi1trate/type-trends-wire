@@ -1,0 +1,111 @@
+/* slug brand tokens. Paper and ink carry the brand; four inks do one job each. */
+:root {
+  --slug-paper: #F1ECE0;
+  --slug-ink: #0A0A0A;
+  --slug-white: #FFFFFF;
+  --slug-pink: #FF8FC4;
+  --slug-green: #19B560;
+  --slug-yellow: #FFE600;
+  --slug-red: #E8320E;
+  --slug-newsprint: #CFC7B4;
+  --slug-muted: #4A463D;
+  --slug-font-display: 'Big Shoulders', 'Arial Narrow', Impact, sans-serif;
+  --slug-font-text: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --slug-space-1: 4px;
+  --slug-space-2: 8px;
+  --slug-space-3: 16px;
+  --slug-space-4: 24px;
+  --slug-space-5: 40px;
+  --slug-space-6: 64px;
+  --slug-space-7: 104px;
+  --slug-radius: 0;
+  --slug-radius-sticker: 999px;
+  --slug-border-hairline: 1.5px;
+  --slug-border-rule: 3px;
+  --slug-tap: 120ms;
+  --slug-move: 240ms;
+  --slug-wipe: 480ms;
+  --slug-arrive: 700ms;
+  --slug-stagger: 110ms;
+  --slug-ease-ooze: cubic-bezier(0.3, 1.5, 0.5, 1);
+  --slug-ease-cut: cubic-bezier(0.7, 0, 0.3, 1);
+  --slug-ease-settle: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root, [data-mode="light"] {
+  --slug-surface-page: #F1ECE0;
+  --slug-surface-card: #FFFFFF;
+  --slug-surface-raised: #FFE600;
+  --slug-surface-sunken: #CFC7B4;
+  --slug-surface-inverse: #0A0A0A;
+  --slug-text-primary: #0A0A0A;
+  --slug-text-muted: #4A463D;
+  --slug-text-inverse: #F1ECE0;
+  --slug-rule: #0A0A0A;
+  --slug-plate: #FF8FC4;
+  --slug-on-plate: #0A0A0A;
+  --slug-highlight: #FFE600;
+  --slug-positive: #19B560;
+  --slug-live: #E8320E;
+  --slug-shadow: #0A0A0A;
+  --slug-mark-ground: #F1ECE0;
+  --slug-shadow-raised: 6px 6px 0 #0A0A0A;
+  --slug-shadow-sticker: 4px 5px 0 #0A0A0A;
+}
+[data-mode="dark"] {
+  --slug-surface-page: #0A0A0A;
+  --slug-surface-card: #1D1B18;
+  --slug-surface-raised: #FFE600;
+  --slug-surface-sunken: #141210;
+  --slug-surface-inverse: #F1ECE0;
+  --slug-text-primary: #F1ECE0;
+  --slug-text-muted: #CFC7B4;
+  --slug-text-inverse: #0A0A0A;
+  --slug-rule: #F1ECE0;
+  --slug-plate: #FF8FC4;
+  --slug-on-plate: #0A0A0A;
+  --slug-highlight: #FFE600;
+  --slug-positive: #19B560;
+  --slug-live: #E8320E;
+  --slug-shadow: #F1ECE0;
+  --slug-mark-ground: #FF8FC4;
+  --slug-shadow-raised: 6px 6px 0 #F1ECE0;
+  --slug-shadow-sticker: 4px 5px 0 #F1ECE0;
+}
+[data-mode="vibes"] {
+  --slug-surface-page: #FF8FC4;
+  --slug-surface-card: #FFE600;
+  --slug-surface-raised: #FFFFFF;
+  --slug-surface-sunken: #F57BB6;
+  --slug-surface-inverse: #0A0A0A;
+  --slug-text-primary: #0A0A0A;
+  --slug-text-muted: #4A1030;
+  --slug-text-inverse: #F1ECE0;
+  --slug-rule: #0A0A0A;
+  --slug-plate: #0A0A0A;
+  --slug-on-plate: #F1ECE0;
+  --slug-highlight: #FFE600;
+  --slug-positive: #19B560;
+  --slug-live: #E8320E;
+  --slug-shadow: #0A0A0A;
+  --slug-mark-ground: #FF8FC4;
+  --slug-shadow-raised: 6px 6px 0 #0A0A0A;
+  --slug-shadow-sticker: 4px 5px 0 #0A0A0A;
+}
+.slug-stage-emerging { background: #FF8FC4; color: #0A0A0A; }
+.slug-stage-rising { background: #19B560; color: #0A0A0A; }
+.slug-stage-peaking { background: #E8320E; color: #0A0A0A; }
+.slug-stage-fading { background: #0A0A0A; color: #F1ECE0; }
+.slug-stage-steady { background: #CFC7B4; color: #0A0A0A; }
+
+/* Type roles */
+.slug-display { font-family: var(--slug-font-display); font-weight: 900; font-size: 132px; line-height: 0.88; text-transform: uppercase; text-wrap: balance; }
+.slug-h1 { font-family: var(--slug-font-display); font-weight: 900; font-size: 72px; line-height: 0.92; text-transform: uppercase; text-wrap: balance; }
+.slug-h2 { font-family: var(--slug-font-display); font-weight: 900; font-size: 44px; line-height: 0.95; text-transform: uppercase; text-wrap: balance; }
+.slug-h3 { font-family: var(--slug-font-display); font-weight: 900; font-size: 28px; line-height: 1.0; text-transform: uppercase; text-wrap: balance; }
+.slug-kicker { font-family: var(--slug-font-display); font-weight: 700; font-size: 15px; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.12em; text-wrap: balance; }
+.slug-chip { font-family: var(--slug-font-display); font-weight: 700; font-size: 12px; line-height: 1.5; text-transform: uppercase; letter-spacing: 0.12em; text-wrap: balance; }
+.slug-deck { font-family: var(--slug-font-text); font-weight: 400; font-size: 26px; line-height: 1.25; text-wrap: pretty; }
+.slug-body { font-family: var(--slug-font-text); font-weight: 400; font-size: 18px; line-height: 1.55; max-width: 62ch; text-wrap: pretty; }
+.slug-caption { font-family: var(--slug-font-text); font-weight: 400; font-size: 14px; line-height: 1.4; text-wrap: pretty; }
+.slug-quote { font-family: var(--slug-font-text); font-weight: 400; font-size: 34px; line-height: 1.15; font-style: italic; text-wrap: pretty; }
+.slug-figure { font-family: var(--slug-font-display); font-weight: 900; font-size: 96px; line-height: 0.9; font-variant-numeric: tabular-nums; text-wrap: balance; }
