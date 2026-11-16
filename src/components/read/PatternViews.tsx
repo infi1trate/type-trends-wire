@@ -1,6 +1,8 @@
 // PATTERNS: /patterns (headline layout + composite signals with ≥3 example brands) and /patterns/<key> (the example grid).
 import { Link } from "@tanstack/react-router";
 import type { PatternPage, PatternRow } from "@/lib/patterns";
+import type { Story } from "@/lib/stories";
+import { RelatedStories } from "./StoryCard";
 import { PATTERN_MIN_EXAMPLES } from "@/lib/patterns";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
@@ -30,7 +32,7 @@ export function PatternsIndexView({ patterns, sector }: { patterns: PatternRow[]
   </DigestShell>;
 }
 
-export function PatternView({ p }: { p: PatternPage }) {
+export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
   const [, setSector] = useSectorLens();
   return <DigestShell label={`${p.name} pattern`} section="patterns" lens>
     <ObjectPage kind="pattern" id="ed-pattern" blocks={{
@@ -53,6 +55,7 @@ export function PatternView({ p }: { p: PatternPage }) {
       "so-what": <p className="ed-pull max-w-[44ch]">{p.soWhat || "Not a headline signal right now, so we don't write a so-what line for it."}</p>,
       related: <>
         <BlockPart title="The signal behind it"><p className="ed-data flex flex-wrap gap-x-6"><Link to="/signals/$key" params={{ key: p.key }} className="ed-tap" {...pr(p.signalHref)}>{p.name}: chart, evidence and calls →</Link><AppLink href={p.whoUses} className="ed-tap">Who uses this well ⇄</AppLink></p></BlockPart>
+        <BlockPart title="Stories naming it"><RelatedStories stories={p.stories ?? []} empty="No story has named this pattern yet." /></BlockPart>
         {p.related.length > 0 && <BlockPart title="Related patterns"><ul className="ed-data flex flex-wrap gap-x-6 gap-y-1">{p.related.map(r => <li key={r.key}><Link to="/patterns/$key" params={{ key: r.key }} className="ed-tap">{r.name}</Link> <span className="ed-muted">{r.examples} brands</span></li>)}</ul></BlockPart>}
       </>,
     }} />

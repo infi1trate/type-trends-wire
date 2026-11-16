@@ -6,6 +6,9 @@ import { emptyComponents, nextWaveScores, presentComponents } from "./forecast-s
 const auth = vi.hoisted(() => vi.fn(async (_r: Request): Promise<Response | null> => null));
 const run = vi.hoisted(() => vi.fn(async () => ({ ok: true, run_id: 1 })));
 vi.mock("@/integrations/supabase/cron-auth", () => ({ authenticateCronRequest: auth }));
+// The story build runs after the job; stub it so job tests stay offline (its own tests live in stories/).
+const afterJob = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock("./stories/build.server", () => ({ afterJob }));
 vi.mock("./forecast.server", () => ({ runForecast: run }));
 const { handleForecastRun } = await import("./forecast-run.server");
 const post = (body: string, headers: Record<string, string> = {}) => new Request("https://x.test/api/public/forecast-run", { method: "POST", body, headers });
@@ -18,6 +21,11 @@ describe("forecast-run body", () => {
 describe("forecast-run handler", () => {
   beforeEach(() => { auth.mockReset().mockResolvedValue(null); run.mockClear(); });
   it("runs for the pg_net-serialized weekly body (space after colon)", async () => { const r = await handleForecastRun(post('{"kind": "weekly"}')); expect(r.status).toBe(200); expect(run).toHaveBeenCalledOnce(); });
+  it("builds stories after a stored run, marking that run real (DEV runs call runForecast directly and never get here)", async () => {
+    run.mockResolvedValueOnce({ ok: true, run_id: 77 } as never); afterJob.mockClear();
+    expect((await handleForecastRun(post("{}"))).status).toBe(200);
+    expect(afterJob).toHaveBeenCalledWith("forecast", expect.any(Number), { realRunIds: [77] });
+  });
   it("authenticates before reading the body", async () => { auth.mockResolvedValue(new Response("no", { status: 401 })); const r = await handleForecastRun(post("not json")); expect(r.status).toBe(401); expect(run).not.toHaveBeenCalled(); });
   it("400 invalid_input for a bad body", async () => { const r = await handleForecastRun(post('{"kind":"daily"}')); expect(r.status).toBe(400); expect(await r.json()).toEqual({ ok: false, code: "invalid_input" }); expect(run).not.toHaveBeenCalled(); });
   it("413 above 64 KB, streamed or declared", async () => {

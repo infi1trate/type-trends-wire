@@ -14,7 +14,7 @@ import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
 import { Library } from "@/components/terminal/Library";
-import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery, patternsQuery } from "@/lib/data";
+import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery, patternsQuery, storyQueueQuery } from "@/lib/data";
 import { VibeMap } from "@/components/terminal/VibeMap";
 import { PanelHeadlines } from "@/components/terminal/Signals";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
@@ -34,13 +34,13 @@ const DESC = "The dense, keyboard-first view of DSGN/TERMINAL: six sections (Liv
 const str = (v: unknown) => (typeof v === "string" ? v : undefined);
 
 export const Route = createFileRoute("/terminal")({
-  validateSearch: (s: Record<string, unknown>): TerminalSearch => ({ panel: str(s["panel"]) ?? "today", ...(str(s["sector"]) ? { sector: str(s["sector"])! } : {}), q: str(s["q"]) ?? "", sort: str(s["sort"]) ?? "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0, cmd: str(s["cmd"])?.slice(0, 4096), trait: str(s["trait"]) }),
+  validateSearch: (s: Record<string, unknown>): TerminalSearch => ({ panel: str(s["panel"]) ?? "today", ...(str(s["sector"]) ? { sector: str(s["sector"])! } : {}), q: str(s["q"]) ?? "", sort: str(s["sort"]) ?? "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0, cmd: str(s["cmd"])?.slice(0, 4096), trait: str(s["trait"]), story: str(s["story"])?.slice(0, 200) }),
   loaderDeps: ({ search }) => ({ panel: resolveView(search.panel), sector: resolveSector(search.sector) }),
   // Every panel filters by tier, so the signal snapshot loads with the page (SSR and client then render the same headline set).
   loader: ({ context, deps }) => {
     const q = context.queryClient, v = deps.panel;
     const extra: Promise<unknown>[] =
-      v === "today" ? [q.ensureQueryData(todayQuery())] : v === "library" ? [q.ensureQueryData(libraryQuery())] : v === "history" ? [q.ensureQueryData(libraryHistoryQuery())]
+      v === "today" ? [q.ensureQueryData(todayQuery()), q.ensureQueryData(storyQueueQuery(null)).catch(() => null)] : v === "library" ? [q.ensureQueryData(libraryQuery())] : v === "history" ? [q.ensureQueryData(libraryHistoryQuery())]
       : v === "brief" ? [q.ensureQueryData(forecastQuery()), q.ensureQueryData(chartCardQuery(null))] : v === "vibe" ? [q.ensureQueryData(vibeQuery())]
       : v === "rebrands" ? [q.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 }))] : v === "patterns" ? [q.ensureQueryData(patternsQuery(deps.sector))] : [];
     return Promise.all([q.ensureQueryData(signalsQuery()).catch(() => null), ...extra]).then(() => undefined);
@@ -57,7 +57,7 @@ function Terminal() {
   const search = Route.useSearch(), navigate = Route.useNavigate(), router = useRouter();
   const view = resolveView(search.panel);
   const [sector, setSector] = useSectorLens(), mode = useModeToggle();
-  const setPanel = useCallback((p: ViewId) => { void navigate({ search: prev => ({ ...prev, panel: p, trait: undefined }) }); }, [navigate]);
+  const setPanel = useCallback((p: ViewId) => { void navigate({ search: prev => ({ ...prev, panel: p, trait: undefined, story: undefined }) }); }, [navigate]);
   const [typeTab, setTypeTab] = useState("GOOGLE FONTS");
   const [overlay, setOverlayRaw] = useState<null | "glossary" | "method" | "mcp" | "taste">(null);
   const [cmd, setCmd] = useState<string | undefined>(undefined);
@@ -125,7 +125,7 @@ function Terminal() {
         <Ticker />
       </div>
       <main className="flex min-h-0 flex-1 flex-col" aria-label={`${sectionById(section).label} section`}>
-        {view === "today" && <Wait><Today go={setPanel} onTour={startTour} onGlossary={() => setOverlay("glossary")} /></Wait>}
+        {view === "today" && <Wait><Today go={setPanel} onTour={startTour} onGlossary={() => setOverlay("glossary")} focus={search.story} /></Wait>}
         {view === "wire" && <Wire freshIds={fresh} />}
         {view === "overview" && <Overview go={setPanel} freshIds={fresh} />}
         {view === "type" && <><PanelHeadlines panel="type" /><div className="shrink-0 border-b border-rule p-3"><Toggle label="TYPE" options={["GOOGLE FONTS", "IN THE WILD"]} value={typeTab} onChange={setTypeTab} /></div>{typeTab === "GOOGLE FONTS" ? <TypeIndex /> : <InTheWild />}</>}

@@ -9,6 +9,9 @@ const state = vi.hoisted(() => ({
   refreshes: [] as { name: string; statuses: unknown[]; siteCount: number }[],
   refreshError: false,
 }));
+// The story build runs after the job; stub it so job tests stay offline (its own tests live in stories/).
+const afterJob = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock("./stories/build.server", () => ({ afterJob }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   async rpc(name: string) {
     state.refreshes.push({ name, statuses: [...state.runs.values()].map(row => row['status']), siteCount: state.sites.size });

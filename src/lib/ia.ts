@@ -120,20 +120,21 @@ export function resolveKey(key: string): KeyDef | null {
 export const keyView = (d: KeyDef | null): ViewId | null => (!d ? null : "view" in d.target ? d.target.view : "section" in d.target ? sectionById(d.target.section).terminal : null);
 
 // URLS — the terminal lives at /terminal; `/` is always Read.
-export type TerminalSearch = { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?: string | undefined; trait?: string | undefined };
+export type TerminalSearch = { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?: string | undefined; trait?: string | undefined; story?: string | undefined };
 const enc = encodeURIComponent;
 const qs = (o: Record<string, string | number | boolean | undefined | null>) => {
   const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "" && v !== false).map(([k, v]) => `${k}=${enc(String(v))}`);
   return p.length ? `?${p.join("&")}` : "";
 };
 const lensOf = (s: Record<string, unknown>) => (typeof s["sector"] === "string" && s["sector"] && s["sector"] !== "all" ? (s["sector"] as string) : undefined);
-export const terminalHref = (view: ViewId, extra: { trait?: string | undefined; sector?: string | undefined; cmd?: string | undefined } = {}) =>
-  `/terminal${qs({ panel: view, trait: extra.trait, sector: extra.sector && extra.sector !== "all" ? extra.sector : undefined, cmd: extra.cmd })}`;
+export const terminalHref = (view: ViewId, extra: { trait?: string | undefined; sector?: string | undefined; cmd?: string | undefined; story?: string | undefined } = {}) =>
+  `/terminal${qs({ panel: view, trait: extra.trait, sector: extra.sector && extra.sector !== "all" ? extra.sector : undefined, cmd: extra.cmd, story: extra.story })}`;
 /** A console command opened in Terminal mode, prefilled. */
 export const consoleHref = (cmd: string, sector?: string) => terminalHref("console", { cmd, sector });
 export const signalPath = (key: string) => `/signals/${enc(key)}`;
 export const brandPath = (domain: string) => `/brands/${enc(domain)}`;
 export const patternPath = (key: string) => `/patterns/${enc(key)}`;
+export const storyHref = (id: string) => `/stories/${enc(id)}`;
 
 /** Search params only the old terminal at `/` used; any of them on `/` means an old terminal link. */
 export const LEGACY_PARAMS = ["panel", "trait", "cmd", "q", "sort", "desc", "alert"] as const;
@@ -156,6 +157,7 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
   if (modeOf(pathname) === "terminal") {
     if (seg[0] === "library" && seg[1]) return `${brandPath(seg[1])}${qs({ sector })}`;
     const view = resolveView(search["panel"]), trait = typeof search["trait"] === "string" && search["trait"] ? (search["trait"] as string) : undefined;
+    if (view === "today" && typeof search["story"] === "string" && search["story"]) return storyHref(search["story"] as string);
     if (trait) return `${view === "patterns" ? patternPath(trait) : signalPath(trait)}${qs({ sector })}`;
     if (view === "rebrands") return `/brands${qs({ tab: "moves", sector })}`;
     if (view === "ledger") return "/ledger";
@@ -165,6 +167,8 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
   const t = (v: ViewId, trait?: string) => terminalHref(v, { trait, sector });
   switch (seg[0]) {
     case undefined: return t("today");
+    case "stories": return seg[1] ? terminalHref("today", { sector, story: seg[1] }) : t("today");
+    case "desk": return t("today");
     case "signals": case "trait": return seg[1] ? t("brief", seg[1]) : t("overview");
     case "what-we-show": return t("overview");
     case "brands": return seg[1] ? `/library/${enc(seg[1])}` : t(search["tab"] === "moves" ? "rebrands" : "library");
@@ -180,12 +184,12 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
 /** The Read section a path belongs to (for the active nav item). */
 export function readSectionOf(pathname: string): SectionId | null {
   const s = pathname.split("/").filter(Boolean)[0];
-  if (!s) return "live";
+  if (!s || s === "stories") return "live";
   if (s === "signals" || s === "trait" || s === "what-we-show") return "signals";
   if (s === "brands") return "brands";
   if (s === "patterns") return "patterns";
   if (s === "digest" || s === "chart") return "digest";
-  if (["tools", "status", "watch", "audit", "ledger"].includes(s)) return "tools";
+  if (["tools", "status", "watch", "audit", "ledger", "desk"].includes(s)) return "tools";
   return null;
 }
 
@@ -198,6 +202,8 @@ export const SURFACES: Record<string, Surface> = {
   "index": S("live", "read", "shown", "The front page: lead story, story stream, moving now, chart of the week, new launches. Old /?panel= links redirect to /terminal."),
   "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
   "signals.$key": S("signals", "read", "shown", "Signal object page (was the trait explainer)."),
+  "stories.$id": S("live", "read", "shown", "Story object page: headline, facts with receipts, so-what with why-this-ran, related; backtick opens Terminal › Live › Today with it focused."),
+  "desk": S("tools", "read", "quiet", "Editor's desk: today's queue (ran, held, killed) with scores and edit history; actions need the editor key, kept in memory for the tab."),
   "trait.$key": S("signals", "read", "quiet", "Redirects to /signals/<key>; kept so old links and share cards work."),
   "trait.{$key}[.]png": S("signals", "both", "quiet", "Signal share image (open for link previews); used by /signals pages too."),
   "what-we-show": S("signals", "read", "shown", "What we show and why, with Where things live from this registry."),
@@ -228,11 +234,11 @@ export const SURFACES: Record<string, Surface> = {
   "embed.chart.$week": S("tools", "both", "quiet", "Embeddable chart widget (open)."),
   "robots[.]txt": S("tools", "both", "quiet", "Crawler instructions."),
   "thumbs.$": S("brands", "both", "quiet", "Credited homepage thumbnails."),
-  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 23 tools (agent access)."),
+  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 24 tools (agent access)."),
   "api/public/oembed": S("tools", "both", "quiet", "oEmbed provider for signal and chart pages."),
   "api/public/watch-feed.{$token}[.]xml": S("tools", "both", "quiet", "Per-watchlist RSS."),
   "api/public/health": S("tools", "both", "quiet", "Machine-readable health; shown in words on /status."),
-  "api/public/*": S("tools", "both", "quiet", "Machine endpoints: cron callbacks, crawler/thumb ingest, opt-out, MCP keys admin, OAuth metadata."),
+  "api/public/*": S("tools", "both", "quiet", "Machine endpoints: cron callbacks, crawler/thumb ingest, opt-out, MCP keys admin, editor desk, OAuth metadata."),
   // Old terminal panels and new tabs
   "panel:today": S("live", "terminal", "shown", "Live · Today (key T)."),
   "panel:wire": S("live", "terminal", "shown", "Live · Wire (old F8)."),

@@ -6,14 +6,17 @@ import { brandPath, signalPath, terminalHref } from "./ia";
 import { soWhat } from "./digest/copy";
 import { sectorFirst } from "./sector-lens";
 import type { TodayLine } from "./today";
+import type { StoryKind } from "./stories/types";
 
 export const STORY_TYPES = ["move", "rebrand", "shift", "breakout", "alert", "launch", "news"] as const;
-export type StoryType = (typeof STORY_TYPES)[number];
+export type StoryType = (typeof STORY_TYPES)[number] | StoryKind;
 export type Story = {
   id: string; type: StoryType; kicker: string; headline: string; deck?: string; at: string; sector?: string | null;
   signalKeys: string[]; domains: string[];
   /** Receipts: an in-app path or an external source URL. */
   evidence: string; basis: Basis | null;
+  /** Stored stories (Phase 14): newsworthiness score, correction date and, on the desk/terminal, why it was held. */
+  score?: number; corrected?: string | null; held?: string | null;
 };
 export const STORIES_PER_PAGE = 30;
 const SITE = /^https?:\/\/[^/]+/;

@@ -288,6 +288,27 @@
       "when": 1794789250763,
       "tag": "0040_site_history_h1_size",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794796601602,
+      "tag": "0041_stories_and_story_edits",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794798027863,
+      "tag": "0042_ai_usage_story_why_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794798048822,
+      "tag": "0043_story_lines",
+      "breakpoints": true
     }
   ]
 }

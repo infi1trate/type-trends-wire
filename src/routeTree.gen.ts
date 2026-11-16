@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
+import { Route as DeskRouteImport } from './routes/desk'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as StatusRouteImport } from './routes/status'
@@ -35,6 +36,7 @@ import { Route as PatternsIndexRouteImport } from './routes/patterns.index'
 import { Route as PatternsKeyRouteImport } from './routes/patterns.$key'
 import { Route as SignalsIndexRouteImport } from './routes/signals.index'
 import { Route as SignalsKeyRouteImport } from './routes/signals.$key'
+import { Route as StoriesIdRouteImport } from './routes/stories.$id'
 import { Route as ThumbsSplatRouteImport } from './routes/thumbs.$'
 import { Route as TraitKeyRouteImport } from './routes/trait.$key'
 import { Route as TraitChar123keyChar125DotpngRouteImport } from './routes/trait.{$key}[.]png'
@@ -42,6 +44,7 @@ import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as WatchNewRouteImport } from './routes/watch.new'
 import { Route as ApiPublicChartCardRouteImport } from './routes/api/public/chart-card'
 import { Route as ApiPublicCrawlRequestsRouteImport } from './routes/api/public/crawl-requests'
+import { Route as ApiPublicDeskRouteImport } from './routes/api/public/desk'
 import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public/discourse-terms'
 import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -73,6 +76,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuditDotpngRoute = AuditDotpngRouteImport.update({
   id: '/audit.png',
   path: '/audit.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeskRoute = DeskRouteImport.update({
+  id: '/desk',
+  path: '/desk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LedgerRoute = LedgerRouteImport.update({
@@ -198,6 +206,11 @@ const SignalsKeyRoute = SignalsKeyRouteImport.update({
   path: '/signals/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoriesIdRoute = StoriesIdRouteImport.update({
+  id: '/stories/$id',
+  path: '/stories/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ThumbsSplatRoute = ThumbsSplatRouteImport.update({
   id: '/thumbs/$',
   path: '/thumbs/$',
@@ -232,6 +245,11 @@ const ApiPublicChartCardRoute = ApiPublicChartCardRouteImport.update({
 const ApiPublicCrawlRequestsRoute = ApiPublicCrawlRequestsRouteImport.update({
   id: '/api/public/crawl-requests',
   path: '/api/public/crawl-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDeskRoute = ApiPublicDeskRouteImport.update({
+  id: '/api/public/desk',
+  path: '/api/public/desk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicDiscourseTermsRoute = ApiPublicDiscourseTermsRouteImport.update({
@@ -352,6 +370,7 @@ const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/desk': typeof DeskRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
@@ -370,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/library/$domain': typeof LibraryDomainRoute
   '/patterns/$key': typeof PatternsKeyRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
@@ -383,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/signals/': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
+  '/api/public/desk': typeof ApiPublicDeskRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -409,6 +430,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/desk': typeof DeskRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
@@ -427,6 +449,7 @@ export interface FileRoutesByTo {
   '/library/$domain': typeof LibraryDomainRoute
   '/patterns/$key': typeof PatternsKeyRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
@@ -440,6 +463,7 @@ export interface FileRoutesByTo {
   '/signals': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
+  '/api/public/desk': typeof ApiPublicDeskRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -467,6 +491,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/desk': typeof DeskRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
@@ -485,6 +510,7 @@ export interface FileRoutesById {
   '/library/$domain': typeof LibraryDomainRoute
   '/patterns/$key': typeof PatternsKeyRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
@@ -498,6 +524,7 @@ export interface FileRoutesById {
   '/signals/': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
+  '/api/public/desk': typeof ApiPublicDeskRoute
   '/api/public/discourse-terms': typeof ApiPublicDiscourseTermsRoute
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -526,6 +553,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/audit.png'
+    | '/desk'
     | '/ledger'
     | '/robots.txt'
     | '/status'
@@ -544,6 +572,7 @@ export interface FileRouteTypes {
     | '/library/$domain'
     | '/patterns/$key'
     | '/signals/$key'
+    | '/stories/$id'
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
@@ -557,6 +586,7 @@ export interface FileRouteTypes {
     | '/signals/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
+    | '/api/public/desk'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
     | '/api/public/health'
@@ -583,6 +613,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/audit.png'
+    | '/desk'
     | '/ledger'
     | '/robots.txt'
     | '/status'
@@ -601,6 +632,7 @@ export interface FileRouteTypes {
     | '/library/$domain'
     | '/patterns/$key'
     | '/signals/$key'
+    | '/stories/$id'
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
@@ -614,6 +646,7 @@ export interface FileRouteTypes {
     | '/signals'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
+    | '/api/public/desk'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
     | '/api/public/health'
@@ -640,6 +673,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/audit.png'
+    | '/desk'
     | '/ledger'
     | '/robots.txt'
     | '/status'
@@ -658,6 +692,7 @@ export interface FileRouteTypes {
     | '/library/$domain'
     | '/patterns/$key'
     | '/signals/$key'
+    | '/stories/$id'
     | '/thumbs/$'
     | '/trait/$key'
     | '/trait/{$key}.png'
@@ -671,6 +706,7 @@ export interface FileRouteTypes {
     | '/signals/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
+    | '/api/public/desk'
     | '/api/public/discourse-terms'
     | '/api/public/forecast-run'
     | '/api/public/health'
@@ -698,6 +734,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuditDotpngRoute: typeof AuditDotpngRoute
+  DeskRoute: typeof DeskRoute
   LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   StatusRoute: typeof StatusRoute
@@ -716,6 +753,7 @@ export interface RootRouteChildren {
   LibraryDomainRoute: typeof LibraryDomainRoute
   PatternsKeyRoute: typeof PatternsKeyRoute
   SignalsKeyRoute: typeof SignalsKeyRoute
+  StoriesIdRoute: typeof StoriesIdRoute
   ThumbsSplatRoute: typeof ThumbsSplatRoute
   TraitKeyRoute: typeof TraitKeyRoute
   TraitChar123keyChar125DotpngRoute: typeof TraitChar123keyChar125DotpngRoute
@@ -729,6 +767,7 @@ export interface RootRouteChildren {
   SignalsIndexRoute: typeof SignalsIndexRoute
   ApiPublicChartCardRoute: typeof ApiPublicChartCardRoute
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
+  ApiPublicDeskRoute: typeof ApiPublicDeskRoute
   ApiPublicDiscourseTermsRoute: typeof ApiPublicDiscourseTermsRoute
   ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -767,6 +806,13 @@ declare module '@tanstack/react-router' {
       path: '/audit.png'
       fullPath: '/audit.png'
       preLoaderRoute: typeof AuditDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/desk': {
+      id: '/desk'
+      path: '/desk'
+      fullPath: '/desk'
+      preLoaderRoute: typeof DeskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ledger': {
@@ -937,6 +983,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignalsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stories/$id': {
+      id: '/stories/$id'
+      path: '/stories/$id'
+      fullPath: '/stories/$id'
+      preLoaderRoute: typeof StoriesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/thumbs/$': {
       id: '/thumbs/$'
       path: '/thumbs/$'
@@ -984,6 +1037,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/crawl-requests'
       fullPath: '/api/public/crawl-requests'
       preLoaderRoute: typeof ApiPublicCrawlRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/desk': {
+      id: '/api/public/desk'
+      path: '/api/public/desk'
+      fullPath: '/api/public/desk'
+      preLoaderRoute: typeof ApiPublicDeskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/discourse-terms': {
@@ -1146,6 +1206,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuditDotpngRoute: AuditDotpngRoute,
+  DeskRoute: DeskRoute,
   LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   StatusRoute: StatusRoute,
@@ -1164,6 +1225,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryDomainRoute: LibraryDomainRoute,
   PatternsKeyRoute: PatternsKeyRoute,
   SignalsKeyRoute: SignalsKeyRoute,
+  StoriesIdRoute: StoriesIdRoute,
   ThumbsSplatRoute: ThumbsSplatRoute,
   TraitKeyRoute: TraitKeyRoute,
   TraitChar123keyChar125DotpngRoute: TraitChar123keyChar125DotpngRoute,
@@ -1177,6 +1239,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignalsIndexRoute: SignalsIndexRoute,
   ApiPublicChartCardRoute: ApiPublicChartCardRoute,
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,
+  ApiPublicDeskRoute: ApiPublicDeskRoute,
   ApiPublicDiscourseTermsRoute: ApiPublicDiscourseTermsRoute,
   ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,

@@ -63,6 +63,7 @@ async function refreshAggregates(): Promise<void> {
 }
 
 export async function handleCrawlIngest(request: Request): Promise<Response> {
+  const started = Date.now();
   try {
     if (!await authenticateCrawler(request)) return forbidden();
     const text = await boundedBody(request);
@@ -75,7 +76,9 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
     const payload = result.data;
     if (payload.kind === "library_sync" || payload.kind === "library_snapshots") {
       const { ingestLibrary } = await import("./library-ingest.server");
-      return await ingestLibrary(payload);
+      const res = await ingestLibrary(payload);
+      if (res.ok && payload.kind === "library_snapshots") await (await import("./stories/build.server")).afterJob("library", started);
+      return res;
     }
     if (payload.kind === "start") {
       const { error } = await db.from("crawl_runs").upsert({ id: payload.run_id, started_at: payload.started_at,
@@ -112,6 +115,7 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
     if (error) throw new Error("Crawler run finish failed");
     if (!data?.length) return Response.json({ error: "Unknown run" }, { status: 404 });
     await refreshAggregates();
+    await (await import("./stories/build.server")).afterJob("crawl-finish", started);
     return Response.json({ ok: true, written: data.length });
   } catch (error) {
     // Never log payloads, credentials, or provider errors that may contain input.

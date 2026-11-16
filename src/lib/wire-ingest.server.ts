@@ -12,6 +12,7 @@ const unauthorized = () => Response.json({ error: "unauthorized" }, { status: 40
 const internal = (where: string, error: unknown) => { console.error(where, error instanceof Error ? error.name : "UnknownError"); return Response.json({ error: "Internal error" }, { status: 500, headers: noStore }); };
 
 export async function handleIngestWire(request: Request): Promise<Response> {
+  const started = Date.now();
   try {
     if (!await authenticateQueueCaller(request)) {
       // Not the crawler: only the managed schedule may trigger the RSS/HN poll (empty JSON object body).
@@ -21,8 +22,9 @@ export async function handleIngestWire(request: Request): Promise<Response> {
       const text = await boundedText(request, 1024);
       let body: unknown = null; try { body = text ? JSON.parse(text) : null; } catch { /* invalid */ }
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) return Response.json({ error: "Expected empty JSON object" }, { status: 400 });
-      const { ingestWire } = await import("./ingest.server");
-      return ingestWire();
+      const { ingestWire } = await import("./ingest.server"), res = await ingestWire();
+      if (res.ok) await (await import("./stories/build.server")).afterJob("wire", started);
+      return res;
     }
     const text = await boundedText(request, WIRE_INGEST_BODY_LIMIT);
     if (text === null) return Response.json({ error: "Body exceeds 256 KB" }, { status: 413, headers: noStore });
@@ -39,6 +41,7 @@ export async function handleIngestWire(request: Request): Promise<Response> {
         if (error) throw new Error("Wire item write failed");
         written = data?.length ?? 0;
       }
+      if (written) await (await import("./stories/build.server")).afterJob("wire-items", started);
       return Response.json({ ok: true, received: payload.items.length, written, duplicates: rows.length - written, skipped }, { headers: noStore });
     }
     const rows = mentionRows(payload);

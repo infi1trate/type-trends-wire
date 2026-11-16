@@ -18,6 +18,11 @@ export async function handleForecastRun(request: Request): Promise<Response> {
   const body = await boundedText(request);
   if (body === null) return Response.json({ ok: false, code: "body_too_large" }, { status: 413 });
   if (!parseForecastRunBody(body).ok) return Response.json({ ok: false, code: "invalid_input" }, { status: 400 });
-  try { const { runForecast } = await import("./forecast.server"); return Response.json(await runForecast()); }
+  try {
+    const started = Date.now(), { runForecast } = await import("./forecast.server"), result = await runForecast();
+    // Stories are a derived output of real runs only; the DEV script calls runForecast(DEV_RUN) directly and never reaches this.
+    if (result.ok && "run_id" in result && typeof result.run_id === "number") { const { afterJob } = await import("./stories/build.server"); await afterJob("forecast", started, { realRunIds: [result.run_id] }); }
+    return Response.json(result);
+  }
   catch { return Response.json({ ok: false, code: "forecast_failed" }, { status: 500 }); }
 }

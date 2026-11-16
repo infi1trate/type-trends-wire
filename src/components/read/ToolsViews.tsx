@@ -15,7 +15,7 @@ const TOOLS: { title: string; line: string; href: string; cta: string }[] = [
   { title: "Forecast ledger", line: "Every forecast call we recorded and how it resolved, with the live hit rate once 20 calls resolve.", href: "/ledger", cta: "Read the ledger" },
   { title: "What we show and why", line: "The so-what test: how tiers, composites, Momentum and Confidence decide what you see by default, and where everything lives.", href: "/what-we-show", cta: "Read the rules" },
   { title: "Embeds", line: "Put a live signal chart on your own site or deck: every signal page and chart of the week has an embed panel with the iframe code.", href: "/signals", cta: "Pick a signal" },
-  { title: "Agent access (MCP)", line: `Connect an AI agent to ${SITE_URL}/api/public/mcp: 23 read-only tools with the same numbers and receipts. Owner-issued keys raise the rate limit.`, href: "/terminal#mcp", cta: "How to connect" },
+  { title: "Agent access (MCP)", line: `Connect an AI agent to ${SITE_URL}/api/public/mcp: 24 read-only tools with the same numbers and receipts. Owner-issued keys raise the rate limit.`, href: "/terminal#mcp", cta: "How to connect" },
 ];
 export function ToolsView() {
   return <DigestShell label="Tools" section="tools">
@@ -31,7 +31,7 @@ export function ToolsView() {
     <section aria-labelledby="tools-console" className="ed-wrap mt-16">
       <h2 id="tools-console" className="ed-kicker ed-rule pt-3">In context, in the terminal</h2>
       <p className="ed-small mt-2 max-w-[72ch]">Type and palette recommendations, differentiation and critiques run in the terminal console. Brand pages offer “Differentiate from this brand” and “Recommend type for its sector”; signal pages offer “Who uses this well”. Each opens Terminal mode with the command filled in.</p>
-      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link></p>
+      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link><Link to="/desk" className="ed-tap">Editor's desk</Link></p>
     </section>
     <ReadFooter terminal="/terminal?panel=watch" />
   </DigestShell>;
@@ -54,6 +54,11 @@ export function StatusView() {
         <tbody>{health.jobs.map(j => <tr key={j.job} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal">{j.job.replace(/_/g, " ")}{j.note && <span className="ed-caption block">{j.note}</span>}</th><td className="py-2 pr-3">{j.expected_every}</td><td className="py-2 pr-3">{j.last_ok_at ? storyTime(j.last_ok_at) : "never"}</td><td className="py-2">{j.stale ? "stale" : j.last_status}{j.consecutive_failures > 0 ? ` · ${j.consecutive_failures} failures` : ""}</td></tr>)}</tbody>
       </table> : <p className="ed-small mt-3">Job health couldn't be read right now.</p>}
       <p className="ed-caption mt-2">Checked {health ? storyTime(health.checked_at) : "—"}. Machine-readable at /api/public/health.</p>
+    </section>
+    <section aria-labelledby="st-desk" className="ed-wrap mt-14">
+      <h2 id="st-desk" className="ed-h2 ed-rule pt-3">Story desk</h2>
+      <p className="ed-small mt-3 max-w-[72ch]">What the story engine ran today, what it held and why, with score components and the editor's log.</p>
+      <p className="ed-data mt-3"><Link to="/desk" className="ed-tap">Open the editor's desk →</Link></p>
     </section>
     <section aria-labelledby="st-model" className="ed-wrap mt-14">
       <h2 id="st-model" className="ed-h2 ed-rule pt-3">Forecast model card</h2>

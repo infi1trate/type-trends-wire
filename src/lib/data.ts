@@ -15,7 +15,7 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue } from "./read.functions";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
@@ -395,7 +395,11 @@ export const signalsQuery = () => queryOptions({ queryKey: ["signals"], staleTim
 export const ledgerQuery = () => queryOptions({ queryKey: ["ledger"], staleTime: 10 * 60_000, queryFn: () => getLedger({ data: {} }) });
 
 // Read mode (Phase 13): the same objects as the terminal, server-assembled with the public 10-minute TTL.
-export const liveQuery = (sector: string, page: number) => queryOptions({ queryKey: ["live", sector, page], staleTime: 5 * 60_000, queryFn: () => getLive({ data: { sector, page } }) });
+export type LiveTypeFilter = "all" | "moves" | "signals" | "openings" | "news";
+export const liveQuery = (sector: string, page: number, type: LiveTypeFilter = "all") => queryOptions({ queryKey: ["live", sector, page, type], staleTime: 60_000, queryFn: () => getLive({ data: { sector, page, type } }) });
+export const storyQuery = (id: string) => queryOptions({ queryKey: ["story", id], staleTime: 60_000, queryFn: () => getStory({ data: { id } }) });
+/** Today's queue (published, held, killed) for the desk and Terminal › Live › Today; `fresh` skips the server's short cache. */
+export const storyQueueQuery = (day: string | null, fresh = false) => queryOptions({ queryKey: ["story-queue", day ?? "recent", fresh], staleTime: fresh ? 0 : 60_000, queryFn: () => getStoryQueue({ data: { ...(day ? { day } : {}), fresh } }) });
 export const brandQuery = (domain: string) => queryOptions({ queryKey: ["brand", domain], staleTime: 10 * 60_000, queryFn: () => getBrand({ data: { domain } }) });
 export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime: 10 * 60_000, queryFn: () => getBrands() });
 export const patternsQuery = (sector: string) => queryOptions({ queryKey: ["patterns", sector], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector } }) });

@@ -1,0 +1,2 @@
+ALTER TABLE public.ai_usage ADD CONSTRAINT ai_usage_kind_check_v2 CHECK (kind = ANY (ARRAY['vision'::text, 'pricing'::text, 'changelog'::text, 'product'::text, 'brief'::text, 'taste_brief'::text, 'taste_vision'::text, 'taste_fonts'::text, 'story_why'::text]));
+ALTER TABLE public.ai_usage DROP CONSTRAINT ai_usage_kind_check;

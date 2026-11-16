@@ -177,3 +177,12 @@
 - [x] Sector lens (?sector=, remembered per device, scope fallback note)
 - [x] Help: glossary entries, read-mode tour, MCP explainer_url → /signals + brand_url, embeds/oEmbed accept /signals, /what-we-show "Where things live"
 - [x] Tests + screenshots + report
+
+# Phase 14 — the story engine (structure + logic; keep type system and chrome)
+- [x] stories/types.ts: 11 types, triggers, min evidence, templates, named thresholds
+- [x] stories/score.ts: four 0–25 components, threshold, dedupe/merge, daily cap (24, 6 NEWS), held reasons, why-this-ran
+- [x] Writing: deterministic headline/deck/facts with receipts; one validated AI "why it matters" line (≤10/day, ≤5/build, own budget label)
+- [x] Storage: stories + story_edits (insert-only), edits overlay; build.server.ts hooked at end of wire/crawl/forecast jobs (20s budget, skip DEV); scripts/build-stories.ts 30-day backfill
+- [x] Surfaces: /stories/$id (ObjectPage, ia.ts, backtick), Live lead/stream/type chips/lens, related stories on signal/brand/pattern, brand timeline links, Terminal Today held toggle, MCP `stories` (24 tools)
+- [x] Editor's desk: /api/public/desk (crawler-secret Bearer, rate limited, story_edits only), /desk page (key in memory), docs/editor-desk.md
+- [x] Tests + backfill + screenshots + report

@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ hash: "", sites: new Map<string, Record<string, unknown>>(), snapshots: [] as Record<string, unknown>[], events: [] as Record<string, unknown>[], text: new Map<number, string>(), retry: false, baselines: new Map<string, Record<string, unknown>>() }));
+// The story build runs after the job; stub it so job tests stay offline (its own tests live in stories/).
+const afterJob = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock("./stories/build.server", () => ({ afterJob }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   from() { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; },
   async rpc(name: string, args: Record<string, unknown> = {}) {

@@ -84,7 +84,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
           {p.showing.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-1">{p.showing.map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap">{s.name ?? s.domain}</Link> <span className="ed-muted">{sectorName(s.sector)}</span></li>)}</ul> : <p className="ed-small">No tracked brand shows it on its current homepage.</p>}
         </BlockPart>
         <BlockPart title="Recent stories">
-          {p.stories.length ? <div className="grid grid-cols-1 gap-8 md:grid-cols-2">{p.stories.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-small">No story has named this signal in the last 30 days.</p>}
+          {p.stories.length ? <div className="grid grid-cols-1 gap-8 md:grid-cols-2">{p.stories.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-small">No story has named this signal yet.</p>}
         </BlockPart>
       </>,
     }} />

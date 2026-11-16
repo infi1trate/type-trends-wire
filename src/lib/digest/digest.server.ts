@@ -118,9 +118,9 @@ export async function traitRows(rawKey: string): Promise<TraitRows | null> {
   const byKey = new Map(signals.map(s => [s.key, s]));
   const evidence = evidenceKeys(key).map(k => { const l = label(k), x = byKey.get(k); return { key: k, name: l.name, dimension: l.dimension, basis: basis(k), tier: tierFor(tiers, k), stage: x?.stage ?? null, share: x?.share ?? null, href: explainerPath(k) }; });
   // Brands showing it now and recent stories naming it (shared Read-mode caches; never fail the page).
-  const { siteTraitIndex, allStories } = await import("../read.server");
-  const [index, stories] = await Promise.all([siteTraitIndex().catch(() => []), allStories().then(x => x.stories).catch(() => [])]);
+  const { siteTraitIndex } = await import("../read.server"), { storyIndex } = await import("../stories/read.server"), { storiesAbout } = await import("../stories/view");
+  const [index, stories] = await Promise.all([siteTraitIndex().catch(() => []), storyIndex().then(all => storiesAbout(all, { signal: key, limit: 5 })).catch(() => [])]);
   const showing = index.filter(s => s.traits.includes(key)).sort((a, b) => (b.captured ?? "").localeCompare(a.captured ?? "") || a.domain.localeCompare(b.domain)).map(s => ({ domain: s.domain, name: s.name, sector: s.sector }));
-  return { key, showing, stories: stories.filter(s => s.signalKeys.includes(key)).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5), signal: byKey.get(key) ?? null, tier: tiers.get(key) ?? null, evidence, headline: tiers.size ? [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key) : null, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
+  return { key, showing, stories, signal: byKey.get(key) ?? null, tier: tiers.get(key) ?? null, evidence, headline: tiers.size ? [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key) : null, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
 }
 export async function loadTrait(key: string) { const rows = await traitRows(key); return rows ? traitModel(rows) : null; }

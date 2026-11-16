@@ -1327,6 +1327,145 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          basis: string | null
+          components: Json
+          created_at: string
+          deck: string | null
+          domains: string[]
+          evidence: Json
+          facts: Json
+          happened_at: string
+          headline: string
+          id: string
+          kicker: string
+          reason: string
+          score: number
+          sector: string | null
+          signal_keys: string[]
+          source_ids: string[]
+          status: string
+          type: string
+          why_at: string | null
+          why_line: string | null
+          why_model: string | null
+          why_ran: string
+        }
+        Insert: {
+          basis?: string | null
+          components: Json
+          created_at?: string
+          deck?: string | null
+          domains?: string[]
+          evidence?: Json
+          facts?: Json
+          happened_at: string
+          headline: string
+          id: string
+          kicker: string
+          reason: string
+          score: number
+          sector?: string | null
+          signal_keys?: string[]
+          source_ids?: string[]
+          status: string
+          type: string
+          why_at?: string | null
+          why_line?: string | null
+          why_model?: string | null
+          why_ran: string
+        }
+        Update: {
+          basis?: string | null
+          components?: Json
+          created_at?: string
+          deck?: string | null
+          domains?: string[]
+          evidence?: Json
+          facts?: Json
+          happened_at?: string
+          headline?: string
+          id?: string
+          kicker?: string
+          reason?: string
+          score?: number
+          sector?: string | null
+          signal_keys?: string[]
+          source_ids?: string[]
+          status?: string
+          type?: string
+          why_at?: string | null
+          why_line?: string | null
+          why_model?: string | null
+          why_ran?: string
+        }
+        Relationships: []
+      }
+      story_edits: {
+        Row: {
+          action: string
+          at: string
+          id: number
+          note: string | null
+          payload: Json
+          story_id: string
+        }
+        Insert: {
+          action: string
+          at?: string
+          id?: never
+          note?: string | null
+          payload?: Json
+          story_id: string
+        }
+        Update: {
+          action?: string
+          at?: string
+          id?: never
+          note?: string | null
+          payload?: Json
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_edits_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_lines: {
+        Row: {
+          story_id: string
+          why_at: string
+          why_line: string
+          why_model: string
+        }
+        Insert: {
+          story_id: string
+          why_at?: string
+          why_line: string
+          why_model: string
+        }
+        Update: {
+          story_id?: string
+          why_at?: string
+          why_line?: string
+          why_model?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_lines_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: true
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thumb_optouts: {
         Row: {
           created_at: string

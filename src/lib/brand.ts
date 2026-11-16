@@ -7,13 +7,13 @@ import type { Tier } from "./tiers";
 import type { Thumb } from "./thumbs";
 
 export type BrandPeer = { domain: string; name: string | null; sector: string; traits: string[] };
-export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; peers: BrandPeer[]; tiers: [string, Tier][] };
+export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][] };
 export type BrandTag = { key: string; name: string; basis: Basis; kind: "aesthetic" | "imagery" | "tone" | "theme" };
 export type BrandShow = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; tier: Tier; href: string };
 export type BrandPage = {
   domain: string; name: string; sector: string | null; sectorName: string; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
   identity: { h1: { family: string; google: boolean } | null; body: { family: string; google: boolean } | null; theme: string | null; accent: { hex: string; name: string } | null; palette: { hex: string; name: string }[]; tags: BrandTag[] };
-  timeline: { id: string; at: string; kind: string; text: string; basis: Basis; href: string }[];
+  timeline: { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean }[];
   versus: { scope: string; scopeName: string; ahead: TraitRef[]; behind: TraitRef[] } | null;
   soWhat: string;
   closest: { domain: string; name: string | null; shared: number; href: string }[];
@@ -42,9 +42,10 @@ export function brandModel(r: BrandRows): BrandPage {
     ...(color?.theme ? [{ key: `theme:${color.theme}`, name: label(`theme:${color.theme}`).name, basis: basis(`theme:${color.theme}`), kind: "theme" as const }] : []),
     ...(["aesthetic", "imagery", "tone"] as const).flatMap(kind => (vibe?.[kind] ?? []).map(v => ({ key: `${kind}:${v}`, name: label(`${kind}:${v}`).name, basis: basis(`${kind}:${v}`), kind }))),
   ];
+  const stories = new Map(r.storyOf ?? []), link = (src: string) => { const h = stories.get(src); return h ? { href: h, story: true } : { href: `/library/${d}`, story: false }; };
   const timeline = [
-    ...r.events.filter(e => e.domain === d).map(e => ({ id: `event:${e.id}`, at: e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, href: `/library/${d}` })),
-    ...r.audit.rebrands.filter(x => x.domain === d).map(x => ({ id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, href: `/library/${d}` })),
+    ...r.events.filter(e => e.domain === d).map(e => ({ id: `event:${e.id}`, at: e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`) })),
+    ...r.audit.rebrands.filter(x => x.domain === d).map(x => ({ id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`) })),
   ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
   const m = a.market?.sites.find(s => s.domain === d) ?? null;
   const versus = m ? { scope: m.scope, scopeName: sectorName(m.scope), ahead: m.ahead.filter(x => shown(x.trait)), behind: m.behind.filter(x => shown(x.trait)) } : null;

@@ -3,9 +3,18 @@ import { z } from "zod";
 import type { Json } from "@/integrations/supabase/types";
 // Read-mode reads: anonymous SELECT-only, assembled by pure models (stories.ts, brand.ts, patterns.ts). No AI per view.
 const sector = z.string().max(40).default("all");
-export const getLive = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, page: z.number().int().min(0).max(500).default(0) })).handler(async ({ data }) => {
+export const getLive = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, page: z.number().int().min(0).max(500).default(0), type: z.enum(["all", "moves", "signals", "openings", "news"]).default("all") })).handler(async ({ data }) => {
   const { loadLive } = await import("./read.server");
-  return loadLive(data.sector, data.page);
+  return loadLive(data.sector, data.page, data.type);
+});
+const storyId = z.string().min(3).max(200);
+export const getStory = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => {
+  const { loadStory } = await import("./stories/page.server");
+  return loadStory(data.id);
+});
+export const getStoryQueue = createServerFn({ method: "GET" }).inputValidator(z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), fresh: z.boolean().default(false) })).handler(async ({ data }) => {
+  const { loadQueue } = await import("./stories/page.server");
+  return loadQueue(data.day ?? null, data.fresh);
 });
 export const getBrand = createServerFn({ method: "GET" }).inputValidator(z.object({ domain: z.string().min(3).max(253) })).handler(async ({ data }) => {
   const { loadBrand } = await import("./read.server");
