@@ -7,7 +7,7 @@ import { label } from "../labels";
 import { BRAND_NAME } from "../brand";
 import { svgTextStyle } from "../theme";
 const nf = () => new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
-async function respond(scene: { w: number; h: number; prims: Prim[] }, format: "png" | "svg", alt: string) {
+export async function respond(scene: { w: number; h: number; prims: Prim[] }, format: "png" | "svg", alt: string) {
   if (format === "svg") return new Response(renderPrimsSvg(scene.w, scene.h, scene.prims, { label: alt, style: svgTextStyle() }), { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": CARD_CACHE } });
   const { renderScenePng } = await import("../chart/raster");
   const png = await renderScenePng(scene);

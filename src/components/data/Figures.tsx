@@ -133,9 +133,10 @@ export function CaptureFrame({ fr, label, slim = false, className = "" }: { fr: 
     {boxes.map((b, k) => { const [t, x, y, w, h] = b;
       if (t === "s") return <rect key={k} x={x} y={y} width={w} height={h} fill="none" style={{ stroke: ink }} strokeOpacity={0.12} strokeWidth={2} />;
       if (t === "h") return <rect key={k} x={x} y={y} width={w} height={h} style={{ fill: ink }} opacity={0.9} />;
-      if (t === "t") return <g key={k} style={{ stroke: ink }} strokeOpacity={0.45} strokeWidth={Math.max(2, Math.min(8, h / 6))}>{Array.from({ length: Math.min(6, Math.max(1, Math.round(h / 22))) }, (_, j, a) => <line key={j} x1={x} x2={x + w * (j === a.length - 1 && a.length > 1 ? 0.6 : 1)} y1={y + (h / a.length) * (j + 0.5)} y2={y + (h / a.length) * (j + 0.5)} />)}</g>;
+      if (t === "t") { const n = Math.min(6, Math.max(1, Math.round(h / 22)));
+        return <g key={k} style={{ stroke: ink }} strokeOpacity={0.45} strokeWidth={Math.max(2, Math.min(8, h / 6))}>{Array.from({ length: n }, (_, j) => <line key={j} x1={x} x2={x + w * (j === n - 1 && n > 1 ? 0.6 : 1)} y1={y + (h / n) * (j + 0.5)} y2={y + (h / n) * (j + 0.5)} />)}</g>; }
       if (t === "c") return <rect key={k} x={x} y={y} width={w} height={h} style={{ fill: acc }} />;
-      if (t === "m") return <g key={k}><rect x={x} y={y} width={w} height={h} style={{ fill: tone }} opacity={0.35} /><path d={`M${x},${y} L${x + w},${y + h} M${x + w},${y} L${x},${y + h}`} style={{ stroke: ink }} strokeOpacity={0.25} strokeWidth={2} /></g>;
+      if (t === "m") return <g key={k}><rect x={x} y={y} width={w} height={h} style={{ fill: tone }} opacity={0.18} /><path d={`M${x},${y} L${x + w},${y + h} M${x + w},${y} L${x},${y + h}`} style={{ stroke: ink }} strokeOpacity={0.25} strokeWidth={2} /></g>;
       return <rect key={k} x={x} y={y} width={w} height={h} fill="none" style={{ stroke: ink }} strokeOpacity={0.2} strokeWidth={2} />;
     })}
   </svg>;

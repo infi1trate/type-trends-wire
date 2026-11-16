@@ -51,14 +51,17 @@ export function stripCaptures(cs: CaptureRaw[]): CaptureRaw[] {
 const theme = (c: CaptureRaw) => str(obj(c.color)["theme"]);
 const px = (v: number | null) => (v == null ? null : `${Math.round(v)}px`);
 const pc = (v: number | null) => (v == null ? null : `${Math.round(v * 100)}%`);
-/** Measured differences between two captures, field by field; only fields measured on both sides and different. */
+/** Smallest change worth listing for continuous measures: headline size in px, white space as a share of the first screen. */
+export const DIFF_MIN = { px: 4, share: 0.05 } as const;
+/** Measured differences between two captures, field by field; only fields measured on both sides and different (continuous ones by at least DIFF_MIN). */
 export function diffs(a: CaptureRaw, b: CaptureRaw): Diff[] {
   const rows: [string, string | null, string | null][] = [
     ["Headline font", a.h1, b.h1], ["Body font", a.body, b.body], ["Theme", theme(a), theme(b)],
     ["Page background", hex(obj(a.color)["page_bg"]), hex(obj(b.color)["page_bg"])], ["Accent colour", hex(obj(a.color)["accent"]), hex(obj(b.color)["accent"])],
     ["Headline size", px(a.h1_size), px(b.h1_size)], ["White space", pc(a.whitespace), pc(b.whitespace)], ["Hero media", a.hero, b.hero], ["Button corners", radiusBucket(a.radius), radiusBucket(b.radius)],
   ];
-  return rows.filter((r): r is [string, string, string] => r[1] != null && r[2] != null && r[1].toLowerCase() !== r[2].toLowerCase()).map(([field, before, after]) => ({ field, before, after }));
+  const small = (a.h1_size != null && b.h1_size != null && Math.abs(a.h1_size - b.h1_size) < DIFF_MIN.px ? ["Headline size"] : []).concat(a.whitespace != null && b.whitespace != null && Math.abs(a.whitespace - b.whitespace) < DIFF_MIN.share ? ["White space"] : []);
+  return rows.filter((r): r is [string, string, string] => r[1] != null && r[2] != null && r[1].toLowerCase() !== r[2].toLowerCase() && !small.includes(r[0])).map(([field, before, after]) => ({ field, before, after }));
 }
 export function beforeAfter(o: { title: string; note: string; domain: string; name: string; a: CaptureRaw; b: CaptureRaw; crops: CropRow[] }): BeforeAfterFig {
   return { kind: "before-after", title: o.title, note: o.note, domain: o.domain, name: o.name, href: brandHref(o.domain), before: toFrame(o.domain, o.a, o.crops), after: toFrame(o.domain, o.b, o.crops), diffs: diffs(o.a, o.b) };

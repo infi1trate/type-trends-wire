@@ -18,7 +18,7 @@ describe("/kit", () => {
     expect(shells.some(s => s.includes('"/kit"'))).toBe(false);
   });
   it("renders its sections in the brief's order with ten container styles", () => {
-    expect(KIT_SECTIONS.map(s => s.title)).toEqual(["Wordmark and type roles", "Colour and stage colours", "Buttons, chips and controls", "Stories, signals and brands", "Containers", "Image treatments", "Charts", "Spacing and whitespace", "Motion"]);
+    expect(KIT_SECTIONS.map(s => s.title)).toEqual(["Wordmark and type roles", "Colour and stage colours", "Buttons, chips and controls", "Stories, signals and brands", "Containers", "Image treatments", "Charts", "Spacing and whitespace", "Motion", "Data story templates"]);
     expect(CONTAINERS).toEqual(["page", "card", "inverse", "accent", "highlight", "patterned", "grain", "striped-draft", "raised", "photo-with-scrim"]);
   });
   it("chart data: scatter of every composite, top six bars by share, two well-covered lines, stories by type", () => {

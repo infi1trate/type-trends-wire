@@ -12,3 +12,5 @@ export const DIGEST_FIRST_WEEK = "2026-W46";
 export const MCP_TOOL_COUNT = MCP_TOOL_NAMES.length;
 /** The landing page (/welcome) stays private: it is gated like every other page and is not in OPEN_PATHS. Only the owner flips this. */
 export const LANDING_PUBLIC = false;
+/** Data stories (/data, /data/<slug>, their share images and embeds) stay private: gated like every other page, nothing in OPEN_PATHS. Only the owner flips this. */
+export const DATA_STORIES_PUBLIC = false;

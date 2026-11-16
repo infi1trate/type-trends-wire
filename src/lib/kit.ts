@@ -14,6 +14,7 @@ export const KIT_SECTIONS = [
   { id: "kit-charts", title: "Charts" },
   { id: "kit-space", title: "Spacing and whitespace" },
   { id: "kit-motion", title: "Motion" },
+  { id: "kit-data", title: "Data story templates" },
 ] as const;
 export const CONTAINERS = ["page", "card", "inverse", "accent", "highlight", "patterned", "grain", "striped-draft", "raised", "photo-with-scrim"] as const;
 export type ContainerStyle = (typeof CONTAINERS)[number];

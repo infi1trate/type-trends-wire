@@ -41,3 +41,5 @@ export function buildWhereYouSit(i: DataInput, domain: string, cs: CaptureRaw[])
 /** Only tracked brands can be picked: the picker list and the server both go through this. */
 export const isTracked = (i: { sites: { domain: string; active: boolean }[] }, domain: string) => i.sites.some(s => s.active && s.domain === domain);
 export const normDomain = (raw: string) => raw.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+/** The front page shelf: live stories by registry status (no data load on the front page). */
+export const dataShelf = () => DATA_STORIES.filter(e => statusOf(e, null).status === "live").map(e => ({ slug: e.slug, number: e.number, question: e.question, href: `/data/${e.slug}` }));

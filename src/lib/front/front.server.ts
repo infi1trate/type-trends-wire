@@ -1,5 +1,6 @@
 // Loads what the front page model needs with the shared anonymous SELECT-only reads (stories, signal snapshot, real runs, freshness,
 // editions, crops for the lead) and runs the pure model. No AI, no writes. Memoised briefly per (sector, format) for the page and /front.json.
+import { dataShelf } from "../data-stories/build";
 import { storyIndex } from "../stories/read.server";
 import { latestSignals } from "../signals.server";
 import { lensSignals, resolveSector } from "../sector-lens";
@@ -58,6 +59,7 @@ async function build(sector: string, format: FormatFilter): Promise<FrontModel> 
       sectors: editions ? { at: editions.run?.at ?? null, count: editions.sectors.length } : null,
     },
     archiveMoves, patternKeys: new Set(signals.filter(isPatternSignal).map(s => s.key)), brandNames: new Map(index.map(s => [s.domain, s.name])),
+    dataStories: dataShelf(),
   };
   let model = frontModel(input);
   // The lead's evidence slot: before/after crops when two captures straddle the change; otherwise the model falls back to the sparkline or nothing.

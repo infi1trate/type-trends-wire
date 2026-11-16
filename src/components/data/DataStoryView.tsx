@@ -58,7 +58,7 @@ export function Stepper({ s, step, onStep }: { s: StoryModel; step: number; onSt
     const t = clampStep(j, n);
     if (t === k) return;
     onStep(t);
-    if (scroll) { quiet.current = Date.now() + 700; blocks.current[t]?.scrollIntoView({ behavior: reduce() ? "auto" : "smooth", block: "center" }); }
+    if (scroll) { quiet.current = Date.now() + 700; blocks.current[t]?.scrollIntoView?.({ behavior: reduce() ? "auto" : "smooth", block: "center" }); }
   }, [k, n, onStep]);
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
@@ -70,25 +70,28 @@ export function Stepper({ s, step, onStep }: { s: StoryModel; step: number; onSt
     };
     document.addEventListener("keydown", on); return () => document.removeEventListener("keydown", on);
   }, [go, k, n]);
-  // Scrolling: the caption block nearest the middle of the screen is the current step.
+  // Deep link: open at ?step= by jumping to its caption block, before scroll stepping takes over.
+  useEffect(() => { if (k > 0) { quiet.current = Date.now() + 1200; blocks.current[k]?.scrollIntoView?.({ behavior: "auto", block: "center" }); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Scrolling: the caption block crossing the reading line is the current step (mid-screen when wide; below the sticky picture when narrow).
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(es => { if (Date.now() < quiet.current) return; const hit = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (hit) { const j = Number((hit.target as HTMLElement).dataset["step"]) - 1; if (Number.isFinite(j)) onStep(clampStep(j, n)); } }, { rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.5, 1] });
+    const io = new IntersectionObserver(es => { if (Date.now() < quiet.current) return; const hit = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (hit) { const j = Number((hit.target as HTMLElement).dataset["step"]) - 1; if (Number.isFinite(j)) onStep(clampStep(j, n)); } }, { rootMargin: window.innerWidth >= 1024 ? "-45% 0px -45% 0px" : "-78% 0px -12% 0px", threshold: [0, 0.5, 1] });
     blocks.current.forEach(b => b && io.observe(b)); return () => io.disconnect();
   }, [n, onStep]);
   return <div ref={root} className="ed-wrap mt-8 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10" data-stepper="">
     <div className="sticky top-0 z-10 self-start border-b py-3 lg:top-4 lg:border-b-0" style={{ background: "var(--tk-surface-page)", borderColor: "var(--tk-rule-hairline)" }}>
-      <div className="max-h-[52vh] overflow-y-auto lg:max-h-none lg:overflow-visible">{fig && <FigureView fig={fig} view={cur.view} live />}</div>
+      <div className="max-h-[46vh] overflow-y-auto lg:max-h-none lg:overflow-visible">{fig && <FigureView fig={fig} view={cur.view} live />}</div>
       <div className="no-print mt-3 flex items-center gap-2" role="group" aria-label="Step through the story">
         <button type="button" className="tk-btn tk-t-data" data-variant="secondary" onClick={() => go(k - 1)} disabled={k === 0} aria-label="Previous step">← Previous</button>
         <span className="tk-t-data min-w-[8ch] text-center" data-counter="">{counter(k, n)}</span>
         <button type="button" className="tk-btn tk-t-data" data-variant="primary" onClick={() => go(k + 1)} disabled={k >= n - 1} aria-label="Next step">Next →</button>
         <span className="tk-t-caption tk-c-muted ml-auto hidden md:inline">← → or J K to step · Home / End</span>
       </div>
+      <p className="ed-small mt-2 lg:hidden" aria-hidden="true" data-current-caption=""><CaptionText c={cur.caption} /></p>
       <p className="sr-only" aria-live="polite" aria-atomic="true" data-announce="">{said}</p>
     </div>
     <ol className="mt-4 lg:mt-0" aria-label="Steps">{s.steps.map((st, j) => <li key={st.id} ref={el => { blocks.current[j] = el; }} data-step={j + 1} aria-current={j === k ? "step" : undefined}
-      className="flex min-h-[55vh] items-center py-6 first:pt-2 last:min-h-[40vh]">
+      className="flex min-h-[40vh] items-center py-6 first:pt-2 last:min-h-[30vh] lg:min-h-[55vh] lg:last:min-h-[40vh]">
       <p className={`ed-body max-w-[46ch] border-l-2 pl-4 transition-colors duration-200 motion-reduce:transition-none ${j === k ? "" : "ed-muted"}`} style={{ borderColor: j === k ? "var(--tk-accent-1)" : "var(--tk-rule-hairline)" }}>
         <span className="ed-kicker block">{counter(j, n)}</span><CaptionText c={st.caption} />
       </p>

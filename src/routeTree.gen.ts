@@ -34,6 +34,7 @@ import { Route as CropsSplatRouteImport } from './routes/crops.$'
 import { Route as DataIndexRouteImport } from './routes/data.index'
 import { Route as DataSlugRouteImport } from './routes/data.$slug'
 import { Route as DataWhereYouSitRouteImport } from './routes/data.where-you-sit'
+import { Route as DataChar123slugChar125DotpngRouteImport } from './routes/data.{$slug}[.]png'
 import { Route as DigestIndexRouteImport } from './routes/digest.index'
 import { Route as DigestWeekRouteImport } from './routes/digest.$week'
 import { Route as DigestArchiveRouteImport } from './routes/digest.archive'
@@ -78,6 +79,7 @@ import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/ap
 import { Route as ApiPublicOembedRouteImport } from './routes/api/public/oembed'
 import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public/seed-candidates'
 import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/thumb-optout'
+import { Route as DataEmbedSlugRouteImport } from './routes/data.embed.$slug'
 import { Route as EmbedChartWeekRouteImport } from './routes/embed.chart.$week'
 import { Route as EmbedTraitKeyRouteImport } from './routes/embed.trait.$key'
 import { Route as StoriesNoNumberRouteImport } from './routes/stories.no.$number'
@@ -210,6 +212,12 @@ const DataWhereYouSitRoute = DataWhereYouSitRouteImport.update({
   path: '/data/where-you-sit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataChar123slugChar125DotpngRoute =
+  DataChar123slugChar125DotpngRouteImport.update({
+    id: '/data/{$slug}.png',
+    path: '/data/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DigestIndexRoute = DigestIndexRouteImport.update({
   id: '/digest/',
   path: '/digest/',
@@ -435,6 +443,11 @@ const ApiPublicThumbOptoutRoute = ApiPublicThumbOptoutRouteImport.update({
   path: '/api/public/thumb-optout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataEmbedSlugRoute = DataEmbedSlugRouteImport.update({
+  id: '/data/embed/$slug',
+  path: '/data/embed/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmbedChartWeekRoute = EmbedChartWeekRouteImport.update({
   id: '/embed/chart/$week',
   path: '/embed/chart/$week',
@@ -479,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/crops/$': typeof CropsSplatRoute
   '/data/$slug': typeof DataSlugRoute
   '/data/where-you-sit': typeof DataWhereYouSitRoute
+  '/data/{$slug}.png': typeof DataChar123slugChar125DotpngRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -527,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/data/embed/$slug': typeof DataEmbedSlugRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/stories/no/$number': typeof StoriesNoNumberRoute
@@ -554,6 +569,7 @@ export interface FileRoutesByTo {
   '/crops/$': typeof CropsSplatRoute
   '/data/$slug': typeof DataSlugRoute
   '/data/where-you-sit': typeof DataWhereYouSitRoute
+  '/data/{$slug}.png': typeof DataChar123slugChar125DotpngRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -602,6 +618,7 @@ export interface FileRoutesByTo {
   '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/data/embed/$slug': typeof DataEmbedSlugRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/stories/no/$number': typeof StoriesNoNumberRoute
@@ -630,6 +647,7 @@ export interface FileRoutesById {
   '/crops/$': typeof CropsSplatRoute
   '/data/$slug': typeof DataSlugRoute
   '/data/where-you-sit': typeof DataWhereYouSitRoute
+  '/data/{$slug}.png': typeof DataChar123slugChar125DotpngRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -678,6 +696,7 @@ export interface FileRoutesById {
   '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/data/embed/$slug': typeof DataEmbedSlugRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/stories/no/$number': typeof StoriesNoNumberRoute
@@ -707,6 +726,7 @@ export interface FileRouteTypes {
     | '/crops/$'
     | '/data/$slug'
     | '/data/where-you-sit'
+    | '/data/{$slug}.png'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -755,6 +775,7 @@ export interface FileRouteTypes {
     | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/data/embed/$slug'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
     | '/stories/no/$number'
@@ -782,6 +803,7 @@ export interface FileRouteTypes {
     | '/crops/$'
     | '/data/$slug'
     | '/data/where-you-sit'
+    | '/data/{$slug}.png'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -830,6 +852,7 @@ export interface FileRouteTypes {
     | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/data/embed/$slug'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
     | '/stories/no/$number'
@@ -857,6 +880,7 @@ export interface FileRouteTypes {
     | '/crops/$'
     | '/data/$slug'
     | '/data/where-you-sit'
+    | '/data/{$slug}.png'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -905,6 +929,7 @@ export interface FileRouteTypes {
     | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/data/embed/$slug'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
     | '/stories/no/$number'
@@ -933,6 +958,7 @@ export interface RootRouteChildren {
   CropsSplatRoute: typeof CropsSplatRoute
   DataSlugRoute: typeof DataSlugRoute
   DataWhereYouSitRoute: typeof DataWhereYouSitRoute
+  DataChar123slugChar125DotpngRoute: typeof DataChar123slugChar125DotpngRoute
   DigestWeekRoute: typeof DigestWeekRoute
   DigestArchiveRoute: typeof DigestArchiveRoute
   DigestRssDotxmlRoute: typeof DigestRssDotxmlRoute
@@ -981,6 +1007,7 @@ export interface RootRouteChildren {
   ApiPublicOembedRoute: typeof ApiPublicOembedRoute
   ApiPublicSeedCandidatesRoute: typeof ApiPublicSeedCandidatesRoute
   ApiPublicThumbOptoutRoute: typeof ApiPublicThumbOptoutRoute
+  DataEmbedSlugRoute: typeof DataEmbedSlugRoute
   EmbedChartWeekRoute: typeof EmbedChartWeekRoute
   EmbedTraitKeyRoute: typeof EmbedTraitKeyRoute
   StoriesNoNumberRoute: typeof StoriesNoNumberRoute
@@ -1162,6 +1189,13 @@ declare module '@tanstack/react-router' {
       path: '/data/where-you-sit'
       fullPath: '/data/where-you-sit'
       preLoaderRoute: typeof DataWhereYouSitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data/{$slug}.png': {
+      id: '/data/{$slug}.png'
+      path: '/data/{$slug}.png'
+      fullPath: '/data/{$slug}.png'
+      preLoaderRoute: typeof DataChar123slugChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/digest/': {
@@ -1472,6 +1506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicThumbOptoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data/embed/$slug': {
+      id: '/data/embed/$slug'
+      path: '/data/embed/$slug'
+      fullPath: '/data/embed/$slug'
+      preLoaderRoute: typeof DataEmbedSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/embed/chart/$week': {
       id: '/embed/chart/$week'
       path: '/embed/chart/$week'
@@ -1525,6 +1566,7 @@ const rootRouteChildren: RootRouteChildren = {
   CropsSplatRoute: CropsSplatRoute,
   DataSlugRoute: DataSlugRoute,
   DataWhereYouSitRoute: DataWhereYouSitRoute,
+  DataChar123slugChar125DotpngRoute: DataChar123slugChar125DotpngRoute,
   DigestWeekRoute: DigestWeekRoute,
   DigestArchiveRoute: DigestArchiveRoute,
   DigestRssDotxmlRoute: DigestRssDotxmlRoute,
@@ -1573,6 +1615,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOembedRoute: ApiPublicOembedRoute,
   ApiPublicSeedCandidatesRoute: ApiPublicSeedCandidatesRoute,
   ApiPublicThumbOptoutRoute: ApiPublicThumbOptoutRoute,
+  DataEmbedSlugRoute: DataEmbedSlugRoute,
   EmbedChartWeekRoute: EmbedChartWeekRoute,
   EmbedTraitKeyRoute: EmbedTraitKeyRoute,
   StoriesNoNumberRoute: StoriesNoNumberRoute,

@@ -198,7 +198,7 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
 export function readSectionOf(pathname: string): SectionId | null {
   const s = pathname.split("/").filter(Boolean)[0];
   if (!s || s === "stories") return "live";
-  if (s === "signals" || s === "trait" || s === "what-we-show") return "signals";
+  if (s === "signals" || s === "trait" || s === "what-we-show" || s === "data") return "signals";
   if (s === "brands") return "brands";
   if (s === "patterns") return "patterns";
   if (["digest", "chart", "morning", "sectors", "editions"].includes(s)) return "digest";
@@ -217,6 +217,11 @@ export const SURFACES: Record<string, Surface> = {
   "stories.no.$number": S("live", "read", "quiet", "A story's permanent number (No. 47) redirects to its story page; killed stories' numbers lead nowhere."),
   "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
   "signals.$key": S("signals", "read", "shown", "Signal object page (was the trait explainer)."),
+  "data.index": S("signals", "read", "shown", "Data stories: the numbered index (question, deck, template, last data date; drafts with their reason). Gated."),
+  "data.$slug": S("signals", "read", "shown", "One data story: the picture you step through (?step=), captions with receipts, the same ending. Gated."),
+  "data.where-you-sit": S("signals", "read", "shown", "The reader's own data story for one tracked brand (?brand=): field, strip, signals that set it apart. Gated."),
+  "data.{$slug}[.]png": S("signals", "both", "quiet", "Data story share image; gated while DATA_STORIES_PUBLIC is false."),
+  "data.embed.$slug": S("signals", "read", "quiet", "One step of a data story as a standalone page (?step=); gated while DATA_STORIES_PUBLIC is false."),
   "stories.$id": S("live", "read", "shown", "Story object page: headline, facts with receipts, so-what with why-this-ran, related; backtick opens Terminal › Live › Today with it focused."),
   "desk": S("tools", "read", "quiet", "Editor's desk: today's queue (ran, held, killed) with scores and edit history; actions need the editor key, kept in memory for the tab."),
   "trait.$key": S("signals", "read", "quiet", "Redirects to /signals/<key>; kept so old links and share cards work."),

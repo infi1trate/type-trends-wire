@@ -79,7 +79,7 @@
     font-size: var(--tk-root-size);
     line-height: var(--tk-root-leading);
     font-variant-numeric: tabular-nums;
-    overflow-x: hidden;
+    overflow-x: clip; /* clip, not hidden: hidden made body a scroll container and broke position: sticky (data story stepper) */
     -webkit-font-smoothing: antialiased;
   }
   :focus-visible {

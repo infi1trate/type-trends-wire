@@ -131,6 +131,11 @@ export function FrontView({ m }: { m: FrontModel }) {
       <Kicker id="front-editions">Editions</Kicker>
       <ul className="mt-2 grid grid-cols-1 gap-x-8 md:grid-cols-3">{m.editions.map(e => <li key={e.id} className="ed-hair py-3"><Receipt href={e.href} className="ed-h4 no-underline hover:underline">{e.title}</Receipt><span className="ed-data ed-muted mt-1 block">{e.date}</span></li>)}</ul>
     </section>}
+    {m.sections.dataStories && <section aria-labelledby="front-data" className="ed-wrap mt-14" data-shelf="data-stories">
+      <Kicker id="front-data">Data stories</Kicker>
+      <ul className="mt-2 grid grid-cols-1 gap-x-8 md:grid-cols-3">{m.dataStories.map(d => <li key={d.slug} className="ed-hair py-3"><span className="ed-data ed-muted block">Data story {d.number}</span><Receipt href={d.href} className="ed-h4 no-underline hover:underline">{d.question}</Receipt></li>)}</ul>
+      <p className="ed-data mt-2"><Receipt href="/data" className="ed-tap">All data stories →</Receipt></p>
+    </section>}
     <nav aria-label="About the front page" className="ed-wrap ed-data mt-14 flex flex-wrap gap-x-6">{m.footer.map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     <ReadFooter terminal="/terminal" />
   </DigestShell>;
