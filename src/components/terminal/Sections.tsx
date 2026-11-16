@@ -63,7 +63,7 @@ export function AuditTab() {
       <label className="label text-g500" htmlFor="audit-sites">2–6 SITES, COMMA OR SPACE SEPARATED</label>
       <div className="flex flex-wrap gap-2"><input id="audit-sites" value={v} onChange={e => { setV(e.target.value); setErr(null); }} placeholder="linear.app vercel.com supabase.com" className="min-h-11 min-w-0 flex-1 border border-rule bg-void px-2 text-ink md:min-h-8" />
         <button type="submit" className="label min-h-11 border border-ink px-3 text-ink hover:bg-ink hover:text-void md:min-h-8">AUDIT →</button></div>
-      {err && <p role="alert" className="text-signal">{err}</p>}
+      {err && <p role="alert" className="text-live">{err}</p>}
       <p className="text-g500">Opens the editorial audit: type, color, layout, vibe, versus the market and open territory. <Link to="/audit/new" search={{ sites: undefined }} className="text-ink underline">Guided form →</Link></p>
     </form>
   </section>;

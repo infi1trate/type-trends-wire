@@ -1,7 +1,9 @@
 // Pure-JS rasterizer + PNG encoder for the chart card (no native or WASM deps, so it runs on the hosted runtime).
-// Anti-aliased nonzero scanline fill (4 sub-rows, exact horizontal coverage) and pre-rendered Geist Mono glyph masks.
+// Anti-aliased nonzero scanline fill (4 sub-rows, exact horizontal coverage) and pre-rendered IBM Plex Mono glyph masks.
 import { GLYPH_ADVANCE, GLYPH_ATLASES, GLYPH_CHARS } from "./glyphs.gen";
-import type { Prim } from "./card";
+import { markGeom, type Prim } from "./card";
+import { flattenPath } from "./path";
+import { MARK_INK } from "@/components/brand/mark";
 
 type Glyph = { w: number; h: number; l: number; t: number; data: Uint8Array };
 const atlasCache = new Map<string, Promise<Map<string, Glyph>>>();
@@ -28,12 +30,13 @@ class Canvas {
   constructor(public w: number, public h: number) { this.px = new Uint8Array(w * h * 3); }
   blend(i: number, c: [number, number, number], a: number) { if (a <= 0) return; const o = i * 3, k = Math.min(1, a); this.px[o] = this.px[o]! + (c[0] - this.px[o]!) * k; this.px[o + 1] = this.px[o + 1]! + (c[1] - this.px[o + 1]!) * k; this.px[o + 2] = this.px[o + 2]! + (c[2] - this.px[o + 2]!) * k; }
   /** Union of polygons (each normalized to the same orientation) filled with nonzero winding. */
-  fill(polys: [number, number][][], color: string, opacity = 1) {
+  /** `keepWinding`: fill as drawn (nonzero), so reverse-wound contours cut holes (the mark's counters and slits). */
+  fill(polys: [number, number][][], color: string, opacity = 1, keepWinding = false) {
     const SS = 4, c = rgbOf(color), edges: { x0: number; y0: number; x1: number; y1: number; dir: number }[] = [];
     let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
     for (let poly of polys) {
       let area = 0; for (let i = 0; i < poly.length; i++) { const a = poly[i]!, b = poly[(i + 1) % poly.length]!; area += a[0] * b[1] - b[0] * a[1]; }
-      if (area < 0) poly = [...poly].reverse();
+      if (area < 0 && !keepWinding) poly = [...poly].reverse();
       for (let i = 0; i < poly.length; i++) { const a = poly[i]!, b = poly[(i + 1) % poly.length]!; minX = Math.min(minX, a[0]); maxX = Math.max(maxX, a[0]); minY = Math.min(minY, a[1]); maxY = Math.max(maxY, a[1]); if (a[1] === b[1]) continue; edges.push(a[1] < b[1] ? { x0: a[0], y0: a[1], x1: b[0], y1: b[1], dir: 1 } : { x0: b[0], y0: b[1], x1: a[0], y1: a[1], dir: -1 }); }
     }
     const x0 = Math.max(0, Math.floor(minX)), x1 = Math.min(this.w, Math.ceil(maxX) + 1), y0 = Math.max(0, Math.floor(minY)), y1 = Math.min(this.h, Math.ceil(maxY) + 1), bw = x1 - x0;
@@ -93,6 +96,7 @@ export async function renderScenePng(scene: { w: number; h: number; prims: Prim[
     if (p.k === "rect") cv.fill([[[p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, p.y + p.h], [p.x, p.y + p.h]]], p.fill, p.opacity ?? 1);
     else if (p.k === "poly") cv.fill([p.pts], p.fill, p.opacity);
     else if (p.k === "line") cv.stroke(p.pts, p.width, p.stroke, p.dash, p.opacity ?? 1);
+    else if (p.k === "mark") { const m = markGeom(p); if (m.slab) cv.fill([[[m.slab.x, m.slab.y], [m.slab.x + m.slab.w, m.slab.y], [m.slab.x + m.slab.w, m.slab.y + m.slab.h], [m.slab.x, m.slab.y + m.slab.h]]], m.slab.fill); cv.fill(flattenPath(m.d, m.s, m.x, m.y), MARK_INK, 1, true); }
     else await cv.text(p.x, p.y, p.text, p.size, p.weight, p.fill, p.anchor);
   }
   return encodePng(cv.px, scene.w, scene.h);

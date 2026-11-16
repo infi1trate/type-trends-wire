@@ -80,7 +80,7 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
       {isLoading ? (
         <div className="p-3"><Loading /></div>
       ) : error ? (
-        <div role="alert" className="p-3 text-signal">The type index couldn’t load ({String((error as Error).message)}). Try again in a minute.</div>
+        <div role="alert" className="p-3 text-live">The type index couldn’t load ({String((error as Error).message)}). Try again in a minute.</div>
       ) : !data || data.rows.length === 0 ? (
         <Empty why="No Google Fonts snapshot yet. Rankings are collected once a day, so the index fills in after the next daily run." />
       ) : (

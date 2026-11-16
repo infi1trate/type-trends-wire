@@ -16,28 +16,29 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GATE_ENABLED } from "../lib/gate";
 import { activeCss, fontLinks } from "../lib/theme";
 import { modeOf } from "../lib/theme/route-mode";
+import { densityOf } from "../lib/ia";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_DESCRIPTION, BRAND_LINE, BRAND_NAME } from "@/lib/brand";
 
-function NotFoundComponent() {
+function ErrorPage({ code, title, line, children }: { code: string; title: string; line: string; children: ReactNode }) {
+  // Error pages take the theme: paper, the drawn mark, one Raised button (and a plain link beside it).
   return (
-    <div data-mode="dark" className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
+    <div className="digest flex min-h-screen flex-col">
+      <header className="c-slab"><div className="ed-wrap flex min-h-14 items-center"><a href="/" aria-label={`${BRAND_NAME}, the front page`} className="inline-flex min-h-11 items-center"><Wordmark height={24} ground="ink" decorative /></a></div></header>
+      <main className="ed-wrap flex-1 pb-24 pt-[104px]">
+        <p className="ed-kicker">{code}</p>
+        <h1 className="ed-h1 mt-4 max-w-[16ch]">{title}</h1>
+        <p className="ed-standfirst mt-6">{line}</p>
+        <div className="mt-10 flex flex-wrap items-center gap-6">{children}</div>
+      </main>
     </div>
   );
+}
+
+function NotFoundComponent() {
+  return <ErrorPage code="Error 404" title="Page not found" line="The page you're looking for doesn't exist or has been moved.">
+    <Link to="/" className="c-raised" data-container="raised">Go to the front page</Link>
+  </ErrorPage>;
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
@@ -46,36 +47,10 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
-
-  return (
-    <div data-mode="dark" className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+  return <ErrorPage code="Something went wrong" title="This page didn't load" line="Something went wrong on our end. You can try again, or head back to the front page.">
+    <button type="button" className="c-raised" data-container="raised" onClick={() => { router.invalidate(); reset(); }}>Try again</button>
+    <a href="/" className="ed-data ed-tap underline">Go to the front page</a>
+  </ErrorPage>;
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -101,6 +76,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/brand/files/slug-favicon-180.png" },
+      { rel: "manifest", href: "/site.webmanifest" },
       ...fontLinks("base"),
     ],
   }),
@@ -113,8 +90,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   // The route sets the mode (light Read pages, dark terminal); the active theme's tokens are written once, here.
   const mode = useRouterState({ select: s => modeOf(s.matches) });
+  // The page's density (Quiet, Steady, Loud) is recorded per route in ia.ts; the shell reads it here.
+  const density = useRouterState({ select: s => densityOf(s.matches[s.matches.length - 1]?.routeId ?? "/") });
   return (
-    <html lang="en" data-mode={mode}>
+    <html lang="en" data-mode={mode} data-density={density}>
       <head>
         <style id="tk-theme" dangerouslySetInnerHTML={{ __html: activeCss() }} />
         <HeadContent />

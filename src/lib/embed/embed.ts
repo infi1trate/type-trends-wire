@@ -1,4 +1,4 @@
-// Embeddable signal widget: pure model + self-contained HTML (no scripts, no cookies; Geist Mono is the only external asset).
+// Embeddable signal widget: pure model + self-contained HTML (no scripts, no cookies; the theme's font link is the only external asset).
 // Framing is allowed only here (CSP frame-ancestors *); every other page keeps its current framing rules.
 import { chartPrims, renderPrimsSvg, LIGHT_PALETTE, cardText, type CardModel } from "../chart/card";
 import { cardModel, usableSeries, MIN_SERIES, type ForecastLike } from "../chart/model";
@@ -7,7 +7,8 @@ import { soWhat } from "../digest/copy";
 import { callSentence, direction, quarterText } from "../ledger/ledger";
 import { SITE_URL } from "../site";
 import { BRAND_NAME } from "../brand";
-import { activeTheme, svgMono } from "../theme";
+import { activeTheme } from "../theme";
+import { markSvg } from "@/components/brand/mark";
 
 export const EMBED_ASPECT = { w: 4, h: 3 } as const;
 export const EMBED_MIN_W = 280, EMBED_MAX_W = 800;
@@ -39,28 +40,30 @@ export function chartEmbedModel(m: CardModel | null, headline = false): EmbedMod
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 // One plot per width band so axis text stays 11–17 px from 280 to 800 px wide.
 const VIEWS = [{ cls: "v-s", w: 520, h: 170 }, { cls: "v-m", w: 800, h: 330 }, { cls: "v-l", w: 1100, h: 560 }] as const;
-const FONT = activeTheme.shared.fonts.base, IMG = activeTheme.shared.image;
+const FONT = activeTheme.shared.fonts.base, IMG = activeTheme.shared.image, F = activeTheme.shared.fonts;
+/** The drawn mark in an embed's footer: micro cut, on its slab when the embed is dark. */
+const mark = (t: Theme) => markSvg(16, t === "dark" ? "ink" : "paper");
 /** Embed colours come from the theme's image palettes (embeds are standalone HTML). */
 const THEMES: Record<Theme, { bg: string; ink: string; muted: string; rule: string }> = {
   dark: { bg: IMG.dark.bg, ink: IMG.dark.ink, muted: IMG.dark.secondary, rule: IMG.dark.rule },
   light: { bg: IMG.light.bg, ink: IMG.light.ink, muted: IMG.light.muted, rule: IMG.light.rule },
 };
 const css = (t: Theme) => { const c = THEMES[t]; return `*{box-sizing:border-box;margin:0}html,body{height:100%}
-body{background:${c.bg};color:${c.ink};font:400 11px/16px ${svgMono('"')};font-variant-numeric:tabular-nums;min-width:${EMBED_MIN_W}px;overflow:hidden}
+body{background:${c.bg};color:${c.ink};font:400 13px/18px ${F.text};font-variant-numeric:tabular-nums;min-width:${EMBED_MIN_W}px;overflow:hidden}
 main{height:100vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:6px;padding:10px 12px 0}
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
-h1{font-size:13px;line-height:20px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+h1{font-family:${F.display};font-size:16px;line-height:18px;font-weight:900;text-transform:uppercase;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dim{color:${c.muted};font-weight:400}
-.badge{flex:none;border:1px solid ${c.ink};padding:0 4px;text-transform:uppercase;letter-spacing:.04em}.badges{display:flex;gap:6px;flex:none}.basis{border-style:dashed}
+.badge{flex:none;font:700 11px/16px ${F.display};background:${c.ink};color:${c.bg};border:1.5px solid ${c.ink};padding:0 5px;text-transform:uppercase;letter-spacing:.12em}.badges{display:flex;gap:6px;flex:none}.basis{border-style:dashed;background:transparent;color:${c.ink}}
 .so{color:${c.muted};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .scope{color:${c.muted}}
-figure{min-height:0;display:flex}figure svg{width:100%;height:100%;display:none}figure svg text{font-family:${svgMono('"')};white-space:pre}
+figure{min-height:0;display:flex}figure svg{width:100%;height:100%;display:none}figure svg text{font-family:${F.display};font-weight:700;white-space:pre}
 .call{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border-top:1px solid ${c.rule};color:${c.muted};text-transform:uppercase;letter-spacing:.04em}
-footer a{color:${c.ink};font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}footer a:hover,footer a:focus-visible{text-decoration:underline}
-a:focus-visible{outline:1px solid ${c.ink};outline-offset:2px}
+footer{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border-top:3px solid ${c.ink};color:${c.muted};font:700 11px/16px ${F.display};text-transform:uppercase;letter-spacing:.12em}
+footer a{color:${c.ink};font-weight:700;gap:6px;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}footer a:hover,footer a:focus-visible{text-decoration:underline}
+a:focus-visible{outline:3px solid ${c.ink};outline-offset:2px}
 .v-s{display:block!important}
-@media (min-width:420px){.v-s{display:none!important}.v-m{display:block!important}body{font-size:13px;line-height:20px}h1{font-size:20px;line-height:28px}}
+@media (min-width:420px){.v-s{display:none!important}.v-m{display:block!important}body{font-size:15px;line-height:21px}h1{font-size:24px;line-height:26px}}
 @media (min-width:620px){.v-m{display:none!important}.v-l{display:block!important}main{padding:16px 20px 0;gap:10px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`; };
 const shell = (theme: Theme, title: string, label: string, body: string) => `<!doctype html>
@@ -75,12 +78,12 @@ export function renderEmbed(m: EmbedModel, theme: Theme): string {
 <figure>${svgs}</figure>
 <p class="call">${esc(m.call)} <span class="scope">· ${esc(m.scope)}</span></p>
 ${m.soWhat ? `<p class="so">${esc(m.soWhat)}</p>` : "<span></span>"}
-<footer><span>Data through ${esc(m.dataThrough)}</span><a href="${esc(m.href)}" target="_blank" rel="noopener">${BRAND_NAME} →</a></footer>`);
+<footer><span>Data through ${esc(m.dataThrough)}</span><a href="${esc(m.href)}" target="_blank" rel="noopener" aria-label="${BRAND_NAME}: the full chart">${mark(theme)} →</a></footer>`);
 }
 export function renderEmbedNotFound(theme: Theme): string {
   return shell(theme, `Signal not found — ${BRAND_NAME}`, "Signal not found", `<div class="head"><h1>Signal not found</h1></div>
 <p style="align-self:center">This signal or chart isn't in the latest forecast. The link may be misspelled, or the signal dropped out.</p><span></span><span></span>
-<footer><span>${BRAND_NAME}</span><a href="${SITE_URL}/" target="_blank" rel="noopener">${BRAND_NAME} →</a></footer>`);
+<footer><span>${BRAND_NAME}</span><a href="${SITE_URL}/" target="_blank" rel="noopener" aria-label="${BRAND_NAME}: the front page">${mark(theme)} →</a></footer>`);
 }
 
 /** Path of the embed for a trait or chart page URL path (also accepts the embed paths themselves). */

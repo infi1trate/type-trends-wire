@@ -56,7 +56,7 @@ function Swatches({ mode }: { mode: Mode }) {
 function TypeRoles({ mode }: { mode: Mode }) {
   const t = activeTheme.modes[mode].type;
   return <ul className="space-y-4">{TYPE_ROLES.map(r => <li key={r} className="min-w-0 overflow-hidden">
-    {r === "wordmark" ? <Wordmark size={32} leading={40} /> : <p className={`tk-t-${r} break-words`}>{SAMPLE[r]}</p>}
+    {r === "wordmark" ? <Wordmark height={48} ground="auto" /> : <p className={`tk-t-${r} break-words`}>{SAMPLE[r]}</p>}
     <p className="tk-t-caption tk-c-muted mt-1">{r} · {t[r].family} {t[r].weight} · {t[r].size}{t[r].sizeMd ? ` → ${t[r].sizeMd}` : ""}{t[r].sizeXl ? ` → ${t[r].sizeXl}` : ""} / {t[r].leading}{t[r].case !== "none" ? ` · ${t[r].case}` : ""}{t[r].style !== "normal" ? ` · ${t[r].style}` : ""}</p>
   </li>)}</ul>;
 }

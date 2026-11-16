@@ -13,16 +13,42 @@ export type TypeRole = {
   leading: string; leadingMd?: string; tracking: string; case: "none" | "uppercase" | "lowercase"; style: "normal" | "italic";
   /** Optical size cap for variable faces ("normal" when not set). */
   opsz: string;
+  /** Figure style: tabular for numbers a reader compares. */
+  numeric: "normal" | "tabular-nums";
+  /** Line breaking: headlines balance, text is pretty, data stays auto. */
+  wrap: "balance" | "pretty" | "auto";
 };
+/** One colour job with the ink that reads on it. */
+export type Pair = { bg: string; fg: string };
+/** A gumball (a round data point): light highlight, base colour, dark edge. */
+export type Gumball = { light: string; base: string; dark: string };
+export const GUMBALLS = ["pink", "green", "yellow", "red", "ink", "newsprint"] as const;
+export type GumballName = (typeof GUMBALLS)[number];
 export type Palette = {
   surface: { page: string; card: string; raised: string; sunken: string; inverse: string };
   text: { primary: string; secondary: string; muted: string; inverse: string; onAccent: string; emphasis: string };
   rule: { strong: string; hairline: string };
   accent: { 1: string; 2: string; 3: string; 4: string };
   onAccent: { 1: string; 2: string; 3: string; 4: string };
+  /** Stage fills (chips, chart marks) and the ink that reads on each. */
   stage: { emerging: string; rising: string; peaking: string; fading: string; steady: string; unstaged: string };
+  onStage: { emerging: string; rising: string; peaking: string; fading: string; steady: string; unstaged: string };
+  /** The one loud thing on a screen (the lead), and the highlighter (what moved, focus halo, stickers). */
+  plate: Pair;
+  highlight: Pair;
+  /** The ink slab (navigation, the ticker, footers) and the type on it; ink in every mode. */
+  slab: Pair;
+  /** Rising and measured values; live and urgent (the dot, the stamp). */
+  positive: string;
+  live: string;
+  /** The colour of hard shadows (Raised, Sticker) and the slab the drawn mark sits on in this mode. */
+  shadowInk: string;
+  markGround: string;
+  /** Chart strokes: axis, gridline, and the double stroke under a coloured line (outer, inner). */
+  chart: { axis: string; grid: string; outline: string; inner: string };
+  gumball: Record<GumballName, Gumball>;
   mark: { measured: string; ai: string; live: string };
-  focus: { ring: string; width: string; offset: string };
+  focus: { ring: string; width: string; offset: string; /** Fills the outline offset (a yellow ring in light mode). */ halo: string };
   selection: { bg: string; text: string };
   scrollbar: { track: string; thumb: string };
 };
@@ -32,13 +58,18 @@ export type ImagePalette = { bg: string; ink: string; muted: string; secondary: 
 export type Shared = {
   fonts: { mono: string; display: string; text: string; /** Stylesheets that load the faces; the only place font URLs live. */ base: string; editorial: string; preconnect: readonly string[] };
   root: { size: string; leading: string };
-  radius: { none: string; sm: string; md: string; pill: string };
+  radius: { none: string; sm: string; md: string; pill: string; /** Round things only: stickers, gumballs. */ sticker: string; icon: string };
   border: { hairline: string; strong: string };
-  shadow: { flat: string; raised: string; pressed: string };
+  /** Hard shadows exist only on Raised (things you press) and Sticker; see components/brand/Containers. */
+  shadow: { flat: string; raised: string; pressed: string; sticker: string };
   /** The spacing scale, smallest first: 4, 8, 16, 24, 40, 64, 104 in the legacy theme. */
   space: { 1: string; 2: string; 3: string; 4: string; 5: string; 6: string; 7: string };
   layout: { wrap: string; gutter: string; gutterLg: string; gridGap: string; gridGapLg: string; measure: string; tap: string };
-  motion: { fast: string; base: string; slow: string; ease: string; tick: string; tickEase: string };
+  motion: { fast: string; base: string; slow: string; ease: string; tick: string; tickEase: string;
+    /** Brand timings and easings: tap, move, wipe, arrive, draw; the mark's letter stagger. */
+    tap: string; move: string; wipe: string; arrive: string; draw: string; stagger: string; ooze: string; cut: string; settle: string };
+  /** Page densities: gap between blocks, gap inside a block, air above the title. */
+  density: Record<"quiet" | "steady" | "loud", { block: string; inner: string; air: string }>;
   /** Square chrome: when true every corner is square and no element casts a shadow, whatever a component asks for. */
   square: boolean;
   print: { paper: string; ink: string; muted: string };

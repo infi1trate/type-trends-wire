@@ -19,7 +19,7 @@ export function themeCss(theme: Theme): string {
   const order: Mode[] = ["dark", ...MODES.filter(m => m !== "dark")];
   const base = order.map(m => block(sel(m), flatten(theme, m)));
   const bps = (["md", "xl"] as const).map(bp => `@media (min-width:${BREAKPOINTS[bp]}){${order.map(m => { const v = steps(theme, m, bp); return Object.keys(v).length ? block(sel(m), v) : ""; }).join("")}}`);
-  const roles = TYPE_ROLES.map(r => `.tk-t-${r}{font-family:var(--tk-type-${r}-family);font-weight:var(--tk-type-${r}-weight);font-size:var(--tk-type-${r}-size);line-height:var(--tk-type-${r}-leading);letter-spacing:var(--tk-type-${r}-tracking);text-transform:var(--tk-type-${r}-case);font-style:var(--tk-type-${r}-style);font-variation-settings:"opsz" var(--tk-type-${r}-opsz)}`).join("");
+  const roles = TYPE_ROLES.map(r => `.tk-t-${r}{font-family:var(--tk-type-${r}-family);font-weight:var(--tk-type-${r}-weight);font-size:var(--tk-type-${r}-size);line-height:var(--tk-type-${r}-leading);letter-spacing:var(--tk-type-${r}-tracking);text-transform:var(--tk-type-${r}-case);font-style:var(--tk-type-${r}-style);font-variation-settings:"opsz" var(--tk-type-${r}-opsz);font-variant-numeric:var(--tk-type-${r}-numeric);text-wrap:var(--tk-type-${r}-wrap)}`).join("");
   const square = theme.shared.square ? `*{border-radius:0!important;box-shadow:none!important}` : "";
   return [...base, ...bps, roles, square].join("\n");
 }

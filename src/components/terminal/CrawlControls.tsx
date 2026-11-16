@@ -40,7 +40,7 @@ export function CrawlControls({index,onIndex}:{index?:IndexFilter;onIndex?:(inde
 export function CrawlState({children}:{children:(data:CrawlData)=>React.ReactNode}) {
   const {data,error,isLoading}=useCrawl();
   if(isLoading) return <div className="p-3"><Loading/></div>;
-  if(error) return <div className="p-3 text-signal">ERR · {String((error as Error).message)}</div>;
+  if(error) return <div className="p-3 text-live">ERR · {String((error as Error).message)}</div>;
   if(!data) return <p className="p-3 text-compare-muted">No weekly crawl has finished yet. The crawler runs every Sunday at 03:23 UTC, and this fills in when that run finishes.</p>;
   return children(data);
 }

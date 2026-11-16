@@ -38,7 +38,7 @@ export function Roll({ value, className = "" }: { value: string; className?: str
 
 export function Delta({ v }: { v: number | null }) {
   if (v === null) return <span className="text-g500">—</span>;
-  if (v > 0) return <span className="text-signal">▲{v}</span>;
+  if (v > 0) return <span className="text-positive">▲{v}</span>;
   if (v < 0) return <span className="text-g500">▼{-v}</span>;
   return <span className="text-g500">0</span>;
 }
@@ -66,7 +66,7 @@ export const QueryBar = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInp
             autoComplete="off"
           />
         </span>
-        <span className="animate-blink inline-block h-[14px] w-[7px] bg-signal" aria-hidden />
+        <span className="animate-blink inline-block h-[14px] w-[7px] bg-highlight" aria-hidden />
       </label>
     );
   },

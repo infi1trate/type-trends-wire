@@ -1,8 +1,16 @@
 // Chart of the Week: pure card model + display list. One scene feeds both the SVG and the PNG rasterizer.
 import { GLYPH_ADVANCE, GLYPH_ASCENT } from "./glyphs.gen";
 import { alertDisplayTitle, basisWord, label as traitLabel, scopeText, stageName } from "../labels";
-import { BRAND_NAME, SITE_HOST } from "../brand";
+import { SITE_HOST } from "../brand";
 import { activeTheme, svgTextStyle } from "../theme";
+import { MARK_PATHS } from "@/components/brand/mark.gen";
+import { MARK_INK, SLAB, cutFor, slabPad } from "@/components/brand/mark";
+const MARK_SLAB = SLAB.ink;
+/** Where a mark primitive lands: its cut, scale, top-left and optional slab rectangle. Shared by the SVG serializer and the rasterizer. */
+export function markGeom(p: Extract<Prim, { k: "mark" }>) {
+  const g = MARK_PATHS[cutFor(p.h)], s = p.h / g.h, w = g.w * s, pad = p.slab ? slabPad(p.h) : 0, x = (p.anchor === "end" ? p.x - w - pad : p.x + pad), y = p.y + pad;
+  return { d: g.d, s, x, y, w, slab: p.slab ? { x: x - pad, y: y - pad, w: w + pad * 2, h: p.h + pad * 2, fill: p.slab } : null };
+}
 export const CARD_SIZES = { "1200x675": { w: 1200, h: 675 }, "1080x1350": { w: 1080, h: 1350 } } as const;
 export type CardSize = keyof typeof CARD_SIZES;
 const IMG = activeTheme.shared.image;
@@ -20,7 +28,9 @@ export type Prim =
   | { k: "rect"; x: number; y: number; w: number; h: number; fill: string; opacity?: number }
   | { k: "line"; pts: [number, number][]; stroke: string; width: number; dash?: [number, number]; opacity?: number }
   | { k: "poly"; pts: [number, number][]; fill: string; opacity: number }
-  | { k: "text"; x: number; y: number; text: string; size: 22 | 28 | 44 | 96; weight: 400 | 600; fill: string; anchor?: "start" | "end" };
+  | { k: "text"; x: number; y: number; text: string; size: 22 | 28 | 44 | 96; weight: 400 | 600; fill: string; anchor?: "start" | "end" }
+  /** The drawn mark (brand/logo/svg): height in px, top-left at x,y (or right-aligned at x with anchor "end"); always brand ink, on a slab over ink. */
+  | { k: "mark"; x: number; y: number; h: number; slab?: string; anchor?: "start" | "end" };
 
 export const MAX_JOIN_QUARTERS = 4;
 export const qIdx = (q: string) => Number(q.slice(0, 4)) * 4 + Number(q.slice(5)) - 1;
@@ -76,8 +86,8 @@ function chart(m: Pick<CardModel, "series" | "forecast">, x0: number, y0: number
 function stats(m: CardModel): [string, string][] {
   return [["SHARE", pct(m.share)], ["MOMENTUM", m.momentum_pts_q == null ? "—" : `${m.momentum_pts_q >= 0 ? "+" : ""}${m.momentum_pts_q.toFixed(2)} PTS/Q`], ["STAGE", stageWord(m.stage)], ["N", m.n == null ? "—" : String(m.n)]];
 }
-export const footerText = (m: CardModel) => `${BRAND_NAME} · ${CARD_HOST} · data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`;
-const footerLines = (m: CardModel) => [`${BRAND_NAME} · ${CARD_HOST}`, `data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`];
+export const footerText = (m: CardModel) => `${CARD_HOST} · data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`;
+const footerLines = (m: CardModel) => [`${CARD_HOST}`, `data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`];
 
 /** Display list for one card size. Deterministic: same model → same primitives. */
 export function cardScene(m: CardModel, size: CardSize, opts: { head?: string } = {}): { w: number; h: number; prims: Prim[] } {
@@ -101,8 +111,9 @@ export function cardScene(m: CardModel, size: CardSize, opts: { head?: string } 
     prims.push(...chart(m, pad, cy, colX - pad - 40, h - cy - 96));
     st.forEach(([l, v], i) => { const y = cy + (i ? 82 + (i - 1) * 64 : 0); t(colX, y, l, 22, 400, COLORS.g500); if (i) t(colX, y + 28, fit(v, 28, 300), 28, 600, COLORS.ink); else t(colX, y + 28, fit(v, 44, 300), 44, 600, COLORS.ink); });
   }
-  if (portrait) { prims.push({ k: "rect", x: pad, y: h - pad - 74, w: inner, h: 1, fill: COLORS.rule }); footerLines(m).forEach((line, i) => t(pad, h - pad - 58 + i * 30, fit(line, 22, inner), 22, 400, COLORS.g500)); }
-  else { prims.push({ k: "rect", x: pad, y: h - pad - 34, w: inner, h: 1, fill: COLORS.rule }); t(pad, h - pad - 18, fit(footerText(m), 22, inner), 22, 400, COLORS.g500); }
+  // The drawn mark sits bottom-right on its pink slab (the card is ink); the footer text keeps the host and the data line.
+  if (portrait) { prims.push({ k: "rect", x: pad, y: h - pad - 74, w: inner, h: 1, fill: COLORS.rule }); footerLines(m).forEach((line, i) => t(pad, h - pad - 58 + i * 30, fit(line, 22, inner - 160), 22, 400, COLORS.g500)); prims.push({ k: "mark", x: w - pad, y: h - pad - 52, h: 36, slab: MARK_SLAB, anchor: "end" }); }
+  else { prims.push({ k: "rect", x: pad, y: h - pad - 34, w: inner, h: 1, fill: COLORS.rule }); t(pad, h - pad - 18, fit(footerText(m), 22, inner - 140), 22, 400, COLORS.g500); prims.push({ k: "mark", x: w - pad, y: h - pad - 20, h: 24, slab: MARK_SLAB, anchor: "end" }); }
   return { w, h, prims };
 }
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -114,6 +125,7 @@ export function renderPrimsSvg(w: number, h: number, prims: Prim[], o: { label: 
     if (p.k === "rect") return `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${c(p.fill)}"${p.opacity != null ? ` fill-opacity="${p.opacity}"` : ""}/>`;
     if (p.k === "poly") return `<path d="M${p.pts.map(q => q.join(",")).join(" L")} Z" fill="${c(p.fill)}" fill-opacity="${p.opacity}"/>`;
     if (p.k === "line") return `<polyline points="${p.pts.map(q => q.join(",")).join(" ")}" fill="none" stroke="${c(p.stroke)}" stroke-width="${p.width}" stroke-linejoin="round" stroke-linecap="round"${p.dash ? ` stroke-dasharray="${p.dash.join(" ")}"` : ""}/>`;
+    if (p.k === "mark") { const m = markGeom(p); return `${m.slab ? `<rect x="${m.slab.x}" y="${m.slab.y}" width="${m.slab.w}" height="${m.slab.h}" fill="${m.slab.fill}"/>` : ""}<path transform="translate(${m.x} ${m.y}) scale(${m.s})" d="${m.d}" fill="${MARK_INK}"/>`; }
     return `<text x="${p.x}" y="${r1(p.y + GLYPH_ASCENT * p.size)}" font-size="${p.size}" font-weight="${p.weight}" fill="${c(p.fill)}"${p.anchor === "end" ? ` text-anchor="end"` : ""}>${esc(p.text)}</text>`;
   }).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg"${o.className ? ` class="${o.className}"` : ""} width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.label)}">${o.style ? `<style>${o.style}</style>` : ""}${body}</svg>`;

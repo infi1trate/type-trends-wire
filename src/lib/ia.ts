@@ -202,7 +202,7 @@ export function readSectionOf(pathname: string): SectionId | null {
   if (s === "brands") return "brands";
   if (s === "patterns") return "patterns";
   if (["digest", "chart", "morning", "sectors", "editions"].includes(s)) return "digest";
-  if (["tools", "status", "watch", "audit", "ledger", "desk", "welcome", "kit"].includes(s)) return "tools";
+  if (["tools", "status", "watch", "audit", "ledger", "desk", "welcome", "kit", "brand"].includes(s)) return "tools";
   return null;
 }
 
@@ -249,6 +249,16 @@ export const SURFACES: Record<string, Surface> = {
   "chart.{$week}[.]png": S("digest", "both", "quiet", "Chart share image (open)."),
   "chart.{$week}[.]svg": S("digest", "both", "quiet", "Chart vector image (open)."),
   "tools": S("tools", "read", "shown", "One page linking every ACT tool."),
+  "brand.index": S("tools", "read", "quiet", "The brand: overview of the approved slug brand (P · Extra Fine) built from the live tokens; gated while BRAND_PUBLIC is false, linked from /tools and /kit."),
+  "brand.mark": S("tools", "read", "quiet", "Brand › The mark: construction, clear space, the three cuts, the s, tiles and app icon, grounds, what not to do."),
+  "brand.colour": S("tools", "read", "quiet", "Brand › Colour: proportions, roles with hex, job and limit, live contrast from the tokens, stage colours, three modes."),
+  "brand.type": S("tools", "read", "quiet", "Brand › Type: the role ladder set in real story copy, sizes read from the tokens, the four type rules."),
+  "brand.containers": S("tools", "read", "quiet", "Brand › Containers: the eight, each with use for and never, the front page's container map, the rules."),
+  "brand.space": S("tools", "read", "quiet", "Brand › Space: the scale, the three densities as annotated page skeletons, the rules."),
+  "brand.illustration": S("tools", "read", "quiet", "Brand › Illustration: rules, the three styles and their filters; the artwork arrives in part 2."),
+  "brand.motion": S("tools", "read", "quiet", "Brand › Motion: timings, easings, the five patterns and their tokens; the animations arrive in part 2."),
+  "brand.downloads": S("tools", "read", "quiet", "Brand › Downloads: the kit files (logo SVG/PNG, tokens, motion CSS, filters, guidelines), served only through the gated file route."),
+  "brand.files.$file": S("tools", "both", "quiet", "One kit file from brand/ (allow-listed names only); gated like any page, never an open path."),
   "kit": S("tools", "read", "quiet", "Design kit: every shared component on live data in the current theme, light/dark/vibes side by side; gated, linked from /tools only."),
   "status": S("tools", "read", "quiet", "Health, model card and ops details; out of the reader's path."),
   "audit.index": S("tools", "read", "shown", "Competitive audit."),
@@ -314,6 +324,34 @@ export const SURFACES: Record<string, Surface> = {
   "cmd:q": S("tools", "terminal", "quiet", "Query signals; 'Who uses this well' on signal pages."),
   "cmd:help": S("tools", "terminal", "shown", "List commands."),
 };
+// DENSITY — every route file's page density (brand/README.md, "Space"). The root shell writes it to <html data-density>.
+// Quiet: stories, reports, long pages (one off-centre column, 104 above the title). Steady: the front page and indexes (40 between
+// blocks, 16 inside). Loud: the terminal, tile walls, the kit (8 gaps). "none": routes that render no page (images, feeds, JSON, API).
+export const DENSITIES = ["quiet", "steady", "loud"] as const;
+export type Density = (typeof DENSITIES)[number];
+export const DENSITY: Record<string, Density | "none"> = {
+  index: "steady", "signals.index": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
+  "sectors.index": "steady", "data.index": "steady", tools: "steady", "audit.index": "steady", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
+  ledger: "steady", desk: "steady", status: "steady", "morning.index": "quiet", "morning.$date": "quiet",
+  "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet", "brands.$domain": "quiet", "patterns.$key": "quiet",
+  "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "what-we-show": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
+  "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.space": "quiet",
+  "brand.illustration": "quiet", "brand.motion": "quiet", "brand.downloads": "quiet",
+  terminal: "loud", "library.$domain": "loud", "chart.index": "loud", "chart.$week": "loud", kit: "loud",
+  "front[.]json": "none", "digest.rss[.]xml": "none", "digest.{$week}[.]png": "none", "morning.rss[.]xml": "none", "chart.{$week}[.]png": "none", "chart.{$week}[.]svg": "none",
+  "audit[.]png": "none", "trait.{$key}[.]png": "none", "data.{$slug}[.]png": "none", "data.embed.$slug": "none", "embed.trait.$key": "none", "embed.chart.$week": "none",
+  "robots[.]txt": "none", "thumbs.$": "none", "crops.$": "none", "brand.files.$file": "none", "api/*": "none",
+};
+/** Route file key for a router route id ("/data/$slug" → "data.$slug", "/" → "index", "/brand/" → "brand.index"). */
+export const routeKeyOf = (routeId: string) => routeId === "/" ? "index" : routeId.replace(/^\//, "").replace(/\/$/, "/index").replace(/\//g, ".");
+/** The page density for a matched route id; Steady when the route renders no page or is unknown. */
+export function densityOf(routeId: string): Density {
+  const d = DENSITY[routeKeyOf(routeId)];
+  return d && d !== "none" ? d : "steady";
+}
+/** Density for a route file key ("api/public/mcp" falls back to "api/*"). */
+export const densityOfFile = (key: string): Density | "none" | undefined => DENSITY[key] ?? (key.startsWith("api/") ? DENSITY["api/*"] : undefined);
+
 /** Surface for a route file key, falling back to its "family/*" entry. */
 export function surfaceOf(key: string): Surface | null {
   if (SURFACES[key]) return SURFACES[key]!;

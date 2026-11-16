@@ -77,9 +77,9 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
     ? `${pad(new Date(ingest).getUTCHours())}:${pad(new Date(ingest).getUTCMinutes())} UTC`
     : "—";
   return (
-    <header className="flex h-8 items-stretch border-b border-rule bg-g900 text-label">
+    <header className="flex h-10 items-stretch border-b border-rule bg-g900 text-label">
       <div className="flex shrink-0 items-center gap-2 px-3">
-        <h1 className="text-ink"><Wordmark size={13} leading={16} /></h1>
+        <h1 className="flex items-center"><Wordmark height={18} ground="ink" /></h1>
         <span className="label normal-case text-g500">v0.1</span>
       </div>
       <div className="hidden min-w-0 flex-1 md:block">
@@ -87,7 +87,7 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-3 px-3 label">
         <span className="flex items-center gap-1">
-          <span className="animate-pulse-dot inline-block h-2 w-2 bg-signal" aria-hidden />
+          <span className="animate-pulse-dot inline-block h-2 w-2 rounded-full bg-live" aria-hidden />
           <span className="text-ink">LIVE</span>
         </span>
         <Clock />
@@ -122,7 +122,7 @@ export function Ticker() {
       <span key={i.t} className="mr-8 inline-flex gap-2">
         <span className="font-semibold normal-case text-ink">{i.t}</span><span className="text-g500">[FONT]</span>
         {i.d !== null &&
-          (i.d >= 0 ? <span className="text-signal">▲{i.d}</span> : <span className="text-g500">▼{-i.d}</span>)}
+          (i.d >= 0 ? <span className="text-positive">▲{i.d}</span> : <span className="text-g500">▼{-i.d}</span>)}
         <span className="text-g500">{i.extra}</span>
       </span>
     ))

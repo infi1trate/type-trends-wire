@@ -1,0 +1,13 @@
+{
+  "name": "slug",
+  "short_name": "slug",
+  "description": "The live newsroom for how brands look and sound on the web.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#F1ECE0",
+  "theme_color": "#0A0A0A",
+  "icons": [
+    { "src": "/brand/files/slug-favicon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/brand/files/slug-app-icon-1024.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
+}
