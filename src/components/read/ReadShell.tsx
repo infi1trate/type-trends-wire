@@ -4,7 +4,7 @@
 // The footer is a slab too (DigestFooter).
 // Reuses the Digest editorial system; no health or model jargon here (that lives on /status).
 import { PrintFrame, PrintMark } from "./PrintFrame";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SECTIONS, readSectionOf, type SectionId } from "@/lib/ia";
 import { LENS_SECTORS } from "@/lib/sector-lens";
@@ -75,6 +75,14 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, [mode, close]);
+  // The Menu sheet is a disclosure, not a trap: Tab can leave it, and it closes when focus leaves the bar; Escape closes it and returns focus to Menu.
+  const menuRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const out = (e: FocusEvent) => { if (!(e.target as HTMLElement).closest?.(".shell-top")) setOpen(false); };
+    document.addEventListener("focusin", out); return () => document.removeEventListener("focusin", out);
+  }, [open]);
+  const onBarKey = (e: React.KeyboardEvent) => { if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); menuRef.current?.focus(); } };
   const startTour = useCallback(() => { close(); modeTour("read").reset(); setTouring(true); }, [close]);
   const home = <Link to="/" className="inline-flex min-h-11 shrink-0 items-center" aria-label={`${BRAND_NAME}, the front page`}><ArrivingMark height={32} /></Link>;
   const go = (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); };
@@ -87,7 +95,7 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     <div className="digest">
       <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the content</a>
       {/* The chrome: one ink slab bar. Below 1280 px, whatever does not fit opens from one Menu button in a sheet. */}
-      <header className="c-slab shell-top no-print" data-container="slab" data-shell-row="bar">
+      <header className="c-slab shell-top no-print" data-container="slab" data-shell-row="bar" onKeyDown={onBarKey}>
         <div className="ed-wrap shell-nav flex flex-nowrap items-center gap-x-5 py-1">
           {home}
           {sections(INLINE_CLS.sections, "flex flex-row gap-x-5")}
@@ -96,7 +104,7 @@ export function ReadShell({ children, label, section, lens = false, note = null,
             {modeSwitch(INLINE_CLS.switch)}
             {glossary(INLINE_CLS.glossary)}
             {lock(INLINE_CLS.lock)}
-            <button type="button" className="shell-menu inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center px-2 xl:hidden" aria-expanded={open} aria-controls="shell-sheet" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Menu"}</button>
+            <button ref={menuRef} type="button" className="shell-menu inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center px-2 xl:hidden" aria-expanded={open} aria-controls="shell-sheet" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Menu"}</button>
           </span>
         </div>
         <div id="shell-sheet" hidden={!open} className="shell-sheet xl:hidden" data-shell-sheet="">

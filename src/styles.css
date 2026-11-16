@@ -766,7 +766,7 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   .digest p, .digest li { orphans: 3; widows: 3; }
   .digest :is(.ledger-row, figure, .ed-figure, .tk-chart, tr, [data-step], .step-card-rest, [data-pair], .tile, blockquote, [data-container="card"], [data-container="sheet"]) { break-inside: avoid; page-break-inside: avoid; }
   .digest-data [data-step] { margin-bottom: 8mm; }
-  [data-receipts] .digest a[data-fn]::after { content: "[" attr(data-fn) "]"; vertical-align: super; font-family: var(--tk-font-mono); font-size: 6.5pt; color: var(--tk-print-muted); }
+  [data-receipts] .digest a[data-fn]::after { content: "[" attr(data-fn) "]"; vertical-align: super; font-size: 6.5pt; color: var(--tk-print-muted); }
   [data-receipts] .digest a[data-print]::after { content: "[" attr(data-fn) "]"; }
   .digest a { text-decoration: underline; }
   .digest img, .digest svg { max-width: 100% !important; }
@@ -784,3 +784,4 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 .digest a.c-raised, .digest button.c-raised { color: var(--tk-text-on-accent); }
 /* Chips on the one loud Plate take the plate's own type colour, so an AI ESTIMATE word stays legible on pink in every mode. */
 .c-plate :is(.ed-badge, .tk-chip)[data-basis="ai"] { --chip-c: var(--tk-plate-fg); }
+.digest h1[tabindex="-1"]:focus:not(:focus-visible) { outline: none; }

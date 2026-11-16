@@ -64,6 +64,7 @@ import { Route as SectorsSectorRouteImport } from './routes/sectors.$sector'
 import { Route as ShareSplatRouteImport } from './routes/share.$'
 import { Route as SignalsIndexRouteImport } from './routes/signals.index'
 import { Route as SignalsKeyRouteImport } from './routes/signals.$key'
+import { Route as StatusLaunchRouteImport } from './routes/status_.launch'
 import { Route as StoriesIdRouteImport } from './routes/stories.$id'
 import { Route as ThumbsSplatRouteImport } from './routes/thumbs.$'
 import { Route as TraitKeyRouteImport } from './routes/trait.$key'
@@ -379,6 +380,11 @@ const SignalsKeyRoute = SignalsKeyRouteImport.update({
   path: '/signals/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatusLaunchRoute = StatusLaunchRouteImport.update({
+  id: '/status_/launch',
+  path: '/status/launch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoriesIdRoute = StoriesIdRouteImport.update({
   id: '/stories/$id',
   path: '/stories/$id',
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/status/launch': typeof StatusLaunchRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
@@ -696,6 +703,7 @@ export interface FileRoutesByTo {
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/status/launch': typeof StatusLaunchRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
@@ -789,6 +797,7 @@ export interface FileRoutesById {
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/status_/launch': typeof StatusLaunchRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
   '/trait/$key': typeof TraitKeyRoute
@@ -883,6 +892,7 @@ export interface FileRouteTypes {
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
+    | '/status/launch'
     | '/stories/$id'
     | '/thumbs/$'
     | '/trait/$key'
@@ -975,6 +985,7 @@ export interface FileRouteTypes {
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
+    | '/status/launch'
     | '/stories/$id'
     | '/thumbs/$'
     | '/trait/$key'
@@ -1067,6 +1078,7 @@ export interface FileRouteTypes {
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
+    | '/status_/launch'
     | '/stories/$id'
     | '/thumbs/$'
     | '/trait/$key'
@@ -1160,6 +1172,7 @@ export interface RootRouteChildren {
   SectorsSectorRoute: typeof SectorsSectorRoute
   ShareSplatRoute: typeof ShareSplatRoute
   SignalsKeyRoute: typeof SignalsKeyRoute
+  StatusLaunchRoute: typeof StatusLaunchRoute
   StoriesIdRoute: typeof StoriesIdRoute
   ThumbsSplatRoute: typeof ThumbsSplatRoute
   TraitKeyRoute: typeof TraitKeyRoute
@@ -1596,6 +1609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignalsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/status_/launch': {
+      id: '/status_/launch'
+      path: '/status/launch'
+      fullPath: '/status/launch'
+      preLoaderRoute: typeof StatusLaunchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stories/$id': {
       id: '/stories/$id'
       path: '/stories/$id'
@@ -1888,6 +1908,7 @@ const rootRouteChildren: RootRouteChildren = {
   SectorsSectorRoute: SectorsSectorRoute,
   ShareSplatRoute: ShareSplatRoute,
   SignalsKeyRoute: SignalsKeyRoute,
+  StatusLaunchRoute: StatusLaunchRoute,
   StoriesIdRoute: StoriesIdRoute,
   ThumbsSplatRoute: ThumbsSplatRoute,
   TraitKeyRoute: TraitKeyRoute,

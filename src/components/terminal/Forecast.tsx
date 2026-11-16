@@ -1,3 +1,4 @@
+import { deLegacy, sitePath } from "@/lib/brand";
 import { line as voiced } from "@/lib/voice";
 import { Suspense, useEffect, useState } from "react";
 import { AddToWatch } from "./Watch";
@@ -159,10 +160,10 @@ function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) 
     <h3 className="text-hero font-semibold"><span className="label mr-2 text-signal">AI</span>{shown.headline}</h3>
     <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{shown.sections.map(s => <section key={s.title} className="min-w-0 border border-rule p-3">
       <h4 className="label font-semibold">{s.title.toUpperCase()}</h4><p className="mt-1">{s.body}</p>
-      <div className="mt-2 flex flex-wrap gap-1">{s.citations.map(c => { const ref = brief.refs?.[`${c.kind}:${c.id}`]; const text = c.text; const cls = "label inline-flex h-6 items-center border border-rule px-2 text-compare-muted hover:text-ink";
+      <div className="mt-2 flex flex-wrap gap-1">{s.citations.map(c => { const ref = brief.refs?.[`${c.kind}:${c.id}`]; const text = deLegacy(c.text); const cls = "label inline-flex h-6 items-center border border-rule px-2 text-compare-muted hover:text-ink";
         if (c.kind === "forecast") return <button key={c.kind + c.id} type="button" className={cls} onClick={() => onTrait(c.id)}>{text}</button>;
         if (c.kind === "event" && ref?.domain) return <Link key={c.kind + c.id} to="/library/$domain" params={{ domain: ref.domain }} className={cls}>{text}</Link>;
-        if (c.kind === "wire" && ref?.url) return <a key={c.kind + c.id} href={ref.url} target="_blank" rel="noreferrer" className={cls}>{text}</a>;
+        if (c.kind === "wire" && ref?.url) { const href = sitePath(ref.url), own = href.startsWith("/"); return <a key={c.kind + c.id} href={href} {...(own ? {} : { target: "_blank", rel: "noreferrer" })} className={cls}>{text}</a>; }
         if (c.kind === "spread") return <Link key={c.kind + c.id} to="/terminal" search={{ panel: "overview" }} className={cls}>{text}</Link>;
         return <span key={c.kind + c.id} className={cls}>{text}</span>; })}</div>
     </section>)}</div>

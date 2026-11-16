@@ -84,7 +84,7 @@ export function MorningView({ d }: { d: MorningData }) {
           <h2 id="ml-figure" className="ed-kicker">The figure</h2>
           {e.figure?.kind === "chart" ? <>
             <Link to="/chart/$week" params={{ week: e.figure.week }} className="mt-3 block border border-ed-ink"><img src={`/chart/${e.figure.week}.png`} width={1200} height={675} loading="lazy" decoding="async" className="block h-auto w-full" alt={`Chart of the week ${e.figure.week}: ${cardText(e.figure.model).name} share by quarter.`} /></Link>
-            <p className="ed-small mt-2">Chart of the week {e.figure.week}: {cardText(e.figure.model).call}</p>
+            <p className="ed-small mt-2">Chart of the week {e.figure.week}: {cardText(e.figure.model).call} <Link to="/chart" className="ed-tap">Every chart →</Link></p>
           </> : e.figure?.kind === "signal" ? <><p className="ed-caption mt-1">The lead story's signal, share by quarter.</p><LeadSpark k={e.figure.key} /></> : <p className="ed-small mt-3">{voiced("read.editionsViews.4")}</p>}
         </RuleBox></section>
         <section aria-labelledby="ml-desk"><RuleBox>

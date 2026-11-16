@@ -73,6 +73,7 @@ export function StatusView() {
       <p className="ed-kicker">Status · for operators</p>
       <h1 className="ed-cover mt-3">How the machine is running</h1>
       <p className="ed-standfirst mt-5">Scheduled jobs, the forecast model card and data coverage. Readers never need this page; every story and number links to its own receipts.</p>
+      <p className="mt-4"><Link to="/status/launch" className="ed-tap ed-kicker">Launch readiness: switches and pre-flight checks →</Link></p>
     </header>
     <FreshnessTable />
     <section aria-labelledby="st-jobs" className="ed-wrap mt-14">

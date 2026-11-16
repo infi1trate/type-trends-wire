@@ -1,6 +1,6 @@
 // The Digest: one issue assembled deterministically from stored rows for its week. Pure (no I/O, no AI);
 // every trait name, dimension and stage word comes from labels.ts, and stored text is only unticked at render time.
-import { deLegacy } from "../brand";
+import { deLegacy, sitePath } from "../brand";
 import { alertDisplayTitle, basis, briefDisplay, explainerPath, label, scopeText, stageName, untick, type Basis, type Dimension, type StageName } from "../labels";
 import { colorTicker } from "../taste/color";
 import { colorName } from "../labels";
@@ -90,7 +90,7 @@ export function citationHref(c: { kind: string; id: string }, refs: StoredBrief[
   const r = refs?.[`${c.kind}:${c.id}`];
   if (c.kind === "forecast") return explainerPath(c.id.split(":").slice(0, 2).join(":"));
   if (c.kind === "event" && r?.domain) return `/library/${r.domain}`;
-  if (c.kind === "wire" && r?.url) return r.url;
+  if (c.kind === "wire" && r?.url) return sitePath(r.url);
   if (c.kind === "spread") return "/terminal?panel=spread";
   return null;
 }

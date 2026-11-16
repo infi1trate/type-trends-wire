@@ -38,7 +38,7 @@ function Multiples({ f, v }: { f: MultiplesFig; v: View }) {
   const sx = (x: string) => (f.xs.length < 2 ? W / 2 : m.l + (f.xs.indexOf(x) / (f.xs.length - 1)) * (W - m.l - m.r));
   const bw = Math.max(2, (W - m.l - m.r) / Math.max(1, f.xs.length) - 3);
   const bx = (x: string) => m.l + f.xs.indexOf(x) * ((W - m.l - m.r) / Math.max(1, f.xs.length));
-  return <ChartFrame title={f.title} note={f.note} source={SOURCE} isEmpty={!f.panels.length} table={{ columns: ["Panel", ...f.xs.map(x => (/Q/.test(x) ? qText(x) : x))], rows: f.panels.map(p => [p.label, ...f.xs.map(x => { const pt = p.points.find(q => q.x === x); return pt ? fmt(pt.y) : "—"; })]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} isEmpty={!f.panels.length} table={{ columns: ["Panel", ...f.xs.map(x => (/Q/.test(x) ? qText(x) : x))], rows: f.panels.map(p => [p.label, ...f.xs.map(x => { const pt = p.points.find(q => q.x === x); return pt ? fmt(pt.y) : "—"; })]) }}>
     {() => <ul className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 xl:grid-cols-4" data-figure="multiples">
       {f.panels.map(p => { const hot = on.has(p.id), dim = any && !hot; const a = p.points[0], z = p.points.at(-1);
         return <li key={p.id} className={`${fade} min-w-0 ${dim ? "opacity-40" : ""}`} data-panel={p.id} data-hot={hot ? "" : undefined}>
@@ -68,7 +68,7 @@ function Adoption({ f, v }: { f: AdoptionFig; v: View }) {
   const rows = Math.max(1, ...cols.map(c => Math.ceil(c.length / PER))), top = 70, H = top + rows * (S + G) + 30;
   const sy = linear([0, Math.max(0.05, ...f.share.map(p => p.y))], [top - 12, 14]), cx = (k: number) => 40 + k * colW + colW / 2;
   const stage = f.adopters.filter(a => on.has(a.domain)).slice(0, 6);
-  return <ChartFrame title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.signal.href, label: f.signal.name }} isEmpty={!f.adopters.length}
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.signal.href, label: f.signal.name }} isEmpty={!f.adopters.length}
     table={{ columns: ["Brand", "First seen", "Start known", "Still shows it"], rows: f.adopters.map(a => [a.name, qText(a.first), a.censored ? "No (already there)" : "Yes", a.dropped ? "No" : "Yes"]) }}>
     {ids => <div data-figure="adoption">
       <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="img" aria-labelledby={ids.title} aria-describedby={ids.note}>
@@ -94,7 +94,7 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
   const fx = (n: number) => (f.axes.x.unit === "px" ? `${Math.round(n)}px` : pctText(n)), fy = (n: number) => (f.axes.y.unit === "px" ? `${Math.round(n)}px` : `${Math.round(n * 100)}%`);
   const ext = new Map(f.extremes.map(e => [e.domain, e.label]));
   const labelled = new Set([...f.points.filter(p => on.has(p.domain)).slice(0, 4).map(p => p.domain), ...(any ? [] : f.extremes.map(e => e.domain))]);
-  return <ChartFrame title={f.title} note={f.note} source={SOURCE} isEmpty={!f.points.length} table={{ columns: ["Brand", f.axes.x.label, f.axes.y.label, "Note"], rows: f.points.map(p => [p.name, fx(p.x), fy(p.y), ext.get(p.domain) ?? ""]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} isEmpty={!f.points.length} table={{ columns: ["Brand", f.axes.x.label, f.axes.y.label, "Note"], rows: f.points.map(p => [p.name, fx(p.x), fy(p.y), ext.get(p.domain) ?? ""]) }}>
     {ids => <div data-figure="field"><svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
       {f.points.length > 0 && <>
         {ticks(y0, y1, 4).map(t => <g key={t} aria-hidden="true"><line x1={m.l} x2={W - m.r} y1={sy(t)} y2={sy(t)} className="tk-svg-grid" /><text x={m.l - 6} y={sy(t) + 4} textAnchor="end" className="tk-svg-text tk-svg-muted">{fy(t)}</text></g>)}
@@ -120,7 +120,7 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
 // PALETTE DRIFT ------------------------------------------------------------------------------------
 function Drift({ f, v }: { f: DriftFig; v: View }) {
   const on = new Set(v.highlight), any = on.size > 0;
-  return <ChartFrame title={f.title} note={f.note} source={SOURCE} isEmpty={!f.bands.length} table={{ columns: ["Quarter", "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, b.swatches.map(s => `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; ")]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} isEmpty={!f.bands.length} table={{ columns: ["Quarter", "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, b.swatches.map(s => `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; ")]) }}>
     {() => <ol className="grid gap-2" data-figure="drift">{f.bands.map(b => { const total = b.swatches.reduce((a, s) => a + s.w, 0) || 1, hot = v.focus === b.q;
       return <li key={b.q} className="grid grid-cols-[9ch_1fr] items-center gap-2">
         <span className="tk-t-data" style={hot ? hlText : undefined}>{qText(b.q)}</span>
@@ -162,7 +162,7 @@ function BeforeAfter({ f, v, live, pair = false }: { f: BeforeAfterFig; v: View;
   const wipe = <><div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><CaptureFrame fr={f.before} label={`${f.name}, ${bStamp}`} /></div>
     {pos > 0 && pos < 100 && <span className="absolute inset-y-0 w-0.5" style={{ left: `${pos}%`, background: INK }} />}</>;
   const on = new Set(v.highlight);
-  return <ChartFrame title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={false} table={{ columns: ["Field", "Before", "After"], rows: f.diffs.map(d => [d.field, d.before, d.after]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={false} table={{ columns: ["Field", "Before", "After"], rows: f.diffs.map(d => [d.field, d.before, d.after]) }}>
     {() => <div data-figure="before-after" data-pos={pos} data-layout={pair ? "pair" : "wipe"}>
       {pair ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <figure className="m-0 min-w-0 max-w-[520px]"><CaptureFrame fr={f.before} label={`${f.name}, ${bStamp}`} />
@@ -199,7 +199,7 @@ function Strip({ f, v, live }: { f: StripFig; v: View; live: boolean }) {
   useEffect(() => { setK(start); setPlay(false); }, [start]);
   useEffect(() => { if (!play) return; const t = setInterval(() => setK(x => (x + 1 >= f.frames.length ? (setPlay(false), x) : x + 1)), STRIP_TICK_MS); return () => clearInterval(t); }, [play, f.frames.length]);
   const cur = f.frames[k], on = new Set(v.highlight), markAt = new Map(f.marks.filter(m => m.after).map(m => [m.after!, m]));
-  return <ChartFrame title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={!f.frames.length} table={{ columns: ["Capture", "Source", "Changes marked"], rows: f.frames.map(fr => [dayText(fr.at), fr.source, f.marks.filter(m => m.after === fr.id).map(m => m.label).join("; ") || "—"]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={!f.frames.length} table={{ columns: ["Capture", "Source", "Changes marked"], rows: f.frames.map(fr => [dayText(fr.at), fr.source, f.marks.filter(m => m.after === fr.id).map(m => m.label).join("; ") || "—"]) }}>
     {() => <div data-figure="strip" data-frame-index={k}>
       {cur && <div className="strip-current mx-auto max-w-[520px]"><CaptureFrame fr={cur} label={`${f.name}, ${dayText(cur.at)}`} />
         <p className="tk-t-caption tk-c-muted mt-1 flex flex-wrap items-center gap-2"><Swatches fr={cur} />{k + 1} of {f.frames.length} · {frameCaption(cur)}{markAt.get(cur.id) && <span style={hlText}>· {markAt.get(cur.id)!.label}</span>}</p></div>}

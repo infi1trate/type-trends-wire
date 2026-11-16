@@ -67,3 +67,11 @@
 - Server read caches use `memo.ts` (settled values only, joiners of a failed in-flight load reload, one retry with backoff), because a pending promise shared across Worker requests can never settle once its creating request ends.
 - `library_site_history` is read by domain slices (`history.server.ts`), since the view sorts every row before LIMIT and only a domain filter is pushed down; this keeps each read inside the anonymous statement timeout.
 - Gallery routes mark errored matches `Retry-After` via route `headers` (`unavailable.ts`) and `src/server.ts` turns such HTML 500s into 503, so a failed stored-data read reads as temporary.
+- The studio board's playlist is one pure function (`ambient/playlist.ts`) over the front model and already-loaded rows; timers, polling, wake lock and pointer hiding live in `ambient/board.ts` with injected clock/fetch/wake deps so they test without a browser.
+- Page-weight budgets are held in `components/read/budget.test.tsx`: long lists send the first screen (`Deferred`, first-rows constants) and load the rest after hydration; the signals snapshot is column-packed (`signal-pack.ts`) to avoid sending rows twice.
+- Font fallbacks with size-adjust live only in CSS variables (theme contract `fonts.fallback`), so SVG/PNG drawers keep plain stacks and image snapshots stay stable.
+- Share cards for brand, collection, Morning Line, sector, front, story and pattern are `/share/<kind>/<id>.png` from pure `share/scene.ts` over the shared chart rasterizer; `/share/` stays gated until the owner opens it.
+- Every empty, loading, failed and not-found sentence lives in `voice.ts` with its next step; `voice.test.ts` fails on a state string rendered outside the inventory.
+- Read pages print through `ReadShell` (`PrintMark`/`PrintFrame`) and one `@media print` block; receipts pages opt into numbered link footnotes with `data-receipts`; `print.test.tsx` asserts the rules per page type.
+- `/status/launch` is pure `launch/launch.ts` over anonymous reads in `launch.server.ts`; it describes switches from code and never writes or flips anything.
+- After a client-side page change focus moves to the page h1 (`route-focus.ts`, mounted in `__root`); search or hash changes keep focus.

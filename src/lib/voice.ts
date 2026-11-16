@@ -82,6 +82,7 @@ export const VOICE = {
   "sector.failed": failed("/sectors/<sector>", "This report didn't load", "The sector's numbers", go("Sector reports", "/sectors")),
   "sector.notFound": missing("/sectors/<sector> for an unknown sector", "No report for this sector", "Sector reports exist for each tracked sector; pick one from the sector reports page.", go("Sector reports", "/sectors")),
   "desk.failed": failed("/desk", "The desk didn't load", "The story queue"),
+  "launch.failed": failed("/status/launch", "The readiness checks didn't load", "The pre-flight checks", go("Status", "/status")),
   "ledger.failed": failed("/ledger", "The ledger didn't load", "The record of calls"),
   "kit.failed": failed("/kit", "The kit didn't load", "The live examples"),
   "welcome.failed": failed("/welcome", "This page didn't load", "The live examples"),

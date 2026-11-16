@@ -123,12 +123,13 @@ function Terminal() {
   const section = sectionOf(view);
   return (
     <div className="flex min-h-dvh flex-col bg-void pb-11 md:h-dvh md:overflow-hidden md:pb-0">
+      <a href="#tk-main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:bg-void focus:p-3">Skip to the panel</a>
       <div className="sticky top-0 z-30 shrink-0">
         <TopBar active={view} onSelect={setPanel} />
         <TabRow active={view} onSelect={setPanel} sector={sector} onSector={setSector} readHref={mode.href} onRead={mode.go} />
         <Ticker />
       </div>
-      <main className="flex min-h-0 flex-1 flex-col" aria-label={`${sectionById(section).label} section`}>
+      <main id="tk-main" tabIndex={-1} className="flex min-h-0 flex-1 flex-col focus:outline-none" aria-label={`${sectionById(section).label} section`}>
         {view === "today" && <Wait><Today go={setPanel} onTour={startTour} onGlossary={() => setOverlay("glossary")} focus={search.story} /></Wait>}
         {view === "wire" && <Wire freshIds={fresh} />}
         {view === "overview" && <Overview go={setPanel} freshIds={fresh} />}

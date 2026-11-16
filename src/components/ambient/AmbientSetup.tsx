@@ -17,6 +17,7 @@ export function AmbientSetup() {
       <p className="ed-kicker">Live · studio board</p>
       <h1 className="ed-h1 mt-3">Put slug on the wall</h1>
       <p className="ed-standfirst mt-5 max-w-[62ch]">The board plays one scene at a time on a screen across the room and keeps itself current. Nobody needs to touch it. Choose how it runs below, then open it on the screen you want to use.</p>
+      <p className="mt-4"><a href="/ambient" className="ed-tap ed-kicker">Open the board with the defaults →</a></p>
     </header>
     <section aria-labelledby="setup-form" className="ed-wrap mt-10">
       <RuleBox className="p-5">

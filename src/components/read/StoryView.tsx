@@ -70,7 +70,7 @@ export function StoryView({ s }: { s: StoryPageData }) {
       headline: <>
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={coverObject(s)}
           kicker={<><span>{s.kicker}</span>{s.basis && <> <BasisWord b={s.basis} /></>}</>}
-          left={<>{s.number != null && <span className="cover-num block">{numberLabel(s.number)}</span>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Corrected {day(s.correctedAt)}</span>}</>}
+          left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Corrected {day(s.correctedAt)}</span>}</>}
           right={<>{s.sectorName && <span className="block">{s.sectorName}</span>}<span className="block">{s.typeName}</span><span className="block ed-caption">{JOB[s.job]}</span>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
       </>,

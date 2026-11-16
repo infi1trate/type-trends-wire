@@ -22,6 +22,7 @@ import { HEAD_SCRIPT } from "../lib/motion";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_DESCRIPTION, BRAND_LINE, BRAND_NAME } from "@/lib/brand";
 import { say } from "@/lib/voice";
+import { FOCUS_TARGETS, shouldMoveFocus } from "@/lib/route-focus";
 import { NotFoundLookup } from "@/components/read/NotFoundLookup";
 
 function ErrorPage({ code, title, line, children }: { code: string; title: string; line: string; children: ReactNode }) {
@@ -116,6 +117,21 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** After a client-side page change, focus goes to the new page's h1 (see route-focus.ts). */
+function RouteFocus() {
+  const router = useRouter();
+  useEffect(() => router.subscribe("onResolved", e => {
+    if (!shouldMoveFocus(e.fromLocation, { pathname: e.toLocation.pathname, hash: e.toLocation.hash })) return;
+    window.requestAnimationFrame(() => {
+      const el = FOCUS_TARGETS.map(s => document.querySelector<HTMLElement>(s)).find(Boolean);
+      if (!el) return;
+      if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+      el.focus({ preventScroll: true });
+    });
+  }), [router]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -123,6 +139,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <RouteFocus />
     </QueryClientProvider>
   );
 }

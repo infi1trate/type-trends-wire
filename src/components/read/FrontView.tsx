@@ -5,6 +5,7 @@ import { line as voiced } from "@/lib/voice";
 // the sector strip, editions and data stories as rule boxes. Nothing else is filled with colour.
 import { useCallback, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { BRAND_NAME } from "@/lib/brand";
 import type { FrontModel, FrontUpdates } from "@/lib/front/front";
 import { FORMAT_LABEL, FORMAT_NOTE, FORMATS, frontSearch, type FormatFilter } from "@/lib/front/formats";
 import { numberLabel } from "@/lib/stories/numbers";
@@ -121,6 +122,7 @@ export function FrontView({ m }: { m: FrontModel }) {
     <FrontTicker items={m.ticker} />
     <FiltersScope>
     <div className="ed-wrap d-stack front-stack mt-4">
+      <h1 className="sr-only">{BRAND_NAME}: the live front page</h1>
       <DateState m={m} />
       {m.lead ? <Lead m={m} now={now} /> : m.format === "all" && <p className="ed-standfirst">{voiced("read.frontView.3")}</p>}
       {moving && <Moving moving={moving} />}

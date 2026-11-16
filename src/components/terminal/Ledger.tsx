@@ -10,7 +10,7 @@ import { BasisChip } from "./SignalBits";
 export function LedgerOutput() {
   const { data, isError } = useQuery(ledgerQuery());
   if (isError) return <p role="alert" className="text-g500">{voiced("terminal.ledger.1")}</p>;
-  if (!data) return <p role="status" role="status">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p>;
+  if (!data) return <p role="status">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p>;
   const s = data.summary;
   return <div className="min-w-0 space-y-3">
     <p>{s.headline}</p>

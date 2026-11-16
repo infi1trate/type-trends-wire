@@ -95,7 +95,7 @@ describe("gallery model", () => {
     const boxes: Box[] = Array.from({ length: 200 }, (_, k) => ["t", 0, k * 10, 100, 20 + (k % 5)]);
     const fr: Frame = { id: "1", at: "2026-11-16", source: "live", w: 1280, h: 4000, bg: null, ink: null, accent: null, tones: [], boxes, crop: null, archiveUrl: null };
     const t = tileFrame(fr);
-    expect(TILE_BOXES).toBe(40);
+    expect(TILE_BOXES).toBe(32);
     expect(t.boxes.length).toBeLessThanOrEqual(40);
     expect(t.h).toBe(900);
     expect(t.boxes.every(b => b[2] < 900 && b[2] + b[4] <= 900)).toBe(true);

@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import { getLaunch } from "./launch/launch.functions";
 import { getWatchView, getWatchOptions, getAudit } from "./agency.functions";
 import { parseAuditSites } from "./agency/audit";
 import type { WatchRange } from "./agency/watch-feed";
@@ -323,6 +324,7 @@ export type RebrandFilters = { sector?: string; source?: "live" | "archive"; yea
 export const rebrandsQuery = (f: RebrandFilters) => queryOptions({ queryKey: ["rebrands", f.sector ?? "all", f.source ?? "all", f.year ?? 0, f.limit], staleTime: 10 * 60_000, queryFn: () => getRebrands({ data: { ...(f.sector && f.sector !== "all" ? { sector: f.sector } : {}), ...(f.source ? { source: f.source } : {}), ...(f.year ? { year: f.year } : {}), offset: 0, limit: f.limit } }) });
 export const vibeQuery = () => queryOptions({ queryKey: ["vibe-map"], staleTime: 10 * 60_000, queryFn: () => getVibeMap() });
 export const chartCardQuery = (week: string | null) => queryOptions({ queryKey: ["chart-card", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getChartCard({ data: { week } }) });
+export const launchQuery = () => queryOptions({ queryKey: ["launch"], staleTime: 60_000, queryFn: () => getLaunch() });
 export const healthQuery = () => queryOptions({ queryKey: ["health"], staleTime: 60_000, refetchInterval: 120_000, queryFn: () => getHealth() });
 
 /** TODAY inputs: the latest real forecast run and its week-over-week partner (scope all; none when closer than MIN_RUN_GAP_DAYS), recent alerts, wire freshness, latest live library change and crawl. */

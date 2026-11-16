@@ -128,8 +128,8 @@ describe("fonts", () => {
   it("the utility face sets only code-like values on Read pages: .ed-code, the data role and the terminal", () => {
     const css = readFileSync("src/styles.css", "utf8");
     const mono = [...css.matchAll(/([^{}]+)\{([^{}]*var\(--tk-font-mono\)[^{}]*)\}/g)].map(m => m[1]!.trim().split("\n").pop()!.trim());
-    // Tailwind's font-mono utility, code-like values, and printed link URLs.
-    expect(mono.sort()).toEqual([".digest .ed-code, .tk-code", ".digest a[data-print]::after", "@theme inline"]);
+    // Tailwind's font-mono utility, code-like values, and printed addresses (link URLs, the sheet foot and the footnote list).
+    expect(mono.sort()).toEqual([".digest .ed-code, .tk-code", ".digest .print-foot", ".digest .print-notes", ".digest a[data-print]::after", "@theme inline"]);
     expect(css).not.toMatch(/\.ed-(h1|h2|h3|h4|cover|mast|kicker|standfirst|navtext)[^{]*\{[^}]*--tk-font-mono/);
   });
 });

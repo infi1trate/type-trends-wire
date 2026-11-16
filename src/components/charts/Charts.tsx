@@ -11,7 +11,7 @@ import { Receipt } from "@/components/read/StoryCard";
 import { GUMBALLS, type GumballName } from "@/lib/theme/contract";
 
 export type Cell = string | number;
-export type FrameProps = { title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
+export type FrameProps = { /** Heading level of the title: 3 under a section heading (default), 2 when the chart sits directly under the page h1. */ level?: 2 | 3; title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
 type Frame = FrameProps & { isEmpty: boolean; table: { columns: string[]; rows: Cell[][] }; children: (ids: { title: string; note: string }) => ReactNode };
 export const STAGE_FILL = (stage: string | null | undefined) => (stage ? `var(--tk-stage-${stage.toLowerCase()})` : "var(--tk-stage-unstaged)");
 /** Which gumball a stage's point uses: Emerging pink, Rising green, Peaking red, Fading ink, Steady and unstaged newsprint. */
@@ -29,10 +29,10 @@ export function Gumball({ id, ball, cx, cy, r }: { id: string; ball: GumballName
 }
 const ballId = (raw: string) => `gb${raw.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-export function ChartFrame({ title, note, source, receipt, empty = voiced("chart.empty"), isEmpty, table, children }: Frame) {
-  const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` };
+export function ChartFrame({ level = 3, title, note, source, receipt, empty = voiced("chart.empty"), isEmpty, table, children }: Frame) {
+  const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` }, H = level === 2 ? "h2" : "h3";
   return <figure className="tk-chart min-w-0" aria-labelledby={ids.title} data-chart="">
-    <h3 id={ids.title} className="tk-t-h3">{title}</h3>
+    <H id={ids.title} className="tk-t-h3">{title}</H>
     <p id={ids.note} className="tk-t-small tk-c-secondary mt-1">{note}</p>
     {isEmpty ? <p className="tk-t-data tk-chart-empty mt-3" role="status" data-chart-empty="">{empty}</p> : <>
       <div className="mt-3">{children(ids)}</div>
