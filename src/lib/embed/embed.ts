@@ -1,6 +1,6 @@
 // Embeddable signal widget: pure model + self-contained HTML (no scripts, no cookies; the theme's font link is the only external asset).
 // Framing is allowed only here (CSP frame-ancestors *); every other page keeps its current framing rules.
-import { chartPrims, renderPrimsSvg, LIGHT_PALETTE, cardText, type CardModel } from "../chart/card";
+import { chartPrims, renderPrimsSvg, LIGHT_PALETTE, PAPER_CHART, VIBES_CHART, cardText, type CardModel } from "../chart/card";
 import { cardModel, usableSeries, MIN_SERIES, type ForecastLike } from "../chart/model";
 import { BASIS_WORD, basis, canonical, label, scopeText, stageName, type Basis, type Dimension, type StageName } from "../labels";
 import { soWhat } from "../digest/copy";
@@ -14,8 +14,9 @@ export const EMBED_ASPECT = { w: 4, h: 3 } as const;
 export const EMBED_MIN_W = 280, EMBED_MAX_W = 800;
 export const EMBED_CACHE = "public, max-age=3600, s-maxage=86400";
 export const EMBED_404_CACHE = "public, max-age=300";
-export type Theme = "light" | "dark";
-export const parseTheme = (v: string | null | undefined): Theme => (v === "light" ? "light" : "dark");
+/** Vibes is the default (README "Modes": pink page, yellow card, ink plate); ?theme=light and ?theme=dark keep working for hosts. */
+export type Theme = "vibes" | "light" | "dark";
+export const parseTheme = (v: string | null | undefined): Theme => (v === "light" ? "light" : v === "dark" ? "dark" : "vibes");
 export const embedHeaders = (cache = EMBED_CACHE): Record<string, string> => ({
   "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": "frame-ancestors *", "Cache-Control": cache, "X-Robots-Tag": "noindex", "X-Content-Type-Options": "nosniff",
 });
@@ -42,12 +43,17 @@ const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
 const VIEWS = [{ cls: "v-s", w: 520, h: 170 }, { cls: "v-m", w: 800, h: 330 }, { cls: "v-l", w: 1100, h: 560 }] as const;
 const FONT = activeTheme.shared.fonts.base, IMG = activeTheme.shared.image, F = activeTheme.shared.fonts;
 /** The drawn mark in an embed's footer: micro cut, on its slab when the embed is dark. */
-const mark = (t: Theme) => markSvg(16, t === "dark" ? "ink" : "paper");
+const mark = (t: Theme) => markSvg(16, t === "dark" ? "ink" : t === "vibes" ? "pink" : "paper");
 /** Embed colours come from the theme's image palettes (embeds are standalone HTML). */
 const THEMES: Record<Theme, { bg: string; ink: string; muted: string; rule: string }> = {
+  vibes: { bg: IMG.vibes.bg, ink: IMG.vibes.ink, muted: IMG.vibes.ink, rule: IMG.vibes.rule },
   dark: { bg: IMG.dark.bg, ink: IMG.dark.ink, muted: IMG.dark.secondary, rule: IMG.dark.rule },
   light: { bg: IMG.light.bg, ink: IMG.light.ink, muted: IMG.light.muted, rule: IMG.light.rule },
 };
+/** Vibes only: the title on an ink plate, the chart on a yellow card with an ink edge and a hard shadow. */
+const vibesCss = () => { const V = IMG.vibes; return `
+h1{background:${V.plate};color:${V.plateInk};padding:2px 8px}h1 .dim{color:${V.bg}}
+figure{background:${V.card};border:3px solid ${V.edge};box-shadow:6px 6px 0 ${V.edge};padding:4px;margin:0 6px 6px 0}`; };
 const css = (t: Theme) => { const c = THEMES[t]; return `*{box-sizing:border-box;margin:0}html,body{height:100%}
 body{background:${c.bg};color:${c.ink};font:400 13px/18px ${F.text};font-variant-numeric:tabular-nums;min-width:${EMBED_MIN_W}px;overflow:hidden}
 main{height:100vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:6px;padding:10px 12px 0}
@@ -65,7 +71,7 @@ a:focus-visible{outline:3px solid ${c.ink};outline-offset:2px}
 .v-s{display:block!important}
 @media (min-width:420px){.v-s{display:none!important}.v-m{display:block!important}body{font-size:15px;line-height:21px}h1{font-size:24px;line-height:26px}}
 @media (min-width:620px){.v-m{display:none!important}.v-l{display:block!important}main{padding:16px 20px 0;gap:10px}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`; };
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}${t === "vibes" ? vibesCss() : ""}`; };
 const shell = (theme: Theme, title: string, label: string, body: string) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>${esc(title)}</title><link rel="preconnect" href="${activeTheme.shared.fonts.preconnect[0]}"><link rel="preconnect" href="${activeTheme.shared.fonts.preconnect[1]}" crossorigin><link rel="stylesheet" href="${FONT}">
@@ -73,7 +79,8 @@ const shell = (theme: Theme, title: string, label: string, body: string) => `<!d
 
 export function renderEmbed(m: EmbedModel, theme: Theme): string {
   const stage = m.stage ?? "Not staged yet", label = `${m.title}, ${BASIS_WORD[m.basis]}, ${m.scope}: ${stage}. ${m.call}${m.soWhat ? ` ${m.soWhat}` : ""} Data through ${m.dataThrough}.`;
-  const svgs = VIEWS.map(v => renderPrimsSvg(v.w, v.h, chartPrims(m.chart, 0, 4, v.w, v.h - 4), { label: `${m.name}: share of tracked homepages by quarter, with the forecast band`, className: v.cls, ...(theme === "light" ? { palette: LIGHT_PALETTE } : {}) })).join("");
+  const pal = theme === "vibes" ? VIBES_CHART : theme === "light" ? PAPER_CHART : undefined;
+  const svgs = VIEWS.map(v => renderPrimsSvg(v.w, v.h, chartPrims(m.chart, 0, 4, v.w, v.h - 4, pal), { label: `${m.name}: share of tracked homepages by quarter, with the forecast band`, className: v.cls, ...(theme === "light" && !pal ? { palette: LIGHT_PALETTE } : {}) })).join("");
   return shell(theme, `${m.title} — ${BRAND_NAME}`, label, `<div class="head"><h1>${esc(m.name)} <span class="dim">[${m.dimension}]</span></h1><span class="badges"><span class="badge basis" title="${m.basis === "ai" ? "AI estimate: read by an AI tagger from homepage captures" : "Measured from page code and rendered styles"}">${BASIS_WORD[m.basis]}</span><span class="badge" title="Stage">${esc(stage)}</span></span></div>
 <figure>${svgs}</figure>
 <p class="call">${esc(m.call)} <span class="scope">· ${esc(m.scope)}</span></p>

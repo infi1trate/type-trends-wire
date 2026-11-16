@@ -69,7 +69,23 @@ describe("brand pages: values equal the tokens", () => {
     const m = await renderInRouter(() => <BrandMotion />, "/brand/motion");
     for (const k of ["tap", "move", "wipe", "arrive", "stagger"] as const) expect(text(m.container.querySelector(`[data-motion="${k}"]`))).toBe(K.motion[k]);
     expect(m.container.querySelectorAll("[data-pattern]").length).toBe(5);
-    expect(m.container.querySelectorAll('[data-slot="part-2"]').length).toBe(5);
+    // Part 2: every slot is the real thing: a live demo with a Raised replay button, and no "arrives in part 2" left.
+    expect(m.container.querySelectorAll('[data-slot="part-2"]').length).toBe(0);
+    expect(m.container.querySelectorAll('[data-pattern] [data-demo] > p > [data-container="raised"]').length).toBe(5);
+    expect(m.container.textContent).not.toMatch(/part 2/i);
+  });
+  it("illustration: each of the three styles is drawn live, one per screen, with a replay button", async () => {
+    const { BrandIllustration } = await import("./BrandPages");
+    const r = await renderInRouter(() => <BrandIllustration />, "/brand/illustration");
+    const styles = [...r.container.querySelectorAll("[data-style]")];
+    expect(styles.map(x => x.getAttribute("data-style"))).toEqual(["cut", "trail", "soft"]);
+    for (const st of styles) {
+      expect(st.querySelectorAll("[data-illustration]").length).toBe(1);
+      expect(st.querySelector('[data-container="raised"]')).not.toBeNull();
+      expect(st.closest("section")!.className).toContain("brand-screen-tall");
+    }
+    expect(r.container.querySelectorAll("[data-slug-filters]").length).toBe(1);
+    expect(r.container.textContent).not.toMatch(/part 2/i);
   });
   it("containers: the eight, and at most one Plate outside specimen frames on the overview", async () => {
     const c = await renderInRouter(() => <BrandContainers />, "/brand/containers");

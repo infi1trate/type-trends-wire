@@ -4,6 +4,7 @@
 // points as gumballs (a radial gradient from the token's light to dark with a hard ink offset), lines as a paper-and-ink double
 // stroke with the colour on top. Accessible names, table fallbacks and keyboard focus are unchanged.
 import { useId, type ReactNode } from "react";
+import { useGrow } from "@/components/brand/Motion";
 import { arcPath, arcs, extent, linear, point, ticks } from "@/lib/charts/scale";
 import { Receipt } from "@/components/read/StoryCard";
 import { GUMBALLS, type GumballName } from "@/lib/theme/contract";
@@ -107,10 +108,11 @@ export function LineChart({ series, y, ...frame }: FrameProps & { series: LineSe
 
 export type Bar = { id: string; label: string; value: number; stage?: string | null };
 export function BarChart({ bars, format, valueLabel, ...frame }: FrameProps & { bars: Bar[]; format: (v: number) => string; valueLabel: string }) {
+  const [growRef, grow] = useGrow<SVGSVGElement>();
   const row = 28, m = { l: 150, r: 52, t: 6, b: 6 }, H = m.t + m.b + bars.length * row;
   const sx = linear([0, Math.max(...bars.map(b => b.value), 0.0001)], [m.l, W - m.r]);
   return <ChartFrame {...frame} isEmpty={!bars.length} table={{ columns: ["Signal", valueLabel, "Stage"], rows: bars.map(b => [b.label, format(b.value), b.stage ?? "Not staged"]) }}>
-    {ids => <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
+    {ids => <svg ref={growRef} viewBox={`0 0 ${W} ${H}`} className={`tk-svg ${grow}`.trim()} role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
       {bars.map((b, i) => { const y = m.t + i * row; return <Mark key={b.id} label={`${b.label}: ${format(b.value)}${b.stage ? `, ${b.stage}` : ""}`} x={sx(b.value)} y={y}>
         <text x={m.l - 8} y={y + 18} textAnchor="end" className="tk-svg-text" aria-hidden="true">{b.label.length > 20 ? `${b.label.slice(0, 19)}…` : b.label}</text>
         <rect x={m.l} y={y + 6} width={Math.max(1, sx(b.value) - m.l)} height={row - 12} style={{ fill: STAGE_FILL(b.stage) }} className="tk-svg-bar" />

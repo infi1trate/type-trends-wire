@@ -32,7 +32,7 @@ export function useFirstView<T extends Element>(duration: number, threshold = 0.
 
 /** The mark in the shell. On the first page of a session the head script sets html[data-arrive] and CSS lifts the letters in. */
 export function ArrivingMark({ height }: { height: number }) {
-  return <span className="m-arrive inline-flex" data-motion="arrive"><Wordmark height={height} ground="ink" decorative letters /></span>;
+  return <span className="m-arrive inline-flex" data-motion-pattern="arrive"><Wordmark height={height} ground="ink" decorative letters /></span>;
 }
 
 /** Count: a figure that rolls to its value the first time it enters view. The text is the final value until then. */
@@ -45,7 +45,7 @@ export function Count({ text, className = "" }: { text: string; className?: stri
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [on, text]);
-  return <span ref={ref} className={className} data-motion="count"><span className="sr-only">{text}</span><span aria-hidden="true">{shown}</span></span>;
+  return <span ref={ref} className={className} data-motion-pattern="count"><span className="sr-only">{text}</span><span aria-hidden="true">{shown}</span></span>;
 }
 
 /** A bar that grows from its start the first time it enters view (transform only). */

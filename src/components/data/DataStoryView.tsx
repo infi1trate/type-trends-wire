@@ -5,23 +5,32 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { flushSync } from "react-dom";
 import { Link, useHydrated } from "@tanstack/react-router";
 import type { Caption, StoryModel } from "@/lib/data-stories/types";
-import { capText, isNum, dayText } from "@/lib/data-stories/text";
+import { capText, isNum, dayText, pctText } from "@/lib/data-stories/text";
 import { announcement, applyAction, clampStep, counter, keyAction } from "@/lib/data-stories/stepper";
 import { DigestShell } from "@/components/digest/Editorial";
 import { ReadFooter } from "@/components/read/Bits";
 import { Receipt } from "@/components/read/StoryCard";
 import { FigureView } from "./Figures";
+import { Raised } from "@/components/brand/Containers";
+import { FiltersScope, Trail } from "@/components/brand/Illustration";
+import { coverTrail, type CoverTrail } from "@/lib/data-stories/cover";
 
 export function CaptionText({ c }: { c: Caption }) {
   return <>{c.map((s, k) => (typeof s === "string" ? <span key={k}>{s}</span> : <Receipt key={k} href={s.href} className="underline decoration-1 underline-offset-2" data-num={isNum(s) ? "" : undefined}>{isNum(s) ? s.n : s.r}</Receipt>))}</>;
 }
-export function StoryHead({ s, kicker }: { s: Pick<StoryModel, "number" | "question" | "deck" | "template" | "dataThrough">; kicker?: ReactNode }) {
-  return <header className="ed-wrap pt-8 md:pt-12">
+export function StoryHead({ s, kicker, trail }: { s: Pick<StoryModel, "number" | "question" | "deck" | "template" | "dataThrough">; kicker?: ReactNode; trail?: CoverTrail | null }) {
+  const text = <>
     <p className="ed-kicker flex flex-wrap gap-x-3"><Link to="/data" className="ed-tap no-underline">Data story {s.number}</Link><span>{s.template}</span>{kicker}</p>
     <h1 className="ed-h1 mt-3 max-w-[22ch]">{s.question}</h1>
     <p className="ed-standfirst mt-4 max-w-[60ch]">{s.deck}</p>
     {s.dataThrough && <p className="ed-data ed-muted mt-3">Data through <time dateTime={s.dataThrough}>{dayText(s.dataThrough)}</time></p>}
-  </header>;
+  </>;
+  if (!trail) return <header className="ed-wrap pt-8 md:pt-12">{text}</header>;
+  // The cover: the story's own series as the trail, beside the question (one illustration in the viewport).
+  return <FiltersScope><header className="ed-wrap grid grid-cols-1 gap-8 pt-8 md:pt-12 lg:grid-cols-12" data-cover="data-story">
+    <div className="lg:col-span-7">{text}</div>
+    <div className="lg:col-span-5 lg:self-end"><Trail points={trail.points} label={trail.label} format={trail.unit === "share" ? pctText : String} w={520} h={300} seed={s.number} /></div>
+  </header></FiltersScope>;
 }
 export function StoryEnding({ s }: { s: StoryModel }) {
   return <footer className="ed-wrap mt-16" aria-labelledby="ds-basis">
@@ -78,22 +87,22 @@ export function Stepper({ s, step, onStep }: { s: StoryModel; step: number; onSt
     const io = new IntersectionObserver(es => { if (Date.now() < quiet.current) return; const hit = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (hit) { const j = Number((hit.target as HTMLElement).dataset["step"]) - 1; if (Number.isFinite(j)) onStep(clampStep(j, n)); } }, { rootMargin: window.innerWidth >= 1024 ? "-45% 0px -45% 0px" : "-78% 0px -12% 0px", threshold: [0, 0.5, 1] });
     blocks.current.forEach(b => b && io.observe(b)); return () => io.disconnect();
   }, [n, onStep]);
-  return <div ref={root} className="ed-wrap mt-8 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-10" data-stepper="">
-    <div className="sticky top-0 z-10 self-start border-b py-3 lg:top-4 lg:border-b-0" style={{ background: "var(--tk-surface-page)", borderColor: "var(--tk-rule-hairline)" }}>
+  return <div ref={root} className="ed-wrap mt-8 lg:grid lg:grid-cols-12 lg:gap-10" data-stepper="" data-composition="data-story">
+    <div className="sticky top-0 z-10 self-start border-b py-3 lg:col-span-7 lg:top-4 lg:border-b-0" data-stepper-picture="" style={{ background: "var(--tk-surface-page)", borderColor: "var(--tk-rule-hairline)" }}>
       <div className="max-h-[46vh] overflow-y-auto lg:max-h-none lg:overflow-visible">{fig && <FigureView fig={fig} view={cur.view} live />}</div>
       <div className="no-print mt-3 flex items-center gap-2" role="group" aria-label="Step through the story">
-        <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" onClick={() => go(k - 1)} disabled={k === 0} aria-label="Previous step">← Previous</button>
+        <Raised className="tk-t-kicker" onClick={() => go(k - 1)} disabled={k === 0} aria-label="Previous step">← Previous</Raised>
         <span className="tk-t-data min-w-[8ch] text-center" data-counter="">{counter(k, n)}</span>
-        <button type="button" className="tk-btn tk-t-kicker" data-variant="primary" onClick={() => go(k + 1)} disabled={k >= n - 1} aria-label="Next step">Next →</button>
+        <Raised className="tk-t-kicker" onClick={() => go(k + 1)} disabled={k >= n - 1} aria-label="Next step">Next →</Raised>
         <span className="tk-t-caption tk-c-muted ml-auto hidden md:inline">← → or J K to step · Home / End</span>
       </div>
       <p className="ed-small mt-2 lg:hidden" aria-hidden="true" data-current-caption=""><CaptionText c={cur.caption} /></p>
       <p className="sr-only" aria-live="polite" aria-atomic="true" data-announce="">{said}</p>
     </div>
-    <ol className="mt-4 lg:mt-0" aria-label="Steps">{s.steps.map((st, j) => <li key={st.id} ref={el => { blocks.current[j] = el; }} data-step={j + 1} aria-current={j === k ? "step" : undefined}
+    <ol className="mt-4 lg:col-span-5 lg:mt-0" aria-label="Steps">{s.steps.map((st, j) => <li key={st.id} ref={el => { blocks.current[j] = el; }} data-step={j + 1} aria-current={j === k ? "step" : undefined}
       className="flex min-h-[40vh] items-center py-6 first:pt-2 last:min-h-[30vh] lg:min-h-[55vh] lg:last:min-h-[40vh]">
-      <p className={`ed-body max-w-[46ch] border-l-2 pl-4 transition-colors duration-200 motion-reduce:transition-none ${j === k ? "" : "ed-muted"}`} style={{ borderColor: j === k ? "var(--tk-accent-1)" : "var(--tk-rule-hairline)" }}>
-        <span className="ed-kicker block">{counter(j, n)}</span><CaptionText c={st.caption} />
+      <p data-container={j === k ? "card" : "sheet"} className={`${j === k ? "c-card" : "c-sheet step-card-rest"} ed-body w-full max-w-[46ch] transition-colors duration-200 motion-reduce:transition-none`}>
+        <span className="step-num block" aria-hidden="true">{String(j + 1).padStart(2, "0")}</span><span className="ed-kicker block">{counter(j, n)}</span><CaptionText c={st.caption} />
       </p>
     </li>)}</ol>
   </div>;
@@ -113,7 +122,7 @@ export function StoryBody({ s, step, onStep }: { s: StoryModel; step: number; on
 export function DataStoryView({ s, step, onStep }: { s: StoryModel; step: number; onStep: (k: number) => void }) {
   return <DigestShell label="Data stories" section="signals">
     <article className="digest-data pb-8" data-story={s.slug}>
-      <StoryHead s={s} />
+      <StoryHead s={s} trail={coverTrail(s)} />
       <StoryBody s={s} step={step} onStep={onStep} />
       <StoryEnding s={s} />
     </article>

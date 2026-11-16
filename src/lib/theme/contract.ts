@@ -55,6 +55,9 @@ export type Palette = {
 export type ModeTokens = Palette & { type: Record<TypeRoleName, TypeRole> };
 /** Colours for images rendered outside the page (PNG cards, embeds, share images): they cannot read CSS variables. */
 export type ImagePalette = { bg: string; ink: string; muted: string; secondary: string; rule: string; accent: string };
+/** Share images and embeds in vibes mode (README "Modes": pink page, yellow card, ink plate): the page palette plus the card, the
+ * plate and its type, the ink edge and the gumball for measured points. */
+export type ImageVibes = ImagePalette & { card: string; plate: string; plateInk: string; edge: string; ball: Gumball };
 export type Shared = {
   fonts: { mono: string; display: string; text: string; /** Stylesheets that load the faces; the only place font URLs live. */ base: string; editorial: string; preconnect: readonly string[] };
   root: { size: string; leading: string };
@@ -73,7 +76,7 @@ export type Shared = {
   /** Square chrome: when true every corner is square and no element casts a shadow, whatever a component asks for. */
   square: boolean;
   print: { paper: string; ink: string; muted: string };
-  image: { dark: ImagePalette; light: ImagePalette };
+  image: { dark: ImagePalette; light: ImagePalette; vibes: ImageVibes };
 };
 export type Theme = { name: string; label: string; shared: Shared; modes: Record<Mode, ModeTokens> };
 

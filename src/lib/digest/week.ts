@@ -34,3 +34,11 @@ export function issueNumber(week: string): number | null {
   return Math.round((+b - +a) / (7 * DAY)) + 1;
 }
 export const isIssueWeek = (week: string) => issueNumber(week) !== null;
+
+/** An issue carries the "New" sticker for the seven days after its week closes (the week it is the current edition). */
+export const NEW_FOR_MS = 7 * DAY;
+export function isNewIssue(week: string, now: number): boolean {
+  const r = weekRange(week); if (!r) return false;
+  const end = Date.parse(r.endIso);
+  return now >= end && now < end + NEW_FOR_MS;
+}

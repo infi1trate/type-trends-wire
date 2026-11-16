@@ -11,7 +11,7 @@ import { localWatches } from "@/lib/agency/watch-local";
 import { SITE_URL } from "@/lib/site";
 import { BasisWord, SectionHead, SiteCard, StageWord, Dim, pr } from "@/components/digest/Editorial";
 import { basis } from "@/lib/labels";
-import { AgencyShell, Btn, CopyField, day } from "./Shell";
+import { AgencyShell, Btn, CopyField, FORM_BOX, day } from "./Shell";
 import { TargetsInput, splitList } from "./Targets";
 import { ClassifiedReport } from "./Report";
 
@@ -114,7 +114,7 @@ export function WatchPage({ v, k }: { v: WatchView; k?: string | undefined }) {
 
     {editable && <section className="ed-wrap no-print mt-14" aria-labelledby="w-edit">
       <SectionHead n="05" title="Edit" id="w-edit" kicker="Up to 25 sites and 25 signals. Changes apply for everyone with the view link." />
-      <div className="grid max-w-3xl gap-6">
+      <div data-container="rulebox" className={FORM_BOX}>
         <form className="flex flex-col gap-2" onSubmit={e => { e.preventDefault(); const xs = splitList(add); if (xs.length) void run({ op: "add", sites: xs.filter(x => !x.includes(":")), traits: xs.filter(x => x.includes(":")), request_render: render }); }}>
           <TargetsInput id="w-add" label="Add sites or signals" value={add} onChange={setAdd} hint="Domains (linear.app) or signal keys (css:subgrid), separated by commas." />
           <label className="ed-small flex min-h-[44px] items-center gap-2"><input type="checkbox" checked={render} onChange={e => setRender(e.target.checked)} className="h-5 w-5" /> Not tracked yet? Request a render and add it once tracked</label>

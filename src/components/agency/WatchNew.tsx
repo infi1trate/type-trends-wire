@@ -6,7 +6,7 @@ import { createWatchlist } from "@/lib/agency.functions";
 import { localWatches } from "@/lib/agency/watch-local";
 import type { Classified } from "@/lib/agency/watch";
 import { SectionHead } from "@/components/digest/Editorial";
-import { AgencyShell, Btn, CopyField } from "./Shell";
+import { AgencyShell, Btn, CopyField, FORM_BOX } from "./Shell";
 import { TargetsInput, splitList } from "./Targets";
 import { ClassifiedReport } from "./Report";
 
@@ -34,7 +34,7 @@ export function WatchNew({ add, name: initialName }: { add?: string | undefined;
       <p className="ed-standfirst mt-4">Pick up to 25 sites and 25 signals. You get a view link to share, a private edit link and an RSS feed of every confirmed change. No account needed.</p>
     </header>
     <section className="ed-wrap" aria-labelledby="wn-form">
-      {!made ? <form className="grid max-w-3xl gap-6" onSubmit={e => { e.preventDefault(); void submit(); }}>
+      {!made ? <form data-container="rulebox" className={FORM_BOX} onSubmit={e => { e.preventDefault(); void submit(); }}>
         <SectionHead n="01" title="New watchlist" id="wn-form" />
         <div className="flex flex-col gap-1"><label htmlFor="wn-name" className="ed-kicker">Name</label>
           <input id="wn-name" required maxLength={80} value={name} onChange={e => setName(e.target.value)} placeholder="Acme — competitors" className="ed-data min-h-[44px] border border-ed-ink bg-transparent px-3" /></div>

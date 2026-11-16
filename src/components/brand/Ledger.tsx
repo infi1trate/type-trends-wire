@@ -19,13 +19,15 @@ export type LedgerRow = {
   id?: string;
   /** A plain link (a file download), not an in-app navigation. */
   plain?: boolean;
+  /** A row that has just arrived (the live column): it drops in and settles once. */
+  drop?: boolean;
 };
 function LinkOf({ r, children }: { r: LedgerRow; children: ReactNode }) {
   return r.plain ? <a href={r.href} className="ledger-link">{children}</a> : <Receipt href={r.href} className="ledger-link">{children}</Receipt>;
 }
 export function LedgerItem({ r, small }: { r: LedgerRow; small?: boolean }) {
   const [first, ...more] = r.facts ?? [];
-  return <li className="ledger-row" id={r.id} data-ledger-row="">
+  return <li className="ledger-row" id={r.id} data-ledger-row="" data-drop={r.drop ? "" : undefined}>
     <LinkOf r={r}>
       <span className={`ledger-num ${small ? "ledger-num-sm" : ""}`.trim()} data-ledger-number="">{r.number ?? ""}</span>
       <span className="ledger-title">{r.tags && r.tags.length > 0 && <span className="mr-2 inline-flex gap-1 align-middle max-md:hidden">{r.tags.map(t => <span key={t} className="ledger-tag">{t}</span>)}</span>}{r.title}{r.line && <span className="ledger-line">{r.line}</span>}</span>

@@ -10,6 +10,7 @@ import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/
 import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { ReadFooter } from "./Bits";
+import { Ledger } from "@/components/brand/Ledger";
 import { useSectorLens } from "./lens";
 import { CropFallback, CropFigure } from "./Evidence";
 import { ILLUSTRATED_MIN } from "@/lib/crops";
@@ -57,8 +58,14 @@ export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
     <ObjectPage kind="pattern" id="ed-pattern" blocks={{
       headline: <div>
         <p className="ed-kicker">Pattern · {p.dimension}</p>
-        <h1 id="ed-pattern-title" className="ed-cover mt-3">{p.name}</h1>
-        <p className="ed-data mt-4 flex flex-wrap items-center gap-x-3 gap-y-2"><Dim d={p.dimension} /><BasisWord b={p.basis} /><StageWord stage={p.stage} />{p.share != null && <span>{pct(p.share, 1)} of tracked homepages</span>}<span>Momentum {p.momentum_index ?? "—"}{p.direction ? ` · ${p.direction}` : ""}</span><span title={p.confidence_reason}>Confidence {p.confidence}</span></p>
+        <h1 id="ed-pattern-title" className="ed-h1 mt-3">{p.name}</h1>
+        <p className="ed-data mt-3 flex flex-wrap items-center gap-x-3 gap-y-2"><Dim d={p.dimension} /><BasisWord b={p.basis} /><StageWord stage={p.stage} /></p>
+        <dl className="facts-row mt-4" data-facts-row="">
+          <div><dt>Share</dt><dd>{p.share != null ? `${pct(p.share, 1)}` : "—"}</dd></div>
+          <div><dt>Momentum</dt><dd>{p.momentum_index ?? "—"}{p.direction ? ` · ${p.direction}` : ""}</dd></div>
+          <div><dt>Confidence</dt><dd title={p.confidence_reason}>{p.confidence}</dd></div>
+          <div><dt>Brands</dt><dd>{p.total}</dd></div>
+        </dl>
         <p className="ed-data mt-4" data-testid="pattern-count">{p.countLine}{p.illustrated ? " · illustrated" : ""}</p>
         <p className="ed-standfirst mt-6">{p.total} {p.total === 1 ? "brand shows" : "brands show"} it{p.sector !== "all" ? ` in ${sectorName(p.sector)}` : ""} on their current homepage. Examples show each brand's {p.sectionName.toLowerCase()}.</p>
       </div>,
@@ -68,7 +75,7 @@ export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
           {p.sectors.map(s => <button key={s.sector} type="button" onClick={() => setSector(s.sector)} className={`ed-tap cursor-pointer ${p.sector === s.sector ? "font-semibold underline" : ""}`}>{s.name}<span className="ed-muted ml-1.5">{s.count}</span></button>)}
         </nav>
         {p.note && <p className="ed-caption mt-3">{p.note}</p>}
-        {p.examples.length ? <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-4">{p.examples.map(e => <Example key={e.domain} e={e} section={p.sectionName} />)}</div>
+        {p.examples.length ? <ul className="tile-wall mt-6" data-tile-wall="">{p.examples.map((e, i) => <li key={e.domain} className={i === 0 ? "tile-lg" : "tile-sm"}><Example e={e} section={p.sectionName} /></li>)}</ul>
           : <p className="ed-body mt-6">No brand in {sectorName(p.sector)} shows it yet.</p>}
         {p.total > p.examples.length && <p className="ed-caption mt-4">Showing {p.examples.length} of {p.total}, brands with captures first, then latest measurement.</p>}
       </>,
@@ -76,7 +83,7 @@ export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
       related: <>
         <BlockPart title="The signal behind it"><p className="ed-data flex flex-wrap gap-x-6"><Link to="/signals/$key" params={{ key: p.key }} className="ed-tap" {...pr(p.signalHref)}>{p.name}: chart, evidence and calls →</Link><AppLink href={p.whoUses} className="ed-tap">Who uses this well ⇄</AppLink></p></BlockPart>
         <BlockPart title="Stories naming it"><RelatedStories stories={p.stories ?? []} empty="No story has named this pattern yet." /></BlockPart>
-        {p.related.length > 0 && <BlockPart title="Related patterns"><ul className="ed-data flex flex-wrap gap-x-6 gap-y-1">{p.related.map(r => <li key={r.key}><Link to="/patterns/$key" params={{ key: r.key }} className="ed-tap">{r.name}</Link> <span className="ed-muted">{r.examples} brands</span></li>)}</ul></BlockPart>}
+        {p.related.length > 0 && <BlockPart title="Related patterns"><Ledger small label="Related patterns" rows={p.related.map(r => ({ key: r.key, href: `/patterns/${encodeURIComponent(r.key)}`, title: r.name, facts: [`${r.examples} brands`] }))} /></BlockPart>}
       </>,
     }} />
     <ReadFooter terminal={`/terminal?panel=patterns&trait=${encodeURIComponent(p.key)}`} />

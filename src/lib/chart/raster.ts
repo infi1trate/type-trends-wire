@@ -1,7 +1,8 @@
 // Pure-JS rasterizer + PNG encoder for the chart card (no native or WASM deps, so it runs on the hosted runtime).
 // Anti-aliased nonzero scanline fill (4 sub-rows, exact horizontal coverage) and pre-rendered IBM Plex Mono glyph masks.
-import { GLYPH_ADVANCE, GLYPH_ATLASES, GLYPH_CHARS } from "./glyphs.gen";
-import { markGeom, type Prim } from "./card";
+import { FACE_ATLASES, GLYPH_ATLASES, GLYPH_CHARS } from "./glyphs.gen";
+import { ballGeom, markGeom, type Prim } from "./card";
+import { advances, atlasKey, type Face, type TextSize, type TextWeight } from "./fonts";
 import { flattenPath } from "./path";
 import { MARK_INK } from "@/components/brand/mark";
 
@@ -14,7 +15,7 @@ function atlas(key: string) {
   let p = atlasCache.get(key);
   if (!p) {
     p = (async () => {
-      const src = GLYPH_ATLASES[key]; if (!src) throw new Error(`missing glyph atlas ${key}`);
+      const src = GLYPH_ATLASES[key] ?? FACE_ATLASES[key]; if (!src) throw new Error(`missing glyph atlas ${key}`);
       const raw = await inflate(b64(src)), view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength), map = new Map<string, Glyph>(); let o = 0;
       for (const ch of GLYPH_CHARS) { const w = view.getUint16(o, true), h = view.getUint16(o + 2, true), l = view.getInt16(o + 4, true), t = view.getInt16(o + 6, true); o += 8; map.set(ch, { w, h, l, t, data: raw.subarray(o, o + w * h) }); o += w * h; }
       return map;
@@ -70,13 +71,13 @@ class Canvas {
     if (!dash) for (const p of pts) polys.push(Array.from({ length: 12 }, (_, i) => [p[0] + r * Math.cos((i * Math.PI) / 6), p[1] + r * Math.sin((i * Math.PI) / 6)] as [number, number]));
     this.fill(polys, color, opacity);
   }
-  async text(x: number, y: number, text: string, size: number, weight: number, color: string, anchor?: "start" | "end") {
-    const g = await atlas(`${weight}-${size}`), c = rgbOf(color), adv = GLYPH_ADVANCE * size, chars = [...text];
-    let pen = anchor === "end" ? x - chars.length * adv : x;
-    for (const ch of chars) {
+  async text(x: number, y: number, text: string, size: TextSize, weight: TextWeight, color: string, anchor?: "start" | "end", face: Face = "mono") {
+    const g = await atlas(atlasKey(face, weight, size)), c = rgbOf(color), chars = [...text], adv = advances(text, size, weight, face);
+    let pen = anchor === "end" ? x - adv.reduce((a, b) => a + b, 0) : x;
+    for (const [k, ch] of chars.entries()) {
       const gl = g.get(ch) ?? g.get("?")!, ox = Math.round(pen) + gl.l, oy = Math.round(y) + gl.t;
       for (let j = 0; j < gl.h; j++) { const yy = oy + j; if (yy < 0 || yy >= this.h) continue; for (let i = 0; i < gl.w; i++) { const xx = ox + i, a = gl.data[j * gl.w + i]!; if (a && xx >= 0 && xx < this.w) this.blend(yy * this.w + xx, c, a / 255); } }
-      pen += adv;
+      pen += adv[k]!;
     }
   }
 }
@@ -97,7 +98,8 @@ export async function renderScenePng(scene: { w: number; h: number; prims: Prim[
     else if (p.k === "poly") cv.fill([p.pts], p.fill, p.opacity);
     else if (p.k === "line") cv.stroke(p.pts, p.width, p.stroke, p.dash, p.opacity ?? 1);
     else if (p.k === "mark") { const m = markGeom(p); if (m.slab) cv.fill([[[m.slab.x, m.slab.y], [m.slab.x + m.slab.w, m.slab.y], [m.slab.x + m.slab.w, m.slab.y + m.slab.h], [m.slab.x, m.slab.y + m.slab.h]]], m.slab.fill); cv.fill(flattenPath(m.d, m.s, m.x, m.y), MARK_INK, 1, true); }
-    else await cv.text(p.x, p.y, p.text, p.size, p.weight, p.fill, p.anchor);
+    else if (p.k === "ball") for (const g of ballGeom(p)) cv.fill([g.pts], g.fill);
+    else await cv.text(p.x, p.y, p.text, p.size, p.weight, p.fill, p.anchor, p.face);
   }
   return encodePng(cv.px, scene.w, scene.h);
 }

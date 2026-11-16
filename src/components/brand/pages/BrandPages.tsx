@@ -1,6 +1,6 @@
 // The brand pages (/brand/*): live pages built from the real tokens and components, not pictures of them. Quiet density: one idea
 // per screen, the left third holds a label, generous air above each title; the rules are short sentences from brand/README.md.
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { kitFilesQuery, kitQuery } from "@/lib/data";
@@ -17,6 +17,10 @@ import { MARK_PATHS } from "@/components/brand/mark.gen";
 import { MARK_INK, CUT_MIN_PX, X_HEIGHT, cutFor } from "@/components/brand/mark";
 import { Card, Plate, Raised, RuleBox, Sheet, Slab, Sticker, PhotoPlate, CONTAINER_NAMES, CONTAINER_RULES } from "@/components/brand/Containers";
 import { Ledger } from "@/components/brand/Ledger";
+import { CutAndPaste, FiltersScope, HeadlineStrips, SoftObject, Trail } from "@/components/brand/Illustration";
+import { Count, useGrow } from "@/components/brand/Motion";
+import { MOTION_MS } from "@/lib/motion";
+import { FRAME_LABEL } from "@/lib/stories/frames";
 
 const K = BRAND_KIT, C = K.color;
 const LIGHT = activeTheme.modes.light;
@@ -43,8 +47,8 @@ export function BrandShell({ page, children }: { page: BrandPageSlug; children: 
   </DigestShell>;
 }
 /** One idea per screen: air above, a label in the left third, the idea in the two thirds beside it. */
-function Screen({ label, title, children, id }: { label: string; title?: string; children: ReactNode; id: string }) {
-  return <section aria-labelledby={`${id}-h`} className="ed-wrap d-air">
+function Screen({ label, title, children, id, tall = false }: { label: string; title?: string; children: ReactNode; id: string; tall?: boolean }) {
+  return <section aria-labelledby={`${id}-h`} className={`ed-wrap d-air ${tall ? "brand-screen-tall" : ""}`.trim()}>
     <div className="d-quiet">
       <p className="d-quiet-label ed-kicker" id={title ? undefined : `${id}-h`}>{label}</p>
       <div className="min-w-0">{title && <h2 id={`${id}-h`} className="ed-h2">{title}</h2>}<div className={title ? "mt-6" : ""}>{children}</div></div>
@@ -54,15 +58,22 @@ function Screen({ label, title, children, id }: { label: string; title?: string;
 const Rules = ({ rules }: { rules: readonly string[] }) => <ol className="ledger">{rules.map((r, i) => <li key={r} className="ledger-row grid grid-cols-[4.5ch_1fr] gap-x-4 py-3"><span className="ledger-num">{i + 1}</span><span className="ed-body">{r}</span></li>)}</ol>;
 const Code = ({ children }: { children: ReactNode }) => <code className="ed-code">{children}</code>;
 const Fact = ({ k, v }: { k: string; v: ReactNode }) => <div><dt className="ed-kicker">{k}</dt><dd className="ed-stat mt-1">{v}</dd></div>;
-const Slot = ({ what }: { what: string }) => <div className="c-rulebox border-dashed" data-slot="part-2"><p className="ed-kicker">Arrives in part 2</p><p className="ed-small mt-2">{what}</p></div>;
+/** A live demo with a Raised replay button: replaying remounts the demo, so it plays once more from its first frame. With reduced
+ * motion the demo rests on its last frame and the button still re-draws it. Nothing plays on load except what the page itself does. */
+function Replay({ name, children }: { name: string; children: (played: boolean) => ReactNode }) {
+  const [n, setN] = useState(0);
+  return <div data-demo="">
+    <div key={n} className="brand-demo">{children(n > 0)}</div>
+    <p className="mt-4"><Raised onClick={() => setN(x => x + 1)} aria-label={`Replay: ${name}`}>Replay ↺</Raised></p>
+  </div>;
+}
 
 // ——— /brand ————————————————————————————————————————————————————————————————————————————————————————
 export function BrandOverview() {
   return <BrandShell page="">
     <Screen id="b-mark" label="The mark"><div className="brand-mark-full"><Wordmark height={240} /></div></Screen>
     <Screen id="b-idea" label="The idea" title={BRAND_INTRO.name}>
-      <p className="ed-standfirst">{BRAND_INTRO.idea}</p>
-      <p className="ed-body mt-4">Approved {BRAND_INTRO.approved}. Paper and ink carry the brand; four inks do one job each; two families set the words and one utility face sets the code.</p>
+      <p className="ed-body">Approved {BRAND_INTRO.approved}. Paper and ink carry the brand; four inks do one job each; two families set the words and one utility face sets the code.</p>
     </Screen>
     <Screen id="b-pages" label="The pages" title="Eight pages, one idea each">
       <Ledger rows={BRAND_PAGES.slice(1).map((p, i) => ({ key: p.slug, href: p.path, number: i + 1, title: p.title, line: p.line }))} />
@@ -180,7 +191,7 @@ export function BrandColour() {
       </li>; })}
         <li className="border-[3px] border-ed-ink p-4" style={{ background: C.paper, color: C.red }} data-contrast="red-on-paper"><p className="ed-kicker" style={{ color: C.ink }}>Red on paper</p><p className="ed-figure-num mt-2">{ratioText(C.red, C.paper)}</p><p className="ed-caption mt-1" style={{ color: C.ink }}>{COLOUR_NOTES.red}</p></li>
       </ul>
-      <p className="ed-caption mt-4">WCAG ratios, computed on this page from the token hexes. The guidelines quote red on ink as 4.8 and red on paper as 3.8; computed from the hexes they are {ratioText(C.red, C.ink)} and {ratioText(C.red, C.paper)}, so red stays large or a mark.</p>
+      <p className="ed-caption mt-4">WCAG ratios, computed on this page from the token hexes. The guidelines quote red on ink as 4.6, red on paper as 3.6 and red on pink as 2.0; computed here from the hexes they are {ratioText(C.red, C.ink)}, {ratioText(C.red, C.paper)} and {ratioText(C.red, C.pink)}, so red stays large or a mark.</p>
     </Screen>
     <Screen id="c-stage" label="Stages" title="Five stages, five fills">
       <ul className="flex flex-wrap gap-3">{STAGES.map(s => <li key={s}><StageWord stage={s} /></li>)}</ul>
@@ -294,20 +305,59 @@ export function BrandSpace() {
 }
 
 // ——— /brand/illustration ———————————————————————————————————————————————————————————————————————————
+const ILLUSTRATION_USE: Record<string, string> = {
+  cut: "Used on story covers. The picture is a crop printed in one ink, or the stored layout redrawn; the pencil note is a real fact.",
+  trail: "Used on the lead plate, signal covers and data-story covers. It takes the chart's own series and keeps the table.",
+  soft: "Used on Digest, Morning Line and sector report covers: the issue number or the day's figure.",
+};
+/** Demo data: the shape of real stored values (a share series and a story), labelled as a sample. */
+const DEMO_SERIES = [{ x: "Q1 2024", y: 0.212 }, { x: "Q3 2024", y: 0.268 }, { x: "Q1 2025", y: 0.241 }, { x: "Q3 2025", y: 0.336 }, { x: "Q1 2026", y: 0.47 }];
+function IllustrationDemo({ id }: { id: string }) {
+  if (id === "trail") return <Trail points={DEMO_SERIES} label="Sample: a signal's share of homepages by quarter" format={v => `${(v * 100).toFixed(1)}%`} w={720} h={400} seed="brand-trail" />;
+  if (id === "soft") return <SoftObject text="47" seed="brand-soft" ink="pink" print="yellow" label="Sample: the number 47 as a soft object" />;
+  return <div className="cover c-slab p-6" data-cover="sample">
+    <CutAndPaste seed={48} note="Confirmed 16 Nov" picture={<div className="brand-demo-frame"><span className="ed-kicker">{FRAME_LABEL}</span><span className="ed-h3 mt-2 block">Image hero → video hero</span></div>} />
+    <p className="cover-head mt-4"><HeadlineStrips text="neon.com changed its hero" seed={48} /></p>
+  </div>;
+}
 export function BrandIllustration() {
-  return <BrandShell page="illustration">
+  return <BrandShell page="illustration"><FiltersScope>
     <Screen id="i-rules" label="Rules" title="Three materials, one light"><Rules rules={ILLUSTRATION_RULES} /></Screen>
-    <Screen id="i-styles" label="Styles" title="Three styles">
-      <ul className="space-y-10">{ILLUSTRATION_STYLES.map((s, i) => <li key={s.id} className="ed-hair pt-4" data-style={s.id}>
-        <p className="ledger-num">{String(i + 1).padStart(2, "0")}</p><h3 className="ed-h3 mt-2">{s.name}</h3><p className="ed-body mt-2">{s.what}</p>
-        <p className="mt-3 flex flex-wrap gap-2">{s.filters.map(f => <Code key={f}>{f}</Code>)}</p>
-        <div className="mt-4"><Slot what={`The ${s.name.toLowerCase()} artwork, built with the kit's filters (brand/illustration/slug-filters.svg).`} /></div>
-      </li>)}</ul>
-    </Screen>
-  </BrandShell>;
+    {ILLUSTRATION_STYLES.map((st, i) => <Screen key={st.id} id={`i-${st.id}`} label={`Style ${String(i + 1).padStart(2, "0")}`} title={st.name} tall>
+      <div data-style={st.id}>
+        <p className="ed-body">{st.what}</p>
+        <p className="mt-3 flex flex-wrap gap-2">{st.filters.map(f => <Code key={f}>{f}</Code>)}</p>
+        <p className="ed-caption mt-2">{ILLUSTRATION_USE[st.id]}</p>
+        <div className="mt-6"><Replay name={st.name}>{() => <IllustrationDemo id={st.id} />}</Replay></div>
+      </div>
+    </Screen>)}
+  </FiltersScope></BrandShell>;
 }
 
 // ——— /brand/motion —————————————————————————————————————————————————————————————————————————————————
+function GrowBar() {
+  const [ref, cls] = useGrow<HTMLSpanElement>();
+  return <span ref={ref} className={`brand-demo-bar ${cls}`.trim()} aria-hidden="true" />;
+}
+/** Press: on replay the Raised control travels into its shadow for one tap and comes back; the sticker pops as it mounts. */
+function PressDemo({ played }: { played: boolean }) {
+  const [down, setDown] = useState(false);
+  useEffect(() => {
+    if (!played || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const tap = MOTION_MS.tap; let t2 = 0;
+    const t1 = window.setTimeout(() => { setDown(true); t2 = window.setTimeout(() => setDown(false), tap * 2); }, tap);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [played]);
+  return <div className="flex flex-wrap items-center gap-6"><Raised data-pressed={down ? "" : undefined}>Press me</Raised><Sticker data-pop="">New</Sticker></div>;
+}
+function MotionDemo({ id, played }: { id: string; played: boolean }) {
+  const on = played ? "m-demo-on" : "";
+  if (id === "arrive") return <span className={`brand-demo-mark ${on}`.trim()}><Wordmark height={120} letters decorative /></span>;
+  if (id === "press") return <PressDemo played={played} />;
+  if (id === "cut") return <div className={`brand-demo-wipe c-slab ${on}`.trim()}><p className="ed-h2">The next page</p></div>;
+  if (id === "count") return <div><p className="ed-cover"><Count text="47.0%" /></p><GrowBar /></div>;
+  return <FiltersScope><Trail points={DEMO_SERIES} label="Sample: the trail drawing along its path" format={v => `${(v * 100).toFixed(1)}%`} w={640} h={300} sticker={false} seed="brand-draw" /></FiltersScope>;
+}
 export function BrandMotion() {
   const m = activeTheme.shared.motion as unknown as Record<string, string>;
   const ease = { linear: "linear", ooze: m["ooze"]!, cut: m["cut"]!, settle: m["settle"]! } as Record<string, string>;
@@ -317,13 +367,13 @@ export function BrandMotion() {
       <dl className="grid grid-cols-2 gap-6 md:grid-cols-3">{(["tap", "move", "wipe", "arrive", "draw", "stagger"] as const).map(k => <Fact key={k} k={k} v={<span data-motion={k}>{m[k]}</span>} />)}</dl>
       <ul className="mt-8 space-y-2">{(["ooze", "cut", "settle"] as const).map(k => <li key={k} className="flex flex-wrap items-baseline gap-x-4"><span className="ed-h4 w-24">{k}</span><Code>{m[k]}</Code></li>)}</ul>
     </Screen>
-    <Screen id="mo-patterns" label="Patterns" title="Five motion patterns">
-      <ul className="space-y-10">{MOTION_PATTERNS.map((p, i) => <li key={p.id} className="ed-hair pt-4" data-pattern={p.id}>
-        <p className="ledger-num">{i + 1}</p><h3 className="ed-h3 mt-2">{p.name}</h3><p className="ed-body mt-2">{p.for}</p>
+    {MOTION_PATTERNS.map((p, i) => <Screen key={p.id} id={`mo-${p.id}`} label={`Pattern ${i + 1}`} title={p.name}>
+      <div data-pattern={p.id}>
+        <p className="ed-body">{p.for}</p>
         <p className="ed-caption mt-2">{p.token} · <Code>{m[p.token]}</Code> · {p.ease} <Code>{ease[p.ease]}</Code> · keyframes {p.keyframes.map(k => <Code key={k}>{k} </Code>)}</p>
-        <div className="mt-4"><Slot what={`The ${p.name.toLowerCase()} animation, from brand/motion/slug-motion.css, resting on its last frame when reduced motion is on.`} /></div>
-      </li>)}</ul>
-    </Screen>
+        <div className="mt-6"><Replay name={p.name}>{played => <MotionDemo id={p.id} played={played} />}</Replay></div>
+      </div>
+    </Screen>)}
   </BrandShell>;
 }
 

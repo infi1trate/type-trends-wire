@@ -24,7 +24,7 @@ describe("embed widget", () => {
     expect(html).toContain("Subgrid layouts: rising from 12.0% to 12.5–17.0% of homepages by Q1 2027.");
     expect(html).toContain("Data through Q4 2026");
     // The credit link carries the drawn mark (an inline SVG of the kit's outlined path), never the name set in type.
-    expect(html).toMatch(/<a href="https:\/\/slug\.global\/trait\/css%3Asubgrid" target="_blank" rel="noopener" aria-label="slug: the full chart"><svg [^>]*role="img" aria-label="slug"><path [^>]*fill="#0A0A0A"\/><\/svg> →<\/a>/);
+    expect(html).toMatch(/<a href="https:\/\/slug\.global\/trait\/css%3Asubgrid" target="_blank" rel="noopener" aria-label="slug: the full chart"><svg [^>]*role="img" aria-label="slug"><g [^>]*><path [^>]*fill="#0A0A0A"\/><\/g><\/svg> →<\/a>/);
     expect(html.match(/<svg [^>]*class="v-/g)!.length).toBe(3);
     expect(html).toContain('stroke="#19B560"');
     expect(html).toMatch(/<main aria-label="Subgrid layouts \[LAYOUT\], MEASURED, all sectors: Rising\./);

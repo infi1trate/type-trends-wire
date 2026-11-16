@@ -82,14 +82,14 @@ export function CutAndPaste({ seed, picture, note, className = "" }: CutProps) {
     <svg className="ill-sheet absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 900 600" preserveAspectRatio="none" aria-hidden="true">
       <F id="slug-paper"><rect x="18" y="18" width="864" height="564" fill="var(--tk-surface-page)" /></F>
     </svg>
-    <div className="ill-pic relative" style={{ transform: `rotate(${tilt}deg)` }}>
-      <div className="ill-pic-frame">{picture}</div>
-      {tapes.map(t => <span key={t.corner} className="ill-tape absolute" aria-hidden="true" style={{ ...TAPE_POS[t.corner], width: `${t.length * 100}%`, transform: `rotate(${t.angle}deg)` }} />)}
-    </div>
     {note && <figcaption className="ill-note relative" data-pencil-note="">
       <svg className="ill-pencil absolute" viewBox="0 0 120 60" aria-hidden="true"><F id="slug-pencil"><path d="M8 44 C 30 10, 70 6, 104 22 M96 12 L106 23 L92 30" fill="none" stroke="var(--tk-text-primary)" strokeWidth={3} strokeLinecap="round" /></F></svg>
       <span className="ill-note-text">{note}</span>
     </figcaption>}
+    <div className="ill-pic relative" style={{ transform: `rotate(${tilt}deg)` }}>
+      <div className="ill-pic-frame">{picture}</div>
+      {tapes.map(t => <span key={t.corner} className="ill-tape absolute" aria-hidden="true" style={{ ...TAPE_POS[t.corner], width: `${t.length * 100}%`, transform: `rotate(${t.angle}deg)` }} />)}
+    </div>
   </figure>;
 }
 /** The headline cut into two or three strips (the cover's h1 holds them; screen readers hear one headline). */

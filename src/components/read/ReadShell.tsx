@@ -75,7 +75,7 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, [mode, close]);
   const startTour = useCallback(() => { close(); modeTour("read").reset(); setTouring(true); }, [close]);
-  const home = <Link to="/" className="inline-flex min-h-11 shrink-0 items-center" aria-label={`${BRAND_NAME}, the front page`}><ArrivingMark height={28} /></Link>;
+  const home = <Link to="/" className="inline-flex min-h-11 shrink-0 items-center" aria-label={`${BRAND_NAME}, the front page`}><ArrivingMark height={32} /></Link>;
   const go = (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); };
   const sections = (cls: string, list: string) => <nav aria-label="Sections" className={cls}><ul className={list}>{SECTIONS.map(s => <li key={s.id}><SectionLink s={s} active={active === s.id} onGo={() => setOpen(false)} /></li>)}</ul></nav>;
   const modeSwitch = (cls: string) => <span role="group" aria-label="Mode" className={`shell-switch ${cls}`}><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></span>;

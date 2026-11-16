@@ -39,7 +39,7 @@ export const blank: Theme = {
     density: { quiet: { block: U, inner: U, air: U }, steady: { block: U, inner: U, air: U }, loud: { block: U, inner: U, air: U } },
     square: false,
     print: { paper: U, ink: U, muted: U },
-    image: { dark: image, light: image },
+    image: { dark: image, light: image, vibes: { ...image, card: U, plate: U, plateInk: U, edge: U, ball: { light: U, base: U, dark: U } } },
   },
   modes: { light: mode, dark: mode, vibes: mode },
 };

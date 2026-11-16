@@ -10,6 +10,7 @@ import { BasisWord, DigestShell, Dim, SiteCard, StageWord, Swatches, pr } from "
 import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { ReadFooter } from "./Bits";
+import { Ledger } from "@/components/brand/Ledger";
 import { BeforeAfter, CropFallback, CropFigure } from "./Evidence";
 import { CROP_SECTION_NAME } from "@/lib/labels";
 import { isCropSection, type CropSection } from "@/lib/crops";
@@ -23,14 +24,14 @@ const Refs = ({ xs, empty }: { xs: TraitRef[]; empty: string }) => xs.length ? <
 function Sections({ b, open }: { b: BrandPage; open: CropSection | null }) {
   const hist = open ? b.history[open] : [];
   return <div id="ed-sections">
-    {b.sections.length ? <ul className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">{b.sections.map(c => <li key={c.section}>
+    {b.sections.length ? <ul className="tile-wall" data-tile-wall="">{b.sections.map((c, i) => <li key={c.section} className={i === 0 ? "tile-lg" : "tile-sm"}>
       <CropFigure crop={c} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" />
       <p className="ed-data mt-1"><Link to="/brands/$domain" params={{ domain: b.domain }} search={{ section: c.section }} hash="ed-sections" resetScroll={false} className="ed-tap" aria-current={open === c.section ? "true" : undefined}>History · {c.versions} {c.versions === 1 ? "version" : "versions"} →</Link></p>
     </li>)}</ul> : <div className="max-w-md"><CropFallback domain={b.domain} section={CROP_SECTION_NAME.hero} /><p className="ed-caption mt-2">No section of this brand has been captured yet. Crops arrive when the crawler sends them.</p></div>}
     {open && <div className="mt-10" role="region" aria-labelledby="ed-section-history">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4"><h4 id="ed-section-history" className="ed-h3">{CROP_SECTION_NAME[open]} history</h4><Link to="/brands/$domain" params={{ domain: b.domain }} search={{}} hash="ed-sections" resetScroll={false} className="ed-tap ed-data">Close</Link></div>
       <p className="ed-caption mt-1">Every stored version, newest first. A new version is kept only when the section looks different; up to 12 are kept.</p>
-      {hist.length ? <ol className="mt-4 grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">{hist.map((c, i) => <li key={c.src}><CropFigure crop={c} label={`${i === 0 ? "Latest" : `Version ${hist.length - i}`} · seen ${c.captured_at.slice(0, 10)}${c.last_seen_at.slice(0, 10) !== c.captured_at.slice(0, 10) ? ` to ${c.last_seen_at.slice(0, 10)}` : ""}`} /></li>)}</ol>
+      {hist.length ? <ol className="tile-wall mt-4">{hist.map((c, i) => <li key={c.src} className={i === 0 ? "tile-lg" : "tile-sm"}><CropFigure crop={c} label={`${i === 0 ? "Latest" : `Version ${hist.length - i}`} · seen ${c.captured_at.slice(0, 10)}${c.last_seen_at.slice(0, 10) !== c.captured_at.slice(0, 10) ? ` to ${c.last_seen_at.slice(0, 10)}` : ""}`} /></li>)}</ol>
         : <div className="mt-4 max-w-md"><CropFallback domain={b.domain} section={CROP_SECTION_NAME[open]} /></div>}
     </div>}
   </div>;
@@ -42,14 +43,20 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
   return <DigestShell label={`${b.name} brand`} section="brands" lens={false}>
     <ObjectPage kind="brand" id="ed-brand" blocks={{
       headline: <div className="ed-grid">
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-8">
           <p className="ed-kicker">Brand · {b.sectorName}</p>
-          <h1 id="ed-brand-title" className="ed-cover mt-3 break-words">{b.name}</h1>
-          <p className="ed-data mt-4 flex flex-wrap gap-x-4"><a href={`https://${b.domain}`} target="_blank" rel="noopener" {...pr(`https://${b.domain}`)}>{b.domain} ↗</a><span>Last captured {b.captured ? storyTime(b.captured) : "—"}</span></p>
+          <h1 id="ed-brand-title" className="ed-h1 mt-3 break-words">{b.name}</h1>
+          <dl className="facts-row mt-4" data-facts-row="">
+            <div><dt>Site</dt><dd><a href={`https://${b.domain}`} target="_blank" rel="noopener" {...pr(`https://${b.domain}`)}>{b.domain} ↗</a></dd></div>
+            <div><dt>Sector</dt><dd>{b.sectorName}</dd></div>
+            <div><dt>Last captured</dt><dd>{b.captured ? storyTime(b.captured) : "—"}</dd></div>
+            <div><dt>Moves</dt><dd>{b.timeline.length}</dd></div>
+            <div><dt>Signals</dt><dd>{b.shows.length}</dd></div>
+          </dl>
           {b.lastMove && <p className="ed-standfirst mt-6">{b.lastMove.text}<span className="ed-caption block mt-1">{storyTime(b.lastMove.at)}</span></p>}
           <p className="ed-data mt-4"><AppLink href={b.actions.terminal} className="ed-tap">Dense record in the terminal ⇄</AppLink></p>
         </div>
-        <div className="lg:col-span-5"><SiteCard domain={b.domain} name={b.name} sector={b.sectorName} thumb={b.thumb} lines={[b.captured ? `captured ${b.captured.slice(0, 10)}` : "not captured yet"]} sizes="(min-width: 1024px) 40vw, 100vw" /></div>
+        <div className="lg:col-span-4"><SiteCard domain={b.domain} name={b.name} sector={b.sectorName} thumb={b.thumb} lines={[b.captured ? `captured ${b.captured.slice(0, 10)}` : "not captured yet"]} sizes="(min-width: 1024px) 33vw, 100vw" /></div>
       </div>,
       evidence: <>
         <BlockPart title="Sections" kicker="Credited crops of the desktop homepage: hero, navigation, pricing, call to action and footer, each with its history."><Sections b={b} open={open} /></BlockPart>
@@ -61,11 +68,10 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
           </div>
         </BlockPart>
         <BlockPart title="Timeline of moves" kicker="Confirmed changes (two captures agree) and rebrands, newest first.">
-          {b.timeline.length ? <ol className="space-y-3">{b.timeline.map(t => <li key={t.id} className="ed-hair grid grid-cols-1 gap-x-6 pt-2 md:grid-cols-[12rem_minmax(0,1fr)]">
-            <p className="ed-data ed-muted"><time dateTime={t.at}>{storyTime(t.at)}</time><br />{t.kind}</p>
-            <p className="ed-small">{t.text} {t.basis === "ai" && <BasisWord b="ai" />}{t.story && <> <AppLink href={t.href} className="ed-tap">Story →</AppLink></>}</p>
-            {t.compare && <div className="mt-4 md:col-start-2"><BeforeAfter before={t.compare.before} after={t.compare.after} /></div>}
-          </li>)}</ol> : <p className="ed-small">No confirmed move recorded yet.</p>}
+          {b.timeline.length ? <>
+            <Ledger label="Timeline of moves" rows={b.timeline.map(t => ({ key: t.id, href: t.href, title: <>{t.text}{t.basis === "ai" && <> <BasisWord b="ai" /></>}</>, tags: [t.kind], facts: [t.story ? "Story" : "Receipt"], time: <time dateTime={t.at}>{storyTime(t.at)}</time> }))} />
+            {(() => { const c = b.timeline.find(t => t.compare)?.compare; return c ? <div className="mt-6"><p className="ed-kicker mb-2">The latest move with crops on both sides</p><BeforeAfter before={c.before} after={c.after} /></div> : null; })()}
+          </> : <p className="ed-small">No confirmed move recorded yet.</p>}
         </BlockPart>
         {b.versus && <BlockPart title={`Versus ${b.versus.scopeName}`} kicker="Signals this brand shows, read in its own sector's forecast (headline and supporting signals only).">
           <div className="ed-grid"><div className="lg:col-span-6"><h4 className="ed-kicker">Ahead · rising or emerging</h4><div className="mt-2"><Refs xs={b.versus.ahead} empty="None of its signals is rising or emerging right now." /></div></div>

@@ -19,6 +19,17 @@ import type { loadWelcome } from "@/lib/editions/welcome.server";
 import { BasisWord, DigestShell, SectionHead, StageWord, pr } from "@/components/digest/Editorial";
 import { CropFigure, CropFallback } from "./Evidence";
 import { ReadFooter, Spark } from "./Bits";
+import { EditionCover } from "./Covers";
+import { FiltersScope } from "@/components/brand/Illustration";
+import { Ledger, type LedgerRow } from "@/components/brand/Ledger";
+import { RuleBox } from "@/components/brand/Containers";
+
+const storyRow = (s: { id: string; kicker: string; headline: string; at: string; score: number; number?: number | null; deck?: string | null }, i: number): LedgerRow => ({
+  key: s.id, href: `/stories/${encodeURIComponent(s.id)}`, number: s.number != null ? numberLabel(s.number) : String(i + 1).padStart(2, "0"),
+  title: s.headline, line: s.deck ?? s.kicker, facts: [`Score ${s.score}`], time: <time dateTime={s.at}>{storyTime(s.at)}</time> });
+/** A titled rule box: one section of an edition. */
+const Box = ({ id, title, caption, children, className = "" }: { id: string; title: ReactNode; caption?: ReactNode; children: ReactNode; className?: string }) =>
+  <section aria-labelledby={id} className={className}><RuleBox><h2 id={id} className="ed-kicker">{title}</h2>{caption && <p className="ed-caption mt-1">{caption}</p>}<div className="mt-4">{children}</div></RuleBox></section>;
 
 const Item = ({ s, lead = false }: { s: MorningItem; lead?: boolean }) => <article className={lead ? "" : "ed-hair pt-4"}>
   <p className="ed-kicker flex flex-wrap items-center gap-2">{s.kicker}</p>
@@ -37,58 +48,54 @@ export type MorningData = NonNullable<Awaited<ReturnType<typeof loadMorning>>>;
 export function MorningView({ d }: { d: MorningData }) {
   const e = d.edition;
   return <DigestShell label="The Morning Line" edition="morning">
-    <header className="ed-wrap pt-8 md:pt-12">
-      <p className="ed-kicker">The Morning Line · daily · {e.final ? "final edition" : "today, updating until the UTC day ends"}</p>
-      <h1 className="ed-cover mt-3">{e.title}</h1>
-      <p className="ed-standfirst mt-5 max-w-[60ch]">{e.count ? `${e.count} ${e.count === 1 ? "story" : "stories"} ran in the 24 hours to ${storyTime(e.window.to)}, ranked by score.` : `No story ran in the 24 hours to ${storyTime(e.window.to)}.`}{e.final ? " This edition no longer changes." : ""}</p>
-      {e.thin && <p className="ed-small mt-3 max-w-[60ch] font-semibold" data-testid="thin">A thin edition: fewer than three stories cleared the bar. {e.lastFull ? "The last full edition is below." : "There is no full edition yet to show below."}</p>}
-    </header>
-    <div className="ed-wrap ed-grid mt-10">
-      <div className="lg:col-span-8">
-        <section aria-labelledby="ml-lead">
-          <h2 id="ml-lead" className="ed-kicker ed-rule pt-3">The lead</h2>
-          <div className="mt-4">{e.lead ? <Item s={e.lead} lead /> : <p className="ed-small">No lead today.</p>}</div>
-        </section>
-        {e.more.length > 0 && <section aria-labelledby="ml-more" className="mt-12">
-          <h2 id="ml-more" className="ed-kicker ed-rule pt-3">Also today · by score</h2>
-          <div className="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2">{e.more.map(s => <Item key={s.id} s={s} />)}</div>
-        </section>}
-        <section aria-labelledby="ml-opening" className="mt-12">
-          <h2 id="ml-opening" className="ed-kicker ed-rule pt-3">The opening of the day</h2>
-          <p className="ed-caption mt-1">The best white-space story of the last seven days not used in the previous three editions.</p>
-          <div className="mt-4">{e.opening ? <Item s={e.opening} /> : <p className="ed-small">{e.openingInList ? "This week's white-space stories already run above, so there is no separate opening today." : "No opening this time: no unused white-space story from the last seven days."}</p>}</div>
-        </section>
-        {e.lastFull && <section aria-labelledby="ml-last" className="mt-12">
-          <h2 id="ml-last" className="ed-kicker ed-rule pt-3">The last full edition · <Link to="/morning/$date" params={{ date: e.lastFull.day }} className="ed-tap">{e.lastFull.title}</Link></h2>
-          <div className="mt-4"><Item s={e.lastFull.lead} /></div>
-          {e.lastFull.more.length > 0 && <ul className="mt-4 space-y-2">{e.lastFull.more.map(s => <li key={s.id} className="ed-small"><Link to="/stories/$id" params={{ id: s.id }} className="ed-tap">{s.headline}</Link> <span className="ed-data ed-muted">Score {s.score}</span></li>)}</ul>}
-        </section>}
+    <FiltersScope>
+    <EditionCover seed={e.day} object={String(e.count)} objectLabel={`${e.count} ${e.count === 1 ? "story" : "stories"} today, drawn as a soft object`} titleId="ml-title" isNew={!e.final} ink="green"
+      kicker={<>The Morning Line · daily · {e.final ? "final edition" : "today, updating until the UTC day ends"}</>} title={e.title}
+      left={<><span className="cover-num block">{e.count}</span><span className="block">{e.count === 1 ? "story" : "stories"} in 24 hours</span></>}
+      right={<><span className="block">{e.day}</span><span className="block">{e.final ? "Final" : "Updating"}</span></>}
+      deck={<>
+        <p className="ed-standfirst">{e.count ? `${e.count} ${e.count === 1 ? "story" : "stories"} ran in the 24 hours to ${storyTime(e.window.to)}, ranked by score.` : `No story ran in the 24 hours to ${storyTime(e.window.to)}.`}{e.final ? " This edition no longer changes." : ""}</p>
+        {e.thin && <p className="ed-small mt-3 font-semibold" data-testid="thin">A thin edition: fewer than three stories cleared the bar. {e.lastFull ? "The last full edition is below." : "There is no full edition yet to show below."}</p>}
+      </>} />
+    </FiltersScope>
+    <nav aria-labelledby="ml-contents" className="ed-wrap d-air d-quiet">
+      <h2 id="ml-contents" className="d-quiet-label ed-kicker">Today, by score</h2>
+      {e.lead ? <Ledger label="Today, by score" rows={[e.lead, ...e.more].map(storyRow)} /> : <p className="ed-small">No lead today.</p>}
+    </nav>
+    <div className="ed-wrap ed-grid d-air">
+      <div className="space-y-10 lg:col-span-8">
+        <Box id="ml-lead" title="The lead">{e.lead ? <Item s={e.lead} lead /> : <p className="ed-small">No lead today.</p>}</Box>
+        <Box id="ml-opening" title="The opening of the day" caption="The best white-space story of the last seven days not used in the previous three editions.">{e.opening ? <Item s={e.opening} /> : <p className="ed-small">{e.openingInList ? "This week's white-space stories already run above, so there is no separate opening today." : "No opening this time: no unused white-space story from the last seven days."}</p>}</Box>
+        {e.lastFull && <Box id="ml-last" title={<>The last full edition · <Link to="/morning/$date" params={{ date: e.lastFull.day }} className="ed-tap">{e.lastFull.title}</Link></>}>
+          <Item s={e.lastFull.lead} />
+          {e.lastFull.more.length > 0 && <Ledger small label="The rest of that edition" className="mt-4" rows={e.lastFull.more.map(storyRow)} />}
+        </Box>}
       </div>
-      <aside className="space-y-12 lg:col-span-4" aria-label="Moving now, figure and the desk">
-        <section aria-labelledby="ml-moving">
-          <h2 id="ml-moving" className="ed-kicker ed-rule pt-3">Moving now</h2>
+      <aside className="space-y-10 lg:col-span-4" aria-label="Moving now, figure and the desk">
+        <section aria-labelledby="ml-moving"><RuleBox>
+          <h2 id="ml-moving" className="ed-kicker">Moving now</h2>
           <p className="ed-caption mt-1">{e.moving.pair ? `Headline signals that changed stage between forecast run ${e.moving.pair.earlier.id} and run ${e.moving.pair.latest.id} (${e.moving.pair.days} days apart).` : "Headline signals that changed stage week over week."}</p>
           {e.moving.items.length ? <ul className="mt-3 space-y-3">{e.moving.items.map(m => <li key={m.key} className="ed-hair pt-2"><Link to="/signals/$key" params={{ key: m.key }} className="ed-h3 no-underline hover:underline">{m.name}</Link>
             <p className="ed-data mt-1 flex flex-wrap items-center gap-2"><span>{m.from} → </span><StageWord stage={m.to as StageName} />{m.share != null && <span>{pct(m.share, 1)}</span>}</p></li>)}</ul>
             : <p className="ed-small mt-3">{e.moving.pair ? "No headline signal changed stage between those runs." : NO_COMPARISON_TEXT}</p>}
-        </section>
-        <section aria-labelledby="ml-figure">
-          <h2 id="ml-figure" className="ed-kicker ed-rule pt-3">The figure</h2>
+        </RuleBox></section>
+        <section aria-labelledby="ml-figure"><RuleBox>
+          <h2 id="ml-figure" className="ed-kicker">The figure</h2>
           {e.figure?.kind === "chart" ? <>
             <Link to="/chart/$week" params={{ week: e.figure.week }} className="mt-3 block border border-ed-ink"><img src={`/chart/${e.figure.week}.png`} width={1200} height={675} loading="lazy" decoding="async" className="block h-auto w-full" alt={`Chart of the week ${e.figure.week}: ${cardText(e.figure.model).name} share by quarter.`} /></Link>
             <p className="ed-small mt-2">Chart of the week {e.figure.week}: {cardText(e.figure.model).call}</p>
           </> : e.figure?.kind === "signal" ? <><p className="ed-caption mt-1">The lead story's signal, share by quarter.</p><LeadSpark k={e.figure.key} /></> : <p className="ed-small mt-3">No figure for this edition.</p>}
-        </section>
-        <section aria-labelledby="ml-desk">
-          <h2 id="ml-desk" className="ed-kicker ed-rule pt-3">On the desk</h2>
+        </RuleBox></section>
+        <section aria-labelledby="ml-desk"><RuleBox>
+          <h2 id="ml-desk" className="ed-kicker">On the desk</h2>
           <p className="ed-caption mt-1">Stories the engine held in this window, and why.</p>
           {e.desk.length ? <ul className="mt-3 space-y-3">{e.desk.map(h => <li key={h.id} className="ed-hair pt-2 ed-small"><Link to="/stories/$id" params={{ id: h.id }} className="ed-tap">{h.headline}</Link><span className="ed-caption block">Held: {h.reason} · score {h.score}</span></li>)}</ul> : <p className="ed-small mt-3">Nothing held in this window.</p>}
-        </section>
-        <section aria-labelledby="ml-archive">
-          <h2 id="ml-archive" className="ed-kicker ed-rule pt-3">Archive</h2>
-          <ul className="ed-data mt-3 space-y-1">{d.archive.map(a => <li key={a.day}><Link to="/morning/$date" params={{ date: a.day }} className="ed-tap inline-flex min-h-11 items-center lg:min-h-0" aria-current={a.day === e.day ? "page" : undefined}>{a.day}</Link> <span className="ed-muted">· {a.count} {a.count === 1 ? "story" : "stories"}{a.final ? "" : " · today"}</span></li>)}</ul>
+        </RuleBox></section>
+        <section aria-labelledby="ml-archive"><RuleBox>
+          <h2 id="ml-archive" className="ed-kicker">Archive</h2>
+          <Ledger small label="Archive" className="mt-3" rows={d.archive.map(a => ({ key: a.day, href: `/morning/${a.day}`, title: a.day === e.day ? <span aria-current="page">{a.day}</span> : a.day, facts: [`${a.count} ${a.count === 1 ? "story" : "stories"}`], ...(a.final ? {} : { time: "today" }) }))} />
           <p className="ed-data mt-3"><a href="/morning/rss.xml" className="ed-tap">RSS (finished editions)</a></p>
-        </section>
+        </RuleBox></section>
       </aside>
     </div>
     <ReadFooter terminal="/terminal?panel=morning" />
@@ -101,8 +108,22 @@ function Side({ s }: { s: { stage: StageName | null; share: number | null } }) {
   return <span className="flex flex-wrap items-center gap-2"><StageWord stage={s.stage} /><span>{share(s.share)}</span></span>;
 }
 const StoryList = ({ items, empty }: { items: { id: string; kicker: string; headline: string; at: string; score: number }[]; empty: string }) => items.length
-  ? <ul className="space-y-3">{items.map(s => <li key={s.id} className="ed-hair pt-2"><p className="ed-kicker">{s.kicker}</p><Link to="/stories/$id" params={{ id: s.id }} className="ed-h3 no-underline hover:underline" {...pr(`/stories/${encodeURIComponent(s.id)}`)}>{s.headline}</Link><p className="ed-data ed-muted mt-1">{storyTime(s.at)} · score {s.score}</p></li>)}</ul>
+  ? <Ledger rows={items.map(storyRow)} />
   : <p className="ed-small">{empty}</p>;
+/** Small multiples: each headline signal's share by quarter in this sector, one tile each, on the 8px grid. */
+function SmallMultiples({ r }: { r: SectorReport }) {
+  const { data } = useQuery(signalSeriesQuery(r.sector));
+  return <section aria-labelledby="sr-multiples" className="ed-wrap d-air">
+    <SectionHead n="··" id="sr-multiples" title="Small multiples" kicker={`Share of ${r.name} homepages by quarter, one signal each; the figure is the latest quarter.`} />
+    <ul className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6" data-small-multiples="">{r.signals.slice(0, 12).map(s => <li key={s.key} className="c-rulebox" data-container="rulebox">
+      <Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="block no-underline">
+        <span className="ed-kicker block truncate">{s.name}</span>
+        <span className="ed-stat block">{share(s.here.share)}</span>
+        <Spark points={data?.[s.key]} label={`${s.name} in ${r.name}`} />
+      </Link>
+    </li>)}</ul>
+  </section>;
+}
 const Block = ({ n, id, title, kicker, children }: { n: string; id: string; title: string; kicker?: string; children: ReactNode }) =>
   <section aria-labelledby={id} className="ed-wrap mt-14"><SectionHead n={n} id={id} title={title} kicker={kicker} />{children}</section>;
 
@@ -112,14 +133,21 @@ export function SectorReportView({ r }: { r: SectorReport }) {
   const num = (b: (typeof r.blocks)[number]) => String(r.blocks.indexOf(b)).padStart(2, "0");
   return <DigestShell label={r.title} edition="sectors" fixedSector={{ value: r.sector, onChange }}>
     <div className="sector-report">
-      <header className="sector-cover ed-wrap pt-8 md:pt-12" data-block="headline">
-        <p className="ed-kicker">Sector report · quarterly · as of {r.asOfText}</p>
-        <h1 className="ed-cover mt-3">{r.title}</h1>
-        <p className="ed-standfirst mt-5 max-w-[60ch]">{r.brands} brands tracked in {r.name}. {r.coverage.enough ? `${r.signals.length} headline signals measured here, ${r.contrast.risingHere.length} rising here and not elsewhere, ${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.` : `${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.`}</p>
-        {r.note && <p className="ed-small mt-3 max-w-[60ch] font-semibold">{r.note}</p>}
-        <p className="ed-caption mt-3 max-w-[72ch]">{r.basis}</p>
-        <p className="print-only ed-caption mt-3" {...pr(r.href)}>{r.href}</p>
-      </header>
+      <div className="sector-cover" data-block="headline">
+      <FiltersScope>
+      <EditionCover seed={`${r.sector}:${r.quarter.label}`} object={r.quarter.label.split(" ")[0] ?? r.quarter.label} objectLabel={`${r.quarter.label}, drawn as a soft object`} titleId="sr-title" ink="green"
+        kicker={<>Sector report · quarterly · as of {r.asOfText}</>} title={r.name}
+        left={<><span className="cover-num block" data-figure="">{r.brands}</span><span className="block">brands tracked</span></>}
+        right={<><span className="block">{r.quarter.label}</span><span className="block">{r.storiesInQuarter} {r.storiesInQuarter === 1 ? "story" : "stories"}</span></>}
+        deck={<>
+          <p className="ed-standfirst">{r.title}. {r.coverage.enough ? `${r.signals.length} headline signals measured here, ${r.contrast.risingHere.length} rising here and not elsewhere, ${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.` : `${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.`}</p>
+          {r.note && <p className="ed-small mt-3 font-semibold">{r.note}</p>}
+          <p className="ed-caption mt-3">{r.basis}</p>
+          <p className="print-only ed-caption mt-3" {...pr(r.href)}>{r.href}</p>
+        </>} />
+      </FiltersScope>
+      {r.signals.length > 0 && <SmallMultiples r={r} />}
+      </div>
       <Block n={num("signals")} id="sr-signals" title="Headline signals" kicker={`Stage and share in ${r.name} against all sectors. Momentum is computed across all sectors only, so it appears once.`}>
         {r.signals.length ? <div className="overflow-x-auto"><table className="ed-data w-full min-w-[720px] border-collapse text-left">
           <caption className="sr-only">Headline signals in {r.name} against all sectors</caption>
@@ -131,14 +159,14 @@ export function SectorReportView({ r }: { r: SectorReport }) {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {([["Rising here, not elsewhere", r.contrast.risingHere], ["Rising elsewhere, not here", r.contrast.risingElsewhere]] as const).map(([t, xs]) => <div key={t}>
             <h3 className="ed-kicker">{t}</h3>
-            {xs.length ? <ul className="mt-3 space-y-3">{xs.map(s => <li key={s.key} className="ed-hair pt-2"><Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="ed-h3 no-underline hover:underline">{s.name}</Link><p className="ed-data mt-1">Here: {s.here.stage ?? "not staged"} · all sectors: {s.all.stage ?? "not staged"}</p></li>)}</ul> : <p className="ed-small mt-3">None this quarter.</p>}
+            {xs.length ? <Ledger small label={t} className="mt-3" rows={xs.map(s => ({ key: s.key, href: `/signals/${encodeURIComponent(s.key)}?sector=${r.sector}`, title: s.name, facts: [share(s.here.share)], line: `Here: ${s.here.stage ?? "not staged"} · all sectors: ${s.all.stage ?? "not staged"}` }))} /> : <p className="ed-small mt-3">None this quarter.</p>}
           </div>)}
         </div>
       </Block>
       <Block n={num("white-space")} id="sr-white" title="White space" kicker="Signals rising elsewhere that this sector's brands have not picked up (stories from the last 90 days)."><StoryList items={r.whiteSpace} empty="No white-space story for this sector in the last 90 days." /></Block>
       <Block n={num("counter-moves")} id="sr-counter" title="Counter-moves" kicker="Brands here moving against a signal's direction (last 90 days)."><StoryList items={r.counterMoves} empty="No counter-move in this sector in the last 90 days." /></Block>
       <Block n={num("leaders")} id="sr-leaders" title="Who leads it" kicker="Trendsetter rank in the forecast run, with each brand's latest published move.">
-        {r.leaders.length ? <ol className="space-y-3">{r.leaders.map(l => <li key={l.domain} className="ed-hair grid grid-cols-[4ch_1fr] gap-x-3 pt-2"><span className="ed-data">#{l.rank}</span><span><Link to="/brands/$domain" params={{ domain: l.domain }} className="ed-tap font-semibold">{l.name ?? l.domain}</Link> <span className="ed-data ed-muted">{l.domain}</span>{l.latest ? <span className="ed-small block">Latest move: <Link to="/stories/$id" params={{ id: l.latest.id }} className="ed-tap">{l.latest.headline}</Link> <span className="ed-data ed-muted">{storyTime(l.latest.at)}</span></span> : <span className="ed-caption block">No published move yet.</span>}</span></li>)}</ol> : <p className="ed-small">No trendsetter from this sector in the forecast run.</p>}
+        {r.leaders.length ? <Ledger label="Who leads it" rows={r.leaders.map(l => ({ key: l.domain, href: `/brands/${encodeURIComponent(l.domain)}`, number: `#${l.rank}`, title: l.name ?? l.domain, line: l.latest ? `Latest move: ${l.latest.headline} · ${storyTime(l.latest.at)}` : "No published move yet.", facts: [l.domain] }))} /> : <p className="ed-small">No trendsetter from this sector in the forecast run.</p>}
       </Block>
       <Block n={num("patterns")} id="sr-patterns" title="Patterns in this sector" kicker="Example brands here that show each pattern; section crops where a current one exists.">
         {r.patterns.length ? <div className="grid grid-cols-1 gap-10">{r.patterns.map(p => <div key={p.key}>
@@ -156,7 +184,7 @@ export function SectorReportView({ r }: { r: SectorReport }) {
 export type SectorIndexData = Awaited<ReturnType<typeof loadSectorIndex>>;
 export function SectorsIndexView({ d }: { d: SectorIndexData }) {
   const covered = d.sectors.filter(s => s.enough), thin = d.sectors.filter(s => !s.enough);
-  const Row = ({ s }: { s: SectorIndexData["sectors"][number] }) => <li className="ed-hair pt-3"><Link to="/sectors/$sector" params={{ sector: s.sector }} className="ed-h3 no-underline hover:underline">State of {s.name}</Link><p className="ed-data ed-muted mt-1">{s.brands} brands · {s.covered} of {s.total} headline signals measured · {s.stories} stories this quarter</p></li>;
+  const sectorRow = (s: SectorIndexData["sectors"][number]): LedgerRow => ({ key: s.sector, href: `/sectors/${encodeURIComponent(s.sector)}`, title: `State of ${s.name}`, facts: [`${s.brands} brands`], line: `${s.covered} of ${s.total} headline signals measured · ${s.stories} stories this quarter` });
   return <DigestShell label="Sector reports" edition="sectors">
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Sector reports · quarterly</p>
@@ -164,11 +192,11 @@ export function SectorsIndexView({ d }: { d: SectorIndexData }) {
       <p className="ed-standfirst mt-5 max-w-[60ch]">One report per sector for the current quarter, built from the forecast run{d.run ? ` of ${storyTime(d.run.at)}` : ""}, stored stories and the brands we track. Each prints as a clean document.</p>
     </header>
     <section aria-labelledby="sx-covered" className="ed-wrap mt-10"><h2 id="sx-covered" className="ed-kicker ed-rule pt-3">With forecast coverage</h2>
-      {covered.length ? <ul className="mt-3 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">{covered.map(s => <Row key={s.sector} s={s} />)}</ul> : <p className="ed-small mt-3">No sector has enough forecast coverage yet.</p>}
+      {covered.length ? <Ledger label="With forecast coverage" className="mt-3" rows={covered.map(sectorRow)} /> : <p className="ed-small mt-3">No sector has enough forecast coverage yet.</p>}
     </section>
     {thin.length > 0 && <section aria-labelledby="sx-thin" className="ed-wrap mt-10"><h2 id="sx-thin" className="ed-kicker ed-rule pt-3">Not enough coverage yet</h2>
       <p className="ed-caption mt-1">These reports show stories, brands and patterns, without sector signal numbers.</p>
-      <ul className="mt-3 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">{thin.map(s => <Row key={s.sector} s={s} />)}</ul></section>}
+      <Ledger label="Not enough coverage yet" className="mt-3" rows={thin.map(sectorRow)} /></section>}
     <ReadFooter terminal="/terminal?panel=sectors" />
   </DigestShell>;
 }
@@ -181,17 +209,12 @@ export function EditionsView({ d }: { d: EditionsData }) {
       <h1 className="ed-cover mt-3">Daily, weekly, quarterly</h1>
       <p className="ed-standfirst mt-5 max-w-[60ch]">Three shapes of the same newsroom. Each is built from stored stories and signals, never written per visit.</p>
     </header>
-    <div className="ed-wrap mt-10 grid grid-cols-1 gap-10 md:grid-cols-3">
-      {EDITIONS.map(x => <section key={x.id} aria-labelledby={`edn-${x.id}`} className="ed-rule pt-3">
-        <p className="ed-kicker">{x.rhythm}</p>
-        <h2 id={`edn-${x.id}`} className="ed-h2 mt-2"><a href={x.read} className="no-underline hover:underline">{x.name}</a></h2>
-        <p className="ed-small mt-2">{x.what}</p>
-        {x.id === "morning" && <p className="ed-small mt-3">{d.morning?.lead ? <>Today: <Link to="/stories/$id" params={{ id: d.morning.lead.id }} className="ed-tap">{d.morning.lead.headline}</Link> <span className="ed-data ed-muted">· {d.morning.count} {d.morning.count === 1 ? "story" : "stories"}</span></> : "No story yet today."}</p>}
-        {x.id === "digest" && <p className="ed-small mt-3">{d.digest ? <>Latest issue: <Link to="/digest/$week" params={{ week: d.digest.week }} className="ed-tap">{d.digest.week}</Link></> : "No issue stored yet."}</p>}
-        {x.id === "sectors" && <p className="ed-small mt-3">{d.sectors.filter(s => s.enough).length} of {d.sectors.length} sectors have forecast coverage.</p>}
-        <p className="ed-data mt-3"><a href={x.read} className="ed-tap">Open {x.name} →</a></p>
-      </section>)}
-    </div>
+    <section aria-label="The editions" className="ed-wrap d-air">
+      <Ledger label="The editions" rows={EDITIONS.map((x, i) => ({ key: x.id, href: x.read, number: String(i + 1).padStart(2, "0"), tags: [x.rhythm], title: x.name, facts: [x.rhythm],
+        line: <>{x.what} {x.id === "morning" ? (d.morning?.lead ? `Today: ${d.morning.lead.headline} · ${d.morning.count} ${d.morning.count === 1 ? "story" : "stories"}.` : "No story yet today.")
+          : x.id === "digest" ? (d.digest ? `Latest issue: ${d.digest.week}.` : "No issue stored yet.")
+          : `${d.sectors.filter(s => s.enough).length} of ${d.sectors.length} sectors have forecast coverage.`}</> }))} />
+    </section>
     <ReadFooter terminal="/terminal?panel=digest" />
   </DigestShell>;
 }

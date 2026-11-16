@@ -111,13 +111,13 @@ export const MOTION_RULES = [
   "One thing moves at a time. The ticker and the live dot are the only loops.",
   "With reduced motion on, everything rests on its last frame.",
 ] as const;
-/** The five motion patterns: the kit's five timings, what each is for, and the reference keyframes in brand/motion/slug-motion.css. */
+/** The five motion patterns (names and words from lib/motion PATTERNS) with the reference keyframes in brand/motion/slug-motion.css. */
 export const MOTION_PATTERNS = [
-  { id: "press", name: "Press", token: "tap", ease: "linear", for: "Presses and toggles.", keyframes: ["m-press"] },
-  { id: "count", name: "Count and grow", token: "move", ease: "ooze", for: "Digits, bars, stickers.", keyframes: ["m-roll", "m-grow", "m-pop", "m-stick"] },
-  { id: "wipe", name: "Cut to the page", token: "wipe", ease: "cut", for: "Page changes.", keyframes: ["m-wipe", "m-swap"] },
-  { id: "arrive", name: "Arrive", token: "arrive", ease: "ooze", for: "The mark, soft objects landing; letters of the mark follow each other by the stagger.", keyframes: ["m-ooze", "m-drop"] },
-  { id: "draw", name: "Draw the trail", token: "draw", ease: "settle", for: "The trail: slow in, slow out, 1.6 to 3 s.", keyframes: ["m-draw", "m-head"] },
+  { id: "arrive", name: "The mark arrives", token: "arrive", ease: "ooze", for: "The mark's four letters rise and settle one after another, by the stagger. On the gate and the first page of a session, once.", keyframes: ["m-ooze"] },
+  { id: "press", name: "Press", token: "tap", ease: "linear", for: "Raised controls travel into their shadow; a sticker pops when it appears.", keyframes: ["m-press", "m-pop"] },
+  { id: "cut", name: "Cut", token: "wipe", ease: "cut", for: "Page changes wipe with a hard edge. Never a fade or a slide.", keyframes: ["m-wipe"] },
+  { id: "count", name: "Count", token: "move", ease: "ooze", for: "Figures roll to their value and bars grow the first time they enter view; a new story drops in and settles.", keyframes: ["m-roll", "m-grow", "m-drop"] },
+  { id: "draw", name: "Draw", token: "draw", ease: "settle", for: "The trail draws along its path, 1.6 to 3 s; each gumball sticks as the head passes it.", keyframes: ["m-draw", "m-head", "m-stick"] },
 ] as const;
 
 /** Kit files offered on /brand/downloads (served only through the gated /brand/files/<name> route). */

@@ -29,13 +29,15 @@ input{flex:1;min-width:0;height:52px;padding:0 14px;background:${L.surface.card}
 .raised,button{display:inline-flex;align-items:center;justify-content:center;height:52px;min-width:120px;padding:0 24px;background:${L.surface.raised};color:${L.text.onAccent};border:${sh.border.strong} solid ${L.shadowInk};border-radius:0;box-shadow:6px 6px 0 ${L.shadowInk};font:700 15px/1 ${F.display};letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:transform ${sh.motion.tap} linear,box-shadow ${sh.motion.tap} linear}
 .raised:active,button:active{transform:translate(6px,6px);box-shadow:0 0 0 ${L.shadowInk}}
 input:focus-visible,button:focus-visible,a:focus-visible{outline:${L.focus.width} solid ${L.focus.ring};outline-offset:${L.focus.offset}}
-input:focus-visible{box-shadow:0 0 0 ${L.focus.offset} ${L.focus.halo}}
 a{color:inherit}
 .msg{min-height:28px;font-size:16px}
 footer{font:400 14px/1.4 ${F.text};color:${L.text.muted};padding:16px 20px;border-top:${sh.border.hairline} solid ${L.rule.hairline}}
 @media (max-width:600px){.mark{width:100%}}
+.mark [data-letter]{transform-box:fill-box;transform-origin:50% 100%;animation:slug-arrive ${sh.motion.arrive} ${sh.motion.ooze} both;animation-delay:calc(var(--i) * ${sh.motion.stagger})}
+@keyframes slug-arrive{0%{transform:translateY(46%) scale(1.3,.12);opacity:0}12%{opacity:1}55%{transform:translateY(0) scale(.9,1.14)}78%{transform:scale(1.04,.96)}100%{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>`;
 }
-/** The mark at display size (the display cut starts at 96 px), sitting directly on paper. */
-export const standaloneMark = () => markSvg(112, "paper").replace("<svg ", '<svg class="mark" ');
+/** The mark at display size (the display cut starts at 96 px), sitting directly on paper. Drawn letter by letter so it arrives
+ * (README "Motion": the mark arrives on the gate); it never exceeds its box, which already sits inside the page gutters. */
+export const standaloneMark = () => markSvg(112, "paper", undefined, undefined, true).replace("<svg ", '<svg class="mark" ');

@@ -55,7 +55,9 @@ describe("the mark", () => {
     expect(markSvg(40, "paper")).not.toContain("<rect");
   });
   it("the shell, the footer and the terminal draw the mark on its ink slab; the s monogram comes from the kit's s", () => {
-    expect(readFileSync("src/components/read/ReadShell.tsx", "utf8")).toMatch(/<Wordmark height=\{\d+\} ground="ink"/);
+    // The Read shell's mark is the arriving mark: the same Wordmark on its ink slab, drawn letter by letter.
+    expect(readFileSync("src/components/read/ReadShell.tsx", "utf8")).toMatch(/<ArrivingMark height=\{\d+\}/);
+    expect(readFileSync("src/components/brand/Motion.tsx", "utf8")).toMatch(/<Wordmark height=\{height\} ground="ink"/);
     expect(readFileSync("src/components/digest/Editorial.tsx", "utf8")).toMatch(/<Wordmark height=\{\d+\} ground="ink"/);
     expect(readFileSync("src/components/terminal/Chrome.tsx", "utf8")).toMatch(/<Wordmark height=\{\d+\} ground="ink"/);
     const { container } = render(<Monogram height={30} />);

@@ -6,7 +6,7 @@ import { checkAuditDomains, requestRender } from "@/lib/agency.functions";
 import { AUDIT_MAX, AUDIT_MIN, parseAuditSites } from "@/lib/agency/audit";
 import { SECTORS } from "@/lib/library";
 import { SectionHead } from "@/components/digest/Editorial";
-import { AgencyShell, Btn } from "./Shell";
+import { AgencyShell, Btn, FORM_BOX } from "./Shell";
 import { TargetsInput, splitList } from "./Targets";
 
 type Checked = { invalid: string[]; sites: { domain: string; status: string; sector: string | null }[] };
@@ -34,7 +34,7 @@ export function AuditNew({ sites }: { sites?: string | undefined }) {
       <p className="ed-standfirst mt-4">Type, color, layout, voice, how each site sits against the market and the open territory none of them use yet. Print it as a PDF appendix.</p>
     </header>
     <section className="ed-wrap" aria-labelledby="an-form">
-      <form className="grid max-w-3xl gap-6" onSubmit={e => { e.preventDefault(); void submit(); }}>
+      <form data-container="rulebox" className={FORM_BOX} onSubmit={e => { e.preventDefault(); void submit(); }}>
         <SectionHead n="01" title="Sites" id="an-form" />
         <TargetsInput id="an-sites" label={`Domains (${AUDIT_MIN}–${AUDIT_MAX})`} value={value} onChange={v => { setValue(v); setChecked(null); }} traits={false} hint="Separate with commas, e.g. linear.app, vercel.com, supabase.com" />
         <div className="flex flex-col gap-1"><label htmlFor="an-sector" className="ed-kicker">Sector for open territory (optional)</label>

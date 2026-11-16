@@ -38,6 +38,8 @@ const shared: Shared = {
   image: {
     dark: { bg: "#000000", ink: "#ededed", muted: "#6b6b6b", secondary: "#9a9a9a", rule: "#262626", accent: "#ff4f00" },
     light: { bg: "#ffffff", ink: "#111111", muted: "#5c5c5c", secondary: "#6b6b6b", rule: "#d6d6d6", accent: "#ff4f00" },
+    // Legacy had no vibes mode: its images keep the black card.
+    vibes: { bg: "#000000", ink: "#ededed", muted: "#6b6b6b", secondary: "#9a9a9a", rule: "#262626", accent: "#ff4f00", card: "#000000", plate: "#000000", plateInk: "#ededed", edge: "#262626", ball: { light: "#ff4f00", base: "#ff4f00", dark: "#ff4f00" } },
   },
 };
 

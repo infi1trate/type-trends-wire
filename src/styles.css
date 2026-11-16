@@ -527,7 +527,7 @@
     .cover-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 7fr) minmax(0, 3fr); grid-template-areas: "kick kick kick" "pinl obj pinr" "head head head" "deck deck deck"; column-gap: var(--tk-space-5); }
     .cover-object { margin-right: calc(-1 * var(--tk-layout-gutter-lg) - 18vw); }
     .cover-pin-r { position: relative; z-index: 3; }
-    .cover-pin-r > span { background: var(--tk-slab-bg); padding: 0 .2em; display: inline-block; }
+    .cover-pin-r > span { background: var(--tk-slab-bg); padding: 0 .2em; display: table; margin-left: auto; }
     .cover-head { margin-top: calc(-1 * var(--tk-space-7)); max-width: 18ch; }
   }
 
@@ -556,7 +556,7 @@
   .ill-pic-frame > * { line-height: normal; }
   .ill-pic-frame svg, .ill-pic-frame img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: cover; object-position: top; }
   .ill-tape { height: 22px; background: color-mix(in oklab, var(--tk-gumball-yellow-light) 70%, transparent); border: 1px solid color-mix(in oklab, var(--tk-rule-strong) 15%, transparent); }
-  .ill-note { margin-top: var(--tk-space-3); padding-left: 64px; font-family: var(--tk-type-quote-family); font-style: italic; font-size: var(--tk-type-small-size); line-height: 1.3; color: var(--tk-text-primary); }
+  .ill-note { margin-bottom: var(--tk-space-3); padding-left: 64px; font-family: var(--tk-type-quote-family); font-style: italic; font-size: var(--tk-type-small-size); line-height: 1.3; color: var(--tk-text-primary); }
   .ill-pencil { left: 0; top: -14px; width: 56px; height: 28px; }
   .ill-strips { display: flex; flex-direction: column; align-items: flex-start; gap: .08em; filter: drop-shadow(2px 4px 3px color-mix(in oklab, var(--tk-gumball-ink-base) 45%, transparent)); }
   .ill-strip { display: inline-block; background: var(--tk-surface-page); color: var(--tk-text-primary); padding: .06em .16em 0; }
@@ -582,12 +582,58 @@ html[data-arrive] .m-arrive [data-letter] { transform-box: fill-box; transform-o
 .ledger-row[data-drop] { animation: slug-drop var(--tk-motion-move) var(--tk-motion-ooze) both; }
 .m-on .ill-draw { stroke-dasharray: 100; animation: slug-draw var(--tk-motion-draw) var(--tk-motion-settle) both; }
 .m-on .ill-stick { transform-box: fill-box; animation: slug-stick var(--tk-motion-move) var(--tk-motion-ooze) both; animation-delay: calc(var(--at) * var(--tk-motion-draw)); }
-.m-grow-on { transform-origin: left center; transform-box: fill-box; animation: slug-grow var(--tk-motion-move) var(--tk-motion-ooze) both; }
+.m-grow-on:not(svg), .m-grow-on .tk-svg-bar { transform-origin: left center; transform-box: fill-box; animation: slug-grow var(--tk-motion-move) var(--tk-motion-ooze) both; }
 /* Cut: page changes wipe with a hard edge through the View Transitions API (types "cut"), and simply change where it isn't. */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 html:active-view-transition-type(cut)::view-transition-new(root) { animation: slug-wipe var(--tk-motion-wipe) var(--tk-motion-cut) both; }
 html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(root) { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  html[data-arrive] .m-arrive [data-letter], .c-sticker[data-pop], .ledger-row[data-drop], .m-on .ill-draw, .m-on .ill-stick, .m-grow-on { animation: none !important; }
+  html[data-arrive] .m-arrive [data-letter], .c-sticker[data-pop], .ledger-row[data-drop], .m-on .ill-draw, .m-on .ill-stick, .m-grow-on, .m-grow-on .tk-svg-bar { animation: none !important; }
   html:active-view-transition-type(cut)::view-transition-new(root) { animation: none !important; }
 }
+
+/* Sector reports print on paper, ink and green only (README "Print"): every fill, shadow and accent collapses to those three. */
+@media print {
+  .digest .sector-report, .digest .sector-report * { color: var(--tk-text-primary) !important; background: transparent !important; box-shadow: none !important; border-color: var(--tk-text-primary) !important; }
+  .digest .sector-report .ed-stage, .digest .sector-report [data-stage] { color: var(--tk-positive) !important; }
+  .digest .sector-report .ecover-object { display: none !important; }
+}
+
+/* Data-story captions: numbered cards; the current one on white (Card), the rest on paper (Sheet). */
+@layer components {
+  .digest-data .step-card-rest { border: var(--tk-border-strong) solid var(--tk-rule-hairline); padding: var(--tk-gap-inner); }
+  .digest-data .step-num { font-family: var(--tk-font-display); font-weight: 900; font-size: 2rem; line-height: 1; margin-bottom: var(--tk-space-2); font-variant-numeric: tabular-nums; }
+  .digest-data [data-stepper] .c-raised:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+}
+
+/* Brand and pattern pages (Steady): a facts row, and captures as a tile wall of two sizes on the 8px grid. */
+@layer components {
+  .facts-row { display: flex; flex-wrap: wrap; gap: var(--tk-space-2) var(--tk-space-5); }
+  .facts-row > div { display: flex; flex-direction: column; min-width: 0; }
+  .facts-row dt { font-family: var(--tk-font-display); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: .75rem; color: var(--tk-text-muted); }
+  .facts-row dd { font-family: var(--tk-font-display); font-weight: 700; font-size: 1.25rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .tile-wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tk-space-2); grid-auto-flow: dense; }
+  .tile-wall > .tile-lg { grid-column: 1 / -1; }
+  @media (min-width: 768px) { .tile-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); } .tile-wall > .tile-lg { grid-column: span 2; grid-row: span 2; } }
+  .tile-wall > li { min-width: 0; padding: var(--tk-space-2); border: var(--tk-border-hair, 1px) solid var(--tk-rule-hairline); }
+}
+
+/* Status: a ruled table; the red mark appears only on rows that are late. */
+@layer components {
+  .ruled-table { border-top: var(--tk-border-strong) solid var(--tk-rule-strong); border-bottom: var(--tk-border-strong) solid var(--tk-rule-strong); }
+  .ruled-table thead tr { border-bottom: var(--tk-border-strong) solid var(--tk-rule-strong); }
+  .ruled-table tbody tr + tr { border-top: 1px solid var(--tk-rule-hairline); }
+  .late-mark { margin-right: var(--tk-space-2); vertical-align: baseline; }
+}
+
+/* /brand/illustration and /brand/motion demos. Each illustration gets a screen of its own (one per viewport). */
+@layer components {
+  .brand-screen-tall { min-height: 100svh; }
+  .brand-demo-frame { display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 16 / 10; padding: var(--tk-space-4); background: var(--tk-surface-card); color: var(--tk-text-primary); border: var(--tk-border-strong) solid var(--tk-rule-strong); }
+  .brand-demo-bar { display: block; height: 24px; width: 70%; margin-top: var(--tk-space-3); background: var(--tk-positive); border: var(--tk-border-strong) solid var(--tk-rule-strong); }
+  .brand-demo-wipe { padding: var(--tk-space-5); }
+}
+.brand-demo-mark.m-demo-on [data-letter] { transform-box: fill-box; transform-origin: 50% 100%; animation: slug-arrive var(--tk-motion-arrive) var(--tk-motion-ooze) both; animation-delay: calc(var(--i) * var(--tk-motion-stagger)); }
+.c-raised[data-pressed] { transform: translate(6px, 6px); box-shadow: var(--tk-shadow-pressed); }
+.brand-demo-wipe.m-demo-on { animation: slug-wipe var(--tk-motion-wipe) var(--tk-motion-cut) both; }
+@media (prefers-reduced-motion: reduce) { .brand-demo-mark.m-demo-on [data-letter], .brand-demo-wipe.m-demo-on { animation: none !important; } }

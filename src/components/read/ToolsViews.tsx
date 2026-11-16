@@ -41,6 +41,8 @@ export function ToolsView() {
 
 const STATE_WORD = { on_time: "On time", late: "Late", never: "Not run yet", dormant: "Switched off" } as const;
 /** Every recurring job in plain words (freshness.ts): what it feeds, how often, last ran/finished, next expected, late or not. */
+/** The red live mark: on /status it marks only what is late (README "Colour": red is for live and late, nothing else). Static, not a loop. */
+const LateMark = () => <span className="shell-dot late-mark" data-late="" aria-hidden="true" />;
 function FreshnessTable() {
   const { data, isError } = useQuery(freshnessQuery());
   const when = (iso: string | null) => (iso ? storyTime(iso) : "—");
@@ -48,13 +50,13 @@ function FreshnessTable() {
     <h2 id="st-fresh" className="ed-h2 ed-rule pt-3">Freshness</h2>
     <p className="ed-small mt-3 max-w-[72ch]">Every recurring job, what it feeds and when it last ran. A job is late when more than twice its interval has passed since it last finished. Crawler jobs run on the crawler's own schedule; times are UTC.</p>
     {!data ? <p className="ed-small mt-3">{isError ? "Freshness couldn't be read right now." : "Checking…"}</p> : <div className="mt-4 overflow-x-auto">
-      <table className="ed-data w-full min-w-[720px] border-collapse text-left" data-testid="freshness">
+      <table className="ed-data ruled-table w-full min-w-[720px] border-collapse text-left" data-testid="freshness">
         <caption className="sr-only">Recurring jobs and when they last ran</caption>
         <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Job</th><th scope="col" className="py-2 pr-3 font-semibold">Feeds</th><th scope="col" className="py-2 pr-3 font-semibold">How often</th><th scope="col" className="py-2 pr-3 font-semibold">Last ran</th><th scope="col" className="py-2 pr-3 font-semibold">Finished</th><th scope="col" className="py-2 pr-3 font-semibold">Next expected</th><th scope="col" className="py-2 font-semibold">State</th></tr></thead>
         <tbody>{data.rows.map(r => <tr key={r.id} className="ed-hair align-top">
           <th scope="row" className="py-2 pr-3 font-normal">{r.name}{r.runs_on === "crawler" && <span className="ed-caption block">Crawler</span>}{r.note && <span className="ed-caption block">{r.note}</span>}</th>
           <td className="py-2 pr-3">{r.feeds}</td><td className="py-2 pr-3">{r.rhythm}</td><td className="py-2 pr-3">{when(r.last_ran)}</td><td className="py-2 pr-3">{when(r.last_finished)}</td><td className="py-2 pr-3">{r.next}</td>
-          <td className={`py-2 ${r.state === "late" ? "font-semibold" : ""}`}>{STATE_WORD[r.state]}</td>
+          <td className={`py-2 ${r.state === "late" ? "font-semibold" : ""}`}>{r.state === "late" && <LateMark />}{STATE_WORD[r.state]}</td>
         </tr>)}</tbody>
       </table>
       {data.follow_ups[0] && <p className="ed-caption mt-2">Forecast run {data.follow_ups[0].run_key}: {data.follow_ups[0].done} of {data.follow_ups[0].total} follow-up steps done{data.follow_ups[0].open.length ? `, waiting: ${data.follow_ups[0].open.join(", ")}` : ""}{data.follow_ups[0].failed.length ? `, failed: ${data.follow_ups[0].failed.join(", ")}` : ""}.</p>}
@@ -74,11 +76,11 @@ export function StatusView() {
     <FreshnessTable />
     <section aria-labelledby="st-jobs" className="ed-wrap mt-14">
       <h2 id="st-jobs" className="ed-h2 ed-rule pt-3">Scheduled jobs{health ? ` · ${health.status}` : ""}</h2>
-      {!health ? <p className="ed-small mt-3">Checking…</p> : health.jobs.length ? <table className="ed-data mt-4 w-full border-collapse text-left">
+      {!health ? <p className="ed-small mt-3">Checking…</p> : health.jobs.length ? <div className="mt-4 overflow-x-auto"><table className="ed-data ruled-table w-full min-w-[560px] border-collapse text-left">
         <caption className="sr-only">Scheduled job health</caption>
         <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Job</th><th scope="col" className="py-2 pr-3 font-semibold">Every</th><th scope="col" className="py-2 pr-3 font-semibold">Last OK</th><th scope="col" className="py-2 font-semibold">Status</th></tr></thead>
-        <tbody>{health.jobs.map(j => <tr key={j.job} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal">{j.job.replace(/_/g, " ")}{j.note && <span className="ed-caption block">{j.note}</span>}</th><td className="py-2 pr-3">{j.expected_every}</td><td className="py-2 pr-3">{j.last_ok_at ? storyTime(j.last_ok_at) : "never"}</td><td className="py-2">{j.stale ? "stale" : j.last_status}{j.consecutive_failures > 0 ? ` · ${j.consecutive_failures} failures` : ""}</td></tr>)}</tbody>
-      </table> : <p className="ed-small mt-3">Job health couldn't be read right now.</p>}
+        <tbody>{health.jobs.map(j => <tr key={j.job} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal">{j.job.replace(/_/g, " ")}{j.note && <span className="ed-caption block">{j.note}</span>}</th><td className="py-2 pr-3">{j.expected_every}</td><td className="py-2 pr-3">{j.last_ok_at ? storyTime(j.last_ok_at) : "never"}</td><td className="py-2">{(j.stale || j.consecutive_failures > 0) && <LateMark />}{j.stale ? "stale" : j.last_status}{j.consecutive_failures > 0 ? ` · ${j.consecutive_failures} failures` : ""}</td></tr>)}</tbody>
+      </table></div> : <p className="ed-small mt-3">Job health couldn't be read right now.</p>}
       <p className="ed-caption mt-2">Checked {health ? storyTime(health.checked_at) : "—"}. Machine-readable at /api/public/health.</p>
     </section>
     <section aria-labelledby="st-desk" className="ed-wrap mt-14">

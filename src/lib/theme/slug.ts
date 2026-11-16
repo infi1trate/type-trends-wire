@@ -143,6 +143,8 @@ const shared: Shared = {
   image: {
     dark: { bg: C.ink, ink: C.paper, muted: C.newsprint, secondary: C.newsprint, rule: C.muted, accent: C.yellow },
     light: { bg: C.paper, ink: C.ink, muted: C.muted, secondary: C.muted, rule: C.ink, accent: C.green },
+    // Vibes: the pink page, a yellow card holding the chart, an ink plate for the headline; every mark and line edge is ink.
+    vibes: { bg: C.pink, ink: C.ink, muted: C.ink, secondary: C.ink, rule: C.ink, accent: C.green, card: C.yellow, plate: C.ink, plateInk: C.paper, edge: C.ink, ball: G.green },
   },
 };
 

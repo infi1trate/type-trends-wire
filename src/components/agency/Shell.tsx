@@ -48,7 +48,11 @@ export function CopyField({ label, value, note }: { label: string; value: string
   </div>;
 }
 
-export const Btn = ({ children, onClick, disabled, type = "button", kind = "line" }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: "button" | "submit"; kind?: "line" | "solid" }) =>
-  <button type={type} onClick={onClick} disabled={disabled} className={`ed-kicker no-print min-h-[44px] border border-ed-ink px-4 disabled:opacity-40 ${kind === "solid" ? "bg-ed-ink text-ed-paper" : ""}`}>{children}</button>;
+/** A form button. `solid` is the form's one submit: a Raised control (it travels into its shadow on press). */
+export const Btn = ({ children, onClick, disabled, type = "button", kind = "line" }: { children: ReactNode; onClick?: () => void; disabled?: boolean; type?: "button" | "submit"; kind?: "line" | "solid" }) => kind === "solid"
+  ? <button type={type} onClick={onClick} disabled={disabled} data-container="raised" className="c-raised ed-kicker no-print disabled:opacity-40">{children}</button>
+  : <button type={type} onClick={onClick} disabled={disabled} className="ed-kicker no-print min-h-[44px] border border-ed-ink px-4 disabled:opacity-40">{children}</button>;
+/** Forms sit in a rule box. */
+export const FORM_BOX = "c-rulebox grid max-w-3xl gap-6";
 
 export const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "—");
