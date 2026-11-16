@@ -16,7 +16,8 @@ export const KIT_SECTIONS = [
   { id: "kit-motion", title: "Motion" },
   { id: "kit-data", title: "Data story templates" },
 ] as const;
-export const CONTAINERS = ["page", "card", "inverse", "accent", "highlight", "patterned", "grain", "striped-draft", "raised", "photo-with-scrim"] as const;
+/** The brand's eight containers (components/brand/Containers.tsx), shown in this order. */
+export const CONTAINERS = ["sheet", "rulebox", "card", "slab", "plate", "raised", "sticker", "photo"] as const;
 export type ContainerStyle = (typeof CONTAINERS)[number];
 
 export type QuarterSeries = { key: string; quarters: { q: string; s: number | null; n: number; c: number }[] };

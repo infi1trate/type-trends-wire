@@ -1,4 +1,5 @@
-// The shared Read shell: masthead, section nav (Live · Signals · Brands · Patterns · Digest · Tools), the sector lens, the Terminal switch, glossary and Lock.
+// The shared Read shell: an ink slab (the drawn mark on its pink slab, the six sections, the live dot with UTC time, the Read / Terminal
+// switch, glossary and Lock), then the sector lens and the freshness line in caption type. The footer is a slab too (DigestFooter).
 // Reuses the Digest editorial system; no health or model jargon here (that lives on /status).
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
@@ -20,7 +21,7 @@ import { BRAND_NAME } from "@/lib/brand";
 type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean; fixedSector?: { value: string; onChange: (s: string) => void } | undefined; dateline?: ReactNode; segmented?: boolean | undefined };
 
 function SectionLink({ s, active, onGo }: { s: (typeof SECTIONS)[number]; active: boolean; onGo: () => void }) {
-  const cls = `ed-tap py-2 no-underline ${active ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`;
+  const cls = "inline-flex min-h-11 items-center";
   const aria = active ? ({ "aria-current": "page" } as const) : {};
   switch (s.id) {
     case "live": return <Link to="/" className={cls} onClick={onGo} {...aria}>{s.label}</Link>;
@@ -30,6 +31,17 @@ function SectionLink({ s, active, onGo }: { s: (typeof SECTIONS)[number]; active
     case "digest": return <Link to="/digest" className={cls} onClick={onGo} {...aria}>{s.label}</Link>;
     case "tools": return <Link to="/tools" className={cls} onClick={onGo} {...aria}>{s.label}</Link>;
   }
+}
+const pad2 = (n: number) => String(n).padStart(2, "0");
+/** The red live dot with the UTC time. Client clock only (the server renders "UTC" alone, so hydration always matches). */
+export function ShellClock() {
+  const [t, setT] = useState<number | null>(null);
+  useEffect(() => { setT(Date.now()); const id = window.setInterval(() => setT(Date.now()), 15_000); return () => window.clearInterval(id); }, []);
+  const d = t === null ? null : new Date(t);
+  return <span className="shell-item inline-flex min-h-11 items-center gap-2" data-shell-clock="">
+    <span className="shell-dot tk-tick-dot" aria-hidden="true" />
+    <span>{d ? <time dateTime={d.toISOString()}>{pad2(d.getUTCHours())}:{pad2(d.getUTCMinutes())} UTC</time> : "UTC"}</span>
+  </span>;
 }
 
 export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector, dateline, segmented = false }: Props) {
@@ -56,37 +68,38 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, [mode, close]);
   const startTour = useCallback(() => { close(); modeTour("read").reset(); setTouring(true); }, [close]);
-  const home = <Link to="/" className="ed-tap py-2 no-underline" aria-label={`${BRAND_NAME}, the front page`}><Wordmark size={20} leading={16} /></Link>;
+  const home = <Link to="/" className="inline-flex min-h-11 items-center" aria-label={`${BRAND_NAME}, the front page`}><Wordmark height={28} ground="ink" decorative /></Link>;
+  const go = (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); };
   return <>
     <div className="digest">
       <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the content</a>
-      <header className="no-print border-b border-ed-ink">
-        <div className="ed-wrap ed-nav ed-navtext flex flex-wrap items-center justify-between gap-x-4">
-          {dateline ? <span className="flex flex-wrap items-center gap-x-4">{home}{dateline}</span> : home}
-          <span className="flex flex-wrap items-center gap-x-4">
-            <button type="button" onClick={() => setOverlay("glossary")} className="ed-tap cursor-pointer py-2 uppercase" aria-label="Open the glossary (?)">Glossary</button>
-            {segmented
-              ? <span role="group" aria-label="Mode" className="tk-seg inline-flex"><a href={loc.pathname} aria-current="page" className="tk-seg-btn">Read</a><a href={mode.href} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); }} data-tour="r-terminal" className="tk-seg-btn" title="Switch to Terminal mode (`)">Terminal</a></span>
-              : <a href={mode.href} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); }} data-tour="r-terminal" className="ed-tap py-2 font-semibold" title="Switch to Terminal mode (`)">Terminal ⇄</a>}
-            {GATE_ENABLED && <form method="post" action="/lock" className="contents"><button type="submit" className="ed-tap cursor-pointer py-2 uppercase">Lock</button></form>}
-            <button type="button" className="ed-tap cursor-pointer py-2 uppercase md:hidden" aria-expanded={open} aria-controls="read-sections" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Sections"}</button>
-          </span>
-        </div>
-        <nav aria-label="Sections" className="ed-wrap ed-nav ed-navtext border-t border-ed-rule md:border-t-0">
-          <div className="flex flex-col gap-y-1 py-1 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-6">
-            <ul id="read-sections" className={`${open ? "flex" : "hidden"} flex-col md:flex md:flex-row md:flex-wrap md:gap-x-6`}>
+      {/* The chrome: one ink slab with the mark on its pink slab, the six sections, the live dot and UTC time, and the Read / Terminal switch. */}
+      <header className="c-slab shell-top no-print" data-container="slab">
+        <div className="ed-wrap shell-nav flex flex-wrap items-center gap-x-6 gap-y-1 py-2">
+          {home}
+          <nav aria-label="Sections" className="order-last w-full lg:order-none lg:w-auto">
+            <ul id="read-sections" className={`${open ? "flex" : "hidden"} flex-col pb-2 lg:flex lg:flex-row lg:flex-wrap lg:gap-x-6 lg:pb-0`}>
               {SECTIONS.map(s => <li key={s.id}><SectionLink s={s} active={active === s.id} onGo={() => setOpen(false)} /></li>)}
             </ul>
-            <label className="flex items-center gap-2 normal-case tracking-normal">
-              <span className="ed-navtext">Sector</span>
-              <select value={sector} onChange={e => setSector(e.target.value)} className="ed-data min-h-11 border border-ed-ink bg-transparent px-2 lg:min-h-8">
-                {LENS_SECTORS.map(s => <option key={s} value={s}>{sectorName(s)}</option>)}
-              </select>
-            </label>
-          </div>
-        </nav>
+          </nav>
+          <span className="ml-auto flex flex-wrap items-center gap-x-4">
+            <ShellClock />
+            <span role="group" aria-label="Mode" className="shell-switch"><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></span>
+            <button type="button" onClick={() => setOverlay("glossary")} className="inline-flex min-h-11 cursor-pointer items-center max-sm:hidden" aria-label="Open the glossary (?)">Glossary</button>
+            {GATE_ENABLED && <form method="post" action="/lock" className="contents"><button type="submit" className="inline-flex min-h-11 cursor-pointer items-center max-sm:hidden">Lock</button></form>}
+            <button type="button" className="inline-flex min-h-11 cursor-pointer items-center lg:hidden" aria-expanded={open} aria-controls="read-sections" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Sections"}</button>
+          </span>
+        </div>
       </header>
-      <p className="ed-wrap ed-data no-print pt-3" aria-live="polite">{showingText(sector)}{!lens && !fixedSector && sector !== "all" ? " · this page is not filtered by sector" : ""}{note ? <span className="ed-muted"> · {note}</span> : null}</p>
+      <div className="ed-wrap no-print flex flex-wrap items-center justify-between gap-x-6 gap-y-1 pt-3">
+        <p className="shell-fresh flex flex-wrap items-center gap-x-3" aria-live="polite">{dateline}<span>{showingText(sector)}{!lens && !fixedSector && sector !== "all" ? " · this page is not filtered by sector" : ""}{note ? <> · {note}</> : null}</span></p>
+        <label className="flex items-center gap-2">
+          <span className="ed-kicker">Sector</span>
+          <select value={sector} onChange={e => setSector(e.target.value)} className="ed-data min-h-11 border-[1.5px] border-ed-ink bg-transparent px-2">
+            {LENS_SECTORS.map(s => <option key={s} value={s}>{sectorName(s)}</option>)}
+          </select>
+        </label>
+      </div>
       <FreshnessLine />
       {sub}
       <main id="ed-main" aria-label={label}>{children}</main>

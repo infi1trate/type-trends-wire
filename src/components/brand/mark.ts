@@ -1,6 +1,7 @@
 // The drawn mark, pure: which cut to use at a height, its slab rule, and an SVG string for pages rendered outside React
 // (the gate, embeds, share images). The mark is always brand ink, never recoloured, never reversed, never given a shadow.
 import { MARK_PATHS } from "./mark.gen";
+import { BRAND_NAME } from "@/lib/brand";
 import type { MarkCut } from "./mark-files";
 
 /** The mark's only colour (brand/tokens: mark.colour). */
@@ -24,7 +25,7 @@ export const slabPad = (height: number) => Math.round(height * X_HEIGHT * 0.5 * 
 export const markSize = (cut: MarkCut, height: number) => { const p = MARK_PATHS[cut]; return { w: Math.round((p.w / p.h) * height * 10) / 10, h: height }; };
 
 /** The mark as a standalone SVG string (gate page, embeds). `ground` adds the slab when one is needed. */
-export function markSvg(height: number, ground: Exclude<Ground, "auto"> = "paper", cut: MarkCut = cutFor(height), label = "slug"): string {
+export function markSvg(height: number, ground: Exclude<Ground, "auto"> = "paper", cut: MarkCut = cutFor(height), label = BRAND_NAME): string {
   const p = MARK_PATHS[cut], { w } = markSize(cut, height), fill = slabFill(ground), pad = fill ? slabPad(height) : 0;
   const W = w + pad * 2, H = height + pad * 2, s = height / p.h;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${fill ? `<rect width="${W}" height="${H}" fill="${fill}"/>` : ""}<path transform="translate(${pad} ${pad}) scale(${s})" d="${p.d}" fill="${MARK_INK}"/></svg>`;

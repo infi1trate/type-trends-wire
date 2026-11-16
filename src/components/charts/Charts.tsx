@@ -1,18 +1,36 @@
 // Shared chart primitives: one frame (title, one-line note, source line, receipt link, screen-reader table, empty state) and
 // four token-driven SVG charts (scatter, line, bar, donut). Colours, type and focus come only from theme tokens (--tk-*).
+// The slug restyle: 3 px ink axes, dashed newsprint gridlines, direct labels in Big Shoulders, stage colours from the tokens,
+// points as gumballs (a radial gradient from the token's light to dark with a hard ink offset), lines as a paper-and-ink double
+// stroke with the colour on top. Accessible names, table fallbacks and keyboard focus are unchanged.
 import { useId, type ReactNode } from "react";
 import { arcPath, arcs, extent, linear, point, ticks } from "@/lib/charts/scale";
 import { Receipt } from "@/components/read/StoryCard";
+import { GUMBALLS, type GumballName } from "@/lib/theme/contract";
 
 export type Cell = string | number;
 export type FrameProps = { title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
 type Frame = FrameProps & { isEmpty: boolean; table: { columns: string[]; rows: Cell[][] }; children: (ids: { title: string; note: string }) => ReactNode };
 export const STAGE_FILL = (stage: string | null | undefined) => (stage ? `var(--tk-stage-${stage.toLowerCase()})` : "var(--tk-stage-unstaged)");
+/** Which gumball a stage's point uses: Emerging pink, Rising green, Peaking red, Fading ink, Steady and unstaged newsprint. */
+const STAGE_BALL: Record<string, GumballName> = { emerging: "pink", rising: "green", peaking: "red", fading: "ink", steady: "newsprint" };
+export const stageBall = (stage: string | null | undefined): GumballName => STAGE_BALL[(stage ?? "").toLowerCase()] ?? "newsprint";
+/** One radial gradient per gumball colour, ids scoped to this chart (light at the top left, where the light comes from). */
+export function GumballDefs({ id }: { id: string }) {
+  return <defs>{GUMBALLS.map(g => <radialGradient key={g} id={`${id}-${g}`} cx="35%" cy="30%" r="75%">
+    <stop offset="0" style={{ stopColor: `var(--tk-gumball-${g}-light)` }} /><stop offset="0.5" style={{ stopColor: `var(--tk-gumball-${g}-base)` }} /><stop offset="1" style={{ stopColor: `var(--tk-gumball-${g}-dark)` }} />
+  </radialGradient>)}</defs>;
+}
+/** A gumball: a hard ink offset under a gradient-filled circle. */
+export function Gumball({ id, ball, cx, cy, r }: { id: string; ball: GumballName; cx: number; cy: number; r: number }) {
+  return <><circle cx={cx + r * 0.35} cy={cy + r * 0.35} r={r} className="tk-svg-dot-shadow" aria-hidden="true" /><circle cx={cx} cy={cy} r={r} fill={`url(#${id}-${ball})`} className="tk-svg-dot" data-gumball={ball} /></>;
+}
+const ballId = (raw: string) => `gb${raw.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
 export function ChartFrame({ title, note, source, receipt, empty = "No data to chart yet.", isEmpty, table, children }: Frame) {
   const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` };
   return <figure className="tk-chart min-w-0" aria-labelledby={ids.title} data-chart="">
-    <h3 id={ids.title} className="tk-t-h4">{title}</h3>
+    <h3 id={ids.title} className="tk-t-h3">{title}</h3>
     <p id={ids.note} className="tk-t-small tk-c-secondary mt-1">{note}</p>
     {isEmpty ? <p className="tk-t-data tk-chart-empty mt-3" role="status" data-chart-empty="">{empty}</p> : <>
       <div className="mt-3">{children(ids)}</div>
@@ -37,6 +55,7 @@ const Mark = ({ label, tip, x, y, children }: { label: string; tip?: string | un
 
 export type ScatterPoint = { id: string; label: string; x: number; y: number; stage?: string | null };
 export function ScatterChart({ points, x, y, ...frame }: FrameProps & { points: ScatterPoint[]; x: { label: string; format: (v: number) => string }; y: { label: string; format: (v: number) => string } }) {
+  const gid = ballId(useId());
   const H = 280, m = { l: 40, r: 12, t: 12, b: 34 };
   const sx = linear(extent(points.map(p => p.x)), [m.l, W - m.r]), dy = extent(points.map(p => p.y), { zero: false }), sy = linear(dy, [H - m.b, m.t]);
   // Direct labels where they fit: greedy, highest first; a label that would overlap another label or a point shows as a focus tip instead.
@@ -50,11 +69,12 @@ export function ScatterChart({ points, x, y, ...frame }: FrameProps & { points: 
   }
   return <ChartFrame {...frame} isEmpty={!points.length} table={{ columns: ["Signal", x.label, y.label, "Stage"], rows: points.map(p => [p.label, x.format(p.x), y.format(p.y), p.stage ?? "Not staged"]) }}>
     {ids => <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
+      <GumballDefs id={gid} />
       {ticks(dy[0], dy[1], 4).map(t => <g key={t} aria-hidden="true"><line x1={m.l} x2={W - m.r} y1={sy(t)} y2={sy(t)} className="tk-svg-grid" /><text x={m.l - 6} y={sy(t) + 4} textAnchor="end" className="tk-svg-text tk-svg-muted">{y.format(t)}</text></g>)}
       <Axis y0={H - m.b} x0={m.l} x1={W - m.r} label={x.label} />
       <text x={m.l} y={m.t - 2} className="tk-svg-text tk-svg-muted" aria-hidden="true">{y.label}</text>
       {points.map(p => { const px = sx(p.x), py = sy(p.y), show = labelled.has(p.id); return <Mark key={p.id} label={`${p.label}: ${x.label} ${x.format(p.x)}, ${y.label} ${y.format(p.y)}${p.stage ? `, ${p.stage}` : ""}`} tip={show ? undefined : p.label} x={px} y={py}>
-        <circle cx={px} cy={py} r={4.5} style={{ fill: STAGE_FILL(p.stage) }} className="tk-svg-dot" />
+        <Gumball id={gid} ball={stageBall(p.stage)} cx={px} cy={py} r={5.5} />
         {show && <text x={px + (right(px) ? 8 : -8)} y={py + 4} textAnchor={right(px) ? "start" : "end"} className="tk-svg-text" aria-hidden="true">{p.label}</text>}
       </Mark>; })}
     </svg>}
@@ -62,21 +82,24 @@ export function ScatterChart({ points, x, y, ...frame }: FrameProps & { points: 
 }
 
 export type LineSeries = { id: string; label: string; points: { x: string; y: number }[] };
-const SERIES_INK = ["var(--tk-accent-1)", "var(--tk-text-primary)", "var(--tk-text-secondary)", "var(--tk-accent-2)"];
+/** Series colours, in order: green (rising, measured), pink, yellow, red. Each line sits on an ink-and-paper double stroke. */
+const SERIES_BALL: GumballName[] = ["green", "pink", "yellow", "red"];
 export function LineChart({ series, y, ...frame }: FrameProps & { series: LineSeries[]; y: { label: string; format: (v: number) => string } }) {
+  const gid = ballId(useId());
   const H = 260, m = { l: 40, r: 124, t: 14, b: 34 };
   const xs = [...new Set(series.flatMap(s => s.points.map(p => p.x)))].sort(), dy = extent(series.flatMap(s => s.points.map(p => p.y)));
   const sx = (q: string) => (xs.length < 2 ? (m.l + W - m.r) / 2 : m.l + (xs.indexOf(q) / (xs.length - 1)) * (W - m.r - m.l)), sy = linear(dy, [H - m.b, m.t]);
   const empty = !series.some(s => s.points.length);
   return <ChartFrame {...frame} isEmpty={empty} table={{ columns: ["Quarter", ...series.map(s => s.label)], rows: xs.map(q => [q, ...series.map(s => { const p = s.points.find(v => v.x === q); return p ? y.format(p.y) : "—"; })]) }}>
     {ids => <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
+      <GumballDefs id={gid} />
       {ticks(dy[0], dy[1], 4).map(t => <g key={t} aria-hidden="true"><line x1={m.l} x2={W - m.r} y1={sy(t)} y2={sy(t)} className="tk-svg-grid" /><text x={m.l - 6} y={sy(t) + 4} textAnchor="end" className="tk-svg-text tk-svg-muted">{y.format(t)}</text></g>)}
       <Axis y0={H - m.b} x0={m.l} x1={W - m.r} />
       {xs.map((q, i) => (i === 0 || i === xs.length - 1 || i % Math.ceil(xs.length / 4) === 0) && <text key={q} x={sx(q)} y={H - m.b + 16} textAnchor="middle" className="tk-svg-text tk-svg-muted" aria-hidden="true">{q}</text>)}
-      {series.map((s, i) => { const ink = SERIES_INK[i % SERIES_INK.length]!, last = s.points[s.points.length - 1]; return <g key={s.id} style={{ color: ink }}>
-        <polyline fill="none" stroke="currentColor" strokeWidth={2} points={s.points.map(p => `${sx(p.x)},${sy(p.y)}`).join(" ")} aria-hidden="true" />
-        {s.points.map(p => <Mark key={p.x} label={`${s.label}, ${p.x}: ${y.format(p.y)}`} tip={`${p.x} · ${y.format(p.y)}`} x={sx(p.x)} y={sy(p.y)}><circle cx={sx(p.x)} cy={sy(p.y)} r={3.5} fill="currentColor" className="tk-svg-dot" /></Mark>)}
-        {last && <text x={sx(last.x) + 8} y={sy(last.y) + 4 + i * 2} className="tk-svg-text" fill="currentColor" aria-hidden="true">{s.label.length > 16 ? `${s.label.slice(0, 15)}…` : s.label}</text>}
+      {series.map((s, i) => { const ball = SERIES_BALL[i % SERIES_BALL.length]!, last = s.points[s.points.length - 1], pts = s.points.map(p => `${sx(p.x)},${sy(p.y)}`).join(" "); return <g key={s.id} data-series={ball}>
+        <g aria-hidden="true" fill="none" strokeLinejoin="round" strokeLinecap="round"><polyline points={pts} strokeWidth={8} className="tk-svg-line-outer" /><polyline points={pts} strokeWidth={5} className="tk-svg-line-inner" /><polyline points={pts} strokeWidth={3} style={{ stroke: `var(--tk-gumball-${ball}-base)` }} /></g>
+        {s.points.map(p => <Mark key={p.x} label={`${s.label}, ${p.x}: ${y.format(p.y)}`} tip={`${p.x} · ${y.format(p.y)}`} x={sx(p.x)} y={sy(p.y)}><Gumball id={gid} ball={ball} cx={sx(p.x)} cy={sy(p.y)} r={5} /></Mark>)}
+        {last && <text x={sx(last.x) + 10} y={sy(last.y) + 4 + i * 2} className="tk-svg-text" aria-hidden="true">{s.label.length > 16 ? `${s.label.slice(0, 15)}…` : s.label}</text>}
       </g>; })}
     </svg>}
   </ChartFrame>;
@@ -99,7 +122,8 @@ export function BarChart({ bars, format, valueLabel, ...frame }: FrameProps & { 
 }
 
 export type Slice = { id: string; label: string; value: number };
-const SLICE_INK = ["var(--tk-accent-1)", "var(--tk-text-primary)", "var(--tk-text-secondary)", "var(--tk-text-muted)", "var(--tk-accent-2)", "var(--tk-rule-strong)", "var(--tk-accent-3)", "var(--tk-accent-4)"];
+/** Slice fills: the four inks, then newsprint and ink, then the light tints (each slice has a 1.5 px ink edge). */
+const SLICE_INK = ["pink-base", "green-base", "yellow-base", "red-base", "newsprint-base", "ink-base", "pink-light", "green-light"].map(t => `var(--tk-gumball-${t})`);
 /** Slices below this share are named in the note under the chart instead of beside the ring. */
 export const DONUT_LABEL_MIN = 0.06;
 export function DonutChart({ slices, unit, ...frame }: FrameProps & { slices: Slice[]; unit: string }) {
@@ -112,8 +136,8 @@ export function DonutChart({ slices, unit, ...frame }: FrameProps & { slices: Sl
           <path d={arcPath(cx, cy, r0, r1, g.start, g.end)} style={{ fill: SLICE_INK[i % SLICE_INK.length] }} className="tk-svg-slice" />
           {g.share >= DONUT_LABEL_MIN && <text x={lx} y={ly + 4} textAnchor={right ? "start" : "end"} className="tk-svg-text" aria-hidden="true">{s.label} {s.value}</text>}
         </Mark>; })}
-        <text x={cx} y={cy - 2} textAnchor="middle" className="tk-svg-text tk-svg-big" aria-hidden="true">{total}</text>
-        <text x={cx} y={cy + 16} textAnchor="middle" className="tk-svg-text tk-svg-muted" aria-hidden="true">{unit}</text>
+        <text x={cx} y={cy + 6} textAnchor="middle" className="tk-svg-text tk-svg-big" aria-hidden="true">{total}</text>
+        <text x={cx} y={cy + 24} textAnchor="middle" className="tk-svg-text tk-svg-muted" aria-hidden="true">{unit}</text>
       </svg>
       {small.length > 0 && <p className="tk-t-caption tk-c-secondary">Also: {small.map(s => `${s.label} ${s.value}`).join(" · ")}</p>}
     </>}

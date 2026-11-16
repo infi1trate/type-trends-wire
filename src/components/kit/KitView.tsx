@@ -1,6 +1,7 @@
 // /kit: every shared component on live data, in the current theme, with light / dark / vibes side by side where mode matters.
 // A brand direction is judged here: change the theme file, reload this page.
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { kitQuery, signalSeriesQuery } from "@/lib/data";
 import { KIT_SECTIONS, CONTAINERS, type ContainerStyle } from "@/lib/kit";
@@ -20,6 +21,7 @@ import { BasisChip, TierChip } from "@/components/terminal/SignalBits";
 import { Ticker } from "@/components/terminal/Chrome";
 import { BarChart, DonutChart, LineChart, ScatterChart } from "@/components/charts/Charts";
 import { DataKitExamples } from "@/components/data/KitExamples";
+import { CONTAINER_RULES, Plate, Slab } from "@/components/brand/Containers";
 import { Button, Byline, Container, LiveChip, LiveStamp, ModePanels, SearchInput, Segmented, Tabs, TickValue } from "./Parts";
 
 const SAMPLE: Record<TypeRoleName, string> = {
@@ -30,10 +32,6 @@ const SAMPLE: Record<TypeRoleName, string> = {
 const signed = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}`;
 const share = (v: number) => pct(v, 1) ?? "—";
 const COLOR_GROUPS = ["surface", "text", "rule", "accent", "on-accent", "stage", "mark", "focus-ring", "selection"] as const;
-const BOX_NOTE: Record<ContainerStyle, string> = {
-  page: "The page itself.", card: "A bordered card.", inverse: "Inverse ink and paper.", accent: "The accent as a field.", highlight: "A marked passage.", patterned: "A quiet dot pattern.",
-  grain: "Still grain over paper.", "striped-draft": "Draft or dormant content.", raised: "Raised above the page.", "photo-with-scrim": "Text over an image, behind a scrim.",
-};
 
 function Section({ id, title, children, note }: { id: string; title: string; children: React.ReactNode; note?: string }) {
   return <section id={id} aria-labelledby={`${id}-h`} className="ed-wrap mt-16">
@@ -90,12 +88,13 @@ export function KitView() {
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Tools · design kit</p>
       <h1 className="ed-cover mt-3">The kit</h1>
-      <p className="ed-standfirst mt-5 max-w-[60ch]">Every shared component on live data, in the current theme ({activeTheme.label}). Light, dark and vibes sit side by side where the mode matters; vibes repeats light until a brand direction is chosen.</p>
+      <p className="ed-standfirst mt-5 max-w-[60ch]">Every shared component on live data, in the current theme ({activeTheme.label}). Light, dark and vibes sit side by side where the mode matters. The rules behind them are on the brand pages.</p>
       <nav aria-label="Kit sections" className="ed-data mt-6 flex flex-wrap gap-x-5">{KIT_SECTIONS.map(s => <a key={s.id} href={`#${s.id}`} className="ed-tap">{s.title}</a>)}</nav>
+      <p className="ed-data mt-3"><Link to="/brand" className="ed-tap">The brand: the rules behind every part here →</Link></p>
       <p className="ed-caption mt-2">Theme “{ACTIVE_THEME}” · forecast run {d.run_id ?? "—"} · {d.published} published stories · {d.composites} composite signals</p>
     </header>
 
-    <Section id="kit-type" title={KIT_SECTIONS[0].title} note={`The wordmark sets “${BRAND_NAME}” in today's display face until the drawn mark lands. Product line: ${BRAND_LINE}.`}>
+    <Section id="kit-type" title={KIT_SECTIONS[0].title} note={`The mark is the kit's outlined drawing of “${BRAND_NAME}”, always brand ink; in dark mode it sits on its pink slab. Product line: ${BRAND_LINE}.`}>
       <ModePanels>{m => <TypeRoles mode={m} />}</ModePanels>
     </Section>
     <Section id="kit-colour" title={KIT_SECTIONS[1].title} note="Semantic tokens only, named by role. Values shown per mode; “currentColor” means the chip takes the surrounding text colour.">
@@ -114,8 +113,8 @@ export function KitView() {
         <LiveStamp at={d.computed_at} /><p className="ed-caption"><NextCheck /></p>
       </div>}</ModePanels>
     </Section>
-    <Section id="kit-containers" title={KIT_SECTIONS[4].title} note="Ten named container styles driven by tokens. In the legacy theme corners stay square and nothing casts a shadow.">
-      <ModePanels>{() => <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{CONTAINERS.map(k => <Container key={k} kind={k}><p className="tk-t-kicker">{k}</p><p className="tk-t-small mt-1">{BOX_NOTE[k]}</p></Container>)}</div>}</ModePanels>
+    <Section id="kit-containers" title={KIT_SECTIONS[4].title} note="The brand's eight containers, with their rules built in. A hard shadow exists only on Raised and Sticker; only Sticker is round. Rules: /brand/containers.">
+      <ModePanels>{() => <div className="grid grid-cols-1 gap-4">{CONTAINERS.map(k => <div key={k}><Container kind={k} /><p className="ed-caption mt-1">{CONTAINER_RULES[k].use}</p></div>)}</div>}</ModePanels>
     </Section>
     <Section id="kit-images" title={KIT_SECTIONS[5].title} note={d.crop ? `On the latest stored crop (${d.crop.domain}); credit and links are unchanged under every treatment. Pages use “none”.` : "No section crops are stored yet, so each treatment is shown on the placeholder state with a generated specimen. Pages use “none”."}>
       <ModePanels>{() => <div className="grid grid-cols-1 gap-6">{TREATMENTS.map(t => <div key={t}><Treated crop={d.crop} treatment={t} label={t} sizes="(min-width: 1024px) 30vw, 100vw" /><p className="ed-caption ed-muted mt-1">{TREATMENT_NOTE[t]}</p></div>)}</div>}</ModePanels>
@@ -138,8 +137,8 @@ export function KitView() {
           <div style={{ marginTop: "var(--tk-space-6)", borderTop: "var(--tk-border-hairline) solid var(--tk-rule-hairline)" }} />
         </div>
         <div className="tk-panel" aria-label="Loud page skeleton" role="group" style={{ padding: 0 }}>
-          <Container kind="inverse"><p className="tk-t-kicker">Loud</p><p className="tk-t-display">Breaking out</p></Container>
-          <Container kind="accent"><p className="tk-t-stat">+4.2</p><p className="tk-t-small">points a quarter</p></Container>
+          <Slab className="p-4"><p className="tk-t-kicker">Loud</p><p className="tk-t-display">Breaking out</p></Slab>
+          <Plate><p className="tk-t-stat">+4.2</p><p className="tk-t-small">points a quarter</p></Plate>
         </div>
       </div>
     </Section>

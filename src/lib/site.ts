@@ -14,3 +14,5 @@ export const MCP_TOOL_COUNT = MCP_TOOL_NAMES.length;
 export const LANDING_PUBLIC = false;
 /** Data stories (/data, /data/<slug>, their share images and embeds) stay private: gated like every other page, nothing in OPEN_PATHS. Only the owner flips this. */
 export const DATA_STORIES_PUBLIC = false;
+/** The brand pages (/brand, /brand/<page>, /brand/files/<name>) stay private: gated like every other page, nothing in OPEN_PATHS. Only the owner flips this. */
+export const BRAND_PUBLIC = false;

@@ -17,9 +17,9 @@ describe("/kit", () => {
     const shells = ["src/components/read/ReadShell.tsx", "src/components/digest/Editorial.tsx", "src/components/terminal/Chrome.tsx"].map(f => readFileSync(f, "utf8"));
     expect(shells.some(s => s.includes('"/kit"'))).toBe(false);
   });
-  it("renders its sections in the brief's order with ten container styles", () => {
+  it("renders its sections in the brief's order with the brand's eight containers", () => {
     expect(KIT_SECTIONS.map(s => s.title)).toEqual(["Wordmark and type roles", "Colour and stage colours", "Buttons, chips and controls", "Stories, signals and brands", "Containers", "Image treatments", "Charts", "Spacing and whitespace", "Motion", "Data story templates"]);
-    expect(CONTAINERS).toEqual(["page", "card", "inverse", "accent", "highlight", "patterned", "grain", "striped-draft", "raised", "photo-with-scrim"]);
+    expect(CONTAINERS).toEqual(["sheet", "rulebox", "card", "slab", "plate", "raised", "sticker", "photo"]);
   });
   it("chart data: scatter of every composite, top six bars by share, two well-covered lines, stories by type", () => {
     const comps = [sig("combo:a", "A", 0.5, 1), sig("combo:b", "B", 0.4, -1, "Fading"), sig("combo:c", "C", 0.3, 0.2), sig("combo:d", "D", 0.2, 0), sig("combo:e", "E", 0.1, 0.5), sig("combo:f", "F", 0.05, 0.1), sig("combo:g", "G", 0.01, 2)];

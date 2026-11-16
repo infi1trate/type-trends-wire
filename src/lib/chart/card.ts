@@ -135,8 +135,8 @@ export function renderCardSvg(m: CardModel, size: CardSize): string {
   const { w, h, prims } = cardScene(m, size);
   return renderPrimsSvg(w, h, prims, { label: `${cardText(m).name} share by quarter with forecast band. ${cardText(m).call}`, style: svgTextStyle() });
 }
-/** Light chrome for editorial pages; the data line and band keep the card's signal color. */
-export const LIGHT_PALETTE: Record<string, string> = { [COLORS.bg]: IMG.light.bg, [COLORS.rule]: IMG.light.rule, [COLORS.g500]: IMG.light.muted, [COLORS.muted]: IMG.light.secondary, [COLORS.ink]: IMG.light.ink };
+/** Light chrome for editorial pages; the data line and band take the light image accent (yellow on ink becomes green on paper). */
+export const LIGHT_PALETTE: Record<string, string> = { [COLORS.bg]: IMG.light.bg, [COLORS.rule]: IMG.light.rule, [COLORS.g500]: IMG.light.muted, [COLORS.muted]: IMG.light.secondary, [COLORS.ink]: IMG.light.ink, [COLORS.signal]: IMG.light.accent };
 /** Chart-only figure (no card chrome) for Digest and explainer pages. */
 export function figureSvg(m: Pick<CardModel, "series" | "forecast">, w: number, h: number, label: string): string {
   return renderPrimsSvg(w, h, [{ k: "rect", x: 0, y: 0, w, h, fill: COLORS.bg }, ...chart(m, 0, 8, w, h - 8)], { label, palette: LIGHT_PALETTE, className: "digest-figure" });

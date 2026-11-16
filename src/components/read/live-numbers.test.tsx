@@ -9,7 +9,7 @@ describe("live column rows", () => {
     const s = toFront(st("a", { number: 48 }) as never);
     const { container } = render(<ul><LiveItem s={s} now={NOW} /></ul>);
     const n = container.querySelector("[data-story-number]");
-    expect(n?.textContent).toBe("NO. 48");
+    expect(n?.textContent).toBe("No. 48");
     expect(n?.closest("a")?.getAttribute("href")).toBe(s.href);
   });
   it("show a dot when a story has no number yet", () => {

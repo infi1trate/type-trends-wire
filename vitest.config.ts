@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Brand kit CSS is read as raw text (the gated /brand/files route); let vitest load it instead of stubbing it out.
+    css: { include: [/brand\/.*\.css/] },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },

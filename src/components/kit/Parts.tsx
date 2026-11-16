@@ -1,18 +1,20 @@
 // Token-driven building blocks shown in /kit and available to new pages: buttons, chips, controls, byline, live stamp,
-// containers and the mode panels. Every colour, type size, border and shadow is a --tk-* token, so a theme swap restyles them.
+// the brand containers and the mode panels. Every colour, type size, border and shadow is a --tk-* token, so a theme swap restyles them.
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { MODES, type Mode } from "@/lib/theme";
 import type { ContainerStyle } from "@/lib/kit";
 import { storyTime } from "@/lib/stories";
 import { BRAND_NAME } from "@/lib/brand";
-import { SPECIMEN_SRC } from "@/components/read/Treated";
+import { ContainerDemo } from "@/components/brand/pages/BrandPages";
 
 export type ButtonVariant = "primary" | "secondary" | "raised" | "link";
 export function Button({ variant = "primary", className = "", ...rest }: { variant?: ButtonVariant } & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button type="button" {...rest} className={`tk-btn tk-t-data ${className}`} data-variant={variant} />;
+  // A raised button is the Raised container: the only control with a hard shadow, because it is pressed.
+  if (variant === "raised") return <button type="button" {...rest} className={`c-raised ${className}`} data-container="raised" data-variant={variant} />;
+  return <button type="button" {...rest} className={`tk-btn tk-t-kicker ${className}`} data-variant={variant} />;
 }
 export function LiveChip() {
-  return <span className="tk-chip tk-live inline-flex items-center gap-1 border px-1"><span className="tk-tick-dot inline-block h-2 w-2" aria-hidden="true" />Live</span>;
+  return <span className="tk-chip tk-live inline-flex items-center gap-1 border px-1"><span className="shell-dot tk-tick-dot" aria-hidden="true" />Live</span>;
 }
 export function SearchInput({ label = "Search brands and signals", placeholder = "Search brands, signals, patterns" }: { label?: string; placeholder?: string }) {
   const id = useId();
@@ -40,14 +42,8 @@ export function LiveStamp({ at }: { at: string | null }) {
   return <p className="tk-t-kicker flex items-center gap-2"><span className="tk-tick-dot inline-block h-2 w-2" aria-hidden="true" /><span>Live</span><span className="tk-c-muted">{at ? <>Updated <time dateTime={at}>{storyTime(at)}</time></> : "Not updated yet"}</span></p>;
 }
 
-/** The ten named container styles; each is one data attribute read by token CSS. */
-export function Container({ kind, children, className = "" }: { kind: ContainerStyle; children: ReactNode; className?: string }) {
-  return <div className={`tk-box ${className}`} data-box={kind}>
-    {kind === "grain" && <svg className="tk-box-grain" aria-hidden="true" focusable="false"><filter id={`g-${kind}`}><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" /><feColorMatrix type="saturate" values="0" /></filter><rect width="100%" height="100%" filter={`url(#g-${kind})`} /></svg>}
-    {kind === "photo-with-scrim" && <img src={SPECIMEN_SRC} alt="" aria-hidden="true" className="tk-box-photo" />}
-    <div className="relative">{children}</div>
-  </div>;
-}
+/** The brand's eight containers, as rendered on /brand/containers (one shared demo per container). */
+export function Container({ kind }: { kind: ContainerStyle }) { return <ContainerDemo name={kind} />; }
 
 /** The same content in each mode side by side (light, dark, vibes); each panel sets its own data-mode so tokens resolve per panel. */
 export function ModePanels({ children, modes = MODES }: { children: (mode: Mode) => ReactNode; modes?: readonly Mode[] }) {

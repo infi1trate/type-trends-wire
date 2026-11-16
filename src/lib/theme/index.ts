@@ -3,7 +3,9 @@
 import type { Mode, Theme } from "./contract";
 import { legacy } from "./legacy";
 import { blank } from "./blank";
-import { slug } from "./slug";
+import { slug, SLUG_KIT } from "./slug";
+/** The owner's kit values (brand/tokens), for pages that show the brand's own numbers (/brand) and for tests. */
+export const BRAND_KIT = SLUG_KIT;
 import { themeCss } from "./css";
 
 export * from "./contract";
@@ -12,7 +14,7 @@ export const THEMES: Readonly<Record<string, Theme>> = { slug, blank };
 /** Unregistered themes kept for side-by-side comparison (the kit's before/after), never for a page. */
 export const COMPARISON_THEMES: Readonly<Record<string, Theme>> = { legacy };
 /** The look in use. Switching brand direction = registering a theme and changing this one name. */
-export const ACTIVE_THEME = "slug";
+export const ACTIVE_THEME: string = slug.name;
 export const activeTheme: Theme = THEMES[ACTIVE_THEME]!;
 export const activeCss = () => themeCss(activeTheme);
 /** Mode tokens for code that cannot read CSS variables (raster images, standalone HTML). */

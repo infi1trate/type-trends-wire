@@ -429,3 +429,6 @@ export const dataIndexQuery = () => queryOptions({ queryKey: ["data-index"], sta
 export const dataStoryQuery = (slug: string) => queryOptions({ queryKey: ["data-story", slug], staleTime: 5 * 60_000, queryFn: () => getDataStory({ data: { slug } }) });
 export const trackedBrandsQuery = () => queryOptions({ queryKey: ["tracked-brands"], staleTime: 10 * 60_000, queryFn: () => getTrackedBrands() });
 export const whereYouSitQuery = (brand: string) => queryOptions({ queryKey: ["where-you-sit", brand], staleTime: 5 * 60_000, queryFn: () => getWhereYouSit({ data: { brand } }) });
+
+/** The brand kit's files (gated /brand/downloads). */
+export const kitFilesQuery = () => queryOptions({ queryKey: ["brand-kit-files"], staleTime: 60 * 60_000, queryFn: async () => { const { getKitFiles } = await import("./brand.functions"); return getKitFiles(); } });

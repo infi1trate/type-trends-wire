@@ -126,7 +126,7 @@ describe("site gate", () => {
     const files: string[] = [];
     const walk = (d: string, pre = "") => { for (const e of readdirSync(join(dir, d), { withFileTypes: true })) e.isDirectory() ? walk(join(d, e.name), `${pre}${e.name}/`) : files.push(`${pre}${e.name}`); };
     walk("");
-    const PARAMS: Record<string, string> = { $date: "2026-11-16", $sector: "fintech", $week: "2026-W46", $key: "css%3Asubgrid", $domain: "vercel.com", $number: "47", $slug: "who-went-big-first", $: "vercel.com/2026-11-15-desktop.webp", index: "" };
+    const PARAMS: Record<string, string> = { $date: "2026-11-16", $sector: "fintech", $week: "2026-W46", $key: "css%3Asubgrid", $domain: "vercel.com", $number: "47", $slug: "who-went-big-first", $file: "slug-s.svg", $: "vercel.com/2026-11-15-desktop.webp", index: "" };
     const toPath = (f: string) => "/" + f.replace(/\.tsx?$/, "").replace(/\[\.\]/g, "\u0000").replace(/[{}]/g, "").split(/[./]/)
       .map(seg => seg.split("\u0000").map(part => PARAMS[part] ?? part).join("."))
       .filter(Boolean).join("/");
@@ -141,7 +141,7 @@ describe("site gate", () => {
     // Any other server route must be a deliberate decision: share images/thumbs/robots open, RSS and crop images gated.
     const otherServer = routes.filter(f => f.endsWith(".ts") && !f.startsWith("api/public/")).map(toPath).sort();
     expect(otherServer.filter(isOpenPath)).toEqual(["/audit.png", "/chart/2026-W46.png", "/chart/2026-W46.svg", "/digest/2026-W46.png", "/embed/chart/2026-W46", "/embed/trait/css%3Asubgrid", "/robots.txt", "/thumbs/vercel.com/2026-11-15-desktop.webp", "/trait/css%3Asubgrid.png"]);
-    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/crops/vercel.com/2026-11-15-desktop.webp", "/data/embed/who-went-big-first", "/data/who-went-big-first.png", "/digest/rss.xml", "/front.json", "/morning/rss.xml"]);
+    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/brand/files/slug-s.svg", "/crops/vercel.com/2026-11-15-desktop.webp", "/data/embed/who-went-big-first", "/data/who-went-big-first.png", "/digest/rss.xml", "/front.json", "/morning/rss.xml"]);
     expect(OPEN_PATHS.every(o => o.why.length > 10)).toBe(true);
   });
 
@@ -158,5 +158,15 @@ describe("site gate", () => {
     expect(DATA_STORIES_PUBLIC).toBe(false);
     for (const p of ["/data", "/data/who-went-big-first", "/data/who-went-big-first?step=3", "/data/where-you-sit", "/data/who-went-big-first.png", "/data/who-went-big-first.svg", "/data/embed/who-went-big-first"]) expect(isOpenPath(p), p).toBe(false);
     expect(OPEN_PATHS.some(o => JSON.stringify(o).includes("/data"))).toBe(false);
+  });
+
+  it("the brand pages stay private: BRAND_PUBLIC is false; every brand page and kit file is gated and not in OPEN_PATHS", async () => {
+    const { BRAND_PUBLIC } = await import("./site");
+    expect(BRAND_PUBLIC).toBe(false);
+    for (const p of ["/brand", "/brand/mark", "/brand/colour", "/brand/type", "/brand/containers", "/brand/space", "/brand/illustration", "/brand/motion", "/brand/downloads",
+      "/brand/files/slug-wordmark-display.svg", "/brand/files/slug-app-icon-1024.png", "/brand/files/slug.tokens.json", "/brand/files/README.md"]) expect(isOpenPath(p), p).toBe(false);
+    expect(OPEN_PATHS.some(o => JSON.stringify(o).includes("brand"))).toBe(false);
+    const cfg = { hash: "a".repeat(64), allow: () => true };
+    for (const p of ["/brand", "/brand/files/slug-s.svg"]) expect((await gate(new Request(`https://slug.global${p}`), cfg))?.status, p).toBe(401);
   });
 });

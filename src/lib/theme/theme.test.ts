@@ -20,7 +20,7 @@ describe("token contract", () => {
     const emptied: Theme = { ...blank, shared: { ...blank.shared, space: { ...blank.shared.space, 3: "" } } };
     expect(missingTokens(emptied, legacy)).toContain("dark:--tk-space-3");
   });
-  it("legacy reproduces today's values exactly (spot checks)", () => {
+  it("legacy keeps the look before the brand exactly (spot checks), for before/after comparisons", () => {
     const light = flatten(legacy, "light"), dark = flatten(legacy, "dark");
     expect(dark["--tk-accent-1"]).toBe("#ff4f00");
     expect(dark["--tk-surface-page"]).toBe("#000000");
@@ -29,7 +29,7 @@ describe("token contract", () => {
     expect(light["--tk-type-kicker-size"]).toBe("11px");
     expect(legacy.shared.space).toEqual({ 1: "4px", 2: "8px", 3: "16px", 4: "24px", 5: "40px", 6: "64px", 7: "104px" });
     expect(legacy.modes.vibes).toBe(legacy.modes.light);
-    expect(activeCss()).toContain("*{border-radius:0!important;box-shadow:none!important}");
+    expect(legacy.shared.square).toBe(true);
   });
   it("only the theme folder holds the product's font stylesheets (specimen loaders for data fonts are separate)", () => {
     const hits: string[] = [];

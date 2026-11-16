@@ -24,6 +24,15 @@ import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WhatWeShowRouteImport } from './routes/what-we-show'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
+import { Route as BrandIndexRouteImport } from './routes/brand.index'
+import { Route as BrandColourRouteImport } from './routes/brand.colour'
+import { Route as BrandContainersRouteImport } from './routes/brand.containers'
+import { Route as BrandDownloadsRouteImport } from './routes/brand.downloads'
+import { Route as BrandIllustrationRouteImport } from './routes/brand.illustration'
+import { Route as BrandMarkRouteImport } from './routes/brand.mark'
+import { Route as BrandMotionRouteImport } from './routes/brand.motion'
+import { Route as BrandSpaceRouteImport } from './routes/brand.space'
+import { Route as BrandTypeRouteImport } from './routes/brand.type'
 import { Route as BrandsIndexRouteImport } from './routes/brands.index'
 import { Route as BrandsDomainRouteImport } from './routes/brands.$domain'
 import { Route as ChartIndexRouteImport } from './routes/chart.index'
@@ -79,6 +88,7 @@ import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/ap
 import { Route as ApiPublicOembedRouteImport } from './routes/api/public/oembed'
 import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public/seed-candidates'
 import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/thumb-optout'
+import { Route as BrandFilesFileRouteImport } from './routes/brand.files.$file'
 import { Route as DataEmbedSlugRouteImport } from './routes/data.embed.$slug'
 import { Route as EmbedChartWeekRouteImport } from './routes/embed.chart.$week'
 import { Route as EmbedTraitKeyRouteImport } from './routes/embed.trait.$key'
@@ -158,6 +168,51 @@ const AuditIndexRoute = AuditIndexRouteImport.update({
 const AuditNewRoute = AuditNewRouteImport.update({
   id: '/audit/new',
   path: '/audit/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandIndexRoute = BrandIndexRouteImport.update({
+  id: '/brand/',
+  path: '/brand/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandColourRoute = BrandColourRouteImport.update({
+  id: '/brand/colour',
+  path: '/brand/colour',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandContainersRoute = BrandContainersRouteImport.update({
+  id: '/brand/containers',
+  path: '/brand/containers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandDownloadsRoute = BrandDownloadsRouteImport.update({
+  id: '/brand/downloads',
+  path: '/brand/downloads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandIllustrationRoute = BrandIllustrationRouteImport.update({
+  id: '/brand/illustration',
+  path: '/brand/illustration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandMarkRoute = BrandMarkRouteImport.update({
+  id: '/brand/mark',
+  path: '/brand/mark',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandMotionRoute = BrandMotionRouteImport.update({
+  id: '/brand/motion',
+  path: '/brand/motion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandSpaceRoute = BrandSpaceRouteImport.update({
+  id: '/brand/space',
+  path: '/brand/space',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandTypeRoute = BrandTypeRouteImport.update({
+  id: '/brand/type',
+  path: '/brand/type',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandsIndexRoute = BrandsIndexRouteImport.update({
@@ -443,6 +498,11 @@ const ApiPublicThumbOptoutRoute = ApiPublicThumbOptoutRouteImport.update({
   path: '/api/public/thumb-optout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BrandFilesFileRoute = BrandFilesFileRouteImport.update({
+  id: '/brand/files/$file',
+  path: '/brand/files/$file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DataEmbedSlugRoute = DataEmbedSlugRouteImport.update({
   id: '/data/embed/$slug',
   path: '/data/embed/$slug',
@@ -485,6 +545,14 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
+  '/brand/colour': typeof BrandColourRoute
+  '/brand/containers': typeof BrandContainersRoute
+  '/brand/downloads': typeof BrandDownloadsRoute
+  '/brand/illustration': typeof BrandIllustrationRoute
+  '/brand/mark': typeof BrandMarkRoute
+  '/brand/motion': typeof BrandMotionRoute
+  '/brand/space': typeof BrandSpaceRoute
+  '/brand/type': typeof BrandTypeRoute
   '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
@@ -510,6 +578,7 @@ export interface FileRoutesByFullPath {
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
   '/audit/': typeof AuditIndexRoute
+  '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/data/': typeof DataIndexRoute
@@ -541,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/brand/files/$file': typeof BrandFilesFileRoute
   '/data/embed/$slug': typeof DataEmbedSlugRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
@@ -562,6 +632,14 @@ export interface FileRoutesByTo {
   '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
+  '/brand/colour': typeof BrandColourRoute
+  '/brand/containers': typeof BrandContainersRoute
+  '/brand/downloads': typeof BrandDownloadsRoute
+  '/brand/illustration': typeof BrandIllustrationRoute
+  '/brand/mark': typeof BrandMarkRoute
+  '/brand/motion': typeof BrandMotionRoute
+  '/brand/space': typeof BrandSpaceRoute
+  '/brand/type': typeof BrandTypeRoute
   '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
@@ -587,6 +665,7 @@ export interface FileRoutesByTo {
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
   '/audit': typeof AuditIndexRoute
+  '/brand': typeof BrandIndexRoute
   '/brands': typeof BrandsIndexRoute
   '/chart': typeof ChartIndexRoute
   '/data': typeof DataIndexRoute
@@ -618,6 +697,7 @@ export interface FileRoutesByTo {
   '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/brand/files/$file': typeof BrandFilesFileRoute
   '/data/embed/$slug': typeof DataEmbedSlugRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
@@ -640,6 +720,14 @@ export interface FileRoutesById {
   '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
+  '/brand/colour': typeof BrandColourRoute
+  '/brand/containers': typeof BrandContainersRoute
+  '/brand/downloads': typeof BrandDownloadsRoute
+  '/brand/illustration': typeof BrandIllustrationRoute
+  '/brand/mark': typeof BrandMarkRoute
+  '/brand/motion': typeof BrandMotionRoute
+  '/brand/space': typeof BrandSpaceRoute
+  '/brand/type': typeof BrandTypeRoute
   '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
@@ -665,6 +753,7 @@ export interface FileRoutesById {
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
   '/audit/': typeof AuditIndexRoute
+  '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/data/': typeof DataIndexRoute
@@ -696,6 +785,7 @@ export interface FileRoutesById {
   '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/brand/files/$file': typeof BrandFilesFileRoute
   '/data/embed/$slug': typeof DataEmbedSlugRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
@@ -719,6 +809,14 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/what-we-show'
     | '/audit/new'
+    | '/brand/colour'
+    | '/brand/containers'
+    | '/brand/downloads'
+    | '/brand/illustration'
+    | '/brand/mark'
+    | '/brand/motion'
+    | '/brand/space'
+    | '/brand/type'
     | '/brands/$domain'
     | '/chart/$week'
     | '/chart/{$week}.png'
@@ -744,6 +842,7 @@ export interface FileRouteTypes {
     | '/watch/$id'
     | '/watch/new'
     | '/audit/'
+    | '/brand/'
     | '/brands/'
     | '/chart/'
     | '/data/'
@@ -775,6 +874,7 @@ export interface FileRouteTypes {
     | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/brand/files/$file'
     | '/data/embed/$slug'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
@@ -796,6 +896,14 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/what-we-show'
     | '/audit/new'
+    | '/brand/colour'
+    | '/brand/containers'
+    | '/brand/downloads'
+    | '/brand/illustration'
+    | '/brand/mark'
+    | '/brand/motion'
+    | '/brand/space'
+    | '/brand/type'
     | '/brands/$domain'
     | '/chart/$week'
     | '/chart/{$week}.png'
@@ -821,6 +929,7 @@ export interface FileRouteTypes {
     | '/watch/$id'
     | '/watch/new'
     | '/audit'
+    | '/brand'
     | '/brands'
     | '/chart'
     | '/data'
@@ -852,6 +961,7 @@ export interface FileRouteTypes {
     | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/brand/files/$file'
     | '/data/embed/$slug'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
@@ -873,6 +983,14 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/what-we-show'
     | '/audit/new'
+    | '/brand/colour'
+    | '/brand/containers'
+    | '/brand/downloads'
+    | '/brand/illustration'
+    | '/brand/mark'
+    | '/brand/motion'
+    | '/brand/space'
+    | '/brand/type'
     | '/brands/$domain'
     | '/chart/$week'
     | '/chart/{$week}.png'
@@ -898,6 +1016,7 @@ export interface FileRouteTypes {
     | '/watch/$id'
     | '/watch/new'
     | '/audit/'
+    | '/brand/'
     | '/brands/'
     | '/chart/'
     | '/data/'
@@ -929,6 +1048,7 @@ export interface FileRouteTypes {
     | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/brand/files/$file'
     | '/data/embed/$slug'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
@@ -951,6 +1071,14 @@ export interface RootRouteChildren {
   WelcomeRoute: typeof WelcomeRoute
   WhatWeShowRoute: typeof WhatWeShowRoute
   AuditNewRoute: typeof AuditNewRoute
+  BrandColourRoute: typeof BrandColourRoute
+  BrandContainersRoute: typeof BrandContainersRoute
+  BrandDownloadsRoute: typeof BrandDownloadsRoute
+  BrandIllustrationRoute: typeof BrandIllustrationRoute
+  BrandMarkRoute: typeof BrandMarkRoute
+  BrandMotionRoute: typeof BrandMotionRoute
+  BrandSpaceRoute: typeof BrandSpaceRoute
+  BrandTypeRoute: typeof BrandTypeRoute
   BrandsDomainRoute: typeof BrandsDomainRoute
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
@@ -976,6 +1104,7 @@ export interface RootRouteChildren {
   WatchIdRoute: typeof WatchIdRoute
   WatchNewRoute: typeof WatchNewRoute
   AuditIndexRoute: typeof AuditIndexRoute
+  BrandIndexRoute: typeof BrandIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
   DataIndexRoute: typeof DataIndexRoute
@@ -1007,6 +1136,7 @@ export interface RootRouteChildren {
   ApiPublicOembedRoute: typeof ApiPublicOembedRoute
   ApiPublicSeedCandidatesRoute: typeof ApiPublicSeedCandidatesRoute
   ApiPublicThumbOptoutRoute: typeof ApiPublicThumbOptoutRoute
+  BrandFilesFileRoute: typeof BrandFilesFileRoute
   DataEmbedSlugRoute: typeof DataEmbedSlugRoute
   EmbedChartWeekRoute: typeof EmbedChartWeekRoute
   EmbedTraitKeyRoute: typeof EmbedTraitKeyRoute
@@ -1119,6 +1249,69 @@ declare module '@tanstack/react-router' {
       path: '/audit/new'
       fullPath: '/audit/new'
       preLoaderRoute: typeof AuditNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/': {
+      id: '/brand/'
+      path: '/brand'
+      fullPath: '/brand/'
+      preLoaderRoute: typeof BrandIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/colour': {
+      id: '/brand/colour'
+      path: '/brand/colour'
+      fullPath: '/brand/colour'
+      preLoaderRoute: typeof BrandColourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/containers': {
+      id: '/brand/containers'
+      path: '/brand/containers'
+      fullPath: '/brand/containers'
+      preLoaderRoute: typeof BrandContainersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/downloads': {
+      id: '/brand/downloads'
+      path: '/brand/downloads'
+      fullPath: '/brand/downloads'
+      preLoaderRoute: typeof BrandDownloadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/illustration': {
+      id: '/brand/illustration'
+      path: '/brand/illustration'
+      fullPath: '/brand/illustration'
+      preLoaderRoute: typeof BrandIllustrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/mark': {
+      id: '/brand/mark'
+      path: '/brand/mark'
+      fullPath: '/brand/mark'
+      preLoaderRoute: typeof BrandMarkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/motion': {
+      id: '/brand/motion'
+      path: '/brand/motion'
+      fullPath: '/brand/motion'
+      preLoaderRoute: typeof BrandMotionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/space': {
+      id: '/brand/space'
+      path: '/brand/space'
+      fullPath: '/brand/space'
+      preLoaderRoute: typeof BrandSpaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/type': {
+      id: '/brand/type'
+      path: '/brand/type'
+      fullPath: '/brand/type'
+      preLoaderRoute: typeof BrandTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brands/': {
@@ -1506,6 +1699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicThumbOptoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/brand/files/$file': {
+      id: '/brand/files/$file'
+      path: '/brand/files/$file'
+      fullPath: '/brand/files/$file'
+      preLoaderRoute: typeof BrandFilesFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/data/embed/$slug': {
       id: '/data/embed/$slug'
       path: '/data/embed/$slug'
@@ -1559,6 +1759,14 @@ const rootRouteChildren: RootRouteChildren = {
   WelcomeRoute: WelcomeRoute,
   WhatWeShowRoute: WhatWeShowRoute,
   AuditNewRoute: AuditNewRoute,
+  BrandColourRoute: BrandColourRoute,
+  BrandContainersRoute: BrandContainersRoute,
+  BrandDownloadsRoute: BrandDownloadsRoute,
+  BrandIllustrationRoute: BrandIllustrationRoute,
+  BrandMarkRoute: BrandMarkRoute,
+  BrandMotionRoute: BrandMotionRoute,
+  BrandSpaceRoute: BrandSpaceRoute,
+  BrandTypeRoute: BrandTypeRoute,
   BrandsDomainRoute: BrandsDomainRoute,
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
@@ -1584,6 +1792,7 @@ const rootRouteChildren: RootRouteChildren = {
   WatchIdRoute: WatchIdRoute,
   WatchNewRoute: WatchNewRoute,
   AuditIndexRoute: AuditIndexRoute,
+  BrandIndexRoute: BrandIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,
   ChartIndexRoute: ChartIndexRoute,
   DataIndexRoute: DataIndexRoute,
@@ -1615,6 +1824,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOembedRoute: ApiPublicOembedRoute,
   ApiPublicSeedCandidatesRoute: ApiPublicSeedCandidatesRoute,
   ApiPublicThumbOptoutRoute: ApiPublicThumbOptoutRoute,
+  BrandFilesFileRoute: BrandFilesFileRoute,
   DataEmbedSlugRoute: DataEmbedSlugRoute,
   EmbedChartWeekRoute: EmbedChartWeekRoute,
   EmbedTraitKeyRoute: EmbedTraitKeyRoute,

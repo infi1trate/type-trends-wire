@@ -2,6 +2,7 @@
 // (the same values as slug.tokens.json). brand/README.md is the source of truth; this file only maps the kit onto the
 // token contract. Values the kit does not give are marked CHOSEN, with the reason, and listed on /brand.
 import { slugBrand as K } from "../../../brand/tokens/slug.theme";
+import { BRAND_NAME } from "../brand";
 import type { Gumball, GumballName, Mode, ModeTokens, Shared, Theme, TypeRole, TypeRoleName } from "./contract";
 
 const C = K.color, T = K.type, px = (n: number) => `${n}px`;
@@ -147,7 +148,8 @@ const shared: Shared = {
 
 const lightFocus = { ring: C.ink, width: "3px", offset: "3px", halo: C.yellow };
 export const slug: Theme = {
-  name: "slug", label: "slug · P Extra Fine", shared,
+  // The theme is named after the brand (a machine name: ACTIVE_THEME, kit labels).
+  name: BRAND_NAME, label: `${BRAND_NAME} · P Extra Fine`, shared,
   modes: {
     // accent 1 is the lead (pink), 2 rising (green), 3 the highlighter (yellow), 4 live (red). Accents are fills on paper, never text.
     light: mode("light", readType, { accent: [C.pink, C.green, C.yellow, C.red], onAccent: [C.ink, C.ink, C.ink, C.ink], focus: lightFocus, grid: C.newsprint, thumb: C.ink, unstaged: C.white }),

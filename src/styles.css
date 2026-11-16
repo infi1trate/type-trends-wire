@@ -37,7 +37,7 @@
 
   --color-void: var(--tk-surface-page);
   --color-g900: var(--tk-surface-card);
-  --color-g800: var(--tk-surface-raised);
+  --color-g800: var(--tk-surface-sunken);
   --color-rule: var(--tk-rule-hairline);
   --color-g500: var(--tk-text-muted);
   --color-ink: var(--tk-text-primary);
@@ -57,7 +57,7 @@
   --color-ring: var(--tk-focus-ring);
   --color-primary: var(--tk-text-primary);
   --color-primary-foreground: var(--tk-text-inverse);
-  --color-muted: var(--tk-surface-raised);
+  --color-muted: var(--tk-surface-sunken);
   --color-muted-foreground: var(--tk-text-muted);
   --color-card: var(--tk-surface-page);
   --color-card-foreground: var(--tk-text-primary);
@@ -118,7 +118,7 @@
 }
 
 @utility hatch {
-  background-color: var(--tk-surface-raised);
+  background-color: var(--tk-surface-sunken);
   background-image: repeating-linear-gradient(45deg, var(--tk-rule-hairline) 0 1px, transparent 1px 8px);
 }
 
@@ -306,24 +306,6 @@
   .tk-tab { min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-3); background: transparent; color: var(--tk-text-muted); border-bottom: var(--tk-border-strong) solid transparent; cursor: pointer; }
   .tk-tab[aria-selected="true"] { color: var(--tk-text-primary); border-bottom-color: var(--tk-accent-1); }
 
-  .tk-box { position: relative; overflow: hidden; padding: var(--tk-space-4); border: var(--tk-border-hairline) solid var(--tk-rule-hairline); border-radius: var(--tk-radius-md); min-height: 120px; }
-  .tk-box[data-box="page"] { background: var(--tk-surface-page); color: var(--tk-text-primary); }
-  .tk-box[data-box="card"] { background: var(--tk-surface-card); color: var(--tk-text-primary); border-color: var(--tk-rule-strong); }
-  .tk-box[data-box="inverse"] { background: var(--tk-surface-inverse); color: var(--tk-text-inverse); border-color: var(--tk-surface-inverse); }
-  .tk-box[data-box="accent"] { background: var(--tk-accent-1); color: var(--tk-on-accent-1); border-color: var(--tk-accent-1); }
-  .tk-box[data-box="highlight"] { background: var(--tk-surface-sunken); color: var(--tk-text-primary); border-left: calc(var(--tk-border-strong) * 2) solid var(--tk-accent-1); }
-  .tk-box[data-box="patterned"] { background: var(--tk-surface-page); color: var(--tk-text-primary); }
-  .tk-box[data-box="patterned"]::before { content: ""; position: absolute; inset: 0; background: var(--tk-rule-hairline);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Ccircle cx='4' cy='4' r='1'/%3E%3C/svg%3E") repeat 0 0 / 8px 8px;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Ccircle cx='4' cy='4' r='1'/%3E%3C/svg%3E") repeat 0 0 / 8px 8px; }
-  .tk-box[data-box="grain"] { background: var(--tk-surface-page); color: var(--tk-text-primary); }
-  .tk-box-grain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .22; mix-blend-mode: multiply; pointer-events: none; }
-  .tk-box[data-box="striped-draft"] { background-color: var(--tk-surface-raised); background-image: repeating-linear-gradient(45deg, var(--tk-rule-hairline) 0 1px, transparent 1px 8px); color: var(--tk-text-primary); border-style: dashed; }
-
-  .tk-box[data-box="photo-with-scrim"] { color: var(--tk-text-inverse); background: var(--tk-surface-inverse); }
-  .tk-box[data-box="photo-with-scrim"]::before { content: ""; position: absolute; inset: 0; background: var(--tk-surface-inverse); opacity: .55; z-index: 1; }
-  .tk-box[data-box="photo-with-scrim"] > .relative { z-index: 2; }
-  .tk-box-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
   .tk-chart { color: var(--tk-text-primary); font-variant-numeric: tabular-nums; }
   .tk-svg { display: block; width: 100%; height: auto; max-width: 720px; overflow: visible; }
@@ -480,3 +462,14 @@
 }
 @media (prefers-reduced-motion: reduce) { .c-raised, .c-sticker { transition: none; } }
 @media print { .c-raised, .c-sticker { box-shadow: none !important; transform: none !important; } .c-slab { background: none !important; color: inherit !important; } }
+@layer components {
+  /* Story ledgers carry "No. 48": a wider number column, the same on every row so titles align. */
+  .ledger-link:has([data-story-number]) { grid-template-columns: 7ch minmax(0, 1fr) auto; }
+  @media (min-width: 768px) { .ledger-link:has([data-story-number]) { grid-template-columns: 8ch minmax(0, 1fr) auto auto; } }
+}
+@layer components {
+  /* Brand pages: the mark at full width, and a stand-in "photograph" (a halftone of ink on green) for grounds and photo plates. */
+  .brand-mark-full .wordmark, .brand-mark-full .wordmark > svg { width: 100%; height: auto; }
+  .brand-photo { background-color: var(--tk-gumball-green-base); background-image: radial-gradient(circle at 30% 30%, var(--tk-gumball-ink-base) 0 1.4px, transparent 1.6px); background-size: 6px 6px; }
+  .brand-dont { position: relative; }
+}

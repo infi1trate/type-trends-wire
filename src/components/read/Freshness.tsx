@@ -5,12 +5,12 @@ import { QueryClientContext, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { freshnessQuery } from "@/lib/data";
 
-const Blank = () => <p className="ed-wrap ed-small ed-muted no-print min-h-5" aria-hidden="true" />;
+const Blank = () => <p className="ed-wrap shell-fresh no-print min-h-5" aria-hidden="true" />;
 function Line() {
   const q = useQuery(freshnessQuery());
   if (!q.data) return <Blank />;
   const { text, late } = q.data.line;
-  return <p className={`ed-wrap ed-small no-print min-h-5 ${late ? "font-semibold" : "ed-muted"}`} role={late ? "status" : undefined}>
+  return <p className={`ed-wrap shell-fresh no-print min-h-5 pt-1 ${late ? "font-semibold" : ""}`} role={late ? "status" : undefined}>
     {text} {late && <Link to="/status" className="ed-tap underline">See status</Link>}
   </p>;
 }
