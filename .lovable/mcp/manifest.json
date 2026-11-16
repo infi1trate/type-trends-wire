@@ -15,7 +15,7 @@
       {
         "name": "get_trend",
         "title": "Get a typeface's trend",
-        "description": "Usage rank, trending rank, 7- and 28-day rank changes, band and daily history for one Google Fonts family. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Usage rank, trending rank, 7- and 28-day rank changes, band and daily history for one Google Fonts family. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -41,7 +41,7 @@
       {
         "name": "search_trends",
         "title": "Find typefaces that are moving",
-        "description": "Ranks Google Fonts families by usage-rank change over a window, or Google's current trending order. Filter by category. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Ranks Google Fonts families by usage-rank change over a window, or Google's current trending order. Filter by category. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -89,7 +89,7 @@
       {
         "name": "wire",
         "title": "Design news wire",
-        "description": "Recent design news (RSS, Hacker News, Bluesky, Product Hunt) and DSGN/TERMINAL trend-signal alerts. Alerts name each signal in plain words with its dimension (FONT, COLOR, LAYOUT, VIBE) and keep the stable trait key. Filter by keyword, tag, source or source_kind. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Recent design news (RSS, Hacker News, Bluesky, Product Hunt) and DSGN/TERMINAL trend-signal alerts. Alerts name each signal in plain words with its dimension (FONT, COLOR, LAYOUT, VIBE) and keep the stable trait key. Filter by keyword, tag, source or source_kind. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -152,7 +152,7 @@
       {
         "name": "library_site",
         "title": "Library site fingerprint",
-        "description": "Latest design fingerprint, snapshot metadata and last 20 change events for a tracked domain; excludes skeleton and private text. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Latest design fingerprint, snapshot metadata and last 20 change events for a tracked domain; excludes skeleton and private text. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -178,7 +178,7 @@
       {
         "name": "library_events",
         "title": "Library change events",
-        "description": "Recent derived design changes across tracked sites, filtered by sector or event type. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Recent derived design changes across tracked sites, filtered by sector or event type. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -239,7 +239,7 @@
       {
         "name": "library_sector",
         "title": "Library sector statistics",
-        "description": "Sector statistics, top headline and body fonts with site counts, and theme split from latest desktop home captures. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Sector statistics, top headline and body fonts with site counts, and theme split from latest desktop home captures. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -274,7 +274,7 @@
       {
         "name": "crawl_spread",
         "title": "Vanguard versus mainstream spread",
-        "description": "Current crawler signal shares and spread points for English-language or all successful sites. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Current crawler signal shares and spread points for English-language or all successful sites. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -289,6 +289,15 @@
                 "en",
                 "all"
               ]
+            },
+            "tier": {
+              "description": "Optional: only signals in this tier (headline = shown by default; supporting = evidence; archive = build plumbing and residuals). Unset returns every row as before.",
+              "type": "string",
+              "enum": [
+                "headline",
+                "supporting",
+                "archive"
+              ]
             }
           },
           "required": [
@@ -301,7 +310,7 @@
       {
         "name": "library_trends",
         "title": "AI-derived Library trends",
-        "description": "Read public design tag shares and pricing, changelog or product-theme statistics, overall or by sector; no private page text or images. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Read public design tag shares and pricing, changelog or product-theme statistics, overall or by sector; no private page text or images. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -339,6 +348,15 @@
                 "health",
                 "enterprise-saas"
               ]
+            },
+            "tier": {
+              "description": "Optional: only signals in this tier (headline = shown by default; supporting = evidence; archive = build plumbing and residuals). Unset returns every row as before.",
+              "type": "string",
+              "enum": [
+                "headline",
+                "supporting",
+                "archive"
+              ]
             }
           },
           "additionalProperties": false
@@ -348,7 +366,7 @@
       {
         "name": "library_history",
         "title": "Library quarterly history",
-        "description": "Read quarterly public design shares with capture denominators and coverage. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Read quarterly public design shares with capture denominators and coverage. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -398,7 +416,7 @@
       {
         "name": "site_history",
         "title": "Site quarterly history",
-        "description": "Read public quarterly site fingerprints and AI tags, without skeletons or private text. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Read public quarterly site fingerprints and AI tags, without skeletons or private text. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -424,7 +442,7 @@
       {
         "name": "forecast",
         "title": "Trait forecast",
-        "description": "Fitted adoption curve, +1/+2/+4 quarter projections with 80% intervals, stage, momentum, evidence and backtest for design traits. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Fitted adoption curve, +1/+2/+4 quarter projections with 80% intervals, stage, momentum, evidence and backtest for design traits. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -446,6 +464,15 @@
               "minLength": 1,
               "maxLength": 40,
               "description": "'all' or a library sector slug."
+            },
+            "tier": {
+              "description": "Optional: only signals in this tier (headline = shown by default; supporting = evidence; archive = build plumbing and residuals). Unset returns every row as before.",
+              "type": "string",
+              "enum": [
+                "headline",
+                "supporting",
+                "archive"
+              ]
             }
           },
           "additionalProperties": false
@@ -455,7 +482,7 @@
       {
         "name": "next_wave",
         "title": "Next-wave traits",
-        "description": "Traits ranked by the next-wave score with each component (trendsetter gap, vanguard spread, momentum, corroboration). Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Traits ranked by the next-wave score with each component (trendsetter gap, vanguard spread, momentum, corroboration). Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -474,6 +501,15 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 50
+            },
+            "tier": {
+              "description": "Optional: only signals in this tier (headline = shown by default; supporting = evidence; archive = build plumbing and residuals). Unset returns every row as before.",
+              "type": "string",
+              "enum": [
+                "headline",
+                "supporting",
+                "archive"
+              ]
             }
           },
           "additionalProperties": false
@@ -483,7 +519,7 @@
       {
         "name": "trendsetters",
         "title": "Trendsetter sites",
-        "description": "Library sites that adopted traits earliest before they crossed 20% library-wide share. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Library sites that adopted traits earliest before they crossed 20% library-wide share. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -505,7 +541,7 @@
       {
         "name": "weekly_brief",
         "title": "Weekly brief",
-        "description": "The AI-written weekly brief with citations to forecasts, events, wire items and spread signals. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "The AI-written weekly brief with citations to forecasts, events, wire items and spread signals. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -526,7 +562,7 @@
       {
         "name": "recommend_type",
         "title": "Recommend type",
-        "description": "Rank real, licensable fonts and pairings with consensus bias, measured adoption and receipts. Bespoke brand faces are excluded unless include_proprietary is true; faces need ≥2 sites in a sector (≥3 overall). Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Rank real, licensable fonts and pairings with consensus bias, measured adoption and receipts. Bespoke brand faces are excluded unless include_proprietary is true; faces need ≥2 sites in a sector (≥3 overall). Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -620,7 +656,7 @@
       {
         "name": "recommend_palette",
         "title": "Recommend palette",
-        "description": "Rank measured site palettes with contrast guarantees and consensus bias. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Rank measured site palettes with contrast guarantees and consensus bias. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -691,7 +727,7 @@
       {
         "name": "differentiate",
         "title": "Differentiate",
-        "description": "Find convergence and leader-led open territory in a sector or up to five URLs; unknown URLs queue rendering. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Find convergence and leader-led open territory in a sector or up to five URLs; unknown URLs queue rendering. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": false,
           "openWorldHint": false,
@@ -738,7 +774,7 @@
       {
         "name": "critique",
         "title": "Critique",
-        "description": "Evaluate a library URL, public declared CSS or transient image against design evidence; unknown URLs queue rendering. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Evaluate a library URL, public declared CSS or transient image against design evidence; unknown URLs queue rendering. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": false,
           "openWorldHint": false,
@@ -769,7 +805,7 @@
       {
         "name": "rebrands",
         "title": "Rebrand desk",
-        "description": "Confirmed identity changes (fonts, accent/palette hue, theme, redesigns) across library sites, newest first, with before/after fields and the forecast stage of each new trait. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Confirmed identity changes (fonts, accent/palette hue, theme, redesigns) across library sites, newest first, with before/after fields and the forecast stage of each new trait. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -812,7 +848,7 @@
       {
         "name": "vibe_map",
         "title": "Vibe map",
-        "description": "Tag-space clusters of library sites (closed-vocabulary AI tags, PCA + k-means) with names, member domains, top tags and momentum vs the archive. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Tag-space clusters of library sites (closed-vocabulary AI tags, PCA + k-means) with names, member domains, top tags and momentum vs the archive. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
