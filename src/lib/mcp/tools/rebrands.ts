@@ -3,7 +3,7 @@ import { z } from "zod";
 import { librarySector } from "@/lib/library-payload";
 import { MAX_REBRAND_LIMIT } from "@/lib/rebrands";
 import { json, READ } from "./shared";
-export default defineTool({ name: "rebrands", title: "Rebrand desk", description: "Confirmed identity changes (fonts, accent/palette hue, theme, redesigns) across library sites, newest first, with before/after fields and the forecast stage of each new trait. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+export default defineTool({ name: "rebrands", title: "Rebrand desk", description: "Confirmed identity changes (fonts, accent/palette hue, theme, redesigns) across library sites, newest first, with before/after fields and the forecast stage of each new trait. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
   inputSchema: { sector: librarySector.optional(), since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("ISO date; only rebrands confirmed on or after it."), limit: z.number().int().min(1).max(MAX_REBRAND_LIMIT).default(10) }, annotations: READ,
   handler: async ({ sector, since, limit }) => {
     const { rebrands } = await import("@/lib/rebrands.server");

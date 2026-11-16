@@ -7,11 +7,13 @@ import { CrawlControls, CrawlState, Toggle } from "./CrawlControls";
 import { CompareBlock, Scatter, comparisonRows, indexClass, shownIndexes } from "./CrawlCharts";
 import { PanelHeader } from "./primitives";
 import { Info } from "./Info";
+import { PanelHeadlines } from "./Signals";
 
 export function CrawlPanel({panel}:{panel:"color"|"layout"|"composition"|"lexicon"}) {
   const [index,setIndex]=useState<IndexFilter>("ALL");
   return <section className="crawler flex min-h-0 flex-1 flex-col" aria-label={panel}>
-    <PanelHeader g={`p-${panel}`} title={{color:"F3 COLOR",layout:"F4 LAYOUT",composition:"F5 COMPOSITION",lexicon:"F6 LEXICON"}[panel]}/>
+    <PanelHeadlines panel={panel}/>
+    <PanelHeader g={`p-${panel}`} title={`${{color:"F3 COLOR",layout:"F4 LAYOUT",composition:"F5 COMPOSITION",lexicon:"F6 LEXICON"}[panel]} · EVIDENCE`} meta="SUPPORTING · WEEKLY CRAWL"/>
     <CrawlControls index={index} onIndex={setIndex}/>
     <div className="min-h-0 flex-1 md:overflow-y-auto"><CrawlState>{data=>panel==="color"?<Color data={data} index={index}/>:panel==="layout"?<Layout data={data} index={index}/>:panel==="composition"?<Composition data={data} index={index}/>:<Lexicon data={data} index={index}/>}</CrawlState></div>
   </section>;
@@ -31,7 +33,9 @@ function Color({data,index}:{data:CrawlData;index:IndexFilter}) {
 }
 const DIMENSIONS=[ ["h1_align","≡"],["hero_media","▣ ▷"],["cta_shape","[ ] ( )"],["grid_cols","▥"],["h1_size","Aa"],["h1_tracking","A A"],["h1_case","a A"] ] as const;
 function Layout({data,index}:{data:CrawlData;index:IndexFilter}) {
-  return <div className="grid xl:grid-cols-2">{DIMENSIONS.map(([dimension,glyph])=><CompareBlock key={dimension} title={(dimension??"").toUpperCase()} glyph={glyph} index={index} present={presentIndexes(data.sites)} rows={comparisonRows(data.layout.filter(r=>r.dimension===dimension))}/>)}<CompareBlock title="TECH STACK" glyph="</>" index={index} present={presentIndexes(data.sites)} rows={comparisonRows(data.tech).slice(0,10)}/></div>;
+  // Tech stack is archive-tier build plumbing: one click away, not shown by default.
+  const [tech,setTech]=useState(false);
+  return <div className="grid xl:grid-cols-2">{DIMENSIONS.map(([dimension,glyph])=><CompareBlock key={dimension} title={(dimension??"").toUpperCase()} glyph={glyph} index={index} present={presentIndexes(data.sites)} rows={comparisonRows(data.layout.filter(r=>r.dimension===dimension))}/>)}{tech?<CompareBlock title="TECH STACK · ARCHIVE" glyph="</>" index={index} present={presentIndexes(data.sites)} rows={comparisonRows(data.tech).slice(0,10)}/>:<div className="border-b border-rule p-3"><button type="button" onClick={()=>setTech(true)} className="label min-h-11 text-compare-muted underline underline-offset-2 hover:text-ink md:min-h-0">SHOW TECH STACK (ARCHIVE: BUILD PLUMBING)</button></div>}</div>;
 }
 function Composition({data,index}:{data:CrawlData;index:IndexFilter}) {
   const sites=data.sites.filter(s=>shownIndexes(index,presentIndexes(data.sites)).includes(s.index_name));

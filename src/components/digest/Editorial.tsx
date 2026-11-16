@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { SITE_URL, DIGEST_NAME } from "@/lib/site";
 import { figureSvg, type CardModel } from "@/lib/chart/card";
 import type { Thumb } from "@/lib/thumbs";
-import type { StageName } from "@/lib/labels";
+import { BASIS_WORD, type Basis, type StageName } from "@/lib/labels";
 import { GATE_ENABLED } from "@/lib/gate";
 
 /** Absolute URL printed after a link in the print stylesheet. */
@@ -31,8 +31,10 @@ export function StageWord({ stage }: { stage: StageName | null }) {
   return stage ? <span className="ed-badge" title="Stage">{stage}</span> : <span className="ed-badge ed-muted">Not staged yet</span>;
 }
 export const Dim = ({ d }: { d: string }) => <span className="ed-data ed-muted">[{d}]</span>;
+/** MEASURED / AI ESTIMATE in the editorial system: a small outlined word, no color. */
+export const BasisWord = ({ b }: { b: Basis }) => <span className="ed-badge ed-basis" title={b === "ai" ? "Read by our AI tagger from homepage captures: an estimate." : "Measured from each page's code and rendered styles."}>{BASIS_WORD[b]}</span>;
 
-export function SectionHead({ n, title, kicker, id }: { n: string; title: string; kicker?: string; id: string }) {
+export function SectionHead({ n, title, kicker, id }: { n: string; title: string; kicker?: string | undefined; id: string }) {
   return <header className="ed-rule mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 pt-3">
     <span className="ed-kicker">{n}</span>
     <h2 id={id} className="ed-h2">{title}</h2>
@@ -83,6 +85,7 @@ export function DigestFooter({ footer }: { footer: { methodology: string; glossa
       <a href={footer.rss} className="ed-tap" {...pr(footer.rss)}>RSS</a>
       <Link to="/" className="ed-tap" {...pr("/")}>Open the terminal</Link>
       <Link to="/digest/archive" className="ed-tap">All issues</Link>
+      <Link to="/what-we-show" className="ed-tap" {...pr("/what-we-show")}>What we show and why</Link>
       {GATE_ENABLED && <form method="post" action="/lock" className="no-print contents"><button type="submit" className="ed-tap cursor-pointer underline">Lock</button></form>}
     </div>
     {footer.contact && <p className="ed-wrap ed-caption mt-3">Spotted an error? <a href={footer.contact}>Write to the editor</a>.</p>}

@@ -281,6 +281,13 @@
       "when": 1794787128052,
       "tag": "0039_forecast_ledger_and_mcp_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794789250763,
+      "tag": "0040_site_history_h1_size",
+      "breakpoints": true
     }
   ]
 }

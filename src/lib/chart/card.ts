@@ -1,6 +1,6 @@
 // Chart of the Week: pure card model + display list. One scene feeds both the SVG and the PNG rasterizer.
 import { GLYPH_ADVANCE, GLYPH_ASCENT } from "./glyphs.gen";
-import { alertDisplayTitle, label as traitLabel, scopeText, stageName } from "../labels";
+import { alertDisplayTitle, basisWord, label as traitLabel, scopeText, stageName } from "../labels";
 export const CARD_SIZES = { "1200x675": { w: 1200, h: 675 }, "1080x1350": { w: 1080, h: 1350 } } as const;
 export type CardSize = keyof typeof CARD_SIZES;
 export const COLORS = { bg: "#000000", rule: "#262626", g500: "#6b6b6b", muted: "#9a9a9a", ink: "#ededed", signal: "#ff4f00" } as const;
@@ -84,7 +84,7 @@ export function cardScene(m: CardModel, size: CardSize, opts: { head?: string } 
   t(pad, pad - 8, fit(head, 22, inner), 22, 400, COLORS.g500);
   const txt = cardText(m);
   t(pad, pad + 24, fit(txt.name, 44, inner), 44, 600, COLORS.ink);
-  t(pad, pad + 80, fit(`[${txt.dimension}] · ${txt.scope.toUpperCase()}`, 22, inner), 22, 400, COLORS.muted);
+  t(pad, pad + 80, fit(`[${txt.dimension}] · ${basisWord(m.trait)} · ${txt.scope.toUpperCase()}`, 22, inner), 22, 400, COLORS.muted);
   const callLines = wrap(txt.call, 28, inner, portrait ? 4 : 2);
   callLines.forEach((line, i) => t(pad, pad + 124 + i * 38, line, 28, 400, COLORS.ink));
   const st = stats(m);

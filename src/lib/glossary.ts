@@ -9,6 +9,8 @@ export type GlossaryEntry = { id: string; term: string; measures: string; howToR
 type Row = [id: string, term: string, measures: string, howToRead: string, anchor: string];
 
 const PANELS: Row[] = [
+  ["p-headline", "Headline signals", "This panel's headline signals only: visible, decision-worthy, well measured and moving.", "Open a row for Momentum, Confidence, the so-what line and the evidence behind it.", "m-tiers"],
+  ["p-all-signals", "All signals", "Every signal by tier: Headline, Supporting or Archive, with the reason for its tier. Your choice is remembered on this device.", "Default surfaces show headline only; switch tier here to see the evidence and the archive.", "m-tiers"],
   ["p-today", "Today", "What changed since the last data came in: stage moves, new alerts, the freshest news and crawl status.", "Start here each day; every line links to the panel that proves it.", "m-forecast"],
   ["p-signals", "Signals (F1)", "The overview: font movers, crawl spread and the news wire side by side.", "Scan for what's climbing, then open the full panel for the receipts.", "m-data"],
   ["p-type-index", "Type index", "Every Google Fonts family ranked by popularity, with its 7- and 28-day rank change and stage.", "Sort by 28-day change to find families gaining real use.", "m-type-bands"],
@@ -79,6 +81,14 @@ const METRICS: Row[] = [
   ["trait", "Trait", "One measurable design choice: a font, a color, a layout pattern or a style tag.", "The tag after the name is its dimension.", "m-labels"],
   ["signal", "Signal", "A trait we watch for movement.", "Each signal has a plain name and one of four dimensions.", "m-labels"],
   ["dimension", "Dimension", "The family a trait belongs to: FONT, COLOR, LAYOUT or VIBE.", "Use it to focus on what matters for your work.", "m-labels"],
+  ["tier-headline", "Headline signal", "A signal that is visible to visitors, worth a brand decision, measured on enough sites and moving. Only these are shown by default.", "Start here: every default list, the Digest, the chart of the week and wire alerts use headline signals only.", "m-tiers"],
+  ["tier-supporting", "Supporting signal", "Visible and decision-worthy but thin or not moving, or a fine measurement bucket (pixel bands, column counts, Google Fonts popularity).", "Read it as evidence inside a headline signal's drawer or explainer, and in audits.", "m-tiers"],
+  ["tier-archive", "Archive signal", "Build plumbing (frameworks, site builders, most CSS techniques) and residual values. Still collected, never deleted.", "Open All signals and pick Archive, or ask MCP with tier: archive.", "m-tiers"],
+  ["composite", "Composite signal", "A signal people say out loud, built per site from several fragments (for example Big type = very large headline AND tight headline spacing).", "It runs through the same forecast as any trait; its members are listed as evidence.", "m-composites"],
+  ["basis-measured", "Measured", "Read directly from each page's code and rendered styles in the weekly crawl or archive.", "Treat it as a count: the share is what the pages actually ship.", "m-tiers"],
+  ["basis-ai", "AI estimate", "Read by our AI tagger from homepage captures (or by our AI reader from pricing pages). A composite is an AI estimate if any member is.", "Useful for direction, less exact than measured values; confidence never rises above Medium.", "m-tiers"],
+  ["momentum-index", "Momentum (0–100)", "One 0–100 figure: where this signal's stored next-wave score ranks among headline and supporting signals in the same run, with a word from its momentum (Rising fast, Rising, Flat, Falling).", "Higher means more likely to grow next. A dash means no next-wave score (already common, or too new).", "m-momentum-and-confidence"],
+  ["confidence", "Confidence", "High, Medium or Low, from how many of the seven score parts were measured, how many sites and how many usable quarters of history.", "The reason line says exactly why. AI estimates are capped at Medium.", "m-momentum-and-confidence"],
 ];
 
 const COLUMNS: Row[] = [

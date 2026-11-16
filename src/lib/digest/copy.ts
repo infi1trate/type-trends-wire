@@ -1,7 +1,8 @@
 // Deterministic editorial copy for the Digest and explainer pages. Names come only from labels.ts. Pure.
-import { canonical, inSentence, label, stageName, type Dimension, type StageName } from "../labels";
+import { AI_TAGGED, basis, canonical, inSentence, label, stageName, type Dimension, type StageName } from "../labels";
 
-export const AI_TAGGED = new Set(["aesthetic", "tone", "imagery", "components", "hero_layout", "color_mood", "ai_positioning"]);
+export { AI_TAGGED };
+import { compositeOf, ruleText } from "../composites";
 export const pct = (v: number | null | undefined, d = 0) => (v == null ? null : `${(v * 100).toFixed(d)}%`);
 export const pts = (v: number | null | undefined) => (v == null ? null : `${Math.abs(v).toFixed(1)} points a quarter`);
 const cat = (key: string) => canonical(key).split(":")[0] ?? "";
@@ -9,6 +10,8 @@ const cat = (key: string) => canonical(key).split(":")[0] ?? "";
 /** One plain-English definition per trait, from its label and how we detect it. */
 export function traitDefinition(key: string): string {
   const k = canonical(key), l = label(k), name = inSentence(l.name), c = cat(k);
+  const combo = c === "combo" ? compositeOf(k) : null;
+  if (combo) return `${l.name} is a composite signal: ${combo.definition.replace(/\.$/, "")}. It combines ${ruleText(combo)}. ${combo.basis === "ai" ? "At least one part is read by our AI tagger, so treat each count as an estimate." : "Every part is measured directly from each page's code and rendered styles."}`;
   const what =
     c === "css" ? `homepages whose stylesheets use ${name}` :
     c === "framework" ? `homepages ${/^built/i.test(l.name) ? name : `built with ${l.name}`}` :
@@ -21,7 +24,7 @@ export function traitDefinition(key: string): string {
     c === "theme" ? `homepages that open in ${name}` :
     c === "ai_positioning" ? `homepages where we see ${name}` :
     `homepages that use ${name}`;
-  const how = AI_TAGGED.has(c) ? "It is read by our AI tagger from homepage captures, so treat each count as an estimate." : "It is measured directly from each page's code and rendered styles.";
+  const how = basis(k) === "ai" ? "It is read by our AI tagger from homepage captures, so treat each count as an estimate." : "It is measured directly from each page's code and rendered styles.";
   return `${l.name} tracks the share of ${what}. ${how}`;
 }
 
@@ -41,6 +44,11 @@ export function whyItMatters(key: string, stage: string | null, share: number | 
   const facts = [p ? `${p} of tracked homepages` : null, m && momentum ? `${momentum >= 0 ? "gaining" : "losing"} ${m}` : null].filter(Boolean);
   const at = facts.length ? `at ${facts.join(" and ")}, ` : "";
   return s ? `${AUDIENCE[l.dimension]}: ${at}this signal is ${STAGE_READ[s]}.` : `${AUDIENCE[l.dimension]}: ${at}this signal is worth watching, but there is not enough history to stage it yet.`;
+}
+/** The so-what line for a headline signal: audience × stage, deterministic, no AI. "this signal" keeps verbs agreeing with any name. */
+export function soWhat(key: string, stage: string | null): string {
+  const l = label(key), s = stageName(stage);
+  return s ? `${AUDIENCE[l.dimension]}: this signal is ${STAGE_READ[s]}.` : `${AUDIENCE[l.dimension]}: worth watching, but there is not enough history to stage it yet.`;
 }
 /** Stage change in words: "moved from Steady to Rising". */
 export const stageMove = (from: StageName | null, to: StageName | null) => (from && to && from !== to ? `moved from ${from} to ${to}` : to ? `is ${to}` : "is not staged yet");

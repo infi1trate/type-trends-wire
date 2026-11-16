@@ -158,3 +158,13 @@
 - [x] Embeds: /embed/trait/$key, /embed/chart/$week (open, frame-ancestors * only there, 404 card), Embed panel on trait + chart pages, oEmbed endpoint + link tags
 - [x] MCP keys: mcp_keys + mcp_key_usage, Bearer dsgn_ keys raise limit, 401 for revoked/unknown, admin endpoint (crawler-secret auth), docs, MCP overlay "Using a key"
 - [x] Tests + screenshots (/ledger, embed 320/800) + report
+
+# Phase 12 — signal tiers and the so-what test (show narrow; nothing deleted; keep look)
+- [x] tiers.ts (four questions, static sets + overrides with reasons) + fixture test
+- [x] composites.ts (~12 combo:* signals in the site-traits layer; view gains h1 size column) + labels/basis
+- [x] Momentum index + Confidence (pure, display only; seven components one click away)
+- [x] MEASURED / AI ESTIMATE chip everywhere a value shows
+- [x] Surfaces obey tiers (TODAY, SIGNALS, panels, Digest cover/movers, chart pick, alert candidates); All signals tier filter; so-what lines
+- [x] MCP fields (tier, basis, momentum_index, confidence) + tier filter + methodology sections
+- [x] /what-we-show page (gated) + links (glossary, terminal footer, Digest footer)
+- [x] Dev forecast run (brief:false, alerts:"off", ledger:false) + tests + screenshots + report

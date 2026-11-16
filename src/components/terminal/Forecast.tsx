@@ -12,6 +12,11 @@ import { SECTORS } from "@/lib/library";
 import { Button } from "@/components/ui/button";
 import { LibraryBand } from "./LibraryShared";
 import { Overlay } from "./primitives";
+import { BasisChip, ConfidenceText, MomentumText, TierChip } from "./SignalBits";
+import { signalsQuery } from "@/lib/data";
+import { buildSignals, type Signal } from "@/lib/signals";
+import { evidenceKeys } from "@/lib/tiers";
+import { compositeOf, ruleText } from "@/lib/composites";
 
 const COMPONENTS = [["gap", "TRENDSETTER GAP"], ["vanguard", "VANGUARD"], ["curation", "CURATION"], ["momentum", "MOMENTUM"], ["corroboration", "CORROBORATION"], ["discourse", "DISCOURSE"], ["supply", "SUPPLY"]] as const;
 const COMPONENT_G: Record<string, string> = { gap: "gap", vanguard: "vanguard", curation: "curation", momentum: "momentum", corroboration: "corroboration", discourse: "discourse", supply: "supply" };
@@ -63,9 +68,13 @@ export function ForecastPanel() {
   useEffect(()=>{if(trait){const [dimension,...parts]=trait.split(':');if(dimension&&parts.length)setOpen({dimension,value:parts.join(':')});}},[trait]);
   const [week, setWeek] = useState<string | null>(null);
   const card = data.card;
-  const all = data.rows.filter(r => r.scope === "all"), scoped = data.rows.filter(r => r.scope === sector);
+  // Default lists obey the tiers (src/lib/tiers.ts): headline signals only; Momentum + Confidence replace the seven-part display (one click away in the drawer).
+  const { data: sig } = useSuspenseQuery(signalsQuery());
+  const scopeSignals = sig ? new Map(buildSignals(data.rows.map(r => ({ ...r, present: r.components?.present ?? [], sites: r.components?.sites ?? null, usable: r.usable ?? null })), sig.tiers, sector).map(x => [x.key, x])) : null;
+  const isHead = (r: { dimension: string; value: string }) => (sig ? sig.tiers.get(key(r))?.tier === "headline" : true);
+  const all = data.rows.filter(r => r.scope === "all" && isHead(r)), scoped = data.rows.filter(r => r.scope === sector && isHead(r));
   const byTrait = new Map(scoped.map(r => [key(r), r]));
-  const wave = [...all].filter(r => r.next_wave_score !== null).sort((a, b) => (b.next_wave_score ?? 0) - (a.next_wave_score ?? 0)).map(a => ({ a, s: byTrait.get(key(a)) ?? a })).filter(x => sector === "all" || byTrait.has(key(x.a))).slice(0, 15);
+  const wave = [...all].filter(r => r.next_wave_score !== null).sort((a, b) => (b.next_wave_score ?? 0) - (a.next_wave_score ?? 0)).map(a => ({ a, s: byTrait.get(key(a)) ?? a, x: scopeSignals?.get(key(a)) })).filter(x => sector === "all" || byTrait.has(key(x.a))).slice(0, 15);
   const lagRows = all.filter(r => r.sectors && Object.values(r.sectors).some(Boolean)).sort((a, b) => Object.values(b.sectors!).filter(Boolean).length - Object.values(a.sectors!).filter(Boolean).length).slice(0, 20);
   const setters = data.setters.filter(s => sector === "all" || s.sector === sector).slice(0, 20);
   const brief = data.briefs.find(b => b.week === week) ?? data.briefs[0];
@@ -87,29 +96,30 @@ export function ForecastPanel() {
     {card && card.n_forecast_ok === 0 && <p className="border-b border-rule p-3 text-compare-muted">Curves aren't fitted yet: each trait needs at least 4 usable quarters (15+ sites and 25% coverage) from the archive backfill. Until then, rankings use trendsetter gap, vanguard and corroboration.</p>}
     <div className="flex flex-wrap gap-1 border-b border-rule p-3" aria-label="Forecast sector filter">{["all", ...SECTORS].map(s => <Button key={s} variant="ghost" className={`label h-8 ${sector === s ? "text-signal" : "text-compare-muted"}`} aria-pressed={sector === s} onClick={() => navigate({ search: prev => ({ ...prev, sector: s }) })}>{s}</Button>)}</div>
 
-    <LibraryBand g="p-next-wave" title={`NEXT WAVE · TOP 15 · ${sector === "all" ? "ALL SECTORS" : sector}`}>
-      <ul className="divide-y divide-rule md:hidden">{wave.map(({ a, s }) => <li key={key(a)} className="space-y-1 p-2">
-        <div className="flex items-baseline justify-between gap-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><Explainer {...a} /><span className="label tabular-nums">{a.next_wave_score?.toFixed(2)}</span></div>
-        <div className="label flex flex-wrap gap-x-3 text-compare-muted"><StageTag stage={s.stage} /><span>SHARE {pct(s.current_share)}</span><span>+4Q {s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</span><span>MOM {s.momentum == null ? "not measured" : s.momentum.toFixed(2)}</span></div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">{COMPONENTS.map(([k, l]) => <span key={k} className="label inline-flex items-center gap-1 text-compare-muted">{l.split(" ")[0]}<ZBar z={a.components?.z?.[k]} label={l} /></span>)}<Cone quarters={s.quarters ?? []} proj={projOf(s)} /></div>
+    <LibraryBand g="p-next-wave" title={`NEXT WAVE · HEADLINE · TOP 15 · ${sector === "all" ? "ALL SECTORS" : sector}`}>
+      <ul className="divide-y divide-rule md:hidden">{wave.map(({ a, s, x }) => <li key={key(a)} className="space-y-1 p-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-2"><Button variant="link" className="label h-auto min-h-11 whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><BasisChip k={key(a)} /><Explainer {...a} /></div>
+        <div className="label flex flex-wrap gap-x-3 text-compare-muted"><StageTag stage={s.stage} /><span>SHARE {pct(s.current_share)}</span><span>+4Q {s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</span>{x && <><span>MOMENTUM <MomentumText s={x} /></span><span>CONFIDENCE <ConfidenceText s={x} /></span></>}</div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><Cone quarters={s.quarters ?? []} proj={projOf(s)} /></div>
       </li>)}</ul>
-      <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[1040px] text-left">
-        <thead className="label text-compare-muted"><tr className="border-b border-rule">{[{ h: "TRAIT", g: "trait" }, { h: "STAGE", g: "stage" }, { h: "SHARE", g: "share" }, { h: "+4Q (LO–HI)", g: "projection" }, { h: "MOM PTS/Q", g: "momentum" }, ...COMPONENTS.map(c => ({ h: c[1], g: COMPONENT_G[c[0]]! })), { h: "SCORE", g: "next-wave-score" }, { h: "SERIES", g: "series" }].map(({ h, g }) => <th key={h} scope="col" className="p-2 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead>
-        <tbody>{wave.map(({ a, s }) => <tr key={key(a)} className="border-b border-rule align-middle">
+      <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[880px] text-left">
+        <thead className="label text-compare-muted"><tr className="border-b border-rule">{[{ h: "SIGNAL", g: "trait" }, { h: "BASIS", g: "basis-measured" }, { h: "STAGE", g: "stage" }, { h: "SHARE", g: "share" }, { h: "+4Q (LO–HI)", g: "projection" }, { h: "MOMENTUM", g: "momentum-index" }, { h: "CONFIDENCE", g: "confidence" }, { h: "SERIES", g: "series" }].map(({ h, g }) => <th key={h} scope="col" className="p-2 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead>
+        <tbody>{wave.map(({ a, s, x }) => <tr key={key(a)} className="border-b border-rule align-middle">
           <td className="p-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><Explainer {...a} /></td>
+          <td className="p-2"><BasisChip k={key(a)} /></td>
           <td className="p-2"><StageTag stage={s.stage} /></td>
           <td className="label p-2 tabular-nums">{pct(s.current_share)}</td>
           <td className="label p-2 tabular-nums">{s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</td>
-          <td className="label p-2 tabular-nums">{s.momentum == null ? "not measured" : `${s.momentum > 0 ? "+" : ""}${s.momentum.toFixed(2)}`}</td>
-          {COMPONENTS.map(([k, l]) => <td key={k} className="p-2"><ZBar z={a.components?.z?.[k]} label={l} /></td>)}
-          <td className="label p-2 tabular-nums">{a.next_wave_score?.toFixed(2)}</td>
+          <td className="p-2">{x ? <MomentumText s={x} /> : "—"}</td>
+          <td className="p-2">{x ? <ConfidenceText s={x} /> : "—"}</td>
           <td className="p-2"><Cone quarters={s.quarters ?? []} proj={projOf(s)} /></td>
         </tr>)}</tbody>
       </table></div>
-      {!wave.length && <p className="p-3 text-compare-muted">No traits are scored for this sector yet. Scores need at least one measured part (gap, vanguard or corroboration); they appear after the next Sunday forecast.</p>}
+      <p className="label border-t border-rule p-2 text-compare-muted">Headline signals only, ranked by the stored next-wave score. Open a row for its seven score parts.</p>
+      {!wave.length && <p className="p-3 text-compare-muted">No headline signal is scored for this sector yet. Scores need at least one measured part (gap, vanguard or corroboration); they appear after the next Sunday forecast.</p>}
     </LibraryBand>
 
-    <LibraryBand g="p-stage-board" title={`STAGE BOARD · ${sector === "all" ? "ALL SECTORS" : sector}`}>
+    <LibraryBand g="p-stage-board" title={`STAGE BOARD · HEADLINE · ${sector === "all" ? "ALL SECTORS" : sector}`}>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">{STAGES.map(st => { const chips = scoped.filter(r => stageName(r.stage) === st).sort((a, b) => (b.momentum ?? 0) - (a.momentum ?? 0)); return <div key={st} className="min-w-0 border-b border-r border-rule p-3"><h3 className="mb-2 flex items-center gap-2"><StageBadge stage={st} /><Info g={stageId(st)} /><span className="label text-compare-muted">{chips.length}</span></h3><div className="flex flex-wrap gap-1">{chips.map(r => <Button key={key(r)} variant="outline" className="label h-auto whitespace-normal px-2 py-1 text-left" onClick={() => setOpen(r)}><TraitName {...r} /></Button>)}{!chips.length && <span className="text-compare-muted">No trait is {st} in this scope yet; stages need at least 4 usable quarters of history.</span>}</div></div>; })}</div>
     </LibraryBand>
 
@@ -160,29 +170,38 @@ function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) 
 }
 
 type DetailRow = { scope: string; status: string; model: string | null; evidence: unknown; backtest: unknown; components?: unknown } & Parameters<typeof projOf>[0];
-function TraitDrawer({ dimension, value, onClose }: { dimension: string; value: string; onClose: () => void }) {
+export function TraitDrawer({ dimension, value, onClose }: { dimension: string; value: string; onClose: () => void }) {
   const { data, isLoading } = useQuery(forecastDetailQuery(dimension, value));
   const rows = (data ?? []) as DetailRow[]; const main = rows.find(r => r.scope === "all");
   const ev = (main?.evidence ?? {}) as { quarters?: Pt[]; fitted?: { quarter: string; value: number }[]; sites?: { domain: string; lead: number; adopted: string }[]; usable?: number; crossed_20?: string | null };
   const comp = (main?.components ?? {}) as DrawerComponents;
   const bt = (main?.backtest ?? {}) as { status?: string; mae_pts?: number; hit_rate?: number; predictions?: { quarter: string; predicted: number; actual: number }[] };
   const sectors = rows.filter(r => r.scope !== "all").map(r => ({ scope: r.scope, pts: ((r.evidence as { quarters?: Pt[] })?.quarters ?? []) }));
-  const tl = label(`${dimension}:${value}`);
+  const tl = label(`${dimension}:${value}`), k = `${dimension}:${value}`;
+  const { data: sig } = useSuspenseQuery(signalsQuery());
+  const signal = sig?.signals.find(x => x.key === k) ?? null, tier = sig?.tiers.get(k) ?? null;
+  const [parts, setParts] = useState(false);
   return <Overlay title={`${tl.name} [${tl.dimension}]`} onClose={onClose}>
     {isLoading || !main ? <p className="label">▍</p> : <div className="space-y-3">
+      <p className="flex flex-wrap items-center gap-2"><BasisChip k={k} info />{tier && <TierChip tier={tier.tier} info />}<StageBadge stage={signal?.stage ?? null} /></p>
+      {signal?.so_what && <p className="text-ink">{signal.so_what}</p>}
+      {signal && <dl className="grid grid-cols-2 border border-rule"><div className="border-r border-rule p-2"><dt className="label flex items-center text-compare-muted">MOMENTUM<Info g="momentum-index" /></dt><dd className="text-hero"><MomentumText s={signal} /></dd></div><div className="p-2"><dt className="label flex items-center text-compare-muted">CONFIDENCE<Info g="confidence" /></dt><dd className="text-hero"><ConfidenceText s={signal} /></dd></div></dl>}
+      {signal && <p className="label break-words text-compare-muted">RECEIPT · {signal.confidence_reason} · NEXT-WAVE SCORE {signal.next_wave_score == null ? "not scored" : signal.next_wave_score.toFixed(2)} · MOMENTUM {signal.momentum == null ? "not measured" : `${signal.momentum > 0 ? "+" : ""}${signal.momentum.toFixed(2)} PTS/Q`}</p>}
+      {tier && <ul className="label space-y-1 text-compare-muted" aria-label="Why this tier">{tier.reasons.map(r => <li key={r}>· {r}</li>)}</ul>}
+      <Evidence k={k} signals={sig?.signals ?? []} />
       <p className="label"><Link to="/trait/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>
       <p className="label text-compare-muted">{main.status === "ok" ? `MODEL ${main.model?.toUpperCase()} · ${ev.usable} USABLE QUARTERS` : `Not fitted yet: ${ev.usable ?? 0} of the 4 usable quarters a curve needs`}{ev.crossed_20 ? ` · CROSSED 20% ${ev.crossed_20}` : ""}</p>
       <Cone large quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>
       <p className="label">BACKTEST {bt.status === "ok" ? `MAE ${bt.mae_pts?.toFixed(1)} PTS · HIT ${pct(bt.hit_rate, 0)}` : "· not enough history before 2025Q2 to test this trait"}</p>
-      <Components comp={comp} />
+      <div><button type="button" aria-expanded={parts} onClick={() => setParts(p => !p)} className="label inline-flex min-h-11 items-center text-ink underline underline-offset-2 md:min-h-0">{parts ? "▾" : "▸"} SEVEN SCORE PARTS</button>{parts && <div className="mt-2"><Components comp={comp} /></div>}</div>
       <div><h3 className="label flex items-center text-compare-muted">LED BY<Info g="p-led-by" /></h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/library/$domain" params={{ domain: s.domain }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="text-compare-muted">No early adopters identified yet; this needs the trait to cross 20% share somewhere.</li>}</ul></div>
       <div className="overflow-x-auto"><table className="w-full text-left"><thead className="label text-compare-muted"><tr>{[{ h: "QUARTER", g: "quarter" }, { h: "SHARE", g: "share" }, { h: "N", g: "sample-n" }, { h: "COVERAGE", g: "coverage" }].map(({ h, g }) => <th key={h} scope="col" className="p-1 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead><tbody>{(ev.quarters ?? []).filter(p => p.n > 0).map(p => <tr key={p.q} className={`label tabular-nums ${p.n < 15 || p.c < .25 ? "text-compare-muted" : ""}`}><td className="p-1">{p.q}</td><td className="p-1">{pct(p.s)}</td><td className="p-1">{p.n}</td><td className="p-1">{(p.c * 100).toFixed(0)}%</td></tr>)}</tbody></table></div>
     </div>}
   </Overlay>;
 }
 
-type DrawerComponents = { raw?: Record<string, number | null>; present?: string[]; why?: string[];
+type DrawerComponents = { raw?: Record<string, number | null>; z?: Record<string, number | null>; present?: string[]; why?: string[];
   curation?: { lead_pts: number | null; prev_lead_pts?: number | null; n?: Record<string, number>; hits?: Record<string, number>; gallery_mix?: Record<string, number>; reason?: string };
   discourse?: { z: number | null; rate_per_10k?: number | null; n_week?: number; n_9w?: number; baseline_weeks?: number; fatigue_ratio?: number | null; fatigue_flag?: boolean; spike?: boolean; terms?: string[]; reason?: string };
   supply?: { value: number | null; category?: string; gf_additions?: { last90: number; prior90: number | null; note: string | null } | null; ph_sites?: number | null; ph_note?: string | null; reason?: string } };
@@ -191,10 +210,25 @@ function Components({ comp }: { comp: DrawerComponents }) {
   const present = new Set(comp.present ?? []), c = comp.curation, d = comp.discourse, s = comp.supply;
   return <div className="space-y-2">
     <h3 className="label flex items-center text-compare-muted">SCORE PARTS · {present.size} OF {COMPONENTS.length} MEASURED · MISSING PARTS COUNT AS AVERAGE<Info g="p-components" /></h3>
-    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4">{COMPONENTS.map(([k, l]) => <div key={k} className="min-w-0"><dt className={`label ${present.has(k) ? "text-ink" : "text-compare-muted"}`}>{l}</dt><dd className="label tabular-nums">{present.has(k) ? num(comp.raw?.[k], 2) : "not measured"}</dd></div>)}</dl>
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4">{COMPONENTS.map(([k, l]) => <div key={k} className="min-w-0"><dt className={`label inline-flex items-center ${present.has(k) ? "text-ink" : "text-compare-muted"}`}>{l}<Info g={COMPONENT_G[k]!} /></dt><dd className="label flex items-center gap-2 tabular-nums">{present.has(k) ? num(comp.raw?.[k], 2) : "not measured"}<ZBar z={comp.z?.[k]} label={l} /></dd></div>)}</dl>
     <p className="label break-words text-compare-muted">CURATION {c?.n ? `${c.lead_pts != null ? `${num(c.lead_pts)} PTS` : "LEAD —"} (PREV ${num(c.prev_lead_pts)}) · N ${["mainstream", "vanguard", "curated"].map(i => `${i[0]!.toUpperCase()} ${c.hits?.[i] ?? 0}/${c.n?.[i] ?? 0}`).join(" · ")}${c.gallery_mix && Object.keys(c.gallery_mix).length ? ` · GALLERIES ${Object.entries(c.gallery_mix).map(([g, n]) => `${g} ${n}`).join(", ")}` : ""}${c.lead_pts == null ? " · NEEDS ≥10 CURATED SITES" : ""}` : c?.reason ?? "not measured for this trait"}</p>
     <p className="label break-words text-compare-muted">DISCOURSE {d && d.z !== undefined && !d.reason ? `Z ${num(d.z, 2)} · ${d.rate_per_10k ?? "—"}/10K POSTS · ${d.n_week ?? 0} THIS WEEK · ${d.n_9w ?? 0} IN 9 WK · BASELINE ${d.baseline_weeks ?? 0} WK · FATIGUE ${d.fatigue_ratio == null ? "—" : `${(d.fatigue_ratio * 100).toFixed(0)}%`}${d.fatigue_flag ? " · FLAG" : ""}${d.spike ? " · SPIKE" : ""}${d.terms?.length ? ` · TERMS ${d.terms.join(", ")}` : ""}` : d?.reason ?? "not measured for this trait"}</p>
     <p className="label break-words text-compare-muted">SUPPLY {s?.category ? `${s.category.toUpperCase()} · ${s.value == null ? "NOT MEASURABLE YET" : num(s.value, 0)} · GF NEW 90D ${s.gf_additions?.last90 ?? "—"} VS PRIOR ${s.gf_additions?.prior90 ?? "—"}${s.gf_additions?.note ? ` (${s.gf_additions.note})` : ""} · PH SITES ${s.ph_sites ?? "—"}${s.ph_note ? ` (${s.ph_note})` : ""}` : s?.reason ?? "not measured for this trait"}</p>
     {comp.why?.length ? <ul className="label space-y-1">{comp.why.map(w => <li key={w} className="text-ink">· {w}</li>)}</ul> : null}
+  </div>;
+}
+
+const pctOr = (v: number | null) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
+/** Supporting evidence: a composite's member fragments, or the composites a fragment belongs to. */
+function Evidence({ k, signals }: { k: string; signals: Signal[] }) {
+  const keys = evidenceKeys(k), combo = compositeOf(k);
+  if (!keys.length) return null;
+  const by = new Map(signals.map(x => [x.key, x]));
+  return <div><h3 className="label flex items-center text-compare-muted">{combo ? "EVIDENCE · MEMBER SIGNALS" : "PART OF"}<Info g={combo ? "composite" : "tier-supporting"} /></h3>
+    {combo && <p className="label text-compare-muted">RULE · {ruleText(combo)}</p>}
+    <ul className="mt-1 divide-y divide-rule border-y border-rule">{keys.map(m => { const x = by.get(m), l = label(m); return <li key={m} className="flex flex-wrap items-baseline gap-x-2 py-1">
+      <Link to="/trait/$key" params={{ key: m }} className="text-ink underline-offset-2 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">{l.name}</Link><DimTag d={l.dimension} /><BasisChip k={m} />
+      <span className="label text-compare-muted">{x ? `${x.tier.toUpperCase()} · ${pctOr(x.share)} · ${x.stage ?? "not staged"}` : "measured per site; not forecast on its own"}</span>
+    </li>; })}</ul>
   </div>;
 }

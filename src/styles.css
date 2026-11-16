@@ -216,6 +216,7 @@
 .digest .ed-pull { font-family: var(--font-display); font-style: italic; font-size: var(--ed-h3); line-height: 1.25; border-top: 2px solid var(--ed-ink); border-bottom: 1px solid var(--ed-ink); padding-block: 16px; text-wrap: balance; }
 .digest .ed-rule { border-top: 1px solid var(--ed-ink); }
 .digest .ed-hair { border-top: 1px solid var(--ed-rule); }
+.digest .ed-basis { border-style: dashed; }
 .digest .ed-badge { display: inline-block; font-family: var(--font-mono); font-size: 11px; line-height: 14px; letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--ed-ink); padding: 2px 6px; white-space: nowrap; }
 .digest .ed-muted { color: var(--ed-muted); }
 .digest .ed-swatch { display: block; width: 100%; aspect-ratio: 1; border: 1px solid var(--ed-rule); }

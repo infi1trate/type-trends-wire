@@ -29,12 +29,19 @@ export function breakoutAlert(alerts: AlertLike[]) {
   const sector = /[?&]sector=([^&]+)/.exec(a.url)?.[1];
   return { trait: a.ref!, scope: sector ? decodeURIComponent(sector) : "all", title: a.title };
 }
-export function pickCard(args: { week: string; run_id: number; brief: BriefLike; rows: ForecastLike[]; alerts: AlertLike[]; data_through: string | null }): CardModel | null {
+/** Picks this week's card. With a headline set (tiers.ts), only headline signals qualify; `fallback` lists headline keys (best first) used when neither the brief's call nor a breakout alert does. */
+export function pickCard(args: { week: string; run_id: number; brief: BriefLike; rows: ForecastLike[]; alerts: AlertLike[]; data_through: string | null; headline?: Set<string> | null; fallback?: string[] }): CardModel | null {
   const find = (dimension: string, value: string, scope: string) => args.rows.find(r => r.dimension === dimension && r.value === value && r.scope === scope);
-  const call = briefCall(args.brief);
+  const ok = (key: string) => !args.headline || args.headline.has(key);
+  const call = briefCall(args.brief) && ok(`${parseTraitId(briefCall(args.brief)!.id).dimension}:${parseTraitId(briefCall(args.brief)!.id).value}`) ? briefCall(args.brief) : null;
   if (call) { const t = parseTraitId(call.id), row = find(t.dimension, t.value, t.scope); if (row && usableSeries(row).length >= MIN_SERIES) return cardModel({ week: args.week, run_id: args.run_id, origin: "call", call: call.call, row, data_through: args.data_through, source_ref: `forecast:${call.id}` }); }
-  const alert = breakoutAlert(args.alerts);
+  const found = breakoutAlert(args.alerts), alert = found && ok(found.trait) ? found : null;
   if (alert) { const t = parseTraitId(alert.trait), row = find(t.dimension, t.value, alert.scope) ?? find(t.dimension, t.value, "all"); if (row && usableSeries(row).length >= MIN_SERIES) return cardModel({ week: args.week, run_id: args.run_id, origin: "alert", call: alert.title, row, data_through: args.data_through, source_ref: `alert:${alert.trait}:${alert.scope}` }); }
+  for (const key of args.fallback ?? []) {
+    if (!ok(key)) continue;
+    const t = parseTraitId(key), row = find(t.dimension, t.value, "all");
+    if (row && usableSeries(row).length >= MIN_SERIES) return cardModel({ week: args.week, run_id: args.run_id, origin: "call", call: `${traitLabel(key).name}: the strongest headline next-wave score this week.`, row, data_through: args.data_through, source_ref: `forecast:${key}:all` });
+  }
   return null;
 }
 export const WEEK_RE = /^\d{4}-W\d{2}$/;

@@ -3,7 +3,7 @@ import { Fragment } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Audit, TraitRef, Matrix } from "@/lib/agency/audit";
 import { scopeText, label as traitLabel } from "@/lib/labels";
-import { SectionHead, SiteCard, StageWord, Swatches, Dim, pr } from "@/components/digest/Editorial";
+import { BasisWord, SectionHead, SiteCard, StageWord, Swatches, Dim, pr } from "@/components/digest/Editorial";
 import { AgencyShell, Btn, CopyField, day } from "./Shell";
 
 const pct = (x: number | null) => (x == null ? "—" : `${Math.round(x * 100)}%`);
@@ -12,7 +12,7 @@ const TITLES: Record<string, string> = { glance: "At a glance", type: "Type", co
 
 function Trait({ t }: { t: TraitRef }) {
   return <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-1">
-    <a href={t.explainer} {...pr(t.explainer)}>{t.name}</a> <Dim d={t.dimension} /> <StageWord stage={t.stage} />
+    <a href={t.explainer} {...pr(t.explainer)}>{t.name}</a> <Dim d={t.dimension} /> <BasisWord b={t.basis} /> <StageWord stage={t.stage} />
     <a href={t.receipt} className="ed-data ed-muted" {...pr(t.receipt)}>{pct(t.share)} of sites</a>
   </li>;
 }
@@ -22,7 +22,7 @@ function MatrixTable({ m, caption, head }: { m: Matrix; caption: string; head: s
       <caption className="ed-caption mb-2 text-left">{caption}</caption>
       <thead><tr className="border-b border-ed-ink"><th scope="col" className="py-2 pr-4 font-semibold">{head}</th>{m.domains.map(d => <th key={d} scope="col" className="py-2 pr-3 font-semibold">{d}</th>)}</tr></thead>
       <tbody>{m.rows.map(r => <tr key={r.trait} className="ed-hair">
-        <th scope="row" className="py-2 pr-4 font-normal"><a href={`/trait/${encodeURIComponent(r.trait)}`}>{r.name}</a></th>
+        <th scope="row" className="py-2 pr-4 font-normal"><a href={`/trait/${encodeURIComponent(r.trait)}`}>{r.name}</a> <BasisWord b={r.basis} /></th>
         {r.cells.map((c, i) => <td key={m.domains[i]} className="py-2 pr-3" aria-label={c == null ? "no data" : c ? "yes" : "no"}>{c == null ? "·" : c ? "✓" : "–"}</td>)}
       </tr>)}</tbody>
     </table>

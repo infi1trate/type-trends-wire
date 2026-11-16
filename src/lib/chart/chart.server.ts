@@ -20,7 +20,12 @@ export async function generateChartCard(week?: string) {
     db.from("wire_items").select("title,ref,url,tags,published_at").eq("source_kind", "alert").gte("published_at", new Date(Date.now() - 14 * 864e5).toISOString()).order("published_at", { ascending: false }).limit(50),
   ]);
   if (run.error || alerts.error) throw run.error ?? alerts.error;
-  const wanted: { dimension: string; value: string }[] = [];
+  // Chart of the week picks headline signals only (tiers.ts); the fallback is the best headline next-wave scores.
+  const { latestSignals } = await import("../signals.server");
+  const sig = await latestSignals("all").catch(() => null);
+  const headline = sig?.tiers.size ? new Set([...sig.tiers.values()].filter(t => t.tier === "headline").map(t => t.key)) : null;
+  const fallback = sig ? sig.signals.filter(x => headline?.has(x.key) && x.next_wave_score != null).sort((a, b) => (b.next_wave_score ?? 0) - (a.next_wave_score ?? 0)).slice(0, 5).map(x => x.key) : [];
+  const wanted: { dimension: string; value: string }[] = fallback.map(k => parseTraitId(k));
   const call = briefCall(brief); if (call) wanted.push(parseTraitId(call.id));
   const alert = breakoutAlert((alerts.data ?? []) as AlertLike[]); if (alert) wanted.push(parseTraitId(alert.trait));
   const rows: ForecastLike[] = [];
@@ -31,7 +36,7 @@ export async function generateChartCard(week?: string) {
     if (res.error) throw res.error;
     rows.push(...((res.data ?? []) as unknown as ForecastLike[]));
   }
-  const model = pickCard({ week: b.week, run_id: runId, brief, rows, alerts: (alerts.data ?? []) as AlertLike[], data_through: run.data?.data_cutoff_quarter ?? null });
+  const model = pickCard({ week: b.week, run_id: runId, brief, rows, alerts: (alerts.data ?? []) as AlertLike[], data_through: run.data?.data_cutoff_quarter ?? null, headline, fallback });
   if (!model) return { ok: false as const, code: "no_series", week: b.week };
   const up = await db.from("chart_cards").upsert({ week: model.week, run_id: model.run_id, trait: `${model.trait}:${model.scope}`, origin: model.origin, model: model as never });
   if (up.error) throw up.error;

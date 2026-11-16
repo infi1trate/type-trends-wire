@@ -1,6 +1,6 @@
 // Weekly forecast job: loads public aggregates, runs pure models, persists a run. Service-role writes only.
 import { forecastSeries, backtestSeries, median, qIndex, usablePoints, type SeriesPoint } from "./forecast";
-import { crossingQuarter, nextWaveIneligibleReason, trendsetterScores, trendsetterGap, leadLag, keywordCount, nextWaveScores, siteTraits, emptyComponents, presentComponents, COMPONENT_KEYS, type SiteRow, type Components } from "./forecast-signals";
+import { crossingQuarter, nextWaveIneligibleReason, trendsetterScores, trendsetterGap, leadLag, keywordCount, nextWaveScores, forecastSiteTraits, siteTraits, emptyComponents, presentComponents, COMPONENT_KEYS, type SiteRow, type Components } from "./forecast-signals";
 import { EXCLUDED_DIMENSIONS, TRAIT_SPREAD, TRAIT_GFONT_CATEGORY, NEXT_WAVE_WEIGHTS, LEGACY_NEXT_WAVE_WEIGHTS } from "./forecast-constants";
 import { traitCuration, galleryMix, crawlSiteTraits, type CrawlTraitSite } from "./curation";
 import { discourseSignal, traitTermMap, weeklyBuckets, DISCOURSE_WEEKS, type DiscourseSignal } from "./discourse";
@@ -8,13 +8,17 @@ import { gfAdditions, supplyValue, isFlooding, FLOODING_NOTE, type FirstSeen } f
 import { alertCandidates, alertRow, selectAlerts, ALERT_DEDUPE_DAYS, type Alert, type AlertInput } from "./alerts";
 import { SECTORS } from "./library";
 import { providerLabel } from "./ai-provider";
-import { crawlCoverage, runErrorText } from "./forecast-run";
+import { crawlCoverage, runErrorText, runSteps, type RunOptions } from "./forecast-run";
+import { compositeSeries, isComposite } from "./composites";
+import { headlineKeys, restrictToHeadline } from "./tiers";
 type Db = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 async function pages<T>(f: (from: number) => PromiseLike<{ data: T[] | null; error: unknown }>) { const out: T[] = []; for (let from = 0; ; from += 1000) { const { data, error } = await f(from); if (error) throw error; out.push(...(data ?? [])); if (!data || data.length < 1000) break; } return out; }
 const CUTOFF = "2025Q2", KEEP_RUNS = 12, MIN_OBSERVED = 3;
 const AI_DIMENSIONS = ["imagery", "aesthetic", "components", "hero_layout", "ai_positioning", "tone", "color_mood"];
 
-export async function runForecast(opts: { brief?: boolean; alerts?: "emit" | "dry" | "off" } = {}) {
+/** Weekly defaults run every step. Sandbox/dev runs pass { brief: false, alerts: "off", ledger: false, derived: false, prune: false } (see scripts/forecast-dev-run.ts). */
+export async function runForecast(opts: RunOptions = {}) {
+  const steps = runSteps(opts);
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
   const run = await db.from("forecast_runs").insert({ status: "running" }).select("id").single();
   if (run.error) throw run.error; const runId = run.data.id;
@@ -25,23 +29,27 @@ export async function runForecast(opts: { brief?: boolean; alerts?: "emit" | "dr
     const fin = await db.from("forecast_runs").update({ status: "ok", data_cutoff_quarter: result.cutoff, coverage: result.coverage, model_card: result.card }).eq("id", runId);
     if (fin.error) throw fin.error;
     stage = "alerts";
-    const alerts = opts.alerts === "off" ? null : await emitAlerts(db, runId, result.alertInputs, opts.alerts === "dry");
+    const alerts = steps.alerts === "off" ? null : await emitAlerts(db, runId, result.alertInputs, steps.alerts === "dry", result.headline);
     stage = "prune";
-    const old = await db.from("forecast_runs").select("id").order("id", { ascending: false }).range(KEEP_RUNS, KEEP_RUNS + 500);
-    if (old.data?.length) await db.from("forecast_runs").delete().in("id", old.data.map(r => r.id));
+    if (steps.prune) {
+      const old = await db.from("forecast_runs").select("id").order("id", { ascending: false }).range(KEEP_RUNS, KEEP_RUNS + 500);
+      if (old.data?.length) await db.from("forecast_runs").delete().in("id", old.data.map(r => r.id));
+    }
     // Derived outputs never fail a stored forecast: taste tables (own health job), brief, vibe map, then the brief's Chart of the Week.
-    const { refreshTaste } = await import("./taste/refresh.server");
-    const taste = await refreshTaste().then(() => ({ ok: true }), e => { console.error("forecast taste refresh failed:", runErrorText("taste", e)); return { ok: false, code: runErrorText("taste", e) }; });
+    let taste: unknown = null, vibe: unknown = null;
+    if (steps.derived) {
+      const { refreshTaste } = await import("./taste/refresh.server");
+      taste = await refreshTaste().then(() => ({ ok: true }), e => { console.error("forecast taste refresh failed:", runErrorText("taste", e)); return { ok: false, code: runErrorText("taste", e) }; });
+    }
     let brief: unknown = null;
-    if (opts.brief !== false) { const { generateWeeklyBrief } = await import("./forecast-brief.server"); brief = await generateWeeklyBrief(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "brief_failed" })); }
-    const { computeVibe } = await import("./vibe.server");
-    const vibe = await computeVibe(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "vibe_failed" }));
+    if (steps.brief) { const { generateWeeklyBrief } = await import("./forecast-brief.server"); brief = await generateWeeklyBrief(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "brief_failed" })); }
+    if (steps.derived) { const { computeVibe } = await import("./vibe.server"); vibe = await computeVibe(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "vibe_failed" })); }
     let chart: unknown = null;
-    if (opts.brief !== false) { const { generateChartCard } = await import("./chart/chart.server"); chart = await generateChartCard().catch(e => ({ ok: false, code: e instanceof Error ? e.message : "chart_failed" })); }
+    if (steps.brief) { const { generateChartCard } = await import("./chart/chart.server"); chart = await generateChartCard().catch(e => ({ ok: false, code: e instanceof Error ? e.message : "chart_failed" })); }
     // Forecast ledger last, so it sees this run's brief and alerts: records the calls, then resolves open ones. Never fails the run.
-    const { nonFatal } = await import("./ledger/ledger");
-    const ledger = await nonFatal("ledger", async () => (await import("./ledger/store.server")).ledgerStep(runId));
-    return { ok: true, run_id: runId, model_card: result.card, alerts, taste, brief, vibe, chart, ledger };
+    let ledger: unknown = null;
+    if (steps.ledger) { const { nonFatal } = await import("./ledger/ledger"); ledger = await nonFatal("ledger", async () => (await import("./ledger/store.server")).ledgerStep(runId)); }
+    return { ok: true, run_id: runId, steps, model_card: result.card, alerts, taste, brief, vibe, chart, ledger };
   } catch (e) {
     const error = runErrorText(stage, e);
     console.error("forecast run failed:", error);
@@ -55,7 +63,7 @@ async function compute(db: Db, runId: number) {
   const since90 = new Date(Date.now() - 90 * 864e5).toISOString(), since30 = Date.now() - 30 * 864e5;
   const [share, sites, spread, wire, gfLatest] = await Promise.all([
     pages(f => db.from("library_history_share").select("quarter,sector,dimension,value,denom,share,coverage").order("quarter").order("sector").order("dimension").order("value").range(f, f + 999)),
-    pages(f => db.from("library_site_history").select("domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags").order("domain").order("quarter").range(f, f + 999)),
+    pages(f => db.from("library_site_history").select("domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags,h1_size_px,cta_radius_bucket,whitespace_ratio").order("domain").order("quarter").range(f, f + 999)),
     db.from("crawl_spread").select("signal,spread_pts,vanguard_share,mainstream_share").eq("scope", "all"),
     pages(f => db.from("wire_items").select("title,excerpt,published_at").gte("published_at", since90).order("id").range(f, f + 999)),
     db.from("gfont_snapshots").select("captured_on").order("captured_on", { ascending: false }).limit(1),
@@ -79,15 +87,17 @@ async function compute(db: Db, runId: number) {
     crawlIds.length ? pages(f => db.from("crawl_sites").select("run_id,domain,index_name,type,color,layout,tech,galleries").in("run_id", crawlIds).eq("ok", true).order("run_id").order("domain").range(f, f + 999)) : Promise.resolve([]),
     pages(f => db.from("discourse_counts").select("window_start,term,n,fatigue,sampled_posts").gte("window_start", new Date(now - DISCOURSE_WEEKS * 7 * 864e5).toISOString()).order("window_start").order("source").order("term").range(f, f + 999)),
     pages(f => db.from("gfont_first_seen").select("family,category,first_seen").order("family").range(f, f + 999)),
-    db.from("forecast_runs").select("id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(1),
+    db.from("forecast_runs").select("id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(2),
   ]);
   if (prevRunRes.error) throw prevRunRes.error;
-  const prevRunId = prevRunRes.data[0]?.id ?? null;
+  const prevRunId = prevRunRes.data[0]?.id ?? null, prev2RunId = prevRunRes.data[1]?.id ?? null;
   const failedRes = await db.from("forecast_runs").select("id,computed_at,error").eq("status", "error").gt("id", prevRunId ?? 0).lt("id", runId).order("id").limit(10);
   if (failedRes.error) throw failedRes.error;
   const failedSince = (failedRes.data ?? []).map(r => ({ run_id: r.id, at: r.computed_at, error: r.error ?? null }));
   const prevRows = prevRunId ? await pages(f => db.from("forecasts").select("dimension,value,scope,current_share,stage").eq("run_id", prevRunId).eq("scope", "all").order("dimension").order("value").range(f, f + 999)) : [];
   const prevByTrait = new Map(prevRows.map(r => [`${r.dimension}:${r.value}`, r]));
+  const prev2Rows = prev2RunId ? await pages(f => db.from("forecasts").select("dimension,value,stage").eq("run_id", prev2RunId).eq("scope", "all").order("dimension").order("value").range(f, f + 999)) : [];
+  const prev2ByTrait = new Map(prev2Rows.map(r => [`${r.dimension}:${r.value}`, r.stage]));
   const latestCrawl = crawlRows.filter(r => r.run_id === crawlIds[0]) as CrawlTraitSite[], prevCrawl = crawlRows.filter(r => r.run_id === crawlIds[1]) as CrawlTraitSite[];
   const curNow = traitCuration(latestCrawl), curPrev = traitCuration(prevCrawl), mix = galleryMix(latestCrawl);
   const phTraits = new Map<string, number>();
@@ -106,12 +116,17 @@ async function compute(db: Db, runId: number) {
     if (AI_DIMENSIONS.includes(r.dimension)) { const t = tagged.get(`${r.quarter}|${r.sector}`) ?? 0; sh = t && sh !== null ? Math.min(1, sh * denom / t) : null; cov = denom ? cov * t / denom : 0; denom = t; }
     const k = `${r.dimension}:${r.value}|${r.sector}`; const l = series.get(k) ?? []; l.push({ quarter: r.quarter, share: sh, denom, coverage: cov }); series.set(k, l);
   }
+  // Composite signals (combo:*) per site, on the same per-quarter denominators and coverage as library_history_share.
+  const base = new Map<string, { denom: number; coverage: number }>();
+  for (const r of share) if (r.quarter && r.sector && !base.has(`${r.quarter}|${r.sector}`)) base.set(`${r.quarter}|${r.sector}`, { denom: Number(r.denom ?? 0), coverage: r.coverage ?? 0 });
+  for (const [k, pts] of compositeSeries(sites.filter(s => s.domain && s.quarter && s.sector) as SiteRow[], base, siteTraits)) series.set(k, pts);
   const traits = [...new Set([...series.keys()].map(k => k.split("|")[0]!))].sort();
   const allPts = (t: string) => series.get(`${t}|all`) ?? [];
   const latestAll = traits.flatMap(t => usablePoints(allPts(t), "all").slice(-1).map(p => p.quarter)).sort((a, b) => qIndex(a) - qIndex(b)).at(-1) ?? null;
 
   // Trendsetters: traits crossing 20% library-wide
-  const crossings = Object.fromEntries(traits.map(t => [t, crossingQuarter(allPts(t), "all", 0.2)]).filter((e): e is [string, string] => !!e[1]));
+  // Composites stay out of trendsetter crossings: their fragments already count, so a site's lead is not credited twice.
+  const crossings = Object.fromEntries(traits.filter(t => !isComposite(t)).map(t => [t, crossingQuarter(allPts(t), "all", 0.2)]).filter((e): e is [string, string] => !!e[1]));
   const siteRows = sites.filter(s => s.domain && s.quarter) as SiteRow[];
   const setters = trendsetterScores(siteRows, crossings).filter(s => s.observed >= MIN_OBSERVED);
   const top30 = new Set(setters.filter(s => s.score > 0).slice(0, 30).map(s => s.domain));
@@ -124,7 +139,7 @@ async function compute(db: Db, runId: number) {
       const pts = series.get(`${t}|${scope}`); if (!pts) continue;
       const [dimension, value] = [t.slice(0, t.indexOf(":")), t.slice(t.indexOf(":") + 1)];
       const f = forecastSeries(pts, scope), b = backtestSeries(pts, scope, CUTOFF);
-      if (b.status === "ok" && scope === "all") bt.push({ mae: b.mae_pts, hit: b.hit_rate });
+      if (b.status === "ok" && scope === "all" && !isComposite(t)) bt.push({ mae: b.mae_pts, hit: b.hit_rate });
       const spKey = TRAIT_SPREAD[t], sp = spKey && crawlCov.use ? spread.data.find(s => s.signal === spKey) : undefined;
       const cat = TRAIT_GFONT_CATEGORY[t], gf = cat && gfTop.length ? gfTop.filter(g => g.category === cat).length / gfTop.length * 100 : null;
       const w30 = keywordCount(t, texts30), w90 = keywordCount(t, texts90);
@@ -158,16 +173,19 @@ async function compute(db: Db, runId: number) {
   const rowOf = (t: string) => rows.find(x => x.scope === "all" && `${x.dimension}:${x.value}` === t)!;
   const eligible: typeof allComponents = [];
   for (const a of allComponents) {
-    const r = rowOf(a.trait), n = latestSites.filter(s => siteTraits(s).includes(a.trait)).length;
+    const r = rowOf(a.trait), n = latestSites.filter(s => forecastSiteTraits(s).includes(a.trait)).length;
     const reason = nextWaveIneligibleReason(r.value, (r["current_share"] as number | null) ?? null, n);
     (r.components as Record<string, unknown>)["sites"] = n;
     if (reason) { r.next_wave_score = null; (r.components as Record<string, unknown>)["ineligible_reason"] = reason; } else eligible.push(a);
   }
-  const scores = nextWaveScores(eligible.map(a => a.c));
-  eligible.forEach((a, i) => { const r = rowOf(a.trait); r.next_wave_score = scores[i]!.score; (r.components as Record<string, unknown>)["z"] = scores[i]!.z; });
+  // Traits are scored in their own cohort exactly as before; each composite is scored in that cohort plus itself, so adding composites moves no existing score.
+  const scored = eligible.filter(a => !isComposite(a.trait)), combos = eligible.filter(a => isComposite(a.trait));
+  const scores = nextWaveScores(scored.map(a => a.c));
+  scored.forEach((a, i) => { const r = rowOf(a.trait); r.next_wave_score = scores[i]!.score; (r.components as Record<string, unknown>)["z"] = scores[i]!.z; });
+  for (const a of combos) { const s = nextWaveScores([...scored.map(b => b.c), a.c]).at(-1)!; const r = rowOf(a.trait); r.next_wave_score = s.score; (r.components as Record<string, unknown>)["z"] = s.z; }
 
   const sitesIn = new Map<string, number>();
-  for (const s of latestSites) for (const tr of new Set(siteTraits(s))) for (const sc of ["all", s.sector]) sitesIn.set(`${sc}|${tr}`, (sitesIn.get(`${sc}|${tr}`) ?? 0) + 1);
+  for (const s of latestSites) for (const tr of new Set(forecastSiteTraits(s))) for (const sc of ["all", s.sector]) sitesIn.set(`${sc}|${tr}`, (sitesIn.get(`${sc}|${tr}`) ?? 0) + 1);
   const alertInputs: AlertInput[] = rows.map(r => {
     const t = `${r.dimension}:${r.value}`, comp = r.components as { curation?: { lead_pts?: number | null; prev_lead_pts?: number | null }; discourse?: DiscourseSignal & { z: number | null } };
     return { dimension: r.dimension, value: r.value, scope: r.scope, status: r.status, stage: (r["stage"] as string | null) ?? null, momentum: (r["momentum"] as number | null) ?? null, current_share: (r["current_share"] as number | null) ?? null,
@@ -179,7 +197,8 @@ async function compute(db: Db, runId: number) {
   // Next-wave backtest: rank top-10 as of CUTOFF with data then available (gap + momentum), check ≥5pt growth by latest.
   const cutSites = latestPerSite(siteRows, CUTOFF), cutSetters = trendsetterScores(siteRows.filter(r => qIndex(r.quarter) <= qIndex(CUTOFF)), Object.fromEntries(Object.entries(crossings).filter(([, q]) => qIndex(q) <= qIndex(CUTOFF)))).filter(s => s.observed >= MIN_OBSERVED);
   const cutTop = new Set(cutSetters.filter(s => s.score > 0).slice(0, 30).map(s => s.domain));
-  const cand = traits.map(t => { const train = allPts(t).filter(p => qIndex(p.quarter) <= qIndex(CUTOFF)); const f = forecastSeries(train, "all"); const u = usablePoints(allPts(t), "all"); const base = u.filter(p => qIndex(p.quarter) <= qIndex(CUTOFF)).at(-1); return f.status === "ok" && base ? { t, c: emptyComponents({ gap: cutTop.size ? trendsetterGap(cutSites, cutTop, t) : null, momentum: f.momentum }), growth: (u.at(-1)!.share - base.share) * 100 } : null; }).filter((x): x is NonNullable<typeof x> => !!x);
+  // Model-card backtests stay over the base traits only, so composites change no reported backtest number.
+  const cand = traits.filter(t => !isComposite(t)).map(t => { const train = allPts(t).filter(p => qIndex(p.quarter) <= qIndex(CUTOFF)); const f = forecastSeries(train, "all"); const u = usablePoints(allPts(t), "all"); const base = u.filter(p => qIndex(p.quarter) <= qIndex(CUTOFF)).at(-1); return f.status === "ok" && base ? { t, c: emptyComponents({ gap: cutTop.size ? trendsetterGap(cutSites, cutTop, t) : null, momentum: f.momentum }), growth: (u.at(-1)!.share - base.share) * 100 } : null; }).filter((x): x is NonNullable<typeof x> => !!x);
   // Curation, discourse, supply (and vanguard/corroboration) have no history at the cutoff: they stay null (= cohort mean), never back-filled.
   const backtestWith = (weights: Partial<Record<keyof Components, number>>) => { const cs = nextWaveScores(cand.map(c => c.c), weights); const ranked = cand.map((c, i) => ({ ...c, s: cs[i]!.score })).sort((a, b) => b.s - a.s).slice(0, 10);
     return ranked.length ? { ranked: ranked.length, grew_5pts: ranked.filter(r => r.growth >= 5).length, hit_rate: ranked.filter(r => r.growth >= 5).length / ranked.length, traits: ranked.map(r => ({ trait: r.t, growth_pts: Number(r.growth.toFixed(2)) })) } : { ranked: 0, grew_5pts: 0, hit_rate: null, status: "insufficient_data" }; };
@@ -197,12 +216,14 @@ async function compute(db: Db, runId: number) {
     component_coverage: { rows: allRows.length, scored: allRows.filter(r => r.next_wave_score != null).length, ...Object.fromEntries(COMPONENT_KEYS.map(k => [k, allRows.filter(r => ((r.components as { raw?: Components }).raw?.[k] ?? null) !== null).length])) },
     crawl: { run: crawlCov.run, used: crawlCov.use, finished_at: crawlCov.finished_at, age_days: crawlCov.age_days, stale: crawlCov.stale, notes: crawlCov.notes, prev_run: crawlIds[1] ?? null, n: Object.fromEntries(["mainstream", "vanguard", "curated"].map(i => [i, latestCrawl.filter(s => s.index_name === i).length])), gallery_mix: mix },
     failed_runs_since_last_ok: failedSince, discourse_rows: discourseRows.length, ai_provider: providerLabel(process.env), thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
-  return { cutoff: latestAll, coverage: quarterCoverage, card, alertInputs };
+  // Alert candidates are restricted to headline signals (tiers.ts) from this run's own rows; the alert rules themselves are unchanged.
+  const headline = headlineKeys(allRows.map(r => ({ key: `${r.dimension}:${r.value}`, stats: { status: r.status, stage: (r["stage"] as string | null) ?? null, momentum: (r["momentum"] as number | null) ?? null, sites: ((r.components as Record<string, unknown>)["sites"] as number | undefined) ?? null, prevStages: [prevByTrait.get(`${r.dimension}:${r.value}`)?.stage ?? null, prev2ByTrait.get(`${r.dimension}:${r.value}`) ?? null] } })));
+  return { cutoff: latestAll, coverage: quarterCoverage, card, alertInputs, headline };
 }
 
 /** Weekly wire alerts: rule hits → one per trait, skip traits alerted in the last 28 days, ≤10. Dry runs only return them. */
-async function emitAlerts(db: Db, runId: number, inputs: AlertInput[], dry: boolean): Promise<{ dry: boolean; candidates: number; skipped_recent: number; emitted: Alert[] }> {
-  const candidates = alertCandidates(inputs), since = new Date(Date.now() - ALERT_DEDUPE_DAYS * 864e5).toISOString();
+async function emitAlerts(db: Db, runId: number, inputs: AlertInput[], dry: boolean, headline: Set<string>): Promise<{ dry: boolean; candidates: number; skipped_recent: number; emitted: Alert[] }> {
+  const candidates = restrictToHeadline(alertCandidates(inputs), headline), since = new Date(Date.now() - ALERT_DEDUPE_DAYS * 864e5).toISOString();
   const recent = await db.from("wire_items").select("ref").eq("source_kind", "alert").gte("published_at", since).not("ref", "is", null).limit(1000);
   if (recent.error) throw recent.error;
   const recentTraits = new Set((recent.data ?? []).map(r => r.ref!).filter(Boolean));

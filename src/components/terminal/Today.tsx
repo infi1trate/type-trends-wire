@@ -1,21 +1,23 @@
 import { useMemo } from "react";
 import { untick } from "@/lib/labels";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { latestBriefQuery, todayQuery, typeIndexQuery } from "@/lib/data";
+import { latestBriefQuery, signalsQuery, todayQuery } from "@/lib/data";
 import { buildToday } from "@/lib/today";
 import { PanelHeader } from "./primitives";
 import { AppLink } from "./AppLink";
 import { DimTag } from "./Info";
+import { BasisChip } from "./SignalBits";
 import type { PanelId } from "./panels";
 
 const hm = (iso: string) => `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
 
 export function Today({ go, onTour, onGlossary }: { go: (p: PanelId) => void; onTour: () => void; onGlossary: () => void }) {
   const { data } = useSuspenseQuery(todayQuery());
-  const { data: type } = useQuery(typeIndexQuery());
+  const { data: sig } = useSuspenseQuery(signalsQuery());
   const { data: brief } = useQuery(latestBriefQuery());
-  const top = useMemo(() => type?.rows.filter(r => (r.delta7 ?? 0) > 0).sort((a, b) => b.delta7! - a.delta7! || a.family.localeCompare(b.family))[0], [type]);
-  const t = useMemo(() => buildToday({ ...data, type: top && type?.latest ? { family: top.family, delta7: top.delta7!, snapshot: type.latest } : null }), [data, top, type?.latest]);
+  // Headline signals only (tiers.ts); Google Fonts popularity is supply-side, so it never fills a TODAY line.
+  const headline = useMemo(() => (sig ? new Set([...sig.tiers.values()].filter(r => r.tier === "headline").map(r => r.key)) : new Set<string>()), [sig]);
+  const t = useMemo(() => buildToday({ ...data, type: null, headline }), [data, headline]);
   const firstTrait = t.lines.find(l => l.target === "trait")?.id, firstSite = t.lines.find(l => l.target === "site")?.id;
   return (
     <section aria-label="Today" className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
@@ -32,7 +34,7 @@ export function Today({ go, onTour, onGlossary }: { go: (p: PanelId) => void; on
               <AppLink href={l.href} data-tour={l.id === firstTrait ? "trait" : l.id === firstSite ? "site" : undefined}
                 className="group grid min-h-11 grid-cols-[3ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 focus-visible:bg-g900 md:grid-cols-[3ch_1fr_auto]">
                 <span className="num label text-g500">{i + 1}</span>
-                <span className="min-w-0 text-ink"><span className="group-hover:underline">{l.text}</span>{l.dimension && <> <DimTag d={l.dimension} /></>} <span aria-hidden>→</span></span>
+                <span className="min-w-0 text-ink"><span className="group-hover:underline">{l.text}</span>{l.dimension && <> <DimTag d={l.dimension} /></>}{l.basis && <> <BasisChip basis={l.basis} /></>} <span aria-hidden>→</span></span>
                 <span className="label col-start-2 text-g500 md:col-start-3">{l.fresh ? "NEW · " : ""}{hm(l.at)}</span>
               </AppLink>
             </li>
@@ -40,7 +42,7 @@ export function Today({ go, onTour, onGlossary }: { go: (p: PanelId) => void; on
         </ol>
       </div>
       <div className="grid grid-cols-1 border-b border-rule md:grid-cols-3">
-        {([["overview", "F1 SIGNALS", "Font movers, crawl spread and the wire on one screen."], ["brief", "F10 FORECAST", "Every trait's stage, momentum and next-wave score."], ["library", "F11 LIBRARY", "300 sites, their fingerprints and confirmed changes."]] as const).map(([id, k, d]) => (
+        {([["overview", "F1 SIGNALS", "Headline signals, crawl spread and the wire on one screen."], ["brief", "F10 FORECAST", "Every trait's stage, momentum and next-wave score."], ["library", "F11 LIBRARY", "300 sites, their fingerprints and confirmed changes."]] as const).map(([id, k, d]) => (
           <button key={id} type="button" onClick={() => go(id)} className="flex min-h-11 flex-col items-start gap-1 border-b border-rule p-3 text-left hover:bg-g900 md:border-b-0 md:border-r md:last:border-r-0">
             <span className="label font-semibold text-ink">{k} →</span><span className="text-g500">{d}</span>
           </button>

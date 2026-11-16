@@ -12,8 +12,14 @@ export const CATEGORY_DIMENSION: Record<string, Dimension> = {
   theme: "COLOR", color_mood: "COLOR", accent: "COLOR", color: "COLOR",
   css: "LAYOUT", framework: "LAYOUT", tech: "LAYOUT", hero_media: "LAYOUT", hero_layout: "LAYOUT", components: "LAYOUT", whitespace: "LAYOUT", grid_cols: "LAYOUT", cta_shape: "LAYOUT", h1_align: "LAYOUT",
   aesthetic: "VIBE", tone: "VIBE", imagery: "VIBE", ai_positioning: "VIBE", vibe: "VIBE", pricing: "VIBE", h1_word: "VIBE",
+  combo: "VIBE", // composites carry their own dimension in KEY_DIMENSION below
 };
-export const KEY_DIMENSION: Record<string, Dimension> = { "css:variable_fonts": "FONT", "css:oklch": "COLOR", "css:color_mix": "COLOR" };
+export const KEY_DIMENSION: Record<string, Dimension> = {
+  "css:variable_fonts": "FONT", "css:oklch": "COLOR", "css:color_mix": "COLOR",
+  // Composite signals (definitions and members live in composites.ts): combo → dimension.
+  "combo:big_type": "FONT", "combo:editorial_serif": "FONT", "combo:dark_tech": "COLOR", "combo:soft_ui": "LAYOUT", "combo:product_led_hero": "LAYOUT", "combo:proof_wall": "LAYOUT",
+  "combo:motion_rich": "LAYOUT", "combo:immersive_3d": "LAYOUT", "combo:numbers_up_front": "LAYOUT", "combo:ai_forward": "VIBE", "combo:playful_brand": "VIBE", "combo:quiet_minimal": "VIBE",
+};
 
 /** Crawl spread signals are aliases of canonical trait keys. */
 export const SPREAD_ALIAS: Record<string, string> = {
@@ -60,6 +66,9 @@ export const NAMES: Record<string, string> = {
   "ai_positioning:ai_core": "AI as the product", "ai_positioning:ai_feature": "AI as a feature", "ai_positioning:ai_mentioned": "AI mentioned in passing", "ai_positioning:none": "No AI positioning",
   "tone:aspirational": "Aspirational voice", "tone:authoritative": "Authoritative voice", "tone:calm": "Calm voice", "tone:friendly": "Friendly voice", "tone:irreverent": "Irreverent voice", "tone:playful": "Playful voice",
   "tone:premium": "Premium voice", "tone:technical": "Technical voice", "tone:urgent": "Urgent voice",
+  // COMPOSITES (rules in composites.ts)
+  "combo:big_type": "Big type", "combo:editorial_serif": "Editorial serif", "combo:dark_tech": "Dark tech look", "combo:soft_ui": "Soft UI", "combo:product_led_hero": "Product-led hero", "combo:proof_wall": "Proof wall",
+  "combo:motion_rich": "Motion-rich", "combo:immersive_3d": "Immersive 3D", "combo:numbers_up_front": "Numbers up front", "combo:ai_forward": "AI-forward", "combo:playful_brand": "Playful brand", "combo:quiet_minimal": "Quiet minimalism",
   "pricing:has_free_tier": "Free tier", "pricing:has_trial": "Free trial", "pricing:has_usage_based": "Usage-based pricing", "pricing:has_ai_addon": "Paid AI add-on", "pricing:ai_credits_model": "AI credits pricing",
 };
 
@@ -158,7 +167,23 @@ export function alertDisplayTitle(title: string, ref: string | null | undefined)
 }
 
 /** Trait categories the weekly forecast stages; each of their keys has an explainer page at /trait/<key>. */
-export const FORECAST_CATEGORIES = new Set(["aesthetic", "ai_positioning", "color_mood", "components", "css", "font", "framework", "headline", "hero_layout", "hero_media", "imagery", "theme", "tone", "tracking"]);
+export const FORECAST_CATEGORIES = new Set(["aesthetic", "ai_positioning", "color_mood", "combo", "components", "css", "font", "framework", "headline", "hero_layout", "hero_media", "imagery", "theme", "tone", "tracking"]);
+
+// BASIS — measured from page code and rendered styles, or estimated by the AI tagger. One word chip, no color, everywhere a value shows.
+/** Categories read by the AI tagger (vision tags) or the AI text extractor (pricing pages); vibe-map clusters are built from AI tags. */
+export const AI_TAGGED = new Set(["aesthetic", "tone", "imagery", "components", "hero_layout", "color_mood", "ai_positioning"]);
+const AI_CATEGORIES = new Set([...AI_TAGGED, "vibe", "pricing"]);
+/** Composites with at least one AI-estimated member (kept in step with composites.ts by composites.test.ts). */
+export const COMBO_AI = new Set(["editorial_serif", "dark_tech", "product_led_hero", "proof_wall", "numbers_up_front", "ai_forward", "playful_brand", "quiet_minimal"]);
+export type Basis = "measured" | "ai";
+export const BASIS_WORD: Record<Basis, string> = { measured: "MEASURED", ai: "AI ESTIMATE" };
+/** basis(traitKey) → "measured" | "ai". Composites are "ai" when any member is. */
+export function basis(traitKey: string): Basis {
+  const k = canonical(traitKey), i = k.indexOf(":"), cat = i > 0 ? k.slice(0, i) : "";
+  if (cat === "combo") return COMBO_AI.has(k.slice(i + 1)) ? "ai" : "measured";
+  return AI_CATEGORIES.has(cat) ? "ai" : "measured";
+}
+export const basisWord = (traitKey: string) => BASIS_WORD[basis(traitKey)];
 export const explainerPath = (key: string) => `/trait/${encodeURIComponent(canonical(key))}`;
 /** Absolute explainer URL for forecast traits; null for keys the forecast does not stage (fonts, colors, crawl-only signals). */
 export function explainerUrl(key: string): string | null {
@@ -168,8 +193,8 @@ export function explainerUrl(key: string): string | null {
 
 /** Strings: any leftover "$TICKER" becomes "Name [DIM]". Prices ("$50") are untouched because tickers start with a letter. */
 export const untick = (s: string) => s.replace(/\$([A-Z][A-Z0-9-]+)/g, (_, t: string) => traitText(t));
-/** Output decoration for agents: stable keys stay; human label/dimension/stage_label (and explainer_url for forecast traits) are added next to them. Pure, recursive. */
-export function withLabels<T>(data: T): T {
+/** Output decoration for agents: stable keys stay; human label/dimension/basis/stage_label (and explainer_url for forecast traits) are added next to them; `extra` adds per-key fields (tier, momentum_index, confidence). Pure, recursive. */
+export function withLabels<T>(data: T, extra?: (key: string) => Record<string, unknown> | undefined): T {
   const walk = (v: unknown): unknown => {
     if (typeof v === "string") return untick(v);
     if (Array.isArray(v)) return v.map(walk);
@@ -182,6 +207,9 @@ export function withLabels<T>(data: T): T {
     if (key) {
       const l = label(key);
       if (!("label" in o)) o["label"] = l.name;
+      if (!("basis" in o)) o["basis"] = basis(key);
+      const more = extra?.(canonical(key));
+      if (more) for (const [k, v] of Object.entries(more)) if (!(k in o)) o[k] = v;
       const url = explainerUrl(key);
       if (url && !("explainer_url" in o)) o["explainer_url"] = url;
       if ("dimension" in o && o["dimension"] !== l.dimension) o["label_dimension"] = l.dimension; else o["dimension"] = l.dimension;

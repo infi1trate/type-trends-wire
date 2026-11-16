@@ -2,7 +2,7 @@ import { defineTool } from "@lovable.dev/mcp-js";
 import { librarySector } from "@/lib/library-payload";
 import { ToolError } from "@lovable.dev/mcp-js";
 import { json, READ } from "./shared";
-export default defineTool({ name: "vibe_map", title: "Vibe map", description: "Tag-space clusters of library sites (closed-vocabulary AI tags, PCA + k-means) with names, member domains, top tags and momentum vs the archive. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+export default defineTool({ name: "vibe_map", title: "Vibe map", description: "Tag-space clusters of library sites (closed-vocabulary AI tags, PCA + k-means) with names, member domains, top tags and momentum vs the archive. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
   inputSchema: { sector: librarySector.optional() }, annotations: READ,
   handler: async ({ sector }) => {
     const { vibeMap } = await import("@/lib/vibe.server");

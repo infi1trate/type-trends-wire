@@ -1,6 +1,6 @@
 // The Digest: one issue assembled deterministically from stored rows for its week. Pure (no I/O, no AI);
 // every trait name, dimension and stage word comes from labels.ts, and stored text is only unticked at render time.
-import { alertDisplayTitle, briefDisplay, explainerPath, label, scopeText, stageName, untick, type Dimension, type StageName } from "../labels";
+import { alertDisplayTitle, basis, briefDisplay, explainerPath, label, scopeText, stageName, untick, type Basis, type Dimension, type StageName } from "../labels";
 import { colorTicker } from "../taste/color";
 import { colorName } from "../labels";
 import { stageChanges, type StageRow } from "../today";
@@ -8,11 +8,11 @@ import type { CardModel } from "../chart/card";
 import { pickThumb, type Thumb, type ThumbRow } from "../thumbs";
 import { DIGEST_NAME, CONTACT_EMAIL } from "../site";
 import { issueNumber, weekRange, longDate } from "./week";
-import { moverSentence, pct, stageMove, whyItMatters } from "./copy";
+import { moverSentence, pct, soWhat, stageMove, whyItMatters } from "./copy";
 
 export type StoredBrief = { headline: string; caveats?: string; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: string; id: string }[] }[]; watch?: { id: string; call: string } | null; standfirst?: string | null; why_it_matters?: string | null };
 export type LeadSite = { domain: string; adopted?: string | null; lead?: number | null };
-export type FRow = StageRow & { scope: string; next_wave_score?: number | null; sites?: number | null; lead_sites?: LeadSite[] | null };
+export type FRow = StageRow & { scope: string; status?: string; next_wave_score?: number | null; sites?: number | null; lead_sites?: LeadSite[] | null };
 export type AlertRow = { title: string; ref: string | null; url: string; tags: string[] | null; published_at: string };
 export type FontMove = { family: string; category: string; change: number; rank: number };
 export type SiteEvent = { domain: string; sector: string | null; before: Record<string, unknown> | null; after: Record<string, unknown> | null; detected_at: string };
@@ -24,6 +24,8 @@ export type IssueRows = {
   card: CardModel | null;
   forecasts: FRow[];
   previous: StageRow[];
+  /** Headline signal keys for this issue's run (tiers.ts). When present, the cover lead and Movers use headline signals only. */
+  headline?: string[] | null;
   alerts: AlertRow[];
   fonts: { date: string; since: string; rising: FontMove[]; fading: FontMove[] } | null;
   typeEvents: SiteEvent[];
@@ -36,8 +38,8 @@ export type IssueRows = {
   numbers: { ledger?: { rate: number | null; hits: number; resolved: number } | null; library_sites: number | null; crawl: { finished_at: string; sites: number } | null; wire_stories: number };
 };
 
-export type TraitRef = { key: string; name: string; dimension: Dimension; stage: StageName | null; href: string };
-export type Mover = TraitRef & { scope: string; scopeText: string; from: StageName | null; to: StageName | null; breakout: boolean; change: string; sentence: string; sites: number | null };
+export type TraitRef = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; href: string };
+export type Mover = TraitRef & { scope: string; scopeText: string; from: StageName | null; to: StageName | null; breakout: boolean; change: string; sentence: string; sites: number | null; soWhat: string | null };
 export type Specimen = { family: string; google: boolean; role: string; line: string; note: string | null; href: string | null };
 export type Swatch = { hex: string; name: string };
 export type ColorMove = { domain: string; sector: string | null; kind: "accent" | "palette"; before: Swatch[]; after: Swatch[]; at: string; href: string };
@@ -78,7 +80,7 @@ export function citationHref(c: { kind: string; id: string }, refs: StoredBrief[
   if (c.kind === "spread") return "/?panel=spread";
   return null;
 }
-const ref = (key: string, stage: string | null): TraitRef => { const l = label(key); return { key, name: l.name, dimension: l.dimension, stage: stageName(stage), href: explainerPath(key) }; };
+const ref = (key: string, stage: string | null): TraitRef => { const l = label(key); return { key, name: l.name, dimension: l.dimension, basis: basis(key), stage: stageName(stage), href: explainerPath(key) }; };
 const sectorOf = (url: string) => { const m = /[?&]sector=([^&#]+)/.exec(url); return m ? decodeURIComponent(m[1]!) : "all"; };
 const swatch = (hex: string): Swatch => ({ hex: hex.toUpperCase(), name: colorName(colorTicker(hex)) ?? hex.toUpperCase() });
 
@@ -91,24 +93,31 @@ export function issueModel(r: IssueRows): Issue | null {
   const standfirst = standfirstOf(r.brief), shown = briefDisplay({ headline: r.brief.headline, caveats: r.brief.caveats ?? "", refs: r.brief.refs, sections: r.brief.sections });
   // A derived standfirst is the first section's opening, so the body continues after it instead of repeating it.
   const body = shown.sections.map((s, i) => ({ title: s.title, body: i === 0 && !r.brief!.standfirst?.trim() && s.body.startsWith(standfirst) ? s.body.slice(standfirst.length).trim() : s.body, citations: s.citations.map(c => ({ text: c.text, href: citationHref(c, r.brief!.refs) })) }));
-  const leadKey = r.card?.trait ?? (r.brief.watch?.id ? r.brief.watch.id.split(":").slice(0, 2).join(":") : null);
-  const leadScope = r.card?.scope ?? "all", leadRow = leadKey ? row(leadKey, leadScope) ?? row(leadKey) : undefined;
-  const leadStage = r.card?.stage ?? leadRow?.stage ?? null, leadShare = r.card?.share ?? leadRow?.current_share ?? null, leadMom = r.card?.momentum_pts_q ?? leadRow?.momentum ?? null;
+  // Tiers: with a headline set, the cover lead and Movers must be headline signals (the stored brief text is shown as written).
+  const head = r.headline ? new Set(r.headline) : null, isHead = (k: string) => !head || head.has(k);
+  const storedLead = r.card?.trait ?? (r.brief.watch?.id ? r.brief.watch.id.split(":").slice(0, 2).join(":") : null);
+  const fallbackLead = head ? all.filter(f => head.has(`${f.dimension}:${f.value}`) && f.next_wave_score != null).sort((a, b) => (b.next_wave_score ?? 0) - (a.next_wave_score ?? 0))[0] : undefined;
+  const keepStored = !!storedLead && isHead(storedLead);
+  const leadKey = keepStored ? storedLead : fallbackLead ? `${fallbackLead.dimension}:${fallbackLead.value}` : null;
+  const card = keepStored ? r.card : null;
+  const leadScope = card?.scope ?? "all", leadRow = leadKey ? row(leadKey, leadScope) ?? row(leadKey) : undefined;
+  const leadStage = card?.stage ?? leadRow?.stage ?? null, leadShare = card?.share ?? leadRow?.current_share ?? null, leadMom = card?.momentum_pts_q ?? leadRow?.momentum ?? null;
   const lead = leadKey ? { ...ref(leadKey, leadStage), share: leadShare, momentum: leadMom, scopeText: scopeText(leadScope) } : null;
-  const call = r.card ? (r.card.origin === "alert" ? alertDisplayTitle(r.card.call, r.card.trait) : untick(r.card.call)) : r.brief.watch?.call ? untick(r.brief.watch.call) : null;
-  const why = r.brief.why_it_matters?.trim() ? untick(r.brief.why_it_matters) : lead ? whyItMatters(lead.key, leadStage, leadShare, leadMom) : null;
-  const cover = { kicker: lead ? `Cover story · ${lead.dimension}` : "Cover story", headline: shown.headline, standfirst, why, body, caveats: shown.caveats || null, lead, card: figureOf(r.card), call };
+  const call = card ? (card.origin === "alert" ? alertDisplayTitle(card.call, card.trait) : untick(card.call)) : keepStored && r.brief.watch?.call ? untick(r.brief.watch.call) : null;
+  const why = keepStored && r.brief.why_it_matters?.trim() ? untick(r.brief.why_it_matters) : lead ? whyItMatters(lead.key, leadStage, leadShare, leadMom) : null;
+  const cover = { kicker: lead ? `Cover story · ${lead.dimension}` : "Cover story", headline: shown.headline, standfirst, why, body, caveats: shown.caveats || null, lead, card: figureOf(card), call };
 
   // Movers: breakout alerts first, then stage changes between this run and the previous one.
   const movers = new Map<string, Mover>();
   const add = (key: string, scope: string, breakout: boolean) => {
+    if (!isHead(key)) return;
     const id = `${key}|${scope}`, f = row(key, scope) ?? row(key), prev = r.previous.find(p => `${p.dimension}:${p.value}` === key);
     const from = scope === "all" && prev ? stageName(prev.stage) : null, to = stageName(f?.stage ?? null);
     const existing = movers.get(id);
     if (existing) { if (breakout) existing.breakout = true; return; }
     const where = scope === "all" ? "" : ` in ${scopeText(scope)}`;
     const change = breakout ? `broke out${where}${from && to && from !== to ? ` and ${stageMove(from, to)}` : to ? `; its stage there is ${to}` : ""}` : `${stageMove(from, to)}${where}`;
-    movers.set(id, { ...ref(key, f?.stage ?? null), scope, scopeText: scopeText(scope), from, to, breakout, change, sentence: moverSentence(f?.current_share ?? null, f?.momentum ?? null, f?.sites ?? null, scope === "all" ? null : scope), sites: f?.sites ?? null });
+    movers.set(id, { ...ref(key, f?.stage ?? null), scope, scopeText: scopeText(scope), from, to, breakout, change, sentence: moverSentence(f?.current_share ?? null, f?.momentum ?? null, f?.sites ?? null, scope === "all" ? null : scope), sites: f?.sites ?? null, soWhat: head ? soWhat(key, f?.stage ?? null) : null });
   };
   for (const a of [...r.alerts].filter(a => a.ref && a.tags?.includes("breakout")).sort((x, y) => y.published_at.localeCompare(x.published_at) || x.title.localeCompare(y.title))) add(a.ref!, sectorOf(a.url), true);
   for (const s of stageChanges(all, r.previous)) add(s.trait, "all", false);

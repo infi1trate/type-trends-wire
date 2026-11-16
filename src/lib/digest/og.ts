@@ -3,6 +3,7 @@
 import { chartPrims, fit, wrap, LIGHT_PALETTE, COLORS, type Prim } from "../chart/card";
 import { CARD_HOST } from "../chart/card";
 import type { Issue } from "./issue";
+import { basisWord } from "../labels";
 export const OG_SIZE = { w: 1200, h: 630 } as const;
 const P = LIGHT_PALETTE, INK = P[COLORS.ink]!, MUTED = P[COLORS.g500]!, RULE = P[COLORS.rule]!, BG = P[COLORS.bg]!;
 export function issueOgScene(i: Pick<Issue, "name" | "number" | "dates" | "cover" | "dataThrough">): { w: number; h: number; prims: Prim[] } {
@@ -14,7 +15,7 @@ export function issueOgScene(i: Pick<Issue, "name" | "number" | "dates" | "cover
   const lines = wrap(i.cover.headline, 44, inner, 3);
   lines.forEach((line, n) => t(pad, pad + 60 + n * 56, line, 44, 600, INK));
   const lead = i.cover.lead, top = pad + 60 + lines.length * 56 + 18;
-  if (lead) t(pad, top, fit(`${lead.name} [${lead.dimension}]${lead.stage ? ` · ${lead.stage.toUpperCase()}` : ""}`, 22, inner), 22, 400, MUTED);
+  if (lead) t(pad, top, fit(`${lead.name} [${lead.dimension}] · ${basisWord(lead.key)}${lead.stage ? ` · ${lead.stage.toUpperCase()}` : ""}`, 22, inner), 22, 400, MUTED);
   const card = i.cover.card, chartTop = top + 40, chartH = h - chartTop - 70;
   if (card && card.series.length && chartH > 120) prims.push(...chartPrims(card, pad, chartTop, inner, chartH).map(p => recolor(p)));
   prims.push({ k: "rect", x: pad, y: h - pad - 18, w: inner, h: 1, fill: RULE });

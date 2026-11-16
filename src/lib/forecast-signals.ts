@@ -1,7 +1,8 @@
 // Pure leading-indicator functions. No I/O.
 import { qIndex, usablePoints, type SeriesPoint } from "./forecast";
 import { NEXT_WAVE_WEIGHTS, TRAIT_KEYWORDS } from "./forecast-constants";
-export type SiteRow = { domain: string; quarter: string; sector: string; theme?: string | null; h1_family?: string | null; webfont?: boolean | null; h1_tracking?: number | null; css_features?: unknown; frameworks?: unknown; hero_media?: string | null; ai_tags?: unknown };
+import { compositeTraits } from "./composites";
+export type SiteRow = { domain: string; quarter: string; sector: string; theme?: string | null; h1_family?: string | null; webfont?: boolean | null; h1_tracking?: number | null; css_features?: unknown; frameworks?: unknown; hero_media?: string | null; ai_tags?: unknown; h1_size_px?: number | null; cta_radius_bucket?: string | null; whitespace_ratio?: number | null };
 const AI_DIMS = ["imagery", "aesthetic", "components", "hero_layout", "ai_positioning", "tone", "color_mood"];
 const SERIF = /(serif|georgia|times|garamond|canela|tiempos|lora|fraunces|playfair|editorial|domaine|recoleta)/i;
 // Mirrors the SQL trait definitions behind library_history_share (except the whitespace median).
@@ -17,6 +18,8 @@ export function siteTraits(r: SiteRow): string[] {
   if (r.ai_tags && typeof r.ai_tags === "object") for (const d of AI_DIMS) { const v = (r.ai_tags as Record<string, unknown>)[d]; for (const x of Array.isArray(v) ? v : typeof v === "string" ? [v] : []) if (typeof x === "string") out.add(`${d}:${x}`); }
   return [...out];
 }
+/** Forecast site traits: siteTraits plus the composite (combo:*) keys this site carries. Other consumers keep siteTraits. */
+export function forecastSiteTraits(r: SiteRow): string[] { const base = siteTraits(r); return [...base, ...compositeTraits(base, r)]; }
 
 // First usable quarter where library-wide share crosses `level`, only when an earlier usable quarter sat below it.
 export function crossingQuarter(points: SeriesPoint[], scope: string, level: number): string | null {
@@ -46,7 +49,7 @@ export function trendsetterScores(rows: SiteRow[], crossings: Record<string, str
 export function trendsetterGap(latestRows: SiteRow[], top: Set<string>, trait: string): number | null {
   const a = latestRows.filter(r => top.has(r.domain)), b = latestRows.filter(r => !top.has(r.domain));
   if (!a.length || !b.length) return null;
-  const share = (l: SiteRow[]) => l.filter(r => siteTraits(r).includes(trait)).length / l.length;
+  const share = (l: SiteRow[]) => l.filter(r => forecastSiteTraits(r).includes(trait)).length / l.length;
   return (share(a) - share(b)) * 100;
 }
 

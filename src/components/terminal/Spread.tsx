@@ -3,6 +3,12 @@ import { CrawlControls, CrawlState, useCrawl } from "./CrawlControls";
 import { PanelHeader } from "./primitives";
 import { Info } from "./Info";
 import { label } from "@/lib/labels";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { signalsQuery } from "@/lib/data";
+import { tierFor } from "@/lib/tiers";
+import { BasisChip } from "./SignalBits";
+/** Default view: spread rows for headline signals only; the rest stay in All signals and in each headline's drawer. */
+function useHeadlineSpread() { const { data } = useSuspenseQuery(signalsQuery()); return (signal: string | null) => !!signal && (!data || tierFor(data.tiers, `spread:${signal}`) === "headline"); }
 const signalName = (signal: string | null, fallback: string | null) => (signal ? label(`spread:${signal}`).name : fallback ?? "Signal");
 
 const share = (v: number | null | undefined) => (v == null ? "—" : String(Math.round(v * 100)));
@@ -13,6 +19,7 @@ function Bar({ value }: { value: number | null | undefined }) {
 
 export function Spread() {
   const { scope } = useCrawl();
+  const shown = useHeadlineSpread();
   return <section className="crawler flex min-h-0 flex-1 flex-col" aria-label="Spread">
     <PanelHeader g="p-spread" title={`SPREAD · VANGUARD / CURATED − MAINSTREAM · LANG ${scope.toUpperCase()}`}/>
     <CrawlControls/>
@@ -27,14 +34,15 @@ export function Spread() {
             <th className="p-2 text-left">SIGNAL<Info g="signal" /></th><th className="w-[6ch] text-right">V%<Info g="v-share" /></th><th className="w-[6ch] text-right">M%<Info g="m-share" /></th><th className="w-[6ch] text-right">C%<Info g="c-share" /></th>
             <th className="w-[9ch] p-2 text-right sm:w-[10ch]">SPREAD<Info g="spread" /></th><th className="w-[8ch] pr-2 text-right sm:w-[9ch]">LEAD<Info g="lead" /></th><th className="hidden w-[7ch] pr-2 text-right sm:table-cell">ΔWK<Info g="delta-week" /></th>
           </tr></thead>
-          <tbody>{data.spread.map(r => <tr key={r.signal} className="border-b border-rule">
-            <th className="crawl-tip relative p-2 text-left font-normal"><span tabIndex={0} className="block truncate">{signalName(r.signal, r.label)}</span><span className="crawl-tooltip">{signalName(r.signal, r.label)}{r.prev_curation_lead_pts != null ? ` · LEAD PREV ${spreadText(r.prev_curation_lead_pts)}` : ""}</span><Bar value={r.spread_pts}/></th>
+          <tbody>{data.spread.filter(r => shown(r.signal)).map(r => <tr key={r.signal} className="border-b border-rule">
+            <th className="crawl-tip relative p-2 text-left font-normal"><span tabIndex={0} className="flex min-w-0 flex-col items-start gap-0.5"><span className="max-w-full truncate">{signalName(r.signal, r.label)}</span>{r.signal && <BasisChip k={`spread:${r.signal}`} />}</span><span className="crawl-tooltip">{signalName(r.signal, r.label)}{r.prev_curation_lead_pts != null ? ` · LEAD PREV ${spreadText(r.prev_curation_lead_pts)}` : ""}</span><Bar value={r.spread_pts}/></th>
             <td className="num text-signal">{share(r.vanguard_share)}</td><td className="num text-compare-muted">{share(r.mainstream_share)}</td><td className="num text-ink">{share(r.curated_share)}</td>
             <td className={`num p-2 ${(r.spread_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}`}>{spreadText(r.spread_pts)}</td>
             <td className={`num pr-2 ${(r.curation_lead_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}`}>{spreadText(r.curation_lead_pts)}</td>
             <td className="num hidden pr-2 text-compare-muted sm:table-cell">{r.prev_spread_pts == null ? <span title="First crawl for this signal; the weekly change appears after the next crawl.">new</span> : spreadText((r.spread_pts ?? 0) - r.prev_spread_pts)}</td>
           </tr>)}</tbody>
         </table>
+        {data.spread.some(r => !shown(r.signal)) && <p className="text-label border-b border-rule p-3 text-compare-muted">HEADLINE SIGNALS ONLY · {data.spread.filter(r => !shown(r.signal)).length} SUPPORTING OR ARCHIVE READINGS HIDDEN ({data.spread.filter(r => !shown(r.signal)).map(r => signalName(r.signal, r.label)).join(", ")}). Each appears as evidence in its headline's drawer and in All signals.</p>}
         <p className="text-label p-3 text-compare-muted">Vanguard leads, mainstream follows. Positive = more common on design-forward sites. LEAD = curated galleries − mainstream.{curated.length ? ` CURATED ${curated.length} SITES · ${mixText || "NO GALLERY TAGS"}. Gallery picks are a biased sample.` : " No curated sites in this crawl yet; the C% column and curation lead fill in after the next weekly crawl that includes gallery picks."}</p>
       </>;
     }}</CrawlState></div>
@@ -42,5 +50,6 @@ export function Spread() {
 }
 export function SpreadTicker() {
   const { data } = useCrawl();
-  return <>{data?.spread.slice(0, 4).map(r => <span key={r.signal} className="mr-8 inline-flex gap-2"><span className="normal-case text-ink">{signalName(r.signal, r.label)}</span><span className="text-g500">[{r.signal ? label(`spread:${r.signal}`).dimension : "LAYOUT"}]</span><span className="text-compare-muted">V{share(r.vanguard_share)} M{share(r.mainstream_share)}{r.curated_share != null ? ` C${share(r.curated_share)}` : ""}</span><span className={(r.spread_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}>{spreadText(r.spread_pts).replace(" PTS", "PTS")}</span></span>)}</>;
+  const shown = useHeadlineSpread();
+  return <>{data?.spread.filter(r => shown(r.signal)).slice(0, 4).map(r => <span key={r.signal} className="mr-8 inline-flex gap-2"><span className="normal-case text-ink">{signalName(r.signal, r.label)}</span><span className="text-g500">[{r.signal ? label(`spread:${r.signal}`).dimension : "LAYOUT"}]</span><span className="text-compare-muted">V{share(r.vanguard_share)} M{share(r.mainstream_share)}{r.curated_share != null ? ` C${share(r.curated_share)}` : ""}</span><span className={(r.spread_pts ?? 0) > 0 ? "text-signal" : "text-compare-muted"}>{spreadText(r.spread_pts).replace(" PTS", "PTS")}</span></span>)}</>;
 }

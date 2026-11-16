@@ -2737,6 +2737,7 @@ export type Database = {
           frameworks: Json | null
           grid_max_cols: number | null
           h1_family: string | null
+          h1_size_px: number | null
           h1_tracking: number | null
           hero_media: string | null
           now: boolean | null

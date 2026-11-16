@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Issue } from "@/lib/digest/issue";
 import { pct } from "@/lib/digest/copy";
-import { DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, Swatches, pr } from "./Editorial";
+import { BasisWord, DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, Swatches, pr } from "./Editorial";
 
 const two = (n: number) => String(n).padStart(2, "0");
 export function IssueView({ issue }: { issue: Issue }) {
@@ -24,7 +24,7 @@ export function IssueView({ issue }: { issue: Issue }) {
           <h1 id="ed-cover-title" className="ed-cover mt-3">{c.headline}</h1>
           {c.standfirst && <p className="ed-standfirst mt-5">{c.standfirst}</p>}
           {c.lead && <p className="ed-data mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="font-semibold">{c.lead.name}</span><Dim d={c.lead.dimension} /><StageWord stage={c.lead.stage} />
+            <span className="font-semibold">{c.lead.name}</span><Dim d={c.lead.dimension} /><BasisWord b={c.lead.basis} /><StageWord stage={c.lead.stage} />
             {c.lead.share != null && <span>{pct(c.lead.share, 1)} of homepages</span>}
             <span className="ed-muted">{c.lead.scopeText}</span>
             <Link to="/trait/$key" params={{ key: c.lead.key }} className="ed-tap" {...pr(c.lead.href)}>Explainer →</Link>
@@ -52,9 +52,10 @@ export function IssueView({ issue }: { issue: Issue }) {
         <SectionHead n={n("movers")} id="ed-movers" title="The Movers" kicker="Signals that broke out or changed stage since the previous forecast run." />
         <ol className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
           {issue.movers.map(m => <li key={`${m.key}|${m.scope}`} className="ed-hair pt-4">
-            <p className="ed-data flex flex-wrap items-center gap-2"><Dim d={m.dimension} />{m.breakout && <span className="ed-badge">Breakout</span>}<StageWord stage={m.to} /></p>
+            <p className="ed-data flex flex-wrap items-center gap-2"><Dim d={m.dimension} /><BasisWord b={m.basis} />{m.breakout && <span className="ed-badge">Breakout</span>}<StageWord stage={m.to} /></p>
             <h3 className="ed-h3 mt-2"><Link to="/trait/$key" params={{ key: m.key }} className="no-underline hover:underline" {...pr(m.href)}>{m.name}</Link></h3>
             <p className="mt-2">{m.name} {m.change}. {m.sentence}</p>
+            {m.soWhat && <p className="ed-caption mt-1">{m.soWhat}</p>}
             <p className="ed-data mt-2"><Link to="/trait/$key" params={{ key: m.key }} className="ed-tap">Explainer →</Link></p>
           </li>)}
         </ol>

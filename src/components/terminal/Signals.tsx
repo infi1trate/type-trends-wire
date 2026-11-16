@@ -1,0 +1,72 @@
+import { useMemo, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { signalsQuery } from "@/lib/data";
+import { headlineOnly, ofTier, type Signal } from "@/lib/signals";
+import { judgment, TIERS, TIER_WORD, type Tier } from "@/lib/tiers";
+import { type Dimension } from "@/lib/labels";
+import { signalList } from "@/lib/what-we-show";
+import { TraitDrawer } from "./Forecast";
+import { Empty, Loading, PanelHeader, Seg } from "./primitives";
+import { SignalTable, useTierChoice } from "./SignalBits";
+
+/** Opens the shared signal drawer for any key. */
+export function useSignalDrawer() {
+  const [open, setOpen] = useState<string | null>(null);
+  const node = open ? <TraitDrawer dimension={open.slice(0, open.indexOf(":"))} value={open.slice(open.indexOf(":") + 1)} onClose={() => setOpen(null)} /> : null;
+  return { open: setOpen, node };
+}
+
+const byMomentum = (a: Signal, b: Signal) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || (b.share ?? 0) - (a.share ?? 0) || a.name.localeCompare(b.name);
+/** Headline signals for one dimension (or a set of dimensions): the default list on each panel. */
+export function HeadlineStrip({ dims, title, g, max, match }: { dims: Dimension[]; title: string; g: string; max?: number; match?: (key: string) => boolean }) {
+  const { data } = useSuspenseQuery(signalsQuery()), isLoading = false;
+  const drawer = useSignalDrawer();
+  const rows = useMemo(() => headlineOnly(data?.signals ?? []).filter(s => dims.includes(s.dimension) && (!match || match(s.key))).sort(byMomentum).slice(0, max ?? 999), [data, dims, max, match]);
+  return <section aria-label={title} className="shrink-0 border-b border-rule">
+    <PanelHeader title={title} g={g} meta={data ? <>{rows.length} HEADLINE · RUN {data.snap.run_id}</> : null} />
+    {isLoading ? <div className="p-3"><Loading /></div> : rows.length ? <div className="max-h-[50vh] overflow-auto"><SignalTable rows={rows} onOpen={drawer.open} caption={title} /></div>
+      : <Empty why="No headline signal in this dimension this week: nothing here is visible, decision-worthy, well measured and moving at once. Supporting and archive signals stay in All signals on F1." />}
+    {drawer.node}
+  </section>;
+}
+
+/** F1 "All signals": headline by default; the tier filter (remembered per device) reaches supporting and archive. */
+export function AllSignals({ compact = false }: { compact?: boolean }) {
+  const { data } = useSuspenseQuery(signalsQuery()), isLoading = false;
+  const [tier, setTier] = useTierChoice();
+  const drawer = useSignalDrawer();
+  const counts = useMemo(() => Object.fromEntries(TIERS.map(t => [t, 0])) as Record<Tier, number>, []);
+  const signals = data?.signals ?? [];
+  for (const t of TIERS) counts[t] = ofTier(signals, t).length;
+  const rows = useMemo(() => ofTier(signals, tier).sort(byMomentum), [signals, tier]);
+  const unstaged = useMemo(() => { if (tier === "headline" || !data) return []; const staged = new Set(signals.map(s => s.key)); return signalList(data.tiers).filter(r => r.tier === tier && !staged.has(r.key)); }, [data, signals, tier]);
+  const opts = TIERS.map(t => `${TIER_WORD[t]} ${counts[t]}`) as unknown as readonly string[];
+  return <section aria-label="All signals" className="flex min-h-0 flex-1 flex-col">
+    <PanelHeader title={compact ? "SIGNALS" : "F1 ALL SIGNALS"} g="p-all-signals" meta={data?.snap.run_id ? <>RUN {data.snap.run_id}</> : null} />
+    <div className="flex flex-wrap items-center gap-2 border-b border-rule p-2">
+      <Seg label="Tier" options={opts} value={opts[TIERS.indexOf(tier)]!} onChange={v => setTier(TIERS[opts.indexOf(v)]!)} />
+      <span className="label text-g500">{tier === "headline" ? "Shown by default everywhere." : tier === "supporting" ? "Evidence: shown inside headline signals." : "Collected, never deleted, not shown by default."}</span>
+    </div>
+    <div className="min-h-0 flex-1 overflow-auto">
+      {isLoading ? <div className="p-3"><Loading /></div> : <SignalTable rows={rows} onOpen={drawer.open} reasons={tier !== "headline"} caption={`${TIER_WORD[tier]} signals`} />}
+      {unstaged.length > 0 && <div className="border-t border-rule p-3"><h3 className="label text-g500">NOT FORECAST · {unstaged.length}</h3><ul className="mt-1 space-y-1">{unstaged.map(r => <li key={r.key} className="text-g500"><span className="text-ink">{r.name}</span> [{r.dimension}] · {judgment(r.key).why}</li>)}</ul></div>}
+      {!isLoading && !rows.length && !unstaged.length && <Empty why="No signal in this tier yet. Tiers are recomputed after every Sunday forecast." />}
+    </div>
+    {drawer.node}
+  </section>;
+}
+
+/** Which headline signals open each panel (dimension, optionally narrowed by key). */
+const COMPOSITION = new Set(["combo:soft_ui", "combo:quiet_minimal", "combo:big_type", "combo:numbers_up_front", "combo:product_led_hero"]);
+export const PANEL_HEADLINES = {
+  type: { dims: ["FONT"], title: "HEADLINE · TYPE" },
+  color: { dims: ["COLOR"], title: "HEADLINE · COLOR" },
+  layout: { dims: ["LAYOUT"], title: "HEADLINE · LAYOUT" },
+  composition: { dims: ["LAYOUT", "VIBE", "FONT"], title: "HEADLINE · COMPOSITION", match: (k: string) => COMPOSITION.has(k) },
+  lexicon: { dims: ["VIBE"], title: "HEADLINE · VOICE", match: (k: string) => /^(tone|ai_positioning):/.test(k) || k === "combo:ai_forward" || k === "combo:playful_brand" },
+  vibe: { dims: ["VIBE"], title: "HEADLINE · VIBE" },
+} satisfies Record<string, { dims: Dimension[]; title: string; match?: (k: string) => boolean }>;
+export function PanelHeadlines({ panel }: { panel: keyof typeof PANEL_HEADLINES }) {
+  const p = PANEL_HEADLINES[panel];
+  return <HeadlineStrip dims={p.dims} title={p.title} g="p-headline" {...("match" in p ? { match: p.match } : {})} />;
+}

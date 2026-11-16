@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { GLOSSARY, searchGlossary, type GlossaryKind } from "@/lib/glossary";
 import { QueryBar } from "./primitives";
@@ -22,7 +23,10 @@ export function Glossary({ onClose, onTour, focus }: { onClose: () => void; onTo
       </div>
       <div className="flex shrink-0 flex-col gap-2 border-b border-rule p-3">
         <QueryBar ref={input} label="Search the glossary" placeholder="SEARCH TERMS" value={q} onChange={e => setQ(e.target.value)} />
-        <button type="button" onClick={onTour} className="label self-start text-ink underline underline-offset-2 max-md:min-h-11">REPLAY THE TOUR →</button>
+        <div className="flex flex-wrap gap-x-4">
+          <button type="button" onClick={onTour} className="label self-start text-ink underline underline-offset-2 max-md:min-h-11">REPLAY THE TOUR →</button>
+          <Link to="/what-we-show" className="label inline-flex items-center self-start text-ink underline underline-offset-2 max-md:min-h-11">WHAT WE SHOW AND WHY →</Link>
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!q && <section className="border-b border-rule p-3"><h3 className="label mb-2 text-g500">KEYS</h3><dl className="grid grid-cols-[8ch_1fr] gap-y-1">{KEYS.map(([k, v]) => <Fragment key={k}><dt className="font-semibold text-ink">{k}</dt><dd className="text-g500">{v}</dd></Fragment>)}</dl></section>}

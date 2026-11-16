@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as WhatWeShowRouteImport } from './routes/what-we-show'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
 import { Route as ChartIndexRouteImport } from './routes/chart.index'
@@ -73,6 +74,11 @@ const LedgerRoute = LedgerRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WhatWeShowRoute = WhatWeShowRouteImport.update({
+  id: '/what-we-show',
+  path: '/what-we-show',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditIndexRoute = AuditIndexRouteImport.update({
@@ -294,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/audit.png': typeof AuditDotpngRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/audit.png': typeof AuditDotpngRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/audit.png': typeof AuditDotpngRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
+  '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/ledger'
     | '/robots.txt'
+    | '/what-we-show'
     | '/audit/new'
     | '/chart/$week'
     | '/chart/{$week}.png'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/ledger'
     | '/robots.txt'
+    | '/what-we-show'
     | '/audit/new'
     | '/chart/$week'
     | '/chart/{$week}.png'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/ledger'
     | '/robots.txt'
+    | '/what-we-show'
     | '/audit/new'
     | '/chart/$week'
     | '/chart/{$week}.png'
@@ -580,6 +592,7 @@ export interface RootRouteChildren {
   AuditDotpngRoute: typeof AuditDotpngRoute
   LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
+  WhatWeShowRoute: typeof WhatWeShowRoute
   AuditNewRoute: typeof AuditNewRoute
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
@@ -651,6 +664,13 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/what-we-show': {
+      id: '/what-we-show'
+      path: '/what-we-show'
+      fullPath: '/what-we-show'
+      preLoaderRoute: typeof WhatWeShowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit/': {
@@ -948,6 +968,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditDotpngRoute: AuditDotpngRoute,
   LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
+  WhatWeShowRoute: WhatWeShowRoute,
   AuditNewRoute: AuditNewRoute,
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,

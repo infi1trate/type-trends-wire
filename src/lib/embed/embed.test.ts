@@ -26,7 +26,7 @@ describe("embed widget", () => {
     expect(html).toContain('<a href="https://type-trends-wire.lovable.app/trait/css%3Asubgrid" target="_blank" rel="noopener">DSGN/TERMINAL →</a>');
     expect(html.match(/<svg /g)!.length).toBe(3);
     expect(html).toContain('stroke="#ff4f00"');
-    expect(html).toMatch(/<main aria-label="Subgrid layouts \[LAYOUT\], all sectors: Rising\./);
+    expect(html).toMatch(/<main aria-label="Subgrid layouts \[LAYOUT\], MEASURED, all sectors: Rising\./);
     expect(html).toContain("prefers-reduced-motion");
     expect(html).not.toMatch(/<script|\$[A-Z]/);
   });

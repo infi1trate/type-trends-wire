@@ -37,3 +37,16 @@ export function crawlCoverage(c: { run: string | null; finished_at: string | nul
   if (use && c.curated_sites === 0) notes.push("no curated index in the latest crawl: curation component missing");
   return { run: c.run, finished_at: c.finished_at, age_days: age, stale, use, curated_sites: use ? c.curated_sites : 0, notes };
 }
+
+/** Which steps a forecast run performs. Every step defaults on (the weekly schedule); dev/sandbox runs turn off anything that writes outside the new run. */
+export type RunOptions = {
+  brief?: boolean; // weekly brief + chart of the week
+  alerts?: "emit" | "dry" | "off";
+  ledger?: boolean; // record + resolve forecast_calls
+  derived?: boolean; // taste refresh + vibe map (both rewrite shared tables)
+  prune?: boolean; // delete runs beyond the newest 12
+};
+export const DEV_RUN: Required<RunOptions> = { brief: false, alerts: "off", ledger: false, derived: false, prune: false };
+export function runSteps(o: RunOptions = {}): Required<RunOptions> {
+  return { brief: o.brief !== false, alerts: o.alerts ?? "emit", ledger: o.ledger !== false, derived: o.derived !== false, prune: o.prune !== false };
+}

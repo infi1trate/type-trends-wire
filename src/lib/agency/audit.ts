@@ -1,6 +1,6 @@
 // Competitive audit: one pure model over stored rows for 2–6 domains (no AI per view). Names from labels.ts; every section only with real data.
 import { SECTORS, fingerprint, obj, radiusBucket, str, num } from "../library";
-import { explainerPath, label, stageName, scopeText, type Dimension, type StageName } from "../labels";
+import { basis, explainerPath, label, stageName, scopeText, type Basis, type Dimension, type StageName } from "../labels";
 import { siteTraits, type SiteRow } from "../forecast-signals";
 import { pickThumb, type Thumb, type ThumbRow } from "../thumbs";
 import { SITE_URL } from "../site";
@@ -33,7 +33,7 @@ export type AuditSiteIn = {
 export type ForecastIn = { dimension: string; value: string; scope: string; stage: string | null; current_share: number | null; momentum: number | null };
 export type AuditRows = { domains: string[]; sector: string | null; now: string; sites: AuditSiteIn[]; events: EventRow[]; rebrands: RebrandRow[]; forecasts: ForecastIn[]; google: string[]; thumbs: ThumbRow[]; dataThrough: string | null };
 
-export type TraitRef = { trait: string; name: string; dimension: Dimension; stage: StageName | null; share: number | null; explainer: string; receipt: string };
+export type TraitRef = { trait: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; share: number | null; explainer: string; receipt: string };
 type Face = { family: string; google: boolean; size: number | null; weight: string | null; tracking: number | null; case: string | null; style: "serif" | "sans" | "mono" | null };
 export type Audit = {
   domains: string[]; sector: string; sectorSource: "chosen" | "majority" | "all"; url: string; now: string; dataThrough: string | null;
@@ -49,7 +49,7 @@ export type Audit = {
   pending: string[];
   sections: string[];
 };
-export type Matrix = { rows: { trait: string; name: string; cells: (boolean | null)[]; count: number }[]; domains: string[] };
+export type Matrix = { rows: { trait: string; name: string; basis: Basis; cells: (boolean | null)[]; count: number }[]; domains: string[] };
 
 const SERIF = /serif|georgia|times|garamond|baskerville|caslon|bodoni|didot|lyon|tiempos|canela|lora|merriweather|playfair|fraunces|newsreader|domaine|recoleta/i;
 const MONO = /mono|code|courier|consolas/i;
@@ -79,7 +79,7 @@ function matrix(sites: AuditSiteIn[], keysOf: (s: AuditSiteIn) => string[] | nul
   if (!per.some(k => k && k.length)) return null;
   const counts = new Map<string, number>();
   for (const k of per) for (const x of new Set(k ?? [])) counts.set(x, (counts.get(x) ?? 0) + 1);
-  const rows = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([x, count]) => ({ trait: `${prefix}:${x}`, name: label(`${prefix}:${x}`).name, cells: per.map(k => (k ? k.includes(x) : null)), count }));
+  const rows = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([x, count]) => ({ trait: `${prefix}:${x}`, name: label(`${prefix}:${x}`).name, basis: basis(`${prefix}:${x}`), cells: per.map(k => (k ? k.includes(x) : null)), count }));
   return { rows, domains: sites.map(s => s.domain) };
 }
 
@@ -101,7 +101,7 @@ export function auditModel(r: AuditRows): Audit {
   const fc = new Map(r.forecasts.map(f => [`${f.scope}|${f.dimension}:${f.value}`, f]));
   const ref = (trait: string, scope: string): TraitRef => {
     const f = fc.get(`${scope}|${trait}`), l = label(trait);
-    return { trait, name: l.name, dimension: l.dimension, stage: stageName(f?.stage), share: f?.current_share ?? null, explainer: explainerPath(trait), receipt: `/?panel=brief&trait=${encodeURIComponent(trait)}&sector=${scope}` };
+    return { trait, name: l.name, dimension: l.dimension, basis: basis(trait), stage: stageName(f?.stage), share: f?.current_share ?? null, explainer: explainerPath(trait), receipt: `/?panel=brief&trait=${encodeURIComponent(trait)}&sector=${scope}` };
   };
 
   const eventsBy = (d: string) => r.events.filter(e => e.domain === d).sort((a, b) => b.detected_at.localeCompare(a.detected_at));

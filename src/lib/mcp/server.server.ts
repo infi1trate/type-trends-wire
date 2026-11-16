@@ -4,12 +4,13 @@ import {METHODOLOGY} from './analysis';
 import {createRateLimiter} from './rate-limit';
 import {createKeyedLimiter,usageTool} from './keys';
 import {createKeyResolver,type Caller} from './keys.server';
+import {primeSignalIndex} from './signal-index';
 export const TOOL_NAMES=['get_trend','search_trends','wire','library_site','library_events','library_sector','crawl_spread','library_trends','library_history','site_history','forecast','next_wave','trendsetters','weekly_brief','recommend_type','recommend_palette','differentiate','critique','rebrands','vibe_map','audit_sites','watchlist_changes','forecast_ledger'];
 const KNOWN=new Set(TOOL_NAMES);
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, POST, DELETE, OPTIONS','Access-Control-Allow-Headers':'authorization, content-type, mcp-session-id, mcp-protocol-version, accept','Access-Control-Expose-Headers':'mcp-session-id'};
 const protocol=createMcpProtocolHandler(definition,{resourcePath:'/api/public/mcp'});
 const rpcError=(message:string,code:number,status:number)=>Response.json({jsonrpc:'2.0',error:{code,message},id:null},{status,headers:{...CORS,...(status===429?{'Retry-After':'60'}:{})}});
-export type McpDeps={resolve:(header:string|null)=>Promise<Caller>;count:(id:string,tool:string)=>Promise<void>;anon:(ip:string)=>boolean;keyed:(id:string,limit:number)=>boolean};
+export type McpDeps={resolve:(header:string|null)=>Promise<Caller>;count:(id:string,tool:string)=>Promise<void>;anon:(ip:string)=>boolean;keyed:(id:string,limit:number)=>boolean;prime?:()=>Promise<void>};
 const prod=():McpDeps=>{const store=async()=>(await import('./keys.server')).adminKeyStore();return{resolve:createKeyResolver(store),count:async(id,tool)=>(await store()).count(id,tool),anon:createRateLimiter(),keyed:createKeyedLimiter()};};
 let defaults:McpDeps|undefined;
 /** Anonymous callers keep the per-IP limit; a valid `Authorization: Bearer dsgn_…` key gets its own per-key limit and aggregate usage counts; unknown or revoked keys get 401 (no detail). Keys are never logged. */
@@ -40,6 +41,8 @@ export async function handleMcp(req:Request,deps?:McpDeps):Promise<Response>{
       }
     }
     await count();
+    // Tool answers carry tier / momentum_index / confidence from the latest stored forecast (cached; failures leave the fields out).
+    if(method==='tools/call')await (d.prime??primeSignalIndex)();
     const res=await protocol(req);const headers=new Headers(res.headers);for(const[k,v]of Object.entries(CORS))headers.set(k,v);
     if(req.method==='POST'&&res.ok&&res.body){
       const text=await res.text();

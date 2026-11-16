@@ -66,9 +66,9 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
   return (
     <section ref={section} className="flex min-h-0 flex-1 flex-col" aria-label="Type index">
       <PanelHeader
-        title={compact ? "TYPE INDEX" : "F2 TYPE INDEX"}
+        title={compact ? "TYPE INDEX" : "F2 SUPPLY · GOOGLE FONTS POPULARITY"}
         g="p-type-index"
-        meta={data?.latest ? <>SNAPSHOT {data.latest} · {data.rows.length} FAMILIES</> : null}
+        meta={data?.latest ? <>SUPPORTING · SNAPSHOT {data.latest} · {data.rows.length} FAMILIES</> : null}
       />
       {!compact && (
         <div className="flex flex-col gap-2 border-b border-rule p-3 lg:flex-row lg:items-center">

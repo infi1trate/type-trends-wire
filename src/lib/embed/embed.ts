@@ -2,7 +2,8 @@
 // Framing is allowed only here (CSP frame-ancestors *); every other page keeps its current framing rules.
 import { chartPrims, renderPrimsSvg, LIGHT_PALETTE, cardText, type CardModel } from "../chart/card";
 import { cardModel, usableSeries, MIN_SERIES, type ForecastLike } from "../chart/model";
-import { canonical, label, scopeText, stageName, type Dimension, type StageName } from "../labels";
+import { BASIS_WORD, basis, canonical, label, scopeText, stageName, type Basis, type Dimension, type StageName } from "../labels";
+import { soWhat } from "../digest/copy";
 import { callSentence, direction, quarterText } from "../ledger/ledger";
 import { SITE_URL } from "../site";
 
@@ -15,22 +16,22 @@ export const parseTheme = (v: string | null | undefined): Theme => (v === "light
 export const embedHeaders = (cache = EMBED_CACHE): Record<string, string> => ({
   "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": "frame-ancestors *", "Cache-Control": cache, "X-Robots-Tag": "noindex", "X-Content-Type-Options": "nosniff",
 });
-export type EmbedModel = { kind: "trait" | "chart"; title: string; name: string; dimension: Dimension; stage: StageName | null; scope: string; call: string; dataThrough: string; href: string; chart: Pick<CardModel, "series" | "forecast"> };
+export type EmbedModel = { kind: "trait" | "chart"; title: string; name: string; dimension: Dimension; basis: Basis; soWhat: string | null; stage: StageName | null; scope: string; call: string; dataThrough: string; href: string; chart: Pick<CardModel, "series" | "forecast"> };
 
 /** Trait widget from the latest stored forecast row for one scope; null when there is nothing to draw. */
-export function traitEmbedModel(key: string, row: ForecastLike | null, dataThrough: string | null): EmbedModel | null {
+export function traitEmbedModel(key: string, row: ForecastLike | null, dataThrough: string | null, headline = false): EmbedModel | null {
   if (!row || usableSeries(row).length < MIN_SERIES) return null;
   const k = canonical(key), l = label(k), card = cardModel({ week: "", run_id: row.run_id ?? 0, origin: "call", call: "", row, data_through: dataThrough, source_ref: `forecast:${k}:${row.scope}` });
   const next = card.forecast[0], base = row.current_share;
   const call = next && base != null ? callSentence({ trait: k, scope: row.scope, direction: direction(next.mid - base), share_at_call: base, band_lo: next.lo, band_hi: next.hi, target_quarter: next.q, outcome: null, outcome_reason: null })
     : `${l.name}: not enough history for a forecast band yet.`;
-  return { kind: "trait", title: `${l.name} [${l.dimension}]`, name: l.name, dimension: l.dimension, stage: stageName(row.stage), scope: scopeText(row.scope), call, dataThrough: quarterText(dataThrough), href: `${SITE_URL}/trait/${encodeURIComponent(k)}`, chart: card };
+  return { kind: "trait", title: `${l.name} [${l.dimension}]`, name: l.name, dimension: l.dimension, basis: basis(k), soWhat: headline ? soWhat(k, row.stage) : null, stage: stageName(row.stage), scope: scopeText(row.scope), call, dataThrough: quarterText(dataThrough), href: `${SITE_URL}/trait/${encodeURIComponent(k)}`, chart: card };
 }
 /** Chart-of-the-week widget from the stored (immutable) card model. */
-export function chartEmbedModel(m: CardModel | null): EmbedModel | null {
+export function chartEmbedModel(m: CardModel | null, headline = false): EmbedModel | null {
   if (!m || !m.series.length) return null;
   const t = cardText(m);
-  return { kind: "chart", title: `${t.name} [${t.dimension}]`, name: t.name, dimension: t.dimension, stage: stageName(m.stage), scope: t.scope, call: t.call, dataThrough: quarterText(m.data_through), href: `${SITE_URL}/trait/${encodeURIComponent(canonical(m.trait))}`, chart: m };
+  return { kind: "chart", title: `${t.name} [${t.dimension}]`, name: t.name, dimension: t.dimension, basis: basis(m.trait), soWhat: headline ? soWhat(m.trait, m.stage) : null, stage: stageName(m.stage), scope: t.scope, call: t.call, dataThrough: quarterText(m.data_through), href: `${SITE_URL}/trait/${encodeURIComponent(canonical(m.trait))}`, chart: m };
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -43,11 +44,12 @@ const THEMES: Record<Theme, { bg: string; ink: string; muted: string; rule: stri
 };
 const css = (t: Theme) => { const c = THEMES[t]; return `*{box-sizing:border-box;margin:0}html,body{height:100%}
 body{background:${c.bg};color:${c.ink};font:400 11px/16px "Geist Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;min-width:${EMBED_MIN_W}px;overflow:hidden}
-main{height:100vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;gap:6px;padding:10px 12px 0}
+main{height:100vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:6px;padding:10px 12px 0}
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
 h1{font-size:13px;line-height:20px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dim{color:${c.muted};font-weight:400}
-.badge{flex:none;border:1px solid ${c.ink};padding:0 4px;text-transform:uppercase;letter-spacing:.04em}
+.badge{flex:none;border:1px solid ${c.ink};padding:0 4px;text-transform:uppercase;letter-spacing:.04em}.badges{display:flex;gap:6px;flex:none}.basis{border-style:dashed}
+.so{color:${c.muted};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .scope{color:${c.muted}}
 figure{min-height:0;display:flex}figure svg{width:100%;height:100%;display:none}figure svg text{font-family:"Geist Mono",ui-monospace,monospace;white-space:pre}
 .call{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -64,16 +66,17 @@ const shell = (theme: Theme, title: string, label: string, body: string) => `<!d
 <style>${css(theme)}</style></head><body><main aria-label="${esc(label)}">${body}</main></body></html>`;
 
 export function renderEmbed(m: EmbedModel, theme: Theme): string {
-  const stage = m.stage ?? "Not staged yet", label = `${m.title}, ${m.scope}: ${stage}. ${m.call} Data through ${m.dataThrough}.`;
+  const stage = m.stage ?? "Not staged yet", label = `${m.title}, ${BASIS_WORD[m.basis]}, ${m.scope}: ${stage}. ${m.call}${m.soWhat ? ` ${m.soWhat}` : ""} Data through ${m.dataThrough}.`;
   const svgs = VIEWS.map(v => renderPrimsSvg(v.w, v.h, chartPrims(m.chart, 0, 4, v.w, v.h - 4), { label: `${m.name}: share of tracked homepages by quarter, with the forecast band`, className: v.cls, ...(theme === "light" ? { palette: LIGHT_PALETTE } : {}) })).join("");
-  return shell(theme, `${m.title} — DSGN/TERMINAL`, label, `<div class="head"><h1>${esc(m.name)} <span class="dim">[${m.dimension}]</span></h1><span class="badge" title="Stage">${esc(stage)}</span></div>
+  return shell(theme, `${m.title} — DSGN/TERMINAL`, label, `<div class="head"><h1>${esc(m.name)} <span class="dim">[${m.dimension}]</span></h1><span class="badges"><span class="badge basis" title="${m.basis === "ai" ? "AI estimate: read by an AI tagger from homepage captures" : "Measured from page code and rendered styles"}">${BASIS_WORD[m.basis]}</span><span class="badge" title="Stage">${esc(stage)}</span></span></div>
 <figure>${svgs}</figure>
 <p class="call">${esc(m.call)} <span class="scope">· ${esc(m.scope)}</span></p>
+${m.soWhat ? `<p class="so">${esc(m.soWhat)}</p>` : "<span></span>"}
 <footer><span>Data through ${esc(m.dataThrough)}</span><a href="${esc(m.href)}" target="_blank" rel="noopener">DSGN/TERMINAL →</a></footer>`);
 }
 export function renderEmbedNotFound(theme: Theme): string {
   return shell(theme, "Signal not found — DSGN/TERMINAL", "Signal not found", `<div class="head"><h1>Signal not found</h1></div>
-<p style="align-self:center">This signal or chart isn't in the latest forecast. The link may be misspelled, or the signal dropped out.</p><span></span>
+<p style="align-self:center">This signal or chart isn't in the latest forecast. The link may be misspelled, or the signal dropped out.</p><span></span><span></span>
 <footer><span>DSGN/TERMINAL</span><a href="${SITE_URL}/" target="_blank" rel="noopener">DSGN/TERMINAL →</a></footer>`);
 }
 

@@ -6,7 +6,9 @@ import { issueModel, archiveEntries, type IssueRows, type FRow, type SiteEvent, 
 import { traitModel, type TraitRows } from "./trait";
 import type { CardModel } from "../chart/card";
 import type { ThumbRow } from "../thumbs";
-import { canonical } from "../labels";
+import { basis, canonical, explainerPath, label } from "../labels";
+import { evidenceKeys, tierFor } from "../tiers";
+import { tiersFrom } from "../signals";
 import { asOf, ledgerSummary, type StoredCall } from "../ledger/ledger";
 type Db = ReturnType<typeof supabaseAnon>;
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500) {
@@ -15,7 +17,7 @@ async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: 
   return out;
 }
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
-const FCOLS = "dimension,value,scope,stage,current_share,momentum,next_wave_score,sites:components->sites,lead_sites:evidence->sites";
+const FCOLS = "dimension,value,scope,status,stage,current_share,momentum,next_wave_score,sites:components->sites,lead_sites:evidence->sites";
 
 async function fontMoves(db: Db, start: string, end: string) {
   const { fontSnapshot } = await import("../mcp/store.server");
@@ -38,10 +40,10 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   if (!b) return null;
   const range = weekRange(b.week); if (!range) return null;
   const runId = b.run_id;
-  const [run, card, prevRun, alerts, typeEvents, colorEvents, sites, thumbs, libCount, crawl, wire] = await Promise.all([
+  const [run, card, prevRuns, alerts, typeEvents, colorEvents, sites, thumbs, libCount, crawl, wire] = await Promise.all([
     runId == null ? Promise.resolve(null) : db.from("forecast_runs").select("id,computed_at,data_through:model_card->>data_through").eq("id", runId).maybeSingle().then(must),
     db.from("chart_cards").select("model").eq("week", b.week).maybeSingle().then(must),
-    runId == null ? Promise.resolve(null) : db.from("forecast_runs").select("id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(1).maybeSingle().then(must),
+    runId == null ? Promise.resolve([]) : db.from("forecast_runs").select("id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(2).then(must),
     runId == null ? Promise.resolve([]) : db.from("wire_items").select("title,ref,url,tags,published_at").eq("source_kind", "alert").ilike("url", `%alert=${runId}-%`).order("published_at", { ascending: false }).limit(20).then(must),
     pages<SiteEvent>((f, t) => db.from("library_event_feed").select("domain,sector,before,after,detected_at").eq("source", "live").eq("type", "type_change").eq("page_type", "home").eq("viewport", "desktop").gte("detected_at", range.startIso).lt("detected_at", range.endIso).order("detected_at", { ascending: false }).range(f, t) as never),
     pages<SiteEvent>((f, t) => db.from("library_event_feed").select("domain,sector,before,after,detected_at").eq("source", "live").eq("type", "palette_shift").eq("page_type", "home").eq("viewport", "desktop").gte("detected_at", range.startIso).lt("detected_at", range.endIso).order("detected_at", { ascending: false }).range(f, t) as never),
@@ -55,10 +57,16 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   const ledgerCalls = await pages<StoredCall>((f, t) => db.from("forecast_calls").select("made_at,resolved_at,outcome,trait,stage_at_call,target_quarter").lt("made_at", range.endIso).order("id").range(f, t) as never);
   const ledger = ledgerSummary(asOf(ledgerCalls, range.endIso));
   if (libCount.error || wire.error) throw libCount.error ?? wire.error;
-  const [forecasts, previous] = runId == null ? [[], []] : await Promise.all([
+  const [prevRun, prev2Run] = (prevRuns ?? []) as { id: number }[];
+  const [forecasts, previous, previous2] = runId == null ? [[], [], []] : await Promise.all([
     pages<FRow>((f, t) => db.from("forecasts").select(FCOLS).eq("run_id", runId).order("scope").order("dimension").order("value").range(f, t) as never),
     prevRun ? pages<FRow>((f, t) => db.from("forecasts").select("dimension,value,stage,momentum,current_share").eq("run_id", prevRun.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never) : Promise.resolve([]),
+    prev2Run ? pages<FRow>((f, t) => db.from("forecasts").select("dimension,value,stage").eq("run_id", prev2Run.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never) : Promise.resolve([]),
   ]);
+  // Tiers as of this issue's run (and its two previous runs), so an old issue's selection never changes with newer data.
+  const prevStages = new Map<string, (string | null)[]>();
+  for (const [i, list] of [previous, previous2].entries()) for (const p of list) { const k = `${p.dimension}:${p.value}`, a = prevStages.get(k) ?? [null, null]; a[i] = p.stage; prevStages.set(k, a); }
+  const tiers = tiersFrom((forecasts as (FRow & { status: string })[]).map(f => ({ ...f, status: f.status ?? "ok", next_wave_score: f.next_wave_score ?? null, sites: f.sites ?? null })), prevStages);
   const families = [...new Set(typeEvents.flatMap(e => ["h1", "body"].map(k => e.after?.[k]).filter((x): x is string => typeof x === "string" && !!x)))];
   const [google, fonts, rebrandAll] = await Promise.all([
     families.length ? db.from("font_catalog").select("family").eq("source", "google").in("family", families).then(must) : Promise.resolve([]),
@@ -71,7 +79,7 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   return {
     week: b.week, brief: b.brief as unknown as StoredBrief,
     run: run ? { id: run.id, computed_at: run.computed_at, data_through: (run as { data_through: string | null }).data_through } : null,
-    card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous, alerts: alerts ?? [], fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
+    card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous, alerts: alerts ?? [], headline: [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key), fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
     numbers: { ledger: { rate: ledger.rate, hits: ledger.hits, resolved: ledger.resolved }, library_sites: libCount.count ?? null, crawl: crawl?.finished_at && crawlSites ? { finished_at: crawl.finished_at, sites: crawlSites } : null, wire_stories: wire.count ?? 0 },
   };
 }
@@ -104,6 +112,11 @@ export async function traitRows(rawKey: string): Promise<TraitRows | null> {
     domains.length ? db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).then(must) : Promise.resolve([]),
     db.from("forecast_calls").select("*").eq("trait", key).order("made_at", { ascending: false }).order("id", { ascending: false }).limit(24).then(must),
   ]);
-  return { key, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
+  // Tier, Momentum, Confidence and evidence from the latest stored run (same pure code as the terminal).
+  const { latestSignals } = await import("../signals.server");
+  const { tiers, signals } = await latestSignals("all").catch(() => ({ tiers: new Map(), signals: [] as Awaited<ReturnType<typeof latestSignals>>["signals"] }));
+  const byKey = new Map(signals.map(s => [s.key, s]));
+  const evidence = evidenceKeys(key).map(k => { const l = label(k), x = byKey.get(k); return { key: k, name: l.name, dimension: l.dimension, basis: basis(k), tier: tierFor(tiers, k), stage: x?.stage ?? null, share: x?.share ?? null, href: explainerPath(k) }; });
+  return { key, signal: byKey.get(key) ?? null, tier: tiers.get(key) ?? null, evidence, headline: tiers.size ? [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key) : null, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
 }
 export async function loadTrait(key: string) { const rows = await traitRows(key); return rows ? traitModel(rows) : null; }

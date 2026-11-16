@@ -11,6 +11,9 @@ import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 import { getHealth } from "./health.functions";
 import { getIssue, getArchive, getTrait } from "./digest.functions";
+import { getSignalSnapshot } from "./signals.functions";
+
+import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
@@ -282,8 +285,8 @@ export type CrawlData = {
 };
 
 // FORECAST (F10): public SELECT-only reads of the latest finished run.
-const FORECAST_COLS = "dimension,value,scope,status,stage,model,current_share,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi,momentum,next_wave_score,components,quarters:evidence->quarters,sectors:evidence->sectors,crossed:evidence->crossed_20";
-export type ForecastRow = { dimension: string; value: string; scope: string; status: string; stage: string | null; model: string | null; current_share: number | null; proj_q1: number | null; proj_q1_lo: number | null; proj_q1_hi: number | null; proj_q2: number | null; proj_q2_lo: number | null; proj_q2_hi: number | null; proj_q4: number | null; proj_q4_lo: number | null; proj_q4_hi: number | null; momentum: number | null; next_wave_score: number | null; components: { z?: Record<string, number | null>; raw?: Record<string, number | null> } | null; quarters: { q: string; s: number | null; n: number; c: number }[] | null; sectors: Record<string, string | null> | null; crossed: string | null };
+const FORECAST_COLS = "dimension,value,scope,status,stage,model,current_share,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi,momentum,next_wave_score,components,quarters:evidence->quarters,sectors:evidence->sectors,crossed:evidence->crossed_20,usable:evidence->usable";
+export type ForecastRow = { dimension: string; value: string; scope: string; status: string; stage: string | null; model: string | null; current_share: number | null; proj_q1: number | null; proj_q1_lo: number | null; proj_q1_hi: number | null; proj_q2: number | null; proj_q2_lo: number | null; proj_q2_hi: number | null; proj_q4: number | null; proj_q4_lo: number | null; proj_q4_hi: number | null; momentum: number | null; next_wave_score: number | null; components: { z?: Record<string, number | null>; raw?: Record<string, number | null>; present?: string[]; sites?: number } | null; usable?: number | null; quarters: { q: string; s: number | null; n: number; c: number }[] | null; sectors: Record<string, string | null> | null; crossed: string | null };
 export type ModelCard = { data_through: string | null; ai_provider?: "lovable" | "google" | "misconfigured"; backtest_cutoff: string; median_mae_pts: number | null; hit_rate: number | null; n_backtested: number; n_traits: number; n_forecast_ok: number; n_insufficient: number; usable_quarters_all: string[]; next_wave_backtest: { ranked: number; grew_5pts: number; status?: string; hit_rate?: number | null }; next_wave_backtest_legacy_weights?: { ranked: number; grew_5pts: number; hit_rate?: number | null }; component_coverage?: Record<string, number> };
 export type BriefDoc = { week: string; headline: string; caveats: string; provider?: "lovable" | "google"; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: "forecast" | "event" | "wire" | "spread"; id: string }[] }[] };
 export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleTime: 10 * 60_000, queryFn: async () => {
@@ -382,4 +385,10 @@ export function auditQuery(sites: string, sector: string | null) {
   return queryOptions({ queryKey: ["audit", key, sector ?? ""], staleTime: 10 * 60_000, queryFn: () => getAudit({ data: { sites: key, sector } }) });
 }
 
+/** Signal tiers / Momentum / Confidence for every default surface: one snapshot, pure derivation (src/lib/signals.ts). */
+// The cache holds the plain JSON snapshot (SSR-serializable); `select` derives tiers/signals per observer with a stable function, so it is memoized.
+const deriveSignals = (snap: SignalSnapshot) => { const tiers = tiersFrom(snap.rows, new Map(snap.prev)); return { snap, tiers, signals: buildSignals(snap.rows, tiers, "all") }; };
+const EMPTY_SNAPSHOT: SignalSnapshot = { run_id: null, computed_at: null, prev_runs: [], rows: [], prev: [] };
+/** Read with useSuspenseQuery so SSR and hydration render the same headline set; a failed read degrades to an empty snapshot instead of throwing. */
+export const signalsQuery = () => queryOptions({ queryKey: ["signals"], staleTime: 10 * 60_000, queryFn: () => getSignalSnapshot().catch(() => EMPTY_SNAPSHOT), select: deriveSignals });
 export const ledgerQuery = () => queryOptions({ queryKey: ["ledger"], staleTime: 10 * 60_000, queryFn: () => getLedger({ data: {} }) });

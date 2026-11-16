@@ -15,8 +15,9 @@ import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
 import { Library } from "@/components/terminal/Library";
-import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery } from "@/lib/data";
+import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery } from "@/lib/data";
 import { VibeMap } from "@/components/terminal/VibeMap";
+import { PanelHeadlines } from "@/components/terminal/Signals";
 import { RebrandDesk } from "@/components/terminal/Rebrands";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
 import { ForecastPanel } from "@/components/terminal/Forecast";
@@ -32,7 +33,8 @@ const DESC = "A live terminal for design trends: what moved today in type, color
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?:string | undefined; trait?:string | undefined } => ({ panel: typeof s["panel"] === "string" ? s["panel"] : "today", sector: typeof s["sector"] === "string" ? s["sector"] : "all", q: typeof s["q"] === "string" ? s["q"] : "", sort: typeof s["sort"] === "string" ? s["sort"] : "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0,cmd:typeof s['cmd']==='string'?s['cmd'].slice(0,4096):undefined,trait:typeof s['trait']==='string'?s['trait']:undefined }),
   loaderDeps: ({ search }) => ({ panel: search.panel }),
-  loader: ({ context, deps }) => resolvePanel(deps.panel) === "today" ? context.queryClient.ensureQueryData(todayQuery()).then(() => undefined) : deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : deps.panel === "brief" ? Promise.all([context.queryClient.ensureQueryData(forecastQuery()), context.queryClient.ensureQueryData(chartCardQuery(null))]).then(()=>undefined) : deps.panel === "vibe" ? context.queryClient.ensureQueryData(vibeQuery()).then(()=>undefined) : deps.panel === "rebrands" ? context.queryClient.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 })).then(()=>undefined) : undefined,
+  // Every panel filters by tier, so the signal snapshot loads with the page (SSR and client then render the same headline set).
+  loader: ({ context, deps }) => Promise.all([context.queryClient.ensureQueryData(signalsQuery()).catch(() => null), resolvePanel(deps.panel) === "today" ? Promise.all([context.queryClient.ensureQueryData(todayQuery()), context.queryClient.ensureQueryData(signalsQuery()).catch(() => null)]).then(() => undefined) : deps.panel === "library" ? context.queryClient.ensureQueryData(libraryQuery()).then(() => undefined) : deps.panel === "history" ? context.queryClient.ensureQueryData(libraryHistoryQuery()).then(()=>undefined) : deps.panel === "brief" ? Promise.all([context.queryClient.ensureQueryData(forecastQuery()), context.queryClient.ensureQueryData(chartCardQuery(null))]).then(()=>undefined) : deps.panel === "vibe" ? context.queryClient.ensureQueryData(vibeQuery()).then(()=>undefined) : deps.panel === "rebrands" ? context.queryClient.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 })).then(()=>undefined) : undefined]).then(() => undefined),
   errorComponent: () => <div role="alert" className="p-3">LIBRARY DATA UNAVAILABLE</div>,
   notFoundComponent: () => <div className="p-3">NOT FOUND</div>,
   head: () => ({
@@ -114,12 +116,12 @@ function Terminal() {
       <main className="flex min-h-0 flex-1 flex-col">
         {panel === "today" && <Suspense fallback={<div className="p-3">▍</div>}><Today go={setPanel} onTour={startTour} onGlossary={() => setOverlay("glossary")} /></Suspense>}
         {panel === "overview" && <Overview go={setPanel} freshIds={fresh} />}
-        {panel === "type" && <><div className="shrink-0 border-b border-rule p-3"><Toggle label="TYPE" options={["GOOGLE FONTS","IN THE WILD"]} value={typeTab} onChange={setTypeTab}/></div>{typeTab==="GOOGLE FONTS"?<TypeIndex/>:<InTheWild/>}</>}
+        {panel === "type" && <><PanelHeadlines panel="type" /><div className="shrink-0 border-b border-rule p-3"><Toggle label="TYPE" options={["GOOGLE FONTS","IN THE WILD"]} value={typeTab} onChange={setTypeTab}/></div>{typeTab==="GOOGLE FONTS"?<TypeIndex/>:<InTheWild/>}</>}
         {panel === "wire" && <Wire freshIds={fresh} />}
         {panel === "library" && <Suspense fallback={<div className="p-3">▍</div>}><Library/></Suspense>}
         {panel === "history" && <Suspense fallback={<div className="p-3">▍</div>}><HistoryPanel/></Suspense>}
         {panel === "brief" && <Suspense fallback={<div className="p-3">▍</div>}><ForecastPanel/></Suspense>}
-        {panel === "vibe" && <Suspense fallback={<div className="p-3">▍</div>}><VibeMap sector={search.sector ?? "all"} onSector={setSector} onMethod={() => setOverlay("method")}/></Suspense>}
+        {panel === "vibe" && <Suspense fallback={<div className="p-3">▍</div>}><PanelHeadlines panel="vibe" /><VibeMap sector={search.sector ?? "all"} onSector={setSector} onMethod={() => setOverlay("method")}/></Suspense>}
         {panel === "rebrands" && <Suspense fallback={<div className="p-3">▍</div>}><RebrandDesk sector={search.sector ?? "all"} onSector={setSector}/></Suspense>}
         {panel === "watch" && <WatchPanel />}
         {(panel==="color"||panel==="layout"||panel==="composition"||panel==="lexicon") && <CrawlPanel key={panel} panel={panel}/>}
@@ -133,6 +135,7 @@ function Terminal() {
           <Button variant="link" onClick={() => setOverlay("glossary")} className="label h-6 px-2 text-ink max-md:h-11">GLOSSARY</Button>
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-10">MCP</Button>
           <Button variant="link" onClick={() => setOverlay("method")} className="label h-6 px-2 text-ink max-md:h-10">METHODOLOGY</Button>
+          <Link to="/what-we-show" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:hidden">WHAT WE SHOW</Link>
           <Link to="/digest" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">THE DIGEST →</Link>
           {GATE_ENABLED && <form method="post" action="/lock" className="contents"><button type="submit" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">LOCK</button></form>}
         </div>
