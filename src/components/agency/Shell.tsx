@@ -4,17 +4,18 @@ import { Link } from "@tanstack/react-router";
 import { GATE_ENABLED } from "@/lib/gate";
 import { pr } from "@/components/digest/Editorial";
 import { ReadShell } from "@/components/read/ReadShell";
+import { ScrollRow } from "@/components/read/ScrollRow";
 
 export function AgencyShell({ children, label, crumb }: { children: ReactNode; label: string; crumb: string }) {
   return <ReadShell label={label} section="tools" sub={<nav aria-label="Agency tools" className="ed-nav no-print mt-2 border-y border-ed-ink">
-      <div className="ed-wrap ed-navtext flex flex-wrap items-center justify-between gap-x-4">
-        <Link to="/tools" className="ed-tap py-2 font-semibold no-underline">Tools · {crumb}</Link>
-        <span className="flex flex-wrap items-center gap-x-4">
+      <div className="ed-wrap"><ScrollRow className="ed-navtext gap-x-4 md:justify-between">
+        <Link to="/tools" className="ed-tap shrink-0 py-2 font-semibold no-underline">Tools · {crumb}</Link>
+        <span className="flex shrink-0 items-center gap-x-4">
           <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap py-2">New audit</Link>
           <Link to="/watch/new" search={{ add: undefined, name: undefined }} className="ed-tap py-2">New watchlist</Link>
           <Link to="/ledger" className="ed-tap py-2">Ledger</Link>
         </span>
-      </div>
+      </ScrollRow></div>
     </nav>}>
     {children}
     <footer className="ed-rule mt-16 pb-16 pt-6">

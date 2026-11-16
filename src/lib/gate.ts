@@ -97,7 +97,7 @@ ${standaloneHead(BRAND_NAME)}
 ${standaloneMark()}
 <label for="password">Password</label>
 <div class="row">
-<input id="password" name="password" type="password" autocomplete="current-password" required autofocus${wrong ? ' aria-invalid="true" aria-describedby="gate-msg"' : ""}>
+<input id="password" name="password" type="password" autocomplete="current-password" required${wrong ? ' aria-invalid="true" aria-describedby="gate-msg"' : ""}>
 <button type="submit">Enter</button>
 </div>
 <input type="hidden" name="next" value="${esc(next)}">

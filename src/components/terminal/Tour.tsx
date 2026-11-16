@@ -48,7 +48,7 @@ export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?:
       style={mobile ? undefined : { left: pos?.left ?? 8, top: pos?.top ?? 8, width: 320 }}
       className={`fixed z-[60] border border-ink bg-void p-3 ${mobile ? "inset-x-0 bottom-10 border-x-0" : ""}`}>
       <p className="label text-g500">TOUR · {i + 1} / {steps.length}</p>
-      <p className="mt-1 text-ink">{step.caption}</p>
+      <p className="t-say mt-1 text-ink">{step.caption}</p>
       <div className="mt-2 flex gap-2">
         <button ref={next} type="button" onClick={advance} className="label h-11 border border-ink px-3 text-ink hover:bg-ink hover:text-void md:h-8">{i + 1 >= steps.length ? "DONE" : "NEXT →"}</button>
         <button type="button" onClick={finish} className="label h-11 px-3 text-g500 hover:text-ink md:h-8">SKIP · ESC</button>

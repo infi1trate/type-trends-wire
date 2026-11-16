@@ -7,7 +7,7 @@ import type { Thumb } from "@/lib/thumbs";
 import type { Frame } from "@/lib/data-stories/types";
 import { storyTime } from "@/lib/stories";
 import { BasisWord, DigestShell, SiteCard, pr } from "@/components/digest/Editorial";
-import { Ledger } from "@/components/brand/Ledger";
+import { Ledger, StoryNo } from "@/components/brand/Ledger";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { CaptureFrame } from "@/components/data/Figures";
 import { ObjectPage, BlockPart } from "./ObjectPage";
@@ -113,7 +113,7 @@ export function StoryView({ s }: { s: StoryPageData }) {
         </BlockPart>}
         {s.evidence.length > 0 && <BlockPart title="Receipts"><Ledger small label="Receipts" rows={s.evidence.map(e => ({ key: e.href, href: e.href, title: `${e.label}${e.href.startsWith("/") ? " →" : " ↗"}` }))} /></BlockPart>}
         <BlockPart title="Earlier stories on the same signal or brand">
-          {s.earlier.length ? <Ledger label="Earlier stories" rows={s.earlier.map(x => ({ key: x.id, href: `/stories/${encodeURIComponent(x.id)}`, number: x.number != null ? <span data-story-number="" className="whitespace-nowrap"><span className="ledger-num-sm">No.</span> {x.number}</span> : "·", title: x.headline, line: x.deck, tags: [x.kicker.split(" · ")[0] ?? x.kicker], time: <time dateTime={x.at}>{storyTime(x.at)}</time> }))} />
+          {s.earlier.length ? <Ledger label="Earlier stories" rows={s.earlier.map(x => ({ key: x.id, href: `/stories/${encodeURIComponent(x.id)}`, number: x.number != null ? <StoryNo n={x.number} /> : "·", title: x.headline, line: x.deck, tags: [x.kicker.split(" · ")[0] ?? x.kicker], time: <time dateTime={x.at}>{storyTime(x.at)}</time> }))} />
             : <p className="ed-small">No earlier story on this signal or brand.</p>}
         </BlockPart>
         {s.edits.length > 0 && <BlockPart title="Editor's log"><ol className="ed-data space-y-1">{s.edits.map((e, i) => <li key={i}><time dateTime={e.at}>{day(e.at)}</time> · {e.action}{e.note ? ` · ${e.note}` : ""}</li>)}</ol></BlockPart>}

@@ -57,8 +57,8 @@ export function Info({ g, className = "" }: { g: string; className?: string }) {
           style={{ left: pos?.left ?? -9999, top: pos?.top ?? -9999, width: pos?.width ?? W }}
           className="fixed z-[70] border border-ink bg-void p-2 text-left normal-case">
           <p className="label font-semibold text-ink">{e.term}</p>
-          <p className="mt-1 text-label text-ink">{e.measures}</p>
-          <p className="mt-1 text-label text-g500">{e.howToRead}</p>
+          <p className="t-say mt-1 text-ink">{e.measures}</p>
+          <p className="t-say mt-1 text-g500">{e.howToRead}</p>
           <a {...methodLink(e.methodologyAnchor)} onClickCapture={() => setOpen(false)} onBlur={hideSoon} className="label mt-1 inline-block text-ink underline underline-offset-2">Methodology →</a>
         </div>, document.body)}
     </>

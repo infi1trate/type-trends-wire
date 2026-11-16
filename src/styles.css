@@ -637,3 +637,51 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 .c-raised[data-pressed] { transform: translate(6px, 6px); box-shadow: var(--tk-shadow-pressed); }
 .brand-demo-wipe.m-demo-on { animation: slug-wipe var(--tk-motion-wipe) var(--tk-motion-cut) both; }
 @media (prefers-reduced-motion: reduce) { .brand-demo-mark.m-demo-on [data-letter], .brand-demo-wipe.m-demo-on { animation: none !important; } }
+
+/* Phase 20: one-row sub-navigation, the story number, form fields, the pattern wall, terminal sentences, data-story figures. */
+@layer components {
+  .scroll-row-wrap { position: relative; }
+  .scroll-row { display: flex; flex-wrap: nowrap; align-items: center; overflow-x: auto; white-space: nowrap; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .scroll-row::-webkit-scrollbar { display: none; }
+  .scroll-row > * { flex-shrink: 0; }
+  /* The cue: a solid page-coloured tab with an arrow, shown only while items sit off that edge (no gradient). */
+  .scroll-cue { position: absolute; top: 0; bottom: 0; display: none; align-items: center; padding: 0 var(--tk-space-1); background: var(--tk-surface-page); color: var(--tk-text-primary); font-family: var(--tk-font-display); font-weight: 900; pointer-events: none; }
+  .scroll-cue-start { left: 0; border-right: var(--tk-border-hairline) solid var(--tk-rule-strong); }
+  .scroll-cue-end { right: 0; border-left: var(--tk-border-hairline) solid var(--tk-rule-strong); }
+  .scroll-row-wrap[data-more-start] .scroll-cue-start, .scroll-row-wrap[data-more-end] .scroll-cue-end { display: inline-flex; }
+
+  /* "No. 45": the figure never wraps; the column is sized for four digits, so titles align. */
+  .ledger-no { display: inline-flex; align-items: baseline; gap: .18em; white-space: nowrap; min-width: calc(4ch + 1.3em); }
+  .ledger-no-label { font-family: var(--tk-type-kicker-family); font-weight: 700; font-size: var(--tk-type-kicker-size); letter-spacing: var(--tk-type-kicker-tracking); text-transform: uppercase; }
+  .ledger-no-fig { font-family: var(--tk-type-h3-family); font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ledger-link:has(.ledger-no) { grid-template-columns: max-content minmax(0, 1fr) auto; }
+  @media (min-width: 768px) { .ledger-link:has(.ledger-no) { grid-template-columns: max-content minmax(0, 1fr) auto auto; } }
+  .ledger-num-sm .ledger-no { min-width: calc(4ch + 2.6em); }
+
+  /* Form fields: one 3 px ink border at rest; the focus ring only on keyboard focus. Errors sit under the field in plain words. */
+  .form-field { border: var(--tk-border-strong) solid var(--tk-rule-strong); border-radius: 0; outline: none; }
+  .form-field:focus-visible { outline: var(--tk-focus-width, 3px) solid var(--tk-focus-ring); outline-offset: var(--tk-focus-offset, 3px); }
+  .form-field[aria-invalid="true"] { border-style: double; border-width: 6px; }
+  .form-error { font-weight: 600; }
+  .form-error::before { content: "✕ "; }
+
+  /* The pattern wall: tiles on the 8 px grid in two sizes; brand and date on hover and focus, always shown on touch screens. */
+  .wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tk-space-2); grid-auto-flow: dense; list-style: none; padding: 0; }
+  .wall > .tile-lg { grid-column: 1 / -1; }
+  @media (min-width: 768px) { .wall { grid-template-columns: repeat(4, minmax(0, 1fr)); } .wall > .tile-lg { grid-column: span 2; grid-row: span 2; } }
+  @media (min-width: 1280px) { .wall { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  .wall-tile { position: relative; display: block; min-height: var(--tk-layout-tap); color: inherit; text-decoration: none; outline-offset: 2px; }
+  .wall-tile:focus-visible { outline: var(--tk-focus-width, 3px) solid var(--tk-focus-ring); }
+  .wall-cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 0 var(--tk-space-2); padding: var(--tk-space-1) var(--tk-space-2); background: var(--tk-slab-bg); color: var(--tk-slab-fg);
+    font-family: var(--tk-type-kicker-family); font-weight: 700; font-size: var(--tk-type-kicker-size); line-height: 1.2; letter-spacing: .02em; opacity: 0; transform: translateY(4px); transition: opacity var(--tk-motion-tap) linear, transform var(--tk-motion-tap) var(--tk-motion-settle); }
+  .wall-tile:hover .wall-cap, .wall-tile:focus-visible .wall-cap { opacity: 1; transform: none; }
+  @media (hover: none) { .wall-cap { position: static; opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .wall-cap { transition: none; } }
+  .wall-tile img, .wall-tile svg { display: block; width: 100%; height: auto; }
+
+  /* Data-story figures fill their column at every width (text inside scales with the figure, never below its set size). */
+  [data-stepper-picture] .tk-svg { max-width: none; }
+  [data-stepper-picture] [data-figure="strip"] .strip-current { max-width: none; }
+}
+/* The terminal: full sentences outside tables (help, tour, empty states) are set in Newsreader; cells and the console stay mono. */
+.t-say { font-family: var(--tk-font-text); font-size: 15px; line-height: 1.45; letter-spacing: 0; text-transform: none; font-variant-numeric: normal; }

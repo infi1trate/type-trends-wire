@@ -9,7 +9,7 @@ export function Methodology({ onClose, focus }: { onClose: () => void; focus?: s
   return (
     <Overlay title="METHODOLOGY" onClose={onClose}>
       <nav aria-label="Methodology sections" className="mb-3 flex flex-wrap gap-x-3 gap-y-1">{SECTIONS.map(s => <a key={s.id} href={`#${s.id}`} className="label text-g500 hover:text-ink">{s.title}</a>)}</nav>
-      {SECTIONS.map(s => <section key={s.id} id={s.id} className={`scroll-mt-2 border-t border-rule pt-3 mt-3 ${focus === s.id ? "outline outline-1 outline-ink" : ""}`}><h3 className="label mb-2 text-ink">{s.title}</h3>{s.lines.map(l => <p key={l} className="mb-2 break-words text-ink">{l}</p>)}</section>)}
+      {SECTIONS.map(s => <section key={s.id} id={s.id} className={`scroll-mt-2 border-t border-rule pt-3 mt-3 ${focus === s.id ? "outline outline-1 outline-ink" : ""}`}><h3 className="label mb-2 text-ink">{s.title}</h3>{s.lines.map(l => <p key={l} className="t-say mb-2 break-words text-ink">{l}</p>)}</section>)}
     </Overlay>
   );
 }

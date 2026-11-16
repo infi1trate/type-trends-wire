@@ -23,6 +23,7 @@ import { MOTION_MS } from "@/lib/motion";
 import { FRAME_LABEL, storyFrames } from "@/lib/stories/frames";
 import { fxCapture } from "@/lib/data-stories/fixtures";
 import { CaptureFrame } from "@/components/data/Figures";
+import { ScrollRow } from "@/components/read/ScrollRow";
 
 const K = BRAND_KIT, C = K.color;
 const LIGHT = activeTheme.modes.light;
@@ -30,9 +31,9 @@ const LIGHT = activeTheme.modes.light;
 // ——— Layout ——————————————————————————————————————————————————————————————————————————————————————————
 function BrandNav({ page }: { page: BrandPageSlug }) {
   return <nav aria-label="Brand pages" className="no-print border-b-[1.5px] border-ed-ink">
-    <ul className="ed-wrap ed-navtext flex gap-x-5 overflow-x-auto">{BRAND_PAGES.map(p => <li key={p.slug} className="shrink-0">
-      <a href={p.path} aria-current={p.slug === page ? "page" : undefined} className={`-mb-[1.5px] inline-flex min-h-11 items-center border-b-[3px] no-underline ${p.slug === page ? "border-ed-ink" : "border-transparent"}`}>{p.title}</a>
-    </li>)}<li className="shrink-0"><Link to="/kit" className="inline-flex min-h-11 items-center no-underline">The kit (/kit) →</Link></li></ul>
+    <div className="ed-wrap"><ScrollRow className="ed-navtext gap-x-5">{BRAND_PAGES.map(p =>
+      <a key={p.slug} href={p.path} aria-current={p.slug === page ? "page" : undefined} className={`-mb-[1.5px] inline-flex min-h-11 shrink-0 items-center border-b-[3px] no-underline ${p.slug === page ? "border-ed-ink" : "border-transparent"}`}>{p.title}</a>
+    )}<Link to="/kit" className="inline-flex min-h-11 shrink-0 items-center no-underline">The kit (/kit) →</Link></ScrollRow></div>
   </nav>;
 }
 export function BrandShell({ page, children }: { page: BrandPageSlug; children: ReactNode }) {

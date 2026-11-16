@@ -104,32 +104,53 @@ export async function loadBrand(domain: string) {
   const db = supabaseAnon();
   const site = must(await db.from("library_sites").select("domain,active").eq("domain", domain).maybeSingle());
   if (!site?.active) return null;
-  const { auditRows } = await import("./agency/audit.server");
-  const [audit, events, index, { tiers }, all, crops] = await Promise.all([
+  const [{ auditRows }, { capturesOf, dataInput }, { sectorField, signalContrast }, { similarBrands }] = await Promise.all([import("./agency/audit.server"), import("./data-stories/data.server"), import("./data-stories/stories"), import("./similar")]);
+  const [audit, events, index, { tiers, signals }, all, crops, captures, input] = await Promise.all([
     auditRows([domain], null),
     db.from("library_event_feed").select("id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,sector,summary").eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80).then(must),
     siteTraitIndex(),
     latestSignals("all"),
     storyIndex().catch(() => []),
     cropsFor([domain]),
+    capturesOf(domain).catch(() => []),
+    dataInput().catch(() => null),
   ]);
   const own = index.find(s => s.domain === domain);
+  const eligible = new Set(signals.filter(s => s.tier === "headline" && s.basis === "measured").map(s => s.key));
   const storyOf: [string, string][] = [...storyForSource(all)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
-  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops };
+  const field = input && own ? sectorField(input, own.sector) : null;
+  const contrast = input ? signalContrast(input, domain) : null;
+  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops,
+    captures, similar: similarBrands(domain, index, eligible), field, contrast: contrast ? { has: contrast.has.map(x => ({ key: x.key, name: x.name, sector: x.sector })), lacks: contrast.lacks.map(x => ({ key: x.key, name: x.name, sector: x.sector })) } : null };
   return { ...brandModel(rows), stories: storiesAbout(all, { domain, limit: 8 }) };
 }
+
+/** Recorded moves per brand (all time): live desktop changes the brand page lists, plus confirmed live rebrands. */
+const moveCounts = memo(TTL, async () => {
+  const db = supabaseAnon();
+  const [events, rebrandAll] = await Promise.all([
+    pages<{ domain: string; detected_at: string }>((f, t) => db.from("library_event_feed").select("domain,detected_at").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("id").range(f, t) as never, 1000),
+    import("./rebrands.server").then(m => m.rebrandRows()).then(r => r.rows).catch(() => []),
+  ]);
+  const out = new Map<string, { n: number; last: string | null }>();
+  const add = (d: string, at: string) => { const c = out.get(d) ?? { n: 0, last: null }; c.n++; if (!c.last || at > c.last) c.last = at; out.set(d, c); };
+  for (const e of events) add(e.domain, e.detected_at);
+  for (const x of rebrandAll) if (x.source === "live") add(x.domain, x.confirmed_at);
+  return out;
+});
 
 /** /brands: the directory plus recent moves across every brand. */
 export async function loadBrands() {
   const db = supabaseAnon();
-  const [sites, { stories }] = await Promise.all([
+  const [sites, { stories }, counts] = await Promise.all([
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_change_at: string | null; last_snapshot_at: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_change_at,last_snapshot_at").order("domain").range(f, t) as never),
     allStories(),
+    moveCounts().catch(() => new Map<string, { n: number; last: string | null }>()),
   ]);
   const moves = stories.filter(s => s.type === "move" || s.type === "rebrand").sort((a, b) => b.at.localeCompare(a.at) || a.id.localeCompare(b.id));
   const last = new Map<string, Story>(); for (const m of moves) for (const d of m.domains) if (!last.has(d)) last.set(d, m);
   return {
-    sites: sites.filter(s => s.active).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, lastChange: last.get(s.domain)?.at ?? s.last_change_at, lastMove: last.get(s.domain)?.headline ?? null, captured: s.last_snapshot_at })),
+    sites: sites.filter(s => s.active).map(s => { const c = counts.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, lastChange: last.get(s.domain)?.at ?? c?.last ?? s.last_change_at, lastMove: last.get(s.domain)?.headline ?? null, captured: s.last_snapshot_at, moves: c?.n ?? 0 }; }),
     moves: moves.slice(0, 120),
   };
 }

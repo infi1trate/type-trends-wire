@@ -12,7 +12,7 @@ export function Loading({ className = "" }: { className?: string }) {
 
 /** Empty state: one plain sentence saying why it's empty and when it fills in. */
 export function Empty({ why = "Nothing collected here yet. Type data is collected daily and the wire every 15 minutes, so this fills in after the next run." }: { why?: string }) {
-  return <p className="p-3 text-g500">{why}</p>;
+  return <p className="t-say p-3 text-g500">{why}</p>;
 }
 
 /** Digits roll vertically when the value changes. */
@@ -129,7 +129,7 @@ export function Sparkline({ ranks }: { ranks: number[] | undefined }) {
 }
 
 export function LineChart({ points }: { points: { date: string; rank: number }[] }) {
-  if (points.length < 2) return <p className="py-6 text-g500">Only {points.length} daily snapshot so far; the line draws once a second day is collected.</p>;
+  if (points.length < 2) return <p className="t-say py-6 text-g500">Only {points.length} daily snapshot so far; the line draws once a second day is collected.</p>;
   const w = 456, h = 160, pl = 36, pb = 18, pt = 6;
   const first = points[0]!, lastP = points[points.length - 1]!;
   const ranks = points.map((p) => p.rank);

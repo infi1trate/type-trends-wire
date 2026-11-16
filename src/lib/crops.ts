@@ -4,6 +4,7 @@ import { z } from "zod";
 import { DOMAIN_RE, decodeB64, sniffImage, webpSize } from "./thumbs";
 import { CROP_SECTION_NAME } from "./labels";
 import { CONTACT_EMAIL } from "./site";
+import { BOT_NAME, LEGACY_UA_TOKEN } from "./brand";
 
 export const CROP_SECTIONS = ["hero", "nav", "pricing", "cta", "footer"] as const;
 export type CropSection = (typeof CROP_SECTIONS)[number];
@@ -157,6 +158,7 @@ export function imagePolicy(): { id: string; title: string; text: string }[] {
     { id: "what", title: "What we keep", text: `Small crops of each tracked brand's public desktop homepage: ${names.slice(0, -1).join(", ")} and ${names.at(-1)}. WebP, at most ${CROP_LIMITS.maxWidth}×${CROP_LIMITS.maxHeight} and ${CROP_LIMITS.imageBytes / 1024} KB each. Never full-page captures.` },
     { id: "history", title: "How history works", text: `A new version is stored only when a section looks different from its last stored version; otherwise we only note that it was seen again. At most ${CROP_LIMITS.keep} versions per section are kept; the oldest is deleted when a newer one arrives.` },
     { id: "credit", title: "Credit and access", text: "Every image shows the brand's domain and capture date and links to the live site. Images are shown only to readers inside the site's password gate, never to search engines or link previews." },
+    { id: "crawler", title: "How pages are read", text: `Our crawler announces itself as ${BOT_NAME} and as ${LEGACY_UA_TOKEN} (the name it used first). robots.txt rules for either name are honoured: disallow either one and it stops reading those pages.` },
     { id: "removal", title: "Removal", text: `Owners can ask for removal${CONTACT_EMAIL ? ` at ${CONTACT_EMAIL}` : " by writing to the editor, Brandon Forant (brandon.wtf)"}. Once a site opts out, every stored crop and thumbnail of it is deleted, new captures are refused, and the site is shown by name only.` },
   ];
 }

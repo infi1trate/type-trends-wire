@@ -32,14 +32,14 @@ export function Glossary({ onClose, onTour, focus }: { onClose: () => void; onTo
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!q && <section className="border-b border-rule p-3"><h3 className="label mb-2 text-g500">KEYS</h3><dl className="grid grid-cols-[8ch_1fr] gap-y-1">{KEYS.map(([k, v]) => <Fragment key={k}><dt className="font-semibold text-ink">{k}</dt><dd className="text-g500">{v}</dd></Fragment>)}</dl></section>}
-        {hits.length === 0 && <p className="p-3 text-g500">No term matches “{q}”. Try a shorter word, like “share” or “stage”.</p>}
+        {hits.length === 0 && <p className="t-say p-3 text-g500">No term matches “{q}”. Try a shorter word, like “share” or “stage”.</p>}
         {GROUPS.map(([kind, title]) => {
           const list = hits.filter(e => e.kind === kind);
           return list.length ? <section key={kind} className="border-b border-rule"><h3 className="label sticky top-0 border-b border-rule bg-g900 px-3 py-1 text-g500">{title}</h3>
             {list.map(e => <article key={e.id} id={`g-${e.id}`} className="scroll-mt-8 border-b border-rule p-3 last:border-b-0 target:outline target:outline-1 target:outline-ink">
               <h4 className="label font-semibold text-ink"><a href={`#g-${e.id}`} className="hover:underline">{e.term}</a></h4>
-              <p className="mt-1 text-ink">{e.measures}</p>
-              <p className="mt-1 text-g500">{e.howToRead}</p>
+              <p className="t-say mt-1 text-ink">{e.measures}</p>
+              <p className="t-say mt-1 text-g500">{e.howToRead}</p>
               <a {...methodLink(e.methodologyAnchor)} className="label mt-1 inline-block text-ink underline underline-offset-2 max-md:min-h-11">Methodology →</a>
             </article>)}</section> : null;
         })}

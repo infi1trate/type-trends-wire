@@ -7,25 +7,50 @@ import type { Tier } from "./tiers";
 import type { Thumb } from "./thumbs";
 import { CROP_SECTIONS, beforeAfterAt, latestSections, toCrop, versionsOf, type Crop, type CropRow, type CropSection } from "./crops";
 import { changeSection } from "./evidence-map";
+import type { SimilarResult } from "./similar";
+import type { BeforeAfterFig, FieldFig } from "./data-stories/types";
+import { beforeAfter, type CaptureRaw } from "./data-stories/templates/frames";
+import { capturePair, FRAME_LABEL } from "./stories/frames";
 
 export type BrandPeer = { domain: string; name: string | null; sector: string; traits: string[] };
-export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][]; /** This brand's stored section crops (any order). */ crops?: CropRow[] };
+export type ContrastItem = { key: string; name: string; sector: { v: number; n: number } };
+export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][]; /** This brand's stored section crops (any order). */ crops?: CropRow[];
+  /** Stored home/desktop captures of this brand (skeletons), for the before/after pair either side of each move. */ captures?: CaptureRaw[];
+  /** Similar brands (similar.ts), the sector's brand field and the "where you sit" contrast (data-stories/stories.ts). */ similar?: SimilarResult; field?: FieldFig | null; contrast?: { has: ContrastItem[]; lacks: ContrastItem[] } | null };
 export type BrandTag = { key: string; name: string; basis: Basis; kind: "aesthetic" | "imagery" | "tone" | "theme" };
 export type BrandShow = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; tier: Tier; href: string };
+export type Face = { family: string; google: boolean; size: number | null; css: string | null };
+export type LayoutFact = { id: "theme" | "hero" | "h1" | "whitespace"; label: string; value: string };
+export type Move = { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; rebrand: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null; pair: BeforeAfterFig | null; pairShared: boolean };
 export type BrandPage = {
   domain: string; name: string; sector: string | null; sectorName: string; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
-  identity: { h1: { family: string; google: boolean } | null; body: { family: string; google: boolean } | null; theme: string | null; accent: { hex: string; name: string } | null; palette: { hex: string; name: string }[]; tags: BrandTag[] };
-  timeline: { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null }[];
+  identity: { h1: Face | null; body: Face | null; theme: string | null; accent: { hex: string; name: string } | null; palette: { hex: string; name: string; share: number | null }[]; tags: BrandTag[]; layout: LayoutFact[]; receipt: string };
+  timeline: Move[];
+  /** The sector's brand field with this brand marked, and the headline signals it has that its sector mostly lacks (and the reverse). */
+  field: FieldFig | null; contrast: { has: ContrastItem[]; lacks: ContrastItem[] } | null;
+  similar: SimilarResult;
   /** Latest crop of each section that exists, and every stored version per section (newest first) for the history view. */
   sections: (Crop & { versions: number })[]; history: Record<CropSection, Crop[]>;
   versus: { scope: string; scopeName: string; ahead: TraitRef[]; behind: TraitRef[] } | null;
   soWhat: string;
-  closest: { domain: string; name: string | null; shared: number; href: string }[];
   shows: BrandShow[];
   actions: { watch: string; compare: string; audit: string | null; differentiate: string; recommendType: string | null; terminal: string };
   blocks: readonly Block[];
 };
-export const TIMELINE_MAX = 40, CLOSEST_MAX = 4;
+export const TIMELINE_MAX = 40;
+/** At most this many moves carry a redrawn before/after pair (the newest first), so a long history stays light. */
+export const MOVE_PAIRS_MAX = 8;
+/** Faces a reader already has without fetching anything: the brand's own three, and the core faces every system ships. */
+const SHIPPED: Record<string, string> = { "big shoulders": "var(--tk-font-display)", "big shoulders display": "var(--tk-font-display)", newsreader: "var(--tk-font-text)", "ibm plex mono": "var(--tk-font-mono)" };
+const SYSTEM: Record<string, string> = { arial: "Arial, sans-serif", helvetica: "Helvetica, Arial, sans-serif", "helvetica neue": "\"Helvetica Neue\", Helvetica, Arial, sans-serif", georgia: "Georgia, serif", "times new roman": "\"Times New Roman\", Times, serif", times: "Times, serif", verdana: "Verdana, sans-serif", "courier new": "\"Courier New\", monospace", "system-ui": "system-ui, sans-serif", "-apple-system": "system-ui, sans-serif", "sans-serif": "sans-serif", serif: "serif", monospace: "monospace" };
+/** next/font and similar build tools rename faces ("__Inter_a1b2c3"); compare on the plain name. */
+export const plainFace = (family: string) => family.replace(/^_+/, "").replace(/_(?:[0-9a-f]{5,}|Fallback.*)$/i, "").replace(/_/g, " ").replace(/^["']|["']$/g, "").trim();
+/** The CSS family to set a face in on the page, or null when showing it would mean fetching a font (the name is shown alone). */
+export function showableFace(family: string): string | null {
+  const k = plainFace(family).toLowerCase();
+  return SHIPPED[k] ?? SYSTEM[k] ?? null;
+}
+const HERO: Record<string, string> = { video: "Video", image: "Image", illustration: "Illustration", "3d": "3D", product: "Product shot", none: "Text only", text: "Text only", canvas: "Canvas" };
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** "Ahead of its sector on 3 rising signals; still using 1 fading one." Deterministic, from the audit's ahead/behind lists. */
@@ -35,7 +60,6 @@ export function brandSoWhat(ahead: number, behind: number, where = "its sector")
   const b = behind ? `still using ${behind === 1 ? "1 fading one" : `${behind} fading ones`}` : "using no fading ones";
   return `${a}; ${b}.`;
 }
-const jaccard = (a: Set<string>, b: Set<string>) => { let i = 0; for (const x of a) if (b.has(x)) i++; const u = a.size + b.size - i; return u ? i / u : 0; };
 
 export function brandModel(r: BrandRows): BrandPage {
   const a = auditModel(r.audit), d = r.domain, site = r.audit.sites.find(s => s.domain === d) ?? null, g = a.glance[0]!;
@@ -51,29 +75,51 @@ export function brandModel(r: BrandRows): BrandPage {
   // A timeline entry shows before/after only when two versions of its section sit on either side of the change (effective time).
   const compareAt = (section: CropSection | null, pivot: string) => { if (!section) return null; const p = beforeAfterAt(versionsOf(crops, d, section), pivot); return p ? { before: toCrop(p.before), after: toCrop(p.after) } : null; };
   const fieldsOf = (e: EventRow) => Object.keys({ ...(e.before && typeof e.before === "object" ? e.before : {}), ...(e.after && typeof e.after === "object" ? e.after : {}) });
-  const timeline = [
-    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
-    ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
-  ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
+  const caps = r.captures ?? [], usedPairs = new Set<string>();
+  let pairs = 0;
+  const pairAt = (pivot: string, compare: unknown): { pair: BeforeAfterFig | null; pairShared: boolean } => {
+    if (compare || !caps.length) return { pair: null, pairShared: false };
+    const p = capturePair(caps, pivot); if (!p) return { pair: null, pairShared: false };
+    const k = `${p.before.id}:${p.after.id}`;
+    if (usedPairs.has(k)) return { pair: null, pairShared: true };
+    if (pairs >= MOVE_PAIRS_MAX) return { pair: null, pairShared: false };
+    const fig = beforeAfter({ title: "Before → after", note: `${FRAME_LABEL}: the two captures either side of the change, in their own colours. No screenshot is stored.`, domain: d, name: site?.site?.name ?? d, a: p.before, b: p.after, crops: [] });
+    if (!fig.before.boxes.length || !fig.after.boxes.length) return { pair: null, pairShared: false };
+    usedPairs.add(k); pairs++;
+    return { pair: fig, pairShared: false };
+  };
+  const timeline: Move[] = [
+    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
+    ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: true, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
+  ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX)
+    .map(({ pivot, ...m }) => ({ ...m, ...pairAt(pivot, m.compare) }));
   const history = Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(crops, d, s).map(toCrop)])) as Record<CropSection, Crop[]>;
   const m = a.market?.sites.find(s => s.domain === d) ?? null;
   const versus = m ? { scope: m.scope, scopeName: sectorName(m.scope), ahead: m.ahead.filter(x => shown(x.trait)), behind: m.behind.filter(x => shown(x.trait)) } : null;
   const where = versus && versus.scope !== "all" ? "its sector" : "all sectors";
   const self = r.peers.find(p => p.domain === d), mine = new Set((self?.traits ?? (site ? traitsOf(site) : [])).filter(shown));
-  const closest = r.peers.filter(p => p.domain !== d && p.sector === sector)
-    .map(p => { const t = new Set(p.traits.filter(shown)); let n = 0; for (const x of t) if (mine.has(x)) n++; return { domain: p.domain, name: p.name, shared: n, score: jaccard(mine, t), href: brandPath(p.domain) }; })
-    .filter(p => p.shared > 0).sort((x, y) => y.score - x.score || y.shared - x.shared || x.domain.localeCompare(y.domain)).slice(0, CLOSEST_MAX).map(({ score: _s, ...p }) => p);
+  const similar: SimilarResult = r.similar ?? { items: [], enough: false, basis: 0, line: "Similar brands are not available right now." };
   const fc = new Map(r.audit.forecasts.filter(f => f.scope === scope).map(f => [`${f.dimension}:${f.value}`, f]));
   const order: Record<Tier, number> = { headline: 0, supporting: 1, archive: 2 };
   const shows = [...mine].map(k => { const l = label(k); return { key: k, name: l.name, dimension: l.dimension, basis: basis(k), stage: stageName(fc.get(k)?.stage), tier: tiers.get(k) ?? "supporting", href: signalPath(k) }; })
     .sort((x, y) => order[x.tier] - order[y.tier] || x.name.localeCompare(y.name));
-  const peers = closest.slice(0, 2).map(p => p.domain);
+  const peers = similar.items.slice(0, 2).map(p => p.domain);
+  const h1 = type?.h1 ?? null, body = type?.body ?? null, lay = a.layout?.sites.find(x => x.domain === d) ?? null, ws = site?.history?.whitespace_ratio ?? null;
+  const layout: LayoutFact[] = [
+    ...(color?.theme ? [{ id: "theme" as const, label: "Theme", value: label(`theme:${color.theme}`).name }] : []),
+    ...(lay?.heroMedia ? [{ id: "hero" as const, label: "Hero media", value: HERO[lay.heroMedia] ?? lay.heroMedia.replace(/_/g, " ") }] : []),
+    ...(h1?.size != null ? [{ id: "h1" as const, label: "Headline size", value: `${Math.round(h1.size)}px` }] : []),
+    ...(typeof ws === "number" && Number.isFinite(ws) ? [{ id: "whitespace" as const, label: "White space", value: `${Math.round(ws * 100)}%` }] : []),
+  ];
+  const face = (f: typeof h1): Face | null => f ? { family: plainFace(f.family), google: f.google, size: f.size, css: showableFace(f.family) } : null;
+  const palette = (color?.palette ?? []).map(p => ({ hex: p.hex, name: p.name, share: p.share })).sort((x, y) => (y.share ?? -1) - (x.share ?? -1));
   return {
     domain: d, name: site?.site?.name ?? d, sector, sectorName: sectorName(sector), tracked: g.status === "tracked", captured: g.captured, lastMove: timeline[0] ? { text: timeline[0].text, at: timeline[0].at } : g.latest, thumb: g.thumb,
-    identity: { h1: type?.h1 ? { family: type.h1.family, google: type.h1.google } : null, body: type?.body ? { family: type.body.family, google: type.body.google } : null, theme: color?.theme ?? null, accent: color?.accent ?? null, palette: (color?.palette ?? []).map(p => ({ hex: p.hex, name: p.name })), tags },
+    identity: { h1: face(h1), body: face(body), theme: color?.theme ?? null, accent: color?.accent ?? null, palette, tags, layout, receipt: `/library/${d}` },
+    field: r.field ?? null, contrast: r.contrast ?? null, similar,
     timeline, sections: latestSections(crops, d), history, versus, soWhat: versus ? brandSoWhat(versus.ahead.length, versus.behind.length, where) : "Not enough measured data on this brand yet to compare it with its sector.",
-    closest, shows,
-    actions: { watch: `/watch/new?add=${encodeURIComponent(d)}`, compare: `/audit/new?sites=${encodeURIComponent(d)}`, audit: peers.length ? `/audit?sites=${[d, ...peers].sort().join(",")}` : null,
+    shows,
+    actions: { watch: `/watch/new?add=${encodeURIComponent(d)}&name=${encodeURIComponent(`${site?.site?.name ?? d} watch`)}`, compare: `/audit/new?sites=${encodeURIComponent(d)}`, audit: peers.length ? `/audit?sites=${[d, ...peers].sort().join(",")}` : null,
       differentiate: consoleHref(`diff https://${d}`), recommendType: sector ? consoleHref(`type ${sector} headline any`, sector) : null, terminal: `/library/${d}` },
     blocks: OBJECT_BLOCKS,
   };

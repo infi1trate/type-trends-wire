@@ -15,8 +15,9 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit, getFront } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import { comparisonPair } from "./run-gap";
+import type { GallerySearch } from "./gallery";
 import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
@@ -415,6 +416,9 @@ export const siteCropsQuery = (domain: string) => queryOptions({ queryKey: ["sit
   if (error) throw error; return data ?? [];
 } });
 export const patternQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern", key, sector], staleTime: 10 * 60_000, queryFn: () => getPattern({ data: { key, sector } }) });
+export const galleryQuery = (s: GallerySearch) => queryOptions({ queryKey: ["gallery", s], staleTime: 10 * 60_000, queryFn: () => getGallery({ data: s }) });
+export const collectionsQuery = () => queryOptions({ queryKey: ["collections"], staleTime: 10 * 60_000, queryFn: () => getCollections() });
+export const collectionQuery = (slug: string, page = 1) => queryOptions({ queryKey: ["collection", slug, page], staleTime: 10 * 60_000, queryFn: () => getCollection({ data: { slug, page } }) });
 export const signalSeriesQuery = (scope: string) => queryOptions({ queryKey: ["signal-series", scope], staleTime: 10 * 60_000, queryFn: () => getSignalSeries({ data: { scope } }) });
 export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], staleTime: 10 * 60_000, queryFn: () => getModelCard() });
 /** /kit: every shared component on live data (composites, stories, crops). */

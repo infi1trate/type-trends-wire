@@ -109,6 +109,8 @@ export function galleryModel(i: GalleryIn, raw: GalleryFilter) {
   const f: GalleryFilter = { ...raw, sectors: raw.sectors.filter(s => resolveSector(s) !== "all"), section: raw.section && sections.includes(raw.section) ? raw.section : null };
   const pattern = f.pattern ? allKeys.get(f.pattern) ?? null : null;
   if (f.pattern && !pattern) f.pattern = null;
+  // A pattern signal without a wall shows nothing; a collection's extra key (say, dark mode) is not a pattern and always may.
+  const patternWalled = !pattern || walledKeys.has(pattern.key) || !i.patterns.some(p => p.key === pattern.key);
   const periods = [...new Set(caps.map(c => c.quarter).filter((q): q is string => !!q && Q.test(q)))].sort((a, b) => qNum(b) - qNum(a));
   const period = f.period === "latest" ? periods[0] ?? null : f.period;
 
@@ -128,7 +130,7 @@ export function galleryModel(i: GalleryIn, raw: GalleryFilter) {
   const inSector = (d: string) => !f.sectors.length || f.sectors.includes(site.get(d)?.sector ?? "");
   const shows = (c: Cand) => {
     if (!c.traits) return !pattern && !f.basis; // change tiles carry no trait list; they match only unfiltered pattern views
-    if (pattern) return c.traits.includes(pattern.key) && (!f.basis || pattern.basis === f.basis);
+    if (pattern) return patternWalled && c.traits.includes(pattern.key) && (!f.basis || pattern.basis === f.basis);
     return c.traits.some(t => walledKeys.has(t) && (!f.basis || allKeys.get(t)?.basis === f.basis));
   };
   const hasSection = (c: Cand) => !f.section || !!tileCrop(i.crops, c.domain, c.at, f.section);
@@ -145,7 +147,7 @@ export function galleryModel(i: GalleryIn, raw: GalleryFilter) {
   const at = (p: number) => galleryQuery({ ...resolved, page: p });
   return {
     filter: resolved, total, page, pages, tiles, countLine: countLine(total ? from + 1 : 0, from + tiles.length, total),
-    pattern: pattern ? { ...pattern, walled: walledKeys.has(pattern.key) || !i.patterns.some(p => p.key === pattern.key), count: counts.get(pattern.key) ?? 0 } : null,
+    pattern: pattern ? { ...pattern, walled: patternWalled, count: counts.get(pattern.key) ?? 0 } : null,
     options: {
       patterns: walled.map(p => ({ ...p, count: counts.get(p.key) ?? 0 })).sort((a, b) => a.name.localeCompare(b.name)),
       periods: periods.map(q => ({ value: q, label: qText(q) })),

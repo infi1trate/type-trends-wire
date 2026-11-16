@@ -21,7 +21,7 @@ export function HealthLine() {
     {open && <Overlay title={`HEALTH · ${status?.toUpperCase() ?? "CHECKING"}`} onClose={() => setOpen(false)}>
       {!data ? <p className="text-g500">▍</p> : <>
         <p className="label mb-2 flex flex-wrap items-center text-g500"><Info g="p-health" className="mr-2 ml-0" />CHECKED {when(data.checked_at)} UTC · STALE = LAST OK OLDER THAN 2× INTERVAL · GET /api/public/health</p>
-        {data.jobs.length === 0 ? <p className="text-live">Job health couldn’t be read right now. The status refreshes every minute, so try again shortly.</p> :
+        {data.jobs.length === 0 ? <p className="t-say text-live">Job health couldn’t be read right now. The status refreshes every minute, so try again shortly.</p> :
           <table className="w-full border-collapse tabular-nums">
             <caption className="sr-only">Scheduled job health</caption>
             <thead><tr className="label text-left text-g500"><th scope="col" className="py-1 pr-2 font-normal">JOB<Info g="job" /></th><th scope="col" className="py-1 pr-2 font-normal">EVERY<Info g="every" /></th><th scope="col" className="py-1 pr-2 font-normal">LAST OK<Info g="last-ok" /></th><th scope="col" className="py-1 font-normal">STATUS<Info g="status" /></th></tr></thead>

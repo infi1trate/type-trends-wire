@@ -192,7 +192,7 @@ function Strip({ f, v, live }: { f: StripFig; v: View; live: boolean }) {
   const cur = f.frames[k], on = new Set(v.highlight), markAt = new Map(f.marks.filter(m => m.after).map(m => [m.after!, m]));
   return <ChartFrame title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={!f.frames.length} table={{ columns: ["Capture", "Source", "Changes marked"], rows: f.frames.map(fr => [dayText(fr.at), fr.source, f.marks.filter(m => m.after === fr.id).map(m => m.label).join("; ") || "—"]) }}>
     {() => <div data-figure="strip" data-frame-index={k}>
-      {cur && <div className="mx-auto max-w-[520px]"><CaptureFrame fr={cur} label={`${f.name}, ${dayText(cur.at)}`} />
+      {cur && <div className="strip-current mx-auto max-w-[520px]"><CaptureFrame fr={cur} label={`${f.name}, ${dayText(cur.at)}`} />
         <p className="tk-t-caption tk-c-muted mt-1 flex flex-wrap items-center gap-2"><Swatches fr={cur} />{k + 1} of {f.frames.length} · {frameCaption(cur)}{markAt.get(cur.id) && <span style={hlText}>· {markAt.get(cur.id)!.label}</span>}</p></div>}
       <ol className="mt-3 grid gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(f.frames.length, 16)}, minmax(0, 1fr))` }} aria-label="Captures">
         {f.frames.map((fr, j) => { const mk = markAt.get(fr.id), hot = j === k;

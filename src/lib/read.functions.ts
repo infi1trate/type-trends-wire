@@ -91,3 +91,18 @@ export const getKit = createServerFn({ method: "GET" }).handler(async () => {
   const { loadKit } = await import("./kit.server");
   return loadKit();
 });
+
+// Pattern gallery and collections (gallery.ts + collections/registry.ts over stored captures; no AI).
+const gallerySearchInput = z.object({ sector: z.string().max(40).optional(), pattern: z.string().max(80).optional(), period: z.string().max(10).optional(), basis: z.string().max(10).optional(), section: z.string().max(10).optional(), page: z.number().int().min(1).max(999).optional() });
+export const getGallery = createServerFn({ method: "GET" }).inputValidator(gallerySearchInput).handler(async ({ data }) => {
+  const [{ loadGallery }, { parseGallerySearch }] = await Promise.all([import("./gallery.server"), import("./gallery")]);
+  return loadGallery(parseGallerySearch(data));
+});
+export const getCollections = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadCollections } = await import("./gallery.server");
+  return loadCollections();
+});
+export const getCollection = createServerFn({ method: "GET" }).inputValidator(z.object({ slug: z.string().min(3).max(80).regex(/^[a-z0-9-]+$/), page: z.number().int().min(1).max(999).default(1) })).handler(async ({ data }) => {
+  const { loadCollection } = await import("./gallery.server");
+  return loadCollection(data.slug, data.page);
+});

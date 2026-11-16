@@ -6,7 +6,7 @@ import { AppLink } from "@/components/terminal/AppLink";
 import { BasisWord } from "@/components/digest/Editorial";
 import { BasisChip } from "@/components/terminal/SignalBits";
 import { numberLabel } from "@/lib/stories/numbers";
-import { Ledger } from "@/components/brand/Ledger";
+import { Ledger, StoryNo } from "@/components/brand/Ledger";
 
 export function Receipt({ href, children, ...rest }: { href: string; children: ReactNode } & AnchorHTMLAttributes<HTMLAnchorElement>) {
   return href.startsWith("/") ? <AppLink href={href} {...rest}>{children}</AppLink> : <a href={href} target="_blank" rel="noopener" {...rest}>{children}</a>;
@@ -21,7 +21,7 @@ export function StoryCard({ s, lead = false, tour }: { s: Story; lead?: boolean;
 }
 /** RELATED block on signal, brand and pattern pages: a Ledger (lists are ruled tables, not stacks of cards). */
 export function RelatedStories({ stories, empty }: { stories: Story[]; empty: string }) {
-  return stories.length ? <Ledger label="Related stories" rows={stories.map(s => ({ key: s.id, href: s.evidence, number: s.number != null ? <span data-story-number="" className="whitespace-nowrap"><span className="ledger-num-sm">No.</span> {s.number}</span> : "·",
+  return stories.length ? <Ledger label="Related stories" rows={stories.map(s => ({ key: s.id, href: s.evidence, number: s.number != null ? <StoryNo n={s.number} /> : "·",
     title: <>{s.headline}{s.basis && <> <BasisWord b={s.basis} /></>}</>, line: s.deck ?? null, tags: [s.kicker], time: <time dateTime={s.at}>{storyTime(s.at)}</time> }))} /> : <p className="ed-small">{empty}</p>;
 }
 /** The compact story card (terminal row): one token-driven rendering for every mode, so it reads right on the dark terminal, the Read

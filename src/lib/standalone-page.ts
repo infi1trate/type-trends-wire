@@ -25,7 +25,7 @@ h1{font:900 44px/.95 ${F.display};text-transform:uppercase;text-wrap:balance}
 p{text-wrap:pretty}
 label{font:700 15px/1.15 ${F.display};letter-spacing:.12em;text-transform:uppercase}
 .row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
-input{flex:1;min-width:0;height:52px;padding:0 14px;background:${L.surface.card};color:${L.text.primary};border:${sh.border.strong} solid ${L.rule.strong};border-radius:0;font:400 18px ${F.text}}
+input{flex:1;min-width:0;height:52px;outline:none;padding:0 14px;background:${L.surface.card};color:${L.text.primary};border:${sh.border.strong} solid ${L.rule.strong};border-radius:0;font:400 18px ${F.text}}
 .raised,button{display:inline-flex;align-items:center;justify-content:center;height:52px;min-width:120px;padding:0 24px;background:${L.surface.raised};color:${L.text.onAccent};border:${sh.border.strong} solid ${L.shadowInk};border-radius:0;box-shadow:6px 6px 0 ${L.shadowInk};font:700 15px/1 ${F.display};letter-spacing:.12em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:transform ${sh.motion.tap} linear,box-shadow ${sh.motion.tap} linear}
 .raised:active,button:active{transform:translate(6px,6px);box-shadow:0 0 0 ${L.shadowInk}}
 input:focus-visible,button:focus-visible,a:focus-visible{outline:${L.focus.width} solid ${L.focus.ring};outline-offset:${L.focus.offset}}

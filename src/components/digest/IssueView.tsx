@@ -5,7 +5,7 @@ import { pct } from "@/lib/digest/copy";
 import { BasisWord, DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, Swatches, pr } from "./Editorial";
 import { EditionCover } from "@/components/read/Covers";
 import { FiltersScope } from "@/components/brand/Illustration";
-import { Ledger } from "@/components/brand/Ledger";
+import { Ledger, StoryNo } from "@/components/brand/Ledger";
 import { RuleBox } from "@/components/brand/Containers";
 import { isNewIssue } from "@/lib/digest/week";
 
@@ -61,7 +61,7 @@ export function IssueView({ issue }: { issue: Issue }) {
 
       {issue.stories && <section id="ed-stories" aria-labelledby="ed-stories-h" className="ed-wrap d-air">
         <SectionHead n={n("stories")} id="ed-stories-h" title="The week in stories" kicker="The week's top published stories by score, each with its receipts." />
-        <Ledger label="The week in stories" rows={issue.stories.map((x, i) => ({ key: x.id, href: x.href, number: x.number != null ? <span data-story-number="" className="whitespace-nowrap"><span className="ledger-num-sm">No.</span> {x.number}</span> : i + 1, title: x.headline, line: x.deck ?? null, tags: [x.kicker.split(" · ")[0] ?? x.kicker], facts: [`Score ${x.score}`] }))} />
+        <Ledger label="The week in stories" rows={issue.stories.map((x, i) => ({ key: x.id, href: x.href, number: x.number != null ? <StoryNo n={x.number} /> : i + 1, title: x.headline, line: x.deck ?? null, tags: [x.kicker.split(" · ")[0] ?? x.kicker], facts: [`Score ${x.score}`] }))} />
       </section>}
 
       {issue.movers && <section id="ed-movers" aria-labelledby="ed-movers-h" className="ed-wrap d-air"><RuleBox>
