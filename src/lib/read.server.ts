@@ -158,7 +158,7 @@ export async function loadBrands() {
   const moves = stories.filter(s => s.type === "move" || s.type === "rebrand").sort((a, b) => b.at.localeCompare(a.at) || a.id.localeCompare(b.id));
   const last = new Map<string, Story>(); for (const m of moves) for (const d of m.domains) if (!last.has(d)) last.set(d, m);
   return {
-    sites: sites.filter(s => s.active).map(s => { const c = counts.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, lastChange: last.get(s.domain)?.at ?? c?.last ?? s.last_change_at, lastMove: last.get(s.domain)?.headline ?? null, captured: s.last_snapshot_at, moves: c?.n ?? 0 }; }),
+    sites: sites.filter(s => s.active).map(s => { const c = counts.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, lastChange: c?.n ? (last.get(s.domain)?.at ?? c.last) : null, lastMove: last.get(s.domain)?.headline ?? null, captured: s.last_snapshot_at, moves: c?.n ?? 0 }; }),
     moves: moves.slice(0, 120),
   };
 }

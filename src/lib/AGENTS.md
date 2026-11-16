@@ -60,3 +60,7 @@
 - Motion rules live in pure `motion.ts` (patterns, loops, once-per-session arrival via HEAD_SCRIPT, MotionLock); CSS keyframes animate only transform/opacity/stroke-dashoffset (Cut wipe: clip-path) and every one-shot has a reduced-motion override, enforced by `motion.test.ts`.
 - Share images draw Big Shoulders/Newsreader from per-glyph atlases (`scripts/build-glyph-atlas.py` → `glyphs.gen.ts`, measured in `chart/fonts.ts`) in the theme's `image.vibes` palette; embeds default to vibes, `?theme=light|dark` keep the old looks.
 
+- Similar brands come only from pure `similar.ts` (Jaccard over measured headline signals, named minimums, no padding); the brand page and MCP `library_site` share `similarFor`/eligibility in `read.server.ts`.
+- The pattern gallery is pure `gallery.ts` over rows loaded and cached by `gallery.server.ts`; collections are saved gallery filters in `collections/registry.ts` (live at `COLLECTION_MIN`, re-checked at read time), so walls, collection pages and MCP `collections` share one model.
+- Index views (`/signals`, `/brands`) keep sort/filter/lens in the URL via pure `signals-index.ts` and `brands-index.ts`; form field errors are pure `agency/forms.ts` and the audit report cover/findings pure `agency/report.ts`.
+- Sub-navigation rows use `components/read/ScrollRow` (one sideways-scrolling row, current item scrolled into view) instead of wrapping lists.

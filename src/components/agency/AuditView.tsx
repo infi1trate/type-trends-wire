@@ -7,7 +7,7 @@ import { BasisWord, SectionHead, SiteCard, StageWord, Swatches, Dim, pr } from "
 import { AgencyShell, Btn, CopyField, day } from "./Shell";
 import { BRAND_NAME } from "@/lib/brand";
 import type { FieldFig } from "@/lib/data-stories/types";
-import { auditFindings, reportFigure } from "@/lib/agency/report";
+import { auditFindings, reportFigure, scopeName } from "@/lib/agency/report";
 import { Ledger } from "@/components/brand/Ledger";
 import { FigureView } from "@/components/data/Figures";
 
@@ -46,7 +46,7 @@ function FaceLine({ role, f }: { role: string; f: NonNullable<Audit["type"]>["si
 const FIND_TAG = { ahead: "Ahead", behind: "Behind", open: "Open", shared: "Shared" } as const;
 export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | null }) {
   const fig = reportFigure(a), findings = auditFindings(a), placed = field ? a.domains.filter(d => field.points.some(p => p.domain === d)) : [];
-  const n = a.domains.length, where = scopeText(a.sector);
+  const n = a.domains.length, where = scopeName(a.sector);
   const latest = a.glance.map(g => g.captured).filter((x): x is string => !!x).sort().at(-1) ?? null;
   const num = (k: string) => String(a.sections.indexOf(k) + 1).padStart(2, "0");
   return <AgencyShell label={`Competitive audit of ${list(a.domains)}`} crumb="Competitive audit">
@@ -69,13 +69,13 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
     </header>
 
     <section className="ed-wrap mb-14" aria-labelledby="a-findings">
-      <SectionHead n="·" title="Findings" id="a-findings" kicker="Each finding from the numbers below, with whether it was measured or is an AI estimate." />
+      <SectionHead n="Summary" title="Findings" id="a-findings" kicker="Each finding from the numbers below, with whether it was measured or is an AI estimate." />
       {findings.length ? <Ledger label="Findings" rows={findings.map((f, k) => ({ key: f.key, href: f.href, number: k + 1, title: f.text, tags: [FIND_TAG[f.kind]], facts: [<BasisWord key="b" b={f.basis} />] }))} />
         : <p className="ed-body">No finding yet: none of these sites has enough measured signals in a staged forecast. Add a tracked site or try again after the next weekly run.</p>}
     </section>
 
     {field && <section className="ed-wrap mb-14" aria-labelledby="a-field">
-      <SectionHead n="·" title={`Where each page sits in ${scopeText(a.sector)}`} id="a-field" kicker={placed.length ? `${list(placed)} marked among every ${scopeText(a.sector)} brand by headline size and white space.` : "None of these pages is tracked in this sector, so none can be placed; the field shows the sector as it stands."} />
+      <SectionHead n="Placement" title={`Where each page sits in ${scopeName(a.sector)}`} id="a-field" kicker={placed.length ? `${list(placed)} marked among every ${scopeName(a.sector)} brand by headline size and white space.` : "None of these pages is tracked in this sector, so none can be placed; the field shows the sector as it stands."} />
       <div className="max-w-3xl"><FigureView fig={field} view={{ figure: "field", highlight: placed, focus: null }} /></div>
     </section>}
 

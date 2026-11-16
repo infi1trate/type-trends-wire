@@ -45,7 +45,7 @@ export function BrandsIndexView({ v }: { v: BrandsView }) {
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}</p>
       {idx.empty ? <p className="ed-body mt-4 max-w-[60ch]">{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p>
         : <Ledger className="mt-3" label="Tracked brands" rows={idx.rows.map(s => ({ key: s.domain, href: `/brands/${encodeURIComponent(s.domain)}`, title: s.name ?? s.domain,
-          line: <><span className="ed-code">{s.domain}</span>{s.lastMove ? ` · ${s.lastMove}` : ""}</>, facts: [sectorName(s.sector), s.lastChange ? `Changed ${storyTime(s.lastChange)}` : "No change yet", `${s.moves} ${s.moves === 1 ? "move" : "moves"}`] }))} />}
+          line: <><span className="ed-code">{s.domain}</span>{s.lastMove ? ` · ${s.lastMove}` : ""}</>, facts: [sectorName(s.sector), s.lastChange ? `Changed ${storyTime(s.lastChange)}` : "No recorded move", `${s.moves} ${s.moves === 1 ? "move" : "moves"}`] }))} />}
     </section> : <section aria-label="Recent moves" className="ed-wrap mt-6">
       <p className="ed-caption">Confirmed changes (two captures agree) and rebrands in the last 30 days, newest first.</p>
       {moves.length ? <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 lg:grid-cols-3">{moves.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-body mt-4">No confirmed move{v.sector !== "all" ? ` in ${sectorName(v.sector)}` : ""} in the last 30 days. Moves land here as soon as two captures agree on a change.</p>}
