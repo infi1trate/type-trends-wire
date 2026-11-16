@@ -256,4 +256,13 @@
 - [x] Charts restyle (ink axes, dashed grid, Big Shoulders labels, gumballs, double-stroke lines)
 - [x] Brand pages (/brand + 8) behind BRAND_PUBLIC = false; gated /brand/files downloads
 - [x] Tests, after screenshots, report
-- [ ] Part 2: page-specific art direction (story, signal, brand, pattern, Digest, sector report, data-story pages), share-image typography, illustration and motion
+- [x] Part 2: see Phase 17b-2
+
+# Phase 17b-2 — the brand everywhere, part 2 (don't publish)
+- [x] Live-review fixes: one-bar shell + Menu sheet, lead figure slot, gate mark fit + single focus ring, /brand deck once, legacy names at render, data-story highlights yellow/green, story frames fallback
+- [x] Compositions per page type (story, signal, brand, pattern, Digest, Morning Line, sector report, data stories, tools/status)
+- [x] Illustration: CutAndPaste, Trail, SoftObject from the kit filter file; limits + flat mode
+- [x] Motion: arrive, press, cut, count, draw; reduced-motion end states
+- [x] Share images + embeds in vibes with Big Shoulders / Newsreader atlases
+- [x] Tests, screenshots, report
+- [ ] Terminal: story lines, help text and the tour still set sentences in mono (README wants Newsreader); listed for Brandon, not changed

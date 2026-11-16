@@ -332,9 +332,9 @@ export type Density = (typeof DENSITIES)[number];
 export const DENSITY: Record<string, Density | "none"> = {
   index: "steady", "signals.index": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
   "sectors.index": "steady", "data.index": "steady", tools: "steady", "audit.index": "steady", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
-  ledger: "steady", desk: "steady", status: "steady", "morning.index": "quiet", "morning.$date": "quiet",
-  "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet", "brands.$domain": "quiet", "patterns.$key": "quiet",
-  "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "what-we-show": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
+  ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "morning.index": "quiet", "morning.$date": "quiet",
+  "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet",
+  "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
   "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.space": "quiet",
   "brand.illustration": "quiet", "brand.motion": "quiet", "brand.downloads": "quiet",
   terminal: "loud", "library.$domain": "loud", "chart.index": "loud", "chart.$week": "loud", kit: "loud",

@@ -527,7 +527,7 @@
     .cover-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 7fr) minmax(0, 3fr); grid-template-areas: "kick kick kick" "pinl obj pinr" "head head head" "deck deck deck"; column-gap: var(--tk-space-5); }
     .cover-object { margin-right: calc(-1 * var(--tk-layout-gutter-lg) - 18vw); }
     .cover-pin-r { position: relative; z-index: 3; }
-    .cover-pin-r > span { background: var(--tk-slab-bg); padding: 0 .2em; display: table; margin-left: auto; }
+    .cover .cover-pin-r > span { background: var(--tk-slab-bg); padding: 0 .2em; display: table; margin-left: auto; }
     .cover-head { margin-top: calc(-1 * var(--tk-space-7)); max-width: 18ch; }
   }
 

@@ -20,7 +20,9 @@ import { Ledger } from "@/components/brand/Ledger";
 import { CutAndPaste, FiltersScope, HeadlineStrips, SoftObject, Trail } from "@/components/brand/Illustration";
 import { Count, useGrow } from "@/components/brand/Motion";
 import { MOTION_MS } from "@/lib/motion";
-import { FRAME_LABEL } from "@/lib/stories/frames";
+import { FRAME_LABEL, storyFrames } from "@/lib/stories/frames";
+import { fxCapture } from "@/lib/data-stories/fixtures";
+import { CaptureFrame } from "@/components/data/Figures";
 
 const K = BRAND_KIT, C = K.color;
 const LIGHT = activeTheme.modes.light;
@@ -312,11 +314,13 @@ const ILLUSTRATION_USE: Record<string, string> = {
 };
 /** Demo data: the shape of real stored values (a share series and a story), labelled as a sample. */
 const DEMO_SERIES = [{ x: "Q1 2024", y: 0.212 }, { x: "Q3 2024", y: 0.268 }, { x: "Q1 2025", y: 0.241 }, { x: "Q3 2025", y: 0.336 }, { x: "Q1 2026", y: 0.47 }];
+/** A sample after-frame redrawn from fixture skeleton boxes (the same path story covers use), so the demo shows a real redraw. */
+const DEMO_FRAME = storyFrames("sample.com", [fxCapture(1, "2026-10-01T00:00:00Z"), fxCapture(2, "2026-11-16T00:00:00Z", { bg: "#0A0A0A", source: "live" })], "2026-11-15T00:00:00Z")?.after ?? null;
 function IllustrationDemo({ id }: { id: string }) {
   if (id === "trail") return <Trail points={DEMO_SERIES} label="Sample: a signal's share of homepages by quarter" format={v => `${(v * 100).toFixed(1)}%`} w={720} h={400} seed="brand-trail" />;
   if (id === "soft") return <SoftObject text="47" seed="brand-soft" ink="pink" print="yellow" label="Sample: the number 47 as a soft object" />;
   return <div className="cover c-slab p-6" data-cover="sample">
-    <CutAndPaste seed={48} note="Confirmed 16 Nov" picture={<div className="brand-demo-frame"><span className="ed-kicker">{FRAME_LABEL}</span><span className="ed-h3 mt-2 block">Image hero → video hero</span></div>} />
+    <CutAndPaste seed={48} note="Confirmed 16 Nov" picture={DEMO_FRAME ? <CaptureFrame fr={DEMO_FRAME} label={FRAME_LABEL} /> : <div className="brand-demo-frame"><span className="ed-kicker">{FRAME_LABEL}</span></div>} />
     <p className="cover-head mt-4"><HeadlineStrips text="neon.com changed its hero" seed={48} /></p>
   </div>;
 }
