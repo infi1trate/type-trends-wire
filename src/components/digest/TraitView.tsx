@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import type { TraitPage } from "@/lib/digest/trait";
 import { pct, pts } from "@/lib/digest/copy";
 import { DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, pr } from "./Editorial";
+import { LedgerCall } from "./LedgerView";
+import { EmbedPanel } from "@/components/embed/EmbedPanel";
 
 export function TraitView({ page: p }: { page: TraitPage }) {
   const footer = { methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/", contact: null };
@@ -29,6 +31,13 @@ export function TraitView({ page: p }: { page: TraitPage }) {
         <SectionHead n={next()} id="ed-t-chart" title="Share by quarter" />
         {p.card ? <Figure card={p.card} label={`${p.name}: share of tracked homepages by quarter, with the forecast band`} caption={<>Solid line measured, band forecast (80% interval). Source: forecast run {p.runId ?? "—"}, data through {p.dataThrough ?? "—"}. Only quarters with at least 15 sites and 25% archive coverage are drawn.</>} />
           : <p className="ed-body">{p.chartNote}</p>}
+        {p.card && <div className="mt-4"><EmbedPanel target={{ kind: "trait", key: p.key }} title={`${p.name} [${p.dimension}]`} /></div>}
+      </section>
+
+      <section aria-labelledby="ed-t-calls" className="ed-wrap mt-16">
+        <SectionHead n={next()} id="ed-t-calls" title="Our calls" kicker="Every call the ledger recorded for this signal, newest first, with how it resolved." />
+        {p.calls.length ? <ul className="space-y-6">{p.calls.map(c => <LedgerCall key={c.id} c={c} showName={false} />)}</ul> : <p className="ed-body ed-small">No calls recorded for this signal yet. The ledger records the signals the weekly brief names, every alert and the top 20 next-wave scores.</p>}
+        <p className="ed-data mt-4"><Link to="/ledger" className="ed-tap" {...pr("/ledger")}>The full ledger →</Link></p>
       </section>
 
       {p.sectors.length > 0 && <section aria-labelledby="ed-t-sectors" className="ed-wrap mt-16">

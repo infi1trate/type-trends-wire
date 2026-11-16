@@ -11,6 +11,7 @@ import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 import { getHealth } from "./health.functions";
 import { getIssue, getArchive, getTrait } from "./digest.functions";
+import { getLedger } from "./ledger.functions";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
@@ -380,3 +381,5 @@ export function auditQuery(sites: string, sector: string | null) {
   const p = parseAuditSites(sites), key = p.ok ? p.domains.join(",") : sites.slice(0, 800);
   return queryOptions({ queryKey: ["audit", key, sector ?? ""], staleTime: 10 * 60_000, queryFn: () => getAudit({ data: { sites: key, sector } }) });
 }
+
+export const ledgerQuery = () => queryOptions({ queryKey: ["ledger"], staleTime: 10 * 60_000, queryFn: () => getLedger({ data: {} }) });

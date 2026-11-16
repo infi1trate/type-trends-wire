@@ -3,6 +3,7 @@ import { SITE_URL, DIGEST_NAME } from "../site";
 import type { Issue } from "./issue";
 import type { TraitPage } from "./trait";
 import { traitSummary } from "./trait";
+import { oembedLink } from "../embed/embed";
 export const EDITORIAL_FONTS = "https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Geist+Mono:wght@400;600&display=swap";
 export const fontLinks = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -24,7 +25,7 @@ export function issueHead(i: Issue, path: string, specimenLinks: { rel: string; 
 export function traitHead(p: TraitPage) {
   const path = `/trait/${encodeURIComponent(p.key)}`, url = `${SITE_URL}${path}`, title = `${p.name} [${p.dimension}] — explainer · DSGN/TERMINAL`;
   const desc = `${traitSummary(p)}. ${p.definition}`.slice(0, 300);
-  return { meta: card(title, desc, url, `${SITE_URL}/trait/${encodeURIComponent(p.key)}.png`, 1200, 675, "article"), links: [{ rel: "canonical", href: url }, rss, ...fontLinks()] };
+  return { meta: card(title, desc, url, `${SITE_URL}/trait/${encodeURIComponent(p.key)}.png`, 1200, 675, "article"), links: [{ rel: "canonical", href: url }, rss, oembedLink(url, `${p.name} [${p.dimension}]`), ...fontLinks()] };
 }
 export function archiveHead() {
   const url = `${SITE_URL}/digest/archive`, title = `Archive — ${DIGEST_NAME} · DSGN/TERMINAL`, desc = `Every issue of ${DIGEST_NAME}, the weekly edition of DSGN/TERMINAL: what moved in type, color, layout and vibe.`;

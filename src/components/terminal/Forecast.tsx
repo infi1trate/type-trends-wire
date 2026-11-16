@@ -2,7 +2,7 @@ import { Suspense, useEffect, useState } from "react";
 import { AddToWatch } from "./Watch";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { forecastQuery, forecastDetailQuery, chartCardQuery, discourseSinceQuery, type ForecastRow, type BriefDoc } from "@/lib/data";
+import { forecastQuery, forecastDetailQuery, chartCardQuery, discourseSinceQuery, ledgerQuery, type ForecastRow, type BriefDoc } from "@/lib/data";
 import { briefDisplay, label, stageName, STAGES } from "@/lib/labels";
 import { coverageSentences } from "@/lib/model-card-copy";
 import { DimTag, Info, StageBadge } from "./Info";
@@ -71,14 +71,17 @@ export function ForecastPanel() {
   const brief = data.briefs.find(b => b.week === week) ?? data.briefs[0];
   const { data: discourseSince } = useQuery(discourseSinceQuery());
   const coverage = coverageSentences(card, { discourseSince });
+  const { data: ledger } = useQuery(ledgerQuery());
+  const ls = ledger?.summary, liveRecord = !ls ? "Loading…" : ls.rate != null ? `${Math.round(ls.rate * 100)}% · N=${ls.resolved}` : `${ls.hits} OF ${ls.resolved} LANDED · ${ls.open} OPEN`;
   return <div className="library min-h-0 flex-1 md:overflow-y-auto">
     <section aria-label="Model card" className="border-b border-rule bg-void">
       <h2 className="label flex items-center border-b border-rule bg-g900 px-3 py-2 font-semibold">MODEL CARD<Info g="p-model-card" /></h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-      {([["DATA THROUGH", card?.data_through ?? "No forecast yet", "quarter"], ["MEDIAN MAE", card?.median_mae_pts == null ? `Not scored yet (${card?.n_backtested ?? 0} backtested)` : `${card.median_mae_pts.toFixed(1)} PTS`, "p-model-card"], ["HIT-RATE", card?.hit_rate == null ? "Not scored yet" : pct(card.hit_rate, 0), "p-model-card"], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`, "projection"], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : "None yet (need 15+ sites and 25% coverage)", "coverage"]] as const).map(([l, v, g]) =>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      {([["DATA THROUGH", card?.data_through ?? "No forecast yet", "quarter"], ["MEDIAN MAE", card?.median_mae_pts == null ? `Not scored yet (${card?.n_backtested ?? 0} backtested)` : `${card.median_mae_pts.toFixed(1)} PTS`, "p-model-card"], ["BACKTEST HIT-RATE", card?.hit_rate == null ? "Not scored yet" : pct(card.hit_rate, 0), "p-model-card"], ["LIVE RECORD", liveRecord, "ledger"], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`, "projection"], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : "None yet (need 15+ sites and 25% coverage)", "coverage"]] as const).map(([l, v, g]) =>
         <div key={l} className="min-w-0 border-r border-rule p-2"><div className="label flex items-center text-compare-muted">{l}<Info g={g} /></div><div className="label break-words font-semibold">{v}</div></div>)}
       </div>
       {coverage.length > 0 && <ul className="border-t border-rule p-3 text-compare-muted">{coverage.map(c => <li key={c}>{c}</li>)}</ul>}
+      {ls && <p className="flex flex-wrap items-center gap-x-3 border-t border-rule px-3 py-2 text-compare-muted"><span>{ls.headline} Backtest above is a history replay, not part of the live record.</span><Link to="/ledger" className="label inline-flex items-center text-ink underline-offset-2 hover:underline max-md:min-h-11">LEDGER →</Link></p>}
     </section>
     {!card && <p className="p-3 text-compare-muted">No forecast has run yet. Forecasts run every Sunday after the crawl; the first one fills this panel.</p>}
     {card && card.n_forecast_ok === 0 && <p className="border-b border-rule p-3 text-compare-muted">Curves aren't fitted yet: each trait needs at least 4 usable quarters (15+ sites and 25% coverage) from the archive backfill. Until then, rankings use trendsetter gap, vanguard and corroboration.</p>}

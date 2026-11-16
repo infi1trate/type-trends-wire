@@ -7,6 +7,7 @@ import { traitModel, type TraitRows } from "./trait";
 import type { CardModel } from "../chart/card";
 import type { ThumbRow } from "../thumbs";
 import { canonical } from "../labels";
+import { asOf, ledgerSummary, type StoredCall } from "../ledger/ledger";
 type Db = ReturnType<typeof supabaseAnon>;
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500) {
   const out: T[] = [];
@@ -50,6 +51,9 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
     db.from("crawl_runs").select("finished_at,stats").eq("status", "finished").lt("finished_at", range.endIso).order("finished_at", { ascending: false }).limit(1).maybeSingle().then(must),
     db.from("wire_items").select("id", { count: "exact", head: true }).neq("source_kind", "alert").gte("published_at", range.startIso).lt("published_at", range.endIso),
   ]);
+  // Ledger as it stood at the end of the issue week (later resolutions don't rewrite old issues).
+  const ledgerCalls = await pages<StoredCall>((f, t) => db.from("forecast_calls").select("made_at,resolved_at,outcome,trait,stage_at_call,target_quarter").lt("made_at", range.endIso).order("id").range(f, t) as never);
+  const ledger = ledgerSummary(asOf(ledgerCalls, range.endIso));
   if (libCount.error || wire.error) throw libCount.error ?? wire.error;
   const [forecasts, previous] = runId == null ? [[], []] : await Promise.all([
     pages<FRow>((f, t) => db.from("forecasts").select(FCOLS).eq("run_id", runId).order("scope").order("dimension").order("value").range(f, t) as never),
@@ -68,7 +72,7 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
     week: b.week, brief: b.brief as unknown as StoredBrief,
     run: run ? { id: run.id, computed_at: run.computed_at, data_through: (run as { data_through: string | null }).data_through } : null,
     card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous, alerts: alerts ?? [], fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
-    numbers: { library_sites: libCount.count ?? null, crawl: crawl?.finished_at && crawlSites ? { finished_at: crawl.finished_at, sites: crawlSites } : null, wire_stories: wire.count ?? 0 },
+    numbers: { ledger: { rate: ledger.rate, hits: ledger.hits, resolved: ledger.resolved }, library_sites: libCount.count ?? null, crawl: crawl?.finished_at && crawlSites ? { finished_at: crawl.finished_at, sites: crawlSites } : null, wire_stories: wire.count ?? 0 },
   };
 }
 export async function loadIssue(week: string | null) { const rows = await issueRows(week); return rows ? issueModel(rows) : null; }
@@ -96,7 +100,10 @@ export async function traitRows(rawKey: string): Promise<TraitRows | null> {
     db.from("forecast_model_card").select("data_through:model_card->>data_through").maybeSingle().then(must),
   ]);
   const domains = [...new Set(rows.flatMap(r => (((r as { lead_sites?: { domain: string }[] | null }).lead_sites) ?? []).map(s => s.domain)))].slice(0, 40);
-  const thumbs = domains.length ? must(await db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains)) : [];
-  return { key, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null };
+  const [thumbs, calls] = await Promise.all([
+    domains.length ? db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).then(must) : Promise.resolve([]),
+    db.from("forecast_calls").select("*").eq("trait", key).order("made_at", { ascending: false }).order("id", { ascending: false }).limit(24).then(must),
+  ]);
+  return { key, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
 }
 export async function loadTrait(key: string) { const rows = await traitRows(key); return rows ? traitModel(rows) : null; }

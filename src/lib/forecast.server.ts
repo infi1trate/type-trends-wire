@@ -38,7 +38,10 @@ export async function runForecast(opts: { brief?: boolean; alerts?: "emit" | "dr
     const vibe = await computeVibe(runId).catch(e => ({ ok: false, code: e instanceof Error ? e.message : "vibe_failed" }));
     let chart: unknown = null;
     if (opts.brief !== false) { const { generateChartCard } = await import("./chart/chart.server"); chart = await generateChartCard().catch(e => ({ ok: false, code: e instanceof Error ? e.message : "chart_failed" })); }
-    return { ok: true, run_id: runId, model_card: result.card, alerts, taste, brief, vibe, chart };
+    // Forecast ledger last, so it sees this run's brief and alerts: records the calls, then resolves open ones. Never fails the run.
+    const { nonFatal } = await import("./ledger/ledger");
+    const ledger = await nonFatal("ledger", async () => (await import("./ledger/store.server")).ledgerStep(runId));
+    return { ok: true, run_id: runId, model_card: result.card, alerts, taste, brief, vibe, chart, ledger };
   } catch (e) {
     const error = runErrorText(stage, e);
     console.error("forecast run failed:", error);

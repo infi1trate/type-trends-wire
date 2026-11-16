@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
+import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
@@ -45,9 +46,13 @@ import { Route as ApiPublicLibraryRebuildRouteImport } from './routes/api/public
 import { Route as ApiPublicLibraryStateRouteImport } from './routes/api/public/library-state'
 import { Route as ApiPublicLibraryTagRouteImport } from './routes/api/public/library-tag'
 import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
+import { Route as ApiPublicMcpKeysRouteImport } from './routes/api/public/mcp-keys'
 import { Route as ApiPublicOauthProtectedResourceRouteImport } from './routes/api/public/oauth-protected-resource'
+import { Route as ApiPublicOembedRouteImport } from './routes/api/public/oembed'
 import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public/seed-candidates'
 import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/thumb-optout'
+import { Route as EmbedChartWeekRouteImport } from './routes/embed.chart.$week'
+import { Route as EmbedTraitKeyRouteImport } from './routes/embed.trait.$key'
 import { Route as ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport } from './routes/api/public/watch-feed.{$token}[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
@@ -58,6 +63,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuditDotpngRoute = AuditDotpngRouteImport.update({
   id: '/audit.png',
   path: '/audit.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LedgerRoute = LedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -236,12 +246,22 @@ const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
   path: '/api/public/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMcpKeysRoute = ApiPublicMcpKeysRouteImport.update({
+  id: '/api/public/mcp-keys',
+  path: '/api/public/mcp-keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOauthProtectedResourceRoute =
   ApiPublicOauthProtectedResourceRouteImport.update({
     id: '/api/public/oauth-protected-resource',
     path: '/api/public/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicOembedRoute = ApiPublicOembedRouteImport.update({
+  id: '/api/public/oembed',
+  path: '/api/public/oembed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSeedCandidatesRoute = ApiPublicSeedCandidatesRouteImport.update({
   id: '/api/public/seed-candidates',
   path: '/api/public/seed-candidates',
@@ -250,6 +270,16 @@ const ApiPublicSeedCandidatesRoute = ApiPublicSeedCandidatesRouteImport.update({
 const ApiPublicThumbOptoutRoute = ApiPublicThumbOptoutRouteImport.update({
   id: '/api/public/thumb-optout',
   path: '/api/public/thumb-optout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbedChartWeekRoute = EmbedChartWeekRouteImport.update({
+  id: '/embed/chart/$week',
+  path: '/embed/chart/$week',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbedTraitKeyRoute = EmbedTraitKeyRouteImport.update({
+  id: '/embed/trait/$key',
+  path: '/embed/trait/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
@@ -262,6 +292,7 @@ const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
@@ -296,14 +327,19 @@ export interface FileRoutesByFullPath {
   '/api/public/library-state': typeof ApiPublicLibraryStateRoute
   '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/mcp-keys': typeof ApiPublicMcpKeysRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
+  '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/embed/chart/$week': typeof EmbedChartWeekRoute
+  '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
@@ -338,15 +374,20 @@ export interface FileRoutesByTo {
   '/api/public/library-state': typeof ApiPublicLibraryStateRoute
   '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/mcp-keys': typeof ApiPublicMcpKeysRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
+  '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/embed/chart/$week': typeof EmbedChartWeekRoute
+  '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/audit/new': typeof AuditNewRoute
   '/chart/$week': typeof ChartWeekRoute
@@ -381,9 +422,13 @@ export interface FileRoutesById {
   '/api/public/library-state': typeof ApiPublicLibraryStateRoute
   '/api/public/library-tag': typeof ApiPublicLibraryTagRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/mcp-keys': typeof ApiPublicMcpKeysRoute
   '/api/public/oauth-protected-resource': typeof ApiPublicOauthProtectedResourceRoute
+  '/api/public/oembed': typeof ApiPublicOembedRoute
   '/api/public/seed-candidates': typeof ApiPublicSeedCandidatesRoute
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
+  '/embed/chart/$week': typeof EmbedChartWeekRoute
+  '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRouteTypes {
@@ -391,6 +436,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/audit.png'
+    | '/ledger'
     | '/robots.txt'
     | '/audit/new'
     | '/chart/$week'
@@ -425,14 +471,19 @@ export interface FileRouteTypes {
     | '/api/public/library-state'
     | '/api/public/library-tag'
     | '/api/public/mcp'
+    | '/api/public/mcp-keys'
     | '/api/public/oauth-protected-resource'
+    | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/embed/chart/$week'
+    | '/embed/trait/$key'
     | '/api/public/watch-feed/{$token}.xml'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/audit.png'
+    | '/ledger'
     | '/robots.txt'
     | '/audit/new'
     | '/chart/$week'
@@ -467,14 +518,19 @@ export interface FileRouteTypes {
     | '/api/public/library-state'
     | '/api/public/library-tag'
     | '/api/public/mcp'
+    | '/api/public/mcp-keys'
     | '/api/public/oauth-protected-resource'
+    | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/embed/chart/$week'
+    | '/embed/trait/$key'
     | '/api/public/watch-feed/{$token}.xml'
   id:
     | '__root__'
     | '/'
     | '/audit.png'
+    | '/ledger'
     | '/robots.txt'
     | '/audit/new'
     | '/chart/$week'
@@ -509,15 +565,20 @@ export interface FileRouteTypes {
     | '/api/public/library-state'
     | '/api/public/library-tag'
     | '/api/public/mcp'
+    | '/api/public/mcp-keys'
     | '/api/public/oauth-protected-resource'
+    | '/api/public/oembed'
     | '/api/public/seed-candidates'
     | '/api/public/thumb-optout'
+    | '/embed/chart/$week'
+    | '/embed/trait/$key'
     | '/api/public/watch-feed/{$token}.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuditDotpngRoute: typeof AuditDotpngRoute
+  LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   AuditNewRoute: typeof AuditNewRoute
   ChartWeekRoute: typeof ChartWeekRoute
@@ -552,9 +613,13 @@ export interface RootRouteChildren {
   ApiPublicLibraryStateRoute: typeof ApiPublicLibraryStateRoute
   ApiPublicLibraryTagRoute: typeof ApiPublicLibraryTagRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
+  ApiPublicMcpKeysRoute: typeof ApiPublicMcpKeysRoute
   ApiPublicOauthProtectedResourceRoute: typeof ApiPublicOauthProtectedResourceRoute
+  ApiPublicOembedRoute: typeof ApiPublicOembedRoute
   ApiPublicSeedCandidatesRoute: typeof ApiPublicSeedCandidatesRoute
   ApiPublicThumbOptoutRoute: typeof ApiPublicThumbOptoutRoute
+  EmbedChartWeekRoute: typeof EmbedChartWeekRoute
+  EmbedTraitKeyRoute: typeof EmbedTraitKeyRoute
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute: typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 
@@ -572,6 +637,13 @@ declare module '@tanstack/react-router' {
       path: '/audit.png'
       fullPath: '/audit.png'
       preLoaderRoute: typeof AuditDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ledger': {
+      id: '/ledger'
+      path: '/ledger'
+      fullPath: '/ledger'
+      preLoaderRoute: typeof LedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -812,11 +884,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMcpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mcp-keys': {
+      id: '/api/public/mcp-keys'
+      path: '/api/public/mcp-keys'
+      fullPath: '/api/public/mcp-keys'
+      preLoaderRoute: typeof ApiPublicMcpKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/oauth-protected-resource': {
       id: '/api/public/oauth-protected-resource'
       path: '/api/public/oauth-protected-resource'
       fullPath: '/api/public/oauth-protected-resource'
       preLoaderRoute: typeof ApiPublicOauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/oembed': {
+      id: '/api/public/oembed'
+      path: '/api/public/oembed'
+      fullPath: '/api/public/oembed'
+      preLoaderRoute: typeof ApiPublicOembedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/seed-candidates': {
@@ -833,6 +919,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicThumbOptoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/embed/chart/$week': {
+      id: '/embed/chart/$week'
+      path: '/embed/chart/$week'
+      fullPath: '/embed/chart/$week'
+      preLoaderRoute: typeof EmbedChartWeekRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embed/trait/$key': {
+      id: '/embed/trait/$key'
+      path: '/embed/trait/$key'
+      fullPath: '/embed/trait/$key'
+      preLoaderRoute: typeof EmbedTraitKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/watch-feed/{$token}.xml': {
       id: '/api/public/watch-feed/{$token}.xml'
       path: '/api/public/watch-feed/{$token}.xml'
@@ -846,6 +946,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuditDotpngRoute: AuditDotpngRoute,
+  LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   AuditNewRoute: AuditNewRoute,
   ChartWeekRoute: ChartWeekRoute,
@@ -880,9 +981,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLibraryStateRoute: ApiPublicLibraryStateRoute,
   ApiPublicLibraryTagRoute: ApiPublicLibraryTagRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
+  ApiPublicMcpKeysRoute: ApiPublicMcpKeysRoute,
   ApiPublicOauthProtectedResourceRoute: ApiPublicOauthProtectedResourceRoute,
+  ApiPublicOembedRoute: ApiPublicOembedRoute,
   ApiPublicSeedCandidatesRoute: ApiPublicSeedCandidatesRoute,
   ApiPublicThumbOptoutRoute: ApiPublicThumbOptoutRoute,
+  EmbedChartWeekRoute: EmbedChartWeekRoute,
+  EmbedTraitKeyRoute: EmbedTraitKeyRoute,
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute:
     ApiPublicWatchFeedChar123tokenChar125DotxmlRoute,
 }

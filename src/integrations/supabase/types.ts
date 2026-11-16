@@ -404,6 +404,93 @@ export type Database = {
         }
         Relationships: []
       }
+      forecast_calls: {
+        Row: {
+          actual_n: number | null
+          actual_share: number | null
+          backfilled: boolean
+          band_hi: number | null
+          band_lo: number | null
+          band_mid: number | null
+          created_at: string
+          data_through: string | null
+          direction: string | null
+          horizon_q: number | null
+          id: number
+          made_at: string
+          momentum: number | null
+          next_wave_score: number | null
+          origin: string
+          outcome: string | null
+          outcome_reason: string | null
+          resolved_at: string | null
+          run_id: number
+          scope: string
+          selected_by: string[]
+          share_at_call: number | null
+          stage_at_call: string | null
+          target_quarter: string | null
+          trait: string
+          week: string
+        }
+        Insert: {
+          actual_n?: number | null
+          actual_share?: number | null
+          backfilled?: boolean
+          band_hi?: number | null
+          band_lo?: number | null
+          band_mid?: number | null
+          created_at?: string
+          data_through?: string | null
+          direction?: string | null
+          horizon_q?: number | null
+          id?: never
+          made_at: string
+          momentum?: number | null
+          next_wave_score?: number | null
+          origin: string
+          outcome?: string | null
+          outcome_reason?: string | null
+          resolved_at?: string | null
+          run_id: number
+          scope: string
+          selected_by: string[]
+          share_at_call?: number | null
+          stage_at_call?: string | null
+          target_quarter?: string | null
+          trait: string
+          week: string
+        }
+        Update: {
+          actual_n?: number | null
+          actual_share?: number | null
+          backfilled?: boolean
+          band_hi?: number | null
+          band_lo?: number | null
+          band_mid?: number | null
+          created_at?: string
+          data_through?: string | null
+          direction?: string | null
+          horizon_q?: number | null
+          id?: never
+          made_at?: string
+          momentum?: number | null
+          next_wave_score?: number | null
+          origin?: string
+          outcome?: string | null
+          outcome_reason?: string | null
+          resolved_at?: string | null
+          run_id?: number
+          scope?: string
+          selected_by?: string[]
+          share_at_call?: number | null
+          stage_at_call?: string | null
+          target_quarter?: string | null
+          trait?: string
+          week?: string
+        }
+        Relationships: []
+      }
       forecast_runs: {
         Row: {
           computed_at: string
@@ -1087,6 +1174,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mcp_key_usage: {
+        Row: {
+          calls: number
+          day: string
+          key_id: string
+          tool: string
+        }
+        Insert: {
+          calls?: number
+          day: string
+          key_id: string
+          tool: string
+        }
+        Update: {
+          calls?: number
+          day?: string
+          key_id?: string
+          tool?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_key_usage_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_sha256: string
+          last_used_at: string | null
+          name: string
+          note: string | null
+          prefix: string
+          rate_per_min: number
+          revoked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_sha256: string
+          last_used_at?: string | null
+          name: string
+          note?: string | null
+          prefix: string
+          rate_per_min?: number
+          revoked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_sha256?: string
+          last_used_at?: string | null
+          name?: string
+          note?: string | null
+          prefix?: string
+          rate_per_min?: number
+          revoked_at?: string | null
+        }
+        Relationships: []
       }
       palette_examples: {
         Row: {
@@ -2789,6 +2941,10 @@ export type Database = {
         Returns: Json
       }
       library_sync: { Args: { p_sites: Json }; Returns: undefined }
+      mcp_key_count: {
+        Args: { p_key: string; p_tool: string }
+        Returns: undefined
+      }
       normalize_currency: { Args: { c: string }; Returns: string }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
       refresh_library_history: { Args: never; Returns: undefined }

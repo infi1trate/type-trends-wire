@@ -274,6 +274,13 @@
       "when": 1794779026823,
       "tag": "0038_watchlists",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794787128052,
+      "tag": "0039_forecast_ledger_and_mcp_keys",
+      "breakpoints": true
     }
   ]
 }

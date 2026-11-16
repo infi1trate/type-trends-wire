@@ -32,7 +32,8 @@ export type IssueRows = {
   sites: { domain: string; sector: string; name: string | null }[];
   thumbs: ThumbRow[];
   rebrands: RebrandLite[];
-  numbers: { library_sites: number | null; crawl: { finished_at: string; sites: number } | null; wire_stories: number };
+  /** Live forecast record as of the issue's end; the hit rate shows only once `rate` is set (≥20 resolved calls). */
+  numbers: { ledger?: { rate: number | null; hits: number; resolved: number } | null; library_sites: number | null; crawl: { finished_at: string; sites: number } | null; wire_stories: number };
 };
 
 export type TraitRef = { key: string; name: string; dimension: Dimension; stage: StageName | null; href: string };
@@ -161,6 +162,7 @@ export function issueModel(r: IssueRows): Issue | null {
     { label: "Stories on the wire", value: String(r.numbers.wire_stories), note: `design news items published ${range.label}` },
     all.length ? { label: "Signals forecast", value: String(all.length), note: `staged in forecast run ${r.run?.id ?? "—"}` } : null,
     { label: "Breakout alerts", value: String(r.alerts.filter(a => a.tags?.includes("breakout")).length), note: "at most ten a week, by rule" },
+    r.numbers.ledger?.rate != null ? { label: "Forecast hit rate", value: `${Math.round(r.numbers.ledger.rate * 100)}%`, note: `${r.numbers.ledger.hits} of ${r.numbers.ledger.resolved} resolved calls landed in their band; see the ledger` } : null,
   ].filter((x): x is { label: string; value: string; note: string } => !!x);
 
   const issue: Issue = {

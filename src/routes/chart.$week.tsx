@@ -4,6 +4,8 @@ import { chartCardQuery } from "@/lib/data";
 import { ChartOfWeek } from "@/components/terminal/ChartCard";
 import { SITE_URL } from "@/lib/site";
 import { cardText } from "@/lib/chart/card";
+import { oembedLink } from "@/lib/embed/embed";
+import { EmbedPanel } from "@/components/embed/EmbedPanel";
 
 export const Route = createFileRoute("/chart/$week")({
   loader: async ({ context, params }) => {
@@ -19,7 +21,7 @@ export const Route = createFileRoute("/chart/$week")({
     return {
       meta: [{ title }, { name: "description", content: loaderData.call }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.call }, { property: "og:type", content: "article" }, { property: "og:url", content: url },
         { property: "og:image", content: img }, { property: "og:image:width", content: "1200" }, { property: "og:image:height", content: "675" }, { name: "twitter:card", content: "summary_large_image" }, { name: "twitter:image", content: img }],
-      links: [{ rel: "canonical", href: url }],
+      links: [{ rel: "canonical", href: url }, oembedLink(url, loaderData.name)],
     };
   },
   component: WeekChart,
@@ -32,5 +34,6 @@ function WeekChart() {
   return <main className="min-h-dvh bg-void">
     <header className="flex h-8 items-center justify-between border-b border-rule bg-g900 px-3"><h1 className="label font-semibold">CHART OF THE WEEK · {week}</h1><Link to="/" search={{ panel: "brief" }} className="label text-ink hover:underline">← F10 FORECAST</Link></header>
     <ChartOfWeek card={data} />
+    {data && <div className="border-t border-rule p-3"><EmbedPanel variant="terminal" target={{ kind: "chart", week }} title={`${cardText(data.model).name} [${cardText(data.model).dimension}]`} /></div>}
   </main>;
 }

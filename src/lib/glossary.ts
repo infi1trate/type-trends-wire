@@ -61,6 +61,7 @@ const PANELS: Row[] = [
 
 const METRICS: Row[] = [
   ["gap", "Gap", "How far trendsetter sites are ahead of everyone else on a trait, in share points.", "A big gap means leaders adopted it and the rest haven't caught up yet.", "m-next-wave-components"],
+  ["ledger", "Live record", "Every forecast call we recorded and how it resolved: a hit lands inside the predicted band and moves the way we said.", "Percentages appear only after 20 resolved calls; void calls (the signal lost coverage) are not counted. The backtest is a separate replay of history.", "m-ledger"],
   ["momentum", "Momentum", "How fast a trait's share is changing, in points per quarter.", "Positive means growing; +2 means two more sites in every hundred each quarter.", "m-forecast"],
   ["pts-q", "pts/q", "Percentage points of share gained or lost per quarter.", "Going from 10% to 12% share in one quarter is +2 pts/q.", "m-forecast"],
   ["vanguard", "Vanguard", "How much more design-led sites use a trait than mainstream sites.", "Positive means the design vanguard is ahead of the mainstream.", "m-crawler"],

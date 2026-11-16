@@ -17,10 +17,12 @@ type OpenPath = { prefix?: string; exact?: string; pattern?: RegExp; why: string
 
 /** Everything here bypasses the gate. Everything else (every page route, RSS, server functions) is gated. */
 export const OPEN_PATHS: readonly OpenPath[] = [
-  { prefix: "/api/public/", why: "Machine endpoints that verify their own callers: cron callbacks, crawler/thumb ingest, thumb-optout, health, library-state, and the MCP endpoint (/api/public/mcp, incl. its trend://methodology resource) with its OAuth metadata." },
+  { prefix: "/api/public/", why: "Machine endpoints that verify their own callers: cron callbacks, crawler/thumb ingest, thumb-optout, health, library-state, and the MCP endpoint (/api/public/mcp, incl. its trend://methodology resource) with its OAuth metadata, the owner-only MCP key admin, and the oEmbed provider." },
   // The one human-content endpoint outside the gate: per-watchlist RSS (already under /api/public/, listed here on purpose).
   // RSS readers can't send the password, so the unguessable 22-char feed token is the credential; the edit link rotates it and unknown tokens 404.
   { pattern: /^\/api\/public\/watch-feed\/[A-Za-z0-9_-]{22}\.xml$/, why: "Per-watchlist RSS alerts: a capability URL protected by its unguessable, rotatable feed token (no personal data, noindex)." },
+  // Embeds render inside other sites' iframes, where no password can be entered.
+  { prefix: "/embed/", why: "Embeddable widgets (/embed/trait/<key>, /embed/chart/<week>): embeds render on other sites where no password can be entered; each shows one signal's public chart, the same information as the already-open share images." },
   { pattern: /^\/chart\/[^/]+\.(png|svg)$/, why: "Chart-of-the-week share images, so link previews render." },
   { exact: "/audit.png", why: "Competitive-audit share card (domain names and capture date only), so link previews render." },
   { pattern: /^\/digest\/[^/]+\.png$/, why: "Digest issue OG images, so link previews render." },

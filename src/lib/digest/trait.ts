@@ -5,10 +5,11 @@ import { cardModel, usableSeries, MIN_SERIES, type ForecastLike } from "../chart
 import type { CardModel } from "../chart/card";
 import { pickThumb, type Thumb, type ThumbRow } from "../thumbs";
 import { traitDefinition, pct, pts } from "./copy";
+import { ledgerItem, type LedgerItem, type StoredCall } from "../ledger/ledger";
 
 type Raw = Record<string, unknown> | null;
 export type TRow = ForecastLike & { status: string; next_wave_score: number | null; components: Raw; lead_sites: { domain: string; adopted?: string | null; lead?: number | null }[] | null; computed_at: string };
-export type TraitRows = { key: string; rows: TRow[]; peers: { dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }[]; sites: { domain: string; sector: string; name: string | null }[]; thumbs: ThumbRow[]; data_through: string | null };
+export type TraitRows = { key: string; rows: TRow[]; peers: { dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }[]; sites: { domain: string; sector: string; name: string | null }[]; thumbs: ThumbRow[]; data_through: string | null; calls?: StoredCall[] };
 export type TraitPage = {
   key: string; name: string; dimension: Dimension; stage: StageName | null; share: number | null; momentum: number | null; nextWave: number | null;
   definition: string; stageNote: string | null; dimensionNote: string | null; card: CardModel | null; chartNote: string | null;
@@ -17,6 +18,8 @@ export type TraitPage = {
   examples: { domain: string; name: string | null; sector: string; adopted: string | null; thumb: Thumb | null; terminal: string; live: string }[];
   related: { key: string; name: string; stage: StageName | null; share: number | null; href: string }[];
   terminal: string; dataThrough: string | null; runId: number | null; computedAt: string | null;
+  /** This signal's past ledger calls, newest first. */
+  calls: LedgerItem[];
 };
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
@@ -60,6 +63,7 @@ export function traitModel(t: TraitRows): TraitPage | null {
     definition: traitDefinition(key), stageNote: stage ? g(stageId(stage))?.measures ?? null : null, dimensionNote: g(dimensionId(l.dimension))?.measures ?? null,
     card, chartNote: card ? null : "Not enough usable quarters for a chart yet: a trait needs two quarters with at least 15 sites and 25% archive coverage.",
     sectors, receipts, examples, related, terminal: `/?panel=brief&trait=${encodeURIComponent(key)}&sector=all`, dataThrough: quarter(t.data_through), runId: all.run_id ?? null, computedAt: all.computed_at ?? null,
+    calls: (t.calls ?? []).slice(0, 24).map(ledgerItem),
   };
 }
 export const traitSummary = (p: TraitPage) => [p.stage ? `${p.stage}` : "Not staged yet", pct(p.share, 1) ? `${pct(p.share, 1)} of tracked homepages` : null, p.momentum != null ? `${p.momentum >= 0 ? "gaining" : "losing"} ${pts(p.momentum)}` : null].filter(Boolean).join(" · ");
