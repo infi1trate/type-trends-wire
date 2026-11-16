@@ -58,6 +58,7 @@ export function liveModel(all: StoryRecord[], o: { sector: string; page: number;
     lead: lead ? toStory(lead) : null, leadPinned: !!pinned, stories: ordered.slice(page * STORIES_PER_PAGE, (page + 1) * STORIES_PER_PAGE).map(toStory),
     total: ordered.length, page, pages, type: o.type, counts, inSector,
     launches: stream.filter(s => s.type === "launch").slice(0, 6).map(toStory),
+    /** Live's "Updated" stamp: when the newest published story was stored. */
     updatedAt: stream.map(s => s.created_at).sort().at(-1) ?? null,
   };
 }

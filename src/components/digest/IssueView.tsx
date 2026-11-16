@@ -48,6 +48,16 @@ export function IssueView({ issue }: { issue: Issue }) {
         </div>}
       </section>
 
+      {issue.stories && <section aria-labelledby="ed-stories" className="ed-wrap mt-20">
+        <SectionHead n={n("stories")} id="ed-stories" title="The week in stories" kicker="The week's top published stories by score, each with its receipts." />
+        <ol className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2">
+          {issue.stories.map((s, i) => <li key={s.id} className="ed-hair grid grid-cols-[3ch_1fr] gap-x-3 pt-4">
+            <span className="ed-data">{i + 1}</span>
+            <span><span className="ed-kicker block">{s.kicker}</span><Link to="/stories/$id" params={{ id: s.id }} className="ed-h3 no-underline hover:underline" {...pr(s.href)}>{s.headline}</Link>{s.deck && <span className="ed-small mt-1 block">{s.deck}</span>}<span className="ed-data ed-muted mt-1 block">Score {s.score}</span></span>
+          </li>)}
+        </ol>
+      </section>}
+
       {issue.movers && <section aria-labelledby="ed-movers" className="ed-wrap mt-20">
         <SectionHead n={n("movers")} id="ed-movers" title="The Movers" kicker="Signals that broke out or changed stage since the previous forecast run." />
         <ol className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">

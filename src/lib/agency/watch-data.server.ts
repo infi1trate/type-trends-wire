@@ -5,7 +5,8 @@ import type { ThumbRow } from "../thumbs";
 import type { EventRow, RebrandRow } from "./changes";
 import type { WatchPublic } from "./watch";
 import { FEED_DAYS, type AlertRow, type RunRow, type SiteInfo, type StageRow, type TraitNow, type WatchRows } from "./watch-feed";
-import { readerRunId } from "../real-runs";
+import { fetchRealRuns, readerRunId } from "../real-runs";
+import { gapChain } from "../run-gap";
 
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500, max = 20) {
@@ -19,18 +20,18 @@ export async function loadWatchRows(w: WatchPublic, now: Date): Promise<WatchRow
   const db = supabaseAnon(), domains = [...new Set([...w.sites, ...w.pending_sites])], readerRun = await readerRunId(db);
   const since = new Date(+now - FEED_DAYS * 864e5).toISOString();
   const none = Promise.resolve([] as never[]);
-  const [sites, events, lastEvent, history, thumbs, runsIn, runBefore, alerts, latestAll] = await Promise.all([
+  const [sites, events, lastEvent, history, thumbs, chain, alerts, latestAll] = await Promise.all([
     domains.length ? db.from("library_sites").select("domain,sector,name,last_change_at").in("domain", domains).then(must) : none,
     domains.length ? pages<EventRow>((f, t) => db.from("library_event_feed").select(EVENT_COLS).in("domain", domains).eq("source", "live").eq("viewport", "desktop").gte("detected_at", since).order("detected_at", { ascending: false }).order("id", { ascending: false }).range(f, t) as never, 500, 2) : none,
     domains.length ? db.from("library_event_feed").select(EVENT_COLS).in("domain", domains).eq("source", "live").eq("viewport", "desktop").order("detected_at", { ascending: false }).limit(1).then(must) : none,
     w.sites.length ? db.from("library_site_history").select("domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags").in("domain", w.sites).eq("now", true).then(must) : none,
     domains.length ? db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).order("captured_at", { ascending: false }).limit(100).then(must) : none,
-    db.from("forecast_runs").select("id,computed_at").eq("status", "ok").gte("computed_at", since).order("computed_at").limit(40).then(must),
-    db.from("forecast_runs").select("id,computed_at").eq("status", "ok").lt("computed_at", since).order("computed_at", { ascending: false }).limit(1).then(must),
+    // Run-to-run changes use real runs only, chained under the gap rule (run-gap.ts), like every other reader surface.
+    fetchRealRuns(db, { limit: 40 }).then(rs => { const chain = gapChain(rs).map(r => ({ id: r.id, computed_at: r.at })); return { inside: chain.filter(r => r.computed_at >= since), before: chain.filter(r => r.computed_at < since).slice(-1) }; }),
     db.from("wire_items").select("id,title,ref,url,published_at").eq("source_kind", "alert").not("ref", "is", null).gte("published_at", since).order("published_at", { ascending: false }).limit(300).then(must),
     pages<TraitNow & { scope: string }>((f, t) => db.from("forecasts").select("dimension,value,scope,stage,current_share").eq("run_id", readerRun).eq("scope", "all").order("dimension").order("value").range(f, t) as never),
   ]);
-  const runList = [...(runBefore ?? []), ...(runsIn ?? [])];
+  const runList = [...chain.before, ...chain.inside];
   const ids = runList.map(r => r.id);
   const [briefs, stages] = await Promise.all([
     ids.length ? db.from("weekly_briefs").select("week,run_id").in("run_id", ids).then(must) : none,

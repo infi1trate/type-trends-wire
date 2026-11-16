@@ -22,14 +22,18 @@ export async function authenticateCrawler(request: Request): Promise<boolean> {
   return !!configured && constantTimeHashEqual(await sha256Hex(secret), configured.secret_sha256);
 }
 
-export async function handleLibraryState(request: Request): Promise<Response> {
+export async function handleLibraryState(request: Request, deps: { vanguard?: () => Promise<string[]> } = {}): Promise<Response> {
   try {
     if (!await authenticateCrawler(request)) return Response.json({ error: "unauthorized" }, { status: 401 });
     const source=new URL(request.url).searchParams.get("source");
     if(source!==null&&source!=="live"&&source!=="wayback")return Response.json({error:"Invalid source"},{status:400});
     const { data, error } = await db.rpc(source==="wayback"?"library_archive_state":"library_state");
     if (error) throw new Error("Library state lookup failed");
-    return Response.json(data, { headers: { "cache-control": "no-store" } });
+    if (source === "wayback") return Response.json(data, { headers: { "cache-control": "no-store" } });
+    // Additive: the brands worth a full daily look (vanguard.ts). Existing fields are unchanged.
+    const vanguard = await (deps.vanguard ?? (async () => (await import("./vanguard.server")).loadVanguard()))();
+    const body = data && typeof data === "object" && !Array.isArray(data) ? { ...(data as Record<string, unknown>), vanguard } : data;
+    return Response.json(body, { headers: { "cache-control": "no-store" } });
   } catch {
     return Response.json({ error: "Internal error" }, { status: 500 });
   }

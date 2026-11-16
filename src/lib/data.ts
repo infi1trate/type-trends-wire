@@ -15,7 +15,7 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome } from "./read.functions";
 import { comparisonPair } from "./run-gap";
 import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
 import type { StageRow, TodayInput } from "./today";
@@ -391,6 +391,14 @@ export const ledgerQuery = () => queryOptions({ queryKey: ["ledger"], staleTime:
 
 // Read mode (Phase 13): the same objects as the terminal, server-assembled with the public 10-minute TTL.
 export type LiveTypeFilter = "all" | "moves" | "signals" | "openings" | "news";
+/** Every recurring job in plain words (freshness.ts); the Read shell line, /status table and Live stamp share it. */
+export const freshnessQuery = () => queryOptions({ queryKey: ["freshness"], staleTime: 60_000, refetchInterval: 120_000, queryFn: () => getFreshness() });
+// Editions (Morning Line daily, sector reports quarterly), /editions and the private /welcome: stored data only.
+export const morningQuery = (day: string | null) => queryOptions({ queryKey: ["morning", day], staleTime: 60_000, queryFn: () => getMorning({ data: { day } }) });
+export const sectorReportQuery = (sector: string) => queryOptions({ queryKey: ["sector-report", sector], staleTime: 5 * 60_000, queryFn: () => getSectorReport({ data: { sector } }) });
+export const sectorIndexQuery = () => queryOptions({ queryKey: ["sector-index"], staleTime: 5 * 60_000, queryFn: () => getSectorIndex() });
+export const editionsQuery = () => queryOptions({ queryKey: ["editions"], staleTime: 60_000, queryFn: () => getEditions() });
+export const welcomeQuery = () => queryOptions({ queryKey: ["welcome"], staleTime: 60_000, queryFn: () => getWelcome() });
 export const liveQuery = (sector: string, page: number, type: LiveTypeFilter = "all") => queryOptions({ queryKey: ["live", sector, page, type], staleTime: 60_000, queryFn: () => getLive({ data: { sector, page, type } }) });
 export const storyQuery = (id: string) => queryOptions({ queryKey: ["story", id], staleTime: 60_000, queryFn: () => getStory({ data: { id } }) });
 /** Today's queue (published, held, killed) for the desk and Terminal › Live › Today; `fresh` skips the server's short cache. */

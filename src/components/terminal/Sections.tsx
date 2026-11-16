@@ -74,7 +74,7 @@ export function LedgerTab() {
 export const CONSOLE_HELP: [string, string][] = [
   ["type fintech headline free", "Recommend headline type for a sector."], ["type pair any", "Recommend a headline + body pairing."], ["palette ai dark", "Recommend a palette for a sector and mood."],
   ["diff dev-tools", "Where a sector (or URLs) could look different."], ["critique https://linear.app", "Critique one homepage against the market."], ["q serif AND fintech AND rising", "Query signals by name, sector and stage."],
-  ["watch", "Watchlists on this device; watch new / add / rm / open."], ["audit linear.app vercel.com", "Open a competitive audit."], ["ledger", "The live forecast record."],
+  ["watch", "Watchlists on this device; watch new / add / rm / open."], ["audit linear.app vercel.com", "Open a competitive audit."], ["ledger", "The live forecast record."], ["morning", "Today's Morning Line inline (morning 2026-11-16 for another day)."],
   ["today", "Live · Today."], ["signals", "Signals · All signals."], ["digest", "The Digest."], ["glossary", "The glossary."], ["tour", "Restart the tour."], ["read", "Switch to Read mode on the same page."],
 ];
 /** F6 TOOLS › CONSOLE: every command with what it does; each opens the console prefilled. */

@@ -28,6 +28,8 @@ export const TABS = [
   { id: "history", section: "brands", label: "HISTORY" },
   { id: "patterns", section: "patterns", label: "PATTERNS" },
   { id: "digest", section: "digest", label: "ISSUES" },
+  { id: "morning", section: "digest", label: "MORNING LINE" },
+  { id: "sectors", section: "digest", label: "SECTOR REPORTS" },
   { id: "watch", section: "tools", label: "WATCH" },
   { id: "audit", section: "tools", label: "AUDIT" },
   { id: "ledger", section: "tools", label: "LEDGER" },
@@ -43,9 +45,16 @@ export const SECTIONS: readonly Section[] = [
   { id: "signals", label: "Signals", purpose: "The design signals worth a decision, ranked, each with its receipts.", read: "/signals", terminal: "overview", key: "F2" },
   { id: "brands", label: "Brands", purpose: "Who is doing it: tracked brands, their identity and every confirmed move.", read: "/brands", terminal: "library", key: "F3" },
   { id: "patterns", label: "Patterns", purpose: "Signals seen as examples: the brands that show each layout pattern.", read: "/patterns", terminal: "patterns", key: "F4" },
-  { id: "digest", label: "Digest", purpose: "The weekly edition: movers, specimens, palettes and rebrands of the week.", read: "/digest", terminal: "digest", key: "F5" },
+  { id: "digest", label: "Digest", purpose: "The editions: the daily Morning Line, the weekly Digest and quarterly sector reports.", read: "/digest", terminal: "digest", key: "F5" },
   { id: "tools", label: "Tools", purpose: "Where to act: audits, watchlists, the forecast ledger and agent access.", read: "/tools", terminal: "watch", key: "F6" },
 ];
+
+/** EDITIONS — the shapes people subscribe to in their heads, all under the Digest section, each with its rhythm. */
+export const EDITIONS = [
+  { id: "morning", name: "The Morning Line", rhythm: "Daily", read: "/morning", tab: "morning", what: "The day's lead, five more stories ranked by score, Moving now, one opening and what the desk held." },
+  { id: "digest", name: "The Digest", rhythm: "Weekly", read: "/digest", tab: "digest", what: "The week in stories, movers, specimens, palettes and rebrands of the week." },
+  { id: "sectors", name: "Sector reports", rhythm: "Quarterly", read: "/sectors", tab: "sectors", what: "The state of one sector this quarter: its signals against all sectors, white space, counter-moves, leaders and patterns." },
+] as const satisfies readonly { id: string; name: string; rhythm: string; read: string; tab: TabId; what: string }[];
 
 /** The fourteen panels the terminal had before Phase 13, with their old keys (kept for aliases and tests). */
 export const LEGACY_PANELS = [
@@ -68,7 +77,7 @@ export const LEGACY_PANELS = [
 /** Other names that still open the right view (muscle memory, shared links, section ids). */
 export const VIEW_ALIASES: Record<string, ViewId> = {
   ticker: "overview", signals: "overview", forecast: "brief", spread: "overview", voice: "lexicon", directory: "library", moves: "rebrands",
-  issues: "digest", live: "today", brands: "library", tools: "watch", help: "console", stories: "today",
+  issues: "digest", editions: "digest", morning_line: "morning", sector: "sectors", reports: "sectors", live: "today", brands: "library", tools: "watch", help: "console", stories: "today",
 };
 const isView = (v: string): v is ViewId => v === "composition" || TABS.some(t => t.id === v);
 export function resolveView(id: unknown): ViewId {
@@ -162,6 +171,8 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     if (view === "rebrands") return `/brands${qs({ tab: "moves", sector })}`;
     if (view === "ledger") return "/ledger";
     if (view === "audit") return "/audit/new";
+    if (view === "morning") return "/morning";
+    if (view === "sectors") return sector ? `/sectors/${enc(sector)}` : "/sectors";
     return `${sectionById(sectionOf(view)).read}${qs({ sector })}`;
   }
   const t = (v: ViewId, trait?: string) => terminalHref(v, { trait, sector });
@@ -173,7 +184,9 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     case "what-we-show": return t("overview");
     case "brands": return seg[1] ? `/library/${enc(seg[1])}` : t(search["tab"] === "moves" ? "rebrands" : "library");
     case "patterns": return seg[1] ? t("patterns", seg[1]) : t("patterns");
-    case "digest": case "chart": return t("digest");
+    case "digest": case "chart": case "editions": return t("digest");
+    case "morning": return t("morning");
+    case "sectors": return terminalHref("sectors", { sector: seg[1] ?? sector });
     case "watch": return t("watch");
     case "audit": return t("audit");
     case "ledger": return t("ledger");
@@ -188,8 +201,8 @@ export function readSectionOf(pathname: string): SectionId | null {
   if (s === "signals" || s === "trait" || s === "what-we-show") return "signals";
   if (s === "brands") return "brands";
   if (s === "patterns") return "patterns";
-  if (s === "digest" || s === "chart") return "digest";
-  if (["tools", "status", "watch", "audit", "ledger", "desk"].includes(s)) return "tools";
+  if (["digest", "chart", "morning", "sectors", "editions"].includes(s)) return "digest";
+  if (["tools", "status", "watch", "audit", "ledger", "desk", "welcome"].includes(s)) return "tools";
   return null;
 }
 
@@ -217,6 +230,13 @@ export const SURFACES: Record<string, Surface> = {
   "digest.archive": S("digest", "read", "shown", "Every issue."),
   "digest.rss[.]xml": S("digest", "read", "quiet", "Digest RSS feed (gated)."),
   "digest.{$week}[.]png": S("digest", "both", "quiet", "Issue share image (open)."),
+  "editions": S("digest", "read", "shown", "Editions index: the Morning Line (daily), the Digest (weekly) and sector reports (quarterly)."),
+  "morning.index": S("digest", "read", "shown", "The Morning Line, today's edition (UTC day) with the archive."),
+  "morning.$date": S("digest", "read", "shown", "One Morning Line edition; permanent once its UTC day ends."),
+  "morning.rss[.]xml": S("digest", "read", "quiet", "Morning Line RSS feed (gated like the Digest feed)."),
+  "sectors.index": S("digest", "read", "shown", "Sector reports index, covered sectors first."),
+  "sectors.$sector": S("digest", "read", "shown", "State of a sector this quarter, with a print stylesheet."),
+  "welcome": S("tools", "read", "quiet", "Private landing page (LANDING_PUBLIC = false); gated, linked from /tools only."),
   "chart.index": S("digest", "terminal", "quiet", "Chart of the week, latest (linked from Live and the Digest)."),
   "chart.$week": S("digest", "terminal", "quiet", "Chart of the week page."),
   "chart.{$week}[.]png": S("digest", "both", "quiet", "Chart share image (open)."),
@@ -235,7 +255,7 @@ export const SURFACES: Record<string, Surface> = {
   "robots[.]txt": S("tools", "both", "quiet", "Crawler instructions."),
   "thumbs.$": S("brands", "both", "quiet", "Credited homepage thumbnails."),
   "crops.$": S("brands", "both", "quiet", "Credited section crops (hero, navigation, pricing, call to action, footer); gated like any page, never served for opted-out sites."),
-  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 24 tools (agent access)."),
+  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 26 tools (agent access)."),
   "api/public/oembed": S("tools", "both", "quiet", "oEmbed provider for signal and chart pages."),
   "api/public/watch-feed.{$token}[.]xml": S("tools", "both", "quiet", "Per-watchlist RSS."),
   "api/public/health": S("tools", "both", "quiet", "Machine-readable health; shown in words on /status."),
@@ -256,6 +276,8 @@ export const SURFACES: Record<string, Surface> = {
   "panel:history": S("brands", "terminal", "shown", "Brands · History (old F12)."),
   "panel:patterns": S("patterns", "terminal", "shown", "Patterns: dense pattern list."),
   "panel:digest": S("digest", "terminal", "shown", "Digest issues in terminal density (key D)."),
+  "panel:morning": S("digest", "terminal", "shown", "Digest › Morning Line: today's edition in terminal density."),
+  "panel:sectors": S("digest", "terminal", "shown", "Digest › Sector reports: sectors with coverage, opening each report."),
   "panel:watch": S("tools", "terminal", "shown", "Tools · Watch (key W)."),
   "panel:audit": S("tools", "terminal", "shown", "Tools · Audit launcher."),
   "panel:ledger": S("tools", "terminal", "shown", "Tools · Ledger summary."),
@@ -272,6 +294,7 @@ export const SURFACES: Record<string, Surface> = {
   "cmd:tour": S("live", "terminal", "shown", "Restart the tour."),
   "cmd:glossary": S("tools", "terminal", "shown", "Open the glossary."),
   "cmd:digest": S("digest", "terminal", "shown", "Open the Digest."),
+  "cmd:morning": S("digest", "terminal", "shown", "Today's Morning Line inline (morning <YYYY-MM-DD> for another day)."),
   "cmd:watch": S("tools", "terminal", "shown", "watch, watch new/add/rm/open."),
   "cmd:audit": S("tools", "terminal", "shown", "audit <sites>."),
   "cmd:ledger": S("tools", "terminal", "shown", "The live record inline."),

@@ -10,6 +10,7 @@ import { TYPE_FILTERS, type TypeFilter } from "@/lib/stories/view";
 import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/Editorial";
 import { StoryCard } from "./StoryCard";
 import { ReadFooter } from "./Bits";
+import { NextCheck } from "./Freshness";
 
 export type LiveData = Awaited<ReturnType<typeof loadLive>>;
 const FILTERS = Object.keys(TYPE_FILTERS) as TypeFilter[];
@@ -19,7 +20,7 @@ export function LiveView({ d }: { d: LiveData }) {
   const what = d.type === "all" ? "stories" : `${TYPE_FILTERS[d.type].label.toLowerCase()} stories`;
   return <DigestShell label="Live" section="live" lens note={ranked} tour>
     <div className="ed-wrap pt-6" data-tour="r-live">
-      <p className="ed-kicker flex flex-wrap gap-x-3"><span>Live</span><span className="ed-muted">Updated {d.updatedAt ? storyTime(d.updatedAt) : "—"}</span></p>
+      <p className="ed-kicker flex flex-wrap gap-x-3"><span>Live</span><span className="ed-muted">Updated {d.updatedAt ? storyTime(d.updatedAt) : "—"}<NextCheck /></span></p>
       {d.lead ? <div className="mt-4 border-b-2 border-ed-ink pb-8">{d.leadPinned && <p className="ed-kicker ed-muted mb-2">Pinned by the editor</p>}<StoryCard s={d.lead} lead /></div>
         : <p className="ed-standfirst mt-4">No story has run yet. Stories are written after each crawl, forecast and news check, and only when something in the data clears the bar.</p>}
     </div>

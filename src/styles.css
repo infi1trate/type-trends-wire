@@ -232,6 +232,7 @@
 .digest .ed-specimen { font-size: clamp(36px, 7vw, 72px); line-height: 1.05; overflow-wrap: anywhere; }
 @media (max-width: 1023px) { .digest .ed-bleed { margin-inline: -20px; } }
 @media (prefers-reduced-motion: reduce) { .digest * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+.digest .print-only { display: none; }
 .library .site-thumb { display: block; width: 100%; max-width: 320px; height: auto; border: 1px solid var(--rule); }
 
 }
@@ -243,4 +244,11 @@
   .digest section, .digest figure, .digest li { break-inside: avoid; }
   .digest .ed-thumb, .digest img { max-width: 100% !important; }
   .digest .ed-wrap { max-width: none; padding: 0; }
+  /* Sector reports print as a clean multi-page document: cover block on page one, each later block starts with its heading kept with its body. */
+  .digest .sector-report > section { break-inside: auto; margin-top: 10mm; }
+  .digest .sector-report > section > header { break-after: avoid; }
+  .digest .sector-report .sector-cover { break-after: page; }
+  .digest .sector-report table { width: 100%; font-size: 9pt; }
+  .digest .sector-report tr { break-inside: avoid; }
+  .digest .sector-report .print-only { display: block !important; }
 }

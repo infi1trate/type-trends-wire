@@ -51,3 +51,28 @@ export const getModelCard = createServerFn({ method: "GET" }).handler(async () =
   if (error) throw error;
   return data ? { card: data.model_card as Json, computed_at: data.computed_at as string } : null;
 });
+export const getFreshness = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadFreshness } = await import("./freshness.server");
+  return loadFreshness();
+});
+// Editions: the Morning Line, sector reports, /editions and the private /welcome page. Stored data only; no AI per view.
+export const getMorning = createServerFn({ method: "GET" }).inputValidator(z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null) })).handler(async ({ data }) => {
+  const { loadMorning } = await import("./editions/editions.server");
+  return loadMorning(data.day);
+});
+export const getSectorReport = createServerFn({ method: "GET" }).inputValidator(z.object({ sector: z.string().min(2).max(40) })).handler(async ({ data }) => {
+  const { loadSectorReport } = await import("./editions/editions.server");
+  return loadSectorReport(data.sector);
+});
+export const getSectorIndex = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadSectorIndex } = await import("./editions/editions.server");
+  return loadSectorIndex(null);
+});
+export const getEditions = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadEditions } = await import("./editions/editions.server");
+  return loadEditions(null);
+});
+export const getWelcome = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadWelcome } = await import("./editions/welcome.server");
+  return loadWelcome();
+});

@@ -29,6 +29,16 @@ export function comparisonPair<R extends RunRef>(runs: R[]): { latest: R; earlie
   const cut = Date.parse(latest.at) - MIN_RUN_GAP_DAYS * DAY, earlier = sorted.filter(r => r.id !== latest.id && Date.parse(r.at) <= cut).at(-1);
   return earlier ? { latest, earlier, days: Math.round((Date.parse(latest.at) - Date.parse(earlier.at)) / DAY * 10) / 10 } : null;
 }
+/**
+ * A run-to-run chain under the gap rule, oldest first: the newest run, then repeatedly the most recent run at least MIN_RUN_GAP_DAYS older
+ * than the last one kept. Consecutive entries are therefore always valid week-over-week comparisons (reruns in between are skipped).
+ */
+export function gapChain<R extends RunRef>(runs: R[]): R[] {
+  const sorted = [...runs].filter(r => Number.isFinite(Date.parse(r.at))).sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id - b.id);
+  const out: R[] = [];
+  for (let i = sorted.length - 1; i >= 0; i--) { const r = sorted[i]!, last = out[0]; if (!last || Date.parse(r.at) <= Date.parse(last.at) - MIN_RUN_GAP_DAYS * DAY) out.unshift(r); }
+  return out;
+}
 /** True when two runs are far enough apart to compare. */
 export const gapOk = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) >= MIN_RUN_GAP_DAYS * DAY;
 

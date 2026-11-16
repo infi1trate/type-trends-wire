@@ -11,6 +11,7 @@ import { fetchRealRuns } from "../real-runs";
 import { planStories, type Existing, type Planned } from "./score";
 import { knownFrom, validateWhy, whyFacts, whyPrompt, WHY_KIND, WHY_PER_BUILD, WHY_PER_DAY, WHY_SYSTEM, WHY_TOOL } from "./why";
 import { soWhatOf } from "./view";
+import { CALL_BUDGET_MS } from "../jobs/steps";
 
 /** Hard time budget for a build called at the end of a job; the rest waits for the next run. */
 export const BUILD_BUDGET_MS = 20_000;
@@ -191,7 +192,8 @@ export async function buildStories(o: BuildOptions & { withWhy?: boolean } = {})
 }
 
 /** Wrapped call at the end of a job: never throws, never fails the job, skips when the job already used most of its time. */
-const JOB_LIMIT_MS = 80_000, MIN_INTERVAL_MS = 120_000;
+// Scheduled calls answer within CALL_BUDGET_MS (jobs/steps.ts); the build only uses what is left of it.
+const JOB_LIMIT_MS = CALL_BUDGET_MS, MIN_INTERVAL_MS = 120_000;
 let lastRun = 0;
 export async function afterJob(job: string, jobStartedAt: number, extra: Pick<BuildOptions, "realRunIds"> = {}): Promise<void> {
   try {

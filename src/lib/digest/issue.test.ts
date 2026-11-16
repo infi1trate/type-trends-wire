@@ -107,3 +107,23 @@ describe("issueModel", () => {
       .toEqual([expect.objectContaining({ week: "2026-W47", number: 2, lead: null }), expect.objectContaining({ week: "2026-W46", number: 1, headline: "A Subgrid layouts [LAYOUT] week", lead: { name: "Subgrid layouts", dimension: "LAYOUT" } })]);
   });
 });
+
+describe("The week in stories", () => {
+  const ws = (id: string, score: number) => ({ id, type: "move", kicker: "Move", headline: id, deck: null, happened_at: "2026-11-17T10:00:00Z", sector: "fintech", score });
+  const stories = Array.from({ length: 9 }, (_, i) => ws(`s${i}`, 50 + i));
+  it("runs from STORIES_FIRST_WEEK on: the top seven by score, above the other sections", async () => {
+    const { STORIES_FIRST_WEEK, WEEK_STORIES, weekInStories } = await import("./issue");
+    expect([STORIES_FIRST_WEEK, WEEK_STORIES]).toEqual(["2026-W47", 7]);
+    expect(weekInStories("2026-W47", stories)?.map(s => s.id)).toEqual(["s8", "s7", "s6", "s5", "s4", "s3", "s2"]);
+    const issue = issueModel({ ...fixture(), week: "2026-W47", stories })!;
+    expect(issue.stories?.length).toBe(7);
+    expect(issue.sections.slice(0, 2)).toEqual(["cover", "stories"]);
+    expect(issue.stories?.[0]?.href).toBe("/stories/s8");
+  });
+  it("earlier issues stay as they were", () => {
+    const issue = issueModel({ ...fixture(), stories })!;
+    expect(issue.week).toBe("2026-W46");
+    expect(issue.stories).toBeNull();
+    expect(issue.sections).not.toContain("stories");
+  });
+});

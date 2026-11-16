@@ -4,7 +4,7 @@ import { fetchRealRuns, fetchStageRows } from "../real-runs";
 import { supabaseAnon } from "../mcp/supabase";
 import { DIGEST_FIRST_WEEK } from "../site";
 import { weekRange } from "./week";
-import { issueModel, archiveEntries, type IssueRows, type FRow, type SiteEvent, type FontMove, type StoredBrief, type RebrandLite } from "./issue";
+import { issueModel, archiveEntries, STORIES_FIRST_WEEK, type WeekStory, type IssueRows, type FRow, type SiteEvent, type FontMove, type StoredBrief, type RebrandLite } from "./issue";
 import { traitModel, type TraitRows } from "./trait";
 import type { CardModel } from "../chart/card";
 import type { ThumbRow } from "../thumbs";
@@ -83,12 +83,20 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   const crawlSites = crawl?.stats && typeof crawl.stats === "object" ? Object.values(crawl.stats as Record<string, { ok?: number }>).reduce((s, v) => s + (typeof v?.ok === "number" ? v.ok : 0), 0) : 0;
   const rebrands: RebrandLite[] = rebrandAll.rows.filter(x => x.source === "live" && x.confirmed_at >= range.startIso && x.confirmed_at < range.endIso)
     .map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, before: { h1: x.before.h1, accent: x.before.accent }, after: { h1: x.after.h1, accent: x.after.accent } }));
+  // The week in stories: published stories of the issue week as they stood when it ended (later edits never rewrite an old issue).
+  const stories = b.week >= STORIES_FIRST_WEEK ? await weekStories(range.startIso, range.endIso).catch(() => null) : null;
   return {
-    week: b.week, brief: b.brief as unknown as StoredBrief,
+    week: b.week, brief: b.brief as unknown as StoredBrief, stories,
     run: run ? { id: run.id, computed_at: run.computed_at, data_through: (run as { data_through: string | null }).data_through } : null,
     card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous: compare, alerts: alerts ?? [], headline: [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key), fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
     numbers: { ledger: { rate: ledger.rate, hits: ledger.hits, resolved: ledger.resolved }, library_sites: libCount.count ?? null, crawl: crawl?.finished_at && crawlSites ? { finished_at: crawl.finished_at, sites: crawlSites } : null, wire_stories: wire.count ?? 0 },
   };
+}
+async function weekStories(startIso: string, endIso: string): Promise<WeekStory[]> {
+  const [{ storyRaw }, { shownAsOf, MORNING_BASELINE }, { streamOf }] = await Promise.all([import("../stories/read.server"), import("../editions/morning"), import("../stories/view")]);
+  const end = Math.min(Date.parse(endIso), Date.now()), known = Math.min(Math.max(Date.parse(endIso), Date.parse(MORNING_BASELINE)), Date.now());
+  return streamOf(shownAsOf(await storyRaw(), end, known)).filter(s => s.type !== "launch" && s.happened_at >= startIso && s.happened_at < endIso)
+    .map(s => ({ id: s.id, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, score: s.score }));
 }
 export async function loadIssue(week: string | null) { const rows = await issueRows(week); return rows ? issueModel(rows) : null; }
 export async function loadArchive(limit = 60) {

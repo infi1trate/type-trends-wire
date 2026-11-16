@@ -24,6 +24,7 @@ import { HealthLine } from "@/components/terminal/Health";
 import { GATE_ENABLED } from "@/lib/gate";
 import { WatchPanel } from "@/components/terminal/Watch";
 import { AuditTab, ConsoleTab, DigestTab, LedgerTab, MovesTab, PatternsTab } from "@/components/terminal/Sections";
+import { MorningTab, SectorsTab } from "@/components/terminal/Editions";
 import { parseAuditSites } from "@/lib/agency/audit";
 import { keyView, resolveKey, resolveView, sectionById, sectionOf, stepTab, type TerminalSearch, type ViewId } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
@@ -142,6 +143,8 @@ function Terminal() {
         {view === "history" && <Wait><HistoryPanel /></Wait>}
         {view === "patterns" && <Wait><PatternsTab sector={sector} /></Wait>}
         {view === "digest" && <DigestTab />}
+        {view === "morning" && <MorningTab />}
+        {view === "sectors" && <SectorsTab sector={sector} />}
         {view === "watch" && <WatchPanel />}
         {view === "audit" && <AuditTab />}
         {view === "ledger" && <LedgerTab />}

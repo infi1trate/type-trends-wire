@@ -674,6 +674,48 @@ export type Database = {
         }
         Relationships: []
       }
+      job_steps: {
+        Row: {
+          attempts: number
+          detail: string | null
+          finished_at: string | null
+          job: string
+          lease_until: string | null
+          position: number
+          queued_at: string
+          run_key: string
+          started_at: string | null
+          status: string
+          step: string
+        }
+        Insert: {
+          attempts?: number
+          detail?: string | null
+          finished_at?: string | null
+          job: string
+          lease_until?: string | null
+          position: number
+          queued_at?: string
+          run_key: string
+          started_at?: string | null
+          status?: string
+          step: string
+        }
+        Update: {
+          attempts?: number
+          detail?: string | null
+          finished_at?: string | null
+          job?: string
+          lease_until?: string | null
+          position?: number
+          queued_at?: string
+          run_key?: string
+          started_at?: string | null
+          status?: string
+          step?: string
+        }
+        Relationships: []
+      }
       library_ai_baselines: {
         Row: {
           captured_at: string

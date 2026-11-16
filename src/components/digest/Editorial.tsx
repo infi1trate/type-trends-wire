@@ -13,17 +13,26 @@ import { ReadShell } from "@/components/read/ReadShell";
 export const pr = (href: string) => ({ "data-print": href.startsWith("http") || href.startsWith("mailto:") ? href : `${SITE_URL}${href}` });
 
 /** Digest, explainer and ledger pages sit inside the shared Read shell; Digest pages keep their own Archive / RSS sub-nav. */
-export function DigestShell({ children, label, section = "digest", lens = false, note = null, tour = false }: { children: ReactNode; label: string; section?: SectionId; lens?: boolean; note?: string | null; tour?: boolean }) {
-  const sub = section === "digest" ? <nav aria-label={`${DIGEST_NAME} navigation`} className="ed-nav no-print mt-2 border-y border-ed-ink">
+type EditionId = "morning" | "digest" | "sectors";
+/** Digest-section pages: the editions sub-nav (Morning Line · Digest · Sector reports) plus the current edition's archive and feed. */
+export function DigestShell({ children, label, section = "digest", lens = false, note = null, tour = false, edition = "digest", fixedSector }: { children: ReactNode; label: string; section?: SectionId; lens?: boolean; note?: string | null; tour?: boolean; edition?: EditionId | null; fixedSector?: { value: string; onChange: (s: string) => void } }) {
+  const cur = (id: EditionId) => (edition === id ? { "aria-current": "page" as const, className: "ed-tap py-2 font-semibold no-underline" } : { className: "ed-tap py-2 no-underline" });
+  const sub = section === "digest" ? <nav aria-label="Editions" className="ed-nav no-print mt-2 border-y border-ed-ink">
     <div className="ed-wrap flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
-      <Link to="/digest" className="ed-tap py-2 font-semibold no-underline">{DIGEST_NAME}</Link>
       <span className="flex flex-wrap items-center gap-x-4">
-        <Link to="/digest/archive" className="ed-tap py-2">Archive</Link>
-        <a href="/digest/rss.xml" className="ed-tap py-2">RSS</a>
+        <Link to="/editions" className="ed-tap py-2 no-underline">Editions</Link>
+        <Link to="/morning" {...cur("morning")}>Morning Line</Link>
+        <Link to="/digest" {...cur("digest")}>{DIGEST_NAME}</Link>
+        <Link to="/sectors" {...cur("sectors")}>Sector reports</Link>
+      </span>
+      <span className="flex flex-wrap items-center gap-x-4">
+        {edition === "digest" && <><Link to="/digest/archive" className="ed-tap py-2">Archive</Link><a href="/digest/rss.xml" className="ed-tap py-2">RSS</a></>}
+        {edition === "morning" && <a href="/morning/rss.xml" className="ed-tap py-2">RSS</a>}
+        {edition === "sectors" && <button type="button" onClick={() => window.print()} className="ed-tap cursor-pointer py-2 uppercase">Print</button>}
       </span>
     </div>
   </nav> : undefined;
-  return <ReadShell label={label} section={section} lens={lens} note={note} sub={sub} tour={tour}>{children}</ReadShell>;
+  return <ReadShell label={label} section={section} lens={lens} note={note} sub={sub} tour={tour} fixedSector={fixedSector}>{children}</ReadShell>;
 }
 
 export function StageWord({ stage }: { stage: StageName | null }) {

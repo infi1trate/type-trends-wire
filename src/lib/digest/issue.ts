@@ -36,7 +36,18 @@ export type IssueRows = {
   rebrands: RebrandLite[];
   /** Live forecast record as of the issue's end; the hit rate shows only once `rate` is set (≥20 resolved calls). */
   numbers: { ledger?: { rate: number | null; hits: number; resolved: number } | null; library_sites: number | null; crawl: { finished_at: string; sites: number } | null; wire_stories: number };
+  /** Published stories that happened in the issue week, as they stood at its end (digest.server.ts). Shown from STORIES_FIRST_WEEK on. */
+  stories?: WeekStory[] | null;
 };
+export type WeekStory = { id: string; type: string; kicker: string; headline: string; deck: string | null; happened_at: string; sector: string | null; score: number };
+/** "The week in stories" runs from this issue on; earlier issues stay as they were. */
+export const STORIES_FIRST_WEEK = "2026-W47";
+export const WEEK_STORIES = 7;
+/** The issue's top stories by score, only from STORIES_FIRST_WEEK on. */
+export function weekInStories(week: string, stories: WeekStory[] | null | undefined): WeekStory[] | null {
+  if (week < STORIES_FIRST_WEEK || !stories?.length) return null;
+  return [...stories].sort((a, b) => b.score - a.score || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id)).slice(0, WEEK_STORIES);
+}
 
 export type TraitRef = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; href: string };
 export type Mover = TraitRef & { scope: string; scopeText: string; from: StageName | null; to: StageName | null; breakout: boolean; change: string; sentence: string; sites: number | null; soWhat: string | null };
@@ -47,6 +58,8 @@ export type WildSite = { domain: string; name: string | null; sector: string; tr
 export type Issue = {
   name: string; week: string; number: number; dates: { start: string; end: string; label: string }; dataThrough: string | null; runId: number | null;
   cover: { kicker: string; headline: string; standfirst: string; why: string | null; body: { title: string; body: string; citations: { text: string; href: string | null }[] }[]; caveats: string | null; lead: (TraitRef & { share: number | null; momentum: number | null; scopeText: string }) | null; card: FigureData | null; call: string | null };
+  /** The week in stories (top seven published stories of the week by score), above the other sections; null before STORIES_FIRST_WEEK. */
+  stories: (WeekStory & { href: string })[] | null;
   movers: Mover[] | null;
   specimens: { rising: Specimen[]; fading: Specimen[]; seen: Specimen[]; since: string | null; date: string | null } | null;
   palette: ColorMove[] | null;
@@ -176,11 +189,11 @@ export function issueModel(r: IssueRows): Issue | null {
 
   const issue: Issue = {
     name: DIGEST_NAME, week: r.week, number, dates: { start: range.start, end: range.end, label: range.label }, dataThrough: quarter(r.run?.data_through ?? r.card?.data_through ?? null), runId: r.run?.id ?? r.card?.run_id ?? null,
-    cover, movers: moverList.length ? moverList : null, specimens, palette: palette.length ? palette : null, wild: wild.size ? [...wild.values()] : null, rebrands: rebrands.length ? rebrands : null, numbers,
+    cover, stories: weekInStories(r.week, r.stories)?.map(x => ({ ...x, href: `/stories/${encodeURIComponent(x.id)}` })) ?? null, movers: moverList.length ? moverList : null, specimens, palette: palette.length ? palette : null, wild: wild.size ? [...wild.values()] : null, rebrands: rebrands.length ? rebrands : null, numbers,
     footer: { methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/", contact: CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Correction: ${DIGEST_NAME} No. ${number}`)}` : null },
     sections: [],
   };
-  issue.sections = ["cover", ...(["movers", "specimens", "palette", "wild", "rebrands"] as const).filter(k => issue[k]), "numbers"];
+  issue.sections = ["cover", ...(["stories", "movers", "specimens", "palette", "wild", "rebrands"] as const).filter(k => issue[k]), "numbers"];
   return issue;
 }
 

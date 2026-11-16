@@ -11,8 +11,10 @@ import { Glossary } from "@/components/terminal/Glossary";
 import { Methodology } from "@/components/terminal/Methodology";
 import { Tour } from "@/components/terminal/Tour";
 import { useLocationParts, useModeToggle, useSectorLens } from "./lens";
+import { FreshnessLine } from "./Freshness";
 
-type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean };
+/** `fixedSector`: the page is about one sector (a sector report); the lens shows it and changing it moves to that sector's page. */
+type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean; fixedSector?: { value: string; onChange: (s: string) => void } | undefined };
 
 function SectionLink({ s, active, onGo }: { s: (typeof SECTIONS)[number]; active: boolean; onGo: () => void }) {
   const cls = `ed-tap py-2 no-underline ${active ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`;
@@ -27,9 +29,10 @@ function SectionLink({ s, active, onGo }: { s: (typeof SECTIONS)[number]; active
   }
 }
 
-export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false }: Props) {
+export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector }: Props) {
   const loc = useLocationParts(), active = section === undefined ? readSectionOf(loc.pathname) : section;
-  const [sector, setSector] = useSectorLens(), mode = useModeToggle();
+  const [lensSector, setLensSector] = useSectorLens(), mode = useModeToggle();
+  const sector = fixedSector?.value ?? lensSector, setSector = fixedSector?.onChange ?? setLensSector;
   const [open, setOpen] = useState(false), [overlay, setOverlay] = useState<null | "glossary" | "method">(null), [anchor, setAnchor] = useState<string | null>(null), [touring, setTouring] = useState(false);
   const close = useCallback(() => { setOverlay(null); setAnchor(null); if (/^#[mg]-/.test(window.location.hash)) history.replaceState(history.state, "", window.location.pathname + window.location.search); }, []);
   // "#g-<id>" opens the glossary and "#m-<section>" the methodology, in Read mode too.
@@ -77,7 +80,8 @@ export function ReadShell({ children, label, section, lens = false, note = null,
           </div>
         </nav>
       </header>
-      <p className="ed-wrap ed-data no-print pt-3" aria-live="polite">{showingText(sector)}{!lens && sector !== "all" ? " · this page is not filtered by sector" : ""}{note ? <span className="ed-muted"> · {note}</span> : null}</p>
+      <p className="ed-wrap ed-data no-print pt-3" aria-live="polite">{showingText(sector)}{!lens && !fixedSector && sector !== "all" ? " · this page is not filtered by sector" : ""}{note ? <span className="ed-muted"> · {note}</span> : null}</p>
+      <FreshnessLine />
       {sub}
       <main id="ed-main" aria-label={label}>{children}</main>
     </div>

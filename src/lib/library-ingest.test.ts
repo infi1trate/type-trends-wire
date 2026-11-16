@@ -4,6 +4,7 @@ const state = vi.hoisted(() => ({ hash: "", sites: new Map<string, Record<string
 // The story build runs after the job; stub it so job tests stay offline (its own tests live in stories/).
 const afterJob = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock("./stories/build.server", () => ({ afterJob }));
+vi.mock("./vanguard.server", () => ({ loadVanguard: async () => ["linear.app", "vercel.com"] }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   from() { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; },
   async rpc(name: string, args: Record<string, unknown> = {}) {
@@ -64,6 +65,7 @@ it("authenticated sync → snapshots → events → state, duplicates are no-op"
   expect(data.sites[0].latest['home:desktop'].html_hash).toBe("hash-2");
   expect(data.sites[0].pages).toEqual({ pricing: "https://example.com/pricing" });
   expect(JSON.stringify(data)).not.toContain("private text");
+  expect(data.vanguard).toEqual(["linear.app", "vercel.com"]);
 });
 it("quarterly state returns only active domains and capture/quarter pairs",async()=>{
  state.sites.set("example.com",{domain:"example.com",active:true});state.sites.set("inactive.com",{domain:"inactive.com",active:false});

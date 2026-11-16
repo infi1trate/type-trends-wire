@@ -17,7 +17,11 @@ const CUTOFF = "2025Q2", KEEP_RUNS = 12, MIN_OBSERVED = 3;
 const AI_DIMENSIONS = ["imagery", "aesthetic", "components", "hero_layout", "ai_positioning", "tone", "color_mood"];
 
 /** Weekly defaults run every step. Sandbox/dev runs pass { brief: false, alerts: "off", ledger: false, derived: false, prune: false } (see scripts/forecast-dev-run.ts). */
-export async function runForecast(opts: RunOptions = {}) {
+/**
+ * One forecast run. `defer` (the weekly scheduled call) stores the run, alerts and pruning, then queues the derived outputs as follow-up steps
+ * (jobs/steps.ts) instead of running them in the same request, so the scheduled call answers well inside the platform limit.
+ */
+export async function runForecast(opts: RunOptions = {}, mode: { defer?: boolean } = {}) {
   const steps = runSteps(opts);
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
   const run = await db.from("forecast_runs").insert({ status: "running" }).select("id").single();
@@ -35,6 +39,13 @@ export async function runForecast(opts: RunOptions = {}) {
       const old = await db.from("forecast_runs").select("id").order("id", { ascending: false }).range(KEEP_RUNS, KEEP_RUNS + 500);
       if (old.data?.length) await db.from("forecast_runs").delete().in("id", old.data.map(r => r.id));
     }
+    if (mode.defer) {
+      const { FORECAST_FOLLOW_UPS } = await import("./jobs/steps");
+      const wanted = FORECAST_FOLLOW_UPS.filter(x => (x === "taste" || x === "vibe" ? steps.derived : x === "brief" || x === "chart" ? steps.brief : x === "ledger" ? steps.ledger : true));
+      const { queueFollowUps } = await import("./jobs/steps.server");
+      const queued = await queueFollowUps("forecast", String(runId), wanted).catch(e => { console.error("forecast follow-up queue failed:", runErrorText("queue", e)); return [] as string[]; });
+      return { ok: true, run_id: runId, steps, model_card: result.card, alerts, taste: null, brief: null, vibe: null, chart: null, ledger: null, queued };
+    }
     // Derived outputs never fail a stored forecast: taste tables (own health job), brief, vibe map, then the brief's Chart of the Week.
     let taste: unknown = null, vibe: unknown = null;
     if (steps.derived) {
@@ -49,7 +60,7 @@ export async function runForecast(opts: RunOptions = {}) {
     // Forecast ledger last, so it sees this run's brief and alerts: records the calls, then resolves open ones. Never fails the run.
     let ledger: unknown = null;
     if (steps.ledger) { const { nonFatal } = await import("./ledger/ledger"); ledger = await nonFatal("ledger", async () => (await import("./ledger/store.server")).ledgerStep(runId)); }
-    return { ok: true, run_id: runId, steps, model_card: result.card, alerts, taste, brief, vibe, chart, ledger };
+    return { ok: true, run_id: runId, steps, model_card: result.card, alerts, taste, brief, vibe, chart, ledger, queued: [] as string[] };
   } catch (e) {
     const error = runErrorText(stage, e);
     console.error("forecast run failed:", error);

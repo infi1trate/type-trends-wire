@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as DeskRouteImport } from './routes/desk'
+import { Route as EditionsRouteImport } from './routes/editions'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as ToolsRouteImport } from './routes/tools'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WhatWeShowRouteImport } from './routes/what-we-show'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
@@ -33,8 +35,13 @@ import { Route as DigestArchiveRouteImport } from './routes/digest.archive'
 import { Route as DigestRssDotxmlRouteImport } from './routes/digest.rss[.]xml'
 import { Route as DigestChar123weekChar125DotpngRouteImport } from './routes/digest.{$week}[.]png'
 import { Route as LibraryDomainRouteImport } from './routes/library.$domain'
+import { Route as MorningIndexRouteImport } from './routes/morning.index'
+import { Route as MorningDateRouteImport } from './routes/morning.$date'
+import { Route as MorningRssDotxmlRouteImport } from './routes/morning.rss[.]xml'
 import { Route as PatternsIndexRouteImport } from './routes/patterns.index'
 import { Route as PatternsKeyRouteImport } from './routes/patterns.$key'
+import { Route as SectorsIndexRouteImport } from './routes/sectors.index'
+import { Route as SectorsSectorRouteImport } from './routes/sectors.$sector'
 import { Route as SignalsIndexRouteImport } from './routes/signals.index'
 import { Route as SignalsKeyRouteImport } from './routes/signals.$key'
 import { Route as StoriesIdRouteImport } from './routes/stories.$id'
@@ -85,6 +92,11 @@ const DeskRoute = DeskRouteImport.update({
   path: '/desk',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditionsRoute = EditionsRouteImport.update({
+  id: '/editions',
+  path: '/editions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LedgerRoute = LedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
@@ -108,6 +120,11 @@ const TerminalRoute = TerminalRouteImport.update({
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WhatWeShowRoute = WhatWeShowRouteImport.update({
@@ -193,6 +210,21 @@ const LibraryDomainRoute = LibraryDomainRouteImport.update({
   path: '/library/$domain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MorningIndexRoute = MorningIndexRouteImport.update({
+  id: '/morning/',
+  path: '/morning/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MorningDateRoute = MorningDateRouteImport.update({
+  id: '/morning/$date',
+  path: '/morning/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MorningRssDotxmlRoute = MorningRssDotxmlRouteImport.update({
+  id: '/morning/rss.xml',
+  path: '/morning/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatternsIndexRoute = PatternsIndexRouteImport.update({
   id: '/patterns/',
   path: '/patterns/',
@@ -201,6 +233,16 @@ const PatternsIndexRoute = PatternsIndexRouteImport.update({
 const PatternsKeyRoute = PatternsKeyRouteImport.update({
   id: '/patterns/$key',
   path: '/patterns/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SectorsIndexRoute = SectorsIndexRouteImport.update({
+  id: '/sectors/',
+  path: '/sectors/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SectorsSectorRoute = SectorsSectorRouteImport.update({
+  id: '/sectors/$sector',
+  path: '/sectors/$sector',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignalsIndexRoute = SignalsIndexRouteImport.update({
@@ -383,11 +425,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
+  '/editions': typeof EditionsRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
   '/terminal': typeof TerminalRoute
   '/tools': typeof ToolsRoute
+  '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
   '/brands/$domain': typeof BrandsDomainRoute
@@ -400,7 +444,10 @@ export interface FileRoutesByFullPath {
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
   '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/morning/$date': typeof MorningDateRoute
+  '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
+  '/sectors/$sector': typeof SectorsSectorRoute
   '/signals/$key': typeof SignalsKeyRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -412,7 +459,9 @@ export interface FileRoutesByFullPath {
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/digest/': typeof DigestIndexRoute
+  '/morning/': typeof MorningIndexRoute
   '/patterns/': typeof PatternsIndexRoute
+  '/sectors/': typeof SectorsIndexRoute
   '/signals/': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
@@ -445,11 +494,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
+  '/editions': typeof EditionsRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
   '/terminal': typeof TerminalRoute
   '/tools': typeof ToolsRoute
+  '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
   '/brands/$domain': typeof BrandsDomainRoute
@@ -462,7 +513,10 @@ export interface FileRoutesByTo {
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
   '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/morning/$date': typeof MorningDateRoute
+  '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
+  '/sectors/$sector': typeof SectorsSectorRoute
   '/signals/$key': typeof SignalsKeyRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -474,7 +528,9 @@ export interface FileRoutesByTo {
   '/brands': typeof BrandsIndexRoute
   '/chart': typeof ChartIndexRoute
   '/digest': typeof DigestIndexRoute
+  '/morning': typeof MorningIndexRoute
   '/patterns': typeof PatternsIndexRoute
+  '/sectors': typeof SectorsIndexRoute
   '/signals': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
@@ -508,11 +564,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
+  '/editions': typeof EditionsRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
   '/terminal': typeof TerminalRoute
   '/tools': typeof ToolsRoute
+  '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
   '/audit/new': typeof AuditNewRoute
   '/brands/$domain': typeof BrandsDomainRoute
@@ -525,7 +583,10 @@ export interface FileRoutesById {
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
   '/digest/{$week}.png': typeof DigestChar123weekChar125DotpngRoute
   '/library/$domain': typeof LibraryDomainRoute
+  '/morning/$date': typeof MorningDateRoute
+  '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
+  '/sectors/$sector': typeof SectorsSectorRoute
   '/signals/$key': typeof SignalsKeyRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -537,7 +598,9 @@ export interface FileRoutesById {
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
   '/digest/': typeof DigestIndexRoute
+  '/morning/': typeof MorningIndexRoute
   '/patterns/': typeof PatternsIndexRoute
+  '/sectors/': typeof SectorsIndexRoute
   '/signals/': typeof SignalsIndexRoute
   '/api/public/chart-card': typeof ApiPublicChartCardRoute
   '/api/public/crawl-requests': typeof ApiPublicCrawlRequestsRoute
@@ -572,11 +635,13 @@ export interface FileRouteTypes {
     | '/'
     | '/audit.png'
     | '/desk'
+    | '/editions'
     | '/ledger'
     | '/robots.txt'
     | '/status'
     | '/terminal'
     | '/tools'
+    | '/welcome'
     | '/what-we-show'
     | '/audit/new'
     | '/brands/$domain'
@@ -589,7 +654,10 @@ export interface FileRouteTypes {
     | '/digest/rss.xml'
     | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/morning/$date'
+    | '/morning/rss.xml'
     | '/patterns/$key'
+    | '/sectors/$sector'
     | '/signals/$key'
     | '/stories/$id'
     | '/thumbs/$'
@@ -601,7 +669,9 @@ export interface FileRouteTypes {
     | '/brands/'
     | '/chart/'
     | '/digest/'
+    | '/morning/'
     | '/patterns/'
+    | '/sectors/'
     | '/signals/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
@@ -634,11 +704,13 @@ export interface FileRouteTypes {
     | '/'
     | '/audit.png'
     | '/desk'
+    | '/editions'
     | '/ledger'
     | '/robots.txt'
     | '/status'
     | '/terminal'
     | '/tools'
+    | '/welcome'
     | '/what-we-show'
     | '/audit/new'
     | '/brands/$domain'
@@ -651,7 +723,10 @@ export interface FileRouteTypes {
     | '/digest/rss.xml'
     | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/morning/$date'
+    | '/morning/rss.xml'
     | '/patterns/$key'
+    | '/sectors/$sector'
     | '/signals/$key'
     | '/stories/$id'
     | '/thumbs/$'
@@ -663,7 +738,9 @@ export interface FileRouteTypes {
     | '/brands'
     | '/chart'
     | '/digest'
+    | '/morning'
     | '/patterns'
+    | '/sectors'
     | '/signals'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
@@ -696,11 +773,13 @@ export interface FileRouteTypes {
     | '/'
     | '/audit.png'
     | '/desk'
+    | '/editions'
     | '/ledger'
     | '/robots.txt'
     | '/status'
     | '/terminal'
     | '/tools'
+    | '/welcome'
     | '/what-we-show'
     | '/audit/new'
     | '/brands/$domain'
@@ -713,7 +792,10 @@ export interface FileRouteTypes {
     | '/digest/rss.xml'
     | '/digest/{$week}.png'
     | '/library/$domain'
+    | '/morning/$date'
+    | '/morning/rss.xml'
     | '/patterns/$key'
+    | '/sectors/$sector'
     | '/signals/$key'
     | '/stories/$id'
     | '/thumbs/$'
@@ -725,7 +807,9 @@ export interface FileRouteTypes {
     | '/brands/'
     | '/chart/'
     | '/digest/'
+    | '/morning/'
     | '/patterns/'
+    | '/sectors/'
     | '/signals/'
     | '/api/public/chart-card'
     | '/api/public/crawl-requests'
@@ -759,11 +843,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuditDotpngRoute: typeof AuditDotpngRoute
   DeskRoute: typeof DeskRoute
+  EditionsRoute: typeof EditionsRoute
   LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   StatusRoute: typeof StatusRoute
   TerminalRoute: typeof TerminalRoute
   ToolsRoute: typeof ToolsRoute
+  WelcomeRoute: typeof WelcomeRoute
   WhatWeShowRoute: typeof WhatWeShowRoute
   AuditNewRoute: typeof AuditNewRoute
   BrandsDomainRoute: typeof BrandsDomainRoute
@@ -776,7 +862,10 @@ export interface RootRouteChildren {
   DigestRssDotxmlRoute: typeof DigestRssDotxmlRoute
   DigestChar123weekChar125DotpngRoute: typeof DigestChar123weekChar125DotpngRoute
   LibraryDomainRoute: typeof LibraryDomainRoute
+  MorningDateRoute: typeof MorningDateRoute
+  MorningRssDotxmlRoute: typeof MorningRssDotxmlRoute
   PatternsKeyRoute: typeof PatternsKeyRoute
+  SectorsSectorRoute: typeof SectorsSectorRoute
   SignalsKeyRoute: typeof SignalsKeyRoute
   StoriesIdRoute: typeof StoriesIdRoute
   ThumbsSplatRoute: typeof ThumbsSplatRoute
@@ -788,7 +877,9 @@ export interface RootRouteChildren {
   BrandsIndexRoute: typeof BrandsIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
   DigestIndexRoute: typeof DigestIndexRoute
+  MorningIndexRoute: typeof MorningIndexRoute
   PatternsIndexRoute: typeof PatternsIndexRoute
+  SectorsIndexRoute: typeof SectorsIndexRoute
   SignalsIndexRoute: typeof SignalsIndexRoute
   ApiPublicChartCardRoute: typeof ApiPublicChartCardRoute
   ApiPublicCrawlRequestsRoute: typeof ApiPublicCrawlRequestsRoute
@@ -841,6 +932,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editions': {
+      id: '/editions'
+      path: '/editions'
+      fullPath: '/editions'
+      preLoaderRoute: typeof EditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ledger': {
       id: '/ledger'
       path: '/ledger'
@@ -874,6 +972,13 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/what-we-show': {
@@ -988,6 +1093,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryDomainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/morning/': {
+      id: '/morning/'
+      path: '/morning'
+      fullPath: '/morning/'
+      preLoaderRoute: typeof MorningIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/morning/$date': {
+      id: '/morning/$date'
+      path: '/morning/$date'
+      fullPath: '/morning/$date'
+      preLoaderRoute: typeof MorningDateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/morning/rss.xml': {
+      id: '/morning/rss.xml'
+      path: '/morning/rss.xml'
+      fullPath: '/morning/rss.xml'
+      preLoaderRoute: typeof MorningRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/patterns/': {
       id: '/patterns/'
       path: '/patterns'
@@ -1000,6 +1126,20 @@ declare module '@tanstack/react-router' {
       path: '/patterns/$key'
       fullPath: '/patterns/$key'
       preLoaderRoute: typeof PatternsKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sectors/': {
+      id: '/sectors/'
+      path: '/sectors'
+      fullPath: '/sectors/'
+      preLoaderRoute: typeof SectorsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sectors/$sector': {
+      id: '/sectors/$sector'
+      path: '/sectors/$sector'
+      fullPath: '/sectors/$sector'
+      preLoaderRoute: typeof SectorsSectorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signals/': {
@@ -1247,11 +1387,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuditDotpngRoute: AuditDotpngRoute,
   DeskRoute: DeskRoute,
+  EditionsRoute: EditionsRoute,
   LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   StatusRoute: StatusRoute,
   TerminalRoute: TerminalRoute,
   ToolsRoute: ToolsRoute,
+  WelcomeRoute: WelcomeRoute,
   WhatWeShowRoute: WhatWeShowRoute,
   AuditNewRoute: AuditNewRoute,
   BrandsDomainRoute: BrandsDomainRoute,
@@ -1264,7 +1406,10 @@ const rootRouteChildren: RootRouteChildren = {
   DigestRssDotxmlRoute: DigestRssDotxmlRoute,
   DigestChar123weekChar125DotpngRoute: DigestChar123weekChar125DotpngRoute,
   LibraryDomainRoute: LibraryDomainRoute,
+  MorningDateRoute: MorningDateRoute,
+  MorningRssDotxmlRoute: MorningRssDotxmlRoute,
   PatternsKeyRoute: PatternsKeyRoute,
+  SectorsSectorRoute: SectorsSectorRoute,
   SignalsKeyRoute: SignalsKeyRoute,
   StoriesIdRoute: StoriesIdRoute,
   ThumbsSplatRoute: ThumbsSplatRoute,
@@ -1276,7 +1421,9 @@ const rootRouteChildren: RootRouteChildren = {
   BrandsIndexRoute: BrandsIndexRoute,
   ChartIndexRoute: ChartIndexRoute,
   DigestIndexRoute: DigestIndexRoute,
+  MorningIndexRoute: MorningIndexRoute,
   PatternsIndexRoute: PatternsIndexRoute,
+  SectorsIndexRoute: SectorsIndexRoute,
   SignalsIndexRoute: SignalsIndexRoute,
   ApiPublicChartCardRoute: ApiPublicChartCardRoute,
   ApiPublicCrawlRequestsRoute: ApiPublicCrawlRequestsRoute,

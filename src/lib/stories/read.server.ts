@@ -18,13 +18,23 @@ export const STORY_WINDOW_DAYS = 120;
 const TTL = 60_000;
 let cache: { at: number; v: Promise<StoryRecord[]> } | null = null;
 
-async function load(): Promise<StoryRecord[]> {
+async function loadRaw(): Promise<{ stories: StoredStory[]; edits: EditRow[]; lines: LineRow[] }> {
   const db = supabaseAnon(), since = new Date(Date.now() - STORY_WINDOW_DAYS * 864e5).toISOString();
   const [stories, edits, lines] = await Promise.all([
     pages<StoredStory>((f, t) => db.from("stories").select(COLS).gte("happened_at", since).order("happened_at", { ascending: false }).order("id").range(f, t) as never),
     pages<EditRow>((f, t) => db.from("story_edits").select("id,story_id,action,payload,note,at").order("id").range(f, t) as never),
     pages<LineRow>((f, t) => db.from("story_lines").select("story_id,why_line,why_model,why_at").order("story_id").range(f, t) as never),
   ]);
+  return { stories, edits, lines };
+}
+let rawCache: { at: number; v: ReturnType<typeof loadRaw> } | null = null;
+/** Stored stories, edits and late why-lines before any overlay (editions replay them as of a past moment). Same TTL as storyIndex. */
+export function storyRaw() {
+  if (!rawCache || Date.now() - rawCache.at > TTL) { const v = loadRaw(); rawCache = { at: Date.now(), v }; v.catch(() => { rawCache = null; }); }
+  return rawCache.v;
+}
+async function load(): Promise<StoryRecord[]> {
+  const { stories, edits, lines } = await storyRaw();
   return overlay(withLines(stories, lines), edits, Date.now());
 }
 /** Every story in the window with edits applied (published, held and killed). */

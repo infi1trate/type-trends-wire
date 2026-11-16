@@ -21,10 +21,13 @@ describe("forecast-run body", () => {
 describe("forecast-run handler", () => {
   beforeEach(() => { auth.mockReset().mockResolvedValue(null); run.mockClear(); });
   it("runs for the pg_net-serialized weekly body (space after colon)", async () => { const r = await handleForecastRun(post('{"kind": "weekly"}')); expect(r.status).toBe(200); expect(run).toHaveBeenCalledOnce(); });
-  it("builds stories after a stored run, marking that run real (DEV runs call runForecast directly and never get here)", async () => {
-    run.mockResolvedValueOnce({ ok: true, run_id: 77 } as never); afterJob.mockClear();
-    expect((await handleForecastRun(post("{}"))).status).toBe(200);
-    expect(afterJob).toHaveBeenCalledWith("forecast", expect.any(Number), { realRunIds: [77] });
+  it("stores the run and defers its follow-ups (brief, chart, ledger, story build) to queued steps, so the call stays short", async () => {
+    run.mockResolvedValueOnce({ ok: true, run_id: 77, queued: ["taste", "brief", "vibe", "chart", "ledger", "stories"] } as never); afterJob.mockClear();
+    const r = await handleForecastRun(post("{}"));
+    expect(r.status).toBe(200);
+    expect(run).toHaveBeenCalledWith({}, { defer: true });
+    expect(afterJob).not.toHaveBeenCalled(); // the story build is the last queued step (jobs/steps.server.ts), with realRunIds: [77]
+    expect((await r.json()).queued).toEqual(["taste", "brief", "vibe", "chart", "ledger", "stories"]);
   });
   it("authenticates before reading the body", async () => { auth.mockResolvedValue(new Response("no", { status: 401 })); const r = await handleForecastRun(post("not json")); expect(r.status).toBe(401); expect(run).not.toHaveBeenCalled(); });
   it("400 invalid_input for a bad body", async () => { const r = await handleForecastRun(post('{"kind":"daily"}')); expect(r.status).toBe(400); expect(await r.json()).toEqual({ ok: false, code: "invalid_input" }); expect(run).not.toHaveBeenCalled(); });

@@ -25,12 +25,17 @@ export type LensResult = { sector: string; scope: string; signals: Signal[]; not
 export function lensSignals(rows: SignalRow[], tiers: Map<string, TierResult>, raw: unknown): LensResult {
   const sector = resolveSector(raw), all = () => buildSignals(rows, tiers, "all");
   if (sector === "all") return { sector, scope: "all", signals: all(), note: null };
+  const { covered, total: head, enough } = sectorCoverage(rows, tiers, sector);
+  if (!enough)
+    return { sector, scope: "all", signals: all(), note: `${sectorName(sector)} doesn't have enough forecast coverage yet (${covered} of ${head} headline signals measured there), so these are all-sector numbers.` };
+  return { sector, scope: sector, signals: buildSignals(rows, tiers, sector), note: null };
+}
+/** How many headline signals have an ok forecast row in a sector, and whether that clears SECTOR_COVERAGE_MIN. */
+export function sectorCoverage(rows: SignalRow[], tiers: Map<string, TierResult>, sector: string): { covered: number; total: number; enough: boolean } {
   const head = [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key);
   const ok = new Set(rows.filter(r => r.scope === sector && r.status === "ok").map(rowKey));
   const covered = head.filter(k => ok.has(k)).length;
-  if (!head.length || covered / head.length < SECTOR_COVERAGE_MIN)
-    return { sector, scope: "all", signals: all(), note: `${sectorName(sector)} doesn't have enough forecast coverage yet (${covered} of ${head.length} headline signals measured there), so these are all-sector numbers.` };
-  return { sector, scope: sector, signals: buildSignals(rows, tiers, sector), note: null };
+  return { covered, total: head.length, enough: head.length > 0 && covered / head.length >= SECTOR_COVERAGE_MIN };
 }
 /** Stable partition: items in the chosen sector first, then the rest, each keeping its order. */
 export function sectorFirst<T>(items: readonly T[], sector: string, sectorOf: (t: T) => string | null | undefined): T[] {

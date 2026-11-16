@@ -1,7 +1,7 @@
 // /tools (every ACT tool, one line each) and /status (health, model card and ops details, out of the reader's path).
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { cropCoverageQuery, healthQuery, modelCardQuery, runComparisonQuery } from "@/lib/data";
+import { cropCoverageQuery, freshnessQuery, healthQuery, modelCardQuery, runComparisonQuery } from "@/lib/data";
 import { cropCoverageLine } from "@/lib/crops";
 import { realRunLine } from "@/lib/run-gap";
 import { coverageSentences } from "@/lib/model-card-copy";
@@ -33,12 +33,35 @@ export function ToolsView() {
     <section aria-labelledby="tools-console" className="ed-wrap mt-16">
       <h2 id="tools-console" className="ed-kicker ed-rule pt-3">In context, in the terminal</h2>
       <p className="ed-small mt-2 max-w-[72ch]">Type and palette recommendations, differentiation and critiques run in the terminal console. Brand pages offer “Differentiate from this brand” and “Recommend type for its sector”; signal pages offer “Who uses this well”. Each opens Terminal mode with the command filled in.</p>
-      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link><Link to="/desk" className="ed-tap">Editor's desk</Link></p>
+      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link><Link to="/welcome" className="ed-tap">Private landing page (draft)</Link><Link to="/desk" className="ed-tap">Editor's desk</Link></p>
     </section>
     <ReadFooter terminal="/terminal?panel=watch" />
   </DigestShell>;
 }
 
+const STATE_WORD = { on_time: "On time", late: "Late", never: "Not run yet", dormant: "Switched off" } as const;
+/** Every recurring job in plain words (freshness.ts): what it feeds, how often, last ran/finished, next expected, late or not. */
+function FreshnessTable() {
+  const { data, isError } = useQuery(freshnessQuery());
+  const when = (iso: string | null) => (iso ? storyTime(iso) : "—");
+  return <section aria-labelledby="st-fresh" className="ed-wrap mt-12">
+    <h2 id="st-fresh" className="ed-h2 ed-rule pt-3">Freshness</h2>
+    <p className="ed-small mt-3 max-w-[72ch]">Every recurring job, what it feeds and when it last ran. A job is late when more than twice its interval has passed since it last finished. Crawler jobs run on the crawler's own schedule; times are UTC.</p>
+    {!data ? <p className="ed-small mt-3">{isError ? "Freshness couldn't be read right now." : "Checking…"}</p> : <div className="mt-4 overflow-x-auto">
+      <table className="ed-data w-full min-w-[720px] border-collapse text-left" data-testid="freshness">
+        <caption className="sr-only">Recurring jobs and when they last ran</caption>
+        <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Job</th><th scope="col" className="py-2 pr-3 font-semibold">Feeds</th><th scope="col" className="py-2 pr-3 font-semibold">How often</th><th scope="col" className="py-2 pr-3 font-semibold">Last ran</th><th scope="col" className="py-2 pr-3 font-semibold">Finished</th><th scope="col" className="py-2 pr-3 font-semibold">Next expected</th><th scope="col" className="py-2 font-semibold">State</th></tr></thead>
+        <tbody>{data.rows.map(r => <tr key={r.id} className="ed-hair align-top">
+          <th scope="row" className="py-2 pr-3 font-normal">{r.name}{r.runs_on === "crawler" && <span className="ed-caption block">Crawler</span>}{r.note && <span className="ed-caption block">{r.note}</span>}</th>
+          <td className="py-2 pr-3">{r.feeds}</td><td className="py-2 pr-3">{r.rhythm}</td><td className="py-2 pr-3">{when(r.last_ran)}</td><td className="py-2 pr-3">{when(r.last_finished)}</td><td className="py-2 pr-3">{r.next}</td>
+          <td className={`py-2 ${r.state === "late" ? "font-semibold" : ""}`}>{STATE_WORD[r.state]}</td>
+        </tr>)}</tbody>
+      </table>
+      {data.follow_ups[0] && <p className="ed-caption mt-2">Forecast run {data.follow_ups[0].run_key}: {data.follow_ups[0].done} of {data.follow_ups[0].total} follow-up steps done{data.follow_ups[0].open.length ? `, waiting: ${data.follow_ups[0].open.join(", ")}` : ""}{data.follow_ups[0].failed.length ? `, failed: ${data.follow_ups[0].failed.join(", ")}` : ""}.</p>}
+      <p className="ed-caption mt-2">Checked {storyTime(data.now)}.</p>
+    </div>}
+  </section>;
+}
 export function StatusView() {
   const { data: health } = useQuery(healthQuery()), { data: mc } = useQuery(modelCardQuery()), { data: runs } = useQuery(runComparisonQuery()), { data: crops, isError: cropsError } = useQuery(cropCoverageQuery());
   const card = mc?.card as Parameters<typeof coverageSentences>[0] & { data_through?: string; median_mae_pts?: number | null; n_forecast_ok?: number; n_traits?: number; ai_provider?: string } | undefined;
@@ -48,7 +71,8 @@ export function StatusView() {
       <h1 className="ed-cover mt-3">How the machine is running</h1>
       <p className="ed-standfirst mt-5">Scheduled jobs, the forecast model card and data coverage. Readers never need this page; every story and number links to its own receipts.</p>
     </header>
-    <section aria-labelledby="st-jobs" className="ed-wrap mt-12">
+    <FreshnessTable />
+    <section aria-labelledby="st-jobs" className="ed-wrap mt-14">
       <h2 id="st-jobs" className="ed-h2 ed-rule pt-3">Scheduled jobs{health ? ` · ${health.status}` : ""}</h2>
       {!health ? <p className="ed-small mt-3">Checking…</p> : health.jobs.length ? <table className="ed-data mt-4 w-full border-collapse text-left">
         <caption className="sr-only">Scheduled job health</caption>

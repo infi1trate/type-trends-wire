@@ -202,3 +202,16 @@
 - [x] Reader-run guard (latest real run once newer than run 15); stage-change alert gap rule
 - [x] Tests, zero-crop and fixture screenshots, report
 - [ ] Contact address for "Report this image" (waiting on Brandon; link points at the removal policy until then)
+
+# Phase 16 — rolling cadence, editions and packaging (app side; don't publish)
+- [x] Vanguard list in /api/public/library-state (pure rule + tests)
+- [x] 90-second scheduled callback: diagnose, bounded work per call, scripts/sql/phase16-cron.sql if cron must change
+- [x] Freshness module; /status table; Read shell freshness line; Live "Updated" stamp
+- [x] Morning Line (/morning, /morning/$date, archive, RSS, console `morning`)
+- [x] Digest "The week in stories" (this week onward)
+- [x] Sector reports (/sectors, /sectors/$sector, print)
+- [x] Editions in ia.ts + /editions + terminal Digest tabs
+- [x] MCP morning_line + sector_report (26 tools)
+- [x] /welcome private landing (LANDING_PUBLIC = false), linked from /tools only
+- [x] Watchlist feed run-to-run uses real runs + gap rule
+- [x] Tests, screenshots, report

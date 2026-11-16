@@ -126,7 +126,7 @@ describe("site gate", () => {
     const files: string[] = [];
     const walk = (d: string, pre = "") => { for (const e of readdirSync(join(dir, d), { withFileTypes: true })) e.isDirectory() ? walk(join(d, e.name), `${pre}${e.name}/`) : files.push(`${pre}${e.name}`); };
     walk("");
-    const PARAMS: Record<string, string> = { $week: "2026-W46", $key: "css%3Asubgrid", $domain: "vercel.com", $: "vercel.com/2026-11-15-desktop.webp", index: "" };
+    const PARAMS: Record<string, string> = { $date: "2026-11-16", $sector: "fintech", $week: "2026-W46", $key: "css%3Asubgrid", $domain: "vercel.com", $: "vercel.com/2026-11-15-desktop.webp", index: "" };
     const toPath = (f: string) => "/" + f.replace(/\.tsx?$/, "").replace(/\[\.\]/g, "\u0000").replace(/[{}]/g, "").split(/[./]/)
       .map(seg => seg.split("\u0000").map(part => PARAMS[part] ?? part).join("."))
       .filter(Boolean).join("/");
@@ -141,7 +141,15 @@ describe("site gate", () => {
     // Any other server route must be a deliberate decision: share images/thumbs/robots open, RSS and crop images gated.
     const otherServer = routes.filter(f => f.endsWith(".ts") && !f.startsWith("api/public/")).map(toPath).sort();
     expect(otherServer.filter(isOpenPath)).toEqual(["/audit.png", "/chart/2026-W46.png", "/chart/2026-W46.svg", "/digest/2026-W46.png", "/embed/chart/2026-W46", "/embed/trait/css%3Asubgrid", "/robots.txt", "/thumbs/vercel.com/2026-11-15-desktop.webp", "/trait/css%3Asubgrid.png"]);
-    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/crops/vercel.com/2026-11-15-desktop.webp", "/digest/rss.xml"]);
+    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/crops/vercel.com/2026-11-15-desktop.webp", "/digest/rss.xml", "/morning/rss.xml"]);
     expect(OPEN_PATHS.every(o => o.why.length > 10)).toBe(true);
+  });
+
+  it("the landing page stays private: LANDING_PUBLIC is false, /welcome is gated and not in OPEN_PATHS", async () => {
+    const { LANDING_PUBLIC } = await import("./site");
+    expect(LANDING_PUBLIC).toBe(false);
+    expect(isOpenPath("/welcome")).toBe(false);
+    expect(OPEN_PATHS.some(o => JSON.stringify(o).includes("welcome"))).toBe(false);
+    for (const p of ["/morning", "/morning/2026-11-16", "/morning/rss.xml", "/sectors", "/sectors/fintech", "/editions"]) expect(isOpenPath(p), p).toBe(false);
   });
 });
