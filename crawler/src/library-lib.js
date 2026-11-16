@@ -110,3 +110,33 @@ export function pickCaptures(rows, { fromYear = 2021, now = new Date(), have = [
   }
   return picks;
 }
+
+/** Parse SLICE="i/n" (slice i of n, 0-based). Empty means no slicing; anything malformed throws rather than crawling everything. */
+export function parseSlice(v) {
+  if (v == null || v === "") return null;
+  const m = /^(\d+)\/(\d+)$/.exec(String(v).trim());
+  if (!m) throw new Error(`SLICE must look like "3/24", got "${v}"`);
+  const i = Number(m[1]), n = Number(m[2]);
+  if (n < 1 || n > 1000 || i >= n) throw new Error(`SLICE out of range: "${v}"`);
+  return { i, n };
+}
+
+/** Which of n slices a domain belongs to. Stable across runs and machines (sha256 of the domain), so each site keeps its hour. */
+export function sliceOf(domain, n) {
+  return createHash("sha256").update(String(domain).toLowerCase()).digest().readUInt32BE(0) % n;
+}
+
+/** Sites in one slice. */
+export function inSlice(sites, slice) {
+  return slice ? sites.filter((s) => sliceOf(s.domain, slice.n) === slice.i) : sites;
+}
+
+/**
+ * The vanguard: brands worth a full look every day. The list comes from GET library-state (`vanguard: string[]`).
+ * No list, or an empty one, means crawl nothing: a daily run must never quietly become a full 300-site crawl.
+ */
+export function pickVanguard(sites, state) {
+  const list = Array.isArray(state?.vanguard) ? new Set(state.vanguard.map((d) => String(d).toLowerCase().replace(/^www\./, ""))) : null;
+  if (!list || !list.size) return { sites: [], listed: 0 };
+  return { sites: sites.filter((s) => list.has(s.domain)), listed: list.size };
+}

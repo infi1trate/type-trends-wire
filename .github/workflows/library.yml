@@ -1,7 +1,8 @@
 name: library-crawl
 on:
   schedule:
-    - cron: "41 5 * * *"   # daily cheap check: only pages whose server HTML changed
+    - cron: "41 * * * *"   # hourly check slice: 1/24 of the library, only pages whose server HTML changed
+    - cron: "17 7 * * *"   # daily vanguard: a full look at the brands the site lists as leading (about 45)
     - cron: "11 4 * * 6"   # Saturdays: full library snapshot (discovery, all pages, mobile)
   workflow_dispatch:
     inputs:
@@ -14,7 +15,15 @@ on:
       dry_run:
         description: "1 = don't post, upload results as an artifact"
         default: "0"
-concurrency: { group: library, cancel-in-progress: false }
+      slice:
+        description: "Only slice i of n, e.g. 3/24 (empty = every site)"
+        default: ""
+      vanguard:
+        description: "1 = full mode on the vanguard list only"
+        default: "0"
+# Hourly slices queue among themselves; the long full runs queue among themselves. A slice may overlap a full run: it only
+# refetches server HTML for about a dozen sites.
+concurrency: { group: "library-${{ github.event.schedule == '41 * * * *' && 'slice' || 'full' }}", cancel-in-progress: false }
 defaults:
   run:
     working-directory: crawler
@@ -27,17 +36,28 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
       - run: npm ci
+      - uses: actions/cache@v4
+        with: { path: ~/.cache/ms-playwright, key: "playwright-${{ runner.os }}-${{ hashFiles('crawler/package-lock.json') }}" }
       - run: npx playwright install --with-deps chromium
-      - run: npm test
+      # The hourly slices skip the test suite; the daily and weekly runs keep it.
+      - if: github.event.schedule != '41 * * * *'
+        run: npm test
+      - name: Pick the slice for this hour
+        if: github.event.schedule == '41 * * * *'
+        run: echo "SLICE=$(date -u +%-H)/24" >> "$GITHUB_ENV"
       - name: Library crawl
         env:
-          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
-          LIBRARY_MODE: ${{ inputs.mode || (github.event.schedule == '11 4 * * 6' && 'full' || 'check') }}
+          LIBRARY_MODE: ${{ inputs.mode || (github.event.schedule == '41 * * * *' && 'check' || 'full') }}
+          VANGUARD: ${{ inputs.vanguard || (github.event.schedule == '17 7 * * *' && '1' || '0') }}
           LIMIT: ${{ inputs.limit || '0' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           CONCURRENCY: "8"
-        run: npm run library
+          SLICE_INPUT: ${{ inputs.slice }}
+        run: |
+          if [ -n "$SLICE_INPUT" ]; then export SLICE="$SLICE_INPUT"; fi
+          npm run library
       - if: always()
         uses: actions/upload-artifact@v4
         with: { name: library-out, path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }

@@ -4,6 +4,10 @@
 //                               check = daily: fetch server HTML, snapshot only pages whose html_hash moved
 //                               tag   = one-off: re-snapshot every home page (desktop) and send it for AI tagging
 //      LIBRARY_FILE (default seeds/library.csv), LIMIT (first N sites), STATE_FILE (dry-run state), ALLOW_HTTP=1 (tests)
+//      SLICE=i/n  only the sites in slice i of n (stable hash of the domain). The hourly check uses SLICE=<UTC hour>/24, so
+//                 every site is checked once a day at its own hour and something is always arriving.
+//      VANGUARD=1 (full mode) only the brands in library-state's `vanguard` list: the daily full look at the brands that
+//                 lead. Run ids start lib-vanguard-, so the site never counts it as the weekly full crawl.
 //                               wayback = 5-year history: one archived homepage per half-year since FROM_YEAR (default 2021),
 //                                         rendered via the Wayback Machine, posted as source=wayback (+ tagged)
 //      SECTOR (only this sector), WAYBACK_BASE (tests), WAYBACK_DELAY_MS (default 2500, politeness between archive loads)
@@ -17,7 +21,7 @@ import { chromium } from "playwright";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { VIEWPORTS, UA, makePoster, robotsOk, openPage, analyzePage, evalSettled, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
-import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash, pickCaptures } from "./library-lib.js";
+import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash, pickCaptures, parseSlice, inSlice, pickVanguard } from "./library-lib.js";
 import sharp from "sharp";
 import { encodeThumb, captureBody, makeThumbSender } from "./thumbs.js";
 import { captureCrops, makeCropSender } from "./crops.js";
@@ -29,7 +33,11 @@ const ENDPOINT = process.env.CRAWL_ENDPOINT;
 const SECRET = process.env.CRAWL_SECRET;
 const ALLOW_HTTP = process.env.ALLOW_HTTP === "1";
 const LIMIT = Number(process.env.LIMIT ?? 0);
-const RUN_ID = process.env.RUN_ID ?? `lib-${MODE}-${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 6)}`;
+const SLICE = parseSlice(process.env.SLICE);
+const VANGUARD = process.env.VANGUARD === "1" && MODE === "full";
+// The site reads the run-id prefix: lib-full- is the weekly full crawl, lib-check- the rolling check. Vanguard runs are neither.
+const RUN_KIND = VANGUARD ? "vanguard" : MODE;
+const RUN_ID = process.env.RUN_ID ?? `lib-${RUN_KIND}-${new Date().toISOString().slice(0, 10)}-${SLICE ? `s${SLICE.i}of${SLICE.n}-` : ""}${Math.random().toString(36).slice(2, 6)}`;
 const post = makePoster({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: RUN_ID });
 const TEXT_PAGES = new Set(["pricing", "changelog", "about", "home", "product"]);
 const TAG = process.env.LIBRARY_TAG !== "0";
@@ -228,10 +236,17 @@ async function main() {
   let sites = parseLibrary(readFileSync(process.env.LIBRARY_FILE ?? new URL("../seeds/library.csv", import.meta.url).pathname, "utf8"));
   await post({ kind: "library_sync", sites });
   if (SECTOR) sites = sites.filter((s) => s.sector === SECTOR);
-  if (LIMIT) sites = sites.slice(0, LIMIT);
+  sites = inSlice(sites, SLICE);
   const state = await getState();
+  let vanguardListed = null;
+  if (VANGUARD) {
+    const v = pickVanguard(sites, state);
+    vanguardListed = v.listed; sites = v.sites;
+    if (!v.listed) console.log("vanguard: library-state returned no vanguard list; nothing to crawl");
+  }
+  if (LIMIT) sites = sites.slice(0, LIMIT);
   const byDomain = Object.fromEntries((state.sites ?? []).map((s) => [s.domain, s]));
-  console.log(`run ${RUN_ID}: mode=${MODE}, ${sites.length} sites, state for ${Object.keys(byDomain).length}`);
+  console.log(`run ${RUN_ID}: mode=${MODE}${VANGUARD ? ` vanguard (${vanguardListed} listed)` : ""}${SLICE ? ` slice ${SLICE.i}/${SLICE.n}` : ""}, ${sites.length} sites, state for ${Object.keys(byDomain).length}`);
 
   if (DRY) mkdirSync("out", { recursive: true });
   if (THUMBS) thumbs = makeThumbSender({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: RUN_ID });
@@ -286,7 +301,7 @@ async function main() {
   if (thumbs) await thumbs.flush();
   if (crops) await crops.flush();
   await browser.close();
-  const summary = { run_id: RUN_ID, mode: MODE, ...totals, ...(thumbs ? { thumbs: thumbs.totals } : {}), ...(crops ? { crops: crops.totals } : {}), errors };
+  const summary = { run_id: RUN_ID, mode: MODE, ...(SLICE ? { slice: `${SLICE.i}/${SLICE.n}` } : {}), ...(VANGUARD ? { vanguard: { listed: vanguardListed, crawled: sites.length } } : {}), sites: sites.length, ...totals, ...(thumbs ? { thumbs: thumbs.totals } : {}), ...(crops ? { crops: crops.totals } : {}), errors };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
   console.log("done", JSON.stringify(summary));
 }

@@ -72,7 +72,7 @@ async function main() {
   if (mode === "health") {
     let status = 0, payload = null;
     try {
-      const r = await fetch(process.env.HEALTH_URL ?? "https://type-trends-wire.lovable.app/api/public/health", { signal: AbortSignal.timeout(20000) });
+      const r = await fetch(process.env.HEALTH_URL ?? "https://slug.global/api/public/health", { signal: AbortSignal.timeout(20000) });
       status = r.status; payload = r.ok ? await r.json().catch(() => null) : null;
     } catch { status = 0; }
     const v = healthVerdict(status, payload);

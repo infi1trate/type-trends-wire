@@ -26,7 +26,7 @@ jobs:
         with: { node-version: 22 }
       - name: Sample Jetstream
         env:
-          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           DURATION_MIN: ${{ inputs.duration_min || '30' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}

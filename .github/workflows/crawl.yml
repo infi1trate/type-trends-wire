@@ -33,7 +33,7 @@ jobs:
       - run: npm test
       - name: Crawl
         env:
-          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           PER_INDEX: ${{ inputs.per_index || '500' }}
           PER_CURATED: ${{ inputs.per_curated || '300' }}

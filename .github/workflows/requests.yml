@@ -26,7 +26,7 @@ jobs:
         env:
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
         run: |
-          n=$(curl -sf -H "Authorization: Bearer $CRAWL_SECRET" "https://type-trends-wire.lovable.app/api/public/crawl-requests?limit=1" | python3 -c 'import json,sys;print(len(json.load(sys.stdin).get("requests",[])))' || echo 1)
+          n=$(curl -sf -H "Authorization: Bearer $CRAWL_SECRET" "https://slug.global/api/public/crawl-requests?limit=1" | python3 -c 'import json,sys;print(len(json.load(sys.stdin).get("requests",[])))' || echo 1)
           echo "pending=$n" >> "$GITHUB_OUTPUT"
       - if: steps.peek.outputs.pending != '0'
         uses: actions/setup-node@v4
@@ -36,7 +36,7 @@ jobs:
       - if: steps.peek.outputs.pending != '0'
         name: Render queued URLs
         env:
-          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           LIMIT: ${{ inputs.limit || '10' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}

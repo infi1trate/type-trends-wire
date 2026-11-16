@@ -33,7 +33,7 @@ jobs:
       - run: npm test
       - name: Wayback backfill
         env:
-          CRAWL_ENDPOINT: https://type-trends-wire.lovable.app/api/public/ingest-crawl
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           LIMIT: ${{ inputs.limit || '0' }}
           PASS_MAX: ${{ inputs.pass_max || '3' }}
