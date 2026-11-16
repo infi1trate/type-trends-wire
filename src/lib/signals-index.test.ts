@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { changeOf, defaultSort, parseSignalsSearch, signalsIndex, signalsSearch } from "./signals-index";
+import { changeOf, defaultSort, momentumText, parseSignalsSearch, signalsIndex, signalsSearch } from "./signals-index";
 import type { Signal } from "./signals";
 
 const sig = (key: string, o: Partial<Signal>): Signal => ({ key, name: key, dimension: "LAYOUT", basis: "measured", tier: "headline", reasons: [], scope: "all", stage: "Rising", share: 0.1, momentum: null, direction: null, next_wave_score: null,
@@ -48,5 +48,17 @@ describe("signals index", () => {
     expect(signalsSearch(v)).toEqual({ tab: "color", sort: "change", sector: "fintech", tier: "archive" });
     expect(parseSignalsSearch(signalsSearch(v))).toEqual(v);
     expect(parseSignalsSearch({ sort: "nonsense", tab: "nope" })).toEqual(base);
+  });
+  it("with a sector lens, Momentum is the all-sector value, labelled as such, and never a bare dash", () => {
+    const scoped = fintech.map(x => ({ ...x, momentum_index: null })); // Momentum is scored for all sectors only
+    const x = signalsIndex({ all, lens: { sector: "fintech", scope: "fintech", signals: scoped, note: null }, series }, parseSignalsSearch({ sector: "fintech", sort: "momentum" }));
+    const rows = x.groups.flatMap(g => g.rows), big = rows.find(r => r.key === "combo:big_type")!;
+    expect([big.momentum, big.momentumAll, momentumText(big)]).toEqual([90, true, "Momentum 90, all sectors"]);
+    expect(rows.map(momentumText).some(t => /—/.test(t))).toBe(false);
+    expect(momentumText(rows.find(r => r.key === "css:old")!)).toBe("Momentum not scored");
+    expect(x.groups[0]!.rows.map(r => r.key)).toEqual(["combo:big_type", "font:inter", "css:has"]); // sorted by the all-sector value
+    expect(x.countLine).toContain("by momentum across all sectors");
+    const plain = signalsIndex({ all, lens: { sector: "all", scope: "all", signals: all, note: null }, series }, base).groups[0]!.rows[0]!;
+    expect(momentumText(plain)).toBe("Momentum 90");
   });
 });

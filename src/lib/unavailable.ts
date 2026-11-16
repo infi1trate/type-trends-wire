@@ -1,5 +1,5 @@
-// "Couldn't read the stored data just now" — a temporary failure, not a broken page. A server read that gives up marks its response with
-// Retry-After; the server entry then answers such an HTML page 503 instead of 500, so caches and crawlers come back later.
+// "Couldn't read the stored data just now" — a temporary failure, not a broken page. A gallery route whose loader gave up (after its
+// retry) marks its page Retry-After through the route's `headers`; the server entry then answers that HTML page 503 instead of 500.
 export const RETRY_AFTER_S = 30;
 export const UNAVAILABLE_BODY = "The stored captures took too long to read this time. Nothing is lost; the next try usually works.";
 
@@ -8,3 +8,6 @@ export function retryLater(res: Response): Response {
   if (res.status !== 500 || !res.headers.has("retry-after") || !(res.headers.get("content-type") ?? "").includes("text/html")) return res;
   return new Response(res.body, { status: 503, statusText: "Service Unavailable", headers: res.headers });
 }
+/** Route `headers` for pages whose only failure mode is a stored-data read: an errored match asks the client to retry later. */
+export const retryHeaders = ({ match }: { match: { status: string } }): Record<string, string> | undefined =>
+  match.status === "error" ? { "Retry-After": String(RETRY_AFTER_S) } : undefined;

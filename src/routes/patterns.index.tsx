@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/site";
 import { GalleryView } from "@/components/read/GalleryView";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { GalleryUnavailable } from "@/components/read/Unavailable";
+import { retryHeaders } from "@/lib/unavailable";
 import { BRAND_NAME } from "@/lib/brand";
 
 const TITLE = `Patterns — the gallery · ${BRAND_NAME}`;
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/patterns/")({
   loaderDeps: ({ search }) => ({ search }),
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(galleryQuery(deps.search)).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/patterns` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/patterns` }, ...fontLinks()] }),
+  headers: retryHeaders,
   component: Patterns,
   errorComponent: () => <GalleryUnavailable title="The gallery didn't load" />,
   notFoundComponent: () => <DigestNotFound title="No such view" body="That gallery view doesn't exist. Start from all patterns." />,

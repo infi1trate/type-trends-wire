@@ -64,3 +64,6 @@
 - The pattern gallery is pure `gallery.ts` over rows loaded and cached by `gallery.server.ts`; collections are saved gallery filters in `collections/registry.ts` (live at `COLLECTION_MIN`, re-checked at read time), so walls, collection pages and MCP `collections` share one model.
 - Index views (`/signals`, `/brands`) keep sort/filter/lens in the URL via pure `signals-index.ts` and `brands-index.ts`; form field errors are pure `agency/forms.ts` and the audit report cover/findings pure `agency/report.ts`.
 - Sub-navigation rows use `components/read/ScrollRow` (one sideways-scrolling row, current item scrolled into view) instead of wrapping lists.
+- Server read caches use `memo.ts` (settled values only, joiners of a failed in-flight load reload, one retry with backoff), because a pending promise shared across Worker requests can never settle once its creating request ends.
+- `library_site_history` is read by domain slices (`history.server.ts`), since the view sorts every row before LIMIT and only a domain filter is pushed down; this keeps each read inside the anonymous statement timeout.
+- Gallery routes mark errored matches `Retry-After` via route `headers` (`unavailable.ts`) and `src/server.ts` turns such HTML 500s into 503, so a failed stored-data read reads as temporary.

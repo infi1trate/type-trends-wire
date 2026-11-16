@@ -277,3 +277,9 @@
 - [x] Audit/watch: rule-box forms + inline errors; audit report (Quiet); watch Ledger with feed copy; voice empty states
 - [x] MCP: collections tool + brand similar (28 tools)
 - [x] Tests, screenshots, report
+
+# Phase 20b — live-site fixes after Phase 20 (don't publish)
+- [x] Gallery failures: cause found (orphaned cross-request promises + history statement timeouts); settled-value memos everywhere, one retry, lean cold load (66 → 18 requests), 503 + Retry-After in the Patterns shell with Raised "Try again"
+- [x] Brand page: before/after side by side (≤520px each, first screen), newest open, rest behind "Show the two captures"; type line "Inter · 56px · Google Fonts"
+- [x] /signals with a lens: all-sector Momentum labelled, never a bare dash; Momentum sort and count line say so
+- [x] Tests
