@@ -1,6 +1,7 @@
 // Editions loaders (Morning Line, sector reports, /editions, /welcome): anonymous SELECT-only reads assembled by the pure models in
 // editions/*.ts. No AI per view; short per-instance memo like the other public reads.
 import { supabaseAnon } from "../mcp/supabase";
+import { memoBy } from "../memo";
 import { storyIndex, storyRaw } from "../stories/read.server";
 import { latestSignals } from "../signals.server";
 import { allCrops, siteTraitIndex } from "../read.server";
@@ -16,10 +17,7 @@ import { morningRss } from "./morning-rss";
 import { sectorIndex, sectorReport, type SectorPatternBlock } from "./sector";
 
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
-function memo<K, T>(ms: number, load: (k: K) => Promise<T>) {
-  const c = new Map<string, { at: number; v: Promise<T> }>();
-  return (k: K) => { const key = JSON.stringify(k), hit = c.get(key); if (hit && Date.now() - hit.at < ms) return hit.v; const v = load(k); c.set(key, { at: Date.now(), v }); v.catch(() => c.delete(key)); return v; };
-}
+const memo = <K, T>(ms: number, load: (k: K) => Promise<T>) => memoBy(ms, load, { max: 200 });
 const TTL = 60_000;
 const charts = memo(10 * 60_000, async (_: null): Promise<ChartRow[]> => (must(await supabaseAnon().from("chart_cards").select("week,trait,created_at,model").order("week", { ascending: false }).limit(60)) ?? []).map(c => ({ ...c, model: c.model as unknown as ChartRow["model"] })));
 

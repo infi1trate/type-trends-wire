@@ -6,16 +6,11 @@ import { healthFactsSchema } from "./health";
 import { VANGUARD_RUN_PREFIX, freshness, freshnessLine, wireOnTime, type FreshRow, type JobFact, type JobId } from "./freshness";
 import { progress, type StepRow } from "./jobs/steps";
 import { fetchRealRuns } from "./real-runs";
+import { memo } from "./memo";
 
 export type FreshnessPayload = { now: string; rows: FreshRow[]; line: { text: string; late: boolean }; wire_on_time: boolean; follow_ups: ReturnType<typeof progress> };
-let cache: { at: number; v: Promise<FreshnessPayload> } | null = null;
-
-export function loadFreshness(): Promise<FreshnessPayload> {
-  if (cache && Date.now() - cache.at < 60_000) return cache.v;
-  const v = build(); const entry = { at: Date.now(), v }; cache = entry;
-  v.catch(() => { if (cache === entry) cache = null; });
-  return v;
-}
+const fresh = memo(60_000, () => build());
+export const loadFreshness = (): Promise<FreshnessPayload> => fresh();
 
 async function build(): Promise<FreshnessPayload> {
   const db = supabaseAnon(), now = Date.now();

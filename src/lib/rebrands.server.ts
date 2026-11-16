@@ -2,6 +2,7 @@
 import { supabaseAnon } from "./mcp/supabase";
 import { buildRebrands, filterRebrands, rebrandCounts, MEASURED_EVENT_TYPES, MAX_REBRAND_LIMIT, type Rebrand, type EventIn, type SideIn, type ForecastIn, type WireIn } from "./rebrands";
 import { readerRunId } from "./real-runs";
+import { memo } from "./memo";
 type Db = ReturnType<typeof supabaseAnon>;
 async function all<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
   const out: T[] = [];
@@ -37,12 +38,9 @@ async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | n
   const rows = buildRebrands({ events, sites, snapshots: snaps, forecasts, wire, google: new Set(fonts.map(f => f.family.toLowerCase())) });
   return { rows, data_through: events.map(e => e.detected_at).sort().at(-1) ?? null };
 }
-let cache: { at: number; value: Promise<{ rows: Rebrand[]; data_through: string | null }> } | null = null;
 const CACHE_MS = 10 * 60_000;
-export function rebrandRows() {
-  if (!cache || Date.now() - cache.at > CACHE_MS) { const value = load(supabaseAnon()); cache = { at: Date.now(), value }; value.catch(() => { cache = null; }); }
-  return cache.value;
-}
+const rows = memo(CACHE_MS, () => load(supabaseAnon()));
+export const rebrandRows = (): Promise<{ rows: Rebrand[]; data_through: string | null }> => rows();
 export type RebrandFilter = { sector?: string | undefined; source?: "live" | "archive" | undefined; year?: number | undefined; since?: string | undefined; limit?: number | undefined; offset?: number | undefined };
 export async function rebrands(f: RebrandFilter, maxLimit = 200) {
   const { rows, data_through } = await rebrandRows();

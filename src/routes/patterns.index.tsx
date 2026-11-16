@@ -5,6 +5,7 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { GalleryView } from "@/components/read/GalleryView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { GalleryUnavailable } from "@/components/read/Unavailable";
 import { BRAND_NAME } from "@/lib/brand";
 
 const TITLE = `Patterns — the gallery · ${BRAND_NAME}`;
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/patterns/")({
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(galleryQuery(deps.search)).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/patterns` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/patterns` }, ...fontLinks()] }),
   component: Patterns,
-  errorComponent: () => <DigestNotFound title="The gallery didn't load" body="The stored captures couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <GalleryUnavailable title="The gallery didn't load" />,
   notFoundComponent: () => <DigestNotFound title="No such view" body="That gallery view doesn't exist. Start from all patterns." />,
 });
 function Patterns() {

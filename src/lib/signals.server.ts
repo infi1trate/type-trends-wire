@@ -2,6 +2,7 @@
 import { supabaseAnon } from "./mcp/supabase";
 import { buildSignals, rowKey, tiersFrom, type SignalRow, type SignalSnapshot } from "./signals";
 import { fetchReaderRuns } from "./real-runs";
+import { memo } from "./memo";
 export type { SignalSnapshot };
 
 async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 1000) {
@@ -10,12 +11,11 @@ async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[]
   return out;
 }
 const COLS = "dimension,value,scope,status,stage,momentum,current_share,next_wave_score,present:components->present,sites:components->sites,usable:evidence->usable";
-let cache: { at: number; snap: SignalSnapshot } | null = null;
 const TTL = 5 * 60_000;
 
 /** The reader run (readerRuns: run 15 until a newer real run exists, then the latest real run) plus the two runs before it. Cached five minutes. */
-export async function loadSignalSnapshot(): Promise<SignalSnapshot> {
-  if (cache && Date.now() - cache.at < TTL) return cache.snap;
+export const loadSignalSnapshot = (): Promise<SignalSnapshot> => snapshot();
+const snapshot = memo(TTL, async (): Promise<SignalSnapshot> => {
   const db = supabaseAnon();
   const reader = await fetchReaderRuns(db), run = reader.latest, prev = reader.prev.map(p => ({ id: p.id }));
   if (!run) return { run_id: null, computed_at: null, prev_runs: [], rows: [], prev: [] };
@@ -27,9 +27,8 @@ export async function loadSignalSnapshot(): Promise<SignalSnapshot> {
   const prevStages = new Map<string, (string | null)[]>();
   prevRows.forEach((list, i) => { for (const r of list) { const k = rowKey(r), a = prevStages.get(k) ?? [null, null]; a[i] = r.stage; prevStages.set(k, a); } });
   const snap: SignalSnapshot = { run_id: latest.id, computed_at: latest.computed_at, prev_runs: prev.map(p => p.id), rows: rows.map(r => ({ ...r, present: Array.isArray(r.present) ? r.present : [], sites: typeof r.sites === "number" ? r.sites : null, usable: typeof r.usable === "number" ? r.usable : null })), prev: [...prevStages] };
-  cache = { at: Date.now(), snap };
   return snap;
-}
+});
 /** Library-wide signals (and tiers) from the latest snapshot. */
 export async function latestSignals(scope = "all") {
   const snap = await loadSignalSnapshot(), tiers = tiersFrom(snap.rows, new Map(snap.prev));

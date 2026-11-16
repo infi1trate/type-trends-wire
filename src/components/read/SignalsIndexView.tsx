@@ -7,7 +7,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { signalSeriesQuery, signalsQuery } from "@/lib/data";
 import { SIGNAL_TABS } from "@/lib/ia";
 import { lensSignals } from "@/lib/sector-lens";
-import { SIGNAL_SORTS, signalsIndex, signalsSearch, type SignalsGroup, type SignalsRow, type SignalsView } from "@/lib/signals-index";
+import { SIGNAL_SORTS, momentumText, signalsIndex, signalsSearch, type SignalsGroup, type SignalsRow, type SignalsView } from "@/lib/signals-index";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
 import { BasisWord, DigestShell, StageWord, pr } from "@/components/digest/Editorial";
@@ -25,7 +25,7 @@ function rowsOf(g: SignalsGroup, scoped: boolean, sector: string, lensQ: string 
     line: <span className="inline-flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /><Spark points={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>,
     facts: [
       <span key="s" className="tabular-nums">{scoped ? <>{pct(r.share, 1) ?? "—"} <span className="ledger-muted">{sectorName(sector)} · {pct(r.allShare, 1) ?? "—"} all</span></> : pct(r.share, 1) ?? "—"}</span>,
-      `Momentum ${r.momentum ?? "—"}`, signed(r.change),
+      momentumText(r), signed(r.change),
     ],
   }));
 }

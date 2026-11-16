@@ -1,29 +1,22 @@
 // Pure-JS rasterizer + PNG encoder for the chart card (no native or WASM deps, so it runs on the hosted runtime).
 // Anti-aliased nonzero scanline fill (4 sub-rows, exact horizontal coverage) and pre-rendered IBM Plex Mono glyph masks.
 import { FACE_ATLASES, GLYPH_ATLASES, GLYPH_CHARS } from "./glyphs.gen";
+import { memoBy } from "../memo";
 import { ballGeom, markGeom, type Prim } from "./card";
 import { advances, atlasKey, type Face, type TextSize, type TextWeight } from "./fonts";
 import { flattenPath } from "./path";
 import { MARK_INK } from "@/components/brand/mark";
 
 type Glyph = { w: number; h: number; l: number; t: number; data: Uint8Array };
-const atlasCache = new Map<string, Promise<Map<string, Glyph>>>();
 async function inflate(bytes: Uint8Array) { const s = new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream("deflate")); return new Uint8Array(await new Response(s).arrayBuffer()); }
 async function deflate(bytes: Uint8Array) { const s = new Blob([bytes as BlobPart]).stream().pipeThrough(new CompressionStream("deflate")); return new Uint8Array(await new Response(s).arrayBuffer()); }
 const b64 = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-function atlas(key: string) {
-  let p = atlasCache.get(key);
-  if (!p) {
-    p = (async () => {
+const atlas = memoBy(Infinity, async (key: string): Promise<Map<string, Glyph>> => {
       const src = GLYPH_ATLASES[key] ?? FACE_ATLASES[key]; if (!src) throw new Error(`missing glyph atlas ${key}`);
       const raw = await inflate(b64(src)), view = new DataView(raw.buffer, raw.byteOffset, raw.byteLength), map = new Map<string, Glyph>(); let o = 0;
       for (const ch of GLYPH_CHARS) { const w = view.getUint16(o, true), h = view.getUint16(o + 2, true), l = view.getInt16(o + 4, true), t = view.getInt16(o + 6, true); o += 8; map.set(ch, { w, h, l, t, data: raw.subarray(o, o + w * h) }); o += w * h; }
       return map;
-    })();
-    atlasCache.set(key, p);
-  }
-  return p;
-}
+}, { key: k => k, retries: 0 });
 const rgbOf = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
 
 class Canvas {

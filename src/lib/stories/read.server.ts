@@ -1,5 +1,6 @@
 // Anonymous SELECT-only reads of stored stories plus the editor's edits, overlaid at read time. Short per-instance TTL; no AI per view.
 import { supabaseAnon } from "../mcp/supabase";
+import { memo } from "../memo";
 import { overlay, type EditRow, type StoredStory } from "./edits";
 import type { StoryRecord } from "./view";
 import { withNumbers, type NumberRow } from "./numbers";
@@ -17,7 +18,6 @@ async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[]
 /** How far back pages read stories (older ones stay in the table and on their own pages). */
 export const STORY_WINDOW_DAYS = 120;
 const TTL = 60_000;
-let cache: { at: number; v: Promise<StoryRecord[]> } | null = null;
 
 async function loadRaw(): Promise<{ stories: StoredStory[]; edits: EditRow[]; lines: LineRow[]; numbers: NumberRow[] }> {
   const db = supabaseAnon(), since = new Date(Date.now() - STORY_WINDOW_DAYS * 864e5).toISOString();
@@ -29,21 +29,15 @@ async function loadRaw(): Promise<{ stories: StoredStory[]; edits: EditRow[]; li
   ]);
   return { stories, edits, lines, numbers };
 }
-let rawCache: { at: number; v: ReturnType<typeof loadRaw> } | null = null;
 /** Stored stories, edits and late why-lines before any overlay (editions replay them as of a past moment). Same TTL as storyIndex. */
-export function storyRaw() {
-  if (!rawCache || Date.now() - rawCache.at > TTL) { const v = loadRaw(); rawCache = { at: Date.now(), v }; v.catch(() => { rawCache = null; }); }
-  return rawCache.v;
-}
+export const storyRaw = memo(TTL, loadRaw);
 async function load(): Promise<StoryRecord[]> {
   const { stories, edits, lines, numbers } = await storyRaw();
   return withNumbers(overlay(withLines(stories, lines), edits, Date.now()), numbers);
 }
 /** Every story in the window with edits applied (published, held and killed). */
-export function storyIndex(): Promise<StoryRecord[]> {
-  if (!cache || Date.now() - cache.at > TTL) { const v = load(); cache = { at: Date.now(), v }; v.catch(() => { cache = null; }); }
-  return cache.v;
-}
+const index = memo(TTL, load);
+export const storyIndex = (): Promise<StoryRecord[]> => index();
 /** One story by id, fresh (outside the window too). */
 export async function storyById(id: string): Promise<StoryRecord | null> {
   const db = supabaseAnon();
@@ -60,4 +54,4 @@ export async function storyIdByNumber(n: number): Promise<string | null> {
   return s && s.state === "published" ? s.id : null;
 }
 /** The desk reads fresh, not through the TTL cache. */
-export async function deskIndex(): Promise<StoryRecord[]> { cache = null; return storyIndex(); }
+export async function deskIndex(): Promise<StoryRecord[]> { index.clear(); return storyIndex(); }

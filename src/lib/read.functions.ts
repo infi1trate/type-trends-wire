@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
+import { RETRY_AFTER_S } from "./unavailable";
 import { z } from "zod";
 import type { Json } from "@/integrations/supabase/types";
 // Read-mode reads: anonymous SELECT-only, assembled by pure models (stories.ts, brand.ts, patterns.ts). No AI per view.
@@ -94,15 +96,18 @@ export const getKit = createServerFn({ method: "GET" }).handler(async () => {
 
 // Pattern gallery and collections (gallery.ts + collections/registry.ts over stored captures; no AI).
 const gallerySearchInput = z.object({ sector: z.string().max(40).optional(), pattern: z.string().max(80).optional(), period: z.string().max(10).optional(), basis: z.string().max(10).optional(), section: z.string().max(10).optional(), page: z.number().int().min(1).max(999).optional() });
-export const getGallery = createServerFn({ method: "GET" }).inputValidator(gallerySearchInput).handler(async ({ data }) => {
+/** A gallery read that still fails after its retry marks the response Retry-After, so the page answers 503 (src/server.ts). */
+async function orRetryLater<T>(load: () => Promise<T>): Promise<T> {
+  try { return await load(); } catch (e) { setResponseHeader("Retry-After", String(RETRY_AFTER_S)); throw e; }
+}
+export const getGallery = createServerFn({ method: "GET" }).inputValidator(gallerySearchInput).handler(async ({ data }) => orRetryLater(async () => {
   const [{ loadGallery }, { parseGallerySearch }] = await Promise.all([import("./gallery.server"), import("./gallery")]);
   return loadGallery(parseGallerySearch(data));
-});
-export const getCollections = createServerFn({ method: "GET" }).handler(async () => {
+}));
+export const getCollections = createServerFn({ method: "GET" }).handler(async () => orRetryLater(async () => {
   const { loadCollections } = await import("./gallery.server");
   return loadCollections();
-});
+}));
 export const getCollection = createServerFn({ method: "GET" }).inputValidator(z.object({ slug: z.string().min(3).max(80).regex(/^[a-z0-9-]+$/), page: z.number().int().min(1).max(999).default(1) })).handler(async ({ data }) => {
-  const { loadCollection } = await import("./gallery.server");
-  return loadCollection(data.slug, data.page);
+  return orRetryLater(async () => { const { loadCollection } = await import("./gallery.server"); return loadCollection(data.slug, data.page); });
 });

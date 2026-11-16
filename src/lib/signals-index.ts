@@ -27,10 +27,14 @@ export function signalsSearch(v: SignalsView): SignalsSearch {
 export type SignalsRow = {
   key: string; rank: number; name: string; href: string; tier: Tier; tab: Exclude<SignalTab, "all">; stage: StageName | null; basis: Basis;
   /** Share now in the lens scope, and across all sectors when a sector lens is on. */
-  share: number | null; allShare: number | null; momentum: number | null;
+  share: number | null; allShare: number | null;
+  /** Momentum is scored across all sectors only: with a sector lens on, this is the all-sector value and `momentumAll` is true. */
+  momentum: number | null; momentumAll: boolean;
   /** Well-covered quarterly shares (all sectors, unfiltered by the lens) and the change from the first to the last. */
   points: number[]; change: number | null;
 };
+/** "Momentum 75", "Momentum 75, all sectors" under a lens, "Momentum not scored" when the run has none: never a bare dash. */
+export const momentumText = (r: Pick<SignalsRow, "momentum" | "momentumAll">) => (r.momentum == null ? "Momentum not scored" : `Momentum ${r.momentum}${r.momentumAll ? ", all sectors" : ""}`);
 export type SignalsGroup = { tier: Tier; title: string; rows: SignalsRow[]; folded: boolean };
 /** Change over the well-covered quarters: last minus first, or null with fewer than two quarters. */
 export const changeOf = (pts: readonly number[]) => (pts.length >= 2 ? pts[pts.length - 1]! - pts[0]! : null);
@@ -41,7 +45,8 @@ export function signalsIndex(i: { all: Signal[]; lens: LensResult; series: Recor
   const rows = i.lens.signals.filter(s => v.tab === "all" || signalTabOf(s.key, s.dimension) === v.tab).map(s => {
     const points = i.series[s.key] ?? [];
     return { key: s.key, name: s.name, href: signalPath(s.key), tier: s.tier, tab: signalTabOf(s.key, s.dimension), stage: s.stage, basis: s.basis,
-      share: s.share, allShare: scoped ? allBy.get(s.key)?.share ?? null : null, momentum: s.momentum_index, points, change: changeOf(points) };
+      share: s.share, allShare: scoped ? allBy.get(s.key)?.share ?? null : null,
+      momentum: scoped ? allBy.get(s.key)?.momentum_index ?? null : s.momentum_index, momentumAll: scoped, points, change: changeOf(points) };
   });
   const by = (a: Omit<SignalsRow, "rank">, b: Omit<SignalsRow, "rank">) =>
     (v.sort === "share" ? desc(a.share, b.share) : v.sort === "change" ? desc(a.change, b.change) : desc(a.momentum, b.momentum))
@@ -50,7 +55,8 @@ export function signalsIndex(i: { all: Signal[]; lens: LensResult; series: Recor
     rows: rows.filter(r => r.tier === t).sort(by).map((r, k) => ({ ...r, rank: k + 1 })) }));
   const n = (t: Tier) => groups.find(g => g.tier === t)!.rows.length;
   const where = [v.tab !== "all" ? SIGNAL_TABS.find(x => x.id === v.tab)!.label : null, v.sector !== "all" ? sectorName(v.sector) : null].filter(Boolean).join(", ");
-  const countLine = `${n("headline")} headline and ${n("supporting")} supporting ${n("headline") + n("supporting") === 1 ? "signal" : "signals"}${where ? ` in ${where}` : ""}, by ${SIGNAL_SORTS.find(x => x.id === v.sort)!.label.toLowerCase()}; ${n("archive")} archive ${n("archive") === 1 ? "signal" : "signals"} ${v.archive ? "shown" : "folded"}.`;
+  const sortWord = `${SIGNAL_SORTS.find(x => x.id === v.sort)!.label.toLowerCase()}${v.sort === "momentum" && scoped ? " across all sectors" : ""}`;
+  const countLine = `${n("headline")} headline and ${n("supporting")} supporting ${n("headline") + n("supporting") === 1 ? "signal" : "signals"}${where ? ` in ${where}` : ""}, by ${sortWord}; ${n("archive")} archive ${n("archive") === 1 ? "signal" : "signals"} ${v.archive ? "shown" : "folded"}.`;
   return { groups, countLine, view: v, scope: i.lens.scope, scoped, note: i.lens.note };
 }
 export type SignalsIndex = ReturnType<typeof signalsIndex>;

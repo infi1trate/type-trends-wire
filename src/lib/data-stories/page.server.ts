@@ -3,15 +3,11 @@ import { dataInput, capturesFor, capturesOf } from "./data.server";
 import { BUILDERS, buildStory, buildWhereYouSit, indexRows, isTracked, normDomain, liveNow } from "./build";
 import { entryOf, templateName } from "./registry";
 import type { StoryModel } from "./types";
+import { memoBy } from "../memo";
 
-const TTL = 10 * 60_000, built = new Map<string, { at: number; v: Promise<StoryModel | null> }>();
-const memo = (k: string, f: () => Promise<StoryModel | null>) => {
-  const hit = built.get(k);
-  if (hit && Date.now() - hit.at < TTL) return hit.v;
-  const v = f(); built.set(k, { at: Date.now(), v }); v.catch(() => built.delete(k));
-  if (built.size > 80) built.delete(built.keys().next().value!);
-  return v;
-};
+const TTL = 10 * 60_000;
+const built = memoBy(TTL, (job: { k: string; f: () => Promise<StoryModel | null> }) => job.f(), { key: j => j.k, max: 80 });
+const memo = (k: string, f: () => Promise<StoryModel | null>) => built({ k, f });
 const through = (i: Awaited<ReturnType<typeof dataInput>>) => i.captures.reduce<string | null>((m, c) => (!m || c.at > m ? c.at : m), null);
 
 export async function loadDataIndex() {

@@ -12,16 +12,14 @@ import { issueNumber, weekRange } from "../digest/week";
 import { wellCovered, type QuarterSeries } from "../kit";
 import { supabaseAnon } from "../mcp/supabase";
 import { readerRunId } from "../real-runs";
+import { memo, memoBy } from "../memo";
 import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, type FrontModel } from "./front";
 import { resolveFormat, type FormatFilter } from "./formats";
 import { streamOf } from "../stories/view";
 import { collectionPath, liveCollections } from "../collections/registry";
 
 /** Quarter series (with quarter labels) for every library-wide row of the reader run: chart of the day and the lead's sparkline. */
-let seriesCache: { at: number; v: Promise<QuarterSeries[]> } | null = null;
-function quarterSeries(): Promise<QuarterSeries[]> {
-  if (seriesCache && Date.now() - seriesCache.at < 10 * 60_000) return seriesCache.v;
-  const v = (async () => {
+const quarterSeries = memo(10 * 60_000, async (): Promise<QuarterSeries[]> => {
     const db = supabaseAnon(), runId = await readerRunId(db), out: QuarterSeries[] = [];
     for (let from = 0; from < 20000; from += 200) {
       const { data, error } = await db.from("forecasts").select("dimension,value,quarters:evidence->quarters").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(from, from + 199);
@@ -30,10 +28,7 @@ function quarterSeries(): Promise<QuarterSeries[]> {
       if (!data || data.length < 200) break;
     }
     return out;
-  })();
-  seriesCache = { at: Date.now(), v }; v.catch(() => { seriesCache = null; });
-  return v;
-}
+});
 const clip = (s: string, n = 180) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 async function build(sector: string, format: FormatFilter): Promise<FrontModel> {
@@ -73,12 +68,9 @@ async function build(sector: string, format: FormatFilter): Promise<FrontModel> 
   }
   return model;
 }
-const cache = new Map<string, { at: number; v: Promise<FrontModel> }>();
 export const FRONT_TTL_MS = 20_000;
+const fronts = memoBy(FRONT_TTL_MS, (k: { sector: string; format: FormatFilter }) => build(k.sector, k.format), { key: k => `${k.sector}|${k.format}`, max: 100 });
 export function loadFront(rawSector: unknown, rawFormat: unknown): Promise<FrontModel> {
-  const sector = resolveSector(rawSector), format = resolveFormat(rawFormat), key = `${sector}|${format}`, hit = cache.get(key);
-  if (hit && Date.now() - hit.at < FRONT_TTL_MS) return hit.v;
-  const v = build(sector, format); cache.set(key, { at: Date.now(), v }); v.catch(() => cache.delete(key));
-  return v;
+  return fronts({ sector: resolveSector(rawSector), format: resolveFormat(rawFormat) });
 }
 export const loadFrontUpdates = async (sector: unknown, format: unknown) => updatesOf(await loadFront(sector, format));

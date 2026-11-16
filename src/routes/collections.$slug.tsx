@@ -4,6 +4,7 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { CollectionView } from "@/components/read/CollectionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { GalleryUnavailable } from "@/components/read/Unavailable";
 import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/collections/$slug")({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/collections/$slug")({
     return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/collections/${params.slug}` }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])], links: [{ rel: "canonical", href: `${SITE_URL}/collections/${params.slug}` }, ...fontLinks()] };
   },
   component: Collection,
-  errorComponent: () => <DigestNotFound title="This collection didn't load" body="The stored captures couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <GalleryUnavailable title="This collection didn't load" />,
   notFoundComponent: () => <DigestNotFound title="No such collection" body="There's no collection at this address. Every collection is listed on /collections." />,
 });
 function Collection() {

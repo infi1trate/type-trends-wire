@@ -88,6 +88,11 @@ export function tileFrame(fr: Frame, max = TILE_BOXES, fold = TILE_FOLD): Frame 
     .sort((a, b) => a[2] - b[2] || a[1] - b[1]).map(b => [b[0], b[1], b[2], b[3], Math.min(b[4], h - b[2])] as Box);
   return { ...fr, h, boxes: kept };
 }
+/** A frame cut to the first screen (the top TILE_FOLD page pixels), every box kept in its drawing order. */
+export function firstScreen(fr: Frame, fold = TILE_FOLD): Frame {
+  const h = Math.min(fr.h, fold);
+  return { ...fr, h, boxes: fr.boxes.filter(b => b[2] < h).map(b => [b[0], b[1], b[2], b[3], Math.min(b[4], h - b[2])] as Box) };
+}
 /** Sections that can be offered as a filter: only those with at least one stored crop. */
 export const sectionsWithCrops = (crops: CropRow[]) => CROP_SECTIONS.filter(s => crops.some(c => c.section === s && c.viewport === "desktop"));
 

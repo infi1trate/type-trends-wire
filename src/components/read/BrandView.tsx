@@ -1,7 +1,7 @@
 // BRAND object page (/brands/<domain>, Steady): Headline (the identity card and the two actions) → Evidence (moves with their
 // before/after captures, sections, how it sits in its sector) → So what → Related (similar brands, stories, signals).
 import { Link } from "@tanstack/react-router";
-import type { BrandPage, Face } from "@/lib/brand-page";
+import { faceLine, openPairId, type BrandPage, type Face } from "@/lib/brand-page";
 import type { Story } from "@/lib/stories";
 import { RelatedStories, Receipt } from "./StoryCard";
 import type { TraitRef } from "@/lib/agency/audit";
@@ -48,9 +48,10 @@ const Fact = ({ k, children, receipt }: { k: string; children: React.ReactNode; 
 </div>;
 function FaceValue({ f }: { f: Face | null }) {
   if (!f) return <span className="ed-small">Not measured</span>;
-  return <span className="block">
-    <span className="ed-h3 block break-words" style={f.css ? { fontFamily: f.css } : undefined} data-set-in={f.css ? "" : undefined}>{f.family}</span>
-    <span className="ed-caption block">{[f.size != null ? `${Math.round(f.size)}px` : null, f.google ? "Google Fonts" : null, f.css ? "set in the face" : "name only: showing it would mean fetching the font"].filter(Boolean).join(" · ")}</span>
+  const rest = faceLine(f).slice(f.family.length);
+  return <span className="block break-words">
+    <span className="ed-h3" style={f.css ? { fontFamily: f.css } : undefined} data-set-in={f.css ? "" : undefined}>{f.family}</span>
+    {rest && <span className="ed-caption">{rest}</span>}
   </span>;
 }
 
@@ -76,12 +77,16 @@ function IdentityCard({ b }: { b: BrandPage }) {
 
 function Moves({ b }: { b: BrandPage }) {
   if (!b.timeline.length) return <p className="ed-small max-w-[60ch]">No change recorded on {b.name} yet. Every new capture is compared with the last; when two captures agree on a change, it lands here with the pictures either side.</p>;
-  return <ol className="space-y-8" aria-label="Moves, newest first">{b.timeline.map(t => <li key={t.id} data-move={t.id}>
-    <Ledger rows={[{ key: t.id, href: t.href, title: <>{t.text}</>, tags: [t.rebrand ? "Confirmed rebrand" : t.kind], facts: [<BasisWord key="b" b={t.basis} />, t.story ? "Story" : "Receipt"], time: <time dateTime={t.at}>{storyTime(t.at)}</time> }]} />
-    {t.compare ? <div className="mt-4"><BeforeAfter before={t.compare.before} after={t.compare.after} /></div>
-      : t.pair ? <div className="mt-4" data-move-pair=""><FigureView fig={t.pair} view={{ figure: t.id, highlight: [], side: "split" }} live /></div>
-      : t.pairShared ? <p className="ed-caption mt-2">Same two captures as the move above.</p> : null}
-  </li>)}</ol>;
+  const open = openPairId(b.timeline);
+  return <ol className="space-y-8" aria-label="Moves, newest first">{b.timeline.map(t => {
+    const pics = t.compare ? <div className="max-w-[1064px]"><BeforeAfter before={t.compare.before} after={t.compare.after} /></div>
+      : t.pair ? <div className="max-w-[1064px]" data-move-pair=""><FigureView fig={t.pair} view={{ figure: t.id, highlight: [], side: "after" }} live pair /></div> : null;
+    return <li key={t.id} data-move={t.id}>
+      <Ledger rows={[{ key: t.id, href: t.href, title: <>{t.text}</>, tags: [t.rebrand ? "Confirmed rebrand" : t.kind], facts: [<BasisWord key="b" b={t.basis} />, t.story ? "Story" : "Receipt"], time: <time dateTime={t.at}>{storyTime(t.at)}</time> }]} />
+      {pics ? t.id === open ? <div className="mt-4" data-pair-open="">{pics}</div>
+        : <details className="move-pics mt-2" data-pair-closed=""><summary className="ed-tap ed-data inline-flex min-h-11 cursor-pointer items-center">Show the two captures</summary><div className="mt-3">{pics}</div></details>
+        : t.pairShared ? <p className="ed-caption mt-2">Same two captures as the move above.</p> : null}
+    </li>; })}</ol>;
 }
 
 function Sector({ b }: { b: BrandPage }) {

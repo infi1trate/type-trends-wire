@@ -19,13 +19,14 @@ const INK = "var(--tk-text-primary)", MUTED = "var(--tk-text-muted)", RULE = "va
 const SOURCE = "Stored library captures and archive history";
 const fade = "transition-opacity duration-300 motion-reduce:transition-none";
 
-export function FigureView({ fig, view, live = false }: { fig: Figure; view: View; live?: boolean }) {
+/** `pair`: a before/after shown as two captures side by side (each at most 520 px), the slider wiping the before over the after. */
+export function FigureView({ fig, view, live = false, pair = false }: { fig: Figure; view: View; live?: boolean; pair?: boolean }) {
   switch (fig.kind) {
     case "multiples": return <Multiples f={fig} v={view} />;
     case "adoption": return <Adoption f={fig} v={view} />;
     case "field": return <Field f={fig} v={view} />;
     case "drift": return <Drift f={fig} v={view} />;
-    case "before-after": return <BeforeAfter f={fig} v={view} live={live} />;
+    case "before-after": return <BeforeAfter f={fig} v={view} live={live} pair={pair} />;
     case "strip": return <Strip f={fig} v={view} live={live} />;
   }
 }
@@ -154,23 +155,31 @@ const frameCaption = (fr: Frame) => `${dayText(fr.at)} · ${fr.source === "live"
 
 // BEFORE AND AFTER -----------------------------------------------------------------------------------
 const SIDE_POS = { before: 100, after: 0, split: 50 } as const;
-function BeforeAfter({ f, v, live }: { f: BeforeAfterFig; v: View; live: boolean }) {
-  const id = useId(), [pos, setPos] = useState<number>(SIDE_POS[v.side ?? "split"]);
-  useEffect(() => { setPos(SIDE_POS[v.side ?? "split"]); }, [v.side]);
+function BeforeAfter({ f, v, live, pair = false }: { f: BeforeAfterFig; v: View; live: boolean; pair?: boolean }) {
+  const start = pair ? SIDE_POS.after : SIDE_POS[v.side ?? "split"];
+  const id = useId(), [pos, setPos] = useState<number>(start);
+  useEffect(() => { setPos(start); }, [start]);
+  const wipe = <><div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><CaptureFrame fr={f.before} label={`${f.name}, ${dayText(f.before.at)}`} /></div>
+    {pos > 0 && pos < 100 && <span className="absolute inset-y-0 w-0.5" style={{ left: `${pos}%`, background: INK }} />}</>;
   const on = new Set(v.highlight);
   return <ChartFrame title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={false} table={{ columns: ["Field", "Before", "After"], rows: f.diffs.map(d => [d.field, d.before, d.after]) }}>
-    {() => <div data-figure="before-after" data-pos={pos}>
-      <div className="relative" aria-hidden={live ? undefined : true}>
-        <CaptureFrame fr={f.after} label={`${f.name}, ${dayText(f.after.at)}`} />
-        <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><CaptureFrame fr={f.before} label={`${f.name}, ${dayText(f.before.at)}`} /></div>
-        {pos > 0 && pos < 100 && <span className="absolute inset-y-0 w-0.5" style={{ left: `${pos}%`, background: INK }} />}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before)}</span>
-        <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after)}</span>
-      </div>
-      {live && <div className="no-print mt-2 flex flex-wrap items-center gap-2">
-        <label htmlFor={`${id}-r`} className="sr-only">Slide between before and after</label>
+    {() => <div data-figure="before-after" data-pos={pos} data-layout={pair ? "pair" : "wipe"}>
+      {pair ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <figure className="m-0 min-w-0 max-w-[520px]"><CaptureFrame fr={f.before} label={`${f.name}, ${dayText(f.before.at)}`} />
+          <figcaption className="tk-t-caption tk-c-muted mt-2 inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before)}</figcaption></figure>
+        <figure className="m-0 min-w-0 max-w-[520px]"><div className="relative"><CaptureFrame fr={f.after} label={`${f.name}, ${dayText(f.after.at)}`} />{wipe}</div>
+          <figcaption className="tk-t-caption tk-c-muted mt-2 inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after)}{pos > 0 && <span>· before laid over {pos}%</span>}</figcaption></figure>
+      </div> : <>
+        <div className="relative" aria-hidden={live ? undefined : true}>
+          <CaptureFrame fr={f.after} label={`${f.name}, ${dayText(f.after.at)}`} />{wipe}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before)}</span>
+          <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after)}</span>
+        </div>
+      </>}
+      {live && <div className={`no-print mt-2 flex flex-wrap items-center gap-2 ${pair ? "max-w-[1064px]" : ""}`}>
+        <label htmlFor={`${id}-r`} className="sr-only">{pair ? "Slide the before capture over the after one" : "Slide between before and after"}</label>
         <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" aria-pressed={pos === 100} onClick={() => setPos(100)}>Before · {dayText(f.before.at)}</button>
         <input id={`${id}-r`} type="range" min={0} max={100} step={5} value={pos} onChange={e => setPos(Number(e.target.value))} className="min-h-11 min-w-0 flex-1" style={{ accentColor: INK }} aria-valuetext={pos === 100 ? "All before" : pos === 0 ? "All after" : `${pos}% before`} />
         <button type="button" className="tk-btn tk-t-kicker" data-variant="secondary" aria-pressed={pos === 0} onClick={() => setPos(0)}>After · {dayText(f.after.at)}</button>

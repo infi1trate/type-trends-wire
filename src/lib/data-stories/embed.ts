@@ -10,7 +10,7 @@ import { counter } from "./stepper";
 export const EMBED_UTILITIES: Record<string, string> = {
   absolute: "position:absolute", relative: "position:relative", block: "display:block", inline: "display:inline", "inline-block": "display:inline-block", "inline-flex": "display:inline-flex", flex: "display:flex", grid: "display:grid",
   "flex-1": "flex:1 1 0%", "flex-wrap": "flex-wrap:wrap", "items-center": "align-items:center", "justify-between": "justify-content:space-between",
-  "gap-1": "gap:4px", "gap-2": "gap:8px", "gap-x-4": "column-gap:16px", "gap-y-5": "row-gap:20px",
+  "gap-1": "gap:4px", "gap-2": "gap:8px", "gap-4": "gap:16px", "grid-cols-1": "grid-template-columns:repeat(1,minmax(0,1fr))", "m-0": "margin:0", "gap-x-4": "column-gap:16px", "gap-y-5": "row-gap:20px",
   "grid-cols-2": "grid-template-columns:repeat(2,minmax(0,1fr))", "grid-cols-[9ch_1fr]": "grid-template-columns:9ch 1fr",
   border: "border-width:1px;border-style:solid", "border-b-2": "border-bottom-width:2px;border-bottom-style:solid", "border-t": "border-top-width:1px;border-top-style:solid", "border-collapse": "border-collapse:collapse",
   "cursor-pointer": "cursor:pointer", "font-normal": "font-weight:400", "font-semibold": "font-weight:600",

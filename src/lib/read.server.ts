@@ -1,5 +1,6 @@
 // Read-mode loaders (Live, brands, patterns, signal series): anonymous SELECT-only reads assembled by pure models. No AI per view.
 import { supabaseAnon } from "./mcp/supabase";
+import { memo } from "./memo";
 import { forecastSiteTraits, type SiteRow } from "./forecast-signals";
 import { latestSignals } from "./signals.server";
 import { label, basis } from "./labels";
@@ -23,11 +24,6 @@ async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: 
   const out: T[] = [];
   for (let from = 0; from < 20000; from += size) { const { data, error } = await page(from, from + size - 1); if (error) throw error; out.push(...(data ?? [])); if (!data || data.length < size) break; }
   return out;
-}
-/** Per-instance memo with the public TTL pattern (failed loads are not cached). */
-function memo<T>(ms: number, load: () => Promise<T>) {
-  let c: { at: number; v: Promise<T> } | null = null;
-  return () => { if (!c || Date.now() - c.at > ms) { const v = load(); c = { at: Date.now(), v }; v.catch(() => { c = null; }); } return c.v; };
 }
 const TTL = 5 * 60_000;
 const day = 864e5;

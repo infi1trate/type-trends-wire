@@ -11,6 +11,7 @@ import type { SimilarResult } from "./similar";
 import type { BeforeAfterFig, FieldFig } from "./data-stories/types";
 import { beforeAfter, type CaptureRaw } from "./data-stories/templates/frames";
 import { capturePair, FRAME_LABEL } from "./stories/frames";
+import { firstScreen } from "./gallery";
 
 export type BrandPeer = { domain: string; name: string | null; sector: string; traits: string[] };
 export type ContrastItem = { key: string; name: string; sector: { v: number; n: number } };
@@ -50,6 +51,13 @@ export function showableFace(family: string): string | null {
   const k = plainFace(family).toLowerCase();
   return SHIPPED[k] ?? SYSTEM[k] ?? null;
 }
+/** One type line, only what a reader needs: the face, its size and where it comes from ("Inter · 56px · Google Fonts"). */
+export function faceLine(f: Face): string {
+  const from = f.google ? "Google Fonts" : SYSTEM[plainFace(f.family).toLowerCase()] ? "System font" : null;
+  return [f.family, f.size != null ? `${Math.round(f.size)}px` : null, from].filter(Boolean).join(" · ");
+}
+/** The newest move with captures to compare shows them open; every later one keeps them behind its row's disclosure. */
+export const openPairId = (moves: readonly Pick<Move, "id" | "compare" | "pair">[]) => moves.find(m => m.compare || m.pair)?.id ?? null;
 const HERO: Record<string, string> = { video: "Video", image: "Image", illustration: "Illustration", "3d": "3D", product: "Product shot", none: "Text only", text: "Text only", canvas: "Canvas" };
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -86,7 +94,8 @@ export function brandModel(r: BrandRows): BrandPage {
     const fig = beforeAfter({ title: "Before → after", note: `${FRAME_LABEL}: the two captures either side of the change, in their own colours. No screenshot is stored.`, domain: d, name: site?.site?.name ?? d, a: p.before, b: p.after, crops: [] });
     if (!fig.before.boxes.length || !fig.after.boxes.length) return { pair: null, pairShared: false };
     usedPairs.add(k); pairs++;
-    return { pair: fig, pairShared: false };
+    // Side by side in the column, each cut to the first screen, so a move's pair stays about one screen tall.
+    return { pair: { ...fig, before: firstScreen(fig.before), after: firstScreen(fig.after) }, pairShared: false };
   };
   const timeline: Move[] = [
     ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
