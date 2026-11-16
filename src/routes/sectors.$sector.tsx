@@ -6,6 +6,7 @@ import { LENS_SECTORS } from "@/lib/sector-lens";
 import { SectorReportView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
+import { withShare, shareImageFor } from "@/lib/share/meta";
 
 export const Route = createFileRoute("/sectors/$sector")({
   loader: async ({ context, params }) => {
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/sectors/$sector")({
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: "Sector not found — Sector reports" }, { name: "robots", content: "noindex" }] };
     const title = `${loaderData.title} · ${BRAND_NAME}`;
-    return { meta: [{ title }, { name: "description", content: loaderData.basis }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.basis }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }], links: fontLinks() };
+    return { meta: withShare(shareImageFor("sector", loaderData.sector), [{ title }, { name: "description", content: loaderData.basis }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.basis }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }]), links: fontLinks() };
   },
   component: Report,
   notFoundComponent: () => <DigestNotFound title="No report for this sector" body="Sector reports exist for each tracked sector; pick one from the sector reports page." />,

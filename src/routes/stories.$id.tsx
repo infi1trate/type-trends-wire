@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/site";
 import { StoryView } from "@/components/read/StoryView";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
+import { withShare, shareImageFor } from "@/lib/share/meta";
 
 export const Route = createFileRoute("/stories/$id")({
   loader: async ({ context, params }) => {
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/stories/$id")({
   head: ({ params, loaderData }) => {
     if (!loaderData) return { meta: [{ title: `Story unavailable — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] };
     const title = `${loaderData.headline} — ${BRAND_NAME}`, desc = loaderData.deck ?? `${loaderData.kicker}: a story from ${BRAND_NAME}, every number with receipts.`, url = `${SITE_URL}/stories/${encodeURIComponent(params.id)}`;
-    return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: loaderData.headline }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData.ran ? [] : [{ name: "robots", content: "noindex" }])], links: [{ rel: "canonical", href: url }, ...fontLinks()] };
+    return { meta: withShare(shareImageFor("story", params.id), [{ title }, { name: "description", content: desc }, { property: "og:title", content: loaderData.headline }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData.ran ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
   component: StoryPage,
   notFoundComponent: () => <DigestNotFound title="No such story" body="The link may be mistyped, or the story is older than the stored record." />,

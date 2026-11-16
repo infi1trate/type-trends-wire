@@ -26,6 +26,14 @@ export const ptsText = (d: number) => `${d >= 0 ? "+" : "−"}${Math.abs(d * 100
 export const qText = (q: string) => { const m = /^(\d{4})Q([1-4])$/.exec(q); return m ? `Q${m[2]} ${m[1]}` : q; };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const dayText = (iso: string) => { const d = new Date(iso); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+/** Before/after stamps that never read the same: the day; with the UTC time when both captures share a day; with seconds if they share a minute. */
+export function pairStamps(before: string, after: string): [string, string] {
+  const hm = (iso: string, sec: boolean) => { const d = new Date(iso), p = (n: number) => String(n).padStart(2, "0"); return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}${sec ? `:${p(d.getUTCSeconds())}` : ""} UTC`; };
+  const b = dayText(before), a = dayText(after);
+  if (b !== a) return [b, a];
+  const sec = hm(before, false) === hm(after, false);
+  return [`${b}, ${hm(before, sec)}`, `${a}, ${hm(after, sec)}`];
+}
 export const yearOf = (q: string) => Number(q.slice(0, 4));
 
 // Receipts ------------------------------------------------------------------------------------------

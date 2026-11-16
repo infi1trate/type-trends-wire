@@ -111,9 +111,12 @@ function mode(m: Mode, type: Record<TypeRoleName, TypeRole>, o: { accent: [strin
 }
 
 const D = K.density, M = K.motion, SH = K.shape;
+/** Each brand family is followed by a metric-matched local fallback (the @font-face rules in styles.css, FONT_FALLBACKS), so the page is
+ * drawn at once in the fallback and the swap to the web font barely moves it. */
+export const FONT_FALLBACKS = { display: "slug Display Fallback", text: "slug Text Fallback", mono: "slug Mono Fallback" } as const;
 const shared: Shared = {
   fonts: {
-    mono: K.font.mono.replace(/'/g, '"'), display: K.font.display.replace(/'/g, '"'), text: K.font.text.replace(/'/g, '"'),
+    mono: K.font.mono.replace(/'/g, '"'), display: K.font.display.replace(/'/g, '"'), text: K.font.text.replace(/'/g, '"'), fallback: FONT_FALLBACKS,
     // One font link for every page: Big Shoulders 700/900, Newsreader 400/600/italic, IBM Plex Mono 400/600.
     base: K.font.google, editorial: K.font.google,
     preconnect: ["https://fonts.googleapis.com", "https://fonts.gstatic.com"],

@@ -43,8 +43,11 @@ export const qLabel = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
 /** Text metrics: mono by default (fixed advance); pass a face and weight for Big Shoulders or Newsreader (per-glyph advances). */
 export type FontSpec = { face?: Face; weight?: TextWeight };
 export const textWidth = (text: string, size: number, f: FontSpec = {}) => (f.face && f.face !== "mono" ? measureText(text, size as TextSize, f.weight ?? 400, f.face) : [...text].length * GLYPH_ADVANCE * size);
+/** The text, or its longest whole-word prefix with "…" that fits (cut mid-word only when even the first word is too wide). */
 export function fit(text: string, size: number, width: number, f: FontSpec = {}) {
   if (textWidth(text, size, f) <= width) return text;
+  const words = text.split(/(?<=\s)/);
+  for (let n = words.length - 1; n >= 1; n--) { const t = words.slice(0, n).join("").trimEnd().replace(/[\s,;:·–—-]+$/, "") + "…"; if (t.length > 1 && textWidth(t, size, f) <= width) return t; }
   const chars = [...text];
   for (let n = chars.length - 1; n >= 1; n--) { const t = chars.slice(0, n).join("").trimEnd() + "…"; if (textWidth(t, size, f) <= width) return t; }
   return chars[0] + "…";

@@ -59,7 +59,10 @@ export type ImagePalette = { bg: string; ink: string; muted: string; secondary: 
  * plate and its type, the ink edge and the gumball for measured points. */
 export type ImageVibes = ImagePalette & { card: string; plate: string; plateInk: string; edge: string; ball: Gumball };
 export type Shared = {
-  fonts: { mono: string; display: string; text: string; /** Stylesheets that load the faces; the only place font URLs live. */ base: string; editorial: string; preconnect: readonly string[] };
+  fonts: { mono: string; display: string; text: string; /** Stylesheets that load the faces; the only place font URLs live. */ base: string; editorial: string; preconnect: readonly string[];
+    /** Optional metric-matched local fallback per family (declared by @font-face in styles.css), inserted after the web font in the CSS
+     * variables only, so pages draw at once and the swap barely moves them; SVG and PNG drawers keep the plain stacks. */
+    fallback?: { mono: string; display: string; text: string } };
   root: { size: string; leading: string };
   radius: { none: string; sm: string; md: string; pill: string; /** Round things only: stickers, gumballs. */ sticker: string; icon: string };
   border: { hairline: string; strong: string };
@@ -90,7 +93,8 @@ export function flatten(theme: Theme, mode: Mode): Record<string, string> {
   for (const [role, t] of Object.entries(type)) out[`--tk-type-${role}-family`] = `var(--tk-font-${t.family})`;
   const { fonts, image: _image, print, square: _square, ...rest } = theme.shared;
   put("--tk", rest); put("--tk-print", print);
-  out["--tk-font-mono"] = fonts.mono; out["--tk-font-display"] = fonts.display; out["--tk-font-text"] = fonts.text;
+  const fb = (stack: string, name: string | undefined) => { if (!name) return stack; const [first, ...rest] = stack.split(","); return [first!.trim(), `"${name}"`, ...rest.map(x => x.trim())].join(", "); };
+  out["--tk-font-mono"] = fb(fonts.mono, fonts.fallback?.mono); out["--tk-font-display"] = fb(fonts.display, fonts.fallback?.display); out["--tk-font-text"] = fb(fonts.text, fonts.fallback?.text);
   return out;
 }
 /** The token names (CSS variables) a complete theme must provide in every mode. Breakpoint steps are optional extras. */

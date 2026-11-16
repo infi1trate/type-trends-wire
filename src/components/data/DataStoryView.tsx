@@ -11,6 +11,10 @@ import { DigestShell } from "@/components/digest/Editorial";
 import { ReadFooter } from "@/components/read/Bits";
 import { Receipt } from "@/components/read/StoryCard";
 import { FigureView } from "./Figures";
+import { Deferred } from "@/components/read/Deferred";
+import type { Figure } from "@/lib/data-stories/types";
+
+const figureName = (f: Figure) => ("title" in f && f.title ? f.title : "Figure");
 import { Raised } from "@/components/brand/Containers";
 import { FiltersScope, Trail } from "@/components/brand/Illustration";
 import { coverTrail, type CoverTrail } from "@/lib/data-stories/cover";
@@ -46,12 +50,13 @@ export function StoryEnding({ s }: { s: StoryModel }) {
   </footer>;
 }
 
-/** The no-JS / print sequence: one block per step, figure then caption. */
-export function StepSequence({ s }: { s: StoryModel }) {
+/** The no-JS / print sequence: one block per step, figure then caption. Before hydration only the first step's figure is drawn (the stepper
+ * takes over straight after); the others draw as they come near the screen, and all of them draw for printing. */
+export function StepSequence({ s, full = false }: { s: StoryModel; full?: boolean }) {
   return <ol className="ed-wrap mt-10 grid gap-12" data-sequence="">{s.steps.map((st, k) => { const fig = s.figures[st.view.figure];
     return <li key={st.id} id={`step-${k + 1}`} className="break-inside-avoid" data-step={k + 1}>
       <p className="ed-kicker">{counter(k, s.steps.length)}</p>
-      {fig && <div className="mt-2"><FigureView fig={fig} view={st.view} /></div>}
+      {fig && <div className="mt-2"><Deferred eager={full || k === 0} label={figureName(fig)} style={{ minHeight: "18rem" }} noscript={<a href={`?figures=all#step-${k + 1}`} className="ed-tap ed-data underline">Draw this step's figure ({figureName(fig)}) →</a>}><FigureView fig={fig} view={st.view} /></Deferred></div>}
       <p className="ed-body mt-3 max-w-[60ch]"><CaptionText c={st.caption} /></p>
     </li>; })}</ol>;
 }
@@ -109,21 +114,21 @@ export function Stepper({ s, step, onStep }: { s: StoryModel; step: number; onSt
 }
 
 /** Sequence before hydration and while printing; the stepper after. */
-export function StoryBody({ s, step, onStep }: { s: StoryModel; step: number; onStep: (k: number) => void }) {
+export function StoryBody({ s, step, onStep, allFigures = false }: { s: StoryModel; step: number; onStep: (k: number) => void; allFigures?: boolean }) {
   const hydrated = useHydrated(), [printing, setPrinting] = useState(false);
   useEffect(() => {
     const b = () => flushSync(() => setPrinting(true)), a = () => setPrinting(false);
     window.addEventListener("beforeprint", b); window.addEventListener("afterprint", a);
     return () => { window.removeEventListener("beforeprint", b); window.removeEventListener("afterprint", a); };
   }, []);
-  return !hydrated || printing ? <StepSequence s={s} /> : <Stepper s={s} step={step} onStep={onStep} />;
+  return !hydrated || printing ? <StepSequence s={s} full={printing || allFigures} /> : <Stepper s={s} step={step} onStep={onStep} />;
 }
 
-export function DataStoryView({ s, step, onStep }: { s: StoryModel; step: number; onStep: (k: number) => void }) {
+export function DataStoryView({ s, step, onStep, allFigures = false }: { s: StoryModel; step: number; onStep: (k: number) => void; allFigures?: boolean }) {
   return <DigestShell label="Data stories" section="signals">
     <article className="digest-data pb-8" data-story={s.slug}>
       <StoryHead s={s} trail={coverTrail(s)} />
-      <StoryBody s={s} step={step} onStep={onStep} />
+      <StoryBody s={s} step={step} onStep={onStep} allFigures={allFigures} />
       <StoryEnding s={s} />
     </article>
     <ReadFooter terminal="/terminal?panel=history" />

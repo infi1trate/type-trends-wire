@@ -7,6 +7,7 @@ import { DigestNotFound } from "@/components/digest/NotFound";
 import { GalleryUnavailable } from "@/components/read/Unavailable";
 import { retryHeaders } from "@/lib/unavailable";
 import { BRAND_NAME } from "@/lib/brand";
+import { withShare, shareImageFor } from "@/lib/share/meta";
 
 export const Route = createFileRoute("/collections/$slug")({
   validateSearch: (s: Record<string, unknown>): { page?: number | undefined } => { const p = Math.floor(Number(s["page"])); return p > 1 && p < 1000 ? { page: p } : {}; },
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/collections/$slug")({
   },
   head: ({ params, loaderData }) => {
     const title = loaderData ? `${loaderData.title} — collection No. ${loaderData.number} · ${BRAND_NAME}` : `Collection · ${BRAND_NAME}`, desc = loaderData?.deck ?? "A saved wall of stored homepage captures.";
-    return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/collections/${params.slug}` }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])], links: [{ rel: "canonical", href: `${SITE_URL}/collections/${params.slug}` }, ...fontLinks()] };
+    return { meta: withShare(shareImageFor("collection", params.slug), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/collections/${params.slug}` }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: `${SITE_URL}/collections/${params.slug}` }, ...fontLinks()] };
   },
   headers: retryHeaders,
   component: Collection,

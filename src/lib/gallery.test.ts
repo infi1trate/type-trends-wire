@@ -91,12 +91,12 @@ describe("gallery model", () => {
     expect(countLine(0, 0, 0)).toBe("0 captures");
     expect(tileLabel("neon.com", "2026-11-16T00:00:00Z", "cta")).toBe("neon.com, call to action, 16 Nov 2026");
   });
-  it("a tile redraws at most 60 boxes, first screen only", () => {
+  it("a tile redraws at most 40 boxes (trimmed from 60 in Phase 21 for the HTML budget), first screen only", () => {
     const boxes: Box[] = Array.from({ length: 200 }, (_, k) => ["t", 0, k * 10, 100, 20 + (k % 5)]);
     const fr: Frame = { id: "1", at: "2026-11-16", source: "live", w: 1280, h: 4000, bg: null, ink: null, accent: null, tones: [], boxes, crop: null, archiveUrl: null };
     const t = tileFrame(fr);
-    expect(TILE_BOXES).toBe(60);
-    expect(t.boxes.length).toBeLessThanOrEqual(60);
+    expect(TILE_BOXES).toBe(40);
+    expect(t.boxes.length).toBeLessThanOrEqual(40);
     expect(t.h).toBe(900);
     expect(t.boxes.every(b => b[2] < 900 && b[2] + b[4] <= 900)).toBe(true);
   });

@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/site";
 import { PatternView } from "@/components/read/PatternViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
+import { withShare, shareImageFor } from "@/lib/share/meta";
 
 export const Route = createFileRoute("/patterns/$key")({
   validateSearch: (s: Record<string, unknown>): { sector?: string | undefined } => (typeof s["sector"] === "string" ? { sector: s["sector"] } : {}),
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/patterns/$key")({
   head: ({ params, loaderData }) => {
     const title = `${loaderData?.name ?? "Pattern"} — pattern · ${BRAND_NAME}`, desc = loaderData ? `${loaderData.total} tracked brands showing ${loaderData.name}, by sector and capture date.` : "Pattern not found.";
     const url = `${SITE_URL}/patterns/${encodeURIComponent(params.key)}`;
-    return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])], links: [{ rel: "canonical", href: url }, ...fontLinks()] };
+    return { meta: withShare(shareImageFor("pattern", params.key), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
   component: Pattern,
   notFoundComponent: () => <DigestNotFound title="Not a pattern right now" body="Patterns are headline layout or composite signals with at least three example brands. This one isn't, or the key is misspelled." />,

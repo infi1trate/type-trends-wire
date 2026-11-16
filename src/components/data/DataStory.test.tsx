@@ -60,8 +60,11 @@ describe("<Stepper>", () => {
 });
 
 describe("without JavaScript", () => {
-  it("every step renders as figure plus caption, with no controls", () => {
-    const html = renderToStaticMarkup(<StepSequence s={s} />);
+  it("every step renders as figure plus caption, with no controls (the first step drawn; the rest link to ?figures=all, which draws all)", () => {
+    const first = new DOMParser().parseFromString(renderToStaticMarkup(<StepSequence s={s} />), "text/html");
+    expect(first.querySelector("[data-sequence] > li [data-figure]")).not.toBeNull();
+    first.querySelectorAll("[data-sequence] > li [data-deferred] noscript").forEach(n => expect(n.innerHTML).toContain("?figures=all#step-"));
+    const html = renderToStaticMarkup(<StepSequence s={s} full />);
     const doc = new DOMParser().parseFromString(html, "text/html");
     const items = doc.querySelectorAll("[data-sequence] > li");
     expect(items).toHaveLength(s.steps.length);

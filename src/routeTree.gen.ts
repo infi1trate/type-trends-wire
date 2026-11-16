@@ -22,6 +22,8 @@ import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WhatWeShowRouteImport } from './routes/what-we-show'
+import { Route as AmbientIndexRouteImport } from './routes/ambient.index'
+import { Route as AmbientSetupRouteImport } from './routes/ambient.setup'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
 import { Route as BrandIndexRouteImport } from './routes/brand.index'
@@ -59,6 +61,7 @@ import { Route as PatternsIndexRouteImport } from './routes/patterns.index'
 import { Route as PatternsKeyRouteImport } from './routes/patterns.$key'
 import { Route as SectorsIndexRouteImport } from './routes/sectors.index'
 import { Route as SectorsSectorRouteImport } from './routes/sectors.$sector'
+import { Route as ShareSplatRouteImport } from './routes/share.$'
 import { Route as SignalsIndexRouteImport } from './routes/signals.index'
 import { Route as SignalsKeyRouteImport } from './routes/signals.$key'
 import { Route as StoriesIdRouteImport } from './routes/stories.$id'
@@ -160,6 +163,16 @@ const WelcomeRoute = WelcomeRouteImport.update({
 const WhatWeShowRoute = WhatWeShowRouteImport.update({
   id: '/what-we-show',
   path: '/what-we-show',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AmbientIndexRoute = AmbientIndexRouteImport.update({
+  id: '/ambient/',
+  path: '/ambient/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AmbientSetupRoute = AmbientSetupRouteImport.update({
+  id: '/ambient/setup',
+  path: '/ambient/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuditIndexRoute = AuditIndexRouteImport.update({
@@ -349,6 +362,11 @@ const SectorsIndexRoute = SectorsIndexRouteImport.update({
 const SectorsSectorRoute = SectorsSectorRouteImport.update({
   id: '/sectors/$sector',
   path: '/sectors/$sector',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareSplatRoute = ShareSplatRouteImport.update({
+  id: '/share/$',
+  path: '/share/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignalsIndexRoute = SignalsIndexRouteImport.update({
@@ -556,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/tools': typeof ToolsRoute
   '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
+  '/ambient/setup': typeof AmbientSetupRoute
   '/audit/new': typeof AuditNewRoute
   '/brand/colour': typeof BrandColourRoute
   '/brand/containers': typeof BrandContainersRoute
@@ -583,6 +602,7 @@ export interface FileRoutesByFullPath {
   '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
   '/sectors/$sector': typeof SectorsSectorRoute
+  '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -590,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
+  '/ambient/': typeof AmbientIndexRoute
   '/audit/': typeof AuditIndexRoute
   '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
@@ -645,6 +666,7 @@ export interface FileRoutesByTo {
   '/tools': typeof ToolsRoute
   '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
+  '/ambient/setup': typeof AmbientSetupRoute
   '/audit/new': typeof AuditNewRoute
   '/brand/colour': typeof BrandColourRoute
   '/brand/containers': typeof BrandContainersRoute
@@ -672,6 +694,7 @@ export interface FileRoutesByTo {
   '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
   '/sectors/$sector': typeof SectorsSectorRoute
+  '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -679,6 +702,7 @@ export interface FileRoutesByTo {
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
+  '/ambient': typeof AmbientIndexRoute
   '/audit': typeof AuditIndexRoute
   '/brand': typeof BrandIndexRoute
   '/brands': typeof BrandsIndexRoute
@@ -735,6 +759,7 @@ export interface FileRoutesById {
   '/tools': typeof ToolsRoute
   '/welcome': typeof WelcomeRoute
   '/what-we-show': typeof WhatWeShowRoute
+  '/ambient/setup': typeof AmbientSetupRoute
   '/audit/new': typeof AuditNewRoute
   '/brand/colour': typeof BrandColourRoute
   '/brand/containers': typeof BrandContainersRoute
@@ -762,6 +787,7 @@ export interface FileRoutesById {
   '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
   '/sectors/$sector': typeof SectorsSectorRoute
+  '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -769,6 +795,7 @@ export interface FileRoutesById {
   '/trait/{$key}.png': typeof TraitChar123keyChar125DotpngRoute
   '/watch/$id': typeof WatchIdRoute
   '/watch/new': typeof WatchNewRoute
+  '/ambient/': typeof AmbientIndexRoute
   '/audit/': typeof AuditIndexRoute
   '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
@@ -826,6 +853,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/welcome'
     | '/what-we-show'
+    | '/ambient/setup'
     | '/audit/new'
     | '/brand/colour'
     | '/brand/containers'
@@ -853,6 +881,7 @@ export interface FileRouteTypes {
     | '/morning/rss.xml'
     | '/patterns/$key'
     | '/sectors/$sector'
+    | '/share/$'
     | '/signals/$key'
     | '/stories/$id'
     | '/thumbs/$'
@@ -860,6 +889,7 @@ export interface FileRouteTypes {
     | '/trait/{$key}.png'
     | '/watch/$id'
     | '/watch/new'
+    | '/ambient/'
     | '/audit/'
     | '/brand/'
     | '/brands/'
@@ -915,6 +945,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/welcome'
     | '/what-we-show'
+    | '/ambient/setup'
     | '/audit/new'
     | '/brand/colour'
     | '/brand/containers'
@@ -942,6 +973,7 @@ export interface FileRouteTypes {
     | '/morning/rss.xml'
     | '/patterns/$key'
     | '/sectors/$sector'
+    | '/share/$'
     | '/signals/$key'
     | '/stories/$id'
     | '/thumbs/$'
@@ -949,6 +981,7 @@ export interface FileRouteTypes {
     | '/trait/{$key}.png'
     | '/watch/$id'
     | '/watch/new'
+    | '/ambient'
     | '/audit'
     | '/brand'
     | '/brands'
@@ -1004,6 +1037,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/welcome'
     | '/what-we-show'
+    | '/ambient/setup'
     | '/audit/new'
     | '/brand/colour'
     | '/brand/containers'
@@ -1031,6 +1065,7 @@ export interface FileRouteTypes {
     | '/morning/rss.xml'
     | '/patterns/$key'
     | '/sectors/$sector'
+    | '/share/$'
     | '/signals/$key'
     | '/stories/$id'
     | '/thumbs/$'
@@ -1038,6 +1073,7 @@ export interface FileRouteTypes {
     | '/trait/{$key}.png'
     | '/watch/$id'
     | '/watch/new'
+    | '/ambient/'
     | '/audit/'
     | '/brand/'
     | '/brands/'
@@ -1094,6 +1130,7 @@ export interface RootRouteChildren {
   ToolsRoute: typeof ToolsRoute
   WelcomeRoute: typeof WelcomeRoute
   WhatWeShowRoute: typeof WhatWeShowRoute
+  AmbientSetupRoute: typeof AmbientSetupRoute
   AuditNewRoute: typeof AuditNewRoute
   BrandColourRoute: typeof BrandColourRoute
   BrandContainersRoute: typeof BrandContainersRoute
@@ -1121,6 +1158,7 @@ export interface RootRouteChildren {
   MorningRssDotxmlRoute: typeof MorningRssDotxmlRoute
   PatternsKeyRoute: typeof PatternsKeyRoute
   SectorsSectorRoute: typeof SectorsSectorRoute
+  ShareSplatRoute: typeof ShareSplatRoute
   SignalsKeyRoute: typeof SignalsKeyRoute
   StoriesIdRoute: typeof StoriesIdRoute
   ThumbsSplatRoute: typeof ThumbsSplatRoute
@@ -1128,6 +1166,7 @@ export interface RootRouteChildren {
   TraitChar123keyChar125DotpngRoute: typeof TraitChar123keyChar125DotpngRoute
   WatchIdRoute: typeof WatchIdRoute
   WatchNewRoute: typeof WatchNewRoute
+  AmbientIndexRoute: typeof AmbientIndexRoute
   AuditIndexRoute: typeof AuditIndexRoute
   BrandIndexRoute: typeof BrandIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
@@ -1261,6 +1300,20 @@ declare module '@tanstack/react-router' {
       path: '/what-we-show'
       fullPath: '/what-we-show'
       preLoaderRoute: typeof WhatWeShowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ambient/': {
+      id: '/ambient/'
+      path: '/ambient'
+      fullPath: '/ambient/'
+      preLoaderRoute: typeof AmbientIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ambient/setup': {
+      id: '/ambient/setup'
+      path: '/ambient/setup'
+      fullPath: '/ambient/setup'
+      preLoaderRoute: typeof AmbientSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/audit/': {
@@ -1520,6 +1573,13 @@ declare module '@tanstack/react-router' {
       path: '/sectors/$sector'
       fullPath: '/sectors/$sector'
       preLoaderRoute: typeof SectorsSectorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$': {
+      id: '/share/$'
+      path: '/share/$'
+      fullPath: '/share/$'
+      preLoaderRoute: typeof ShareSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signals/': {
@@ -1798,6 +1858,7 @@ const rootRouteChildren: RootRouteChildren = {
   ToolsRoute: ToolsRoute,
   WelcomeRoute: WelcomeRoute,
   WhatWeShowRoute: WhatWeShowRoute,
+  AmbientSetupRoute: AmbientSetupRoute,
   AuditNewRoute: AuditNewRoute,
   BrandColourRoute: BrandColourRoute,
   BrandContainersRoute: BrandContainersRoute,
@@ -1825,6 +1886,7 @@ const rootRouteChildren: RootRouteChildren = {
   MorningRssDotxmlRoute: MorningRssDotxmlRoute,
   PatternsKeyRoute: PatternsKeyRoute,
   SectorsSectorRoute: SectorsSectorRoute,
+  ShareSplatRoute: ShareSplatRoute,
   SignalsKeyRoute: SignalsKeyRoute,
   StoriesIdRoute: StoriesIdRoute,
   ThumbsSplatRoute: ThumbsSplatRoute,
@@ -1832,6 +1894,7 @@ const rootRouteChildren: RootRouteChildren = {
   TraitChar123keyChar125DotpngRoute: TraitChar123keyChar125DotpngRoute,
   WatchIdRoute: WatchIdRoute,
   WatchNewRoute: WatchNewRoute,
+  AmbientIndexRoute: AmbientIndexRoute,
   AuditIndexRoute: AuditIndexRoute,
   BrandIndexRoute: BrandIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,

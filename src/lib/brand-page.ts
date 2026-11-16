@@ -1,6 +1,7 @@
 // BRAND object: one Read page per tracked site, built from stored rows (the audit's single-site model plus its full move history). Pure.
 import { auditModel, traitsOf, type AuditRows, type TraitRef } from "./agency/audit";
-import { eventSentence, rebrandSentence, EVENT_KIND, type EventRow } from "./agency/changes";
+import { eventSentence, rebrandSentence, EVENT_KIND, FIELD, type EventRow } from "./agency/changes";
+import { flipRuns, flipSentence, type FlipIn } from "./flips";
 import { basis, label, sectorName, stageName, type Basis, type Dimension, type StageName } from "./labels";
 import { OBJECT_BLOCKS, brandPath, consoleHref, signalPath, type Block } from "./ia";
 import type { Tier } from "./tiers";
@@ -22,7 +23,8 @@ export type BrandTag = { key: string; name: string; basis: Basis; kind: "aesthet
 export type BrandShow = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; tier: Tier; href: string };
 export type Face = { family: string; google: boolean; size: number | null; css: string | null };
 export type LayoutFact = { id: "theme" | "hero" | "h1" | "whitespace"; label: string; value: string };
-export type Move = { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; rebrand: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null; pair: BeforeAfterFig | null; pairShared: boolean };
+export type Move = { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; rebrand: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null; pair: BeforeAfterFig | null; pairShared: boolean;
+  /** A back-and-forth run folded into this one row (flips.ts); its single moves sit behind a disclosure. */ folded?: Move[] };
 export type BrandPage = {
   domain: string; name: string; sector: string | null; sectorName: string; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
   identity: { h1: Face | null; body: Face | null; theme: string | null; accent: { hex: string; name: string } | null; palette: { hex: string; name: string; share: number | null }[]; tags: BrandTag[]; layout: LayoutFact[]; receipt: string };
@@ -56,7 +58,29 @@ export function faceLine(f: Face): string {
   const from = f.google ? "Google Fonts" : SYSTEM[plainFace(f.family).toLowerCase()] ? "System font" : null;
   return [f.family, f.size != null ? `${Math.round(f.size)}px` : null, from].filter(Boolean).join(" · ");
 }
+const withoutFolded = <T extends { folded?: unknown }>({ folded: _f, ...m }: T) => m;
 /** The newest move with captures to compare shows them open; every later one keeps them behind its row's disclosure. */
+/** Folds each back-and-forth run (one scalar field swapping two values within FLIP_DAYS) into one row placed where its newest move was. */
+export function foldFlips<M extends { id: string; at: string }>(moves: M[], events: readonly EventRow[]): (M & { folded?: M[] })[] {
+  const ins: FlipIn[] = events.flatMap(e => {
+    const b = e.before && typeof e.before === "object" ? (e.before as Record<string, unknown>) : {}, a = e.after && typeof e.after === "object" ? (e.after as Record<string, unknown>) : {};
+    const keys = [...new Set([...Object.keys(b), ...Object.keys(a)])];
+    if (keys.length !== 1 || typeof b[keys[0]!] !== "string" || typeof a[keys[0]!] !== "string") return [];
+    return [{ id: `event:${e.id}`, field: keys[0]!, before: b[keys[0]!] as string, after: a[keys[0]!] as string, at: e.effective_at ?? e.detected_at }];
+  });
+  const byId = new Map(moves.map(m => [m.id, m])), out: (M & { folded?: M[] })[] = [], taken = new Set<string>();
+  const runs = flipRuns(ins).filter(r => r.ids.every(id => byId.has(id)));
+  const head = new Map<string, (typeof runs)[number]>();
+  for (const r of runs) { const members = r.ids.map(id => byId.get(id)!).sort((x, y) => y.at.localeCompare(x.at)); head.set(members[0]!.id, r); r.ids.forEach(id => taken.add(id)); }
+  for (const m of moves) {
+    const r = head.get(m.id);
+    if (r) {
+      const members = r.ids.map(id => byId.get(id)!).sort((x, y) => y.at.localeCompare(x.at));
+      out.push({ ...m, id: `flip:${r.field}:${r.ids[0]}`, kind: "Back and forth", text: flipSentence(r, FIELD[r.field] ?? r.field.replace(/_/g, " ")), compare: null, folded: members } as M & { folded: M[] });
+    } else if (!taken.has(m.id)) out.push(m as M & { folded?: M[] });
+  }
+  return out;
+}
 export const openPairId = (moves: readonly Pick<Move, "id" | "compare" | "pair">[]) => moves.find(m => m.compare || m.pair)?.id ?? null;
 const HERO: Record<string, string> = { video: "Video", image: "Image", illustration: "Illustration", "3d": "3D", product: "Product shot", none: "Text only", text: "Text only", canvas: "Canvas" };
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -97,11 +121,11 @@ export function brandModel(r: BrandRows): BrandPage {
     // Side by side in the column, each cut to the first screen, so a move's pair stays about one screen tall.
     return { pair: { ...fig, before: firstScreen(fig.before), after: firstScreen(fig.after) }, pairShared: false };
   };
-  const timeline: Move[] = [
+  const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [
     ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
     ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: true, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
-  ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX)
-    .map(({ pivot, ...m }) => ({ ...m, ...pairAt(pivot, m.compare) }));
+  ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
+  const timeline: Move[] = foldFlips(raw, r.events.filter(e => e.domain === d)).map(({ pivot, ...m }) => (m.folded ? { ...m, pair: null, pairShared: false, folded: m.folded.map(({ pivot: _p, ...x }) => ({ ...x, pair: null, pairShared: false })) } : { ...withoutFolded(m), ...pairAt(pivot, m.compare) }));
   const history = Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(crops, d, s).map(toCrop)])) as Record<CropSection, Crop[]>;
   const m = a.market?.sites.find(s => s.domain === d) ?? null;
   const versus = m ? { scope: m.scope, scopeName: sectorName(m.scope), ahead: m.ahead.filter(x => shown(x.trait)), behind: m.behind.filter(x => shown(x.trait)) } : null;

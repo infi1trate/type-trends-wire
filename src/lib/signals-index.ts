@@ -7,9 +7,12 @@ import { resolveSector } from "./sector-lens";
 import { SIGNAL_TABS, resolveSignalTab, signalPath, signalTabOf, type SignalTab } from "./ia";
 import { TIERS, TIER_WORD, type Tier } from "./tiers";
 import { sectorName, type Basis, type StageName } from "./labels";
+import { NEXT_WAVE_MAX_SHARE, NEXT_WAVE_MIN_SITES } from "./forecast-signals";
 
 export const SIGNAL_SORTS = [{ id: "momentum", label: "Momentum" }, { id: "share", label: "Share now" }, { id: "change", label: "Change" }] as const;
 export type SignalSort = (typeof SIGNAL_SORTS)[number]["id"];
+/** Rows sent on the default view per tier (the rest come with ?tier=archive, the full list), so the page stays under its HTML budget. */
+export const FIRST_ROWS: Record<Tier, number> = { headline: Infinity, supporting: 15, archive: 0 };
 export type SignalsView = { tab: SignalTab; sort: SignalSort; sector: string; archive: boolean };
 export type SignalsSearch = { tab?: string; sort?: string; sector?: string; tier?: string };
 
@@ -33,9 +36,14 @@ export type SignalsRow = {
   /** Well-covered quarterly shares (all sectors, unfiltered by the lens) and the change from the first to the last. */
   points: number[]; change: number | null;
 };
-/** "Momentum 75", "Momentum 75, all sectors" under a lens, "Momentum not scored" when the run has none: never a bare dash. */
-export const momentumText = (r: Pick<SignalsRow, "momentum" | "momentumAll">) => (r.momentum == null ? "Momentum not scored" : `Momentum ${r.momentum}${r.momentumAll ? ", all sectors" : ""}`);
-export type SignalsGroup = { tier: Tier; title: string; rows: SignalsRow[]; folded: boolean };
+/** "Momentum 75", "Momentum 75, all sectors" under a lens; null (an empty slot) when the run has no score: the count line says why, once. */
+export const momentumText = (r: Pick<SignalsRow, "momentum" | "momentumAll">) => (r.momentum == null ? null : `Momentum ${r.momentum}${r.momentumAll ? ", all sectors" : ""}`);
+/** Why a signal has no Momentum: the forecast scores the next wave only below a mainstream share and above a minimum of sites. */
+export const MOMENTUM_NEEDS = `a share under ${Math.round(NEXT_WAVE_MAX_SHARE * 100)}% across all sectors and at least ${NEXT_WAVE_MIN_SITES} tracked sites; signals already that common have no next wave to score`;
+export const NOT_SCORED_RULE = "Not scored";
+/** `unscoredFrom`: under the Momentum sort, the index of the first row without a score (they go last, under one "Not scored" rule). */
+/** `rows` are the rows sent (see FIRST_ROWS); `count` is how many the tier has. */
+export type SignalsGroup = { tier: Tier; title: string; rows: SignalsRow[]; count: number; folded: boolean; unscoredFrom: number | null };
 /** Change over the well-covered quarters: last minus first, or null with fewer than two quarters. */
 export const changeOf = (pts: readonly number[]) => (pts.length >= 2 ? pts[pts.length - 1]! - pts[0]! : null);
 const desc = (a: number | null, b: number | null) => (b ?? -Infinity) - (a ?? -Infinity);
@@ -51,12 +59,18 @@ export function signalsIndex(i: { all: Signal[]; lens: LensResult; series: Recor
   const by = (a: Omit<SignalsRow, "rank">, b: Omit<SignalsRow, "rank">) =>
     (v.sort === "share" ? desc(a.share, b.share) : v.sort === "change" ? desc(a.change, b.change) : desc(a.momentum, b.momentum))
     || desc(a.momentum, b.momentum) || desc(a.share, b.share) || a.name.localeCompare(b.name);
-  const groups: SignalsGroup[] = TIERS.map(t => ({ tier: t, title: TIER_WORD[t].toLowerCase().replace(/^./, c => c.toUpperCase()), folded: t === "archive" && !v.archive,
-    rows: rows.filter(r => r.tier === t).sort(by).map((r, k) => ({ ...r, rank: k + 1 })) }));
-  const n = (t: Tier) => groups.find(g => g.tier === t)!.rows.length;
+  const full = TIERS.map(t => ({ t, rs: rows.filter(r => r.tier === t).sort(by).map((r, k) => ({ ...r, rank: k + 1 })) }));
+  const n = (t: Tier) => full.find(g => g.t === t)!.rs.length;
+  // The first screen: every headline row, the first SUPPORTING_FIRST supporting rows, archive folded with its count only. ?tier=archive sends all.
+  const groups: SignalsGroup[] = full.map(({ t, rs }) => {
+    const shownRows = v.archive ? rs : rs.slice(0, FIRST_ROWS[t]), first = shownRows.findIndex(r => r.momentum == null);
+    return { tier: t, title: TIER_WORD[t].toLowerCase().replace(/^./, c => c.toUpperCase()), folded: t === "archive" && !v.archive, rows: shownRows, count: rs.length, unscoredFrom: v.sort === "momentum" && first >= 0 ? first : null };
+  });
   const where = [v.tab !== "all" ? SIGNAL_TABS.find(x => x.id === v.tab)!.label : null, v.sector !== "all" ? sectorName(v.sector) : null].filter(Boolean).join(", ");
   const sortWord = `${SIGNAL_SORTS.find(x => x.id === v.sort)!.label.toLowerCase()}${v.sort === "momentum" && scoped ? " across all sectors" : ""}`;
   const countLine = `${n("headline")} headline and ${n("supporting")} supporting ${n("headline") + n("supporting") === 1 ? "signal" : "signals"}${where ? ` in ${where}` : ""}, by ${sortWord}; ${n("archive")} archive ${n("archive") === 1 ? "signal" : "signals"} ${v.archive ? "shown" : "folded"}.`;
-  return { groups, countLine, view: v, scope: i.lens.scope, scoped, note: i.lens.note };
+  const shown = full.filter(g => g.t !== "archive").flatMap(g => g.rs), scored = shown.filter(r => r.momentum != null).length;
+  const momentumLine = shown.length && scored < shown.length ? `Momentum is scored for ${scored} of ${shown.length}; it needs ${MOMENTUM_NEEDS}.` : null;
+  return { groups, countLine: momentumLine ? `${countLine} ${momentumLine}` : countLine, momentumLine, view: v, scope: i.lens.scope, scoped, note: i.lens.note };
 }
 export type SignalsIndex = ReturnType<typeof signalsIndex>;

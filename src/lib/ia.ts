@@ -197,7 +197,7 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
 /** The Read section a path belongs to (for the active nav item). */
 export function readSectionOf(pathname: string): SectionId | null {
   const s = pathname.split("/").filter(Boolean)[0];
-  if (!s || s === "stories") return "live";
+  if (!s || s === "stories" || s === "ambient") return "live";
   if (s === "signals" || s === "trait" || s === "what-we-show" || s === "data") return "signals";
   if (s === "brands") return "brands";
   if (s === "patterns" || s === "collections") return "patterns";
@@ -213,6 +213,9 @@ const S = (section: SectionId, mode: Surface["mode"], status: Surface["status"],
 export const SURFACES: Record<string, Surface> = {
   // Read pages
   "index": S("live", "read", "shown", "The live front page from the pure front model: ticker, lead, Moving now, the live column (polls /front.json), chart of the day, new on the scene, your sector, editions; ?format= and ?sector= filters. Old /?panel= links redirect to /terminal."),
+  "ambient.index": S("live", "read", "quiet", "The studio board: a hands-off, full-screen board for a wall (dark, Loud). Scenes from one pure playlist (lead, newest stories, chart, a move, a collection, the day's figure, a data story); polls /front.json; ?dwell=, ?sector=, ?scenes=. Gated."),
+  "ambient.setup": S("live", "read", "quiet", "How to set up the studio board: the three URL settings, kiosk mode in plain words, whether this browser keeps the screen awake. Gated; linked from the front page footer and /tools."),
+  "status.launch": S("tools", "read", "quiet", "Launch readiness for the owner: each switch as set now, what turning it on would expose, and live yes/no pre-flight checks. Read-only, no controls; gated, linked from /status."),
   "front[.]json": S("live", "read", "quiet", "The front page's changeable parts as JSON (ETag, short private cache), polled about every minute; gated like the pages."),
   "stories.no.$number": S("live", "read", "quiet", "A story's permanent number (No. 47) redirects to its story page; killed stories' numbers lead nowhere."),
   "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
@@ -339,7 +342,7 @@ export const DENSITY: Record<string, Density | "none"> = {
   "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
   "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.space": "quiet",
   "brand.illustration": "quiet", "brand.motion": "quiet", "brand.downloads": "quiet",
-  terminal: "loud", "library.$domain": "loud", "chart.index": "loud", "chart.$week": "loud", kit: "loud",
+  terminal: "loud", "library.$domain": "loud", "ambient.index": "loud", "ambient.setup": "steady", "status.launch": "steady", "chart.index": "loud", "chart.$week": "loud", kit: "loud",
   "front[.]json": "none", "digest.rss[.]xml": "none", "digest.{$week}[.]png": "none", "morning.rss[.]xml": "none", "chart.{$week}[.]png": "none", "chart.{$week}[.]svg": "none",
   "audit[.]png": "none", "trait.{$key}[.]png": "none", "data.{$slug}[.]png": "none", "data.embed.$slug": "none", "embed.trait.$key": "none", "embed.chart.$week": "none",
   "robots[.]txt": "none", "thumbs.$": "none", "crops.$": "none", "brand.files.$file": "none", "api/*": "none",

@@ -9,6 +9,7 @@ import { SITE_URL } from "@/lib/site";
 import { FrontView } from "@/components/read/FrontView";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME, BRAND_LINE } from "@/lib/brand";
+import { withShare, shareImageFor } from "@/lib/share/meta";
 
 const TITLE = `${BRAND_NAME} — ${BRAND_LINE}`;
 const DESC = "What is changing in how brands look and sound on the web, as it is detected: the lead story, the live column, what is moving, the chart of the day and the editions, every number with receipts.";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/")({
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(frontQuery(deps.sector, deps.format)).then(() => undefined),
   head: () => ({
-    meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: SITE_URL }, { name: "twitter:card", content: "summary_large_image" }],
+    meta: withShare(shareImageFor("front", "today"), [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: SITE_URL }, { name: "twitter:card", content: "summary_large_image" }]),
     links: [{ rel: "canonical", href: SITE_URL }, ...fontLinks()],
   }),
   component: Front,

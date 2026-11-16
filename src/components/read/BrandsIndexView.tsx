@@ -1,6 +1,6 @@
 // /brands (Steady): the tracked brands as one Ledger — a search over the 300, the sector lens, columns for sector, last change and
 // recorded moves, sortable by each; every choice lives in the URL. A Moves tab lists recent confirmed changes across every brand.
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { brandsQuery } from "@/lib/data";
@@ -14,8 +14,11 @@ import { StoryCard } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { ScrollRow } from "./ScrollRow";
 
-export function BrandsIndexView({ v }: { v: BrandsView }) {
+/** Rows in the first response; "Show all" draws the rest from data already on the page (a link with ?all=1 without scripts). */
+export const BRANDS_FIRST = 60;
+export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boolean }) {
   const { data } = useSuspenseQuery(brandsQuery());
+  const [more, setMore] = useState(false);
   const navigate = useNavigate();
   const idx = useMemo(() => brandsIndex(data.sites, v), [data, v]);
   const moves = data.moves.filter(m => v.sector === "all" || m.sector === v.sector);
@@ -44,8 +47,10 @@ export function BrandsIndexView({ v }: { v: BrandsView }) {
       </RuleBox>
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}</p>
       {idx.empty ? <p className="ed-body mt-4 max-w-[60ch]">{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p>
-        : <Ledger className="mt-3" label="Tracked brands" rows={idx.rows.map(s => ({ key: s.domain, href: `/brands/${encodeURIComponent(s.domain)}`, title: s.name ?? s.domain,
-          line: <><span className="ed-code">{s.domain}</span>{s.lastMove ? ` · ${s.lastMove}` : ""}</>, facts: [sectorName(s.sector), s.lastChange ? `Changed ${storyTime(s.lastChange)}` : "No recorded move", `${s.moves} ${s.moves === 1 ? "move" : "moves"}`] }))} />}
+        : <><Ledger className="mt-3" label="Tracked brands" rows={(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map(s => ({ key: s.domain, href: `/brands/${encodeURIComponent(s.domain)}`, title: s.name ?? s.domain,
+          line: <><span className="ed-code">{s.domain}</span>{s.lastMove ? ` · ${s.lastMove}` : ""}</>, facts: [sectorName(s.sector), s.lastChange ? `Changed ${storyTime(s.lastChange)}` : "No recorded move", `${s.moves} ${s.moves === 1 ? "move" : "moves"}`] }))} />
+          {!all && !more && idx.rows.length > BRANDS_FIRST && <p className="ed-data mt-4"><Link to="/brands" search={{ ...brandsSearch(v), all: "1" }} resetScroll={false} className="c-raised ed-kicker no-underline" data-container="raised" data-show-all=""
+            onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-ledger] .ledger-link")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}
     </section> : <section aria-label="Recent moves" className="ed-wrap mt-6">
       <p className="ed-caption">Confirmed changes (two captures agree) and rebrands in the last 30 days, newest first.</p>
       {moves.length ? <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 lg:grid-cols-3">{moves.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-body mt-4">No confirmed move{v.sector !== "all" ? ` in ${sectorName(v.sector)}` : ""} in the last 30 days. Moves land here as soon as two captures agree on a change.</p>}

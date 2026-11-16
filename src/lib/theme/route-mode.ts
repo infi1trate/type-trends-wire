@@ -10,4 +10,4 @@ export const DEFAULT_MODE: Mode = "light";
 export const modeOf = (matches: readonly { staticData?: { mode?: Mode } | undefined }[]): Mode =>
   matches.reduce<Mode>((m, x) => x.staticData?.mode ?? m, DEFAULT_MODE);
 /** Terminal-density route files (dark mode): the terminal, the library record and the chart of the week. */
-export const DARK_ROUTE_FILES = ["terminal.tsx", "library.$domain.tsx", "chart.index.tsx", "chart.$week.tsx"] as const;
+export const DARK_ROUTE_FILES = ["terminal.tsx", "library.$domain.tsx", "chart.index.tsx", "chart.$week.tsx", "ambient.index.tsx"] as const;

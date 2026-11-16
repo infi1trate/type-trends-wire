@@ -50,6 +50,11 @@ export const getPattern = createServerFn({ method: "GET" }).inputValidator(z.obj
   const { loadPattern } = await import("./read.server");
   return loadPattern(data.key, data.sector);
 });
+/** /signals: the ranked index for one view (tab, sort, lens, archive), built on the server so the page ships only its rows. */
+export const getSignalsIndex = createServerFn({ method: "GET" }).inputValidator(z.object({ tab: z.string().max(20).default("all"), sort: z.string().max(20).default(""), sector, tier: z.string().max(20).default("") })).handler(async ({ data }) => {
+  const [{ loadSignalsIndex }, { parseSignalsSearch }] = await Promise.all([import("./signals-index.server"), import("./signals-index")]);
+  return loadSignalsIndex(parseSignalsSearch(data));
+});
 export const getSignalSeries = createServerFn({ method: "GET" }).inputValidator(z.object({ scope: sector })).handler(async ({ data }) => {
   const { loadSignalSeries } = await import("./read.server");
   return loadSignalSeries(data.scope);
@@ -105,4 +110,9 @@ export const getCollections = createServerFn({ method: "GET" }).handler(async ()
 export const getCollection = createServerFn({ method: "GET" }).inputValidator(z.object({ slug: z.string().min(3).max(80).regex(/^[a-z0-9-]+$/), page: z.number().int().min(1).max(999).default(1) })).handler(async ({ data }) => {
   const { loadCollection } = await import("./gallery.server");
   return loadCollection(data.slug, data.page);
+});
+/** /ambient: everything the studio board plays for one sector lens (memoised; no AI, no writes). */
+export const getAmbient = createServerFn({ method: "GET" }).inputValidator(z.object({ sector })).handler(async ({ data }) => {
+  const [{ loadAmbient }, { resolveSector }] = await Promise.all([import("./ambient/ambient.server"), import("./sector-lens")]);
+  return loadAmbient(resolveSector(data.sector));
 });

@@ -172,6 +172,7 @@ export const FRONT_FOOTER = [
   { label: "What makes a story", href: "/what-we-show#ed-w-story" },
   { label: "What we show and why", href: "/what-we-show" },
   { label: "Status", href: "/status" },
+  { label: "Studio board", href: "/ambient/setup" },
   { label: "Removal policy", href: "/what-we-show#ed-w-images" },
 ] as const;
 

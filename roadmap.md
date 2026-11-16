@@ -283,3 +283,14 @@
 - [x] Brand page: before/after side by side (≤520px each, first screen), newest open, rest behind "Show the two captures"; type line "Inter · 56px · Google Fonts"
 - [x] /signals with a lens: all-sector Momentum labelled, never a bare dash; Momentum sort and count line say so
 - [x] Tests
+
+# Phase 21 — the always-on board and the finishing pass (don't publish; gate and flags unchanged)
+- [ ] Speed: measure 12 pages × 360/1440 before; budgets (HTML < 200 KB, CLS < 0.05, font swap, deferred frames, no double data); after table
+- [ ] Ambient board /ambient + /ambient/setup (playlist pure fn, scenes, Cut, controls, polling, wake lock, burn-in shift); tests
+- [ ] Access: axe on 12 pages × light/dark/vibes; fix serious/critical; manual checks report
+- [ ] Print: Read pages on A4/Letter in paper/ink/green; test asserting rules per page type
+- [ ] Share images: brand, collection, Morning Line, sector report drawers; longest title/name tests; noindex test
+- [ ] Voice: src/lib/voice.ts inventory of empty/loading/failed/not-found states; 404/500/offline; test
+- [ ] Sweep: crawl internal links; ia.ts reachability; /status/launch readiness page
+- [ ] Live fixes: signals lens unscored slot + count line; neon pair stamps; back-and-forth fold
+- [ ] Full suite, screenshots, report

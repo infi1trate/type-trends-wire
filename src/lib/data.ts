@@ -14,8 +14,10 @@ import { getIssue, getArchive, getTrait } from "./digest.functions";
 import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
+import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
+import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
 import type { GallerySearch } from "./gallery";
 import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
@@ -387,7 +389,9 @@ export function auditQuery(sites: string, sector: string | null) {
 const deriveSignals = (snap: SignalSnapshot) => { const tiers = tiersFrom(snap.rows, new Map(snap.prev)); return { snap, tiers, signals: buildSignals(snap.rows, tiers, "all") }; };
 const EMPTY_SNAPSHOT: SignalSnapshot = { run_id: null, computed_at: null, prev_runs: [], rows: [], prev: [] };
 /** Read with useSuspenseQuery so SSR and hydration render the same headline set; a failed read degrades to an empty snapshot instead of throwing. */
-export const signalsQuery = () => queryOptions({ queryKey: ["signals"], staleTime: 10 * 60_000, queryFn: () => getSignalSnapshot().catch(() => EMPTY_SNAPSHOT), select: deriveSignals });
+// The snapshot arrives packed (signal-pack.ts) and stays packed in the cache and the hydration payload; select unpacks it.
+const deriveFromPacked = (p: PackedSnapshot | SignalSnapshot) => deriveSignals(unpackSnapshot(p));
+export const signalsQuery = () => queryOptions({ queryKey: ["signals"], staleTime: 10 * 60_000, queryFn: (): Promise<PackedSnapshot | SignalSnapshot> => getSignalSnapshot().catch(() => EMPTY_SNAPSHOT), select: deriveFromPacked });
 export const ledgerQuery = () => queryOptions({ queryKey: ["ledger"], staleTime: 10 * 60_000, queryFn: () => getLedger({ data: {} }) });
 
 // Read mode (Phase 13): the same objects as the terminal, server-assembled with the public 10-minute TTL.
@@ -419,11 +423,15 @@ export const patternQuery = (key: string, sector: string) => queryOptions({ quer
 export const galleryQuery = (s: GallerySearch) => queryOptions({ queryKey: ["gallery", s], staleTime: 10 * 60_000, queryFn: () => getGallery({ data: s }) });
 export const collectionsQuery = () => queryOptions({ queryKey: ["collections"], staleTime: 10 * 60_000, queryFn: () => getCollections() });
 export const collectionQuery = (slug: string, page = 1) => queryOptions({ queryKey: ["collection", slug, page], staleTime: 10 * 60_000, queryFn: () => getCollection({ data: { slug, page } }) });
+/** /signals: one view's ranked rows (server-built; the snapshot of every scope never ships to the page). */
+export const signalsIndexQuery = (v: SignalsView) => queryOptions({ queryKey: ["signals-index", v.tab, v.sort, v.sector, v.archive], staleTime: 10 * 60_000, queryFn: () => getSignalsIndex({ data: { tab: v.tab, sort: v.sort, sector: v.sector, tier: v.archive ? "archive" : "" } }) });
 export const signalSeriesQuery = (scope: string) => queryOptions({ queryKey: ["signal-series", scope], staleTime: 10 * 60_000, queryFn: () => getSignalSeries({ data: { scope } }) });
 export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], staleTime: 10 * 60_000, queryFn: () => getModelCard() });
 /** /kit: every shared component on live data (composites, stories, crops). */
 export const kitQuery = () => queryOptions({ queryKey: ["kit"], staleTime: 5 * 60_000, queryFn: () => getKit() });
 
+/** /ambient: the studio board's input for one lens (the board polls /front.json and refetches this when it changes). */
+export const ambientQuery = (sector: string) => queryOptions({ queryKey: ["ambient", sector], staleTime: 30_000, queryFn: () => getAmbient({ data: { sector } }) });
 /** `/`: the front page model for one sector lens and format filter. */
 export const frontQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front", sector, format], staleTime: 30_000, queryFn: () => getFront({ data: { sector, format } }) });
 

@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import type { AdoptionFig, BeforeAfterFig, DriftFig, FieldFig, Figure, Frame, MultiplesFig, StripFig, View } from "@/lib/data-stories/types";
 import { familyName } from "@/lib/data-stories/templates/drift";
-import { pctText, qText, dayText } from "@/lib/data-stories/text";
+import { pctText, qText, dayText, pairStamps } from "@/lib/data-stories/text";
 import { linear, ticks } from "@/lib/charts/scale";
 import { ChartFrame } from "@/components/charts/Charts";
 import { Receipt } from "@/components/read/StoryCard";
@@ -151,31 +151,31 @@ export function CaptureFrame({ fr, label, slim = false, className = "" }: { fr: 
   </svg>;
 }
 const Swatches = ({ fr }: { fr: Frame }) => <span className="inline-flex gap-1" aria-hidden="true">{[fr.bg, fr.ink, fr.accent].filter((x): x is string => !!x).map((h, k) => <span key={k} className="ed-swatch inline-block h-3 w-3 border" style={{ background: h, borderColor: RULE }} title={h} />)}</span>;
-const frameCaption = (fr: Frame) => `${dayText(fr.at)} · ${fr.source === "live" ? "live crawl" : "Wayback archive"}${fr.crop ? " · crop" : " · redrawn layout"}`;
+const frameCaption = (fr: Frame, stamp = dayText(fr.at)) => `${stamp} · ${fr.source === "live" ? "live crawl" : "Wayback archive"}${fr.crop ? " · crop" : " · redrawn layout"}`;
 
 // BEFORE AND AFTER -----------------------------------------------------------------------------------
 const SIDE_POS = { before: 100, after: 0, split: 50 } as const;
 function BeforeAfter({ f, v, live, pair = false }: { f: BeforeAfterFig; v: View; live: boolean; pair?: boolean }) {
-  const start = pair ? SIDE_POS.after : SIDE_POS[v.side ?? "split"];
+  const start = pair ? SIDE_POS.after : SIDE_POS[v.side ?? "split"], [bStamp, aStamp] = pairStamps(f.before.at, f.after.at);
   const id = useId(), [pos, setPos] = useState<number>(start);
   useEffect(() => { setPos(start); }, [start]);
-  const wipe = <><div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><CaptureFrame fr={f.before} label={`${f.name}, ${dayText(f.before.at)}`} /></div>
+  const wipe = <><div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><CaptureFrame fr={f.before} label={`${f.name}, ${bStamp}`} /></div>
     {pos > 0 && pos < 100 && <span className="absolute inset-y-0 w-0.5" style={{ left: `${pos}%`, background: INK }} />}</>;
   const on = new Set(v.highlight);
   return <ChartFrame title={f.title} note={f.note} source={SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={false} table={{ columns: ["Field", "Before", "After"], rows: f.diffs.map(d => [d.field, d.before, d.after]) }}>
     {() => <div data-figure="before-after" data-pos={pos} data-layout={pair ? "pair" : "wipe"}>
       {pair ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <figure className="m-0 min-w-0 max-w-[520px]"><CaptureFrame fr={f.before} label={`${f.name}, ${dayText(f.before.at)}`} />
-          <figcaption className="tk-t-caption tk-c-muted mt-2 inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before)}</figcaption></figure>
-        <figure className="m-0 min-w-0 max-w-[520px]"><div className="relative"><CaptureFrame fr={f.after} label={`${f.name}, ${dayText(f.after.at)}`} />{wipe}</div>
-          <figcaption className="tk-t-caption tk-c-muted mt-2 inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after)}{pos > 0 && <span>· before laid over {pos}%</span>}</figcaption></figure>
+        <figure className="m-0 min-w-0 max-w-[520px]"><CaptureFrame fr={f.before} label={`${f.name}, ${bStamp}`} />
+          <figcaption className="tk-t-caption tk-c-muted mt-2 inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before, bStamp)}</figcaption></figure>
+        <figure className="m-0 min-w-0 max-w-[520px]"><div className="relative"><CaptureFrame fr={f.after} label={`${f.name}, ${aStamp}`} />{wipe}</div>
+          <figcaption className="tk-t-caption tk-c-muted mt-2 inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after, aStamp)}{pos > 0 && <span>· before laid over {pos}%</span>}</figcaption></figure>
       </div> : <>
         <div className="relative" aria-hidden={live ? undefined : true}>
-          <CaptureFrame fr={f.after} label={`${f.name}, ${dayText(f.after.at)}`} />{wipe}
+          <CaptureFrame fr={f.after} label={`${f.name}, ${aStamp}`} />{wipe}
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before)}</span>
-          <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after)}</span>
+          <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.before} />Before · {frameCaption(f.before, bStamp)}</span>
+          <span className="tk-t-caption tk-c-muted inline-flex items-center gap-2"><Swatches fr={f.after} />After · {frameCaption(f.after, aStamp)}</span>
         </div>
       </>}
       {live && <div className={`no-print mt-2 flex flex-wrap items-center gap-2 ${pair ? "max-w-[1064px]" : ""}`}>

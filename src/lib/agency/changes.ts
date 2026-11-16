@@ -13,7 +13,7 @@ export const hexName = (hex: unknown) => (typeof hex === "string" && HEX.test(he
 const quote = (t: string, n = 90) => `“${t.length > n ? `${t.slice(0, n - 1)}…` : t}”`;
 const list = (xs: string[], n = 4) => (xs.length > n ? `${xs.slice(0, n).join(", ")} and ${xs.length - n} more` : xs.join(", "));
 const TECH: Record<string, string> = { next: "Next.js", nuxt: "Nuxt", astro: "Astro", gatsby: "Gatsby", sveltekit: "SvelteKit", framer: "Framer", webflow: "Webflow", wordpress: "WordPress", shopify: "Shopify", squarespace: "Squarespace", wix: "Wix", tailwind: "Tailwind CSS", gsap: "GSAP", lenis: "Lenis", lottie: "Lottie", three: "three.js", webgl_canvas: "a WebGL canvas" };
-const FIELD: Record<string, string> = { h1_align: "headline alignment", hero_media: "hero media", grid_max_cols: "grid columns", cta_radius_px: "button corners", sections: "section count", nav_links: "navigation links", h1: "headline font", body: "body font" };
+export const FIELD: Record<string, string> = { h1_align: "headline alignment", hero_media: "hero media", grid_max_cols: "grid columns", cta_radius_px: "button corners", sections: "section count", nav_links: "navigation links", h1: "headline font", body: "body font" };
 const words = (v: unknown) => (v == null ? "none" : String(v).replace(/_/g, " "));
 const tagNames = (dim: string, v: unknown) => (Array.isArray(v) ? v : typeof v === "string" ? [v] : []).filter((x): x is string => typeof x === "string").map(x => label(`${dim}:${x}`).name);
 

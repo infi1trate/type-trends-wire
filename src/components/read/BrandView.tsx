@@ -86,6 +86,8 @@ function Moves({ b }: { b: BrandPage }) {
       {pics ? t.id === open ? <div className="mt-4" data-pair-open="">{pics}</div>
         : <details className="move-pics mt-2" data-pair-closed=""><summary className="ed-tap ed-data inline-flex min-h-11 cursor-pointer items-center">Show the two captures</summary><div className="mt-3">{pics}</div></details>
         : t.pairShared ? <p className="ed-caption mt-2">Same two captures as the move above.</p> : null}
+      {t.folded && <details className="mt-2" data-flip-moves=""><summary className="ed-tap ed-data inline-flex min-h-11 cursor-pointer items-center">Show the {t.folded.length} single moves</summary>
+        <Ledger className="mt-2" label="The single moves in this run" rows={t.folded.map(x => ({ key: x.id, href: x.href, title: <>{x.text}</>, tags: [x.kind], facts: [<BasisWord key="b" b={x.basis} />, x.story ? "Story" : "Receipt"], time: <time dateTime={x.at}>{storyTime(x.at)}</time> }))} /></details>}
     </li>; })}</ol>;
 }
 

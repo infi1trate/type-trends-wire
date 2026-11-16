@@ -13,7 +13,7 @@ import type { Box, Frame } from "./data-stories/types";
 
 export const GALLERY_PAGE = 48;
 /** A tile redraws at most this many boxes, and only the first screen (page pixels from the top). */
-export const TILE_BOXES = 60, TILE_FOLD = 900;
+export const TILE_BOXES = 40, TILE_FOLD = 900;
 /** A section crop belongs to a capture when taken within this many days of it. */
 export const TILE_CROP_DAYS = 2;
 /** Every LARGE_EVERY-th tile (from the first) is large; the rest are small. Deterministic, so a shared link draws the same wall. */

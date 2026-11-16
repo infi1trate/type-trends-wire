@@ -4,14 +4,17 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import type { GalleryTile } from "@/lib/gallery";
 import { CaptureFrame } from "@/components/data/Figures";
+import { Deferred } from "./Deferred";
 import { FRAME_LABEL } from "@/lib/stories/frames";
 import { countLine, GALLERY_PAGE } from "@/lib/gallery";
 
-function Tile({ t }: { t: GalleryTile }) {
+/** Tiles drawn in the first response; the rest draw as they come near the screen (each holds its frame's space until then). */
+export const WALL_EAGER = 8;
+function Tile({ t, eager }: { t: GalleryTile; eager: boolean }) {
   return <a href={t.href} className="wall-tile" aria-label={t.label} data-tile={t.id}>
     <span aria-hidden="true" className="block">
       {t.crop ? <img src={t.crop.src} width={t.crop.width} height={t.crop.height} alt="" loading="lazy" className="wall-ink border" style={{ borderColor: "var(--tk-rule-hairline)" }} data-frame="crop" />
-        : t.frame ? <CaptureFrame fr={t.frame} label={t.label} />
+        : t.frame ? <Deferred eager={eager} style={{ aspectRatio: `${t.frame.w} / ${t.frame.h}`, border: "1px solid var(--tk-rule-hairline)" }}><CaptureFrame fr={t.frame} label={t.label} /></Deferred>
         : <span className="ed-caption block border p-3" style={{ borderColor: "var(--tk-rule-hairline)" }}>No stored layout to redraw</span>}
     </span>
     <span className="wall-cap" aria-hidden="true"><span>{t.domain}</span><span>{t.day}</span>{t.note && <span>{t.note}</span>}</span>
@@ -36,8 +39,8 @@ function move(e: KeyboardEvent<HTMLUListElement>) {
   }
   if (next !== i) { e.preventDefault(); tiles[next]!.focus(); }
 }
-export function Wall({ tiles, label }: { tiles: GalleryTile[]; label: string }) {
-  return <ul className="wall" aria-label={label} onKeyDown={move} data-wall="">{tiles.map(t => <li key={t.id} className={t.size === "lg" ? "tile-lg" : "tile-sm"}><Tile t={t} /></li>)}</ul>;
+export function Wall({ tiles, label, eager = WALL_EAGER }: { tiles: GalleryTile[]; label: string; eager?: number }) {
+  return <ul className="wall" aria-label={label} onKeyDown={move} data-wall="">{tiles.map((t, k) => <li key={t.id} className={t.size === "lg" ? "tile-lg" : "tile-sm"}><Tile t={t} eager={k < eager} /></li>)}</ul>;
 }
 
 /** A wall with its count line, "More" (appends, keeps focus) and the no-JavaScript paged links. */
