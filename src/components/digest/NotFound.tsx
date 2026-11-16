@@ -1,13 +1,17 @@
-import { Link } from "@tanstack/react-router";
-import { DIGEST_NAME } from "@/lib/site";
+import { BRAND_NAME } from "@/lib/brand";
+import { say, type VoiceId } from "@/lib/voice";
+import { StateSteps } from "@/components/read/StateSteps";
 import { DigestShell } from "./Editorial";
-export function DigestNotFound({ title, body }: { title: string; body: string }) {
-  return <DigestShell label="Not found">
-    <section className="ed-wrap py-20">
-      <p className="ed-kicker">{DIGEST_NAME}</p>
-      <h1 className="ed-cover mt-3">{title}</h1>
-      <p className="ed-standfirst mt-5">{body}</p>
-      <p className="ed-data mt-8 flex flex-wrap gap-x-6"><Link to="/digest" className="ed-tap">Read the latest issue →</Link><Link to="/digest/archive" className="ed-tap">All issues</Link><Link to="/" className="ed-tap">Live front page</Link></p>
+import type { SectionId } from "@/lib/ia";
+/** A Read page's not-found, failed or empty state, in the words of lib/voice.ts. */
+export function DigestNotFound({ v, vars, kicker = BRAND_NAME, section }: { v: VoiceId; vars?: Record<string, string | number>; kicker?: string; section?: SectionId }) {
+  const s = say(v, vars);
+  return <DigestShell label={s.kind === "failed" ? "Didn't load" : s.kind === "notFound" ? "Not found" : "Empty"} {...(section ? { section } : {})}>
+    <section className="ed-wrap py-16 md:py-20" data-state={s.kind}>
+      <p className="ed-kicker">{kicker}</p>
+      <h1 className="ed-cover mt-3" {...(s.kind === "failed" ? { role: "alert" } : {})}>{s.title}</h1>
+      <p className="ed-standfirst mt-5 max-w-[60ch]">{s.text}</p>
+      <StateSteps steps={s.next} />
     </section>
   </DigestShell>;
 }

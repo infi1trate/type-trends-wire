@@ -1,7 +1,8 @@
 // "Couldn't read the stored data just now" — a temporary failure, not a broken page. A gallery route whose loader gave up (after its
 // retry) marks its page Retry-After through the route's `headers`; the server entry then answers that HTML page 503 instead of 500.
 export const RETRY_AFTER_S = 30;
-export const UNAVAILABLE_BODY = "The stored captures took too long to read this time. Nothing is lost; the next try usually works.";
+import { line } from "./voice";
+export const UNAVAILABLE_BODY = line("patterns.failed");
 
 /** A 500 HTML page carrying Retry-After (set by a read that gave up) becomes 503 with the same body and headers; anything else passes. */
 export function retryLater(res: Response): Response {

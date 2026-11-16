@@ -10,5 +10,5 @@ const DESC = "The approved slug brand, P · Extra Fine: the idea, the pages and 
 export const Route = createFileRoute("/brand/")({
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex, nofollow" }], links: fontLinks() }),
   component: BrandOverview,
-  errorComponent: () => <DigestNotFound title="This page didn't load" body="The brand page couldn't be built just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="brandBook.failed" />,
 });

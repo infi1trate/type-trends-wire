@@ -18,8 +18,8 @@ export const Route = createFileRoute("/patterns/")({
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/patterns` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/patterns` }, ...fontLinks()] }),
   headers: retryHeaders,
   component: Patterns,
-  errorComponent: () => <GalleryUnavailable title="The gallery didn't load" />,
-  notFoundComponent: () => <DigestNotFound title="No such view" body="That gallery view doesn't exist. Start from all patterns." />,
+  errorComponent: () => <GalleryUnavailable v="patterns.failed" />,
+  notFoundComponent: () => <DigestNotFound v="patterns.notFound" />,
 });
 function Patterns() {
   return <GalleryView search={Route.useSearch()} />;

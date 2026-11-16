@@ -16,6 +16,6 @@ export const Route = createFileRoute("/what-we-show")({
     links: [{ rel: "canonical", href: `${SITE_URL}/what-we-show` }, ...fontLinks()],
   }),
   component: WhatWeShow,
-  errorComponent: () => <DigestNotFound title="This page didn't load" body="The signal list couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="whatWeShow.failed" />,
 });
 function WhatWeShow() { const { data } = useSuspenseQuery(signalsQuery()); return <WhatWeShowView tiers={data.tiers} signals={data.signals} runId={data.snap.run_id} />; }

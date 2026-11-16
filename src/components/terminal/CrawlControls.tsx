@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { crawlQuery, type CrawlData } from "@/lib/data";
@@ -27,7 +28,7 @@ export function CrawlControls({index,onIndex}:{index?:IndexFilter;onIndex?:(inde
   const {scope,setScope,data} = useCrawl();
   const stats = data?.run.stats;
   const errors = stats && typeof stats === "object" && !Array.isArray(stats) ? stats["errors"] : null;
-  const errorText = errors ? JSON.stringify(errors,null,2) : "No crawl errors";
+  const errorText = errors ? JSON.stringify(errors,null,2) : voiced("terminal.crawlControls.1");
   return <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-rule p-3">
     <Toggle label="SCOPE" options={["EN","ALL"]} value={scope.toUpperCase()} onChange={v=>setScope(v==="EN"?"en":"all")} />
     {index && onIndex && <Toggle label="INDEX" options={["ALL","VANGUARD","MAINSTREAM","CURATED"]} value={index} onChange={onIndex}/>}
@@ -41,6 +42,6 @@ export function CrawlState({children}:{children:(data:CrawlData)=>React.ReactNod
   const {data,error,isLoading}=useCrawl();
   if(isLoading) return <div className="p-3"><Loading/></div>;
   if(error) return <div className="p-3 text-live">ERR · {String((error as Error).message)}</div>;
-  if(!data) return <p className="p-3 text-compare-muted">No weekly crawl has finished yet. The crawler runs every Sunday at 03:23 UTC, and this fills in when that run finishes.</p>;
+  if(!data) return <p className="p-3 text-compare-muted">{voiced("terminal.crawlControls.2")}</p>;
   return children(data);
 }

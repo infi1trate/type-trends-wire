@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +88,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
       ) : error ? (
         <div role="alert" className="p-3 text-live">The wire couldn’t load ({String((error as Error).message)}). Try again in a minute.</div>
       ) : rows.length === 0 ? (
-        (data ?? []).length === 0 ? <Empty why="No news collected yet. Feeds are checked every 15 minutes, so headlines appear after the next check." /> : <p className="p-3 text-g500">Nothing on the wire matches these filters. Clear the filter or pick ALL to see every item.</p>
+        (data ?? []).length === 0 ? <Empty why={voiced("terminal.wire.1")} /> : <p className="p-3 text-g500">{voiced("terminal.wire.2")}</p>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {rows.map((r) => (

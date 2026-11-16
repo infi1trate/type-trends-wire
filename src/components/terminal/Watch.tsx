@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // WATCH panel (key W), the console's `watch …` / `audit …` commands, and the +WATCH action on site pages and trait rows.
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -33,7 +34,7 @@ export function WatchPanel() {
   return <section aria-label="Watchlists" className="flex min-h-0 flex-1 flex-col md:flex-row">
     <div className="shrink-0 border-b border-rule md:w-72 md:border-b-0 md:border-r">
       <PanelHeader title="WATCHLISTS" g="p-watch" meta={<span>ON THIS DEVICE</span>} />
-      {list.length === 0 ? <p className="p-3 text-g500">No watchlists on this device. Type <span className="text-ink">watch new &lt;name&gt;</span> in the console (/) or <Link to="/watch/new" search={{ add: undefined, name: undefined }} className="text-ink underline">make one</Link>.</p> :
+      {list.length === 0 ? <p className="p-3 text-g500">{voiced("terminal.watch.1")} <span className="text-ink">watch new &lt;name&gt;</span> in the console (/) or <Link to="/watch/new" search={{ add: undefined, name: undefined }} className="text-ink underline">make one</Link>.</p> :
         <ul>{list.map(w => <li key={w.id} className="border-b border-rule"><button type="button" aria-pressed={w.id === sel?.id} onClick={() => select(w.id)} className={`flex min-h-11 w-full items-center justify-between gap-2 px-3 text-left md:min-h-8 ${w.id === sel?.id ? "bg-ink text-void" : "hover:bg-g900"}`}><span className="truncate">{w.name}</span><span className="label shrink-0">{w.token ? "EDIT" : "VIEW"}</span></button></li>)}</ul>}
       <div className="flex flex-wrap gap-x-3 p-3"><Link to="/watch/new" search={{ add: undefined, name: undefined }} className="label inline-flex min-h-11 items-center text-ink hover:underline md:min-h-6">+ NEW WATCHLIST</Link>
         {sel && <button type="button" className="label min-h-11 text-g500 hover:text-ink md:min-h-6" onClick={() => { if (window.confirm(`Forget “${sel.name}” on this device? The list itself is not deleted.`)) { localWatches().remove(sel.id); refresh(); } }}>FORGET ON DEVICE</button>}</div>
@@ -48,7 +49,7 @@ export function WatchPanel() {
       </div>}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!sel ? <p className="p-3 text-g500">Pick or make a watchlist to see what changed on its sites and signals.</p>
-          : q.isPending ? <p className="p-3">▍</p>
+          : q.isPending ? <p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p>
           : q.isError ? <p className="p-3 text-g500">Couldn't load this watchlist just now.</p>
           : !v ? <p className="p-3 text-g500">This watchlist no longer exists. Forget it on this device.</p>
           : v.empty ? <p className="p-3 text-g500">{v.empty}</p>
@@ -74,7 +75,7 @@ export function useWatchCommands() {
       return { lines: [`Made “${r.watch.name}”. Its edit link is remembered on this device; copy it now if you need it elsewhere (it can't be shown again):`, r.edit_url ?? "", "Add sites or signals: watch add linear.app css:subgrid"], links: [{ label: "OPEN PAGE", href: `/watch/${r.id}` }, { label: "RSS FEED", href: r.feed_url }] };
     }
     const id = store.current(), w = (id && store.get(id)?.token ? store.get(id) : store.list().find(x => x.token)) ?? null;
-    if (!w?.token) return { lines: ["No editable watchlist on this device. Run watch new <name>, or open your edit link once and choose “Remember edit link on this device”."], links: [], error: true };
+    if (!w?.token) return { lines: [voiced("terminal.watch.cli")], links: [], error: true };
     const sites = c.targets.filter(x => !isTraitInput(x)), traits = c.targets.filter(isTraitInput);
     const r = await edit({ data: { id: w.id, token: w.token, op: c.cmd === "add" ? { op: "add", sites, traits, request_render: true } : { op: "remove", sites, traits } } });
     if (!r.ok) return { lines: [r.message], links: [], error: true };
@@ -112,7 +113,7 @@ export function AddToWatch({ target, name }: { target: string; name?: string }) 
     <Button variant="link" aria-expanded={open} aria-label={`Add ${name ?? target} to a watchlist`} onClick={() => { setOpen(o => !o); setMsg(null); }} className="label h-6 px-1 text-g500 hover:text-ink max-md:h-11">+WATCH</Button>
     {open && <span role="dialog" aria-label="Add to watchlist" className="absolute right-0 top-full z-40 flex w-64 flex-col border border-rule bg-void p-2 text-left normal-case">
       {lists.map(w => <button key={w.id} type="button" disabled={busy} onClick={() => add(w)} className="flex min-h-11 items-center truncate px-2 text-left hover:bg-g900 md:min-h-8">{w.name}</button>)}
-      {lists.length === 0 && <span className="px-2 py-1 text-g500">No editable watchlists on this device.</span>}
+      {lists.length === 0 && <span className="px-2 py-1 text-g500">{voiced("terminal.watch.3")}</span>}
       <Link to="/watch/new" search={{ add: target, name: undefined }} className="label flex min-h-11 items-center px-2 text-ink hover:underline md:min-h-8">+ NEW WATCHLIST WITH THIS</Link>
       {msg && <span role="status" className="label px-2 py-1 text-g500">{msg}</span>}
     </span>}

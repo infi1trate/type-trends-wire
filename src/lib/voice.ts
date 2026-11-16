@@ -1,0 +1,258 @@
+// Every empty, loading, failed, not-found and offline state in the product, in one place: where it shows, the sentence, and the next
+// step it offers. Pure and dependency-free so routes, components and lib modules all import it. House voice: short, plain, says what
+// is missing and what to do next; never "Oops", never an apology, never a spinner without words. `{name}` marks a value filled in
+// by say(). voice.test.ts fails when a component renders a state string that isn't here.
+
+export type StateKind = "empty" | "loading" | "failed" | "notFound" | "offline";
+/** A next step: a link, a retry of the same read, or a wait the sentence names (the data arrives on its own). */
+export type Step = { label: string; href: string } | { label: string; retry: true } | { label: string; wait: true };
+export type Said = { kind: StateKind; where: string; title?: string; text: string; next: readonly Step[] };
+
+const FRONT: Step = { label: "Live front page", href: "/" };
+const RETRY: Step = { label: "Try again", retry: true };
+const WAIT = (label: string): Step => ({ label, wait: true });
+const go = (label: string, href: string): Step => ({ label, href });
+/** A page whose stored data didn't arrive: a temporary failure, not a broken page. */
+const failed = (where: string, title: string, what: string, ...more: Step[]): Said =>
+  ({ kind: "failed", where, title, text: `${what} didn't arrive this time. Nothing is lost; try again in a minute.`, next: [RETRY, ...more, FRONT] });
+const missing = (where: string, title: string, text: string, ...next: Step[]): Said => ({ kind: "notFound", where, title, text, next: [...next, FRONT] });
+const empty = (where: string, text: string, ...next: Step[]): Said => ({ kind: "empty", where, text, next });
+const loading = (where: string, text: string): Said => ({ kind: "loading", where, text, next: [] });
+
+export const VOICE = {
+  // ── Whole-site pages ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  "site.notFound": missing("Any address with no page (root 404)", "There's no page at this address",
+    "The link may be mistyped, or the page has moved. Look up a brand or a signal below, read the newest story, or start from the front page.",
+    go("Every brand", "/brands"), go("Every signal", "/signals")),
+  "site.notFound.search": { kind: "notFound", where: "404 page lookup", text: "Brand or signal, e.g. linear or subgrid", next: [] },
+  "site.notFound.noMatch": empty("404 page lookup with no match", "Nothing tracked matches “{q}”. Try part of the name or domain.", go("Every brand", "/brands"), go("Every signal", "/signals")),
+  "site.notFound.newest": empty("404 page, newest story line", "Newest story:"),
+  "site.failed": { kind: "failed", where: "Any page that broke while rendering (root error)", title: "This page didn't load",
+    text: "The page broke while it was being put together. Nothing is lost; try again, or start from the front page.", next: [RETRY, FRONT] },
+  "site.failed.server": { kind: "failed", where: "Last-resort server error page (no app shell)", title: "This page didn't load",
+    text: "The server couldn't put this page together. Nothing is lost; reload in a minute, or start from the front page.", next: [RETRY, FRONT] },
+  "site.offline": { kind: "offline", where: "Any page opened while the device is offline", title: "You're offline",
+    text: "This device lost its connection, so the page couldn't be fetched. It loads as soon as you're back online.", next: [RETRY, FRONT] },
+
+  // ── Read pages: failed reads ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  "front.failed": failed("/ (live front page)", "The front page didn't load", "The stored stories", go("Open the terminal", "/terminal")),
+  "front.notFound": missing("/ with a path the front page doesn't have", "There's no page at this address", "The link may be mistyped, or the page has moved."),
+  "story.failed": failed("/stories/<id>", "This story didn't load", "The story and its receipts", go("Every story", "/")),
+  "story.notFound": missing("/stories/<id> with an unknown id", "No such story", "The link may be mistyped, or the story is older than the stored record.", go("Every story", "/")),
+  "storyNo.failed": failed("/stories/no/<number>", "That story number didn't load", "The story numbers"),
+  "storyNo.notFound": missing("/stories/no/<number> with an unused number", "No story has that number",
+    "Numbers are given to stories when they are published. This one doesn't lead to a published story yet.", go("Every story", "/")),
+  "signals.failed": failed("/signals", "Signals didn't load", "The latest forecast"),
+  "signals.notFound": missing("/signals with an unknown view", "No such view", "That signals view doesn't exist. Start from all signals.", go("All signals", "/signals")),
+  "signal.failed": failed("/signals/<key>", "This signal page didn't load", "The signal's numbers", go("All signals", "/signals")),
+  "signal.notFound": missing("/signals/<key> with a key not in the forecast", "No page for this signal",
+    "Signal pages exist for signals in the latest weekly forecast. The key may be misspelled, or the signal has dropped out of the forecast.", go("All signals", "/signals")),
+  "brands.failed": failed("/brands", "Brands didn't load", "The brand list"),
+  "brand.failed": failed("/brands/<domain>", "This brand page didn't load", "The brand's record", go("Every brand", "/brands")),
+  "brand.notFound": missing("/brands/<domain> for an untracked domain", "We don't track this brand",
+    "Only brands in the library get a brand page. You can still audit any public site against tracked ones.", go("Every tracked brand", "/brands"), go("Audit any site", "/audit/new")),
+  "patterns.failed": { kind: "failed", where: "/patterns (gallery)", title: "The gallery didn't load",
+    text: "The stored captures took too long to read this time. Nothing is lost; the next try usually works.", next: [RETRY, go("All patterns", "/patterns"), go("Collections", "/collections")] },
+  "patterns.notFound": missing("/patterns with an unknown view", "No such view", "That gallery view doesn't exist. Start from all patterns.", go("All patterns", "/patterns")),
+  "pattern.failed": failed("/patterns/<key>", "This pattern didn't load", "The pattern's examples", go("All patterns", "/patterns")),
+  "pattern.notFound": missing("/patterns/<key> for a key that isn't a pattern", "Not a pattern right now",
+    "Patterns are headline layout or composite signals with at least three example brands. This one isn't, or the key is misspelled.", go("All patterns", "/patterns")),
+  "collections.failed": { kind: "failed", where: "/collections", title: "Collections didn't load",
+    text: "The stored captures took too long to read this time. Nothing is lost; the next try usually works.", next: [RETRY, go("All patterns", "/patterns")] },
+  "collections.notFound": missing("/collections with an unknown view", "No collections here", "This list doesn't exist. Try the pattern gallery.", go("All patterns", "/patterns")),
+  "collection.failed": { kind: "failed", where: "/collections/<slug>", title: "This collection didn't load",
+    text: "The stored captures took too long to read this time. Nothing is lost; the next try usually works.", next: [RETRY, go("Collections", "/collections")] },
+  "collection.notFound": missing("/collections/<slug> with an unknown slug", "No such collection", "There's no collection at this address. Every collection is on the collections page.", go("Collections", "/collections")),
+  "data.failed": failed("/data", "Data stories didn't load", "The stored data behind them"),
+  "dataStory.failed": failed("/data/<slug>", "This data story didn't load", "The stored data behind it", go("Data stories", "/data")),
+  "dataStory.notFound": missing("/data/<slug> with an unknown slug", "No such data story", "That data story doesn't exist. Every data story is on the data page.", go("Data stories", "/data")),
+  "whereYouSit.failed": failed("/data/where-you-sit", "This page didn't load", "The stored data behind it", go("Data stories", "/data")),
+  "digest.failed": failed("/digest and /digest/<week>", "This issue didn't load", "The issue's data", go("All issues", "/digest/archive")),
+  "digest.empty": missing("/digest before the first issue", "No issue yet", "The first issue is assembled from the Sunday forecast and brief. It appears after the next run.", go("Live front page", "/")),
+  "digest.notFound": missing("/digest/<week> with no issue", "No issue for this week",
+    "{digest} has no issue for “{week}”. Issues are weekly from {first}, written as year-W-week (for example {first}).", go("Latest issue", "/digest"), go("All issues", "/digest/archive")),
+  "digestArchive.failed": failed("/digest/archive", "The archive didn't load", "The list of issues", go("Latest issue", "/digest")),
+  "editions.failed": failed("/editions", "Editions didn't load", "The editions"),
+  "morning.failed": failed("/morning", "The Morning Line didn't load", "Today's stories"),
+  "morning.empty": missing("/morning before today's edition", "No edition today", "The Morning Line has no edition for today yet. It's written from the day's first stories.", go("Earlier editions", "/editions")),
+  "morningDay.failed": failed("/morning/<date>", "This edition didn't load", "The edition's stories", go("Today's edition", "/morning")),
+  "morningDay.notFound": missing("/morning/<date> with no edition", "No edition for this day",
+    "The Morning Line has no edition for “{date}”. Editions run daily (UTC) from {first} to today, written as YYYY-MM-DD.", go("Today's edition", "/morning")),
+  "sectors.failed": failed("/sectors", "Sector reports didn't load", "The sector numbers"),
+  "sector.failed": failed("/sectors/<sector>", "This report didn't load", "The sector's numbers", go("Sector reports", "/sectors")),
+  "sector.notFound": missing("/sectors/<sector> for an unknown sector", "No report for this sector", "Sector reports exist for each tracked sector; pick one from the sector reports page.", go("Sector reports", "/sectors")),
+  "desk.failed": failed("/desk", "The desk didn't load", "The story queue"),
+  "ledger.failed": failed("/ledger", "The ledger didn't load", "The record of calls"),
+  "kit.failed": failed("/kit", "The kit didn't load", "The live examples"),
+  "welcome.failed": failed("/welcome", "This page didn't load", "The live examples"),
+  "whatWeShow.failed": failed("/what-we-show", "This page didn't load", "The signal list"),
+  "brandBook.failed": failed("/brand and its sub-pages", "This page didn't load", "The brand book's examples", go("Brand book", "/brand")),
+  "audit.failed": failed("/audit", "This audit didn't load", "The audit's captures", go("Start a new audit", "/audit/new")),
+  "watch.failed": failed("/watch/<id>", "This watchlist didn't load", "The watchlist", go("Make a new watchlist", "/watch/new")),
+  "watch.notFound": missing("/watch/<id> with an unknown or revoked id", "No watchlist at this address",
+    "The link may be mistyped, or the watchlist was deleted. Watchlist links can't be recovered, so make a new one.", go("Make a new watchlist", "/watch/new")),
+  "terminal.failed": { kind: "failed", where: "/terminal", title: "TERMINAL DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, FRONT] },
+  "terminal.notFound": { kind: "notFound", where: "/terminal with an unknown path", title: "NO SUCH PANEL", text: "Press ? for the panel list.", next: [go("Terminal", "/terminal"), FRONT] },
+  "library.failed": { kind: "failed", where: "/library/<domain>", title: "LIBRARY DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, go("F11 Library", "/terminal?panel=library")] },
+  "library.notFound": { kind: "notFound", where: "/library/<domain> for an untracked domain", title: "404 · DOMAIN NOT IN LIBRARY", text: "Only tracked brands have a library record.", next: [go("F11 Library", "/terminal?panel=library")] },
+  "chart.failed": { kind: "failed", where: "/chart and /chart/<week>", title: "CHART DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, go("Latest chart", "/chart")] },
+  "chart.notFound": { kind: "notFound", where: "/chart/<week> with no card", title: "404 · NO CHART FOR THIS WEEK", text: "A card is drawn after each Sunday forecast.", next: [go("Latest chart", "/chart")] },
+
+  // ── Ambient board ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  "ambient.empty": empty("/ambient with nothing stored", "Nothing to put on the wall yet: no story, chart or capture is stored. The board fills itself as soon as one is.", WAIT("The board polls every minute")),
+  "ambient.failed": { kind: "failed", where: "/ambient when the first read fails", text: "The stored stories didn't arrive this time. The board tries again in a minute and needs nothing from you.", next: [WAIT("Retries every minute")] },
+  "ambient.wakeLock.checking": loading("/ambient/setup, wake lock line before the check", "Checking whether this browser can keep the screen awake."),
+
+  // ── Loading and busy labels (always words, never a bare spinner) ───────────────────────────────────────────────────────────────
+  "busy.retry": loading("Gallery and collection retry button", "Trying again…"),
+  "busy.more": loading("Pattern wall “More” button while the next page loads", "Loading the next captures…"),
+  "busy.audit": loading("/audit/new submit button", "Checking the sites…"),
+  "busy.watch": loading("/watch/new submit button", "Creating the watchlist…"),
+  "busy.tools": loading("/tools and /status freshness lines", "Checking the latest runs…"),
+  "busy.terminal": loading("Terminal panels while their data arrives", "LOADING"),
+  "busy.ledgerRecord": loading("Terminal forecast panel, ledger record", "Reading the ledger…"),
+  "busy.stories": loading("Terminal story queue", "LOADING STORIES…"),
+  "busy.rebrands": loading("Terminal rebrands panel", "LOADING REBRANDS…"),
+  "tools.freshness.failed": { kind: "failed", where: "/tools freshness", text: "Freshness didn't arrive this time; reload in a minute.", next: [RETRY] },
+  "terminal.stories.failed": { kind: "failed", where: "Terminal story queue", text: "STORIES DIDN'T ARRIVE · RELOAD IN A MINUTE", next: [RETRY] },
+
+  // ── Empty sections inside pages ─────────────────────────────────────────────────────────────────────────────────────────────────
+  "chart.empty": empty("Any chart frame with no series", "Nothing to chart yet: the series fills in after the next stored run.", WAIT("Next run")),
+
+  // ── Panels and sections (empty lines inside pages; the second clause names the next step) ─────────────────────────────────
+  "agency.auditView.1": { kind: "empty", where: "Agency · AuditView", text: "No captures yet", next: [] },
+  "agency.auditView.2": { kind: "empty", where: "Agency · AuditView", text: "No finding yet: none of these sites has enough measured signals in a staged forecast. Add a tracked site or try again after the next weekly run.", next: [WAIT("none of these sites has enough measured signals in a staged forecast. Add a tracked site or try again after the next weekly run")] },
+  "agency.auditView.3": { kind: "empty", where: "Agency · AuditView", text: "None of these pages is tracked in this sector, so none can be placed; the field shows the sector as it stands.", next: [] },
+  "agency.auditView.4": { kind: "empty", where: "Agency · AuditView", text: "No recorded changes yet.", next: [] },
+  "agency.auditView.5": { kind: "empty", where: "Agency · AuditView", text: "No two sites share a face.", next: [] },
+  "agency.watchPage.1": { kind: "empty", where: "Agency · WatchPage", text: "No changes yet", next: [] },
+  "data.dataIndexView.1": { kind: "empty", where: "Data stories · DataIndexView", text: "Not live yet.", next: [] },
+  "data.whereYouSitView.1": { kind: "empty", where: "Data stories · WhereYouSitView", text: "No tracked brand matches.", next: [] },
+  "digest.archiveView.1": { kind: "empty", where: "Digest · ArchiveView", text: "No issues yet. The first issue is assembled after the Sunday forecast and brief are stored.", next: [WAIT("The first issue is assembled after the Sunday forecast and brief are stored")] },
+  "digest.ledgerView.1": { kind: "empty", where: "Digest · LedgerView", text: "None yet", next: [] },
+  "digest.ledgerView.2": { kind: "empty", where: "Digest · LedgerView", text: "No backtest is stored yet.", next: [] },
+  "digest.ledgerView.3": { kind: "empty", where: "Digest · LedgerView", text: "No calls with this outcome yet.", next: [] },
+  "digest.ledgerView.4": { kind: "empty", where: "Digest · LedgerView", text: "No calls recorded yet. The first ones are written after the next Sunday forecast.", next: [WAIT("The first ones are written after the next Sunday forecast")] },
+  "kit.kitView.1": { kind: "empty", where: "Kit · KitView", text: "No published stories yet.", next: [] },
+  "kit.kitView.2": { kind: "empty", where: "Kit · KitView", text: "No section crops are stored yet, so each treatment is shown on the placeholder state with a generated specimen. Pages use “none”.", next: [] },
+  "read.brandView.1": { kind: "empty", where: "Read · BrandView", text: "No section of this brand has been photographed yet. Crops arrive when the crawler sends them; until then the moves below are redrawn from the stored layout.", next: [WAIT("Crops arrive when the crawler sends them; until then the moves below are redrawn from the stored layout")] },
+  "read.brandView.2": { kind: "empty", where: "Read · BrandView", text: "Palette not measured yet.", next: [] },
+  "read.brandView.3": { kind: "empty", where: "Read · BrandView", text: "No confident AI read of this brand yet.", next: [] },
+  "read.brandView.4": { kind: "empty", where: "Read · BrandView", text: "No layout measured yet.", next: [] },
+  "read.brandView.5": { kind: "empty", where: "Read · BrandView", text: "None of its signals is rising or emerging right now.", next: [] },
+  "read.brandView.6": { kind: "empty", where: "Read · BrandView", text: "No story has named this brand yet.", next: [] },
+  "read.brandView.7": { kind: "empty", where: "Read · BrandView", text: "No staged signal measured on this brand yet.", next: [] },
+  "read.brandsIndexView.1": { kind: "empty", where: "Read · BrandsIndexView", text: "No recorded move", next: [] },
+  "read.deskView.1": { kind: "empty", where: "Read · DeskView", text: "Nothing ran.", next: [] },
+  "read.deskView.2": { kind: "empty", where: "Read · DeskView", text: "Nothing was held.", next: [] },
+  "read.deskView.3": { kind: "empty", where: "Read · DeskView", text: "Nothing was killed.", next: [] },
+  "read.deskView.4": { kind: "empty", where: "Read · DeskView", text: "No edits yet.", next: [] },
+  "read.editionsViews.1": { kind: "empty", where: "Read · EditionsViews", text: "No lead today.", next: [] },
+  "read.editionsViews.2": { kind: "empty", where: "Read · EditionsViews", text: "No opening this time: no unused white-space story from the last seven days.", next: [] },
+  "read.editionsViews.3": { kind: "empty", where: "Read · EditionsViews", text: "No headline signal changed stage between those runs.", next: [] },
+  "read.editionsViews.4": { kind: "empty", where: "Read · EditionsViews", text: "No figure for this edition.", next: [] },
+  "read.editionsViews.5": { kind: "empty", where: "Read · EditionsViews", text: "Nothing held in this window.", next: [] },
+  "read.editionsViews.6": { kind: "empty", where: "Read · EditionsViews", text: "No headline signal is measured in this sector yet.", next: [] },
+  "read.editionsViews.7": { kind: "empty", where: "Read · EditionsViews", text: "None this quarter.", next: [] },
+  "read.editionsViews.8": { kind: "empty", where: "Read · EditionsViews", text: "No white-space story for this sector in the last 90 days.", next: [] },
+  "read.editionsViews.9": { kind: "empty", where: "Read · EditionsViews", text: "No counter-move in this sector in the last 90 days.", next: [] },
+  "read.editionsViews.10": { kind: "empty", where: "Read · EditionsViews", text: "No published move yet.", next: [] },
+  "read.editionsViews.11": { kind: "empty", where: "Read · EditionsViews", text: "No trendsetter from this sector in the forecast run.", next: [] },
+  "read.editionsViews.12": { kind: "empty", where: "Read · EditionsViews", text: "No pattern has three or more examples in this sector yet.", next: [] },
+  "read.editionsViews.13": { kind: "empty", where: "Read · EditionsViews", text: "No published story about this sector this quarter yet.", next: [] },
+  "read.editionsViews.14": { kind: "empty", where: "Read · EditionsViews", text: "No sector has enough forecast coverage yet.", next: [] },
+  "read.editionsViews.15": { kind: "empty", where: "Read · EditionsViews", text: "No story yet today.", next: [] },
+  "read.editionsViews.16": { kind: "empty", where: "Read · EditionsViews", text: "No issue stored yet.", next: [] },
+  "read.editionsViews.17": { kind: "empty", where: "Read · EditionsViews", text: "No lead story yet.", next: [] },
+  "read.editionsViews.18": { kind: "empty", where: "Read · EditionsViews", text: "No brand page to excerpt yet.", next: [] },
+  "read.editionsViews.19": { kind: "empty", where: "Read · EditionsViews", text: "No white-space story right now.", next: [] },
+  "read.frontView.1": { kind: "empty", where: "Read · FrontView", text: "No new story in the last day", next: [] },
+  "read.frontView.2": { kind: "empty", where: "Read · FrontView", text: "No story in the last week.", next: [] },
+  "read.frontView.3": { kind: "empty", where: "Read · FrontView", text: "No story has run yet. Stories are written after each crawl, forecast and news check, and only when something in the data clears the bar.", next: [WAIT("Stories are written after each crawl, forecast and news check, and only when something in the data clears the bar")] },
+  "read.frontView.4": { kind: "empty", where: "Read · FrontView", text: "No brand or pattern page is behind this week's stories yet.", next: [] },
+  "read.galleryView.1": { kind: "empty", where: "Read · GalleryView", text: "No stored capture matches these filters. Widen the period, pick another pattern or switch the sector to All.", next: [WAIT("Widen the period, pick another pattern or switch the sector to All")] },
+  "read.patternViews.1": { kind: "empty", where: "Read · PatternViews", text: "No story has named this pattern yet.", next: [] },
+  "read.signalView.1": { kind: "empty", where: "Read · SignalView", text: "No calls recorded for this signal yet. The ledger records the signals the weekly brief names, every alert and the top 20 next-wave scores.", next: [] },
+  "read.signalView.2": { kind: "empty", where: "Read · SignalView", text: "No tracked brand shows it on its current homepage.", next: [] },
+  "read.signalView.3": { kind: "empty", where: "Read · SignalView", text: "No story has named this signal yet.", next: [] },
+  "read.storyView.1": { kind: "empty", where: "Read · StoryView", text: "No facts were stored with this story.", next: [] },
+  "read.storyView.2": { kind: "empty", where: "Read · StoryView", text: "No earlier story on this signal or brand.", next: [] },
+  "read.toolsViews.2": { kind: "failed", where: "Read · ToolsViews", text: "Job health couldn't be read right now.", next: [RETRY] },
+  "read.toolsViews.3": { kind: "loading", where: "Read · ToolsViews", text: "Checking which forecast runs count…", next: [] },
+  "read.toolsViews.4": { kind: "failed", where: "Read · ToolsViews", text: "Section crop coverage couldn't be read right now.", next: [RETRY] },
+  "read.toolsViews.5": { kind: "loading", where: "Read · ToolsViews", text: "Checking section crops…", next: [] },
+  "read.toolsViews.6": { kind: "empty", where: "Read · ToolsViews", text: "No model card stored yet.", next: [] },
+  "read.treated.1": { kind: "empty", where: "Read · Treated", text: "No section crops captured yet · placeholder specimen, not a capture", next: [] },
+  "read.wall.1": { kind: "empty", where: "Read · Wall", text: "No stored layout to redraw", next: [] },
+  "read.wall.2": { kind: "failed", where: "Read · Wall", text: "The next tiles didn't load. Try More again in a moment.", next: [RETRY] },
+  "terminal.chartCard.1": { kind: "empty", where: "Terminal · ChartCard panel", text: "No chart card for this week yet. A card is drawn after each Sunday forecast once its trait has at least two usable quarters of history.", next: [WAIT("A card is drawn after each Sunday forecast once its trait has at least two usable quarters of history")] },
+  "terminal.chrome.1": { kind: "empty", where: "Terminal · Chrome panel", text: "No font signals yet — the first Google Fonts snapshot lands after the daily collection runs ·", next: [WAIT("the first Google Fonts snapshot lands after the daily collection runs")] },
+  "terminal.crawlControls.1": { kind: "empty", where: "Terminal · CrawlControls panel", text: "No crawl errors", next: [] },
+  "terminal.crawlControls.2": { kind: "empty", where: "Terminal · CrawlControls panel", text: "No weekly crawl has finished yet. The crawler runs every Sunday at 03:23 UTC, and this fills in when that run finishes.", next: [WAIT("The crawler runs every Sunday at 03:23 UTC, and this fills in when that run finishes")] },
+  "terminal.editions.1": { kind: "failed", where: "Terminal · Editions panel", text: "The Morning Line couldn't be read right now.", next: [RETRY] },
+  "terminal.editions.2": { kind: "empty", where: "Terminal · Editions panel", text: "No story in this window.", next: [] },
+  "terminal.editions.3": { kind: "empty", where: "Terminal · Editions panel", text: "No unused white-space story from the last seven days.", next: [] },
+  "terminal.editions.4": { kind: "empty", where: "Terminal · Editions panel", text: "Nothing held.", next: [] },
+  "terminal.editions.5": { kind: "empty", where: "Terminal · Editions panel", text: "No headline signal measured in this sector yet.", next: [] },
+  "terminal.forecast.1": { kind: "empty", where: "Terminal · Forecast panel", text: "No projection yet: a curve needs at least 4 usable quarters of history.", next: [] },
+  "terminal.forecast.2": { kind: "empty", where: "Terminal · Forecast panel", text: "No history", next: [] },
+  "terminal.forecast.3": { kind: "empty", where: "Terminal · Forecast panel", text: "No forecast yet", next: [] },
+  "terminal.forecast.4": { kind: "empty", where: "Terminal · Forecast panel", text: "None yet (need 15+ sites and 25% coverage)", next: [] },
+  "terminal.forecast.5": { kind: "empty", where: "Terminal · Forecast panel", text: "No forecast has run yet. Forecasts run every Sunday after the crawl; the first one fills this panel.", next: [WAIT("Forecasts run every Sunday after the crawl; the first one fills this panel")] },
+  "terminal.forecast.6": { kind: "empty", where: "Terminal · Forecast panel", text: "No headline signal is scored for this sector yet. Scores need at least one measured part (gap, vanguard or corroboration); they appear after the next Sunday forecast.", next: [WAIT("Scores need at least one measured part (gap, vanguard or corroboration); they appear after the next Sunday forecast")] },
+  "terminal.forecast.7": { kind: "empty", where: "Terminal · Forecast panel", text: "No trendsetter in this sector yet. A site counts once it adopted a trait before that trait crossed 20% share; check all sectors or wait for more archive quarters.", next: [WAIT("A site counts once it adopted a trait before that trait crossed 20% share; check all sectors or wait for more archive quarters")] },
+  "terminal.forecast.8": { kind: "empty", where: "Terminal · Forecast panel", text: "No sector has crossed 10% share on a tracked trait yet; rows appear as archive quarters fill in.", next: [WAIT("rows appear as archive quarters fill in")] },
+  "terminal.forecast.9": { kind: "empty", where: "Terminal · Forecast panel", text: "No brief yet: the first one is written after the next Sunday forecast.", next: [WAIT("the first one is written after the next Sunday forecast")] },
+  "terminal.forecast.10": { kind: "empty", where: "Terminal · Forecast panel", text: "No early adopters identified yet; this needs the trait to cross 20% share somewhere.", next: [] },
+  "terminal.health.1": { kind: "failed", where: "Terminal · Health panel", text: "Job health couldn’t be read right now. The status refreshes every minute, so try again shortly.", next: [RETRY] },
+  "terminal.ledger.1": { kind: "failed", where: "Terminal · Ledger panel", text: "The ledger didn't load. Try again in a minute.", next: [RETRY] },
+  "terminal.ledger.2": { kind: "empty", where: "Terminal · Ledger panel", text: "No calls recorded yet; the first ones are written after the next Sunday forecast.", next: [WAIT("the first ones are written after the next Sunday forecast")] },
+  "terminal.library.1": { kind: "empty", where: "Terminal · Library panel", text: "No library site matches this search in this sector. Try part of the domain, or switch the sector to all.", next: [WAIT("Try part of the domain, or switch the sector to all")] },
+  "terminal.library.2": { kind: "empty", where: "Terminal · Library panel", text: "No confirmed changes in the last 7 days for this sector. A change shows here once two captures in a row agree, so check back after the next daily capture.", next: [WAIT("A change shows here once two captures in a row agree, so check back after the next daily capture")] },
+  "terminal.libraryAi.1": { kind: "empty", where: "Terminal · LibraryAi panel", text: "No pricing pages read for this sector yet. Pricing is read after a pricing page is captured, so this fills in after the next AI extraction run.", next: [WAIT("Pricing is read after a pricing page is captured, so this fills in after the next AI extraction run")] },
+  "terminal.libraryAi.2": { kind: "empty", where: "Terminal · LibraryAi panel", text: "No product pages read for this sector yet. Themes appear after product and changelog pages are captured and read.", next: [WAIT("Themes appear after product and changelog pages are captured and read")] },
+  "terminal.libraryAi.3": { kind: "empty", where: "Terminal · LibraryAi panel", text: "Not tagged yet. AI tags are added after the homepage capture is read, usually within a day of the first capture.", next: [WAIT("AI tags are added after the homepage capture is read, usually within a day of the first capture")] },
+  "terminal.libraryArchiveStrip.1": { kind: "empty", where: "Terminal · LibraryArchiveStrip panel", text: "No archived captures for this site yet. Quarterly archive captures are added by the history backfill; check back after the next backfill run.", next: [WAIT("Quarterly archive captures are added by the history backfill; check back after the next backfill run")] },
+  "terminal.libraryShared.1": { kind: "empty", where: "Terminal · LibraryShared panel", text: "No accent color was measured on the latest capture.", next: [] },
+  "terminal.libraryShared.2": { kind: "empty", where: "Terminal · LibraryShared panel", text: "No confirmed change since tracking began.", next: [] },
+  "terminal.libraryShared.3": { kind: "empty", where: "Terminal · LibraryShared panel", text: "Not enough captured sites in this group to compute a share yet.", next: [] },
+  "terminal.librarySite.1": { kind: "empty", where: "Terminal · LibrarySite panel", text: "No desktop homepage capture yet. Sites are captured daily, so the fingerprint appears after the first successful capture.", next: [WAIT("Sites are captured daily, so the fingerprint appears after the first successful capture")] },
+  "terminal.librarySite.2": { kind: "empty", where: "Terminal · LibrarySite panel", text: "No pages captured yet. Each page appears after its first successful daily capture.", next: [WAIT("Each page appears after its first successful daily capture")] },
+  "terminal.librarySite.3": { kind: "empty", where: "Terminal · LibrarySite panel", text: "No confirmed changes yet. The first capture is the baseline; a change shows here once two later captures agree.", next: [WAIT("The first capture is the baseline; a change shows here once two later captures agree")] },
+  "terminal.mcpOverlay.1": { kind: "empty", where: "Terminal · McpOverlay panel", text: "No key needed: the endpoint is open at 60 requests a minute per connection. A key raises that to its own limit (600 a minute by default) and is counted per key, not per connection.", next: [] },
+  "terminal.rebrands.1": { kind: "empty", where: "Terminal · Rebrands panel", text: "No fonts measured on this capture", next: [] },
+  "terminal.rebrands.2": { kind: "empty", where: "Terminal · Rebrands panel", text: "No colors measured on this capture", next: [] },
+  "terminal.rebrands.3": { kind: "empty", where: "Terminal · Rebrands panel", text: "No confirmed rebrands match these filters. Try ALL sources or another year: archive coverage is quarterly and uneven, and live rebrands appear once two captures agree.", next: [WAIT("Try ALL sources or another year: archive coverage is quarterly and uneven, and live rebrands appear once two captures agree")] },
+  "terminal.sections.1": { kind: "empty", where: "Terminal · Sections panel", text: "No headline layout or composite signal has three example brands in this sector yet.", next: [] },
+  "terminal.sections.2": { kind: "empty", where: "Terminal · Sections panel", text: "No issue yet: the first one is assembled after the Sunday forecast and brief.", next: [WAIT("the first one is assembled after the Sunday forecast and brief")] },
+  "terminal.sections.3": { kind: "empty", where: "Terminal · Sections panel", text: "No confirmed change in the last 30 days.", next: [] },
+  "terminal.signals.1": { kind: "empty", where: "Terminal · Signals panel", text: "No headline signal in this dimension this week: nothing here is visible, decision-worthy, well measured and moving at once. Supporting and archive signals stay in Signals › All signals (F2).", next: [WAIT("nothing here is visible, decision-worthy, well measured and moving at once. Supporting and archive signals stay in Signals › All signals (F2)")] },
+  "terminal.signals.2": { kind: "empty", where: "Terminal · Signals panel", text: "No signal in this tier yet. Tiers are recomputed after every Sunday forecast.", next: [WAIT("Tiers are recomputed after every Sunday forecast")] },
+  "terminal.today.1": { kind: "empty", where: "Terminal · Today panel", text: "No brief yet: the first one is written after the next Sunday forecast.", next: [WAIT("the first one is written after the next Sunday forecast")] },
+  "terminal.typeIndex.1": { kind: "empty", where: "Terminal · TypeIndex panel", text: "No Google Fonts snapshot yet. Rankings are collected once a day, so the index fills in after the next daily run.", next: [WAIT("Rankings are collected once a day, so the index fills in after the next daily run")] },
+  "terminal.vibeMap.1": { kind: "empty", where: "Terminal · VibeMap panel", text: "No vibe map yet. It is drawn with the Sunday forecast once at least 20 sites carry valid AI style tags.", next: [WAIT("It is drawn with the Sunday forecast once at least 20 sites carry valid AI style tags")] },
+  "terminal.views.1": { kind: "empty", where: "Terminal · Views panel", text: "No brief yet: the first one is written after the next Sunday forecast.", next: [WAIT("the first one is written after the next Sunday forecast")] },
+  "terminal.watch.1": { kind: "empty", where: "Terminal · Watch panel", text: "No watchlists on this device. Type", next: [] },
+  "terminal.watch.2": { kind: "empty", where: "Terminal · Watch panel", text: "No editable watchlist on this device. Run watch new", next: [WAIT("Run watch new")] },
+  "terminal.watch.3": { kind: "empty", where: "Terminal · Watch panel", text: "No editable watchlists on this device.", next: [] },
+  "terminal.wire.1": { kind: "empty", where: "Terminal · Wire panel", text: "No news collected yet. Feeds are checked every 15 minutes, so headlines appear after the next check.", next: [WAIT("Feeds are checked every 15 minutes, so headlines appear after the next check")] },
+  "terminal.wire.2": { kind: "empty", where: "Terminal · Wire panel", text: "Nothing on the wire matches these filters. Clear the filter or pick ALL to see every item.", next: [WAIT("Clear the filter or pick ALL to see every item")] },
+  "terminal.empty": empty("Terminal panels with nothing collected", "Nothing collected here yet. Type data is collected daily and the wire every 15 minutes, so this fills in after the next run.", WAIT("Fills in after the next run")),
+  "terminal.watch.cli": { kind: "empty", where: "Terminal · watch command line", text: "No editable watchlist on this device. Run watch new <name>, or open your edit link once and choose “Remember edit link on this device”.", next: [WAIT("Run watch new <name>, or open your edit link once")] },
+} as const satisfies Record<string, Said>;
+
+export type VoiceId = keyof typeof VOICE;
+export const VOICE_IDS = Object.keys(VOICE) as VoiceId[];
+const fill = (s: string, vars: Record<string, string | number> = {}) => s.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+/** The state's words, with `{name}` values filled in. */
+export function say(id: VoiceId, vars?: Record<string, string | number>): { kind: StateKind; title: string; text: string; next: readonly Step[] } {
+  const e: Said = VOICE[id];
+  return { kind: e.kind, title: fill(e.title ?? "", vars), text: fill(e.text, vars), next: e.next };
+}
+/** Just the sentence (for inline empty lines and busy labels). */
+export const line = (id: VoiceId, vars?: Record<string, string | number>) => say(id, vars).text;
+/** Every sentence and title as a matcher (placeholders match any value), for the inventory test. */
+export function inInventory(text: string): boolean {
+  const t = text.trim();
+  return Object.values(VOICE as Record<string, Said>).some(e => [e.title, e.text].some(s => s && new RegExp(`^${s.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\\?\{\w+\\?\}/g, ".+")}$`).test(t)));
+}

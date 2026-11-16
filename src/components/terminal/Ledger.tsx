@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ledgerQuery } from "@/lib/data";
@@ -8,8 +9,8 @@ import { BasisChip } from "./SignalBits";
 /** Console `ledger`: the live record in terminal density, newest calls first. */
 export function LedgerOutput() {
   const { data, isError } = useQuery(ledgerQuery());
-  if (isError) return <p role="alert" className="text-g500">The ledger didn't load. Try again in a minute.</p>;
-  if (!data) return <p role="status" className="animate-blink">▍</p>;
+  if (isError) return <p role="alert" className="text-g500">{voiced("terminal.ledger.1")}</p>;
+  if (!data) return <p role="status" role="status">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p>;
   const s = data.summary;
   return <div className="min-w-0 space-y-3">
     <p>{s.headline}</p>
@@ -19,7 +20,7 @@ export function LedgerOutput() {
       <span className="label font-semibold">{c.outcome_word.toUpperCase()}</span>
       <span className="min-w-0 break-words"><span className="normal-case">{c.name}</span> <DimTag d={c.dimension} /> <BasisChip k={c.trait} /> <span className="label text-g500">· {c.scope_text} · {c.target_text}</span><br /><span className="text-g500">{c.said}{c.outcome_reason ? ` ${c.outcome_reason}` : c.resolves_on ? ` Resolves ${longDay(c.resolves_on)}.` : ""}</span></span>
     </li>)}</ul>
-    {!data.calls.length && <p className="text-g500">No calls recorded yet; the first ones are written after the next Sunday forecast.</p>}
+    {!data.calls.length && <p className="text-g500">{voiced("terminal.ledger.2")}</p>}
     <p className="label text-g500">BACKTEST (HISTORY REPLAY, NOT LIVE) · {data.backtest?.text ?? "none stored"}</p>
     <Link to="/ledger" className="label inline-flex min-h-11 items-center text-ink underline md:min-h-0">FULL LEDGER →</Link>
   </div>;

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/desk")({
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(storyQueueQuery(deps.day, true)).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }], links: fontLinks() }),
   component: Desk,
-  errorComponent: () => <DigestNotFound title="The desk didn't load" body="The story queue couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="desk.failed" />,
 });
 function Desk() {
   const { day } = Route.useSearch(), navigate = Route.useNavigate();

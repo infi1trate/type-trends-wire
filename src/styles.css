@@ -743,3 +743,44 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   @media (prefers-reduced-motion: reduce) { .amb-cut { animation: none; } }
   @media (orientation: portrait) { .amb-split { grid-template-columns: minmax(0, 1fr); } .amb-wall .wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } .amb-wall .wall > li:nth-child(n+7) { display: none; } }
 }
+
+/* PRINT · EVERY READ PAGE (Phase 21; README "Print"): A4 and Letter alike (size auto), paper, ink and green only; no chrome, controls or
+   ticker; the mark on top, address and date at the foot of every sheet; headings kept with what follows; Ledger rows, figures, steps
+   and table rows never split; on receipt pages ([data-receipts]) each address prints once as a numbered footnote. */
+@media print {
+  @page { size: auto; margin: 16mm 14mm 20mm; }
+  html, body { background: var(--tk-print-paper) !important; }
+  .digest { background: var(--tk-print-paper) !important; color: var(--tk-print-ink) !important; }
+  .digest :is(.shell-top, [data-shell-row], .ed-nav, .ticker, .front-ticker, [data-ticker], [data-front-ticker], [data-tour], [role="search"], .c-sticker, video, button, select, input, textarea, form, .no-print) { display: none !important; }
+  .digest .c-raised { display: none !important; }
+  .digest .print-only { display: block !important; }
+  .digest .print-mark { margin: 0 0 6mm; }
+  .digest .print-foot { position: fixed; bottom: 0; left: 0; right: 0; padding-top: 2mm; border-top: 0.5pt solid var(--tk-print-ink); font-family: var(--tk-font-mono); font-size: 7.5pt; color: var(--tk-print-muted); }
+  .digest .print-notes { break-before: auto; margin-top: 10mm; font-family: var(--tk-font-mono); font-size: 8pt; overflow-wrap: anywhere; }
+  .digest .print-notes ol { list-style: decimal; padding-left: 6mm; }
+  /* Paper, ink and green: fills, shadows and accents collapse; stages and MEASURED keep green. SVG charts keep their own fills. */
+  .digest *:not(svg, svg *) { background: transparent !important; box-shadow: none !important; text-shadow: none !important; color: var(--tk-print-ink) !important; border-color: var(--tk-print-ink) !important; }
+  .digest :is([data-stage], .ed-stage, [data-basis="measured"]) { color: var(--tk-positive) !important; border-color: var(--tk-positive) !important; }
+  .digest section { break-inside: auto; }
+  .digest :is(h1, h2, h3, h4, .ed-kicker, .d-quiet-label, .ed-rule:is(header)) { break-after: avoid; page-break-after: avoid; break-inside: avoid; }
+  .digest p, .digest li { orphans: 3; widows: 3; }
+  .digest :is(.ledger-row, figure, .ed-figure, .tk-chart, tr, [data-step], .step-card-rest, [data-pair], .tile, blockquote, [data-container="card"], [data-container="sheet"]) { break-inside: avoid; page-break-inside: avoid; }
+  .digest-data [data-step] { margin-bottom: 8mm; }
+  [data-receipts] .digest a[data-fn]::after { content: "[" attr(data-fn) "]"; vertical-align: super; font-family: var(--tk-font-mono); font-size: 6.5pt; color: var(--tk-print-muted); }
+  [data-receipts] .digest a[data-print]::after { content: "[" attr(data-fn) "]"; }
+  .digest a { text-decoration: underline; }
+  .digest img, .digest svg { max-width: 100% !important; }
+  /* Covers stack on paper: kicker and pins, a small picture, then the headline at print size; the site footer stays on screen. */
+  .digest :is(.cover-grid, .ecover-grid) { display: block !important; }
+  .digest :is(.cover, .ed-cover-sheet) { padding-block: 0 4mm !important; min-height: 0 !important; height: auto !important; }
+  .digest .cover-head :is(span, [data-strip]) { transform: none !important; margin-inline: 0 !important; }
+  .digest .cover-object { margin: 4mm 0 !important; max-width: 120mm; max-height: 80mm; overflow: hidden; }
+  .digest .cover-pin-r { text-align: left; }
+  .digest :is(.cover-head, .ecover-title, .ed-cover) { margin-top: 4mm !important; max-width: none !important; font-size: 28pt !important; line-height: 1.04 !important; }
+  .digest .ed-footer { display: none !important; }
+}
+
+/* Raised links keep their ink type in every mode (the unlayered `.digest a { color: inherit }` would otherwise take the mode's text colour). */
+.digest a.c-raised, .digest button.c-raised { color: var(--tk-text-on-accent); }
+/* Chips on the one loud Plate take the plate's own type colour, so an AI ESTIMATE word stays legible on pink in every mode. */
+.c-plate :is(.ed-badge, .tk-chip)[data-basis="ai"] { --chip-c: var(--tk-plate-fg); }

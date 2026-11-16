@@ -1,3 +1,4 @@
+import { say as sayState } from "@/lib/voice";
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { librarySiteQuery } from "@/lib/data";
 import { LibrarySite } from "@/components/terminal/LibrarySite";
@@ -8,6 +9,6 @@ export const Route = createFileRoute("/library/$domain")({
   loader: async ({ context, params }) => { const site = await context.queryClient.ensureQueryData(librarySiteQuery(params.domain)); if (!site) throw notFound(); },
   head: ({ params }) => ({ meta: [{ title: `${params.domain} — ${BRAND_NAME}` }, { name: "description", content: `Design fingerprint and change history for ${params.domain} in the ${BRAND_NAME} library.` }, { property: "og:title", content: `${params.domain} — ${BRAND_NAME}` }, { property: "og:description", content: `Measured typography, palette, layout and design changes for ${params.domain}.` }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }),
   component: () => { const { domain } = Route.useParams(); return <LibrarySite domain={domain}/>; },
-  notFoundComponent: () => <main className="p-3"><h1 className="text-hero">404 · DOMAIN NOT IN LIBRARY</h1><Link className="label mt-3 inline-block" to="/terminal" search={{ panel: "library" }}>← F11 LIBRARY</Link></main>,
-  errorComponent: () => <main className="p-3" role="alert"><h1 className="text-hero">LIBRARY UNAVAILABLE</h1><Link to="/terminal" search={{ panel: "library" }}>← F11 LIBRARY</Link></main>,
+  notFoundComponent: () => <main className="p-3"><h1 className="text-hero">{sayState("library.notFound").title}</h1><p className="t-say mt-2">{sayState("library.notFound").text}</p><Link className="label mt-3 inline-block" to="/terminal" search={{ panel: "library" }}>← F11 LIBRARY</Link></main>,
+  errorComponent: () => <main className="p-3" role="alert"><h1 className="text-hero">{sayState("library.failed").title}</h1><p className="t-say mt-2">{sayState("library.failed").text}</p><Link to="/terminal" search={{ panel: "library" }}>← F11 LIBRARY</Link></main>,
 });

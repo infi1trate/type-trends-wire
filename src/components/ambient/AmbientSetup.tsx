@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /ambient/setup (Steady): the three URL settings as a small form that opens the board, kiosk mode in plain words, and whether this
 // browser can keep the screen awake (checked in the browser, after hydration).
 import { useEffect, useState } from "react";
@@ -51,7 +52,7 @@ export function AmbientSetup() {
     </section>
     <section aria-labelledby="setup-wake" className="ed-wrap mt-10 max-w-[68ch]">
       <h2 id="setup-wake" className="ed-h3">Keeping the screen awake</h2>
-      <p className="ed-body mt-3" data-wake-lock={wake === null ? "unknown" : wake ? "yes" : "no"}>{wake === null ? "Checking whether this browser can keep the screen awake." : wake ? "This browser can keep the screen awake: the board asks it to while it plays, and lets go when you leave." : "This browser can't keep the screen awake for a page. Set the screen's own sleep or power saving to never, or use a browser that can (recent Chrome, Edge and Safari can)."}</p>
+      <p className="ed-body mt-3" data-wake-lock={wake === null ? "unknown" : wake ? "yes" : "no"}>{wake === null ? voiced("ambient.wakeLock.checking") : wake ? "This browser can keep the screen awake: the board asks it to while it plays, and lets go when you leave." : "This browser can't keep the screen awake for a page. Set the screen's own sleep or power saving to never, or use a browser that can (recent Chrome, Edge and Safari can)."}</p>
       <p className="ed-body mt-3">To spare the panel, the whole board shifts by a few pixels at every scene and the mark swaps corner, so nothing bright sits in one place for long.</p>
     </section>
     <div className="pb-16" />

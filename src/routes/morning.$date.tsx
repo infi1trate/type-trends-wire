@@ -21,8 +21,8 @@ export const Route = createFileRoute("/morning/$date")({
     return { meta: withShare(shareImageFor("morning", params.date), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }]), links: fontLinks() };
   },
   component: Edition,
-  notFoundComponent: () => { const { date } = Route.useParams(); return <DigestNotFound title="No edition for this day" body={`The Morning Line has no edition for “${date}”. Editions run daily (UTC) from ${MORNING_FIRST_DAY} to today, written as YYYY-MM-DD.`} />; },
-  errorComponent: () => <DigestNotFound title="This edition didn't load" body="The stories behind it couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => { const { date } = Route.useParams(); return <DigestNotFound v="morningDay.notFound" vars={{ date, first: MORNING_FIRST_DAY }} />; },
+  errorComponent: () => <DigestNotFound v="morningDay.failed" />,
 });
 function Edition() {
   const { date } = Route.useParams();

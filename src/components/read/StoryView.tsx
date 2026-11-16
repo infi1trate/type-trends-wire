@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // STORY object page (/stories/<id>), Quiet density: a cover (an ink slab the full width, the headline in Display crossing ONE
 // tilted object, number and date pinned left, sector and type pinned right, the deck on its own ink backing), then the off-centre
 // column: Evidence, So what (the quote role), Related as a Ledger. The editor's edits are applied before this renders.
@@ -86,7 +87,7 @@ export function StoryView({ s }: { s: StoryPageData }) {
         <BlockPart title="Facts" kicker="Every line links to its receipt.">
           {s.facts.length ? <ul className="ledger">{s.facts.map((f, i) => <li key={i} className="ledger-row flex flex-wrap items-baseline gap-x-3 px-2 py-3">
             <span className="ed-small">{f.href ? <Receipt href={f.href} {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>{f.basis && <BasisWord b={f.basis} />}
-          </li>)}</ul> : <p className="ed-small">No facts were stored with this story.</p>}
+          </li>)}</ul> : <p className="ed-small">{voiced("read.storyView.1")}</p>}
         </BlockPart>
         {s.series && s.series.points.length > 0 && <BlockPart title={`${s.series.name}: share by quarter`} kicker="Usable quarters only (15+ sites, 25% coverage), library-wide.">
           <p className="ed-data"><span className="ed-figure-num">{(s.series.points.at(-1)! * 100).toFixed(1)}%</span> <span>of tracked homepages, latest quarter</span> · <Link to="/signals/$key" params={{ key: s.series.key }} className="ed-tap">Full chart →</Link></p>
@@ -114,7 +115,7 @@ export function StoryView({ s }: { s: StoryPageData }) {
         {s.evidence.length > 0 && <BlockPart title="Receipts"><Ledger small label="Receipts" rows={s.evidence.map(e => ({ key: e.href, href: e.href, title: `${e.label}${e.href.startsWith("/") ? " →" : " ↗"}` }))} /></BlockPart>}
         <BlockPart title="Earlier stories on the same signal or brand">
           {s.earlier.length ? <Ledger label="Earlier stories" rows={s.earlier.map(x => ({ key: x.id, href: `/stories/${encodeURIComponent(x.id)}`, number: x.number != null ? <StoryNo n={x.number} /> : "·", title: x.headline, line: x.deck, tags: [x.kicker.split(" · ")[0] ?? x.kicker], time: <time dateTime={x.at}>{storyTime(x.at)}</time> }))} />
-            : <p className="ed-small">No earlier story on this signal or brand.</p>}
+            : <p className="ed-small">{voiced("read.storyView.2")}</p>}
         </BlockPart>
         {s.edits.length > 0 && <BlockPart title="Editor's log"><ol className="ed-data space-y-1">{s.edits.map((e, i) => <li key={i}><time dateTime={e.at}>{day(e.at)}</time> · {e.action}{e.note ? ` · ${e.note}` : ""}</li>)}</ol></BlockPart>}
       </>,

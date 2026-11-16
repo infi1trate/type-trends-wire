@@ -15,8 +15,8 @@ export const Route = createFileRoute("/signals/")({
   loader: ({ context, deps }) => context.queryClient.ensureQueryData(signalsIndexQuery(deps.v)).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/signals` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/signals` }, ...fontLinks()] }),
   component: Signals,
-  errorComponent: () => <DigestNotFound title="Signals didn't load" body="The latest forecast couldn't be read just now. Try again in a minute." />,
-  notFoundComponent: () => <DigestNotFound title="No such view" body="That signals view doesn't exist. Start from all signals." />,
+  errorComponent: () => <DigestNotFound v="signals.failed" />,
+  notFoundComponent: () => <DigestNotFound v="signals.notFound" />,
 });
 function Signals() {
   const v = parseSignalsSearch(Route.useSearch());

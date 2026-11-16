@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export function McpOverlay({onClose}:{onClose:()=>void}){
     <div className="space-y-2 border-b border-rule py-3">{[['recommend_type',{sector:'fintech',role:'headline'}],['recommend_palette',{sector:'ai',theme:'dark'}],['differentiate',{sector:'dev-tools'}],['critique',{url:'https://linear.app'}]].map(([name,input])=><p key={String(name)} className="break-all"><span className="label text-g500">{String(name)}</span><br/>{JSON.stringify(input)}</p>)}</div>
     <section aria-labelledby="mcp-keys" className="space-y-2 border-b border-rule py-3 text-ink">
       <h3 id="mcp-keys" className="label text-g500">USING A KEY</h3>
-      <p className="t-say">No key needed: the endpoint is open at 60 requests a minute per connection. A key raises that to its own limit (600 a minute by default) and is counted per key, not per connection.</p>
+      <p className="t-say">{voiced("terminal.mcpOverlay.1")}</p>
       <CopyLine label="HEADER" value="Authorization: Bearer dsgn_…"/>
       <p className="t-say text-g500">An unknown or revoked key gets 401. Keys are issued by the owner; ask the owner for one. Only a fingerprint of each key is stored, so a lost key can't be shown again; it gets replaced.</p>
     </section>

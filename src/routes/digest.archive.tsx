@@ -9,5 +9,5 @@ export const Route = createFileRoute("/digest/archive")({
   loader: ({ context }) => context.queryClient.ensureQueryData(archiveQuery()).then(() => undefined),
   head: () => archiveHead(),
   component: () => { const { data } = useSuspenseQuery(archiveQuery()); return <ArchiveView issues={data} />; },
-  errorComponent: () => <DigestNotFound title="The archive didn't load" body="Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="digestArchive.failed" />,
 });

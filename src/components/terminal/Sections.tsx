@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // Terminal tabs added by the Phase 13 regrouping: Patterns, Digest issues, Brands › Moves, Tools (audit launcher, ledger, console help).
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -24,7 +25,7 @@ export function PatternsTab({ sector }: { sector: string }) {
       <div className="min-w-0"><button type="button" onClick={() => drawer.open(p.key)} className="min-h-11 text-left text-ink hover:underline md:min-h-0">{p.name}</button> <DimTag d={p.dimension} /> <BasisChip basis={p.basis} />
         <p className="label mt-1 flex flex-wrap items-center gap-2 text-g500"><StageBadge stage={p.stage} /> MOMENTUM {p.momentum_index ?? "—"} · CONFIDENCE {p.confidence.toUpperCase()} · {p.examples} BRANDS</p></div>
       <div className="label flex flex-wrap items-center gap-x-3 text-g500">{p.sample.map(d => <Link key={d} to="/library/$domain" params={{ domain: d }} className="min-h-11 break-all hover:text-ink md:min-h-0">{d}</Link>)}<Link to="/patterns/$key" params={{ key: p.key }} className="text-ink underline-offset-2 hover:underline">READ PAGE →</Link></div>
-    </li>)}</ul> : <Empty why="No headline layout or composite signal has three example brands in this sector yet." />}
+    </li>)}</ul> : <Empty why={voiced("terminal.sections.1")} />}
     {drawer.node}
   </section>;
 }
@@ -34,10 +35,10 @@ export function DigestTab() {
   const { data } = useQuery(archiveQuery());
   return <section aria-label="Digest issues" className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
     <PanelHeader title="THE DIGEST · ISSUES" g="s-digest" meta={<Link to="/digest" className="text-ink underline-offset-2 hover:underline">LATEST →</Link>} />
-    {!data ? <p className="p-3 animate-blink">▍</p> : data.length ? <ol className="divide-y divide-rule">{data.map(i => <li key={i.week}>
+    {!data ? <p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p> : data.length ? <ol className="divide-y divide-rule">{data.map(i => <li key={i.week}>
       <Link to="/digest/$week" params={{ week: i.week }} className="grid min-h-11 grid-cols-[6ch_1fr] gap-x-2 p-3 hover:bg-g900 md:grid-cols-[6ch_16ch_1fr]">
         <span className="num label text-g500">No.{i.number}</span><span className="label text-g500 max-md:col-start-2">{i.dates.toUpperCase()}</span><span className="text-ink max-md:col-start-2">{i.headline}{i.lead && <span className="label text-g500"> · LEAD {i.lead.name.toUpperCase()}</span>}</span>
-      </Link></li>)}</ol> : <Empty why="No issue yet: the first one is assembled after the Sunday forecast and brief." />}
+      </Link></li>)}</ol> : <Empty why={voiced("terminal.sections.2")} />}
   </section>;
 }
 
@@ -49,7 +50,7 @@ export function MovesTab({ sector, onSector }: { sector: string; onSector: (s: s
     <RebrandDesk sector={sector} onSector={onSector} />
     <section aria-label="Recent moves" className="border-t border-rule">
       <PanelHeader title="RECENT MOVES · 30 DAYS" g="p-event-tape" meta={moves ? <>{moves.length}</> : null} />
-      {!moves ? <p className="p-3 animate-blink">▍</p> : moves.length ? <ol>{moves.map((s, i) => <StoryRow key={s.id} s={s} n={i + 1} />)}</ol> : <Empty why="No confirmed change in the last 30 days." />}
+      {!moves ? <p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p> : moves.length ? <ol>{moves.map((s, i) => <StoryRow key={s.id} s={s} n={i + 1} />)}</ol> : <Empty why={voiced("terminal.sections.3")} />}
     </section>
   </div>;
 }

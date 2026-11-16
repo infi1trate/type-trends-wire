@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /tools (every ACT tool, one line each) and /status (health, model card and ops details, out of the reader's path).
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -49,7 +50,7 @@ function FreshnessTable() {
   return <section aria-labelledby="st-fresh" className="ed-wrap mt-12">
     <h2 id="st-fresh" className="ed-h2 ed-rule pt-3">Freshness</h2>
     <p className="ed-small mt-3 max-w-[72ch]">Every recurring job, what it feeds and when it last ran. A job is late when more than twice its interval has passed since it last finished. Crawler jobs run on the crawler's own schedule; times are UTC.</p>
-    {!data ? <p className="ed-small mt-3">{isError ? "Freshness couldn't be read right now." : "Checking…"}</p> : <div className="mt-4 overflow-x-auto">
+    {!data ? <p className="ed-small mt-3">{isError ? voiced("tools.freshness.failed") : voiced("busy.tools")}</p> : <div className="mt-4 overflow-x-auto">
       <table className="ed-data ruled-table w-full min-w-[720px] border-collapse text-left" data-testid="freshness">
         <caption className="sr-only">Recurring jobs and when they last ran</caption>
         <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Job</th><th scope="col" className="py-2 pr-3 font-semibold">Feeds</th><th scope="col" className="py-2 pr-3 font-semibold">How often</th><th scope="col" className="py-2 pr-3 font-semibold">Last ran</th><th scope="col" className="py-2 pr-3 font-semibold">Finished</th><th scope="col" className="py-2 pr-3 font-semibold">Next expected</th><th scope="col" className="py-2 font-semibold">State</th></tr></thead>
@@ -76,18 +77,18 @@ export function StatusView() {
     <FreshnessTable />
     <section aria-labelledby="st-jobs" className="ed-wrap mt-14">
       <h2 id="st-jobs" className="ed-h2 ed-rule pt-3">Scheduled jobs{health ? ` · ${health.status}` : ""}</h2>
-      {!health ? <p className="ed-small mt-3">Checking…</p> : health.jobs.length ? <div className="mt-4 overflow-x-auto"><table className="ed-data ruled-table w-full min-w-[560px] border-collapse text-left">
+      {!health ? <p className="ed-small mt-3">{voiced("busy.tools")}</p> : health.jobs.length ? <div className="mt-4 overflow-x-auto"><table className="ed-data ruled-table w-full min-w-[560px] border-collapse text-left">
         <caption className="sr-only">Scheduled job health</caption>
         <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Job</th><th scope="col" className="py-2 pr-3 font-semibold">Every</th><th scope="col" className="py-2 pr-3 font-semibold">Last OK</th><th scope="col" className="py-2 font-semibold">Status</th></tr></thead>
         <tbody>{health.jobs.map(j => <tr key={j.job} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal">{j.job.replace(/_/g, " ")}{j.note && <span className="ed-caption block">{j.note}</span>}</th><td className="py-2 pr-3">{j.expected_every}</td><td className="py-2 pr-3">{j.last_ok_at ? storyTime(j.last_ok_at) : "never"}</td><td className="py-2">{(j.stale || j.consecutive_failures > 0) && <LateMark />}{j.stale ? "stale" : j.last_status}{j.consecutive_failures > 0 ? ` · ${j.consecutive_failures} failures` : ""}</td></tr>)}</tbody>
-      </table></div> : <p className="ed-small mt-3">Job health couldn't be read right now.</p>}
+      </table></div> : <p className="ed-small mt-3">{voiced("read.toolsViews.2")}</p>}
       <p className="ed-caption mt-2">Checked {health ? storyTime(health.checked_at) : "—"}. Machine-readable at /api/public/health.</p>
     </section>
     <section aria-labelledby="st-desk" className="ed-wrap mt-14">
       <h2 id="st-desk" className="ed-h2 ed-rule pt-3">Story desk</h2>
       <p className="ed-small mt-3 max-w-[72ch]">What the story engine ran today, what it held and why, with score components and the editor's log.</p>
-      <p className="ed-small mt-3 max-w-[72ch]" data-testid="real-runs">{runs ? realRunLine(runs) : "Checking which forecast runs count…"}</p>
-      <p className="ed-small mt-3 max-w-[72ch]" data-testid="crop-coverage">{crops ? cropCoverageLine(crops) : cropsError ? "Section crop coverage couldn't be read right now." : "Checking section crops…"}</p>
+      <p className="ed-small mt-3 max-w-[72ch]" data-testid="real-runs">{runs ? realRunLine(runs) : voiced("read.toolsViews.3")}</p>
+      <p className="ed-small mt-3 max-w-[72ch]" data-testid="crop-coverage">{crops ? cropCoverageLine(crops) : cropsError ? voiced("read.toolsViews.4") : voiced("read.toolsViews.5")}</p>
       <p className="ed-data mt-3"><Link to="/desk" className="ed-tap">Open the editor's desk →</Link></p>
     </section>
     <section aria-labelledby="st-model" className="ed-wrap mt-14">
@@ -97,7 +98,7 @@ export function StatusView() {
         <div className="ed-hair pt-2"><dt className="ed-kicker">Median error</dt><dd>{card.median_mae_pts == null ? "Not scored yet" : `${card.median_mae_pts.toFixed(1)} pts`}</dd></div>
         <div className="ed-hair pt-2"><dt className="ed-kicker">Fitted / signals</dt><dd>{card.n_forecast_ok ?? 0} / {card.n_traits ?? 0}</dd></div>
         <div className="ed-hair pt-2"><dt className="ed-kicker">Computed</dt><dd>{mc ? storyTime(mc.computed_at) : "—"}</dd></div>
-      </dl> : <p className="ed-small mt-3">No model card stored yet.</p>}
+      </dl> : <p className="ed-small mt-3">{voiced("read.toolsViews.6")}</p>}
       {card && <ul className="ed-small mt-4 space-y-1">{coverageSentences(card).map(c => <li key={c}>{c}</li>)}</ul>}
       <p className="ed-data mt-4 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=brief" className="ed-tap">Full model card in the terminal ⇄</AppLink><Link to="/ledger" className="ed-tap">Forecast ledger</Link><a href="/terminal#m-forecast" className="ed-tap">Methodology</a></p>
     </section>

@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { familyHistoryQuery, sparkQuery, typeIndexQuery, type FamilyRow } from "@/lib/data";
@@ -82,7 +83,7 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
       ) : error ? (
         <div role="alert" className="p-3 text-live">The type index couldn’t load ({String((error as Error).message)}). Try again in a minute.</div>
       ) : !data || data.rows.length === 0 ? (
-        <Empty why="No Google Fonts snapshot yet. Rankings are collected once a day, so the index fills in after the next daily run." />
+        <Empty why={voiced("terminal.typeIndex.1")} />
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
           <table className="w-full border-collapse text-body">

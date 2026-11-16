@@ -17,12 +17,12 @@ export const Route = createFileRoute("/signals/$key")({
   },
   head: ({ loaderData }) => loaderData?.page ? traitHead(loaderData.page) : { meta: [{ title: `Signal not found — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] },
   component: Signal,
-  notFoundComponent: () => <DigestNotFound title="No page for this signal" body="We only write signal pages for signals in the latest weekly forecast. The key may be misspelled, or the signal may have dropped out of the forecast." />,
-  errorComponent: () => <DigestNotFound title="This signal page didn't load" body="The data behind it couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound v="signal.notFound" />,
+  errorComponent: () => <DigestNotFound v="signal.failed" />,
 });
 function Signal() {
   const { key } = Route.useParams();
   const { sector } = Route.useSearch();
   const { data } = useSuspenseQuery(traitPageQuery(key));
-  return data ? <SignalView page={data} sector={resolveSector(sector)} /> : null;
+  return data ? <div data-receipts="" className="contents"><SignalView page={data} sector={resolveSector(sector)} /></div> : null;
 }

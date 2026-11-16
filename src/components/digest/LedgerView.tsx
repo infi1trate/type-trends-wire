@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { LedgerItem, LedgerSummary, Backtest, Outcome } from "@/lib/ledger/ledger";
@@ -56,20 +57,20 @@ export function LedgerView({ ledger: l }: { ledger: Ledger }) {
 
       <section aria-labelledby="ed-l-numbers" className="ed-wrap mt-14">
         <SectionHead n="02" id="ed-l-numbers" title="Hit rate" kicker={s.rate == null ? "Shown as a percentage once 20 calls have resolved." : `Hits ÷ (hits + misses), n = ${s.resolved}.`} />
-        <p className="ed-data ed-stat">{s.rate != null ? `${Math.round(s.rate * 100)}%` : s.resolved ? `${s.hits} of ${s.resolved}` : "None yet"}</p>
+        <p className="ed-data ed-stat">{s.rate != null ? `${Math.round(s.rate * 100)}%` : s.resolved ? `${s.hits} of ${s.resolved}` : voiced("digest.ledgerView.1")}</p>
         <p className="ed-caption mt-1">{s.rate != null ? `${s.hits} hits, ${s.misses} misses` : s.resolved ? "resolved calls landed" : `${s.open} calls open${s.nextResolution ? `; the first resolve on ${longDay(s.nextResolution)}` : ""}`}</p>
         <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2"><Breakdown title="By dimension" rows={s.byDimension} /><Breakdown title="By stage at call" rows={s.byStage} /></div>
       </section>
 
       <section aria-labelledby="ed-l-backtest" className="ed-wrap mt-14">
         <SectionHead n="03" id="ed-l-backtest" title="Backtest (history replay)" kicker="A replay of the archive, not live calls. It is never mixed into the hit rate above." />
-        <p className="ed-body ed-small">{l.backtest?.text ?? "No backtest is stored yet."}</p>
+        <p className="ed-body ed-small">{l.backtest?.text ?? voiced("digest.ledgerView.2")}</p>
       </section>
 
       <section aria-labelledby="ed-l-calls" className="ed-wrap mt-14">
         <SectionHead n="04" id="ed-l-calls" title="Every call" kicker="Newest first. Misses are shown exactly like hits." />
         <div className="no-print mb-4 flex flex-wrap gap-x-4" role="group" aria-label="Filter calls by outcome">{FILTERS.map(x => <button key={x.id} type="button" aria-pressed={f === x.id} onClick={() => setF(x.id)} className={`ed-tap ed-data cursor-pointer ${f === x.id ? "underline" : "ed-muted"}`}>{x.label}</button>)}</div>
-        {shown.length ? <ul className="ledger" data-ledger="">{shown.map(c => <LedgerCall key={c.id} c={c} />)}</ul> : <p className="ed-body">{l.calls.length ? "No calls with this outcome yet." : "No calls recorded yet. The first ones are written after the next Sunday forecast."}</p>}
+        {shown.length ? <ul className="ledger" data-ledger="">{shown.map(c => <LedgerCall key={c.id} c={c} />)}</ul> : <p className="ed-body">{l.calls.length ? voiced("digest.ledgerView.3") : voiced("digest.ledgerView.4")}</p>}
         <p className="ed-caption mt-6">Share figures are the share of tracked homepages; the band is the forecast's 80% interval. Percent signs are points of share, not growth.</p>
       </section>
     </article>

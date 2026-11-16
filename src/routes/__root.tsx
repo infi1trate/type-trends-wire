@@ -7,6 +7,7 @@ import {
   useRouterState,
   HeadContent,
   Scripts,
+  useHydrated,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
@@ -20,6 +21,8 @@ import { densityOf } from "../lib/ia";
 import { HEAD_SCRIPT } from "../lib/motion";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_DESCRIPTION, BRAND_LINE, BRAND_NAME } from "@/lib/brand";
+import { say } from "@/lib/voice";
+import { NotFoundLookup } from "@/components/read/NotFoundLookup";
 
 function ErrorPage({ code, title, line, children }: { code: string; title: string; line: string; children: ReactNode }) {
   // Error pages take the theme: paper, the drawn mark, one Raised button (and a plain link beside it).
@@ -37,18 +40,22 @@ function ErrorPage({ code, title, line, children }: { code: string; title: strin
 }
 
 function NotFoundComponent() {
-  return <ErrorPage code="Error 404" title="Page not found" line="The page you're looking for doesn't exist or has been moved.">
+  const v = say("site.notFound");
+  return <ErrorPage code="Error 404" title={v.title} line={v.text}>
     <Link to="/" className="c-raised" data-container="raised">Go to the front page</Link>
+    <NotFoundLookup />
   </ErrorPage>;
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
-  const router = useRouter();
+  const router = useRouter(), hydrated = useHydrated();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
-  return <ErrorPage code="Something went wrong" title="This page didn't load" line="Something went wrong on our end. You can try again, or head back to the front page.">
+  // Offline is only knowable in the browser; the server render (and a connected browser) shows the plain failed page.
+  const v = say(hydrated && typeof navigator !== "undefined" && navigator.onLine === false ? "site.offline" : "site.failed");
+  return <ErrorPage code={v.kind === "offline" ? "Offline" : "Didn't load"} title={v.title} line={v.text}>
     <button type="button" className="c-raised" data-container="raised" onClick={() => { router.invalidate(); reset(); }}>Try again</button>
     <a href="/" className="ed-data ed-tap underline">Go to the front page</a>
   </ErrorPage>;

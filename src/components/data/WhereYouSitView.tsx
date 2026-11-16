@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /data/where-you-sit: the reader picks a tracked brand (search over the tracked list only — no free-text URLs, no crawling on demand)
 // and gets its own short story from the same templates. A brand that is not tracked is pointed at the audit.
 import { useMemo, useState } from "react";
@@ -24,7 +25,7 @@ export function WhereYouSitView({ brands, result, step, onStep }: { brands: Bran
         <input id="sit-q" className="tk-input tk-t-data mt-2 w-full max-w-[40ch]" value={q} onChange={e => { setQ(e.target.value); setMiss(null); }} placeholder="Search by name or domain" autoComplete="off" aria-describedby="sit-hint" />
         <p id="sit-hint" className="ed-small ed-muted mt-1">Only tracked brands; nothing is crawled on demand.</p>
         {q.trim() && <ul className="mt-2 grid max-w-[60ch] gap-1 sm:grid-cols-2" aria-label="Matching brands">{hits.map(b => <li key={b.domain}><button type="button" onClick={() => choose(b.domain)} className="tk-btn tk-t-kicker w-full justify-start text-left" data-variant="secondary">{b.name} <span className="tk-c-muted ml-2">{b.domain}</span></button></li>)}
-          {!hits.length && <li className="ed-small">No tracked brand matches. <Link to="/audit/new" className="ed-tap">Run an audit instead →</Link></li>}</ul>}
+          {!hits.length && <li className="ed-small">{voiced("data.whereYouSitView.1")} <Link to="/audit/new" className="ed-tap">Run an audit instead →</Link></li>}</ul>}
         {miss && <p className="ed-small mt-2" role="status">“{miss}” isn't one of the tracked brands. <Link to="/audit/new" className="ed-tap">Run an audit instead →</Link></p>}
       </form>
       {result.kind === "untracked" && <p className="ed-wrap ed-body mt-8" role="status">{result.domain} isn't tracked, so there is no stored history to draw from. <Link to="/audit/new" className="ed-tap">Audit it instead →</Link></p>}

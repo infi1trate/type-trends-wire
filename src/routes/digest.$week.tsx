@@ -18,8 +18,8 @@ export const Route = createFileRoute("/digest/$week")({
   head: ({ params, loaderData }) => loaderData?.issue ? issueHead(loaderData.issue, `/digest/${params.week}`, specimenLinks(loaderData.issue))
     : { meta: [{ title: `Issue not found — ${DIGEST_NAME}` }, { name: "robots", content: "noindex" }] },
   component: Week,
-  notFoundComponent: () => { const { week } = Route.useParams(); return <DigestNotFound title="No issue for this week" body={`${DIGEST_NAME} has no issue for “${week}”. Issues are weekly from ${DIGEST_FIRST_WEEK}, written as year-W-week (for example ${DIGEST_FIRST_WEEK}).`} />; },
-  errorComponent: () => <DigestNotFound title="This issue didn't load" body="The data behind it couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => { const { week } = Route.useParams(); return <DigestNotFound v="digest.notFound" vars={{ digest: DIGEST_NAME, week, first: DIGEST_FIRST_WEEK }} />; },
+  errorComponent: () => <DigestNotFound v="digest.failed" />,
 });
 function Week() {
   const { week } = Route.useParams();

@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // BRAND object page (/brands/<domain>, Steady): Headline (the identity card and the two actions) → Evidence (moves with their
 // before/after captures, sections, how it sits in its sector) → So what → Related (similar brands, stories, signals).
 import { Link } from "@tanstack/react-router";
@@ -31,7 +32,7 @@ function Sections({ b, open }: { b: BrandPage; open: CropSection | null }) {
     {b.sections.length ? <ul className="tile-wall" data-tile-wall="">{b.sections.map((c, i) => <li key={c.section} className={i === 0 ? "tile-lg" : "tile-sm"}>
       <CropFigure crop={c} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" />
       <p className="ed-data mt-1"><Link to="/brands/$domain" params={{ domain: b.domain }} search={{ section: c.section }} hash="ed-sections" resetScroll={false} className="ed-tap" aria-current={open === c.section ? "true" : undefined}>History · {c.versions} {c.versions === 1 ? "version" : "versions"} →</Link></p>
-    </li>)}</ul> : <div className="max-w-md"><CropFallback domain={b.domain} section={CROP_SECTION_NAME.hero} /><p className="ed-caption mt-2">No section of this brand has been photographed yet. Crops arrive when the crawler sends them; until then the moves below are redrawn from the stored layout.</p></div>}
+    </li>)}</ul> : <div className="max-w-md"><CropFallback domain={b.domain} section={CROP_SECTION_NAME.hero} /><p className="ed-caption mt-2">{voiced("read.brandView.1")}</p></div>}
     {open && <div className="mt-10" role="region" aria-labelledby="ed-section-history">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4"><h4 id="ed-section-history" className="ed-h3">{CROP_SECTION_NAME[open]} history</h4><Link to="/brands/$domain" params={{ domain: b.domain }} search={{}} hash="ed-sections" resetScroll={false} className="ed-tap ed-data">Close</Link></div>
       <p className="ed-caption mt-1">Every stored version, newest first. A new version is kept only when the section looks different; up to 12 are kept.</p>
@@ -61,17 +62,17 @@ function IdentityCard({ b }: { b: BrandPage }) {
     <p className="ed-kicker">Brand · {b.sectorName}</p>
     <h1 id="ed-brand-title" className="ed-h1 mt-3 break-words">{b.name}</h1>
     <p className="mt-2"><a href={`https://${b.domain}`} target="_blank" rel="noopener" className="ed-code ed-tap" {...pr(`https://${b.domain}`)}>{b.domain}</a> <span className="ed-caption">· last captured {b.captured ? storyTime(b.captured) : "not yet"}</span></p>
-    <dl className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <div className="min-w-0 space-y-4"><Fact k="Headline type" receipt={i.receipt}><FaceValue f={i.h1} /></Fact><Fact k="Body type" receipt={i.receipt}><FaceValue f={i.body} /></Fact></div>
-      <div className="min-w-0"><dt className="ed-kicker">Palette · share of the first screen</dt>
+    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <dl className="min-w-0 space-y-4"><Fact k="Headline type" receipt={i.receipt}><FaceValue f={i.h1} /></Fact><Fact k="Body type" receipt={i.receipt}><FaceValue f={i.body} /></Fact></dl>
+      <dl className="min-w-0"><div><dt className="ed-kicker">Palette · share of the first screen</dt>
         <dd className="mt-2">{i.palette.length ? <ul className="space-y-1" aria-label={`${b.name} palette, largest first`}>{i.palette.map((p, k) => <li key={`${p.hex}${k}`}>
           <AppLink href={i.receipt} className="ed-tap flex items-center gap-2 no-underline hover:underline"><span className="ed-swatch inline-block h-6 w-6 shrink-0 border" style={{ background: p.hex }} aria-hidden="true" /><span className="ed-code">{p.hex}</span><span className="ed-data ml-auto">{p.share != null ? pct(p.share, 0) : "—"}</span></AppLink>
-        </li>)}</ul> : <span className="ed-small">Palette not measured yet.</span>}</dd></div>
-      <div className="min-w-0"><dt className="ed-kicker">Voice and style</dt>
-        <dd className="mt-2">{i.tags.length ? <ul className="flex flex-wrap gap-2" aria-label="Voice and style tags">{i.tags.map(t => <li key={t.key}><AppLink href={i.receipt} className="ed-tap ed-data inline-flex items-center gap-1 no-underline hover:underline">{t.name}<BasisWord b={t.basis} /></AppLink></li>)}</ul> : <span className="ed-small">No confident AI read of this brand yet.</span>}</dd></div>
-      <div className="min-w-0"><dt className="ed-kicker">Layout · measured</dt>
-        <dd className="mt-2">{i.layout.length ? <ul className="space-y-1">{i.layout.map(f => <li key={f.id}><AppLink href={i.receipt} className="ed-tap flex items-baseline justify-between gap-3 no-underline hover:underline"><span className="ed-small">{f.label}</span><span className="ed-data">{f.value}</span></AppLink></li>)}</ul> : <span className="ed-small">No layout measured yet.</span>}</dd></div>
-    </dl>
+        </li>)}</ul> : <span className="ed-small">{voiced("read.brandView.2")}</span>}</dd></div></dl>
+      <dl className="min-w-0"><div><dt className="ed-kicker">Voice and style</dt>
+        <dd className="mt-2">{i.tags.length ? <ul className="flex flex-wrap gap-2" aria-label="Voice and style tags">{i.tags.map(t => <li key={t.key}><AppLink href={i.receipt} className="ed-tap ed-data inline-flex items-center gap-1 no-underline hover:underline">{t.name}<BasisWord b={t.basis} /></AppLink></li>)}</ul> : <span className="ed-small">{voiced("read.brandView.3")}</span>}</dd></div></dl>
+      <dl className="min-w-0"><div><dt className="ed-kicker">Layout · measured</dt>
+        <dd className="mt-2">{i.layout.length ? <ul className="space-y-1">{i.layout.map(f => <li key={f.id}><AppLink href={i.receipt} className="ed-tap flex items-baseline justify-between gap-3 no-underline hover:underline"><span className="ed-small">{f.label}</span><span className="ed-data">{f.value}</span></AppLink></li>)}</ul> : <span className="ed-small">{voiced("read.brandView.4")}</span>}</dd></div></dl>
+    </div>
   </Card>;
 }
 
@@ -127,7 +128,7 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
           <Sector b={b} />
         </BlockPart>
         {b.versus && <BlockPart title={`Versus ${b.versus.scopeName}`} kicker="Signals this brand shows, read in its own sector's forecast (headline and supporting signals only).">
-          <div className="ed-grid"><div className="lg:col-span-6"><h4 className="ed-kicker">Ahead · rising or emerging</h4><div className="mt-2"><Refs xs={b.versus.ahead} empty="None of its signals is rising or emerging right now." /></div></div>
+          <div className="ed-grid"><div className="lg:col-span-6"><h4 className="ed-kicker">Ahead · rising or emerging</h4><div className="mt-2"><Refs xs={b.versus.ahead} empty={voiced("read.brandView.5")} /></div></div>
             <div className="lg:col-span-6"><h4 className="ed-kicker">Behind · fading</h4><div className="mt-2"><Refs xs={b.versus.behind} empty="It uses no fading signals." /></div></div></div>
         </BlockPart>}
       </>,
@@ -136,9 +137,9 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
         <BlockPart title="Similar brands" kicker={b.similar.line}>
           {b.similar.items.length > 0 && <Ledger label="Similar brands" rows={b.similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: x.name, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} />}
         </BlockPart>
-        <BlockPart title="Stories about this brand"><RelatedStories stories={b.stories ?? []} empty="No story has named this brand yet." /></BlockPart>
+        <BlockPart title="Stories about this brand"><RelatedStories stories={b.stories ?? []} empty={voiced("read.brandView.6")} /></BlockPart>
         <BlockPart title="Signals it shows">
-          {b.shows.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-2">{b.shows.map(s => <li key={s.key} className="flex items-center gap-1"><Link to="/signals/$key" params={{ key: s.key }} className="ed-tap">{s.name}</Link><StageWord stage={s.stage} />{s.tier === "headline" && <span className="ed-muted">headline</span>}</li>)}</ul> : <p className="ed-small">No staged signal measured on this brand yet.</p>}
+          {b.shows.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-2">{b.shows.map(s => <li key={s.key} className="flex items-center gap-1"><Link to="/signals/$key" params={{ key: s.key }} className="ed-tap">{s.name}</Link><StageWord stage={s.stage} />{s.tier === "headline" && <span className="ed-muted">headline</span>}</li>)}</ul> : <p className="ed-small">{voiced("read.brandView.7")}</p>}
         </BlockPart>
         <BlockPart title="More">
           <p className="ed-data flex flex-wrap gap-x-6">

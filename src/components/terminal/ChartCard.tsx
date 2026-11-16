@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/site";
@@ -12,7 +13,7 @@ const pct = (v: number | null) => (v == null ? "—" : `${(v * 100).toFixed(1)}%
 /** Chart of the Week block: the stored card image, copy/download actions and receipts. */
 export function ChartOfWeek({ card, heading = true }: { card: { week: string; model: CardModel; created_at: string } | null; heading?: boolean }) {
   const [copied, setCopied] = useState(false);
-  if (!card) return <p className="p-3 text-compare-muted">No chart card for this week yet. A card is drawn after each Sunday forecast once its trait has at least two usable quarters of history.</p>;
+  if (!card) return <p className="p-3 text-compare-muted">{voiced("terminal.chartCard.1")}</p>;
   const m = card.model, u = cardUrls(card.week), t = cardText(m);
   const copy = async () => { try { await navigator.clipboard.writeText(u.page); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { setCopied(false); } };
   return <div className="flex flex-col gap-3 p-3">

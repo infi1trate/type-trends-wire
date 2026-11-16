@@ -4,7 +4,7 @@ import { auditQuery } from "@/lib/data";
 import { fontLinks, specimenLink } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { AuditView } from "@/components/agency/AuditView";
-import { AgencyShell } from "@/components/agency/Shell";
+import { AgencyShell, AgencyState } from "@/components/agency/Shell";
 import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/audit/")({
@@ -28,11 +28,11 @@ export const Route = createFileRoute("/audit/")({
     };
   },
   component: Page,
-  errorComponent: () => <AgencyShell label="Audit unavailable" crumb="Competitive audit"><div className="ed-wrap py-16"><h1 className="ed-h1">This audit didn't load</h1><p className="ed-body mt-4">The data behind it couldn't be read just now. Try again in a minute.</p></div></AgencyShell>,
+  errorComponent: () => <AgencyState v="audit.failed" crumb="Competitive audit" />,
 });
 function Page() {
   const { sites, sector } = Route.useSearch();
   const { data } = useSuspenseQuery(auditQuery(sites, sector ?? null));
   if (!data.ok) return <AgencyShell label="Competitive audit" crumb="Competitive audit"><div className="ed-wrap py-16"><h1 className="ed-h1">{sites ? "This audit needs a different set of sites" : "Start a competitive audit"}</h1><p className="ed-body mt-4">{sites ? data.error : "Choose 2–6 sites to compare."}</p><p className="ed-data mt-6"><Link to="/audit/new" search={{ sites: data.domains.join(",") || undefined }}>Choose sites →</Link></p></div></AgencyShell>;
-  return <AuditView a={data.audit} field={data.field} />;
+  return <div data-receipts="" className="contents"><AuditView a={data.audit} field={data.field} /></div>;
 }

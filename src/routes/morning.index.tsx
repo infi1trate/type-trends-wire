@@ -13,9 +13,9 @@ export const Route = createFileRoute("/morning/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(morningQuery(null)).then(() => undefined),
   head: () => ({ meta: withShare(shareImageFor("morning", "today"), [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }]), links: [...fontLinks(), { rel: "alternate", type: "application/rss+xml", title: "The Morning Line", href: "/morning/rss.xml" }] }),
   component: Today,
-  errorComponent: () => <DigestNotFound title="The Morning Line didn't load" body="The stories behind it couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="morning.failed" />,
 });
 function Today() {
   const { data } = useSuspenseQuery(morningQuery(null));
-  return data ? <MorningView d={data} /> : <DigestNotFound title="No edition today" body="The Morning Line has no edition for today yet." />;
+  return data ? <MorningView d={data} /> : <DigestNotFound v="morning.empty" />;
 }

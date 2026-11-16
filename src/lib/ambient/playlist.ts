@@ -1,3 +1,4 @@
+import { line } from "../voice";
 // THE AMBIENT BOARD (/ambient): the scenes a studio wall plays, built by ONE pure function from data the front page, the gallery, the
 // Morning Line and the data stories already load. No I/O, no clock, no randomness: the same input gives the same playlist.
 import type { PageState, TickerItem } from "../front/front";
@@ -66,6 +67,6 @@ export function playlist(i: AmbientInput, o: Pick<AmbientOptions, "scenes" | "se
   return o.scenes.map(id => build[id]()).filter((s): s is Scene => s !== null);
 }
 /** What the board says with nothing to play. */
-export const EMPTY_BOARD_LINE = "Nothing to put on the wall yet: no story, chart or capture is stored. The board fills itself as soon as one is.";
+export const EMPTY_BOARD_LINE = line("ambient.empty");
 /** A stable signature of what the board shows, so a poll only rebuilds the playlist when something changed. */
 export const playlistKey = (ss: Scene[]) => ss.map(s => `${s.id}:${s.id === "cover" ? s.lead.id : s.id === "ledger" ? s.stories.map(x => x.id).join("|") : s.id === "trail" ? s.chart.points.length : s.id === "pair" ? s.move.at : s.id === "wall" ? s.collection.slug : s.id === "figure" ? s.figure.value : s.data.slug}`).join(",");

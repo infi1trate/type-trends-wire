@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { TickerTrack } from "@/components/kit/TickerTrack";
 import { useQuery } from "@tanstack/react-query";
@@ -127,7 +128,7 @@ export function Ticker() {
       </span>
     ))
   ) : (
-    <span className="mr-8 text-g500">No font signals yet — the first Google Fonts snapshot lands after the daily collection runs ·</span>
+    <span className="mr-8 text-g500">{voiced("terminal.chrome.1")}</span>
   );
 
   return (

@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /kit: every shared component on live data, in the current theme, with light / dark / vibes side by side where mode matters.
 // A brand direction is judged here: change the theme file, reload this page.
 import { useState } from "react";
@@ -105,7 +106,7 @@ export function KitView() {
     </Section>
     <Section id="kit-stories" title={KIT_SECTIONS[3].title} note="Story cards (lead, standard, compact), a signal row with its sparkline, a brand lockup and the live timestamp, from today's data.">
       <ModePanels>{() => <div className="space-y-6">
-        {lead ? <StoryCard s={lead} lead /> : <p className="ed-small">No published stories yet.</p>}
+        {lead ? <StoryCard s={lead} lead /> : <p className="ed-small">{voiced("kit.kitView.1")}</p>}
         {standard && <StoryCard s={standard} />}
         {rest.length > 0 && <ul className="border-y border-rule">{rest.slice(0, 3).map((s, i) => <StoryRow key={s.id} s={s} n={i + 1} />)}</ul>}
         <ul>{d.signals.map(s => <SignalLine key={s.key} k={s.key} name={s.name} stage={s.stage} share={s.share} points={series?.[s.key]} />)}</ul>
@@ -116,7 +117,7 @@ export function KitView() {
     <Section id="kit-containers" title={KIT_SECTIONS[4].title} note="The brand's eight containers, with their rules built in. A hard shadow exists only on Raised and Sticker; only Sticker is round. Rules: /brand/containers.">
       <ModePanels>{() => <div className="grid grid-cols-1 gap-4">{CONTAINERS.map(k => <div key={k}><Container kind={k} /><p className="ed-caption mt-1">{CONTAINER_RULES[k].use}</p></div>)}</div>}</ModePanels>
     </Section>
-    <Section id="kit-images" title={KIT_SECTIONS[5].title} note={d.crop ? `On the latest stored crop (${d.crop.domain}); credit and links are unchanged under every treatment. Pages use “none”.` : "No section crops are stored yet, so each treatment is shown on the placeholder state with a generated specimen. Pages use “none”."}>
+    <Section id="kit-images" title={KIT_SECTIONS[5].title} note={d.crop ? `On the latest stored crop (${d.crop.domain}); credit and links are unchanged under every treatment. Pages use “none”.` : voiced("kit.kitView.2")}>
       <ModePanels>{() => <div className="grid grid-cols-1 gap-6">{TREATMENTS.map(t => <div key={t}><Treated crop={d.crop} treatment={t} label={t} sizes="(min-width: 1024px) 30vw, 100vw" /><p className="ed-caption ed-muted mt-1">{TREATMENT_NOTE[t]}</p></div>)}</div>}</ModePanels>
     </Section>
     <Section id="kit-charts" title={KIT_SECTIONS[6].title} note="Four primitives on one frame: title, one-line note, source and receipt. Points take keyboard focus; a table carries the same numbers for screen readers.">

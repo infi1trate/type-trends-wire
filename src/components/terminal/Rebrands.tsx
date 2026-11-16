@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { startTransition, useState, useTransition } from "react";
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -19,12 +20,12 @@ function Chip({ hex }: { hex: string | null }) {
   return <span className="inline-flex items-center gap-1"><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill={hex} stroke="var(--tk-rule-hairline)" /></svg><span className="num">{hex.toUpperCase()}</span></span>;
 }
 function Fonts({ s }: { s: Side }) {
-  if (!s.h1 && !s.body) return <span className="text-compare-muted">No fonts measured on this capture</span>;
+  if (!s.h1 && !s.body) return <span className="text-compare-muted">{voiced("terminal.rebrands.1")}</span>;
   return <span className="flex flex-col">{s.h1 && <span><span className="label text-compare-muted">H1 </span><WildFamily family={s.h1} google={s.h1_google} /></span>}{s.body && <span><span className="label text-compare-muted">BODY </span><WildFamily family={s.body} google={s.body_google} /></span>}</span>;
 }
 function Palette({ s }: { s: Side }) {
   const top = s.palette.filter(h => h !== s.bg && h !== s.accent);
-  if (!s.bg && !s.accent && !top.length) return <span className="text-compare-muted">No colors measured on this capture</span>;
+  if (!s.bg && !s.accent && !top.length) return <span className="text-compare-muted">{voiced("terminal.rebrands.2")}</span>;
   return <span className="flex flex-col gap-1">{s.bg && <span><span className="label text-compare-muted">BG </span><Chip hex={s.bg} /></span>}{s.accent && <span><span className="label text-compare-muted">ACCENT </span><Chip hex={s.accent} /></span>}{top.length > 0 && <span className="flex flex-wrap gap-x-2"><span className="label text-compare-muted">TOP</span>{top.map(h => <Chip key={h} hex={h} />)}</span>}</span>;
 }
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -99,9 +100,9 @@ export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s
       {<span className="label num text-compare-muted" aria-live="polite">{d.filtered.total} SHOWN BY FILTER · LIVE {d.filtered.live} · ARCHIVE {d.filtered.archive}</span>}
     </div>
     <div className="min-h-0 flex-1 md:overflow-y-auto">
-      {d.rows.length === 0 && <p className="p-3 text-compare-muted">No confirmed rebrands match these filters. Try ALL sources or another year: archive coverage is quarterly and uneven, and live rebrands appear once two captures agree.</p>}
+      {d.rows.length === 0 && <p className="p-3 text-compare-muted">{voiced("terminal.rebrands.3")}</p>}
       {d.rows.map(r => <Entry key={r.id} r={r} />)}
-      {d.rows.length < d.filtered.total && <div className="p-3"><Button variant="outline" className="label" disabled={pending} onClick={() => startTransition(() => setLimit(l => Math.min(l + PAGE, 500)))}>{pending ? "LOADING…" : `MORE · ${d.filtered.total - d.rows.length} LEFT`}</Button></div>}
+      {d.rows.length < d.filtered.total && <div className="p-3"><Button variant="outline" className="label" disabled={pending} onClick={() => startTransition(() => setLimit(l => Math.min(l + PAGE, 500)))}>{pending ? voiced("busy.rebrands") : `MORE · ${d.filtered.total - d.rows.length} LEFT`}</Button></div>}
       <p className="label border-t border-rule p-3 text-compare-muted">SOURCE: CONFIRMED LIBRARY CHANGES (TWO CAPTURES, DESKTOP HOME) · LIVE CRAWLER + WAYBACK QUARTERLY ARCHIVE · DATA THROUGH {day(d.data_through)} · STAGES FROM THE LATEST FORECAST · LOGOS AND TEXT COLOR ARE NOT MEASURED</p>
     </div>
   </section>;

@@ -277,6 +277,7 @@ export const SURFACES: Record<string, Surface> = {
   "embed.chart.$week": S("tools", "both", "quiet", "Embeddable chart widget (open)."),
   "robots[.]txt": S("tools", "both", "quiet", "Crawler instructions."),
   "thumbs.$": S("brands", "both", "quiet", "Credited homepage thumbnails."),
+  "share.$": S("live", "both", "quiet", "Share cards (1200×630) for the front page, stories, brands, patterns, collections, the Morning Line and sector reports; gated until launch."),
   "crops.$": S("brands", "both", "quiet", "Credited section crops (hero, navigation, pricing, call to action, footer); gated like any page, never served for opted-out sites."),
   "api/public/mcp": S("tools", "both", "shown", "MCP endpoint (agent access); its tool count is MCP_TOOL_COUNT, checked against the registry."),
   "api/public/oembed": S("tools", "both", "quiet", "oEmbed provider for signal and chart pages."),
@@ -345,7 +346,7 @@ export const DENSITY: Record<string, Density | "none"> = {
   terminal: "loud", "library.$domain": "loud", "ambient.index": "loud", "ambient.setup": "steady", "status.launch": "steady", "chart.index": "loud", "chart.$week": "loud", kit: "loud",
   "front[.]json": "none", "digest.rss[.]xml": "none", "digest.{$week}[.]png": "none", "morning.rss[.]xml": "none", "chart.{$week}[.]png": "none", "chart.{$week}[.]svg": "none",
   "audit[.]png": "none", "trait.{$key}[.]png": "none", "data.{$slug}[.]png": "none", "data.embed.$slug": "none", "embed.trait.$key": "none", "embed.chart.$week": "none",
-  "robots[.]txt": "none", "thumbs.$": "none", "crops.$": "none", "brand.files.$file": "none", "api/*": "none",
+  "robots[.]txt": "none", "thumbs.$": "none", "crops.$": "none", "share.$": "none", "brand.files.$file": "none", "api/*": "none",
 };
 /** Route file key for a router route id ("/data/$slug" → "data.$slug", "/" → "index", "/brand/" → "brand.index"). */
 export const routeKeyOf = (routeId: string) => routeId === "/" ? "index" : routeId.replace(/^\//, "").replace(/\/$/, "/index").replace(/\//g, ".");

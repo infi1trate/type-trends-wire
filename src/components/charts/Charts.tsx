@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // Shared chart primitives: one frame (title, one-line note, source line, receipt link, screen-reader table, empty state) and
 // four token-driven SVG charts (scatter, line, bar, donut). Colours, type and focus come only from theme tokens (--tk-*).
 // The slug restyle: 3 px ink axes, dashed newsprint gridlines, direct labels in Big Shoulders, stage colours from the tokens,
@@ -28,7 +29,7 @@ export function Gumball({ id, ball, cx, cy, r }: { id: string; ball: GumballName
 }
 const ballId = (raw: string) => `gb${raw.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-export function ChartFrame({ title, note, source, receipt, empty = "No data to chart yet.", isEmpty, table, children }: Frame) {
+export function ChartFrame({ title, note, source, receipt, empty = voiced("chart.empty"), isEmpty, table, children }: Frame) {
   const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` };
   return <figure className="tk-chart min-w-0" aria-labelledby={ids.title} data-chart="">
     <h3 id={ids.title} className="tk-t-h3">{title}</h3>

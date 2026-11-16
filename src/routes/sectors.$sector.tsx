@@ -15,14 +15,14 @@ export const Route = createFileRoute("/sectors/$sector")({
     if (!r) throw notFound();
     return { title: r.title, basis: r.basis };
   },
-  head: ({ loaderData }) => {
+  head: ({ params, loaderData }) => {
     if (!loaderData) return { meta: [{ title: "Sector not found — Sector reports" }, { name: "robots", content: "noindex" }] };
     const title = `${loaderData.title} · ${BRAND_NAME}`;
-    return { meta: withShare(shareImageFor("sector", loaderData.sector), [{ title }, { name: "description", content: loaderData.basis }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.basis }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }]), links: fontLinks() };
+    return { meta: withShare(shareImageFor("sector", params.sector), [{ title }, { name: "description", content: loaderData.basis }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.basis }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }]), links: fontLinks() };
   },
   component: Report,
-  notFoundComponent: () => <DigestNotFound title="No report for this sector" body="Sector reports exist for each tracked sector; pick one from the sector reports page." />,
-  errorComponent: () => <DigestNotFound title="This report didn't load" body="The data behind it couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound v="sector.notFound" />,
+  errorComponent: () => <DigestNotFound v="sector.failed" />,
 });
 function Report() {
   const { sector } = Route.useParams();

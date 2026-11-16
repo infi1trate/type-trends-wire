@@ -19,7 +19,7 @@ export const Route = createFileRoute("/data/where-you-sit")({
   loader: ({ context, deps }) => Promise.all([context.queryClient.ensureQueryData(trackedBrandsQuery()), context.queryClient.ensureQueryData(whereYouSitQuery(deps.brand))]).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }], links: fontLinks() }),
   component: WhereYouSit,
-  errorComponent: () => <DigestNotFound title="This page didn't load" body="The stored data behind it couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="whereYouSit.failed" />,
 });
 function WhereYouSit() {
   const { brand = "", step } = Route.useSearch(), nav = useNavigate({ from: "/data/where-you-sit" });

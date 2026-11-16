@@ -1,3 +1,4 @@
+import { say as sayState } from "@/lib/voice";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { chartCardQuery } from "@/lib/data";
@@ -27,8 +28,8 @@ export const Route = createFileRoute("/chart/$week")({
     };
   },
   component: WeekChart,
-  notFoundComponent: () => <main className="p-3"><h1 className="text-hero">404 · NO CHART FOR THIS WEEK</h1><Link className="label mt-3 inline-block" to="/chart">← LATEST CHART</Link></main>,
-  errorComponent: () => <main className="p-3" role="alert"><h1 className="text-hero">CHART UNAVAILABLE</h1><Link to="/chart">← LATEST CHART</Link></main>,
+  notFoundComponent: () => <main className="p-3"><h1 className="text-hero">{sayState("chart.notFound").title}</h1><p className="t-say mt-2">{sayState("chart.notFound").text}</p><Link className="label mt-3 inline-block" to="/chart">← LATEST CHART</Link></main>,
+  errorComponent: () => <main className="p-3" role="alert"><h1 className="text-hero">{sayState("chart.failed").title}</h1><p className="t-say mt-2">{sayState("chart.failed").text}</p><Link to="/chart">← LATEST CHART</Link></main>,
 });
 function WeekChart() {
   const { week } = Route.useParams();

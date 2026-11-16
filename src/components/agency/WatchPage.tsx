@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /watch/<id>: what changed on a watchlist's sites and signals. Editing needs the edit token (from ?k= or remembered on this device).
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
@@ -88,7 +89,7 @@ export function WatchPage({ v, k }: { v: WatchView; k?: string | undefined }) {
     {(v.sites.length > 0 || v.pending.length > 0) && <section className="ed-wrap mt-14" aria-labelledby="w-sites">
       <SectionHead n="02" title="Sites" id="w-sites" />
       <Ledger label="Watched sites" rows={[
-        ...v.sites.map(s => ({ key: s.domain, href: `/brands/${s.domain}`, title: s.name ?? s.domain, line: <span className="ed-code">{s.domain}</span>, facts: [s.sector, s.lastChange ? `Changed ${day(s.lastChange)}` : "No changes yet"] })),
+        ...v.sites.map(s => ({ key: s.domain, href: `/brands/${s.domain}`, title: s.name ?? s.domain, line: <span className="ed-code">{s.domain}</span>, facts: [s.sector, s.lastChange ? `Changed ${day(s.lastChange)}` : voiced("agency.watchPage.1")] })),
         ...v.pending.map(d => ({ key: d, href: "/what-we-show", title: d, line: "Not tracked yet; joins the feed once tracked.", tags: ["Pending"] })),
       ]} />
       {editable && <div className="no-print mt-4 flex flex-wrap gap-2">{[...v.sites.map(s => s.domain), ...v.pending].map(d => <Btn key={d} disabled={busy} onClick={() => run({ op: "remove", sites: [d] })}>Remove {d}</Btn>)}</div>}

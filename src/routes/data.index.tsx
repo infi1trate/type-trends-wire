@@ -12,7 +12,7 @@ export const Route = createFileRoute("/data/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(dataIndexQuery()).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }], links: fontLinks() }),
   component: DataIndex,
-  errorComponent: () => <DigestNotFound title="Data stories didn't load" body="The stored data behind them couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="data.failed" />,
 });
 function DataIndex() {
   const { data } = useSuspenseQuery(dataIndexQuery());

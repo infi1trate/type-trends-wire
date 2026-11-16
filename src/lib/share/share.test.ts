@@ -15,7 +15,7 @@ type T = Extract<Prim, { k: "text" }>;
 const texts = (prims: Prim[]) => prims.filter((p): p is T => p.k === "text");
 function inside(scene: { w: number; h: number; prims: Prim[] }) {
   for (const t of texts(scene.prims)) {
-    const f = { face: t.face, weight: t.weight }, wd = textWidth(t.text, t.size, f), left = t.anchor === "end" ? t.x - wd : t.x;
+    const f = { face: t.face ?? "mono", weight: t.weight }, wd = textWidth(t.text, t.size, f), left = t.anchor === "end" ? t.x - wd : t.x;
     expect(left, t.text).toBeGreaterThanOrEqual(0); expect(left + wd, t.text).toBeLessThanOrEqual(scene.w - 47);
     expect(t.y, t.text).toBeLessThanOrEqual(scene.h);
   }

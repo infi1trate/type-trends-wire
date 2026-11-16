@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // PATTERN object page: /patterns/<key> (the example grid). The /patterns gallery lives in GalleryView.
 import { Link } from "@tanstack/react-router";
 import type { PatternPage } from "@/lib/patterns";
@@ -54,7 +55,7 @@ export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
       "so-what": <p className="ed-pull max-w-[44ch]">{p.soWhat || "Not a headline signal right now, so we don't write a so-what line for it."}</p>,
       related: <>
         <BlockPart title="The signal behind it"><p className="ed-data flex flex-wrap gap-x-6"><Link to="/signals/$key" params={{ key: p.key }} className="ed-tap" {...pr(p.signalHref)}>{p.name}: chart, evidence and calls →</Link><AppLink href={p.whoUses} className="ed-tap">Who uses this well ⇄</AppLink></p></BlockPart>
-        <BlockPart title="Stories naming it"><RelatedStories stories={p.stories ?? []} empty="No story has named this pattern yet." /></BlockPart>
+        <BlockPart title="Stories naming it"><RelatedStories stories={p.stories ?? []} empty={voiced("read.patternViews.1")} /></BlockPart>
         {p.related.length > 0 && <BlockPart title="Related patterns"><Ledger small label="Related patterns" rows={p.related.map(r => ({ key: r.key, href: `/patterns/${encodeURIComponent(r.key)}`, title: r.name, facts: [`${r.examples} brands`] }))} /></BlockPart>}
       </>,
     }} />

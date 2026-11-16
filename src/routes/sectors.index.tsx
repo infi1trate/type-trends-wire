@@ -12,7 +12,7 @@ export const Route = createFileRoute("/sectors/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(sectorIndexQuery()).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }], links: fontLinks() }),
   component: Sectors,
-  errorComponent: () => <DigestNotFound title="Sector reports didn't load" body="The data behind them couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="sectors.failed" />,
 });
 function Sectors() {
   const { data } = useSuspenseQuery(sectorIndexQuery());

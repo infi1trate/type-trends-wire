@@ -141,7 +141,9 @@ describe("site gate", () => {
     // Any other server route must be a deliberate decision: share images/thumbs/robots open, RSS and crop images gated.
     const otherServer = routes.filter(f => f.endsWith(".ts") && !f.startsWith("api/public/")).map(toPath).sort();
     expect(otherServer.filter(isOpenPath)).toEqual(["/audit.png", "/chart/2026-W46.png", "/chart/2026-W46.svg", "/digest/2026-W46.png", "/embed/chart/2026-W46", "/embed/trait/css%3Asubgrid", "/robots.txt", "/thumbs/vercel.com/2026-11-15-desktop.webp", "/trait/css%3Asubgrid.png"]);
-    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/brand/files/slug-s.svg", "/crops/vercel.com/2026-11-15-desktop.webp", "/data/embed/who-went-big-first", "/data/who-went-big-first.png", "/digest/rss.xml", "/front.json", "/morning/rss.xml"]);
+    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/brand/files/slug-s.svg", "/crops/vercel.com/2026-11-15-desktop.webp", "/data/embed/who-went-big-first", "/data/who-went-big-first.png", "/digest/rss.xml", "/front.json", "/morning/rss.xml", "/share/vercel.com/2026-11-15-desktop.webp"]);
+    // The new share cards stay gated until launch adds /share/ to OPEN_PATHS (listed on /status/launch).
+    expect(isOpenPath("/share/brand/neon.com.png")).toBe(false);
     expect(OPEN_PATHS.every(o => o.why.length > 10)).toBe(true);
   });
 

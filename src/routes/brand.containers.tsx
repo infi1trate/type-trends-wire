@@ -10,5 +10,5 @@ const DESC = "The eight containers, each with what it is for and what it never d
 export const Route = createFileRoute("/brand/containers")({
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex, nofollow" }], links: fontLinks() }),
   component: BrandContainers,
-  errorComponent: () => <DigestNotFound title="This page didn't load" body="The brand page couldn't be built just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="brandBook.failed" />,
 });

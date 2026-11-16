@@ -1,3 +1,4 @@
+import { line as voiced, say as sayState } from "@/lib/voice";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { MobileKeys, TabRow, Ticker, TopBar } from "@/components/terminal/Chrome";
@@ -48,13 +49,13 @@ export const Route = createFileRoute("/terminal")({
       : v === "rebrands" ? [q.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 }))] : v === "patterns" ? [q.ensureQueryData(patternsQuery(deps.sector))] : [];
     return Promise.all([q.ensureQueryData(signalsQuery()).catch(() => null), ...extra]).then(() => undefined);
   },
-  errorComponent: () => <div role="alert" className="p-3">TERMINAL DATA UNAVAILABLE · <Link to="/" className="underline">LIVE FRONT PAGE</Link></div>,
-  notFoundComponent: () => <div className="p-3">NOT FOUND</div>,
+  errorComponent: () => <div role="alert" className="p-3">{sayState("terminal.failed").title} · {sayState("terminal.failed").text} · <Link to="/" className="underline">LIVE FRONT PAGE</Link></div>,
+  notFoundComponent: () => <div className="p-3">{sayState("terminal.notFound").title} · {sayState("terminal.notFound").text}</div>,
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: () => <CrawlScopeProvider><Terminal /></CrawlScopeProvider>,
 });
 
-const Wait = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<div className="p-3">▍</div>}>{children}</Suspense>;
+const Wait = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<div className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></div>}>{children}</Suspense>;
 
 function Terminal() {
   const search = Route.useSearch(), navigate = Route.useNavigate(), router = useRouter();

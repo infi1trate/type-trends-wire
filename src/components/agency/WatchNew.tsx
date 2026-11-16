@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /watch/new: create a watchlist; shows the view link, the one-time edit link and the feed link.
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -46,7 +47,7 @@ export function WatchNew({ add, name: initialName }: { add?: string | undefined;
         <TargetsInput id="wn-targets" label="Sites and signals (optional)" value={targets} onChange={v => { setTargets(v); if (fields.targets) setFields(f => ({ ...f, targets: undefined })); }} error={fields.targets} hint="Domains (linear.app) or signal keys (css:subgrid), separated by commas. You can add more later with the edit link." />
         <label className="ed-small flex min-h-[44px] items-center gap-2"><input type="checkbox" checked={render} onChange={e => setRender(e.target.checked)} className="h-5 w-5" /> Not tracked yet? Request a render and add it once tracked</label>
         <label className="ed-small flex min-h-[44px] items-center gap-2"><input type="checkbox" checked={keep} onChange={e => setKeep(e.target.checked)} className="h-5 w-5" /> Remember the edit link on this device</label>
-        <div><Btn type="submit" kind="solid" disabled={busy}>{busy ? "Creating…" : "Create watchlist"}</Btn></div>
+        <div><Btn type="submit" kind="solid" disabled={busy}>{busy ? voiced("busy.watch") : "Create watchlist"}</Btn></div>
         {err && <p role="alert" className="ed-small form-error">{err}</p>}
       </form> : <div className="grid max-w-3xl gap-6" aria-live="polite">
         <SectionHead n="01" title={`“${made.name}” is ready`} id="wn-form" />

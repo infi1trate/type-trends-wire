@@ -21,11 +21,11 @@ export const Route = createFileRoute("/stories/$id")({
     return { meta: withShare(shareImageFor("story", params.id), [{ title }, { name: "description", content: desc }, { property: "og:title", content: loaderData.headline }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData.ran ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
   component: StoryPage,
-  notFoundComponent: () => <DigestNotFound title="No such story" body="The link may be mistyped, or the story is older than the stored record." />,
-  errorComponent: () => <DigestNotFound title="This story didn't load" body="The data behind it couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound v="story.notFound" />,
+  errorComponent: () => <DigestNotFound v="story.failed" />,
 });
 function StoryPage() {
   const { id } = Route.useParams();
   const { data } = useSuspenseQuery(storyQuery(id));
-  return data ? <StoryView s={data} /> : null;
+  return data ? <div data-receipts="" className="contents"><StoryView s={data} /></div> : null;
 }

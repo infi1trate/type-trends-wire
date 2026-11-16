@@ -1,5 +1,7 @@
 // Editorial shell for the agency pages (audits, watchlists): Digest type system, black and white, print-ready.
 import { useRef, useState, type ReactNode } from "react";
+import { say as sayState } from "@/lib/voice";
+import { StateSteps } from "@/components/read/StateSteps";
 import { Link } from "@tanstack/react-router";
 import { GATE_ENABLED } from "@/lib/gate";
 import { pr } from "@/components/digest/Editorial";
@@ -57,3 +59,9 @@ export const Btn = ({ children, onClick, disabled, type = "button", kind = "line
 export const FORM_BOX = "c-rulebox grid max-w-3xl gap-6";
 
 export const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "—");
+
+/** An agency page's not-found or failed state, in the words of lib/voice.ts. */
+export function AgencyState({ v, crumb }: { v: import("@/lib/voice").VoiceId; crumb: string }) {
+  const s = sayState(v);
+  return <AgencyShell label={s.title} crumb={crumb}><div className="ed-wrap py-16" data-state={s.kind}><h1 className="ed-h1" {...(s.kind === "failed" ? { role: "alert" } : {})}>{s.title}</h1><p className="ed-body mt-4 max-w-[60ch]">{s.text}</p><StateSteps steps={s.next} className="ed-data mt-6 flex flex-wrap items-center gap-x-6 gap-y-4" /></div></AgencyShell>;
+}

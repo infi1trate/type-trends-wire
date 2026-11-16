@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // SIGNAL object page (/signals/<key>), Quiet density: the name in Display; ONE figure (share now) with Momentum and Confidence as
 // facts beside it; the stored share series as the trail (the page's one large picture); "Where it leads" and members as rule
 // boxes; calls and stories as Ledgers. Headline → Evidence → So what → Related.
@@ -70,7 +71,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
           </li>)}</ul></RuleBox>
         </BlockPart>}
         <BlockPart title="Our calls" kicker="Every call the ledger recorded for this signal, newest first, with how it resolved.">
-          {p.calls.length ? <ul className="ledger" data-ledger="">{p.calls.map(c => <LedgerCall key={c.id} c={c} showName={false} />)}</ul> : <p className="ed-small">No calls recorded for this signal yet. The ledger records the signals the weekly brief names, every alert and the top 20 next-wave scores.</p>}
+          {p.calls.length ? <ul className="ledger" data-ledger="">{p.calls.map(c => <LedgerCall key={c.id} c={c} showName={false} />)}</ul> : <p className="ed-small">{voiced("read.signalView.1")}</p>}
           <p className="ed-data mt-4"><Link to="/ledger" className="ed-tap" {...pr("/ledger")}>The full ledger →</Link></p>
         </BlockPart>
         {p.receipts.length > 0 && <details className="mt-10">
@@ -89,10 +90,10 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
           <Ledger small label="Signals in the same dimension" rows={p.related.map(r => ({ key: r.key, href: r.href, title: r.name, facts: [r.share != null ? pct(r.share, 0) : "—"], tags: r.stage ? [r.stage] : [] }))} />
         </BlockPart>}
         <BlockPart title="Brands showing it" kicker={p.showingTotal ? `${p.showingTotal} tracked brands show it on their current homepage; the latest captures first.` : undefined}>
-          {p.showing.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-1">{p.showing.map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap">{s.name ?? s.domain}</Link> <span className="ed-muted">{sectorName(s.sector)}</span></li>)}</ul> : <p className="ed-small">No tracked brand shows it on its current homepage.</p>}
+          {p.showing.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-1">{p.showing.map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap">{s.name ?? s.domain}</Link> <span className="ed-muted">{sectorName(s.sector)}</span></li>)}</ul> : <p className="ed-small">{voiced("read.signalView.2")}</p>}
         </BlockPart>
         <BlockPart title="Recent stories">
-          <RelatedStories stories={p.stories} empty="No story has named this signal yet." />
+          <RelatedStories stories={p.stories} empty={voiced("read.signalView.3")} />
         </BlockPart>
       </>,
     }} />

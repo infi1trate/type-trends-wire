@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /desk: the story queue for one day, readable by anyone inside the gate. Actions appear only after the editor key is pasted;
 // the key lives in this component's memory for the tab (never storage, URL or logs).
 import { useState } from "react";
@@ -58,7 +59,7 @@ export function DeskView({ q, onDay }: { q: QueueModel; onDay: (d: string | null
     await client.invalidateQueries({ queryKey: ["story-queue"] }); await client.invalidateQueries({ queryKey: ["live"] }); await client.invalidateQueries({ queryKey: ["story"] });
     return "Saved. Pages update within a minute.";
   };
-  const sections: [string, Item[], string][] = [["Ran", q.published, "Nothing ran."], ["Held", q.held, "Nothing was held."], ["Killed", q.killed, "Nothing was killed."]];
+  const sections: [string, Item[], string][] = [["Ran", q.published, voiced("read.deskView.1")], ["Held", q.held, voiced("read.deskView.2")], ["Killed", q.killed, voiced("read.deskView.3")]];
   return <DigestShell label="Editor's desk" section="tools">
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Desk · {q.day ?? "last 7 days"}</p>
@@ -84,7 +85,7 @@ export function DeskView({ q, onDay }: { q: QueueModel; onDay: (d: string | null
     </section>)}
     <section aria-labelledby="desk-log" className="ed-wrap mt-12">
       <h2 id="desk-log" className="ed-h2 ed-rule pt-3">Editor's log</h2>
-      {q.edits.length ? <ol className="ed-data mt-4 space-y-1">{q.edits.map((e, i) => <li key={i}><time dateTime={e.at}>{e.at.slice(0, 16).replace("T", " ")}</time> · {e.action} · <Link to="/stories/$id" params={{ id: e.story }} className="ed-tap">{e.headline}</Link>{e.note ? ` · ${e.note}` : ""}</li>)}</ol> : <p className="ed-small mt-3">No edits yet.</p>}
+      {q.edits.length ? <ol className="ed-data mt-4 space-y-1">{q.edits.map((e, i) => <li key={i}><time dateTime={e.at}>{e.at.slice(0, 16).replace("T", " ")}</time> · {e.action} · <Link to="/stories/$id" params={{ id: e.story }} className="ed-tap">{e.headline}</Link>{e.note ? ` · ${e.note}` : ""}</li>)}</ol> : <p className="ed-small mt-3">{voiced("read.deskView.4")}</p>}
       <p className="ed-data mt-6"><AppLink href="/terminal?panel=today" className="ed-tap">Dense queue in the terminal ⇄</AppLink></p>
     </section>
     <ReadFooter terminal="/terminal?panel=today" />

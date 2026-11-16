@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /audit/new: enter 2–6 domains; untracked ones get the render-queue offer and show as pending.
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -45,7 +46,7 @@ export function AuditNew({ sites }: { sites?: string | undefined }) {
           <select id="an-sector" value={sector} onChange={e => setSector(e.target.value)} className="ed-data form-field min-h-[44px] bg-transparent px-3">
             <option value="">Most common sector in the set</option>{SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
           </select></div>
-        <div><Btn type="submit" kind="solid" disabled={busy}>{busy ? "Checking…" : "Build the audit"}</Btn></div>
+        <div><Btn type="submit" kind="solid" disabled={busy}>{busy ? voiced("busy.audit") : "Build the audit"}</Btn></div>
         {err && <p role="alert" className="ed-small form-error">{err}</p>}
       </form>
       {checked && <div className="mt-8 grid max-w-3xl gap-4" aria-live="polite">

@@ -23,8 +23,8 @@ export const Route = createFileRoute("/collections/$slug")({
   },
   headers: retryHeaders,
   component: Collection,
-  errorComponent: () => <GalleryUnavailable title="This collection didn't load" />,
-  notFoundComponent: () => <DigestNotFound title="No such collection" body="There's no collection at this address. Every collection is listed on /collections." />,
+  errorComponent: () => <GalleryUnavailable v="collection.failed" />,
+  notFoundComponent: () => <DigestNotFound v="collection.notFound" />,
 });
 function Collection() {
   const { slug } = Route.useParams(), { page } = Route.useSearch();

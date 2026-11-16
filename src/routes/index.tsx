@@ -31,8 +31,8 @@ export const Route = createFileRoute("/")({
     links: [{ rel: "canonical", href: SITE_URL }, ...fontLinks()],
   }),
   component: Front,
-  errorComponent: () => <DigestNotFound title="The front page didn't load" body="The stories behind it couldn't be read just now. Try again in a minute, or open the terminal." />,
-  notFoundComponent: () => <DigestNotFound title="Nothing here" body="Try the front page." />,
+  errorComponent: () => <DigestNotFound v="front.failed" />,
+  notFoundComponent: () => <DigestNotFound v="front.notFound" />,
 });
 function Front() {
   const { sector, format } = Route.useSearch();

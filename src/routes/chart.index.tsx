@@ -1,3 +1,4 @@
+import { say as sayState } from "@/lib/voice";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { chartCardQuery } from "@/lib/data";
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/chart/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(chartCardQuery(null)),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/chart` }, { name: "twitter:card", content: "summary_large_image" }], links: [{ rel: "canonical", href: `${SITE_URL}/chart` }] }),
   component: LatestChart,
-  errorComponent: () => <main className="p-3" role="alert"><h1 className="text-hero">CHART UNAVAILABLE</h1><Link to="/terminal" search={{ panel: "brief" }}>← F10 FORECAST</Link></main>,
+  errorComponent: () => <main className="p-3" role="alert"><h1 className="text-hero">{sayState("chart.failed").title}</h1><p className="t-say mt-2">{sayState("chart.failed").text}</p><Link to="/terminal" search={{ panel: "brief" }}>← F10 FORECAST</Link></main>,
 });
 function LatestChart() {
   const { data } = useSuspenseQuery(chartCardQuery(null));

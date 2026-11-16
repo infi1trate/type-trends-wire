@@ -1,3 +1,4 @@
+import { line } from "@/lib/voice";
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { BarChart, DonutChart, LineChart, ScatterChart } from "./Charts";
@@ -27,7 +28,7 @@ describe("chart primitives", () => {
     });
     it(`${name}: empty data shows the empty state, no chart and no table`, () => {
       const { container } = render(el(true));
-      expect(screen.getByRole("status")).toHaveTextContent("No data to chart yet.");
+      expect(screen.getByRole("status")).toHaveTextContent(line("chart.empty"));
       expect(container.querySelector("svg")).toBeNull();
       expect(container.querySelector("table")).toBeNull();
     });

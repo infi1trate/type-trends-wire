@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { Suspense, useEffect, useState } from "react";
 import { AddToWatch } from "./Watch";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ import { compositeOf, ruleText } from "@/lib/composites";
 const COMPONENTS = [["gap", "TRENDSETTER GAP"], ["vanguard", "VANGUARD"], ["curation", "CURATION"], ["momentum", "MOMENTUM"], ["corroboration", "CORROBORATION"], ["discourse", "DISCOURSE"], ["supply", "SUPPLY"]] as const;
 const COMPONENT_G: Record<string, string> = { gap: "gap", vanguard: "vanguard", curation: "curation", momentum: "momentum", corroboration: "corroboration", discourse: "discourse", supply: "supply" };
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "not measured" : `${(v * 100).toFixed(d)}%`);
-const NO_PROJ = <span className="text-compare-muted" title="No projection yet: a curve needs at least 4 usable quarters of history.">not fitted yet</span>;
+const NO_PROJ = <span className="text-compare-muted" title={voiced("terminal.forecast.1")}>not fitted yet</span>;
 const qi = (q: string) => Number(q.slice(0, 4)) * 4 + Number(q.slice(5)) - 1;
 const ql = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
 /** Trait display name from the shared label map; kept as an export for older imports. */
@@ -34,7 +35,7 @@ const key = (r: { dimension: string; value: string }) => `${r.dimension}:${r.val
 type Pt = { q: string; s: number | null; n: number; c: number };
 function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }: { quarters: Pt[]; proj: { h: number; mid: number | null; lo: number | null; hi: number | null }[]; fitted?: { quarter: string; value: number }[] | undefined; backtest?: { quarter: string; predicted: number }[] | undefined; large?: boolean; sectors?: { scope: string; pts: Pt[] }[] }) {
   const quarters = raw, pts = raw.filter(p => p.s !== null && p.n >= 15 && p.c >= .25), faint = raw.filter(p => p.s !== null && p.n > 0 && !(p.n >= 15 && p.c >= .25));
-  if (!pts.length) return <svg viewBox="0 0 120 32" className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label="No history"><line x1="0" x2="120" y1="31" y2="31" stroke="var(--tk-rule-hairline)" /></svg>;
+  if (!pts.length) return <svg viewBox="0 0 120 32" className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label={voiced("terminal.forecast.2")}><line x1="0" x2="120" y1="31" y2="31" stroke="var(--tk-rule-hairline)" /></svg>;
   const p0 = pts[0]!, pn = pts[pts.length - 1]!, first = qi(quarters[0]?.q ?? p0.q), latest = qi(pn.q), last = latest + 4, W = large ? 600 : 120, H = large ? 220 : 32;
   const all = [...pts.map(p => p.s ?? 0), ...(large ? faint.map(p => p.s ?? 0) : []), ...proj.flatMap(p => [p.hi ?? 0, p.mid ?? 0]), ...(fitted ?? []).map(f => f.value), ...(sectors ?? []).flatMap(s => s.pts.map(p => p.s ?? 0))];
   const max = Math.max(0.05, ...all);
@@ -81,18 +82,18 @@ export function ForecastPanel() {
   const { data: discourseSince } = useQuery(discourseSinceQuery());
   const coverage = coverageSentences(card, { discourseSince });
   const { data: ledger } = useQuery(ledgerQuery());
-  const ls = ledger?.summary, liveRecord = !ls ? "Loading…" : ls.rate != null ? `${Math.round(ls.rate * 100)}% · N=${ls.resolved}` : ls.resolved ? `${ls.hits} OF ${ls.resolved} LANDED · ${ls.open} OPEN` : `NONE RESOLVED · ${ls.open} OPEN`;
+  const ls = ledger?.summary, liveRecord = !ls ? voiced("busy.ledgerRecord") : ls.rate != null ? `${Math.round(ls.rate * 100)}% · N=${ls.resolved}` : ls.resolved ? `${ls.hits} OF ${ls.resolved} LANDED · ${ls.open} OPEN` : `NONE RESOLVED · ${ls.open} OPEN`;
   return <div className="library min-h-0 flex-1 md:overflow-y-auto">
     <section aria-label="Model card" className="border-b border-rule bg-void">
       <h2 className="label flex items-center border-b border-rule bg-g900 px-3 py-2 font-semibold">MODEL CARD<Info g="p-model-card" /></h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-      {([["DATA THROUGH", card?.data_through ?? "No forecast yet", "quarter"], ["MEDIAN MAE", card?.median_mae_pts == null ? `Not scored yet (${card?.n_backtested ?? 0} backtested)` : `${card.median_mae_pts.toFixed(1)} PTS`, "p-model-card"], ["BACKTEST HIT-RATE", card?.hit_rate == null ? "Not scored yet" : pct(card.hit_rate, 0), "p-model-card"], ["LIVE RECORD", liveRecord, "ledger"], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`, "projection"], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : "None yet (need 15+ sites and 25% coverage)", "coverage"]] as const).map(([l, v, g]) =>
+      {([["DATA THROUGH", card?.data_through ?? voiced("terminal.forecast.3"), "quarter"], ["MEDIAN MAE", card?.median_mae_pts == null ? `Not scored yet (${card?.n_backtested ?? 0} backtested)` : `${card.median_mae_pts.toFixed(1)} PTS`, "p-model-card"], ["BACKTEST HIT-RATE", card?.hit_rate == null ? "Not scored yet" : pct(card.hit_rate, 0), "p-model-card"], ["LIVE RECORD", liveRecord, "ledger"], ["FITTED / TRAITS", `${card?.n_forecast_ok ?? 0} / ${card?.n_traits ?? 0}`, "projection"], ["USABLE QUARTERS", card?.usable_quarters_all.length ? card.usable_quarters_all.join(" ") : voiced("terminal.forecast.4"), "coverage"]] as const).map(([l, v, g]) =>
         <div key={l} className="min-w-0 border-r border-rule p-2"><div className="label flex items-center text-compare-muted">{l}<Info g={g} /></div><div className="label break-words font-semibold">{v}</div></div>)}
       </div>
       {coverage.length > 0 && <ul className="border-t border-rule p-3 text-compare-muted">{coverage.map(c => <li key={c}>{c}</li>)}</ul>}
       {ls && <p className="flex flex-wrap items-center gap-x-3 border-t border-rule px-3 py-2 text-compare-muted"><span>{ls.headline} Backtest above is a history replay, not part of the live record.</span><Link to="/ledger" className="label inline-flex items-center text-ink underline-offset-2 hover:underline max-md:min-h-11">LEDGER →</Link></p>}
     </section>
-    {!card && <p className="p-3 text-compare-muted">No forecast has run yet. Forecasts run every Sunday after the crawl; the first one fills this panel.</p>}
+    {!card && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.5")}</p>}
     {card && card.n_forecast_ok === 0 && <p className="border-b border-rule p-3 text-compare-muted">Curves aren't fitted yet: each trait needs at least 4 usable quarters (15+ sites and 25% coverage) from the archive backfill. Until then, rankings use trendsetter gap, vanguard and corroboration.</p>}
     <div className="flex flex-wrap gap-1 border-b border-rule p-3" aria-label="Forecast sector filter">{["all", ...SECTORS].map(s => <Button key={s} variant="ghost" className={`label h-8 ${sector === s ? "text-signal" : "text-compare-muted"}`} aria-pressed={sector === s} onClick={() => navigate({ search: prev => ({ ...prev, sector: s }) })}>{s}</Button>)}</div>
 
@@ -116,7 +117,7 @@ export function ForecastPanel() {
         </tr>)}</tbody>
       </table></div>
       <p className="label border-t border-rule p-2 text-compare-muted">Headline signals only, ranked by the stored next-wave score. Open a row for its seven score parts.</p>
-      {!wave.length && <p className="p-3 text-compare-muted">No headline signal is scored for this sector yet. Scores need at least one measured part (gap, vanguard or corroboration); they appear after the next Sunday forecast.</p>}
+      {!wave.length && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.6")}</p>}
     </LibraryBand>
 
     <LibraryBand g="p-stage-board" title={`STAGE BOARD · HEADLINE · ${sector === "all" ? "ALL SECTORS" : sector}`}>
@@ -131,20 +132,20 @@ export function ForecastPanel() {
           <span className="label tabular-nums">{(s.score ?? 0).toFixed(2)}</span>
           <span className="label min-w-0 flex-1 break-words text-compare-muted">{s.traits_led.slice(0, 4).map(t => `${label(t.trait).name} +${t.lead}Q`).join(" · ")}</span>
         </li>)}</ol>
-        {!setters.length && <p className="p-3 text-compare-muted">No trendsetter in this sector yet. A site counts once it adopted a trait before that trait crossed 20% share; check all sectors or wait for more archive quarters.</p>}
+        {!setters.length && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.7")}</p>}
       </LibraryBand>
       <LibraryBand g="p-lead-lag" title="LEAD–LAG · FIRST QUARTER ≥10% BY SECTOR">
         <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left">
           <thead className="label text-compare-muted"><tr className="border-b border-rule"><th scope="col" className="p-2 font-normal"><span className="inline-flex items-center">TRAIT<Info g="trait" /></span></th>{SECTORS.map((s, i) => <th key={s} scope="col" className={`p-1 font-normal ${sector === s ? "text-ink underline" : ""}`}><span className="inline-flex items-center">{s.slice(0, 8)}{i === 0 && <Info g="first-quarter" />}</span></th>)}</tr></thead>
           <tbody>{lagRows.map(r => { const qs = Object.values(r.sectors!).filter((q): q is string => !!q).sort(); return <tr key={key(r)} className="border-b border-rule"><th scope="row" className="label p-2 text-left font-normal"><Button variant="link" className="label h-auto p-0 text-left text-ink" onClick={() => setOpen(r)}><TraitName {...r} /></Button></th>{SECTORS.map(s => { const q = r.sectors![s]; return <td key={s} className={`label p-1 tabular-nums ${q && q === qs[0] ? "text-signal" : "text-compare-muted"}`}>{q ? q.slice(2) : "·"}</td>; })}</tr>; })}</tbody>
         </table></div>
-        {!lagRows.length && <p className="p-3 text-compare-muted">No sector has crossed 10% share on a tracked trait yet; rows appear as archive quarters fill in.</p>}
+        {!lagRows.length && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.8")}</p>}
       </LibraryBand>
     </div>
 
-    <LibraryBand g="p-chart-of-week" title={`CHART OF THE WEEK${brief?.week ? ` · ${brief.week}` : ""}`}><Suspense fallback={<p className="p-3">▍</p>}><ChartBand week={brief?.week ?? null} /></Suspense></LibraryBand>
+    <LibraryBand g="p-chart-of-week" title={`CHART OF THE WEEK${brief?.week ? ` · ${brief.week}` : ""}`}><Suspense fallback={<p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p>}><ChartBand week={brief?.week ?? null} /></Suspense></LibraryBand>
     <LibraryBand g="p-brief" title={`BRIEF${brief?.week ? ` · ${brief.week}` : ""} · AI VIA ${brief?.brief.provider === "google" ? "GOOGLE AI STUDIO" : "LOVABLE AI"}`}>
-      {brief ? <BriefView brief={brief.brief} onTrait={(id) => { const [dimension, ...rest] = id.replace(/:all$/, "").split(":"); setOpen({ dimension: dimension ?? "", value: rest.join(":") }); }} /> : <p className="p-3 text-compare-muted">No brief yet: the first one is written after the next Sunday forecast.</p>}
+      {brief ? <BriefView brief={brief.brief} onTrait={(id) => { const [dimension, ...rest] = id.replace(/:all$/, "").split(":"); setOpen({ dimension: dimension ?? "", value: rest.join(":") }); }} /> : <p className="p-3 text-compare-muted">{voiced("terminal.forecast.9")}</p>}
       {data.briefs.length > 1 && <div className="flex flex-wrap gap-1 border-t border-rule p-3" aria-label="Brief archive"><span className="label text-compare-muted">ARCHIVE</span>{data.briefs.map(b => <Button key={b.week} variant="ghost" className={`label h-8 ${b.week === brief?.week ? "text-signal" : ""}`} aria-pressed={b.week === brief?.week} onClick={() => setWeek(b.week)}>{b.week}</Button>)}</div>}
     </LibraryBand>
     {open && <TraitDrawer {...open} onClose={() => setOpen(null)} />}
@@ -182,7 +183,7 @@ export function TraitDrawer({ dimension, value, onClose }: { dimension: string; 
   const signal = sig?.signals.find(x => x.key === k) ?? null, tier = sig?.tiers.get(k) ?? null;
   const [parts, setParts] = useState(false);
   return <Overlay title={`${tl.name} [${tl.dimension}]`} onClose={onClose}>
-    {isLoading || !main ? <p className="label">▍</p> : <div className="space-y-3">
+    {isLoading || !main ? <p className="label">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p> : <div className="space-y-3">
       <p className="flex flex-wrap items-center gap-2"><BasisChip k={k} info />{tier && <TierChip tier={tier.tier} info />}<StageBadge stage={signal?.stage ?? null} /></p>
       {signal?.so_what && <p className="text-ink">{signal.so_what}</p>}
       {signal && <dl className="grid grid-cols-2 border border-rule"><div className="border-r border-rule p-2"><dt className="label flex items-center text-compare-muted">MOMENTUM<Info g="momentum-index" /></dt><dd className="text-hero"><MomentumText s={signal} /></dd></div><div className="p-2"><dt className="label flex items-center text-compare-muted">CONFIDENCE<Info g="confidence" /></dt><dd className="text-hero"><ConfidenceText s={signal} /></dd></div></dl>}
@@ -195,7 +196,7 @@ export function TraitDrawer({ dimension, value, onClose }: { dimension: string; 
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>
       <p className="label">BACKTEST {bt.status === "ok" ? `MAE ${bt.mae_pts?.toFixed(1)} PTS · HIT ${pct(bt.hit_rate, 0)}` : "· not enough history before 2025Q2 to test this trait"}</p>
       <div><button type="button" aria-expanded={parts} onClick={() => setParts(p => !p)} className="label inline-flex min-h-11 items-center text-ink underline underline-offset-2 md:min-h-0">{parts ? "▾" : "▸"} SEVEN SCORE PARTS</button>{parts && <div className="mt-2"><Components comp={comp} /></div>}</div>
-      <div><h3 className="label flex items-center text-compare-muted">LED BY<Info g="p-led-by" /></h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/library/$domain" params={{ domain: s.domain }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="text-compare-muted">No early adopters identified yet; this needs the trait to cross 20% share somewhere.</li>}</ul></div>
+      <div><h3 className="label flex items-center text-compare-muted">LED BY<Info g="p-led-by" /></h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/library/$domain" params={{ domain: s.domain }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="text-compare-muted">{voiced("terminal.forecast.10")}</li>}</ul></div>
       <div className="overflow-x-auto"><table className="w-full text-left"><thead className="label text-compare-muted"><tr>{[{ h: "QUARTER", g: "quarter" }, { h: "SHARE", g: "share" }, { h: "N", g: "sample-n" }, { h: "COVERAGE", g: "coverage" }].map(({ h, g }) => <th key={h} scope="col" className="p-1 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead><tbody>{(ev.quarters ?? []).filter(p => p.n > 0).map(p => <tr key={p.q} className={`label tabular-nums ${p.n < 15 || p.c < .25 ? "text-compare-muted" : ""}`}><td className="p-1">{p.q}</td><td className="p-1">{pct(p.s)}</td><td className="p-1">{p.n}</td><td className="p-1">{(p.c * 100).toFixed(0)}%</td></tr>)}</tbody></table></div>
     </div>}
   </Overlay>;

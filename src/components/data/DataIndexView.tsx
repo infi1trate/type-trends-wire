@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /data: the numbered list of data stories — question, deck, template and last data date; drafts show why they are not live yet.
 import { Link } from "@tanstack/react-router";
 import type { IndexRow } from "@/lib/data-stories/build";
@@ -26,7 +27,7 @@ export function DraftView({ d }: { d: { number: number; question: string; deck: 
       <p className="ed-kicker flex gap-3"><Link to="/data" className="ed-tap no-underline">Data story {d.number}</Link><span>{d.template}</span><span className="ed-badge">Draft</span></p>
       <h1 className="ed-h1 mt-3 max-w-[22ch]">{d.question}</h1>
       <p className="ed-standfirst mt-4 max-w-[60ch]">{d.deck}</p>
-      <p className="ed-body mt-6 max-w-[60ch]"><strong>Not live yet.</strong> {d.reason}</p>
+      <p className="ed-body mt-6 max-w-[60ch]"><strong>{voiced("data.dataIndexView.1")}</strong> {d.reason}</p>
       <p className="ed-data mt-6"><Link to="/data" className="ed-tap">← All data stories</Link></p>
     </header>
     <ReadFooter terminal="/terminal?panel=history" />

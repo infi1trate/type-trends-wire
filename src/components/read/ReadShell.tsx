@@ -3,6 +3,7 @@
 // (only when a sector is chosen), the freshness line (one line, truncating) and the sector select. Rows per width live in lib/shell.ts.
 // The footer is a slab too (DigestFooter).
 // Reuses the Digest editorial system; no health or model jargon here (that lives on /status).
+import { PrintFrame, PrintMark } from "./PrintFrame";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SECTIONS, readSectionOf, type SectionId } from "@/lib/ia";
@@ -118,7 +119,9 @@ export function ReadShell({ children, label, section, lens = false, note = null,
         </label>
       </div>
       {sub}
+      <PrintMark />
       <main id="ed-main" aria-label={label}>{children}</main>
+      <PrintFrame path={loc.pathname} />
     </div>
     {/* Glossary, methodology and tour are terminal-density overlays: they keep the dark mode on Read pages. */}
     <div data-mode="dark" className="contents">

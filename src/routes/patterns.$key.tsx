@@ -19,8 +19,8 @@ export const Route = createFileRoute("/patterns/$key")({
     return { meta: withShare(shareImageFor("pattern", params.key), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
   component: Pattern,
-  notFoundComponent: () => <DigestNotFound title="Not a pattern right now" body="Patterns are headline layout or composite signals with at least three example brands. This one isn't, or the key is misspelled." />,
-  errorComponent: () => <DigestNotFound title="This pattern didn't load" body="The examples couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound v="pattern.notFound" />,
+  errorComponent: () => <DigestNotFound v="pattern.failed" />,
 });
 function Pattern() {
   const { key } = Route.useParams(), { sector } = Route.useSearch();

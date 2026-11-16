@@ -14,7 +14,7 @@ export const Route = createFileRoute("/brands/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(brandsQuery()).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/brands` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/brands` }, ...fontLinks()] }),
   component: Brands,
-  errorComponent: () => <DigestNotFound title="Brands didn't load" body="The library couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="brands.failed" />,
 });
 function Brands() {
   const search = Route.useSearch();

@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // /patterns (Steady): the pattern gallery — a wall of stored captures that show a pattern, filtered by sector (the lens), pattern,
 // period, measured or AI estimate, and page section (offered only once crops exist). The server builds and caches the model.
 import { useNavigate } from "@tanstack/react-router";
@@ -55,7 +56,7 @@ export function GalleryView({ search }: { search: GallerySearch }) {
       {p && !p.walled && <p className="ed-body mt-4 max-w-[60ch]" role="status">{p.name} has no wall yet: fewer than {ILLUSTRATED_MIN} stored captures show it. It will get one once {ILLUSTRATED_MIN} do.</p>}
     </section>
     <section aria-label="Captures" className="ed-wrap mt-4">
-      {g.total === 0 ? <p className="ed-body mt-4 max-w-[60ch]">No stored capture matches these filters. Widen the period, pick another pattern or switch the sector to All.</p>
+      {g.total === 0 ? <p className="ed-body mt-4 max-w-[60ch]">{voiced("read.galleryView.1")}</p>
         : <PagedWall key={JSON.stringify(f)} tiles={g.tiles} total={g.total} page={g.page} pages={g.pages} label={p ? `Captures showing ${p.name}` : "Captures showing a pattern"}
           hrefFor={n => `/patterns${galleryHref({ ...f, page: n })}`}
           fetchPage={async n => (await qc.fetchQuery(galleryQuery(gallerySearch({ ...parseGallerySearch(search), page: n })))).tiles} />}

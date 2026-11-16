@@ -116,3 +116,15 @@ export const getAmbient = createServerFn({ method: "GET" }).inputValidator(z.obj
   const [{ loadAmbient }, { resolveSector }] = await Promise.all([import("./ambient/ambient.server"), import("./sector-lens")]);
   return loadAmbient(resolveSector(data.sector));
 });
+/** The 404 page: tracked brands and staged signals matching a name, plus the newest published story. */
+export const getLookup = createServerFn({ method: "GET" }).inputValidator(z.object({ q: z.string().max(80) })).handler(async ({ data }) => {
+  const [{ siteTraitIndex }, { latestSignals }, { label }, { rowKey }, { lookup }] = await Promise.all([import("./read.server"), import("./signals.server"), import("./labels"), import("./signals"), import("./lookup")]);
+  const [sites, { snap }] = await Promise.all([siteTraitIndex(), latestSignals("all")]);
+  const keys = [...new Set(snap.rows.filter(r => r.scope === "all").map(rowKey))];
+  return lookup(data.q, sites.map(s => ({ domain: s.domain, name: s.name })), keys.map(k => { const l = label(k); return { key: k, name: l.name, dimension: l.dimension }; }));
+});
+export const getNewestStory = createServerFn({ method: "GET" }).handler(async () => {
+  const [{ storyIndex }, { streamOf }] = await Promise.all([import("./stories/read.server"), import("./stories/view")]);
+  const s = streamOf(await storyIndex())[0];
+  return s ? { headline: s.headline, href: `/stories/${encodeURIComponent(s.id)}` } : null;
+});

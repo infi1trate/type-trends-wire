@@ -112,7 +112,7 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
           </g>; })}
       </>}
     </svg>
-    <dl className="tk-t-caption tk-c-muted mt-2 grid gap-1 sm:grid-cols-2"><div><dt className="inline font-semibold">Across · {f.axes.x.label}: </dt><dd className="inline">{f.axes.x.measure}</dd></div><div><dt className="inline font-semibold">Up · {f.axes.y.label}: </dt><dd className="inline">{f.axes.y.measure}</dd></div>{f.missing > 0 && <div>{f.missing} brands without both measures are not placed.</div>}</dl>
+    <dl className="tk-t-caption tk-c-muted mt-2 grid gap-1 sm:grid-cols-2"><div><dt className="inline font-semibold">Across · {f.axes.x.label}: </dt><dd className="inline">{f.axes.x.measure}</dd></div><div><dt className="inline font-semibold">Up · {f.axes.y.label}: </dt><dd className="inline">{f.axes.y.measure}</dd></div></dl>{f.missing > 0 && <p className="tk-t-caption tk-c-muted mt-1">{f.missing} brands without both measures are not placed.</p>}
     </div>}
   </ChartFrame>;
 }

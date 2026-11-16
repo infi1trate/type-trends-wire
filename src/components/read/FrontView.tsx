@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // `/` — the live front page. Renders the pure front model (src/lib/front/front.ts) and nothing else; the live column and Moving now
 // refresh from /front.json without a reload. Composition A (brand/README.md, "Layout moves"), Steady density: a date and state line
 // pinned left and right; ONE pink Plate for the lead; Moving now as a rule box; the live column as a Ledger; chart of the day in a Card;
@@ -27,7 +28,7 @@ const share = (v: number) => pct(v, 1) ?? "—";
 const signed = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`;
 const Kicker = ({ id, children }: { id: string; children: ReactNode }) => <h2 id={id} className="ed-kicker">{children}</h2>;
 const STATE_WORD = { busy: "Busy", steady: "Steady", quiet: "Quiet" } as const;
-const STATE_NOTE = { busy: "Three or more stories in the last six hours", steady: "A story in the last day", quiet: "No new story in the last day" } as const;
+const STATE_NOTE = { busy: "Three or more stories in the last six hours", steady: "A story in the last day", quiet: voiced("read.frontView.1") } as const;
 
 function FormatRow({ m }: { m: FrontModel }) {
   return <nav aria-label="Formats" className="no-print min-w-0 md:flex-1">
@@ -114,14 +115,14 @@ export function FrontView({ m }: { m: FrontModel }) {
   const now = useNow(m.now, 30_000);
   const [moving, setMoving] = useState(m.moving);
   const onUpdates = useCallback((u: FrontUpdates) => { if (u.moving) setMoving(u.moving); }, []);
-  const empty = m.format === "all" ? "No story in the last week." : `No ${FORMAT_LABEL[m.format]} stories this week.`;
+  const empty = m.format === "all" ? voiced("read.frontView.2") : `No ${FORMAT_LABEL[m.format]} stories this week.`;
   const explore = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
   return <DigestShell label="Live" section="live" lens tour edition={null} note={m.sector !== "all" ? `${sectorName(m.sector)} stories first in each group` : null}>
     <FrontTicker items={m.ticker} />
     <FiltersScope>
     <div className="ed-wrap d-stack front-stack mt-4">
       <DateState m={m} />
-      {m.lead ? <Lead m={m} now={now} /> : m.format === "all" && <p className="ed-standfirst">No story has run yet. Stories are written after each crawl, forecast and news check, and only when something in the data clears the bar.</p>}
+      {m.lead ? <Lead m={m} now={now} /> : m.format === "all" && <p className="ed-standfirst">{voiced("read.frontView.3")}</p>}
       {moving && <Moving moving={moving} />}
       <div className="grid grid-cols-1 gap-y-10 lg:grid-cols-12 lg:gap-x-10">
         <section aria-labelledby="front-live" className="lg:col-span-8" data-tour="r-live">
@@ -130,7 +131,7 @@ export function FrontView({ m }: { m: FrontModel }) {
           {m.format === "explore"
             ? <Ledger className="mt-4" rows={m.explore.map(explore)} label="Brand and pattern pages" />
             : <LiveColumn initial={m.column.items} serverNow={m.now} sector={m.sector} format={m.format} quiet={m.column.quiet} onUpdates={onUpdates} empty={empty} />}
-          {m.format === "explore" && !m.sections.explore && <p className="ed-small mt-3">No brand or pattern page is behind this week's stories yet.</p>}
+          {m.format === "explore" && !m.sections.explore && <p className="ed-small mt-3">{voiced("read.frontView.4")}</p>}
           {m.sections.archive && <section aria-labelledby="front-archive" className="mt-8">
             <h3 id="front-archive" className="ed-kicker">From the archive</h3>
             <Ledger className="mt-2" rows={m.archive.map(a => ({ key: a.id, href: a.href, number: a.number != null ? String(a.number) : "·", title: a.headline, line: a.line, tags: [a.match], time: <time dateTime={a.at}>{a.date}</time> }))} />

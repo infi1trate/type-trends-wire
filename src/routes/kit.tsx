@@ -12,5 +12,5 @@ export const Route = createFileRoute("/kit")({
   loader: ({ context }) => context.queryClient.ensureQueryData(kitQuery()).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex, nofollow" }], links: fontLinks() }),
   component: KitView,
-  errorComponent: () => <DigestNotFound title="The kit didn't load" body="The live examples couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="kit.failed" />,
 });

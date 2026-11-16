@@ -14,6 +14,6 @@ export const Route = createFileRoute("/stories/no/$number")({
   },
   head: () => ({ meta: [{ title: `Story number · ${BRAND_NAME}` }, { name: "description", content: "A story's permanent number, redirecting to the story." }, { property: "og:title", content: `Story number · ${BRAND_NAME}` }, { property: "og:description", content: "A story's permanent number, redirecting to the story." }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
   component: () => null,
-  notFoundComponent: () => <DigestNotFound title="No story has that number" body="Numbers are given to stories when they are published. This one doesn't lead to a published story." />,
-  errorComponent: () => <DigestNotFound title="That story number didn't load" body="Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound v="storyNo.notFound" />,
+  errorComponent: () => <DigestNotFound v="storyNo.failed" />,
 });

@@ -21,14 +21,14 @@ export const Route = createFileRoute("/data/$slug")({
     return { meta: withShare(`/data/${encodeURIComponent(params.slug)}.png`, [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary_large_image" }, { name: "robots", content: "noindex" }]), links: fontLinks() };
   },
   component: DataStory,
-  notFoundComponent: () => <DigestNotFound title="No such data story" body="That data story doesn't exist. The list of data stories is at /data." />,
-  errorComponent: () => <DigestNotFound title="This data story didn't load" body="The stored data behind it couldn't be read just now. Try again in a minute." />,
+  notFoundComponent: () => <DigestNotFound v="dataStory.notFound" />,
+  errorComponent: () => <DigestNotFound v="dataStory.failed" />,
 });
 function DataStory() {
   const { slug } = Route.useParams(), { step, figures } = Route.useSearch(), { data } = useSuspenseQuery(dataStoryQuery(slug)), nav = useNavigate({ from: "/data/$slug" });
   const n = data.kind === "live" ? data.story.steps.length : 0, [k, setK] = useState(() => parseStep(step, n));
   const onStep = useCallback((j: number) => { setK(j); void nav({ search: prev => ({ ...prev, step: stepParam(j) }), replace: true, resetScroll: false }); }, [nav]);
-  if (data.kind === "missing") return <DigestNotFound title="No such data story" body="That data story doesn't exist." />;
+  if (data.kind === "missing") return <DigestNotFound v="dataStory.notFound" />;
   if (data.kind === "draft") return <DraftView d={data} />;
   return <DataStoryView s={data.story} step={k} onStep={onStep} allFigures={figures === "all"} />;
 }

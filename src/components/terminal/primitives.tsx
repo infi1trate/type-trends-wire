@@ -1,17 +1,18 @@
+import { line } from "@/lib/voice";
 import { forwardRef, type InputHTMLAttributes } from "react";
 import type { Band } from "@/lib/bands";
 import { Info, StageBadge } from "./Info";
 
 export function Loading({ className = "" }: { className?: string }) {
   return (
-    <span className={`animate-blink text-ink ${className}`} aria-label="Loading">
-      ▍
+    <span className={`text-g500 ${className}`} role="status">
+      {line("busy.terminal")} <span className="animate-blink text-ink" aria-hidden="true">▍</span>
     </span>
   );
 }
 
 /** Empty state: one plain sentence saying why it's empty and when it fills in. */
-export function Empty({ why = "Nothing collected here yet. Type data is collected daily and the wire every 15 minutes, so this fills in after the next run." }: { why?: string }) {
+export function Empty({ why = line("terminal.empty") }: { why?: string }) {
   return <p className="t-say p-3 text-g500">{why}</p>;
 }
 

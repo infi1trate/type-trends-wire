@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import type { ArchiveEntry } from "@/lib/digest/issue";
 import { DIGEST_NAME } from "@/lib/site";
 import { Ledger } from "@/components/brand/Ledger";
@@ -13,7 +14,7 @@ export function ArchiveView({ issues }: { issues: ArchiveEntry[] }) {
     {issues.length ? <section aria-label="Every issue" className="ed-wrap d-air">
       <Ledger label="Every issue" rows={issues.map(i => ({ key: i.week, href: `/digest/${i.week}`, number: i.number, title: i.headline,
         line: i.lead ? `Lead signal: ${i.lead.name} [${i.lead.dimension}]` : null, facts: [i.dates] }))} />
-    </section> : <p className="ed-wrap ed-body mt-8">No issues yet. The first issue is assembled after the Sunday forecast and brief are stored.</p>}
+    </section> : <p className="ed-wrap ed-body mt-8">{voiced("digest.archiveView.1")}</p>}
     <DigestFooter footer={{ methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/terminal", contact: null }} />
   </DigestShell>;
 }

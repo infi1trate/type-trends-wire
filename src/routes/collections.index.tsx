@@ -15,6 +15,6 @@ export const Route = createFileRoute("/collections/")({
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/collections` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/collections` }, ...fontLinks()] }),
   headers: retryHeaders,
   component: CollectionsIndexView,
-  errorComponent: () => <GalleryUnavailable title="Collections didn't load" />,
-  notFoundComponent: () => <DigestNotFound title="No collections here" body="This list doesn't exist. Try the pattern gallery." />,
+  errorComponent: () => <GalleryUnavailable v="collections.failed" />,
+  notFoundComponent: () => <DigestNotFound v="collections.notFound" />,
 });

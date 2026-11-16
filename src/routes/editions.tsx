@@ -12,7 +12,7 @@ export const Route = createFileRoute("/editions")({
   loader: ({ context }) => context.queryClient.ensureQueryData(editionsQuery()).then(() => undefined),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }], links: fontLinks() }),
   component: Editions,
-  errorComponent: () => <DigestNotFound title="Editions didn't load" body="The data behind them couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="editions.failed" />,
 });
 function Editions() {
   const { data } = useSuspenseQuery(editionsQuery());

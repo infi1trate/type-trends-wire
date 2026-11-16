@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { signalsQuery } from "@/lib/data";
@@ -31,7 +32,7 @@ export function HeadlineStrip({ dims, title, g, max, match }: { dims: Dimension[
     <PanelHeader title={title} g={g} meta={data ? <>{rows.length} HEADLINE · {sectorName(lens.scope).toUpperCase()} · RUN {data.snap.run_id}</> : null} />
     {lens.note && <p className="border-b border-rule px-3 py-2 text-g500">{lens.note}</p>}
     {isLoading ? <div className="p-3"><Loading /></div> : rows.length ? <div className="max-h-[50vh] overflow-auto"><SignalTable rows={rows} onOpen={drawer.open} caption={title} /></div>
-      : <Empty why="No headline signal in this dimension this week: nothing here is visible, decision-worthy, well measured and moving at once. Supporting and archive signals stay in Signals › All signals (F2)." />}
+      : <Empty why={voiced("terminal.signals.1")} />}
     {drawer.node}
   </section>;
 }
@@ -59,7 +60,7 @@ export function AllSignals({ compact = false }: { compact?: boolean }) {
     <div className="min-h-0 flex-1 overflow-auto">
       {isLoading ? <div className="p-3"><Loading /></div> : <SignalTable rows={rows} onOpen={drawer.open} reasons={tier !== "headline"} caption={`${TIER_WORD[tier]} signals`} />}
       {unstaged.length > 0 && <div className="border-t border-rule p-3"><h3 className="label text-g500">NOT FORECAST · {unstaged.length}</h3><ul className="mt-1 space-y-1">{unstaged.map(r => <li key={r.key} className="text-g500"><span className="text-ink">{r.name}</span> [{r.dimension}] · {judgment(r.key).why}</li>)}</ul></div>}
-      {!isLoading && !rows.length && !unstaged.length && <Empty why="No signal in this tier yet. Tiers are recomputed after every Sunday forecast." />}
+      {!isLoading && !rows.length && !unstaged.length && <Empty why={voiced("terminal.signals.2")} />}
     </div>
     {drawer.node}
   </section>;

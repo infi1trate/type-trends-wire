@@ -57,7 +57,7 @@ export function SignalsIndexView({ v }: { v: SignalsView }) {
         : <p className="ed-body mt-3">No {g.title.toLowerCase()} signal in this dimension{idx.scoped ? ` for ${sectorName(v.sector)}` : ""} this week. Pick another dimension or switch the lens to All.</p>;
       return g.tier === "archive"
         ? <section key={g.tier} aria-labelledby={`sig-${g.tier}`} className="ed-wrap mt-12" data-archive-fold={g.folded ? "folded" : "open"}>{head}
-          <p className="ed-data mt-2"><Link to="/signals" search={g.folded ? all : signalsSearch({ ...v, archive: false })} hash={g.folded ? "sig-archive" : undefined} resetScroll={!g.folded ? false : undefined} className="ed-tap underline">{g.folded ? `Show the ${g.count} archive signals →` : "Fold the archive"}</Link></p>
+          <p className="ed-data mt-2"><Link to="/signals" search={g.folded ? all : signalsSearch({ ...v, archive: false })} {...(g.folded ? { hash: "sig-archive" } : { resetScroll: false })} className="ed-tap underline">{g.folded ? `Show the ${g.count} archive signals →` : "Fold the archive"}</Link></p>
           {!g.folded && body}</section>
         : <section key={g.tier} aria-labelledby={`sig-${g.tier}`} className="ed-wrap mt-12">{head}{body}</section>;
     })}

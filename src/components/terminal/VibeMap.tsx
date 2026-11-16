@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -25,7 +26,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
     const span = Math.max(x1 - x0, y1 - y0) || 1, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, k = (SIZE - 2 * PAD) / span;
     return { X: (x: number) => SIZE / 2 + (x - cx) * k, Y: (y: number) => SIZE / 2 - (y - cy) * k };
   }, [points]);
-  if (!data) return <section className="flex-1"><PanelHeader g="p-vibe-map" title="F7 VIBE MAP" /><p className="p-3 text-compare-muted">No vibe map yet. It is drawn with the Sunday forecast once at least 20 sites carry valid AI style tags.</p></section>;
+  if (!data) return <section className="flex-1"><PanelHeader g="p-vibe-map" title="F7 VIBE MAP" /><p className="p-3 text-compare-muted">{voiced("terminal.vibeMap.1")}</p></section>;
   const order = (c: number | null) => points.filter(p => c == null || p.cluster === c).sort((a, b) => a.x - b.x || a.y - b.y || a.domain.localeCompare(b.domain));
   const focused = points.find(p => p.domain === focus) ?? null;
   const sel = clusters.find(c => c.id === selected) ?? null;

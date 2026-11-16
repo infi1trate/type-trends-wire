@@ -1,3 +1,4 @@
+import { line } from "@/lib/voice";
 // /ambient: the studio-wall board (Loud, dark). Its own chrome only: the mark on its pink slab, the red live dot, the clock (UTC and local),
 // the date and state, and the ticker along the bottom. Scenes from the pure playlist (lib/ambient/playlist.ts), one at a time, each changing
 // with the Cut (a hard wipe; none under reduced motion). It polls /front.json with its ETag and keeps what it has when the network is late.
@@ -196,7 +197,7 @@ export function AmbientWaiting({ retry }: { retry: () => void }) {
     <main className="amb-stage"><h1 className="sr-only">Studio board</h1>
       <div className="amb-empty" data-board-empty=""><span className="amb-mark-big"><Wordmark height={192} ground="ink" decorative /></span>
         <p className="amb-h">{d ? `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())} UTC` : "UTC"}</p>
-        <p className="amb-body">The stored stories didn't arrive this time. The board tries again in a minute and needs nothing from you.</p></div>
+        <p className="amb-body">{line("ambient.failed")}</p></div>
     </main>
   </div>;
 }

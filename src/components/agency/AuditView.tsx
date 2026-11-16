@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // Competitive audit page in the Digest editorial system. Pure render of auditModel; print stylesheet makes it a pitch appendix.
 import { Fragment } from "react";
 import { Link } from "@tanstack/react-router";
@@ -58,7 +59,7 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
         <span className="ed-display tabular-nums" style={{ fontFamily: "var(--tk-font-display)", fontWeight: 900, fontSize: "clamp(4rem, 12vw, 8rem)", lineHeight: 0.85 }}>{fig.value}</span>
         <figcaption className="pb-2"><span className="ed-h3 block">{fig.unit}</span><span className="ed-caption block max-w-[44ch]">{fig.caption}</span></figcaption>
       </figure>
-      <p className="ed-data mt-4">{latest ? `Latest capture ${day(latest)}` : "No captures yet"}{a.dataThrough ? ` · forecast data through ${a.dataThrough}` : ""} · prepared {day(a.now)}</p>
+      <p className="ed-data mt-4">{latest ? `Latest capture ${day(latest)}` : voiced("agency.auditView.1")}{a.dataThrough ? ` · forecast data through ${a.dataThrough}` : ""} · prepared {day(a.now)}</p>
       {a.pending.length > 0 && <p className="ed-small mt-3">Pending: {list(a.pending)} {a.pending.length === 1 ? "is" : "are"} not tracked yet and {a.pending.length === 1 ? "is" : "are"} left out of the comparisons until rendered.</p>}
       <div className="no-print mt-6 flex flex-wrap gap-3">
         <Btn kind="solid" onClick={() => window.print()}>Print / Save as PDF</Btn>
@@ -71,11 +72,11 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
     <section className="ed-wrap mb-14" aria-labelledby="a-findings">
       <SectionHead n="Summary" title="Findings" id="a-findings" kicker="Each finding from the numbers below, with whether it was measured or is an AI estimate." />
       {findings.length ? <Ledger label="Findings" rows={findings.map((f, k) => ({ key: f.key, href: f.href, number: k + 1, title: f.text, tags: [FIND_TAG[f.kind]], facts: [<BasisWord key="b" b={f.basis} />] }))} />
-        : <p className="ed-body">No finding yet: none of these sites has enough measured signals in a staged forecast. Add a tracked site or try again after the next weekly run.</p>}
+        : <p className="ed-body">{voiced("agency.auditView.2")}</p>}
     </section>
 
     {field && <section className="ed-wrap mb-14" aria-labelledby="a-field">
-      <SectionHead n="Placement" title={`Where each page sits in ${scopeName(a.sector)}`} id="a-field" kicker={placed.length ? `${list(placed)} marked among every ${scopeName(a.sector)} brand by headline size and white space.` : "None of these pages is tracked in this sector, so none can be placed; the field shows the sector as it stands."} />
+      <SectionHead n="Placement" title={`Where each page sits in ${scopeName(a.sector)}`} id="a-field" kicker={placed.length ? `${list(placed)} marked among every ${scopeName(a.sector)} brand by headline size and white space.` : voiced("agency.auditView.3")} />
       <div className="max-w-3xl"><FigureView fig={field} view={{ figure: "field", highlight: placed, focus: null }} /></div>
     </section>}
 
@@ -88,7 +89,7 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
             : <article className="flex flex-col gap-2"><div className="ed-typo" role="img" aria-label={`${g.domain}: ${g.status === "rendered" ? "rendered once, not tracked" : "pending render"}`}>
                 <span className="ed-kicker ed-muted">{g.status === "rendered" ? "Rendered once" : "Pending"}</span><span className="ed-h3 break-words">{g.domain}</span><span className="ed-caption">{g.status === "rendered" ? `rendered ${day(g.captured)} · not tracked` : "Not tracked yet — render requested"}</span></div>
                 <p className="ed-data"><a href={g.terminal} className="ed-tap" {...pr(g.terminal)}>Analyse in the terminal →</a></p></article>}
-          <p className="ed-small">{g.latest ? <>Latest change: {g.latest.text} <span className="ed-data ed-muted">{day(g.latest.at)}</span></> : <span className="ed-muted">No recorded changes yet.</span>}</p>
+          <p className="ed-small">{g.latest ? <>Latest change: {g.latest.text} <span className="ed-data ed-muted">{day(g.latest.at)}</span></> : <span className="ed-muted">{voiced("agency.auditView.4")}</span>}</p>
         </div>)}
       </div>
     </section>
@@ -96,7 +97,7 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
     {a.type && <section className="ed-wrap mt-14" aria-labelledby="a-type">
       <SectionHead n={num("type")} title="Type" id="a-type" kicker="Headline and body faces from each homepage, with measured size, weight, tracking and case." />
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">{a.type.sites.map(s => <article key={s.domain} className="ed-hair pt-3"><h3 className="ed-kicker">{s.domain}</h3><FaceLine role="Headline" f={s.h1} /><FaceLine role="Body" f={s.body} /></article>)}</div>
-      <p className="ed-body mt-6">{a.type.shared.length ? a.type.shared.map(x => `${list(x.domains)} share ${x.family}`).join("; ") + "." : "No two sites share a face."}</p>
+      <p className="ed-body mt-6">{a.type.shared.length ? a.type.shared.map(x => `${list(x.domains)} share ${x.family}`).join("; ") + "." : voiced("agency.auditView.5")}</p>
     </section>}
 
     {a.color && <section className="ed-wrap mt-14" aria-labelledby="a-color">

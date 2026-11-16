@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // THE WALL: tiles on the 8 px grid in two sizes, one list for assistive technology with a name per tile, arrow keys between tiles.
 // Each tile is one stored capture: its section crop in one ink when one exists, otherwise the capture redrawn from its stored
 // skeleton. No filtered illustration ever sits in a wall. "More" appends the next page and keeps focus; without JavaScript it is a link.
@@ -15,7 +16,7 @@ function Tile({ t, eager }: { t: GalleryTile; eager: boolean }) {
     <span aria-hidden="true" className="block">
       {t.crop ? <img src={t.crop.src} width={t.crop.width} height={t.crop.height} alt="" loading="lazy" className="wall-ink border" style={{ borderColor: "var(--tk-rule-hairline)" }} data-frame="crop" />
         : t.frame ? <Deferred eager={eager} style={{ aspectRatio: `${t.frame.w} / ${t.frame.h}`, border: "1px solid var(--tk-rule-hairline)" }}><CaptureFrame fr={t.frame} label={t.label} /></Deferred>
-        : <span className="ed-caption block border p-3" style={{ borderColor: "var(--tk-rule-hairline)" }}>No stored layout to redraw</span>}
+        : <span className="ed-caption block border p-3" style={{ borderColor: "var(--tk-rule-hairline)" }}>{voiced("read.wall.1")}</span>}
     </span>
     <span className="wall-cap" aria-hidden="true"><span>{t.domain}</span><span>{t.day}</span>{t.note && <span>{t.note}</span>}</span>
   </a>;
@@ -57,7 +58,7 @@ export function PagedWall({ tiles, total, page, pages, label, hrefFor, fetchPage
       const add = await fetchPage(loaded + 1), first = add[0]?.id;
       setExtra(x => [...x, ...add]); setLoaded(p => p + 1);
       requestAnimationFrame(() => { if (first) root.current?.querySelector<HTMLElement>(`[data-tile="${first}"]`)?.focus(); });
-    } catch { setErr("The next tiles didn't load. Try More again in a moment."); }
+    } catch { setErr(voiced("read.wall.2")); }
     finally { setBusy(false); }
   };
   const nextHref = loaded < pages ? hrefFor(loaded + 1) : null;
@@ -67,7 +68,7 @@ export function PagedWall({ tiles, total, page, pages, label, hrefFor, fetchPage
     <p className="ed-caption mt-3">Tiles without a section crop are {FRAME_LABEL.toLowerCase()}: boxes from the stored capture in its own colours, the first screen only. No screenshot is stored.</p>
     <nav aria-label="More captures" className="no-print mt-6 flex flex-wrap items-center gap-4">
       {page > 1 && <a href={hrefFor(page - 1)} className="ed-tap ed-data">← Previous {GALLERY_PAGE}</a>}
-      {nextHref && <a href={nextHref} data-container="raised" className="c-raised ed-kicker no-underline" aria-disabled={busy || undefined} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); if (!busy) void more(); }}>{busy ? "Loading…" : `More · next ${Math.min(GALLERY_PAGE, total - to)}`}</a>}
+      {nextHref && <a href={nextHref} data-container="raised" className="c-raised ed-kicker no-underline" aria-disabled={busy || undefined} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); if (!busy) void more(); }}>{busy ? voiced("busy.more") : `More · next ${Math.min(GALLERY_PAGE, total - to)}`}</a>}
       {err && <span role="alert" className="ed-small form-error">{err}</span>}
     </nav>
   </div>;

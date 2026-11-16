@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // Terminal › Live › Today: the story queue as dense rows (type, score, time). HELD shows what didn't run and why.
 import { useEffect, useRef, useState } from "react";
 import { FORMAT_LABEL, shows, storyFormat, type FormatFilter } from "@/lib/front/formats";
@@ -46,7 +47,7 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
     </div>
     <FormatTabs value={format} onChange={setFormat} counts={counts} />
     <div role="tabpanel" id="sq-panel" aria-labelledby={`sq-tab-${format}`}>
-    {isPending ? <p className="p-3 text-g500">LOADING STORIES…</p> : isError ? <p className="p-3 text-g500">STORIES UNAVAILABLE</p>
+    {isPending ? <p className="p-3 text-g500">{voiced("busy.stories")}</p> : isError ? <p className="p-3 text-g500">{voiced("terminal.stories.failed")}</p>
       : !rows.length ? <p className="p-3 text-g500">{format === "all" ? "NO STORY HAS RUN IN THE LAST 7 DAYS." : format === "explore" ? "EXPLORE IS FOR PATTERN AND BRAND PAGES; NO STORY TYPE IS IN THIS FORMAT. SEE F4 PATTERNS AND F3 BRANDS." : `NO ${FORMAT_LABEL[format].toUpperCase()} STORY IN THE LAST 7 DAYS.`}</p>
       : <ol className="flex flex-col">{rows.map(s => <li key={s.id} id={`story-${s.id}`} className={`border-b border-rule last:border-b-0 ${s.id === focus ? "border-l-2 border-l-signal bg-g900" : ""}`}>
         <AppLink href={s.evidence} className="group grid min-h-11 grid-cols-[4ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[4ch_8ch_14ch_1fr_auto]">

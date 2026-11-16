@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 // <Treated>: art-direction treatments for section crops, CSS and SVG filters only (no canvas, no new stored images).
 // The crop itself renders through CropFigure unchanged, so its credit, capture date, live-site link and "Report this image" stay.
 // Inks come from theme tokens. Default is "none" everywhere; the kit shows all five.
@@ -60,7 +61,7 @@ export function Treated({ crop, treatment = "none", label, sizes }: { crop: Crop
     {crop ? <CropFigure crop={crop} label={label} {...(sizes ? { sizes } : {})} /> : <figure className="min-w-0" data-crop-placeholder="">
       {label && <p className="ed-kicker mb-2">{label}</p>}
       <span className="tk-media block"><img src={SPECIMEN_SRC} width={640} height={400} alt="Placeholder specimen: grey steps and letterforms (no section crop captured yet)" className="ed-thumb" /></span>
-      <figcaption className="ed-caption mt-1">No section crops captured yet · placeholder specimen, not a capture</figcaption>
+      <figcaption className="ed-caption mt-1">{voiced("read.treated.1")}</figcaption>
     </figure>}
   </div>;
 }

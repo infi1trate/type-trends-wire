@@ -16,6 +16,6 @@ export const Route = createFileRoute("/ledger")({
     links: [{ rel: "canonical", href: `${SITE_URL}/ledger` }, ...fontLinks()],
   }),
   component: Ledger,
-  errorComponent: () => <DigestNotFound title="The ledger didn't load" body="The record couldn't be read just now. Try again in a minute." />,
+  errorComponent: () => <DigestNotFound v="ledger.failed" />,
 });
 function Ledger() { const { data } = useSuspenseQuery(ledgerQuery()); return <LedgerView ledger={data} />; }

@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { useMemo } from "react";
 import { untick } from "@/lib/labels";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -43,7 +44,7 @@ export function Today({ go, onTour, onGlossary, focus }: { go: (p: PanelId) => v
       </div>
       <section className="shrink-0 bg-paper p-3 text-void" aria-label="Weekly brief">
         <h2 className="label font-semibold">WEEKLY BRIEF{brief ? ` · ${brief.week}` : ""} · AI</h2>
-        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2 max-md:min-h-11" onClick={() => go("brief")}>OPEN FORECAST →</button></p> : <p className="mt-1">No brief yet: the first one is written after the next Sunday forecast.</p>}
+        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2 max-md:min-h-11" onClick={() => go("brief")}>OPEN FORECAST →</button></p> : <p className="mt-1">{voiced("terminal.today.1")}</p>}
       </section>
     </section>
   );
