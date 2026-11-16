@@ -96,7 +96,7 @@ async function weekStories(startIso: string, endIso: string): Promise<WeekStory[
   const [{ storyRaw }, { shownAsOf, MORNING_BASELINE }, { streamOf }] = await Promise.all([import("../stories/read.server"), import("../editions/morning"), import("../stories/view")]);
   const end = Math.min(Date.parse(endIso), Date.now()), known = Math.min(Math.max(Date.parse(endIso), Date.parse(MORNING_BASELINE)), Date.now());
   return streamOf(shownAsOf(await storyRaw(), end, known)).filter(s => s.type !== "launch" && s.happened_at >= startIso && s.happened_at < endIso)
-    .map(s => ({ id: s.id, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, score: s.score }));
+    .map(s => ({ id: s.id, number: s.number ?? null, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, score: s.score }));
 }
 export async function loadIssue(week: string | null) { const rows = await issueRows(week); return rows ? issueModel(rows) : null; }
 export async function loadArchive(limit = 60) {

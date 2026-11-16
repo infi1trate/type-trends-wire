@@ -16,7 +16,7 @@ export async function loadStory(id: string) {
 }
 
 /** Section crops for MOVE / COUNTER-MOVE / REBRAND (before/after) and ROUNDUP (member heroes); empty and honest with zero crops. */
-async function evidenceOf(s: { type: string; domains: string[]; source_ids: string[]; happened_at: string }, type: string) {
+export async function evidenceOf(s: { type: string; domains: string[]; source_ids: string[]; happened_at: string }, type: string) {
   const [{ storyEvidence, storyEventIds }, read, { supabaseAnon }] = await Promise.all([import("./evidence"), import("../read.server"), import("../mcp/supabase")]);
   if (type !== "move" && type !== "counter_move" && type !== "rebrand" && type !== "roundup") return storyEvidence({ type, domains: [] }, [], s.happened_at, []);
   const ids = storyEventIds(s.source_ids).slice(0, 40);

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as DeskRouteImport } from './routes/desk'
 import { Route as EditionsRouteImport } from './routes/editions'
+import { Route as FrontDotjsonRouteImport } from './routes/front[.]json'
 import { Route as KitRouteImport } from './routes/kit'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -76,6 +77,7 @@ import { Route as ApiPublicSeedCandidatesRouteImport } from './routes/api/public
 import { Route as ApiPublicThumbOptoutRouteImport } from './routes/api/public/thumb-optout'
 import { Route as EmbedChartWeekRouteImport } from './routes/embed.chart.$week'
 import { Route as EmbedTraitKeyRouteImport } from './routes/embed.trait.$key'
+import { Route as StoriesNoNumberRouteImport } from './routes/stories.no.$number'
 import { Route as ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport } from './routes/api/public/watch-feed.{$token}[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
@@ -96,6 +98,11 @@ const DeskRoute = DeskRouteImport.update({
 const EditionsRoute = EditionsRouteImport.update({
   id: '/editions',
   path: '/editions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FrontDotjsonRoute = FrontDotjsonRouteImport.update({
+  id: '/front.json',
+  path: '/front.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KitRoute = KitRouteImport.update({
@@ -420,6 +427,11 @@ const EmbedTraitKeyRoute = EmbedTraitKeyRouteImport.update({
   path: '/embed/trait/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoriesNoNumberRoute = StoriesNoNumberRouteImport.update({
+  id: '/stories/no/$number',
+  path: '/stories/no/$number',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
   ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport.update({
     id: '/api/public/watch-feed/{$token}.xml',
@@ -432,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
+  '/front.json': typeof FrontDotjsonRoute
   '/kit': typeof KitRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -495,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
+  '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesByTo {
@@ -502,6 +516,7 @@ export interface FileRoutesByTo {
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
+  '/front.json': typeof FrontDotjsonRoute
   '/kit': typeof KitRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -565,6 +580,7 @@ export interface FileRoutesByTo {
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
+  '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesById {
@@ -573,6 +589,7 @@ export interface FileRoutesById {
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
+  '/front.json': typeof FrontDotjsonRoute
   '/kit': typeof KitRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -636,6 +653,7 @@ export interface FileRoutesById {
   '/api/public/thumb-optout': typeof ApiPublicThumbOptoutRoute
   '/embed/chart/$week': typeof EmbedChartWeekRoute
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
+  '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRouteTypes {
@@ -645,6 +663,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/desk'
     | '/editions'
+    | '/front.json'
     | '/kit'
     | '/ledger'
     | '/robots.txt'
@@ -708,6 +727,7 @@ export interface FileRouteTypes {
     | '/api/public/thumb-optout'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
+    | '/stories/no/$number'
     | '/api/public/watch-feed/{$token}.xml'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -715,6 +735,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/desk'
     | '/editions'
+    | '/front.json'
     | '/kit'
     | '/ledger'
     | '/robots.txt'
@@ -778,6 +799,7 @@ export interface FileRouteTypes {
     | '/api/public/thumb-optout'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
+    | '/stories/no/$number'
     | '/api/public/watch-feed/{$token}.xml'
   id:
     | '__root__'
@@ -785,6 +807,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/desk'
     | '/editions'
+    | '/front.json'
     | '/kit'
     | '/ledger'
     | '/robots.txt'
@@ -848,6 +871,7 @@ export interface FileRouteTypes {
     | '/api/public/thumb-optout'
     | '/embed/chart/$week'
     | '/embed/trait/$key'
+    | '/stories/no/$number'
     | '/api/public/watch-feed/{$token}.xml'
   fileRoutesById: FileRoutesById
 }
@@ -856,6 +880,7 @@ export interface RootRouteChildren {
   AuditDotpngRoute: typeof AuditDotpngRoute
   DeskRoute: typeof DeskRoute
   EditionsRoute: typeof EditionsRoute
+  FrontDotjsonRoute: typeof FrontDotjsonRoute
   KitRoute: typeof KitRoute
   LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -919,6 +944,7 @@ export interface RootRouteChildren {
   ApiPublicThumbOptoutRoute: typeof ApiPublicThumbOptoutRoute
   EmbedChartWeekRoute: typeof EmbedChartWeekRoute
   EmbedTraitKeyRoute: typeof EmbedTraitKeyRoute
+  StoriesNoNumberRoute: typeof StoriesNoNumberRoute
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute: typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 
@@ -950,6 +976,13 @@ declare module '@tanstack/react-router' {
       path: '/editions'
       fullPath: '/editions'
       preLoaderRoute: typeof EditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/front.json': {
+      id: '/front.json'
+      path: '/front.json'
+      fullPath: '/front.json'
+      preLoaderRoute: typeof FrontDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kit': {
@@ -1393,6 +1426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmbedTraitKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stories/no/$number': {
+      id: '/stories/no/$number'
+      path: '/stories/no/$number'
+      fullPath: '/stories/no/$number'
+      preLoaderRoute: typeof StoriesNoNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/watch-feed/{$token}.xml': {
       id: '/api/public/watch-feed/{$token}.xml'
       path: '/api/public/watch-feed/{$token}.xml'
@@ -1408,6 +1448,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditDotpngRoute: AuditDotpngRoute,
   DeskRoute: DeskRoute,
   EditionsRoute: EditionsRoute,
+  FrontDotjsonRoute: FrontDotjsonRoute,
   KitRoute: KitRoute,
   LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
@@ -1471,6 +1512,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicThumbOptoutRoute: ApiPublicThumbOptoutRoute,
   EmbedChartWeekRoute: EmbedChartWeekRoute,
   EmbedTraitKeyRoute: EmbedTraitKeyRoute,
+  StoriesNoNumberRoute: StoriesNoNumberRoute,
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute:
     ApiPublicWatchFeedChar123tokenChar125DotxmlRoute,
 }

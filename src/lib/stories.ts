@@ -17,6 +17,8 @@ export type Story = {
   evidence: string; basis: Basis | null;
   /** Stored stories (Phase 14): newsworthiness score, correction date and, on the desk/terminal, why it was held. */
   score?: number; corrected?: string | null; held?: string | null;
+  /** Permanent public number ("No. 47"), only while published. */
+  number?: number | null;
 };
 export const STORIES_PER_PAGE = 30;
 const SITE = /^https?:\/\/[^/]+/;

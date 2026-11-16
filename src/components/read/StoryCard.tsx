@@ -5,6 +5,7 @@ import { storyTime } from "@/lib/stories";
 import { AppLink } from "@/components/terminal/AppLink";
 import { BasisWord } from "@/components/digest/Editorial";
 import { BasisChip } from "@/components/terminal/SignalBits";
+import { numberLabel } from "@/lib/stories/numbers";
 
 export function Receipt({ href, children, ...rest }: { href: string; children: ReactNode } & AnchorHTMLAttributes<HTMLAnchorElement>) {
   return href.startsWith("/") ? <AppLink href={href} {...rest}>{children}</AppLink> : <a href={href} target="_blank" rel="noopener" {...rest}>{children}</a>;
@@ -14,19 +15,21 @@ export function StoryCard({ s, lead = false, tour }: { s: Story; lead?: boolean;
     <p className="ed-kicker flex flex-wrap items-center gap-2">{s.kicker}{s.basis && <BasisWord b={s.basis} />}</p>
     <h3 className={`${lead ? "ed-h1" : "ed-h3"} mt-2`}><Receipt href={s.evidence} className="no-underline hover:underline">{s.headline}</Receipt></h3>
     {s.deck && <p className={`${lead ? "ed-standfirst mt-4" : "ed-small mt-2"}`}>{s.deck}</p>}
-    <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3"><time dateTime={s.at}>{storyTime(s.at)}</time>{s.corrected && <span>Corrected {s.corrected.slice(0, 10)}</span>}<Receipt href={s.evidence} className="ed-tap">{s.evidence.startsWith("/") ? "Receipts →" : "Source ↗"}</Receipt></p>
+    <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time>{s.corrected && <span>Corrected {s.corrected.slice(0, 10)}</span>}<Receipt href={s.evidence} className="ed-tap">{s.evidence.startsWith("/") ? "Receipts →" : "Source ↗"}</Receipt></p>
   </article>;
 }
 /** RELATED block list on signal, brand and pattern pages. */
 export function RelatedStories({ stories, empty }: { stories: Story[]; empty: string }) {
   return stories.length ? <div className="grid grid-cols-1 gap-8 md:grid-cols-2">{stories.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-small">{empty}</p>;
 }
-export function StoryRow({ s, n, tour }: { s: Story; n?: number; tour?: string | undefined }) {
-  return <li className="border-b border-rule last:border-b-0">
-    <Receipt href={s.evidence} data-tour={tour} className="group grid min-h-11 grid-cols-[3ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 focus-visible:bg-g900 md:grid-cols-[3ch_1fr_auto]">
-      <span className="num label text-g500">{n ?? "·"}</span>
-      <span className="min-w-0 text-ink"><span className="label text-g500">{s.kicker.toUpperCase()} · </span><span className="group-hover:underline">{s.headline}</span>{s.basis && <> <BasisChip basis={s.basis} /></>} <span aria-hidden>→</span></span>
-      <span className="label col-start-2 text-g500 md:col-start-3"><time dateTime={s.at}>{storyTime(s.at).toUpperCase()}</time></span>
+/** The compact story card (terminal row): one token-driven rendering for every mode, so it reads right on the dark terminal, the Read
+ * pages and the kit. `kicker`, `line` and `time` let the front page's live column add its type chip, one line and relative time. */
+export function StoryRow({ s, n, tour, id, kicker, line, time }: { s: Story; n?: number | string | undefined; tour?: string | undefined; id?: string | undefined; kicker?: ReactNode; line?: string | null | undefined; time?: ReactNode }) {
+  return <li className="tk-row" id={id}>
+    <Receipt href={s.evidence} data-tour={tour} className="tk-row-link group grid min-h-11 grid-cols-[3ch_1fr] gap-x-2 gap-y-1 p-3 md:grid-cols-[3ch_1fr_auto]">
+      <span className="num label tk-row-muted">{n ?? "·"}</span>
+      <span className="tk-row-ink min-w-0">{kicker ?? <span className="label tk-row-muted">{s.kicker.toUpperCase()} · </span>}<span className="group-hover:underline">{s.headline}</span>{s.basis && <> <BasisChip basis={s.basis} /></>} <span aria-hidden>→</span>{line && <span className="tk-row-line">{line}</span>}</span>
+      <span className="label tk-row-muted col-start-2 md:col-start-3">{time ?? <time dateTime={s.at}>{storyTime(s.at).toUpperCase()}</time>}</span>
     </Receipt>
   </li>;
 }

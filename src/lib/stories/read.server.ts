@@ -2,6 +2,7 @@
 import { supabaseAnon } from "../mcp/supabase";
 import { overlay, type EditRow, type StoredStory } from "./edits";
 import type { StoryRecord } from "./view";
+import { withNumbers, type NumberRow } from "./numbers";
 
 type LineRow = { story_id: string; why_line: string; why_model: string; why_at: string };
 /** A line written after the story was stored (story_lines) fills an empty why_line; the stored row itself never changes. */
@@ -18,14 +19,15 @@ export const STORY_WINDOW_DAYS = 120;
 const TTL = 60_000;
 let cache: { at: number; v: Promise<StoryRecord[]> } | null = null;
 
-async function loadRaw(): Promise<{ stories: StoredStory[]; edits: EditRow[]; lines: LineRow[] }> {
+async function loadRaw(): Promise<{ stories: StoredStory[]; edits: EditRow[]; lines: LineRow[]; numbers: NumberRow[] }> {
   const db = supabaseAnon(), since = new Date(Date.now() - STORY_WINDOW_DAYS * 864e5).toISOString();
-  const [stories, edits, lines] = await Promise.all([
+  const [stories, edits, lines, numbers] = await Promise.all([
     pages<StoredStory>((f, t) => db.from("stories").select(COLS).gte("happened_at", since).order("happened_at", { ascending: false }).order("id").range(f, t) as never),
     pages<EditRow>((f, t) => db.from("story_edits").select("id,story_id,action,payload,note,at").order("id").range(f, t) as never),
     pages<LineRow>((f, t) => db.from("story_lines").select("story_id,why_line,why_model,why_at").order("story_id").range(f, t) as never),
+    pages<NumberRow>((f, t) => db.from("story_numbers").select("story_id,number").order("number").range(f, t) as never, 1000),
   ]);
-  return { stories, edits, lines };
+  return { stories, edits, lines, numbers };
 }
 let rawCache: { at: number; v: ReturnType<typeof loadRaw> } | null = null;
 /** Stored stories, edits and late why-lines before any overlay (editions replay them as of a past moment). Same TTL as storyIndex. */
@@ -34,8 +36,8 @@ export function storyRaw() {
   return rawCache.v;
 }
 async function load(): Promise<StoryRecord[]> {
-  const { stories, edits, lines } = await storyRaw();
-  return overlay(withLines(stories, lines), edits, Date.now());
+  const { stories, edits, lines, numbers } = await storyRaw();
+  return withNumbers(overlay(withLines(stories, lines), edits, Date.now()), numbers);
 }
 /** Every story in the window with edits applied (published, held and killed). */
 export function storyIndex(): Promise<StoryRecord[]> {
@@ -45,9 +47,17 @@ export function storyIndex(): Promise<StoryRecord[]> {
 /** One story by id, fresh (outside the window too). */
 export async function storyById(id: string): Promise<StoryRecord | null> {
   const db = supabaseAnon();
-  const [s, e, l] = await Promise.all([db.from("stories").select(COLS).eq("id", id).maybeSingle(), db.from("story_edits").select("id,story_id,action,payload,note,at").eq("story_id", id).order("id"), db.from("story_lines").select("story_id,why_line,why_model,why_at").eq("story_id", id)]);
-  if (s.error) throw s.error; if (e.error) throw e.error; if (l.error) throw l.error;
-  return s.data ? overlay(withLines([s.data as unknown as StoredStory], (l.data ?? []) as LineRow[]), (e.data ?? []) as unknown as EditRow[], Date.now())[0]! : null;
+  const [s, e, l, n] = await Promise.all([db.from("stories").select(COLS).eq("id", id).maybeSingle(), db.from("story_edits").select("id,story_id,action,payload,note,at").eq("story_id", id).order("id"), db.from("story_lines").select("story_id,why_line,why_model,why_at").eq("story_id", id), db.from("story_numbers").select("story_id,number").eq("story_id", id)]);
+  if (s.error) throw s.error; if (e.error) throw e.error; if (l.error) throw l.error; if (n.error) throw n.error;
+  return s.data ? withNumbers(overlay(withLines([s.data as unknown as StoredStory], (l.data ?? []) as LineRow[]), (e.data ?? []) as unknown as EditRow[], Date.now()), (n.data ?? []) as NumberRow[])[0]! : null;
+}
+/** /stories/no/<n>: the story id a number points at, only while that story is published. */
+export async function storyIdByNumber(n: number): Promise<string | null> {
+  const { data, error } = await supabaseAnon().from("story_numbers").select("story_id,number").eq("number", n).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const s = await storyById(data.story_id);
+  return s && s.state === "published" ? s.id : null;
 }
 /** The desk reads fresh, not through the TTL cache. */
 export async function deskIndex(): Promise<StoryRecord[]> { cache = null; return storyIndex(); }

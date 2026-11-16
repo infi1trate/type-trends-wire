@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { numberLabel } from "@/lib/stories/numbers";
 import type { Issue } from "@/lib/digest/issue";
 import { pct } from "@/lib/digest/copy";
 import { BasisWord, DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, Swatches, pr } from "./Editorial";
@@ -53,7 +54,7 @@ export function IssueView({ issue }: { issue: Issue }) {
         <ol className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2">
           {issue.stories.map((s, i) => <li key={s.id} className="ed-hair grid grid-cols-[3ch_1fr] gap-x-3 pt-4">
             <span className="ed-data">{i + 1}</span>
-            <span><span className="ed-kicker block">{s.kicker}</span><Link to="/stories/$id" params={{ id: s.id }} className="ed-h3 no-underline hover:underline" {...pr(s.href)}>{s.headline}</Link>{s.deck && <span className="ed-small mt-1 block">{s.deck}</span>}<span className="ed-data ed-muted mt-1 block">Score {s.score}</span></span>
+            <span><span className="ed-kicker block">{s.kicker}</span><Link to="/stories/$id" params={{ id: s.id }} className="ed-h3 no-underline hover:underline" {...pr(s.href)}>{s.headline}</Link>{s.deck && <span className="ed-small mt-1 block">{s.deck}</span>}<span className="ed-data ed-muted mt-1 block">{s.number != null ? `${numberLabel(s.number)} · ` : ""}Score {s.score}</span></span>
           </li>)}
         </ol>
       </section>}

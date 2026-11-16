@@ -1559,6 +1559,32 @@ export type Database = {
           },
         ]
       }
+      story_numbers: {
+        Row: {
+          assigned_at: string
+          number: number
+          story_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          number: number
+          story_id: string
+        }
+        Update: {
+          assigned_at?: string
+          number?: number
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_numbers_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: true
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thumb_optouts: {
         Row: {
           created_at: string

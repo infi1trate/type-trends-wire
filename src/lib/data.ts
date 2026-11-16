@@ -15,7 +15,7 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit, getFront } from "./read.functions";
 import { comparisonPair } from "./run-gap";
 import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
 import type { StageRow, TodayInput } from "./today";
@@ -419,3 +419,6 @@ export const signalSeriesQuery = (scope: string) => queryOptions({ queryKey: ["s
 export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], staleTime: 10 * 60_000, queryFn: () => getModelCard() });
 /** /kit: every shared component on live data (composites, stories, crops). */
 export const kitQuery = () => queryOptions({ queryKey: ["kit"], staleTime: 5 * 60_000, queryFn: () => getKit() });
+
+/** `/`: the front page model for one sector lens and format filter. */
+export const frontQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front", sector, format], staleTime: 30_000, queryFn: () => getFront({ data: { sector, format } }) });

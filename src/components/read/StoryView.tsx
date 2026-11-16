@@ -9,6 +9,7 @@ import { ReadFooter, Spark } from "./Bits";
 import { Receipt, StoryCard } from "./StoryCard";
 import { BeforeAfter, CropFallback, CropFigure } from "./Evidence";
 import type { StoryEvidence } from "@/lib/stories/evidence";
+import { numberLabel } from "@/lib/stories/numbers";
 
 export type StoryPageData = StoryPageModel & { thumb: Thumb | null; crops?: StoryEvidence; series: { key: string; name: string; points: number[] } | null };
 const JOB = { spot: "Spot what is changing", prove: "Prove who is doing it", act: "Act on the opening" } as const;
@@ -25,7 +26,7 @@ export function StoryView({ s }: { s: StoryPageData }) {
         <p className="ed-kicker flex flex-wrap items-center gap-2"><span>{s.kicker}</span>{s.basis && <BasisWord b={s.basis} />}<span className="ed-muted">{JOB[s.job]}</span></p>
         <h1 id="ed-story-title" className={`${s.headline.length > LONG_HEADLINE ? "ed-h1" : "ed-cover"} mt-3 break-words`}>{s.headline}</h1>
         {s.deck && <p className="ed-standfirst mt-5">{s.deck}</p>}
-        <p className="ed-data ed-muted mt-4 flex flex-wrap gap-x-4"><time dateTime={s.at}>{storyTime(s.at)}</time>{s.sectorName && <span>{s.sectorName}</span>}{s.correctedAt && <span>Corrected {day(s.correctedAt)}</span>}{s.pinnedUntil && <span>Pinned to the front page</span>}</p>
+        <p className="ed-data ed-muted mt-4 flex flex-wrap gap-x-4">{s.number != null && <span className="font-semibold">{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time>{s.sectorName && <span>{s.sectorName}</span>}{s.correctedAt && <span>Corrected {day(s.correctedAt)}</span>}{s.pinnedUntil && <span>Pinned to the front page</span>}</p>
         {notRun && <p className="ed-small mt-4 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
       </div>,
       evidence: <>

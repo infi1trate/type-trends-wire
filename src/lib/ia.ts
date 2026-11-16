@@ -212,7 +212,9 @@ const S = (section: SectionId, mode: Surface["mode"], status: Surface["status"],
 /** Keys: route files relative to src/routes without extension ("signals.$key"), "family/*" for route families, "panel:<id>", "overlay:<id>", "cmd:<verb>". */
 export const SURFACES: Record<string, Surface> = {
   // Read pages
-  "index": S("live", "read", "shown", "The front page: lead story, story stream, moving now, chart of the week, new launches. Old /?panel= links redirect to /terminal."),
+  "index": S("live", "read", "shown", "The live front page from the pure front model: ticker, lead, Moving now, the live column (polls /front.json), chart of the day, new on the scene, your sector, editions; ?format= and ?sector= filters. Old /?panel= links redirect to /terminal."),
+  "front[.]json": S("live", "read", "quiet", "The front page's changeable parts as JSON (ETag, short private cache), polled about every minute; gated like the pages."),
+  "stories.no.$number": S("live", "read", "quiet", "A story's permanent number (No. 47) redirects to its story page; killed stories' numbers lead nowhere."),
   "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
   "signals.$key": S("signals", "read", "shown", "Signal object page (was the trait explainer)."),
   "stories.$id": S("live", "read", "shown", "Story object page: headline, facts with receipts, so-what with why-this-ran, related; backtick opens Terminal › Live › Today with it focused."),
@@ -256,7 +258,7 @@ export const SURFACES: Record<string, Surface> = {
   "robots[.]txt": S("tools", "both", "quiet", "Crawler instructions."),
   "thumbs.$": S("brands", "both", "quiet", "Credited homepage thumbnails."),
   "crops.$": S("brands", "both", "quiet", "Credited section crops (hero, navigation, pricing, call to action, footer); gated like any page, never served for opted-out sites."),
-  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 26 tools (agent access)."),
+  "api/public/mcp": S("tools", "both", "shown", "MCP endpoint (agent access); its tool count is MCP_TOOL_COUNT, checked against the registry."),
   "api/public/oembed": S("tools", "both", "quiet", "oEmbed provider for signal and chart pages."),
   "api/public/watch-feed.{$token}[.]xml": S("tools", "both", "quiet", "Per-watchlist RSS."),
   "api/public/health": S("tools", "both", "quiet", "Machine-readable health; shown in words on /status."),

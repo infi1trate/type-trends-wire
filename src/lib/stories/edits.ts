@@ -6,6 +6,8 @@ export type StoredStory = {
   id: string; type: string; status: "published" | "held"; reason: string; score: number; components: unknown; why_ran: string; kicker: string; headline: string; deck: string | null;
   facts: unknown; why_line: string | null; why_model: string | null; why_at: string | null; sector: string | null; signal_keys: string[]; domains: string[]; evidence: unknown;
   source_ids: string[]; basis: string | null; happened_at: string; created_at: string;
+  /** Permanent public number (story_numbers), attached at read time and only while the story is published. */
+  number?: number | null;
 };
 export type State = "published" | "held" | "killed";
 export type Shown<S extends StoredStory = StoredStory> = S & {

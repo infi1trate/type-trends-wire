@@ -1,40 +1,40 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { liveQuery } from "@/lib/data";
-import { resolveTypeFilter, type TypeFilter } from "@/lib/stories/view";
+import { frontQuery } from "@/lib/data";
 import { legacyTerminalSearch } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
+import { resolveFormat, type Format } from "@/lib/front/formats";
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
-import { LiveView } from "@/components/read/LiveView";
+import { FrontView } from "@/components/read/FrontView";
 import { DigestNotFound } from "@/components/digest/NotFound";
-import { BRAND_NAME } from "@/lib/brand";
+import { BRAND_NAME, BRAND_LINE } from "@/lib/brand";
 
-const TITLE = `${BRAND_NAME} — the live newsroom for how brands look and sound`;
-const DESC = "What is changing in how brands look and sound on the web, who is doing it and where the opening is: stories, signals and brands, every number with receipts.";
+const TITLE = `${BRAND_NAME} — ${BRAND_LINE}`;
+const DESC = "What is changing in how brands look and sound on the web, as it is detected: the lead story, the live column, what is moving, the chart of the day and the editions, every number with receipts.";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (s: Record<string, unknown>): { sector?: string | undefined; page?: number | undefined; type?: Exclude<TypeFilter, "all"> | undefined } => ({
+  validateSearch: (s: Record<string, unknown>): { sector?: string | undefined; format?: Format | undefined } => ({
     ...(typeof s["sector"] === "string" ? { sector: s["sector"] } : {}),
-    ...(resolveTypeFilter(s["type"]) !== "all" ? { type: resolveTypeFilter(s["type"]) as Exclude<TypeFilter, "all"> } : {}),
-    ...(typeof s["page"] === "number" && s["page"] > 0 ? { page: Math.floor(s["page"]) } : {}),
+    ...(resolveFormat(s["format"]) !== "all" ? { format: resolveFormat(s["format"]) as Format } : {}),
   }),
   // `/` is always Read. Old terminal links (/?panel=…, ?trait=…, ?cmd=…) go to the same view at /terminal.
   beforeLoad: ({ location }) => {
     const legacy = legacyTerminalSearch(location.search as Record<string, unknown>);
     if (legacy) throw redirect({ to: "/terminal", search: legacy, statusCode: 301 });
   },
-  loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), page: search.page ?? 0, type: (search.type ?? "all") as TypeFilter }),
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(liveQuery(deps.sector, deps.page, deps.type)).then(() => undefined),
+  loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(frontQuery(deps.sector, deps.format)).then(() => undefined),
   head: () => ({
     meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: SITE_URL }, { name: "twitter:card", content: "summary_large_image" }],
     links: [{ rel: "canonical", href: SITE_URL }, ...fontLinks()],
   }),
-  component: Live,
+  component: Front,
   errorComponent: () => <DigestNotFound title="The front page didn't load" body="The stories behind it couldn't be read just now. Try again in a minute, or open the terminal." />,
+  notFoundComponent: () => <DigestNotFound title="Nothing here" body="Try the front page." />,
 });
-function Live() {
-  const { sector, page, type } = Route.useSearch();
-  const { data } = useSuspenseQuery(liveQuery(resolveSector(sector), page ?? 0, type ?? "all"));
-  return <LiveView d={data} />;
+function Front() {
+  const { sector, format } = Route.useSearch();
+  const { data } = useSuspenseQuery(frontQuery(resolveSector(sector), resolveFormat(format)));
+  return <FrontView m={data} />;
 }

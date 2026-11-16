@@ -15,7 +15,7 @@ export const pr = (href: string) => ({ "data-print": href.startsWith("http") || 
 /** Digest, explainer and ledger pages sit inside the shared Read shell; Digest pages keep their own Archive / RSS sub-nav. */
 type EditionId = "morning" | "digest" | "sectors";
 /** Digest-section pages: the editions sub-nav (Morning Line · Digest · Sector reports) plus the current edition's archive and feed. */
-export function DigestShell({ children, label, section = "digest", lens = false, note = null, tour = false, edition = "digest", fixedSector }: { children: ReactNode; label: string; section?: SectionId; lens?: boolean; note?: string | null; tour?: boolean; edition?: EditionId | null; fixedSector?: { value: string; onChange: (s: string) => void } }) {
+export function DigestShell({ children, label, section = "digest", lens = false, note = null, tour = false, edition = "digest", fixedSector, dateline, segmented }: { children: ReactNode; label: string; section?: SectionId; lens?: boolean; note?: string | null; tour?: boolean; edition?: EditionId | null; fixedSector?: { value: string; onChange: (s: string) => void }; dateline?: ReactNode; segmented?: boolean | undefined }) {
   const cur = (id: EditionId) => (edition === id ? { "aria-current": "page" as const, className: "ed-tap py-2 font-semibold no-underline" } : { className: "ed-tap py-2 no-underline" });
   const sub = section === "digest" ? <nav aria-label="Editions" className="ed-nav no-print mt-2 border-y border-ed-ink">
     <div className="ed-wrap ed-navtext flex flex-wrap items-center justify-between gap-x-4">
@@ -32,7 +32,7 @@ export function DigestShell({ children, label, section = "digest", lens = false,
       </span>
     </div>
   </nav> : undefined;
-  return <ReadShell label={label} section={section} lens={lens} note={note} sub={sub} tour={tour} fixedSector={fixedSector}>{children}</ReadShell>;
+  return <ReadShell label={label} section={section} lens={lens} note={note} sub={sub} tour={tour} fixedSector={fixedSector} dateline={dateline} segmented={segmented}>{children}</ReadShell>;
 }
 
 export function StageWord({ stage }: { stage: StageName | null }) {

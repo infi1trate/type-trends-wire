@@ -338,3 +338,26 @@
 .tk-treated[data-treatment="overprint"] :is(a:has(> img), .tk-media)::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--tk-src) center / 100% 100% no-repeat;
   filter: var(--tk-f-ink2); transform: translate(3px, 2px); mix-blend-mode: multiply; }
 .tk-treated[data-treatment="grain"] :is(a:has(> img), .tk-media)::after { content: ""; position: absolute; inset: 0; pointer-events: none; filter: var(--tk-f-grain); opacity: .28; mix-blend-mode: multiply; background: var(--tk-surface-page); }
+
+/* Phase 18a: the compact story row in every mode, the paused ticker, the Read / Terminal segmented links, the front page's quiet controls. */
+@layer components {
+  .tk-row { border-bottom: var(--tk-border-hairline) solid var(--tk-rule-hairline); font-family: var(--tk-type-data-family); font-size: var(--tk-type-data-size); line-height: var(--tk-type-data-leading); font-weight: var(--tk-type-data-weight); }
+  .tk-row:last-child { border-bottom-width: 0; }
+  .tk-row-link { color: var(--tk-text-primary); text-decoration: none; }
+  .tk-row-link:hover, .tk-row-link:focus-visible { background: var(--tk-surface-sunken); }
+  .tk-row-muted { color: var(--tk-text-muted); }
+  .tk-row-ink { color: var(--tk-text-primary); }
+  .tk-row-line { display: block; margin-top: var(--tk-space-1); color: var(--tk-text-secondary); }
+  .animate-crawl[data-paused] { animation-play-state: paused; }
+  a.tk-seg-btn { display: inline-flex; align-items: center; text-decoration: none; }
+  .tk-seg-btn[aria-current="page"] { background: var(--tk-surface-inverse); color: var(--tk-text-inverse); }
+  .front-ticker { border-bottom: var(--tk-border-hairline) solid var(--tk-rule-hairline); }
+  .front-ticker-item { font-family: var(--tk-type-data-family); font-size: var(--tk-type-data-size); line-height: var(--tk-type-data-leading); }
+  .front-up { color: var(--tk-accent-1); }
+  .front-new { border: var(--tk-border-hairline) solid var(--tk-rule-strong); background: var(--tk-surface-page); color: var(--tk-text-primary); }
+  .front-new:hover, .front-new:focus-visible { background: var(--tk-surface-inverse); color: var(--tk-text-inverse); }
+  .front-marker { border-top: var(--tk-border-strong) solid var(--tk-accent-1); color: var(--tk-text-primary); }
+  .front-rail { scrollbar-width: thin; }
+}
+/* The compact row is one link; only its headline underlines on hover (the editorial link underline would run through every part). */
+.digest a.tk-row-link { text-decoration-line: none; }

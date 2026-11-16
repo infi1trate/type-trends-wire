@@ -19,7 +19,7 @@ export default defineTool({ name: "stories", title: "Stories", description: `Pub
     const key = signal ? canonical(signal) : null, d = domain?.toLowerCase() ?? null;
     const rows = streamOf(await storyIndex()).filter(s => s.type !== "launch" && (!type || s.type === type) && (!sector || s.sector === sector) && (!key || s.signal_keys.includes(key)) && (!d || s.domains.includes(d)) && (!since || s.happened_at >= `${since}T00:00:00Z`));
     return json({ matched: rows.length, stories: rows.slice(0, limit).map(s => ({
-      id: s.id, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, corrected_at: s.correctedAt,
+      id: s.id, number: s.number ?? null, number_url: s.number != null ? `${SITE_URL}/stories/no/${s.number}` : null, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, corrected_at: s.correctedAt,
       facts: s.facts, why_it_matters: s.why_line ? { text: s.why_line, basis: "ai", model: s.why_model, written_at: s.why_at } : { text: soWhatOf({ type: isKind(s.type) ? s.type : "news", signalKeys: s.signal_keys }), basis: "measured" },
       score: s.score, components: s.components, why_ran: s.why_ran, signal_keys: s.signal_keys, domains: s.domains,
       url: `${SITE_URL}${storyPath(s.id)}`, brand_urls: s.domains.map(x => `${SITE_URL}/brands/${encodeURIComponent(x)}`), signal_urls: s.signal_keys.map(k => `${SITE_URL}/signals/${encodeURIComponent(k)}`),

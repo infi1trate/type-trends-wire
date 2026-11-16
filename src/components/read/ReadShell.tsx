@@ -16,7 +16,8 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_NAME } from "@/lib/brand";
 
 /** `fixedSector`: the page is about one sector (a sector report); the lens shows it and changing it moves to that sector's page. */
-type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean; fixedSector?: { value: string; onChange: (s: string) => void } | undefined };
+/** `dateline`: the front page's date and clock beside the wordmark; `segmented`: show the Read / Terminal switch as a two-part control. */
+type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean; fixedSector?: { value: string; onChange: (s: string) => void } | undefined; dateline?: ReactNode; segmented?: boolean | undefined };
 
 function SectionLink({ s, active, onGo }: { s: (typeof SECTIONS)[number]; active: boolean; onGo: () => void }) {
   const cls = `ed-tap py-2 no-underline ${active ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`;
@@ -31,7 +32,7 @@ function SectionLink({ s, active, onGo }: { s: (typeof SECTIONS)[number]; active
   }
 }
 
-export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector }: Props) {
+export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector, dateline, segmented = false }: Props) {
   const loc = useLocationParts(), active = section === undefined ? readSectionOf(loc.pathname) : section;
   const [lensSector, setLensSector] = useSectorLens(), mode = useModeToggle();
   const sector = fixedSector?.value ?? lensSector, setSector = fixedSector?.onChange ?? setLensSector;
@@ -55,15 +56,18 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, [mode, close]);
   const startTour = useCallback(() => { close(); modeTour("read").reset(); setTouring(true); }, [close]);
+  const home = <Link to="/" className="ed-tap py-2 no-underline" aria-label={`${BRAND_NAME}, the front page`}><Wordmark size={20} leading={16} /></Link>;
   return <>
     <div className="digest">
       <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the content</a>
       <header className="no-print border-b border-ed-ink">
         <div className="ed-wrap ed-nav ed-navtext flex flex-wrap items-center justify-between gap-x-4">
-          <Link to="/" className="ed-tap py-2 no-underline" aria-label={`${BRAND_NAME}, the front page`}><Wordmark size={20} leading={16} /></Link>
+          {dateline ? <span className="flex flex-wrap items-center gap-x-4">{home}{dateline}</span> : home}
           <span className="flex flex-wrap items-center gap-x-4">
             <button type="button" onClick={() => setOverlay("glossary")} className="ed-tap cursor-pointer py-2 uppercase" aria-label="Open the glossary (?)">Glossary</button>
-            <a href={mode.href} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); }} data-tour="r-terminal" className="ed-tap py-2 font-semibold" title="Switch to Terminal mode (`)">Terminal ⇄</a>
+            {segmented
+              ? <span role="group" aria-label="Mode" className="tk-seg inline-flex"><a href={loc.pathname} aria-current="page" className="tk-seg-btn">Read</a><a href={mode.href} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); }} data-tour="r-terminal" className="tk-seg-btn" title="Switch to Terminal mode (`)">Terminal</a></span>
+              : <a href={mode.href} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); }} data-tour="r-terminal" className="ed-tap py-2 font-semibold" title="Switch to Terminal mode (`)">Terminal ⇄</a>}
             {GATE_ENABLED && <form method="post" action="/lock" className="contents"><button type="submit" className="ed-tap cursor-pointer py-2 uppercase">Lock</button></form>}
             <button type="button" className="ed-tap cursor-pointer py-2 uppercase md:hidden" aria-expanded={open} aria-controls="read-sections" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Sections"}</button>
           </span>

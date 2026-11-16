@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useMemo, useState, useRef } from "react";
+import { TickerTrack } from "@/components/kit/TickerTrack";
 import { useQuery } from "@tanstack/react-query";
 import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
 import { type PanelId } from "./panels";
@@ -131,17 +132,13 @@ export function Ticker() {
 
   return (
     <div className="relative h-7 overflow-hidden border-b border-rule bg-void" aria-label="Top moving signals">
-      <div className="animate-crawl label flex h-7 w-max items-center whitespace-nowrap" style={{ ["--crawl-duration" as string]: "50s" }}>
-        {[0, 1].map((k) => (
-          <div key={k} aria-hidden={k === 1} className="flex items-center pl-8">
-            {content}
-            <SpreadTicker/>
-            <Suspense fallback={null}><LibraryTicker/></Suspense>
-            {!items && content}
-            {!items && content}
-          </div>
-        ))}
-      </div>
+      <TickerTrack className="label h-7" duration="50s">
+        {content}
+        <SpreadTicker/>
+        <Suspense fallback={null}><LibraryTicker/></Suspense>
+        {!items && content}
+        {!items && content}
+      </TickerTrack>
     </div>
   );
 }

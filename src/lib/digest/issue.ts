@@ -39,7 +39,7 @@ export type IssueRows = {
   /** Published stories that happened in the issue week, as they stood at its end (digest.server.ts). Shown from STORIES_FIRST_WEEK on. */
   stories?: WeekStory[] | null;
 };
-export type WeekStory = { id: string; type: string; kicker: string; headline: string; deck: string | null; happened_at: string; sector: string | null; score: number };
+export type WeekStory = { id: string; number?: number | null; type: string; kicker: string; headline: string; deck: string | null; happened_at: string; sector: string | null; score: number };
 /** "The week in stories" runs from this issue on; earlier issues stay as they were. */
 export const STORIES_FIRST_WEEK = "2026-W47";
 export const WEEK_STORIES = 7;

@@ -12,6 +12,16 @@ export const getStory = createServerFn({ method: "GET" }).inputValidator(z.objec
   const { loadStory } = await import("./stories/page.server");
   return loadStory(data.id);
 });
+/** /stories/no/<n> → the published story's id (null when the number is unknown or its story is not published). */
+export const getStoryByNumber = createServerFn({ method: "GET" }).inputValidator(z.object({ number: z.number().int().min(1).max(1_000_000) })).handler(async ({ data }) => {
+  const { storyIdByNumber } = await import("./stories/read.server");
+  return storyIdByNumber(data.number);
+});
+/** `/`: the front page model (stored data only, no AI). */
+export const getFront = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => {
+  const { loadFront } = await import("./front/front.server");
+  return loadFront(data.sector, data.format);
+});
 export const getStoryQueue = createServerFn({ method: "GET" }).inputValidator(z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), fresh: z.boolean().default(false) })).handler(async ({ data }) => {
   const { loadQueue } = await import("./stories/page.server");
   return loadQueue(data.day ?? null, data.fresh);

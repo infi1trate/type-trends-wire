@@ -31,9 +31,11 @@ export type BuildDeps = {
   load: (o: { days: number; allRuns: boolean; realRunIds: number[] }) => Promise<BuildInput>; existing: (sinceIso: string) => Promise<Existing[]>; insert: (rows: StoryRowOut[]) => Promise<number>; why?: WhyWriter | null;
   /** Stored published stories without a line yet, best first (lines left over after new stories go to these). */
   lineless?: (limit: number) => Promise<WhyInput[]>; insertLines?: (rows: LineRow[]) => Promise<number>;
+  /** Give newly published stories their permanent numbers (story_numbers); returns how many were numbered. */
+  assignNumbers?: () => Promise<number>;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number };
-export type BuildResult = { ok: true; skipped?: "dev"; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; plan?: Planned[] };
+export type BuildResult = { ok: true; skipped?: "dev"; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; numbered?: number; plan?: Planned[] };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -75,7 +77,9 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const rows = plan.map(p => toRow(p, lines.get(p.id) ?? null));
   const inserted = rows.length ? await deps.insert(rows) : 0;
   const linesLater = later.length && deps.insertLines ? await deps.insertLines(later) : 0;
-  return { ok: true, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, plan };
+  // Numbers come after the insert so a story is numbered once it is published; a failure here never fails the build (the next build retries).
+  const numbered = deps.assignNumbers ? await deps.assignNumbers().catch(() => 0) : 0;
+  return { ok: true, numbered, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, plan };
 }
 
 // ---- Real I/O ---------------------------------------------------------------------------------------------------
@@ -146,8 +150,35 @@ export function dbDeps(admin: Admin, withWhy = true): BuildDeps {
       const done = new Set((have.data ?? []).map(r => r.story_id));
       return (st.data ?? []).filter(r => !done.has(r.id)).slice(0, limit).map(r => ({ id: r.id, type: r.type as Planned["type"], headline: r.headline, deck: r.deck, facts: (Array.isArray(r.facts) ? r.facts : []) as unknown as Planned["facts"], signalKeys: r.signal_keys, domains: r.domains }));
     },
+    assignNumbers: () => assignStoryNumbers(admin, { sinceDays: NUMBER_LOOKBACK_DAYS }),
     insertLines: async rows => { const { data, error } = await admin.from("story_lines").upsert(rows, { onConflict: "story_id", ignoreDuplicates: true }).select("story_id"); if (error) throw new Error("line_insert_failed"); return data?.length ?? 0; },
   };
+}
+
+/** Builds number stories first published in this many days (older ones were numbered by earlier builds or the backfill). */
+export const NUMBER_LOOKBACK_DAYS = 45;
+/**
+ * Number every published story (editor's overlay applied) that has none yet, continuing after the highest number. Insert-only; a clash with a
+ * concurrent build (unique number or story) re-reads and retries, so numbers are never reused or changed. `sinceDays: null` reads every story (backfill).
+ */
+export async function assignStoryNumbers(admin: Admin, o: { sinceDays: number | null }): Promise<number> {
+  const { applyEdits } = await import("./edits"), { assignNumbers } = await import("./numbers");
+  type Row = { id: string; status: "published" | "held"; happened_at: string; created_at: string };
+  const since = o.sinceDays == null ? null : new Date(Date.now() - o.sinceDays * 864e5).toISOString();
+  const stories = await pages<Row>((f, t) => { let q = admin.from("stories").select("id,status,happened_at,created_at"); if (since) q = q.gte("created_at", since); return q.order("id").range(f, t) as never; }, 1000);
+  if (!stories.length) return 0;
+  const edits = await pages<import("./edits").EditRow>((f, t) => admin.from("story_edits").select("id,story_id,action,payload,note,at").order("id").range(f, t) as never, 1000);
+  const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
+  const published = stories.filter(s => applyEdits(s as unknown as import("./edits").StoredStory, by.get(s.id) ?? [], Date.now()).state === "published");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const have = await pages<{ story_id: string; number: number }>((f, t) => admin.from("story_numbers").select("story_id,number").order("number").range(f, t) as never, 1000);
+    const rows = assignNumbers(published, have);
+    if (!rows.length) return 0;
+    const { error } = await admin.from("story_numbers").insert(rows);
+    if (!error) return rows.length;
+    if (error.code !== "23505") throw new Error("story_numbers_insert_failed");
+  }
+  throw new Error("story_numbers_contended");
 }
 
 /** Budget-guarded line writer: reserve under the story_why purpose, call once, settle; unknown outcomes are charged in full and never replayed. */

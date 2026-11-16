@@ -77,15 +77,18 @@ export async function loadLive(sector: string, page: number, type: string = "all
   const s = resolveSector(sector);
   const live = liveModel(all, { sector: s, page, type: resolveTypeFilter(type), now: Date.now() });
   const lens = lensSignals(snap.rows, tiers, s), byKey = new Map(lens.signals.map(x => [x.key, x]));
-  // Stage changes only between the latest real run and the most recent real run at least MIN_RUN_GAP_DAYS older.
-  const moving = moves.pair ? stageChanges(moves.latest, moves.earlier).filter(c => headline.has(c.trait)).map(c => {
+  const moving = movingItems(moves, headline, byKey);
+  return { sector: s, ...live, moving, comparison: moves.pair, nextComparison: moves.next, chart: chart ? { week: chart.week, trait: chart.trait, model: chart.model } : null, runAt: snap.computed_at, runId: snap.run_id };
+}
+/** Moving now: stage changes only between the latest real run and the most recent real run at least MIN_RUN_GAP_DAYS older (headline signals). */
+export function movingItems(moves: Awaited<ReturnType<typeof movingRuns>>, headline: Set<string>, byKey: Map<string, { momentum_index: number | null }>) {
+  return moves.pair ? stageChanges(moves.latest, moves.earlier).filter(c => headline.has(c.trait)).map(c => {
     const x = byKey.get(c.trait);
     return { key: c.trait, name: label(c.trait).name, dimension: label(c.trait).dimension, basis: basis(c.trait), from: c.from, to: c.to, share: c.share, momentum_index: x?.momentum_index ?? null, href: signalPath(c.trait) };
   }).sort((a, b) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || a.name.localeCompare(b.name)) : [];
-  return { sector: s, ...live, moving, comparison: moves.pair, nextComparison: moves.next, chart: chart ? { week: chart.week, trait: chart.trait, model: chart.model } : null, runAt: snap.computed_at, runId: snap.run_id };
 }
 /** The valid comparison for Moving now: real runs, the gap pair and both runs' library-wide stages (cached like other public reads). */
-const movingRuns = memo(TTL, async () => {
+export const movingRuns = memo(TTL, async () => {
   const db = supabaseAnon(), runs = await fetchRealRuns(db), pair = comparisonPair(runs), next = nextComparison(runs, Date.now());
   if (!pair) return { pair: null, next, latest: [], earlier: [] };
   const [latest, earlier] = await Promise.all([fetchStageRows(db, pair.latest.id), fetchStageRows(db, pair.earlier.id)]);

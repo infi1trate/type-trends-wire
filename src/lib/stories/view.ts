@@ -33,7 +33,7 @@ const inFilter = (t: string, f: TypeFilter) => { const ts = TYPE_FILTERS[f].type
 const asBasis = (b: string | null): Basis | null => (b === "measured" || b === "ai" ? b : null);
 export function toStory(s: StoryRecord): Story {
   return { id: s.id, type: isKind(s.type) ? s.type : "news", kicker: s.kicker, headline: s.headline, ...(s.deck ? { deck: s.deck } : {}), at: s.happened_at, sector: s.sector,
-    signalKeys: s.signal_keys, domains: s.domains, evidence: storyPath(s.id), basis: asBasis(s.basis), score: s.score, corrected: s.correctedAt,
+    signalKeys: s.signal_keys, domains: s.domains, evidence: storyPath(s.id), basis: asBasis(s.basis), score: s.score, corrected: s.correctedAt, number: s.state === "published" ? s.number ?? null : null,
     held: s.state === "held" ? s.reason : s.state === "killed" ? `killed${s.killReason ? `: ${s.killReason}` : ""}` : null };
 }
 /** Published, not folded into another running story, newest first. */
@@ -92,7 +92,7 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; soWhat: s
   const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts);
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
   return {
-    id: s.id, type, typeName: def.kicker, job: def.job, kicker: s.kicker, headline: s.headline, deck: s.deck, at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
+    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, job: def.job, kicker: s.kicker, headline: s.headline, deck: s.deck, at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
     facts: facts.filter(f => f.kind !== "before" && f.kind !== "after"), beforeAfter: before && after ? { before, after } : null,
     evidence: asLinks(s.evidence),
