@@ -7,6 +7,7 @@ import { COMPOSITES, DROPPED_COMPOSITES, ruleText } from "@/lib/composites";
 import { BASIS_LINE, COMPOSITE_LINE, CONFIDENCE_LINE, JOBS, MOMENTUM_LINE, OPEN_CATEGORIES, QUESTIONS, TIER_LINES, signalList } from "@/lib/what-we-show";
 import { whereThingsLive } from "@/lib/ia";
 import { firstSeenList, storyRules, storyTypeList } from "@/lib/stories/rules";
+import { imagePolicy } from "@/lib/crops";
 import { BasisWord, Dim, DigestFooter, DigestShell, SectionHead, StageWord, pr } from "./Editorial";
 
 const pct = (v: number | null | undefined) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
@@ -95,8 +96,13 @@ export function WhatWeShowView({ tiers, signals, runId }: { tiers: Map<string, T
         <ul className="mt-2">{firstSeenList().map(d => <li key={d.id} className="ed-hair grid grid-cols-1 gap-x-6 py-2 md:grid-cols-[minmax(0,3fr)_minmax(0,9fr)]"><p className="min-w-0 font-medium">{d.name}</p><p className="ed-caption min-w-0">{d.why}</p></li>)}</ul>
       </section>
 
+      <section aria-labelledby="ed-w-images" className="ed-wrap mt-14">
+        <SectionHead n="09" id="ed-w-images" title="Images of other sites" kicker="Section crops prove what we measured. They are other companies' pages, so each one is credited, linked and removable." />
+        <ul className="ed-grid gap-y-6">{imagePolicy().map(r => <li key={r.id} className="ed-hair min-w-0 pt-3 md:col-span-6"><h3 className="ed-h3">{r.title}</h3><p className="ed-small mt-1">{r.text}</p></li>)}</ul>
+      </section>
+
       <section aria-labelledby="ed-w-all" className="ed-wrap mt-14">
-        <SectionHead n="09" id="ed-w-all" title="Every signal, by tier" kicker="Each with the reason for its tier. Search by name, key, dimension or reason." />
+        <SectionHead n="10" id="ed-w-all" title="Every signal, by tier" kicker="Each with the reason for its tier. Search by name, key, dimension or reason." />
         <label className="ed-data flex max-w-md items-center gap-2 border border-ed-ink px-2"><span className="sr-only">Search signals</span><span aria-hidden>⌕</span><input value={q} onChange={e => setQ(e.target.value)} placeholder="Search signals" className="min-h-11 w-full bg-transparent outline-none" /></label>
         <p className="ed-caption mt-2" aria-live="polite">{shown.length} of {list.length} signals</p>
         {TIERS.map(t => { const rows = shown.filter(r => r.tier === t); return rows.length ? <div key={t} className="mt-8"><h3 className="ed-kicker">{TIER_WORD[t]} · {rows.length}</h3>

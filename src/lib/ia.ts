@@ -234,11 +234,12 @@ export const SURFACES: Record<string, Surface> = {
   "embed.chart.$week": S("tools", "both", "quiet", "Embeddable chart widget (open)."),
   "robots[.]txt": S("tools", "both", "quiet", "Crawler instructions."),
   "thumbs.$": S("brands", "both", "quiet", "Credited homepage thumbnails."),
+  "crops.$": S("brands", "both", "quiet", "Credited section crops (hero, navigation, pricing, call to action, footer); gated like any page, never served for opted-out sites."),
   "api/public/mcp": S("tools", "both", "shown", "MCP endpoint: 24 tools (agent access)."),
   "api/public/oembed": S("tools", "both", "quiet", "oEmbed provider for signal and chart pages."),
   "api/public/watch-feed.{$token}[.]xml": S("tools", "both", "quiet", "Per-watchlist RSS."),
   "api/public/health": S("tools", "both", "quiet", "Machine-readable health; shown in words on /status."),
-  "api/public/*": S("tools", "both", "quiet", "Machine endpoints: cron callbacks, crawler/thumb ingest, opt-out, MCP keys admin, editor desk, OAuth metadata."),
+  "api/public/*": S("tools", "both", "quiet", "Machine endpoints: cron callbacks, crawler/thumb/crop ingest, opt-out, MCP keys admin, editor desk, OAuth metadata."),
   // Old terminal panels and new tabs
   "panel:today": S("live", "terminal", "shown", "Live · Today (key T)."),
   "panel:wire": S("live", "terminal", "shown", "Live · Wire (old F8)."),

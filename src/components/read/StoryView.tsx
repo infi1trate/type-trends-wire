@@ -7,8 +7,10 @@ import { BasisWord, DigestShell, Dim, SiteCard, pr } from "@/components/digest/E
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { ReadFooter, Spark } from "./Bits";
 import { Receipt, StoryCard } from "./StoryCard";
+import { BeforeAfter, CropFallback, CropFigure } from "./Evidence";
+import type { StoryEvidence } from "@/lib/stories/evidence";
 
-export type StoryPageData = StoryPageModel & { thumb: Thumb | null; series: { key: string; name: string; points: number[] } | null };
+export type StoryPageData = StoryPageModel & { thumb: Thumb | null; crops?: StoryEvidence; series: { key: string; name: string; points: number[] } | null };
 const JOB = { spot: "Spot what is changing", prove: "Prove who is doing it", act: "Act on the opening" } as const;
 const day = (iso: string) => iso.slice(0, 10);
 
@@ -27,14 +29,25 @@ export function StoryView({ s }: { s: StoryPageData }) {
         {notRun && <p className="ed-small mt-4 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
       </div>,
       evidence: <>
-        {s.beforeAfter && <BlockPart title="Before → after" kicker="Two captures agree on the change; the brand page has the full record.">
+        {s.crops?.compare && <BlockPart title={`Before → after · ${s.crops.sectionName}`} kicker={s.beforeAfter ? `Before: ${s.beforeAfter.before}. After: ${s.beforeAfter.after}. Two stored captures of this section, either side of the change.` : "Two stored captures of this section, either side of the change."}>
+          <BeforeAfter before={s.crops.compare.before} after={s.crops.compare.after} />
+        </BlockPart>}
+        {s.crops?.grid && <BlockPart title="The brands in this roundup · hero" kicker={s.crops.note ?? "Each brand's current hero, credited and linked."}>
+          <ul className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-4">{s.crops.grid.map(g => <li key={g.domain}>
+            {g.crop ? <CropFigure crop={g.crop} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw" /> : <CropFallback domain={g.domain} section="Hero" />}
+            <p className="ed-data mt-1"><Link to="/brands/$domain" params={{ domain: g.domain }} className="ed-tap">Brand page →</Link></p>
+          </li>)}</ul>
+        </BlockPart>}
+        {!s.crops?.compare && s.beforeAfter && <BlockPart title="Before → after" kicker="Two captures agree on the change; the brand page has the full record.">
           <div className="ed-grid">
             <div className="lg:col-span-4 ed-typo"><span className="ed-kicker ed-muted">Before</span><span className="ed-h3 break-words">{s.beforeAfter.before}</span></div>
             <div className="lg:col-span-4 ed-typo"><span className="ed-kicker ed-muted">After</span><span className="ed-h3 break-words">{s.beforeAfter.after}</span></div>
             {s.thumb && s.brands[0] && <div className="lg:col-span-4"><SiteCard domain={s.brands[0].domain} name={null} sector={s.sectorName ?? ""} thumb={s.thumb} lines={["latest capture"]} sizes="(min-width: 1024px) 30vw, 100vw" /></div>}
           </div>
+          {s.crops?.note && !s.crops.grid && <p className="ed-caption mt-3">{s.crops.note}</p>}
         </BlockPart>}
-        {!s.beforeAfter && s.thumb && s.brands[0] && <BlockPart title="Latest capture"><div className="max-w-md"><SiteCard domain={s.brands[0].domain} name={null} sector={s.sectorName ?? ""} thumb={s.thumb} lines={["latest capture"]} /></div></BlockPart>}
+        {!s.crops?.compare && !s.beforeAfter && s.crops?.note && !s.crops.grid && <p className="ed-caption">{s.crops.note}</p>}
+        {!s.crops?.compare && !s.beforeAfter && s.thumb && s.brands[0] && <BlockPart title="Latest capture"><div className="max-w-md"><SiteCard domain={s.brands[0].domain} name={null} sector={s.sectorName ?? ""} thumb={s.thumb} lines={["latest capture"]} /></div></BlockPart>}
         <BlockPart title="Facts" kicker="Every line links to its receipt.">
           {s.facts.length ? <ul className="space-y-3">{s.facts.map((f, i) => <li key={i} className="ed-hair flex flex-wrap items-baseline gap-x-3 pt-2">
             <span className="ed-small">{f.href ? <Receipt href={f.href} {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>{f.basis && <BasisWord b={f.basis} />}

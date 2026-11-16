@@ -5,6 +5,7 @@ import type { ThumbRow } from "../thumbs";
 import type { EventRow, RebrandRow } from "./changes";
 import type { WatchPublic } from "./watch";
 import { FEED_DAYS, type AlertRow, type RunRow, type SiteInfo, type StageRow, type TraitNow, type WatchRows } from "./watch-feed";
+import { readerRunId } from "../real-runs";
 
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500, max = 20) {
@@ -15,7 +16,7 @@ async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: 
 const EVENT_COLS = "id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary";
 
 export async function loadWatchRows(w: WatchPublic, now: Date): Promise<WatchRows> {
-  const db = supabaseAnon(), domains = [...new Set([...w.sites, ...w.pending_sites])];
+  const db = supabaseAnon(), domains = [...new Set([...w.sites, ...w.pending_sites])], readerRun = await readerRunId(db);
   const since = new Date(+now - FEED_DAYS * 864e5).toISOString();
   const none = Promise.resolve([] as never[]);
   const [sites, events, lastEvent, history, thumbs, runsIn, runBefore, alerts, latestAll] = await Promise.all([
@@ -27,7 +28,7 @@ export async function loadWatchRows(w: WatchPublic, now: Date): Promise<WatchRow
     db.from("forecast_runs").select("id,computed_at").eq("status", "ok").gte("computed_at", since).order("computed_at").limit(40).then(must),
     db.from("forecast_runs").select("id,computed_at").eq("status", "ok").lt("computed_at", since).order("computed_at", { ascending: false }).limit(1).then(must),
     db.from("wire_items").select("id,title,ref,url,published_at").eq("source_kind", "alert").not("ref", "is", null).gte("published_at", since).order("published_at", { ascending: false }).limit(300).then(must),
-    pages<TraitNow & { scope: string }>((f, t) => db.from("forecast_latest").select("dimension,value,scope,stage,current_share").eq("scope", "all").order("dimension").order("value").range(f, t) as never),
+    pages<TraitNow & { scope: string }>((f, t) => db.from("forecasts").select("dimension,value,scope,stage,current_share").eq("run_id", readerRun).eq("scope", "all").order("dimension").order("value").range(f, t) as never),
   ]);
   const runList = [...(runBefore ?? []), ...(runsIn ?? [])];
   const ids = runList.map(r => r.id);

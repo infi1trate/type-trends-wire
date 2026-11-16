@@ -1,6 +1,7 @@
 // Rebrand Desk reads (anonymous, SELECT-only) shared by F9 and the MCP `rebrands` tool; derived fields only, no page text or images.
 import { supabaseAnon } from "./mcp/supabase";
 import { buildRebrands, filterRebrands, rebrandCounts, MEASURED_EVENT_TYPES, MAX_REBRAND_LIMIT, type Rebrand, type EventIn, type SideIn, type ForecastIn, type WireIn } from "./rebrands";
+import { readerRunId } from "./real-runs";
 type Db = ReturnType<typeof supabaseAnon>;
 async function all<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
   const out: T[] = [];
@@ -9,10 +10,11 @@ async function all<T>(page: (from: number, to: number) => PromiseLike<{ data: T[
 }
 const str = (v: unknown) => (typeof v === "string" && v ? v : null);
 async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | null }> {
+  const runId = await readerRunId(db);
   const [events, sites, forecasts, wire, fonts] = await Promise.all([
     all<EventIn>((f, t) => db.from("library_events").select("id,domain,source,type,before,after,effective_at,detected_at,snapshot_id,prev_snapshot_id").in("type", [...MEASURED_EVENT_TYPES]).eq("page_type", "home").eq("viewport", "desktop").order("id").range(f, t) as never),
     all<{ domain: string; sector: string; name: string | null }>((f, t) => db.from("library_sites").select("domain,sector,name").order("domain").range(f, t) as never),
-    all<ForecastIn>((f, t) => db.from("forecast_latest").select("dimension,value,scope,stage,status,current_share,momentum").eq("status", "ok").order("dimension").order("value").order("scope").range(f, t) as never),
+    all<ForecastIn>((f, t) => db.from("forecasts").select("dimension,value,scope,stage,status,current_share,momentum").eq("run_id", runId).eq("status", "ok").order("dimension").order("value").order("scope").range(f, t) as never),
     all<WireIn>((f, t) => db.from("wire_items").select("id,title,excerpt,url,source,source_kind,published_at").neq("source_kind", "alert").order("id").range(f, t) as never),
     all<{ family: string }>((f, t) => db.from("font_catalog").select("family").eq("source", "google").order("key").range(f, t) as never),
   ]);

@@ -26,10 +26,10 @@ export const getWatchView = createServerFn({ method: "GET" }).inputValidator(z.o
 export const getWatchOptions = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAnon } = await import("./mcp/supabase");
   const { label } = await import("./labels");
-  const db = supabaseAnon();
+  const db = supabaseAnon(), { readerRunId } = await import("./real-runs"), runId = await readerRunId(db);
   const [sites, traits] = await Promise.all([
     db.from("library_sites").select("domain,sector").eq("active", true).order("domain").range(0, 999),
-    db.from("forecast_latest").select("dimension,value").eq("scope", "all").order("dimension").order("value").range(0, 999),
+    db.from("forecasts").select("dimension,value").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(0, 999),
   ]);
   if (sites.error || traits.error) throw sites.error ?? traits.error;
   return { sites: sites.data ?? [], traits: (traits.data ?? []).map(t => { const k = `${t.dimension}:${t.value}`, l = label(k); return { trait: k, name: l.name, dimension: l.dimension }; }) };

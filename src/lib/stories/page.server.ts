@@ -12,7 +12,23 @@ export async function loadStory(id: string) {
   const page = storyPage(s, { earlier, soWhat: soWhatOf({ type, signalKeys: s.signal_keys, stage: key ? byKey.get(key)?.stage ?? null : null }), patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
   const { pickThumb } = await import("../thumbs");
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
-  return { ...page, thumb, series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
+  return { ...page, thumb, crops: await evidenceOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
+}
+
+/** Section crops for MOVE / COUNTER-MOVE / REBRAND (before/after) and ROUNDUP (member heroes); empty and honest with zero crops. */
+async function evidenceOf(s: { type: string; domains: string[]; source_ids: string[]; happened_at: string }, type: string) {
+  const [{ storyEvidence, storyEventIds }, read, { supabaseAnon }] = await Promise.all([import("./evidence"), import("../read.server"), import("../mcp/supabase")]);
+  if (type !== "move" && type !== "counter_move" && type !== "rebrand" && type !== "roundup") return storyEvidence({ type, domains: [] }, [], s.happened_at, []);
+  const ids = storyEventIds(s.source_ids).slice(0, 40);
+  const [crops, events] = await Promise.all([
+    read.cropsFor(type === "roundup" ? s.domains : s.domains.slice(0, 1)).catch(() => []),
+    ids.length && type !== "roundup" ? supabaseAnon().from("library_event_feed").select("id,type,before,after,detected_at,effective_at").in("id", ids).then(r => r.data ?? []) : Promise.resolve([]),
+  ]);
+  const keys = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v) : []);
+  const changes = type === "rebrand" ? [{ kind: "rebrand" as const, reasons: [] }] : events.map(e => ({ kind: "event" as const, type: e.type, fields: [...new Set([...keys(e.before), ...keys(e.after)])] }));
+  // Pivot: when the change first appeared (effective time of its earliest event), else when the story happened.
+  const pivot = events.map(e => e.effective_at ?? e.detected_at).filter((x): x is string => !!x).sort()[0] ?? s.happened_at;
+  return storyEvidence({ type, domains: s.domains }, changes, pivot, crops);
 }
 export async function loadQueue(day: string | null, fresh: boolean) {
   return queueModel(await (fresh ? deskIndex() : storyIndex()), day, Date.now());

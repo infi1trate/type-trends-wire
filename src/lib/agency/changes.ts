@@ -2,8 +2,8 @@
 import { colorName, label } from "../labels";
 import { colorTicker } from "../taste/color";
 
-export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
-export type RebrandRow = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[] };
+export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
+export type RebrandRow = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; effective_at?: string | null };
 
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);

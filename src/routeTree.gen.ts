@@ -26,6 +26,7 @@ import { Route as ChartIndexRouteImport } from './routes/chart.index'
 import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
 import { Route as ChartChar123weekChar125DotsvgRouteImport } from './routes/chart.{$week}[.]svg'
+import { Route as CropsSplatRouteImport } from './routes/crops.$'
 import { Route as DigestIndexRouteImport } from './routes/digest.index'
 import { Route as DigestWeekRouteImport } from './routes/digest.$week'
 import { Route as DigestArchiveRouteImport } from './routes/digest.archive'
@@ -50,6 +51,7 @@ import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/fo
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicIngestArenaRouteImport } from './routes/api/public/ingest-arena'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
+import { Route as ApiPublicIngestCropsRouteImport } from './routes/api/public/ingest-crops'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestProducthuntRouteImport } from './routes/api/public/ingest-producthunt'
 import { Route as ApiPublicIngestThumbsRouteImport } from './routes/api/public/ingest-thumbs'
@@ -155,6 +157,11 @@ const ChartChar123weekChar125DotsvgRoute =
     path: '/chart/{$week}.svg',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CropsSplatRoute = CropsSplatRouteImport.update({
+  id: '/crops/$',
+  path: '/crops/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DigestIndexRoute = DigestIndexRouteImport.update({
   id: '/digest/',
   path: '/digest/',
@@ -277,6 +284,11 @@ const ApiPublicIngestCrawlRoute = ApiPublicIngestCrawlRouteImport.update({
   path: '/api/public/ingest-crawl',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestCropsRoute = ApiPublicIngestCropsRouteImport.update({
+  id: '/api/public/ingest-crops',
+  path: '/api/public/ingest-crops',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestGfontsRoute = ApiPublicIngestGfontsRouteImport.update({
   id: '/api/public/ingest-gfonts',
   path: '/api/public/ingest-gfonts',
@@ -382,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/crops/$': typeof CropsSplatRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -409,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
+  '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
@@ -442,6 +456,7 @@ export interface FileRoutesByTo {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/crops/$': typeof CropsSplatRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -469,6 +484,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
+  '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
@@ -503,6 +519,7 @@ export interface FileRoutesById {
   '/chart/$week': typeof ChartWeekRoute
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
+  '/crops/$': typeof CropsSplatRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -530,6 +547,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
+  '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
@@ -565,6 +583,7 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/crops/$'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -592,6 +611,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
+    | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
     | '/api/public/ingest-thumbs'
@@ -625,6 +645,7 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/crops/$'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -652,6 +673,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
+    | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
     | '/api/public/ingest-thumbs'
@@ -685,6 +707,7 @@ export interface FileRouteTypes {
     | '/chart/$week'
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
+    | '/crops/$'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -712,6 +735,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/ingest-arena'
     | '/api/public/ingest-crawl'
+    | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
     | '/api/public/ingest-thumbs'
@@ -746,6 +770,7 @@ export interface RootRouteChildren {
   ChartWeekRoute: typeof ChartWeekRoute
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
+  CropsSplatRoute: typeof CropsSplatRoute
   DigestWeekRoute: typeof DigestWeekRoute
   DigestArchiveRoute: typeof DigestArchiveRoute
   DigestRssDotxmlRoute: typeof DigestRssDotxmlRoute
@@ -773,6 +798,7 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestArenaRoute: typeof ApiPublicIngestArenaRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
+  ApiPublicIngestCropsRoute: typeof ApiPublicIngestCropsRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestProducthuntRoute: typeof ApiPublicIngestProducthuntRoute
   ApiPublicIngestThumbsRoute: typeof ApiPublicIngestThumbsRoute
@@ -911,6 +937,13 @@ declare module '@tanstack/react-router' {
       path: '/chart/{$week}.svg'
       fullPath: '/chart/{$week}.svg'
       preLoaderRoute: typeof ChartChar123weekChar125DotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crops/$': {
+      id: '/crops/$'
+      path: '/crops/$'
+      fullPath: '/crops/$'
+      preLoaderRoute: typeof CropsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/digest/': {
@@ -1081,6 +1114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestCrawlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingest-crops': {
+      id: '/api/public/ingest-crops'
+      path: '/api/public/ingest-crops'
+      fullPath: '/api/public/ingest-crops'
+      preLoaderRoute: typeof ApiPublicIngestCropsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest-gfonts': {
       id: '/api/public/ingest-gfonts'
       path: '/api/public/ingest-gfonts'
@@ -1218,6 +1258,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChartWeekRoute: ChartWeekRoute,
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
+  CropsSplatRoute: CropsSplatRoute,
   DigestWeekRoute: DigestWeekRoute,
   DigestArchiveRoute: DigestArchiveRoute,
   DigestRssDotxmlRoute: DigestRssDotxmlRoute,
@@ -1245,6 +1286,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestArenaRoute: ApiPublicIngestArenaRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
+  ApiPublicIngestCropsRoute: ApiPublicIngestCropsRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestProducthuntRoute: ApiPublicIngestProducthuntRoute,
   ApiPublicIngestThumbsRoute: ApiPublicIngestThumbsRoute,

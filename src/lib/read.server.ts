@@ -12,9 +12,10 @@ import { lensSignals, resolveSector } from "./sector-lens";
 import { signalPath } from "./ia";
 import { decodeEntities } from "./entities";
 import { comparisonPair, nextComparison } from "./run-gap";
-import { fetchRealRuns, fetchStageRows } from "./real-runs";
+import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
 import { stageChanges } from "./today";
 import type { ThumbRow } from "./thumbs";
+import { cropCoverage, type CropRow } from "./crops";
 import type { EventRow, RebrandRow } from "./agency/changes";
 
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
@@ -41,6 +42,19 @@ export const siteTraitIndex = memo(10 * 60_000, async (): Promise<PatternSite[]>
   const h = new Map(hist.map(r => [r.domain, r]));
   return sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; });
 });
+const CROP_COLS = "domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash";
+/** Every visible section crop (opted-out sites are hidden by policy). Zero rows until the crawler sends crops. */
+export const allCrops = memo(10 * 60_000, () => pages<CropRow>((f, t) => supabaseAnon().from("site_crops").select(CROP_COLS).order("id").range(f, t) as never));
+/** Crops of a few domains (brand and story pages), read fresh rather than from the all-crops memo. */
+export async function cropsFor(domains: string[]): Promise<CropRow[]> {
+  if (!domains.length) return [];
+  return pages<CropRow>((f, t) => supabaseAnon().from("site_crops").select(CROP_COLS).in("domain", domains.slice(0, 60)).order("id").range(f, t) as never);
+}
+/** /status: crop coverage (brands with a crop, versions stored, newest capture). */
+export async function loadCropCoverage() {
+  const rows = await pages<Pick<CropRow, "domain" | "captured_at">>((f, t) => supabaseAnon().from("site_crops").select("domain,captured_at").order("id").range(f, t) as never, 1000);
+  return cropCoverage(rows);
+}
 export const allThumbs = memo(10 * 60_000, () => pages<ThumbRow>((f, t) => supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").order("id").range(f, t) as never));
 
 /** Brand moves and rebrands as thin Stories (the Brands › Moves tab lists every confirmed change, not only the ones that ran as stories). */
@@ -88,16 +102,17 @@ export async function loadBrand(domain: string) {
   const site = must(await db.from("library_sites").select("domain,active").eq("domain", domain).maybeSingle());
   if (!site?.active) return null;
   const { auditRows } = await import("./agency/audit.server");
-  const [audit, events, index, { tiers }, all] = await Promise.all([
+  const [audit, events, index, { tiers }, all, crops] = await Promise.all([
     auditRows([domain], null),
-    db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary").eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80).then(must),
+    db.from("library_event_feed").select("id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,sector,summary").eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80).then(must),
     siteTraitIndex(),
     latestSignals("all"),
     storyIndex().catch(() => []),
+    cropsFor([domain]),
   ]);
   const own = index.find(s => s.domain === domain);
   const storyOf: [string, string][] = [...storyForSource(all)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
-  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf };
+  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops };
   return { ...brandModel(rows), stories: storiesAbout(all, { domain, limit: 8 }) };
 }
 
@@ -116,18 +131,20 @@ export async function loadBrands() {
   };
 }
 
-export async function loadPatterns(sector: string) {
-  const [index, { signals }] = await Promise.all([siteTraitIndex(), latestSignals("all")]);
-  return { sector: resolveSector(sector), patterns: patternIndex(index, signals, sector) };
+export async function loadPatterns(sector: string, illustrated = false) {
+  const [index, { signals }, crops] = await Promise.all([siteTraitIndex(), latestSignals("all"), allCrops()]);
+  const all = patternIndex(index, signals, sector, crops);
+  return { sector: resolveSector(sector), illustrated, total: all.length, illustratedCount: all.filter(p => p.illustrated).length, patterns: illustrated ? all.filter(p => p.illustrated) : all };
 }
 export async function loadPattern(key: string, sector: string) {
-  const [index, { signals }, thumbs, all] = await Promise.all([siteTraitIndex(), latestSignals("all"), allThumbs(), storyIndex().catch(() => [])]);
-  const m = patternModel(key, index, signals, thumbs, sector);
+  const [index, { signals }, crops, all] = await Promise.all([siteTraitIndex(), latestSignals("all"), allCrops(), storyIndex().catch(() => [])]);
+  const m = patternModel(key, index, signals, crops, sector);
   return m ? { ...m, stories: storiesAbout(all, { signal: key, limit: 6 }) } : null;
 }
 
 /** Quarterly share points for every forecast row in one scope (sparklines on /signals). */
 export async function loadSignalSeries(scope: string) {
-  const rows = await pages<{ dimension: string; value: string; quarters: { q: string; s: number | null; n: number; c: number }[] | null }>((f, t) => supabaseAnon().from("forecast_latest").select("dimension,value,quarters:evidence->quarters").eq("scope", resolveSector(scope)).order("dimension").order("value").range(f, t) as never, 200);
+  const db = supabaseAnon(), runId = await readerRunId(db);
+  const rows = await pages<{ dimension: string; value: string; quarters: { q: string; s: number | null; n: number; c: number }[] | null }>((f, t) => db.from("forecasts").select("dimension,value,quarters:evidence->quarters").eq("run_id", runId).eq("scope", resolveSector(scope)).order("dimension").order("value").range(f, t) as never, 200);
   return Object.fromEntries(rows.map(r => [`${r.dimension}:${r.value}`, (r.quarters ?? []).filter(p => p.s != null && p.n >= 15 && p.c >= 0.25).map(p => p.s as number)]));
 }

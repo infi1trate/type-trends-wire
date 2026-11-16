@@ -1258,6 +1258,57 @@ export type Database = {
         }
         Relationships: []
       }
+      site_crops: {
+        Row: {
+          bytes: number
+          captured_at: string
+          created_at: string
+          domain: string
+          first_seen_at: string
+          hash: string
+          height: number
+          id: number
+          last_seen_at: string
+          path: string
+          run_id: string | null
+          section: string
+          viewport: string
+          width: number
+        }
+        Insert: {
+          bytes: number
+          captured_at: string
+          created_at?: string
+          domain: string
+          first_seen_at: string
+          hash: string
+          height: number
+          id?: never
+          last_seen_at: string
+          path: string
+          run_id?: string | null
+          section: string
+          viewport?: string
+          width: number
+        }
+        Update: {
+          bytes?: number
+          captured_at?: string
+          created_at?: string
+          domain?: string
+          first_seen_at?: string
+          hash?: string
+          height?: number
+          id?: never
+          last_seen_at?: string
+          path?: string
+          run_id?: string | null
+          section?: string
+          viewport?: string
+          width?: number
+        }
+        Relationships: []
+      }
       site_thumbs: {
         Row: {
           bytes: number
@@ -3019,6 +3070,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      crop_opted_out: { Args: { p_domain: string }; Returns: boolean }
       discourse_merge: {
         Args: { p_add: boolean; p_rows: Json }
         Returns: number

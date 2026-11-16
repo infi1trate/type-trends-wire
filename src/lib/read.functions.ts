@@ -28,9 +28,13 @@ export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
   const { loadBrands } = await import("./read.server");
   return loadBrands();
 });
-export const getPatterns = createServerFn({ method: "GET" }).inputValidator(z.object({ sector })).handler(async ({ data }) => {
+export const getPatterns = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, illustrated: z.boolean().default(false) })).handler(async ({ data }) => {
   const { loadPatterns } = await import("./read.server");
-  return loadPatterns(data.sector);
+  return loadPatterns(data.sector, data.illustrated);
+});
+export const getCropCoverage = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadCropCoverage } = await import("./read.server");
+  return loadCropCoverage();
 });
 export const getPattern = createServerFn({ method: "GET" }).inputValidator(z.object({ key: z.string().min(3).max(120), sector })).handler(async ({ data }) => {
   const { loadPattern } = await import("./read.server");
@@ -41,8 +45,9 @@ export const getSignalSeries = createServerFn({ method: "GET" }).inputValidator(
   return loadSignalSeries(data.scope);
 });
 export const getModelCard = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAnon } = await import("./mcp/supabase");
-  const { data, error } = await supabaseAnon().from("forecast_model_card").select("model_card,computed_at").maybeSingle();
+  const [{ supabaseAnon }, { readerRunId }] = await Promise.all([import("./mcp/supabase"), import("./real-runs")]);
+  const db = supabaseAnon();
+  const { data, error } = await db.from("forecast_runs").select("model_card,computed_at").eq("id", await readerRunId(db)).maybeSingle();
   if (error) throw error;
   return data ? { card: data.model_card as Json, computed_at: data.computed_at as string } : null;
 });

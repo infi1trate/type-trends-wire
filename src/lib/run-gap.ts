@@ -58,3 +58,30 @@ export function realRunLine(r: { real: RunRef[]; pair: { latest: RunRef; earlier
     ? `${head} Current comparison: run ${r.pair.latest.id} (${dm(r.pair.latest.at)}) against run ${r.pair.earlier.id} (${dm(r.pair.earlier.at)}), ${r.pair.days} days apart.${next}`
     : `${head} No two are at least ${MIN_RUN_GAP_DAYS} days apart yet, so there is no week-over-week comparison.${next}`;
 }
+
+// READER RUN ---------------------------------------------------------------------------------------
+/**
+ * The one sandbox run reader pages may show: run 15 carries the Phase 12 outputs. No other sandbox run is ever shown, and once a real
+ * run newer than it exists, reader pages read the latest real run and never a sandbox run again.
+ */
+export const READABLE_SANDBOX_RUN = 15;
+export type ReaderRuns<R extends RunRef> = { latest: R | null; prev: R[]; mode: "real" | "sandbox" | "none" };
+/**
+ * Which stored run every reader-facing surface reads, plus the two runs before it (tiers compare stages across them).
+ * `ok` is every ok run, `real` the real ones (REAL_RUN_RULE). Pure.
+ */
+export function readerRuns<R extends RunRef>(ok: R[], real: R[], anchor: number = READABLE_SANDBOX_RUN): ReaderRuns<R> {
+  const byId = (a: R, b: R) => b.id - a.id, realIds = new Set(real.map(r => r.id));
+  const reals = ok.filter(r => realIds.has(r.id)).sort(byId);
+  if (reals[0] && reals[0].id > anchor) return { latest: reals[0], prev: reals.slice(1, 3), mode: "real" };
+  // Before the switch: the newest ok run up to the anchor (today run 15), with the two ok runs before it, as before.
+  const upTo = ok.filter(r => r.id <= anchor).sort(byId), latest = upTo[0] ?? null;
+  if (!latest) return { latest: null, prev: [], mode: "none" };
+  return { latest, prev: upTo.slice(1, 3), mode: realIds.has(latest.id) ? "real" : "sandbox" };
+}
+
+/** Stage-change alerts compare the new run against the most recent real run at least MIN_RUN_GAP_DAYS older, so a rerun cannot fire them. */
+export function alertBaseline<R extends RunRef>(real: R[], current: RunRef): R | null {
+  const cut = Date.parse(current.at) - MIN_RUN_GAP_DAYS * DAY;
+  return [...real].filter(r => r.id !== current.id && Date.parse(r.at) <= cut).sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.id - a.id)[0] ?? null;
+}

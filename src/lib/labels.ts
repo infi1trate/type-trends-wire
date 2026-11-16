@@ -239,3 +239,6 @@ export function citationText(c: { kind: string; id: string }, refLabel?: string)
 export function briefDisplay<T extends BriefLike>(b: T) {
   return { headline: untick(b.headline), caveats: untick(b.caveats), sections: b.sections.map(s => ({ title: s.title, body: untick(s.body), citations: s.citations.map(c => ({ ...c, text: citationText(c, b.refs?.[`${c.kind}:${c.id}`]?.label) })) })) };
 }
+
+// HOMEPAGE SECTIONS — names for section crops (Phase 15).
+export const CROP_SECTION_NAME = { hero: "Hero", nav: "Navigation", pricing: "Pricing", cta: "Call to action", footer: "Footer" } as const;

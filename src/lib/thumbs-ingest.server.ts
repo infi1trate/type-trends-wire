@@ -83,8 +83,8 @@ export async function handleThumbIngest(request: Request, store?: ThumbStore): P
   }
 }
 
-/** Opt-out admin path: add (hide + delete every stored capture) or remove (allow future captures). */
-export async function handleThumbOptout(request: Request, store?: ThumbStore): Promise<Response> {
+/** Opt-out admin path: add (hide + delete every stored capture, thumbnails and section crops) or remove (allow future captures). */
+export async function handleThumbOptout(request: Request, store?: ThumbStore, cropStore?: import("./crops-ingest.server").CropStore | null): Promise<Response> {
   try {
     const db = store ?? (await adminStore());
     if (!await db.authenticate(request)) return json({ error: "forbidden" }, 403);
@@ -98,7 +98,11 @@ export async function handleThumbOptout(request: Request, store?: ThumbStore): P
     await db.addOptout(domain, note ?? null);
     const rows = await db.rows(domain);
     if (rows.length) { await db.removeObjects(rows.flatMap(allPaths)); await db.deleteRows(rows.map(r => r.id)); }
-    return json({ ok: true, domain, action, deleted: rows.length });
+    // Section crops follow the same opt-out (an injected thumb store without a crop store skips them, as in older tests).
+    const crops = cropStore === undefined && store ? null : cropStore;
+    if (crops === null) return json({ ok: true, domain, action, deleted: rows.length });
+    const { deleteCropsFor } = await import("./crops-ingest.server");
+    return json({ ok: true, domain, action, deleted: rows.length, crops_deleted: await deleteCropsFor(domain, crops) });
   } catch (error) {
     console.error("Thumbnail opt-out failed", error instanceof Error ? error.name : "UnknownError");
     return json({ error: "Internal error" }, 500);

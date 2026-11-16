@@ -5,15 +5,19 @@ import { basis, label, sectorName, stageName, type Basis, type Dimension, type S
 import { OBJECT_BLOCKS, brandPath, consoleHref, signalPath, type Block } from "./ia";
 import type { Tier } from "./tiers";
 import type { Thumb } from "./thumbs";
+import { CROP_SECTIONS, beforeAfterAt, latestSections, toCrop, versionsOf, type Crop, type CropRow, type CropSection } from "./crops";
+import { changeSection } from "./evidence-map";
 
 export type BrandPeer = { domain: string; name: string | null; sector: string; traits: string[] };
-export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][] };
+export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][]; /** This brand's stored section crops (any order). */ crops?: CropRow[] };
 export type BrandTag = { key: string; name: string; basis: Basis; kind: "aesthetic" | "imagery" | "tone" | "theme" };
 export type BrandShow = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; tier: Tier; href: string };
 export type BrandPage = {
   domain: string; name: string; sector: string | null; sectorName: string; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
   identity: { h1: { family: string; google: boolean } | null; body: { family: string; google: boolean } | null; theme: string | null; accent: { hex: string; name: string } | null; palette: { hex: string; name: string }[]; tags: BrandTag[] };
-  timeline: { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean }[];
+  timeline: { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null }[];
+  /** Latest crop of each section that exists, and every stored version per section (newest first) for the history view. */
+  sections: (Crop & { versions: number })[]; history: Record<CropSection, Crop[]>;
   versus: { scope: string; scopeName: string; ahead: TraitRef[]; behind: TraitRef[] } | null;
   soWhat: string;
   closest: { domain: string; name: string | null; shared: number; href: string }[];
@@ -43,10 +47,15 @@ export function brandModel(r: BrandRows): BrandPage {
     ...(["aesthetic", "imagery", "tone"] as const).flatMap(kind => (vibe?.[kind] ?? []).map(v => ({ key: `${kind}:${v}`, name: label(`${kind}:${v}`).name, basis: basis(`${kind}:${v}`), kind }))),
   ];
   const stories = new Map(r.storyOf ?? []), link = (src: string) => { const h = stories.get(src); return h ? { href: h, story: true } : { href: `/library/${d}`, story: false }; };
+  const crops = (r.crops ?? []).filter(c => c.domain === d);
+  // A timeline entry shows before/after only when two versions of its section sit on either side of the change (effective time).
+  const compareAt = (section: CropSection | null, pivot: string) => { if (!section) return null; const p = beforeAfterAt(versionsOf(crops, d, section), pivot); return p ? { before: toCrop(p.before), after: toCrop(p.after) } : null; };
+  const fieldsOf = (e: EventRow) => Object.keys({ ...(e.before && typeof e.before === "object" ? e.before : {}), ...(e.after && typeof e.after === "object" ? e.after : {}) });
   const timeline = [
-    ...r.events.filter(e => e.domain === d).map(e => ({ id: `event:${e.id}`, at: e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`) })),
-    ...r.audit.rebrands.filter(x => x.domain === d).map(x => ({ id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`) })),
+    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
+    ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, kind: "Rebrand", text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
   ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
+  const history = Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(crops, d, s).map(toCrop)])) as Record<CropSection, Crop[]>;
   const m = a.market?.sites.find(s => s.domain === d) ?? null;
   const versus = m ? { scope: m.scope, scopeName: sectorName(m.scope), ahead: m.ahead.filter(x => shown(x.trait)), behind: m.behind.filter(x => shown(x.trait)) } : null;
   const where = versus && versus.scope !== "all" ? "its sector" : "all sectors";
@@ -62,7 +71,7 @@ export function brandModel(r: BrandRows): BrandPage {
   return {
     domain: d, name: site?.site?.name ?? d, sector, sectorName: sectorName(sector), tracked: g.status === "tracked", captured: g.captured, lastMove: timeline[0] ? { text: timeline[0].text, at: timeline[0].at } : g.latest, thumb: g.thumb,
     identity: { h1: type?.h1 ? { family: type.h1.family, google: type.h1.google } : null, body: type?.body ? { family: type.body.family, google: type.body.google } : null, theme: color?.theme ?? null, accent: color?.accent ?? null, palette: (color?.palette ?? []).map(p => ({ hex: p.hex, name: p.name })), tags },
-    timeline, versus, soWhat: versus ? brandSoWhat(versus.ahead.length, versus.behind.length, where) : "Not enough measured data on this brand yet to compare it with its sector.",
+    timeline, sections: latestSections(crops, d), history, versus, soWhat: versus ? brandSoWhat(versus.ahead.length, versus.behind.length, where) : "Not enough measured data on this brand yet to compare it with its sector.",
     closest, shows,
     actions: { watch: `/watch/new?add=${encodeURIComponent(d)}`, compare: `/audit/new?sites=${encodeURIComponent(d)}`, audit: peers.length ? `/audit?sites=${[d, ...peers].sort().join(",")}` : null,
       differentiate: consoleHref(`diff https://${d}`), recommendType: sector ? consoleHref(`type ${sector} headline any`, sector) : null, terminal: `/library/${d}` },

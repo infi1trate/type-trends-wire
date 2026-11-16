@@ -12,6 +12,7 @@ import { basis, canonical, explainerPath, label } from "../labels";
 import { evidenceKeys, tierFor } from "../tiers";
 import { tiersFrom } from "../signals";
 import { asOf, ledgerSummary, type StoredCall } from "../ledger/ledger";
+import { readerRunId } from "../real-runs";
 type Db = ReturnType<typeof supabaseAnon>;
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500) {
   const out: T[] = [];
@@ -105,13 +106,13 @@ export async function traitRows(rawKey: string): Promise<TraitRows | null> {
   const key = canonical(rawKey), i = key.indexOf(":");
   if (i <= 0) return null;
   const dimension = key.slice(0, i), value = key.slice(i + 1);
-  const db = supabaseAnon();
-  const rows = must(await db.from("forecast_latest").select(TCOLS).eq("dimension", dimension).eq("value", value).order("scope"));
+  const db = supabaseAnon(), runId = await readerRunId(db);
+  const rows = must(await db.from("forecasts").select(TCOLS).eq("run_id", runId).eq("dimension", dimension).eq("value", value).order("scope"));
   if (!rows?.length) return null;
   const [peers, sites, card] = await Promise.all([
-    pages<{ dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }>((f, t) => db.from("forecast_latest").select("dimension,value,stage,current_share,momentum").eq("scope", "all").order("dimension").order("value").range(f, t) as never),
+    pages<{ dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }>((f, t) => db.from("forecasts").select("dimension,value,stage,current_share,momentum").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(f, t) as never),
     pages<{ domain: string; sector: string; name: string | null }>((f, t) => db.from("library_sites").select("domain,sector,name").order("domain").range(f, t) as never),
-    db.from("forecast_model_card").select("data_through:model_card->>data_through").maybeSingle().then(must),
+    db.from("forecast_runs").select("data_through:model_card->>data_through").eq("id", runId).maybeSingle().then(must),
   ]);
   const domains = [...new Set(rows.flatMap(r => (((r as { lead_sites?: { domain: string }[] | null }).lead_sites) ?? []).map(s => s.domain)))].slice(0, 40);
   const [thumbs, calls] = await Promise.all([

@@ -73,6 +73,11 @@ describe("site gate", () => {
     expect(OPEN_PATHS.find(o => o.exact === "/audit.png")!.why).toMatch(/domain names and capture date only/);
   });
 
+  it("crop images are gated like any page: 401 without the cookie, never the image", async () => {
+    const r = (await gate(get("/crops/vercel.com/hero/2026-11-15-abcdef01.webp"), await cfgFor()))!;
+    expect(r.status).toBe(401);
+    expect(r.headers.get("content-type")).not.toContain("image/");
+  });
   it("RSS and server functions answer 401 text when locked", async () => {
     const cfg = await cfgFor();
     for (const p of ["/digest/rss.xml", "/_serverFn/abc"]) {
@@ -133,10 +138,10 @@ describe("site gate", () => {
     expect(pages.length).toBeGreaterThan(5);
     for (const f of pages) expect(isOpenPath(toPath(f)), `${f} → ${toPath(f)}`).toBe(false);
     expect(isOpenPath("/digest/rss.xml")).toBe(false);
-    // Any other server route must be a deliberate decision: share images/thumbs/robots open, RSS gated.
+    // Any other server route must be a deliberate decision: share images/thumbs/robots open, RSS and crop images gated.
     const otherServer = routes.filter(f => f.endsWith(".ts") && !f.startsWith("api/public/")).map(toPath).sort();
     expect(otherServer.filter(isOpenPath)).toEqual(["/audit.png", "/chart/2026-W46.png", "/chart/2026-W46.svg", "/digest/2026-W46.png", "/embed/chart/2026-W46", "/embed/trait/css%3Asubgrid", "/robots.txt", "/thumbs/vercel.com/2026-11-15-desktop.webp", "/trait/css%3Asubgrid.png"]);
-    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/digest/rss.xml"]);
+    expect(otherServer.filter(p => !isOpenPath(p))).toEqual(["/crops/vercel.com/2026-11-15-desktop.webp", "/digest/rss.xml"]);
     expect(OPEN_PATHS.every(o => o.why.length > 10)).toBe(true);
   });
 });

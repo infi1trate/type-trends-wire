@@ -194,3 +194,11 @@
 - [x] Wording: crossover "<signal> reaches <sector>", layout moves in plain words, templated rebrand decks, new AI prompt + banned hedges
 - [x] /status real-runs line; /what-we-show "What makes a story"
 - [x] Tests, screenshots, report
+
+# Phase 15 — the evidence layer, app side (don't publish)
+- [x] `site_crops` table + private `site-crops` bucket; POST /api/public/ingest-crops; gated GET /crops/<path>; opt-out deletes crops; docs/crops.md
+- [x] CropFigure, BeforeAfter, honest fallback; brand Sections strip + history, timeline before/after; story before/after + roundup grid; pattern section crops, counts, illustrated filter
+- [x] Terminal brand record SECTIONS row; /status crop coverage line; /what-we-show "Images of other sites"
+- [x] Reader-run guard (latest real run once newer than run 15); stage-change alert gap rule
+- [x] Tests, zero-crop and fixture screenshots, report
+- [ ] Contact address for "Report this image" (waiting on Brandon; link points at the removal policy until then)

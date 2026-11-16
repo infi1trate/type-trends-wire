@@ -1,6 +1,7 @@
 // Anonymous SELECT-only reads of the latest stored forecast for the signal view model (terminal, Digest, embeds, MCP share this).
 import { supabaseAnon } from "./mcp/supabase";
 import { buildSignals, rowKey, tiersFrom, type SignalRow, type SignalSnapshot } from "./signals";
+import { fetchReaderRuns } from "./real-runs";
 export type { SignalSnapshot };
 
 async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 1000) {
@@ -12,14 +13,13 @@ const COLS = "dimension,value,scope,status,stage,momentum,current_share,next_wav
 let cache: { at: number; snap: SignalSnapshot } | null = null;
 const TTL = 5 * 60_000;
 
-/** Latest ok run (all scopes) plus the previous two runs' library-wide stages. Cached five minutes per server instance. */
+/** The reader run (readerRuns: run 15 until a newer real run exists, then the latest real run) plus the two runs before it. Cached five minutes. */
 export async function loadSignalSnapshot(): Promise<SignalSnapshot> {
   if (cache && Date.now() - cache.at < TTL) return cache.snap;
   const db = supabaseAnon();
-  const runs = await db.from("forecast_runs").select("id,computed_at").eq("status", "ok").order("id", { ascending: false }).limit(3);
-  if (runs.error) throw runs.error;
-  const [latest, ...prev] = runs.data ?? [];
-  if (!latest) return { run_id: null, computed_at: null, prev_runs: [], rows: [], prev: [] };
+  const reader = await fetchReaderRuns(db), run = reader.latest, prev = reader.prev.map(p => ({ id: p.id }));
+  if (!run) return { run_id: null, computed_at: null, prev_runs: [], rows: [], prev: [] };
+  const latest = { id: run.id, computed_at: run.at };
   const [rows, ...prevRows] = await Promise.all([
     pages<SignalRow>((f, t) => db.from("forecasts").select(COLS).eq("run_id", latest.id).order("scope").order("dimension").order("value").range(f, t) as never),
     ...prev.map(p => pages<{ dimension: string; value: string; stage: string | null }>((f, t) => db.from("forecasts").select("dimension,value,stage").eq("run_id", p.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never)),

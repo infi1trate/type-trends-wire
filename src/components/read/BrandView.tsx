@@ -10,13 +10,34 @@ import { BasisWord, DigestShell, Dim, SiteCard, StageWord, Swatches, pr } from "
 import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { ReadFooter } from "./Bits";
+import { BeforeAfter, CropFallback, CropFigure } from "./Evidence";
+import { CROP_SECTION_NAME } from "@/lib/labels";
+import { isCropSection, type CropSection } from "@/lib/crops";
 
 const Refs = ({ xs, empty }: { xs: TraitRef[]; empty: string }) => xs.length ? <ul className="space-y-3">{xs.map(x => <li key={x.trait} className="ed-hair pt-2">
   <Link to="/signals/$key" params={{ key: x.trait }} className="ed-small font-medium">{x.name}</Link>
   <p className="ed-data mt-1 flex flex-wrap items-center gap-2"><Dim d={x.dimension} /><BasisWord b={x.basis} /><StageWord stage={x.stage} />{x.share != null && <span>{pct(x.share, 1)}</span>}</p>
 </li>)}</ul> : <p className="ed-small">{empty}</p>;
 
-export function BrandView({ b }: { b: BrandPage & { stories?: Story[] } }) {
+/** Sections strip: the latest crop of each section that exists; each opens its history (?section=…). Zero crops → the honest fallback. */
+function Sections({ b, open }: { b: BrandPage; open: CropSection | null }) {
+  const hist = open ? b.history[open] : [];
+  return <div id="ed-sections">
+    {b.sections.length ? <ul className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">{b.sections.map(c => <li key={c.section}>
+      <CropFigure crop={c} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" />
+      <p className="ed-data mt-1"><Link to="/brands/$domain" params={{ domain: b.domain }} search={{ section: c.section }} hash="ed-sections" resetScroll={false} className="ed-tap" aria-current={open === c.section ? "true" : undefined}>History · {c.versions} {c.versions === 1 ? "version" : "versions"} →</Link></p>
+    </li>)}</ul> : <div className="max-w-md"><CropFallback domain={b.domain} section={CROP_SECTION_NAME.hero} /><p className="ed-caption mt-2">No section of this brand has been captured yet. Crops arrive when the crawler sends them.</p></div>}
+    {open && <div className="mt-10" role="region" aria-labelledby="ed-section-history">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4"><h4 id="ed-section-history" className="ed-h3">{CROP_SECTION_NAME[open]} history</h4><Link to="/brands/$domain" params={{ domain: b.domain }} search={{}} hash="ed-sections" resetScroll={false} className="ed-tap ed-data">Close</Link></div>
+      <p className="ed-caption mt-1">Every stored version, newest first. A new version is kept only when the section looks different; up to 12 are kept.</p>
+      {hist.length ? <ol className="mt-4 grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">{hist.map((c, i) => <li key={c.src}><CropFigure crop={c} label={`${i === 0 ? "Latest" : `Version ${hist.length - i}`} · seen ${c.captured_at.slice(0, 10)}${c.last_seen_at.slice(0, 10) !== c.captured_at.slice(0, 10) ? ` to ${c.last_seen_at.slice(0, 10)}` : ""}`} /></li>)}</ol>
+        : <div className="mt-4 max-w-md"><CropFallback domain={b.domain} section={CROP_SECTION_NAME[open]} /></div>}
+    </div>}
+  </div>;
+}
+
+export function BrandView({ b, section = null }: { b: BrandPage & { stories?: Story[] }; section?: string | null }) {
+  const open = isCropSection(section) ? section : null;
   const face = (f: { family: string; google: boolean } | null, role: string) => f ? <p className="ed-small"><span className="ed-kicker">{role} · </span>{f.family}{f.google ? <span className="ed-caption"> (Google Fonts)</span> : null}</p> : <p className="ed-small"><span className="ed-kicker">{role} · </span>not measured</p>;
   return <DigestShell label={`${b.name} brand`} section="brands" lens={false}>
     <ObjectPage kind="brand" id="ed-brand" blocks={{
@@ -31,6 +52,7 @@ export function BrandView({ b }: { b: BrandPage & { stories?: Story[] } }) {
         <div className="lg:col-span-5"><SiteCard domain={b.domain} name={b.name} sector={b.sectorName} thumb={b.thumb} lines={[b.captured ? `captured ${b.captured.slice(0, 10)}` : "not captured yet"]} sizes="(min-width: 1024px) 40vw, 100vw" /></div>
       </div>,
       evidence: <>
+        <BlockPart title="Sections" kicker="Credited crops of the desktop homepage: hero, navigation, pricing, call to action and footer, each with its history."><Sections b={b} open={open} /></BlockPart>
         <BlockPart title="Identity" kicker="From the latest desktop homepage capture. Voice and aesthetic tags are AI estimates.">
           <div className="ed-grid">
             <div className="space-y-2 lg:col-span-4">{face(b.identity.h1, "Headline type")}{face(b.identity.body, "Body type")}<p className="ed-small"><span className="ed-kicker">Theme · </span>{b.identity.theme ?? "not measured"}</p>{b.identity.accent && <p className="ed-small"><span className="ed-kicker">Accent · </span>{b.identity.accent.name} <span className="ed-data ed-muted">{b.identity.accent.hex}</span></p>}</div>
@@ -42,6 +64,7 @@ export function BrandView({ b }: { b: BrandPage & { stories?: Story[] } }) {
           {b.timeline.length ? <ol className="space-y-3">{b.timeline.map(t => <li key={t.id} className="ed-hair grid grid-cols-1 gap-x-6 pt-2 md:grid-cols-[12rem_minmax(0,1fr)]">
             <p className="ed-data ed-muted"><time dateTime={t.at}>{storyTime(t.at)}</time><br />{t.kind}</p>
             <p className="ed-small">{t.text} {t.basis === "ai" && <BasisWord b="ai" />}{t.story && <> <AppLink href={t.href} className="ed-tap">Story →</AppLink></>}</p>
+            {t.compare && <div className="mt-4 md:col-start-2"><BeforeAfter before={t.compare.before} after={t.compare.after} /></div>}
           </li>)}</ol> : <p className="ed-small">No confirmed move recorded yet.</p>}
         </BlockPart>
         {b.versus && <BlockPart title={`Versus ${b.versus.scopeName}`} kicker="Signals this brand shows, read in its own sector's forecast (headline and supporting signals only).">

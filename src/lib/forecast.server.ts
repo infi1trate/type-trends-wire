@@ -98,6 +98,11 @@ async function compute(db: Db, runId: number) {
   const prevByTrait = new Map(prevRows.map(r => [`${r.dimension}:${r.value}`, r]));
   const prev2Rows = prev2RunId ? await pages(f => db.from("forecasts").select("dimension,value,stage").eq("run_id", prev2RunId).eq("scope", "all").order("dimension").order("value").range(f, f + 999)) : [];
   const prev2ByTrait = new Map(prev2Rows.map(r => [`${r.dimension}:${r.value}`, r.stage]));
+  // Stage-change alerts compare against the newest real run at least MIN_RUN_GAP_DAYS older (alertBaseline), so a rerun cannot fire them; prevByTrait stays for everything else.
+  const { fetchRealRuns } = await import("./real-runs"), { alertBaseline } = await import("./run-gap");
+  const alertBase = alertBaseline(await fetchRealRuns(db as never, { upTo: runId - 1 }), { id: runId, at: new Date(now).toISOString() });
+  const alertPrevRows = !alertBase ? [] : alertBase.id === prevRunId ? prevRows : await pages(f => db.from("forecasts").select("dimension,value,scope,current_share,stage").eq("run_id", alertBase.id).eq("scope", "all").order("dimension").order("value").range(f, f + 999));
+  const alertPrevByTrait = new Map(alertPrevRows.map(r => [`${r.dimension}:${r.value}`, r]));
   const latestCrawl = crawlRows.filter(r => r.run_id === crawlIds[0]) as CrawlTraitSite[], prevCrawl = crawlRows.filter(r => r.run_id === crawlIds[1]) as CrawlTraitSite[];
   const curNow = traitCuration(latestCrawl), curPrev = traitCuration(prevCrawl), mix = galleryMix(latestCrawl);
   const phTraits = new Map<string, number>();
@@ -189,7 +194,7 @@ async function compute(db: Db, runId: number) {
   const alertInputs: AlertInput[] = rows.map(r => {
     const t = `${r.dimension}:${r.value}`, comp = r.components as { curation?: { lead_pts?: number | null; prev_lead_pts?: number | null }; discourse?: DiscourseSignal & { z: number | null } };
     return { dimension: r.dimension, value: r.value, scope: r.scope, status: r.status, stage: (r["stage"] as string | null) ?? null, momentum: (r["momentum"] as number | null) ?? null, current_share: (r["current_share"] as number | null) ?? null,
-      sites: sitesIn.get(`${r.scope}|${t}`) ?? 0, prev: r.scope === "all" ? prevByTrait.get(t) ?? null : null,
+      sites: sitesIn.get(`${r.scope}|${t}`) ?? 0, prev: r.scope === "all" ? alertPrevByTrait.get(t) ?? null : null,
       curation: r.scope === "all" && comp.curation ? { lead_pts: comp.curation.lead_pts ?? null, prev_lead_pts: comp.curation.prev_lead_pts ?? null } : null,
       discourse: r.scope === "all" && comp.discourse && "fatigue_flag" in comp.discourse ? comp.discourse : null };
   });

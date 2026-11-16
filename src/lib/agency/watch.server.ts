@@ -148,9 +148,9 @@ export function adminWatchStore(): WatchStore {
       const { supabaseAnon } = await import("../mcp/supabase");
       const byDim = new Map<string, string[]>();
       for (const k of keys) { const i = k.indexOf(":"); byDim.set(k.slice(0, i), [...(byDim.get(k.slice(0, i)) ?? []), k.slice(i + 1)]); }
-      const out = new Set<string>();
+      const out = new Set<string>(), anon = supabaseAnon(), { readerRunId } = await import("../real-runs"), runId = await readerRunId(anon);
       for (const [dim, values] of byDim) {
-        const r = await supabaseAnon().from("forecast_latest").select("dimension,value").eq("scope", "all").eq("dimension", dim).in("value", values.slice(0, 50));
+        const r = await anon.from("forecasts").select("dimension,value").eq("run_id", runId).eq("scope", "all").eq("dimension", dim).in("value", values.slice(0, 50));
         if (r.error) throw r.error; for (const x of r.data ?? []) out.add(`${x.dimension}:${x.value}`);
       }
       return out;

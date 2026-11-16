@@ -15,9 +15,9 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage } from "./read.functions";
 import { comparisonPair } from "./run-gap";
-import { fetchRealRuns, fetchStageRows } from "./real-runs";
+import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
 import type { StageRow, TodayInput } from "./today";
 import { decodeEntities } from "./entities";
 export const tasteCommandQuery=(command:string)=>queryOptions({queryKey:["taste-command",command],staleTime:7*864e5,queryFn:()=>runTasteCommand({data:{command}})});
@@ -293,10 +293,12 @@ export type ForecastRow = { dimension: string; value: string; scope: string; sta
 export type ModelCard = { data_through: string | null; ai_provider?: "lovable" | "google" | "misconfigured"; backtest_cutoff: string; median_mae_pts: number | null; hit_rate: number | null; n_backtested: number; n_traits: number; n_forecast_ok: number; n_insufficient: number; usable_quarters_all: string[]; next_wave_backtest: { ranked: number; grew_5pts: number; status?: string; hit_rate?: number | null }; next_wave_backtest_legacy_weights?: { ranked: number; grew_5pts: number; hit_rate?: number | null }; component_coverage?: Record<string, number> };
 export type BriefDoc = { week: string; headline: string; caveats: string; provider?: "lovable" | "google"; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: "forecast" | "event" | "wire" | "spread"; id: string }[] }[] };
 export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleTime: 10 * 60_000, queryFn: async () => {
+  // The reader run (readerRuns in run-gap.ts), never a sandbox run once a newer real run exists.
+  const runId = await readerRunId(supabase);
   const [card, rows, setters, briefs] = await Promise.all([
-    supabase.from("forecast_model_card").select("*").maybeSingle(),
-    fetchAll<ForecastRow>((f, t) => supabase.from("forecast_latest").select(FORECAST_COLS).order("scope").order("dimension").order("value").range(f, t) as unknown as PromiseLike<{ data: ForecastRow[] | null; error: unknown }>),
-    supabase.from("trendsetters_latest").select("domain,rank,score,traits_led,sector").order("rank").limit(50),
+    supabase.from("forecast_runs").select("run_id:id,computed_at,data_cutoff_quarter,coverage,model_card").eq("id", runId).maybeSingle(),
+    fetchAll<ForecastRow>((f, t) => supabase.from("forecasts").select(FORECAST_COLS).eq("run_id", runId).order("scope").order("dimension").order("value").range(f, t) as unknown as PromiseLike<{ data: ForecastRow[] | null; error: unknown }>),
+    supabase.from("trendsetters").select("domain,rank,score,traits_led,sector").eq("run_id", runId).order("rank").limit(50),
     supabase.from("weekly_briefs").select("week,brief,model,created_at").order("week", { ascending: false }).limit(12),
   ]);
   for (const r of [card, setters, briefs]) if (r.error) throw r.error;
@@ -305,7 +307,7 @@ export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleT
     briefs: (briefs.data ?? []).map(b => ({ week: b.week, model: b.model, created_at: b.created_at, brief: b.brief as unknown as BriefDoc })) };
 } });
 export const forecastDetailQuery = (dimension: string, value: string) => queryOptions({ queryKey: ["forecast-detail", dimension, value], staleTime: 10 * 60_000, queryFn: async () => {
-  const { data, error } = await supabase.from("forecast_latest").select("scope,status,model,evidence,backtest,components,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi").eq("dimension", dimension).eq("value", value).order("scope");
+  const { data, error } = await supabase.from("forecasts").select("scope,status,model,evidence,backtest,components,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi").eq("run_id", await readerRunId(supabase)).eq("dimension", dimension).eq("value", value).order("scope");
   if (error) throw error; return data ?? [];
 } });
 export const latestBriefQuery = () => queryOptions({ queryKey: ["brief-latest"], staleTime: 10 * 60_000, queryFn: async () => {
@@ -397,7 +399,13 @@ export const runComparisonQuery = () => queryOptions({ queryKey: ["run-compariso
 export const storyQueueQuery = (day: string | null, fresh = false) => queryOptions({ queryKey: ["story-queue", day ?? "recent", fresh], staleTime: fresh ? 0 : 60_000, queryFn: () => getStoryQueue({ data: { ...(day ? { day } : {}), fresh } }) });
 export const brandQuery = (domain: string) => queryOptions({ queryKey: ["brand", domain], staleTime: 10 * 60_000, queryFn: () => getBrand({ data: { domain } }) });
 export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime: 10 * 60_000, queryFn: () => getBrands() });
-export const patternsQuery = (sector: string) => queryOptions({ queryKey: ["patterns", sector], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector } }) });
+export const patternsQuery = (sector: string, illustrated = false) => queryOptions({ queryKey: ["patterns", sector, illustrated], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector, illustrated } }) });
+export const cropCoverageQuery = () => queryOptions({ queryKey: ["crop-coverage"], staleTime: 10 * 60_000, queryFn: () => getCropCoverage() });
+/** Terminal brand record: this brand's stored section crops (public SELECT; opted-out sites are hidden by policy). */
+export const siteCropsQuery = (domain: string) => queryOptions({ queryKey: ["site-crops", domain], staleTime: 10 * 60_000, queryFn: async () => {
+  const { data, error } = await supabase.from("site_crops").select("domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash").eq("domain", domain).order("captured_at", { ascending: false }).limit(100);
+  if (error) throw error; return data ?? [];
+} });
 export const patternQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern", key, sector], staleTime: 10 * 60_000, queryFn: () => getPattern({ data: { key, sector } }) });
 export const signalSeriesQuery = (scope: string) => queryOptions({ queryKey: ["signal-series", scope], staleTime: 10 * 60_000, queryFn: () => getSignalSeries({ data: { scope } }) });
 export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], staleTime: 10 * 60_000, queryFn: () => getModelCard() });

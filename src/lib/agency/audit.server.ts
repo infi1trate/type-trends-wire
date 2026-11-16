@@ -4,6 +4,7 @@ import { pickCrawlRow } from "../crawl-requests";
 import type { ThumbRow } from "../thumbs";
 import type { EventRow, RebrandRow } from "./changes";
 import { auditModel, MOVES_DAYS, type AuditRows, type AuditSiteIn, type ForecastIn, type SiteStatus } from "./audit";
+import { readerRunId } from "../real-runs";
 
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 1000) {
@@ -56,13 +57,14 @@ export async function auditRows(domains: string[], sector: string | null, now = 
     return { domain: d, status: q.status, site: null, signals: q.signals, captured_at: q.at, history: null };
   });
   const sectors = [...new Set(["all", ...(lib ?? []).map(s => s.sector), ...(sector ? [sector] : [])])];
-  const forecasts = await pages<ForecastIn>((f, t) => db.from("forecast_latest").select("dimension,value,scope,stage,current_share,momentum").in("scope", sectors).order("scope").order("dimension").order("value").range(f, t) as never);
+  const runId = await readerRunId(db);
+  const forecasts = await pages<ForecastIn>((f, t) => db.from("forecasts").select("dimension,value,scope,stage,current_share,momentum").eq("run_id", runId).in("scope", sectors).order("scope").order("dimension").order("value").range(f, t) as never);
   const families = [...new Set(sites.flatMap(s => ["h1", "body"].map(k => { const v = (s.signals as { type?: { rendered?: Record<string, { family?: unknown }> } } | null)?.type?.rendered?.[k]?.family; return typeof v === "string" ? v : null; })).filter((x): x is string => !!x))];
   const [google, rebrandAll] = await Promise.all([
     families.length ? db.from("font_catalog").select("family").eq("source", "google").in("family", families).then(must) : Promise.resolve([]),
     import("../rebrands.server").then(m => m.rebrandRows()),
   ]);
-  const rebrands: RebrandRow[] = rebrandAll.rows.filter(x => x.source === "live" && domains.includes(x.domain)).map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons }));
+  const rebrands: RebrandRow[] = rebrandAll.rows.filter(x => x.source === "live" && domains.includes(x.domain)).map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, effective_at: x.effective_at }));
   return { domains, sector, now: now.toISOString(), sites, events: (events ?? []) as EventRow[], rebrands, forecasts, google: (google ?? []).map(g => g.family), thumbs: (thumbs ?? []) as ThumbRow[], dataThrough: (run as { data_through?: string | null } | null)?.data_through ?? null };
 }
 export async function loadAudit(domains: string[], sector: string | null) { return auditModel(await auditRows(domains, sector)); }
