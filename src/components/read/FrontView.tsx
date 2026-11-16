@@ -16,9 +16,11 @@ import { Card, Plate, Raised, RuleBox } from "@/components/brand/Containers";
 import { Ledger } from "@/components/brand/Ledger";
 import { BeforeAfter } from "./Evidence";
 import { Receipt } from "./StoryCard";
-import { ReadFooter, Spark } from "./Bits";
+import { ReadFooter } from "./Bits";
+import { LeadFigureSlot } from "./Covers";
+import { FiltersScope } from "@/components/brand/Illustration";
 import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLive";
-import { relTime } from "@/lib/front/front";
+import { leadFigure, relTime } from "@/lib/front/front";
 
 const FILTERS: FormatFilter[] = ["all", ...FORMATS];
 const share = (v: number) => pct(v, 1) ?? "—";
@@ -28,18 +30,18 @@ const STATE_WORD = { busy: "Busy", steady: "Steady", quiet: "Quiet" } as const;
 const STATE_NOTE = { busy: "Three or more stories in the last six hours", steady: "A story in the last day", quiet: "No new story in the last day" } as const;
 
 function FormatRow({ m }: { m: FrontModel }) {
-  return <nav aria-label="Formats" className="no-print">
-    <ul className="ed-navtext flex flex-wrap gap-x-5 border-b-[1.5px] border-ed-ink">{FILTERS.map(f => <li key={f}>
+  return <nav aria-label="Formats" className="no-print min-w-0 md:flex-1">
+    <ul className="ed-navtext front-formats flex gap-x-5 overflow-x-auto">{FILTERS.map(f => <li key={f} className="shrink-0">
       <Link to="/" search={frontSearch({ sector: m.sector, format: f })} aria-current={m.format === f ? "true" : undefined} resetScroll={false}
-        className={`-mb-[1.5px] inline-flex min-h-11 items-center border-b-[3px] no-underline ${m.format === f ? "border-ed-ink" : "border-transparent"}`}>{FORMAT_LABEL[f]}</Link>
+        className={`-mb-[3px] inline-flex min-h-11 items-center border-b-[3px] no-underline ${m.format === f ? "border-ed-ink" : "border-transparent"}`}>{FORMAT_LABEL[f]}</Link>
     </li>)}</ul>
-    <p className="ed-caption mt-2" aria-live="polite">Showing {m.format === "all" ? "every format" : `${FORMAT_LABEL[m.format]}: ${FORMAT_NOTE[m.format]}`}{m.sector !== "all" ? ` · ${sectorName(m.sector)} first` : ""}</p>
+    <p className={`ed-caption ${m.format === "all" && m.sector === "all" ? "sr-only" : "mt-1"}`} aria-live="polite">Showing {m.format === "all" ? "every format" : `${FORMAT_LABEL[m.format]}: ${FORMAT_NOTE[m.format]}`}{m.sector !== "all" ? ` · ${sectorName(m.sector)} first` : ""}</p>
   </nav>;
 }
 
 /** The lead: the page's one Plate. Kicker with the story number, H1, deck, a Raised "Receipts" button, the basis mark and the evidence slot. */
 function Lead({ m, now }: { m: FrontModel; now: number }) {
-  const l = m.lead!;
+  const l = m.lead!, fig = leadFigure(l.evidence);
   return <section aria-labelledby="front-lead"><Plate className="md:p-10">
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
       <div className={l.evidence ? "lg:col-span-7" : "lg:col-span-10"}>
@@ -53,7 +55,7 @@ function Lead({ m, now }: { m: FrontModel; now: number }) {
         </div>
       </div>
       {l.evidence?.kind === "crops" && <figure className="lg:col-span-5" data-evidence=""><BeforeAfter before={l.evidence.before} after={l.evidence.after} /><figcaption className="ed-caption mt-2">Before → after · {l.evidence.section}</figcaption></figure>}
-      {l.evidence?.kind === "spark" && <figure className="lg:col-span-5" data-evidence=""><p className="ed-kicker">{l.evidence.name}: share by quarter</p><div className="mt-3 border-y-[1.5px] border-current py-3"><Spark points={l.evidence.points} label={l.evidence.name} w={320} h={88} /></div><figcaption className="ed-caption mt-2">Well-covered quarters only (15+ sites, 25% coverage), all sectors. <Link to="/signals/$key" params={{ key: l.evidence.key }} className="ed-tap">Full chart →</Link></figcaption></figure>}
+      {fig && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
     </div>
   </Plate></section>;
 }
@@ -99,11 +101,12 @@ function Strip({ s, format, now }: { s: NonNullable<FrontModel["strip"]>; format
   </RuleBox></section>;
 }
 
-/** Date and state, pinned to the left and right edges; the middle is left to the lead. */
+/** Date and state, pinned to the left and right edges; from 768 px the format filter shares the row between them (lib/shell.ts). */
 function DateState({ m }: { m: FrontModel }) {
-  return <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b-[3px] border-ed-ink pb-2" data-front-dateline="">
-    <FrontDate now={m.now} />
-    <p className="ed-kicker" title={STATE_NOTE[m.state]}><span className="sr-only">Page state: </span>{STATE_WORD[m.state]}<span className="ed-caption ml-2 normal-case tracking-normal">{STATE_NOTE[m.state]}</span></p>
+  return <div className="flex flex-wrap items-end justify-between gap-x-6 border-b-[3px] border-ed-ink md:flex-nowrap" data-front-dateline="">
+    <div className="flex min-h-11 items-center"><FrontDate now={m.now} /></div>
+    <div className="order-last w-full md:order-none md:w-auto md:min-w-0 md:flex-1"><FormatRow m={m} /></div>
+    <p className="ed-kicker flex min-h-11 items-center" title={STATE_NOTE[m.state]}><span className="sr-only">Page state: </span>{STATE_WORD[m.state]}<span className="ed-caption ml-2 normal-case tracking-normal max-xl:sr-only">{STATE_NOTE[m.state]}</span></p>
   </div>;
 }
 
@@ -115,9 +118,9 @@ export function FrontView({ m }: { m: FrontModel }) {
   const explore = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
   return <DigestShell label="Live" section="live" lens tour edition={null} note={m.sector !== "all" ? `${sectorName(m.sector)} stories first in each group` : null}>
     <FrontTicker items={m.ticker} />
-    <div className="ed-wrap d-stack mt-6">
+    <FiltersScope>
+    <div className="ed-wrap d-stack front-stack mt-4">
       <DateState m={m} />
-      <FormatRow m={m} />
       {m.lead ? <Lead m={m} now={now} /> : m.format === "all" && <p className="ed-standfirst">No story has run yet. Stories are written after each crawl, forecast and news check, and only when something in the data clears the bar.</p>}
       {moving && <Moving moving={moving} />}
       <div className="grid grid-cols-1 gap-y-10 lg:grid-cols-12 lg:gap-x-10">
@@ -160,6 +163,7 @@ export function FrontView({ m }: { m: FrontModel }) {
       </RuleBox></section>}
       <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     </div>
+    </FiltersScope>
     <ReadFooter terminal="/terminal" />
   </DigestShell>;
 }

@@ -64,7 +64,7 @@ export function pickLead(ranked: StoryRecord[], sector: string, now: number): { 
 }
 export type LeadEvidence =
   | { kind: "crops"; section: string; before: Crop; after: Crop }
-  | { kind: "spark"; key: string; name: string; points: number[] };
+  | { kind: "spark"; key: string; name: string; points: number[]; quarters?: string[] | undefined };
 
 // LIVE COLUMN --------------------------------------------------------------------------------------
 export const TIME_GROUPS = [{ id: "hour", title: "Last hour" }, { id: "today", title: "Today" }, { id: "yesterday", title: "Yesterday" }, { id: "week", title: "Earlier this week" }] as const;
@@ -182,6 +182,8 @@ export type FrontInput = {
   signals: Signal[]; lens: LensResult | null; stages: Map<string, StageName | null>;
   moving: MovingIn; freshness: { text: string; late: boolean } | null;
   leadEvidence: { id: string; crops: { section: string; before: Crop; after: Crop } | null } | null; series: Record<string, number[]>;
+  /** Quarter labels for each series point (the lead's figure dates its number), when the loader has them. */
+  seriesQuarters?: Record<string, string[]>;
   chart: Omit<ChartInput, "day" | "stories">;
   editions: EditionsIn; archiveMoves: ArchiveMove[]; patternKeys: Set<string>; brandNames: Map<string, string | null>;
   /** Live data stories (registry status); the shelf is absent when there are none. */
@@ -199,7 +201,7 @@ export function frontModel(i: FrontInput) {
     const whyText = s.why_line ?? soWhatOf({ type, signalKeys: s.signal_keys, stage: key ? i.stages.get(key) ?? null : null });
     const crops = i.leadEvidence?.id === s.id ? i.leadEvidence.crops : null, pts = key ? i.series[key] ?? [] : [];
     lead = { story: toFront(s), label: state === "quiet" && picked.label === "Today" ? "This week" : picked.label, why: whyText ? { text: whyText, basis: s.why_line ? "ai" : "measured" } : null,
-      evidence: crops ? { kind: "crops", ...crops } : key && pts.length >= 2 ? { kind: "spark", key, name: label(key).name, points: pts } : null };
+      evidence: crops ? { kind: "crops", ...crops } : key && pts.length >= 1 ? { kind: "spark", key, name: label(key).name, points: pts, ...(i.seriesQuarters?.[key]?.length === pts.length ? { quarters: i.seriesQuarters[key] } : {}) } : null };
   }
   const items = inFormat.filter(s => s.id !== picked?.story.id && groupOf(s.happened_at, i.now) !== null).slice(0, COLUMN_MAX).map(toFront);
   const quiet = state === "quiet";
@@ -227,3 +229,16 @@ export type FrontModel = ReturnType<typeof frontModel>;
 /** The parts /front.json serves (everything that changes between polls). */
 export const updatesOf = (m: FrontModel) => ({ now: m.now, state: m.state, lead: m.lead ? { id: m.lead.story.id, label: m.lead.label } : null, items: m.column.items, moving: m.moving, freshness: m.freshness });
 export type FrontUpdates = ReturnType<typeof updatesOf>;
+
+// THE LEAD'S FIGURE ---------------------------------------------------------------------------------
+/** What the lead plate's evidence slot shows for a signal: the one number (Figure type) with its unit and date, the trail when
+ * there are at least two measured quarters (it ends at that number), and the coverage caption pinned to the bottom. */
+export type LeadFigure = { value: string; unit: string; date: string | null; trail: { x: string; y: number }[] | null; caption: string; key: string; name: string };
+export const LEAD_COVERAGE = "Well-covered quarters only (15+ sites, 25% coverage), all sectors.";
+const qLabel = (q: string) => { const m = /^(\d{4})-?Q([1-4])$/.exec(q); return m ? `Q${m[2]} ${m[1]}` : q; };
+export function leadFigure(e: LeadEvidence | null): LeadFigure | null {
+  if (!e || e.kind !== "spark" || !e.points.length) return null;
+  const last = e.points[e.points.length - 1]!, q = e.quarters?.[e.quarters.length - 1] ?? null;
+  const trail = e.points.length >= 2 ? e.points.map((y, i) => ({ x: e.quarters?.[i] ?? `p${i + 1}`, y })) : null;
+  return { value: `${(last * 100).toFixed(1)}%`, unit: "of tracked homepages", date: q ? qLabel(q) : null, trail, caption: LEAD_COVERAGE, key: e.key, name: e.name };
+}

@@ -17,7 +17,7 @@ describe("<Treated>", () => {
     expect(screen.getByRole("link", { name: "Live site ↗" })).toHaveAttribute("href", "https://vercel.com");
     expect(screen.getByRole("link", { name: "Report this image" })).toHaveAttribute("href", crop.report);
     // filters are inline SVG only for real treatments; nothing is drawn on a canvas
-    expect(container.querySelectorAll("filter").length).toBe(t === "none" ? 0 : 4);
+    expect(container.querySelectorAll("filter").length).toBe(t === "none" ? 0 : t.startsWith("print-") ? 10 : 4);
     expect(container.querySelector("canvas")).toBeNull();
     unmount();
   });

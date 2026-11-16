@@ -45,13 +45,14 @@ async function build(sector: string, format: FormatFilter): Promise<FrontModel> 
   const byKey = new Map(signals.map(s => [s.key, s]));
   const lens = sector === "all" ? null : lensSignals(snap.rows, tiers, sector);
   const points: Record<string, number[]> = Object.fromEntries(series.map(s => [s.key, s.quarters.filter(wellCovered).map(p => p.s as number)]));
+  const quarters: Record<string, string[]> = Object.fromEntries(series.map(s => [s.key, s.quarters.filter(wellCovered).map(p => p.q)]));
   const quiet = pageState(streamOf(all).filter(s => s.type !== "launch").map(s => s.happened_at), now) === "quiet";
   const archiveMoves: ArchiveMove[] = quiet ? await import("../rebrands.server").then(m => m.rebrandRows()).then(r => r.rows.map(x => ({ id: `rebrand:${x.id}`, at: x.confirmed_at, headline: rebrandSentence(x), line: x.read ? clip(untick(x.read)) : null, href: `/brands/${encodeURIComponent(x.domain)}`, source: x.source }))).catch(() => []) : [];
   const digestWeek = editions?.digest?.week ?? null, digestNo = digestWeek ? issueNumber(digestWeek) : null;
   const input: FrontInput = {
     now, sector, format, stories: all, signals, lens, stages: new Map(signals.map(s => [s.key, s.stage])),
     moving: { items: read.movingItems(moves, headlineKeys, byKey), pair: moves.pair, next: moves.next },
-    freshness: fresh?.line ?? null, leadEvidence: null, series: points,
+    freshness: fresh?.line ?? null, leadEvidence: null, series: points, seriesQuarters: quarters,
     chart: { composites: signals.filter(s => isComposite(s.key)), headline: signals.filter(s => s.tier === "headline"), series },
     editions: {
       morning: editions?.morning ? { day: editions.morning.href.split("/").at(-1) ?? "", title: editions.morning.title, href: editions.morning.href, count: editions.morning.count } : null,

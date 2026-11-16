@@ -1,4 +1,5 @@
 // Read-time views over stored stories with the editor's overlay applied: cards, the Live stream, the story page. Pure.
+import { deLegacy } from "../brand";
 import { basis as basisOf, label, sectorName, type Basis } from "../labels";
 import { brandPath, patternPath, signalPath } from "../ia";
 import { STORIES_PER_PAGE, type Story } from "../stories";
@@ -92,14 +93,14 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; soWhat: s
   const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts);
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
   return {
-    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, job: def.job, kicker: s.kicker, headline: s.headline, deck: s.deck, at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
+    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, job: def.job, kicker: deLegacy(s.kicker), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
-    facts: facts.filter(f => f.kind !== "before" && f.kind !== "after"), beforeAfter: before && after ? { before, after } : null,
-    evidence: asLinks(s.evidence),
+    facts: facts.filter(f => f.kind !== "before" && f.kind !== "after").map(f => ({ ...f, text: deLegacy(f.text) })), beforeAfter: before && after ? { before, after } : null,
+    evidence: asLinks(s.evidence).map(e => ({ ...e, label: deLegacy(e.label) })),
     brands: s.domains.map(d => ({ domain: d, href: brandPath(d) })),
     signals: s.signal_keys.map(k => ({ key: k, name: label(k).name, dimension: label(k).dimension, basis: basisOf(k), href: signalPath(k) })),
     patterns: related.patterns.map(k => ({ key: k, name: label(k).name, href: patternPath(k) })),
-    soWhat: s.why_line ? { text: s.why_line, basis: "ai" as const, model: s.why_model, at: s.why_at } : { text: related.soWhat, basis: "measured" as const, model: null, at: null },
+    soWhat: s.why_line ? { text: deLegacy(s.why_line), basis: "ai" as const, model: s.why_model, at: s.why_at } : { text: related.soWhat, basis: "measured" as const, model: null, at: null },
     score: s.score, threshold: PUBLISH_MIN, components: asComponents(s.components), whyRan: s.why_ran,
     earlier: related.earlier, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note })),
     blocks: STORY_BLOCKS,

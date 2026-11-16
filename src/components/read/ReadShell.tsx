@@ -1,10 +1,13 @@
-// The shared Read shell: an ink slab (the drawn mark on its pink slab, the six sections, the live dot with UTC time, the Read / Terminal
-// switch, glossary and Lock), then the sector lens and the freshness line in caption type. The footer is a slab too (DigestFooter).
+// The shared Read shell: ONE ink slab bar (the drawn mark on its pink slab, the six sections, the live dot with UTC time, the Read /
+// Terminal switch, glossary and Lock; below 1280 px what does not fit moves into one Menu sheet), then ONE line under it: the lens note
+// (only when a sector is chosen), the freshness line (one line, truncating) and the sector select. Rows per width live in lib/shell.ts.
+// The footer is a slab too (DigestFooter).
 // Reuses the Digest editorial system; no health or model jargon here (that lives on /status).
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SECTIONS, readSectionOf, type SectionId } from "@/lib/ia";
-import { LENS_SECTORS, showingText } from "@/lib/sector-lens";
+import { LENS_SECTORS } from "@/lib/sector-lens";
+import { lensLine, type BarItem } from "@/lib/shell";
 import { sectorName } from "@/lib/labels";
 import { GATE_ENABLED } from "@/lib/gate";
 import { modeTour } from "@/lib/tour";
@@ -13,8 +16,8 @@ import { Methodology } from "@/components/terminal/Methodology";
 import { Tour } from "@/components/terminal/Tour";
 import { useLocationParts, useModeToggle, useSectorLens } from "./lens";
 import { FreshnessLine } from "./Freshness";
-import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_NAME } from "@/lib/brand";
+import { ArrivingMark } from "@/components/brand/Motion";
 
 /** `fixedSector`: the page is about one sector (a sector report); the lens shows it and changing it moves to that sector's page. */
 /** `dateline`: the front page's date and clock beside the wordmark; `segmented`: show the Read / Terminal switch as a two-part control. */
@@ -44,7 +47,11 @@ export function ShellClock() {
   </span>;
 }
 
-export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector, dateline, segmented = false }: Props) {
+/** Tailwind classes for an item that sits in the bar from its breakpoint up (and in the Menu sheet below it). */
+const INLINE_CLS: Record<BarItem, string> = { switch: "max-md:hidden", sections: "max-lg:hidden", glossary: "max-xl:hidden", lock: "max-xl:hidden" };
+const SHEET_CLS: Record<BarItem, string> = { switch: "md:hidden", sections: "lg:hidden", glossary: "xl:hidden", lock: "xl:hidden" };
+
+export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector, dateline }: Props) {
   const loc = useLocationParts(), active = section === undefined ? readSectionOf(loc.pathname) : section;
   const [lensSector, setLensSector] = useSectorLens(), mode = useModeToggle();
   const sector = fixedSector?.value ?? lensSector, setSector = fixedSector?.onChange ?? setLensSector;
@@ -68,39 +75,48 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
   }, [mode, close]);
   const startTour = useCallback(() => { close(); modeTour("read").reset(); setTouring(true); }, [close]);
-  const home = <Link to="/" className="inline-flex min-h-11 items-center" aria-label={`${BRAND_NAME}, the front page`}><Wordmark height={28} ground="ink" decorative /></Link>;
+  const home = <Link to="/" className="inline-flex min-h-11 shrink-0 items-center" aria-label={`${BRAND_NAME}, the front page`}><ArrivingMark height={28} /></Link>;
   const go = (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); };
+  const sections = (cls: string, list: string) => <nav aria-label="Sections" className={cls}><ul className={list}>{SECTIONS.map(s => <li key={s.id}><SectionLink s={s} active={active === s.id} onGo={() => setOpen(false)} /></li>)}</ul></nav>;
+  const modeSwitch = (cls: string) => <span role="group" aria-label="Mode" className={`shell-switch ${cls}`}><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></span>;
+  const glossary = (cls: string) => <button type="button" onClick={() => { setOpen(false); setOverlay("glossary"); }} className={`inline-flex min-h-11 cursor-pointer items-center ${cls}`} aria-label="Open the glossary (?)">Glossary</button>;
+  const lock = (cls: string) => GATE_ENABLED ? <form method="post" action="/lock" className={`contents`}><button type="submit" className={`inline-flex min-h-11 cursor-pointer items-center ${cls}`}>Lock</button></form> : null;
+  const line = lensLine({ sector, sectorName: sectorName(sector), filtered: lens || !!fixedSector, note });
   return <>
     <div className="digest">
       <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the content</a>
-      {/* The chrome: one ink slab with the mark on its pink slab, the six sections, the live dot and UTC time, and the Read / Terminal switch. */}
-      <header className="c-slab shell-top no-print" data-container="slab">
-        <div className="ed-wrap shell-nav flex flex-wrap items-center gap-x-6 gap-y-1 py-2">
+      {/* The chrome: one ink slab bar. Below 1280 px, whatever does not fit opens from one Menu button in a sheet. */}
+      <header className="c-slab shell-top no-print" data-container="slab" data-shell-row="bar">
+        <div className="ed-wrap shell-nav flex flex-nowrap items-center gap-x-5 py-1">
           {home}
-          <nav aria-label="Sections" className="order-last w-full lg:order-none lg:w-auto">
-            <ul id="read-sections" className={`${open ? "flex" : "hidden"} flex-col pb-2 lg:flex lg:flex-row lg:flex-wrap lg:gap-x-6 lg:pb-0`}>
-              {SECTIONS.map(s => <li key={s.id}><SectionLink s={s} active={active === s.id} onGo={() => setOpen(false)} /></li>)}
-            </ul>
-          </nav>
-          <span className="ml-auto flex flex-wrap items-center gap-x-4">
+          {sections(INLINE_CLS.sections, "flex flex-row gap-x-5")}
+          <span className="ml-auto flex shrink-0 items-center gap-x-4">
             <ShellClock />
-            <span role="group" aria-label="Mode" className="shell-switch"><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></span>
-            <button type="button" onClick={() => setOverlay("glossary")} className="inline-flex min-h-11 cursor-pointer items-center max-sm:hidden" aria-label="Open the glossary (?)">Glossary</button>
-            {GATE_ENABLED && <form method="post" action="/lock" className="contents"><button type="submit" className="inline-flex min-h-11 cursor-pointer items-center max-sm:hidden">Lock</button></form>}
-            <button type="button" className="inline-flex min-h-11 cursor-pointer items-center lg:hidden" aria-expanded={open} aria-controls="read-sections" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Sections"}</button>
+            {modeSwitch(INLINE_CLS.switch)}
+            {glossary(INLINE_CLS.glossary)}
+            {lock(INLINE_CLS.lock)}
+            <button type="button" className="shell-menu inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center px-2 xl:hidden" aria-expanded={open} aria-controls="shell-sheet" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Menu"}</button>
           </span>
         </div>
+        <div id="shell-sheet" hidden={!open} className="shell-sheet xl:hidden" data-shell-sheet="">
+          <div className="ed-wrap shell-nav grid gap-y-3 pb-4 pt-2">
+            {sections(SHEET_CLS.sections, "grid grid-cols-2 gap-x-6 sm:grid-cols-3")}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">{modeSwitch(SHEET_CLS.switch)}{glossary(SHEET_CLS.glossary)}{lock(SHEET_CLS.lock)}</div>
+          </div>
+        </div>
       </header>
-      <div className="ed-wrap no-print flex flex-wrap items-center justify-between gap-x-6 gap-y-1 pt-3">
-        <p className="shell-fresh flex flex-wrap items-center gap-x-3" aria-live="polite">{dateline}<span>{showingText(sector)}{!lens && !fixedSector && sector !== "all" ? " · this page is not filtered by sector" : ""}{note ? <> · {note}</> : null}</span></p>
-        <label className="flex items-center gap-2">
-          <span className="ed-kicker">Sector</span>
-          <select value={sector} onChange={e => setSector(e.target.value)} className="ed-data min-h-11 border-[1.5px] border-ed-ink bg-transparent px-2">
+      {/* One line under the bar: the lens note (only when a sector is chosen), freshness (truncating) and the sector select. */}
+      <div className="ed-wrap no-print flex flex-nowrap items-center gap-x-4" data-shell-row="sub">
+        {dateline}
+        {line && <span className="shell-fresh max-w-[45%] shrink-0 truncate" aria-live="polite" title={line} data-lens-line="">{line}</span>}
+        <FreshnessLine />
+        <label className="ml-auto flex shrink-0 items-center gap-2">
+          <span className="ed-kicker max-md:sr-only">Sector</span>
+          <select value={sector} onChange={e => setSector(e.target.value)} className="ed-data min-h-11 max-w-[11rem] border-[1.5px] border-ed-ink bg-transparent px-2" aria-label="Sector">
             {LENS_SECTORS.map(s => <option key={s} value={s}>{sectorName(s)}</option>)}
           </select>
         </label>
       </div>
-      <FreshnessLine />
       {sub}
       <main id="ed-main" aria-label={label}>{children}</main>
     </div>

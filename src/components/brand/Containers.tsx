@@ -38,7 +38,7 @@ export function Raised(p: ({ href: string } & AnchorHTMLAttributes<HTMLAnchorEle
 /** Sticker: a short note on top of the layout (a control or a stamp), round and tilted. */
 export function Sticker({ className = "", children, onClick, ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return onClick ? <button type="button" data-container="sticker" className={`c-sticker ${className}`.trim()} onClick={onClick} {...rest}>{children}</button>
-    : <span data-container="sticker" className={`c-sticker ${className}`.trim()}>{children}</span>;
+    : <span data-container="sticker" className={`c-sticker ${className}`.trim()} {...(rest as HTMLAttributes<HTMLSpanElement>)}>{children}</span>;
 }
 /** Photo plate: the picture runs full; the caption and anything read sits on an ink strip below it. */
 export function PhotoPlate({ media, children, className = "" }: { media: ReactNode; children?: ReactNode; className?: string }) {

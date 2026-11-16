@@ -1,18 +1,18 @@
 // One quiet line stating when the data last moved; a plain warning only when a job is late. Client-side read (no SSR mismatch);
-// renders nothing where no query client exists (static renders in tests).
+// renders nothing where no query client exists (static renders in tests). In the shell it is one line that truncates.
 import { useContext } from "react";
 import { QueryClientContext, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { freshnessQuery } from "@/lib/data";
 
-const Blank = () => <p className="ed-wrap shell-fresh no-print min-h-5" aria-hidden="true" />;
+const Blank = () => <span className="shell-fresh no-print min-h-5 min-w-0 flex-1" aria-hidden="true" />;
 function Line() {
   const q = useQuery(freshnessQuery());
   if (!q.data) return <Blank />;
   const { text, late } = q.data.line;
-  return <p className={`ed-wrap shell-fresh no-print min-h-5 pt-1 ${late ? "font-semibold" : ""}`} role={late ? "status" : undefined}>
-    {text} {late && <Link to="/status" className="ed-tap underline">See status</Link>}
-  </p>;
+  return <span className={`shell-fresh no-print flex min-w-0 flex-1 items-center gap-2 ${late ? "font-semibold" : ""}`} role={late ? "status" : undefined} data-freshness="">
+    <span className="min-w-0 truncate" title={text}>{text}</span>{late && <Link to="/status" className="ed-tap shrink-0 underline">See status</Link>}
+  </span>;
 }
 export function FreshnessLine() { return useContext(QueryClientContext) ? <Line /> : <Blank />; }
 

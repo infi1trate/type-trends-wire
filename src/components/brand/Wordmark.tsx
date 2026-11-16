@@ -2,7 +2,7 @@
 // It is a drawing, never type. The cut follows the rendered height; the fill is always brand ink; on ink or an image it sits on a slab.
 import { BRAND_NAME } from "@/lib/brand";
 import { MARK_PATHS } from "./mark.gen";
-import { MARK_INK, cutFor, markSize, slabFill, slabPad, type Ground } from "./mark";
+import { MARK_INK, cutFor, markLetters, markSize, slabFill, slabPad, type Ground } from "./mark";
 import type { MarkCut } from "./mark-files";
 
 type Props = {
@@ -13,12 +13,16 @@ type Props = {
   className?: string;
   /** Decorative when a parent already names it (a link labelled "slug, the front page"). */
   decorative?: boolean;
+  /** Draw each letter as its own path (data-letter, --i), so the arrival can lift them one after another. */
+  letters?: boolean;
 };
-function Drawn({ cut, height, ground = "paper", className = "", decorative = false }: Props & { cut: MarkCut; height: number }) {
+function Drawn({ cut, height, ground = "paper", className = "", decorative = false, letters = false }: Props & { cut: MarkCut; height: number }) {
   const p = MARK_PATHS[cut], { w } = markSize(cut, height), fill = slabFill(ground), pad = fill ? slabPad(height) : 0;
   const a11y = decorative ? { "aria-hidden": true as const } : { role: "img" as const, "aria-label": BRAND_NAME };
   return <span className={`wordmark ${className}`.trim()} data-wordmark="" data-cut={cut} data-ground={ground} style={fill ? { background: fill, padding: `${pad}px` } : undefined}>
-    <svg width={w} height={height} viewBox={`0 0 ${p.w} ${p.h}`} {...a11y} focusable="false"><path d={p.d} fill={MARK_INK} /></svg>
+    <svg width={w} height={height} viewBox={`0 0 ${p.w} ${p.h}`} {...a11y} focusable="false">
+      {letters ? markLetters(cut).map((d, i) => <path key={i} d={d} fill={MARK_INK} data-letter={i} style={{ ["--i" as string]: i }} />) : <path d={p.d} fill={MARK_INK} />}
+    </svg>
   </span>;
 }
 export function Wordmark({ height = 24, ...rest }: Props) {

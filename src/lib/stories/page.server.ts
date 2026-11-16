@@ -12,7 +12,16 @@ export async function loadStory(id: string) {
   const page = storyPage(s, { earlier, soWhat: soWhatOf({ type, signalKeys: s.signal_keys, stage: key ? byKey.get(key)?.stage ?? null : null }), patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
   const { pickThumb } = await import("../thumbs");
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
-  return { ...page, thumb, crops: await evidenceOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
+  const crops = await evidenceOf(s, type);
+  return { ...page, thumb, crops, frames: crops.compare ? null : await framesOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
+}
+
+/** No crops either side of the change: the stored captures either side of it, redrawn from their skeletons (anonymous reads). */
+export async function framesOf(s: { type: string; domains: string[]; happened_at: string }, type: string) {
+  const d = s.domains[0];
+  if (!d || (type !== "move" && type !== "counter_move" && type !== "rebrand")) return null;
+  const [{ capturesOf }, { storyFrames }] = await Promise.all([import("../data-stories/data.server"), import("./frames")]);
+  return storyFrames(d, await capturesOf(d).catch(() => []), s.happened_at);
 }
 
 /** Section crops for MOVE / COUNTER-MOVE / REBRAND (before/after) and ROUNDUP (member heroes); empty and honest with zero crops. */

@@ -24,9 +24,26 @@ export const slabPad = (height: number) => Math.round(height * X_HEIGHT * 0.5 * 
 
 export const markSize = (cut: MarkCut, height: number) => { const p = MARK_PATHS[cut]; return { w: Math.round((p.w / p.h) * height * 10) / 10, h: height }; };
 
-/** The mark as a standalone SVG string (gate page, embeds). `ground` adds the slab when one is needed. */
-export function markSvg(height: number, ground: Exclude<Ground, "auto"> = "paper", cut: MarkCut = cutFor(height), label = BRAND_NAME): string {
-  const p = MARK_PATHS[cut], { w } = markSize(cut, height), fill = slabFill(ground), pad = fill ? slabPad(height) : 0;
-  const W = w + pad * 2, H = height + pad * 2, s = height / p.h;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${fill ? `<rect width="${W}" height="${H}" fill="${fill}"/>` : ""}<path transform="translate(${pad} ${pad}) scale(${s})" d="${p.d}" fill="${MARK_INK}"/></svg>`;
+/** The mark as a standalone SVG string (gate page, embeds). `ground` adds the slab when one is needed; `letters` draws each letter as
+ * its own path (data-letter, --i) so standalone pages can play the arrival. The box is padded by MARK_BLEED so no curve is clipped. */
+export function markSvg(height: number, ground: Exclude<Ground, "auto"> = "paper", cut: MarkCut = cutFor(height), label = BRAND_NAME, letters = false): string {
+  const p = MARK_PATHS[cut], s = height / p.h, bleed = Math.round(MARK_BLEED * s * 10) / 10, { w } = markSize(cut, height), fill = slabFill(ground), pad = fill ? slabPad(height) : 0;
+  const W = Math.round((w + bleed * 2 + pad * 2) * 10) / 10, H = height + pad * 2;
+  const paths = letters ? markLetters(cut).map((d, i) => `<path data-letter="${i}" style="--i:${i}" d="${d}" fill="${MARK_INK}"/>`).join("") : `<path d="${p.d}" fill="${MARK_INK}"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${fill ? `<rect width="${W}" height="${H}" fill="${fill}"/>` : ""}<g transform="translate(${pad + bleed} ${pad}) scale(${s})">${paths}</g></svg>`;
+}
+
+/** Overhang: the outlined letters reach a few units past the files' viewBox (the s's left curve), so drawings pad the box by this. */
+export const MARK_BLEED = 12;
+/**
+ * The mark split into its letters, left to right, for the arrival (each letter rises and settles after the one before it).
+ * A letter is an outer contour plus the counters and slits inside its box; the fused micro cut and the s stay one piece.
+ */
+export function markLetters(cut: MarkCut): string[] {
+  const subs = MARK_PATHS[cut].d.match(/M[^M]*/g) ?? [];
+  const box = (d: string) => { const n = [...d.matchAll(/(-?[\d.]+)[ ,](-?[\d.]+)/g)].map(m => [Number(m[1]), Number(m[2])] as const); const xs = n.map(p => p[0]), ys = n.map(p => p[1]); return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), d }; };
+  const all = subs.map(box), area = (b: ReturnType<typeof box>) => (b.x1 - b.x0) * (b.y1 - b.y0);
+  const inside = (a: ReturnType<typeof box>, b: ReturnType<typeof box>) => a !== b && a.x0 >= b.x0 && a.x1 <= b.x1 && a.y0 >= b.y0 && a.y1 <= b.y1 && area(a) < area(b);
+  const outers = all.filter(a => !all.some(b => inside(a, b)));
+  return outers.sort((a, b) => a.x0 - b.x0).map(o => [o.d, ...all.filter(a => inside(a, o)).map(a => a.d)].join(""));
 }

@@ -489,3 +489,105 @@
     .brand-roles td:nth-child(3), .brand-roles td:nth-child(4) { grid-column: 1 / -1; margin-top: var(--tk-space-1); }
   }
 }
+
+/* ——— Phase 17b-2: art direction per page type, illustration and motion. Values come only from tokens. ——— */
+@layer components {
+  /* The shell: one bar; the Menu sheet opens under it on the same slab. */
+  .shell-top .shell-nav { min-height: calc(var(--tk-layout-tap) + var(--tk-space-2)); }
+  .shell-sheet { border-top: var(--tk-border-hairline) solid var(--tk-slab-fg); }
+  .shell-sheet nav a, .shell-sheet button { min-height: var(--tk-layout-tap); }
+  [data-shell-row="sub"] { min-height: var(--tk-layout-tap); }
+  .front-formats { scrollbar-width: none; }
+  .front-formats::-webkit-scrollbar { display: none; }
+  .front-stack > [data-front-dateline] + * { margin-top: var(--tk-space-4); }
+
+  /* The lead plate's evidence slot: the number, the trail at the slot's full height, the caption pinned to the bottom. */
+  .lead-fig .ill-trail { height: 100%; }
+  .lead-fig .ill-trail svg { height: 100%; }
+
+  /* Covers: one object in the middle, tilted and bleeding off one edge, captions pinned left and right at mid-height. */
+  .cover { overflow: hidden; padding-block: var(--tk-space-6) var(--tk-space-6); }
+  .cover-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "kick kick" "pinl pinr" "obj obj" "head head" "deck deck"; column-gap: var(--tk-space-4); row-gap: var(--tk-space-4); position: relative; }
+  .cover-kicker { grid-area: kick; color: var(--tk-slab-fg); }
+  .cover-pin { align-self: center; color: var(--tk-slab-fg); }
+  .cover-pin-l { grid-area: pinl; }
+  .cover-pin-r { grid-area: pinr; text-align: right; }
+  .cover-pin .ed-caption { color: var(--tk-slab-fg); }
+  .cover-num { font-family: var(--tk-type-figure-family); font-weight: 900; font-size: var(--tk-type-h3-size); line-height: 1; }
+  .cover-object { grid-area: obj; min-width: 0; margin-right: calc(-1 * var(--tk-layout-gutter) - 12vw); }
+  .cover-head { grid-area: head; position: relative; z-index: 2; margin-top: calc(-1 * var(--tk-space-6)); }
+  .cover-deck { grid-area: deck; position: relative; z-index: 2; max-width: 40ch; }
+  .cover-deck > span { background: var(--tk-slab-bg); color: var(--tk-slab-fg); box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0 .15em; }
+  .cover-grid:not([data-has-object]) .cover-head { margin-top: 0; }
+  .cover-typo { aspect-ratio: 16 / 10; background: var(--tk-surface-card); color: var(--tk-text-primary); }
+  .cover-trail { aspect-ratio: 760 / 420; max-width: 900px; }
+  .cover-trail .ill-trail, .cover-trail svg { height: 100%; }
+  @media (min-width: 1024px) {
+    .cover { padding-block: var(--tk-space-7) var(--tk-space-6); }
+    .cover-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 7fr) minmax(0, 3fr); grid-template-areas: "kick kick kick" "pinl obj pinr" "head head head" "deck deck deck"; column-gap: var(--tk-space-5); }
+    .cover-object { margin-right: calc(-1 * var(--tk-layout-gutter-lg) - 18vw); }
+    .cover-pin-r { position: relative; z-index: 3; }
+    .cover-pin-r > span { background: var(--tk-slab-bg); padding: 0 .2em; display: inline-block; }
+    .cover-head { margin-top: calc(-1 * var(--tk-space-7)); max-width: 18ch; }
+  }
+
+  /* Edition covers (Digest, Morning Line, sector reports): a two-ink print with one soft object; captions pinned at mid-height. */
+  .ed-cover-sheet { padding-block: var(--tk-air-title) var(--tk-space-5); }
+  .ecover-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "kick kick" "pinl pinr" "obj obj" "title title" "deck deck"; gap: var(--tk-space-4); }
+  .ed-cover-sheet .cover-kicker, .ed-cover-sheet .cover-pin { color: var(--tk-text-primary); }
+  .ecover-object { grid-area: obj; position: relative; min-width: 0; border: var(--tk-border-strong) solid var(--tk-rule-strong); overflow: hidden; }
+  .ecover-new { position: absolute; right: 8%; top: 10%; }
+  .ecover-title { grid-area: title; }
+  .ecover-deck { grid-area: deck; }
+  @media (min-width: 1024px) {
+    .ecover-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 8fr) minmax(0, 2fr); grid-template-areas: "kick kick kick" "pinl obj pinr" "title title title" "deck deck deck"; column-gap: var(--tk-space-5); }
+    .ecover-object { max-width: 900px; justify-self: center; width: 100%; }
+  }
+
+  /* Illustration. The kit filter is applied by CSS (so flat mode can drop it); filters are never animated. */
+  .ill-f { filter: var(--ill-f); }
+  html[data-save-data] .ill-f { filter: none; }
+  @media (prefers-reduced-data: reduce) { .ill-f { filter: none; } }
+  .ill { position: relative; }
+  .ill-sticker { transform: translate(-40%, -130%) rotate(var(--tilt, 6deg)); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ill-cut { padding: 6% 8% 7%; }
+  .ill-sheet { pointer-events: none; }
+  .ill-pic-frame { border: var(--tk-border-strong) solid var(--tk-rule-strong); background: var(--tk-surface-card); line-height: 0; }
+  .ill-pic-frame > * { line-height: normal; }
+  .ill-pic-frame svg, .ill-pic-frame img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: cover; object-position: top; }
+  .ill-tape { height: 22px; background: color-mix(in oklab, var(--tk-gumball-yellow-light) 70%, transparent); border: 1px solid color-mix(in oklab, var(--tk-rule-strong) 15%, transparent); }
+  .ill-note { margin-top: var(--tk-space-3); padding-left: 64px; font-family: var(--tk-type-quote-family); font-style: italic; font-size: var(--tk-type-small-size); line-height: 1.3; color: var(--tk-text-primary); }
+  .ill-pencil { left: 0; top: -14px; width: 56px; height: 28px; }
+  .ill-strips { display: flex; flex-direction: column; align-items: flex-start; gap: .08em; filter: drop-shadow(2px 4px 3px color-mix(in oklab, var(--tk-gumball-ink-base) 45%, transparent)); }
+  .ill-strip { display: inline-block; background: var(--tk-surface-page); color: var(--tk-text-primary); padding: .06em .16em 0; }
+  .cover .ill-note { color: var(--tk-text-primary); }
+  .ill-trail { overflow: visible; }
+
+  /* One-ink prints for real crops (the kit's slug-duoK / slug-duoG / slug-duoP). */
+  .tk-treated[data-treatment="print-ink"] img { filter: url(#slug-duoK); }
+  .tk-treated[data-treatment="print-green"] img { filter: url(#slug-duoG); }
+  .tk-treated[data-treatment="print-pink"] img { filter: url(#slug-duoP); }
+}
+
+/* Motion (brand/motion/slug-motion.css; README "Motion"). The resting frame is the base style; every animation replays toward it. */
+@keyframes slug-arrive { 0% { transform: translateY(46%) scale(1.3, .12); opacity: 0 } 12% { opacity: 1 } 55% { transform: translateY(0) scale(.9, 1.14) } 78% { transform: scale(1.04, .96) } 100% { transform: none; opacity: 1 } }
+@keyframes slug-pop { 0% { transform: rotate(-4deg) scale(0) } 70% { transform: rotate(-4deg) scale(1.16) } 100% { transform: rotate(-4deg) scale(1) } }
+@keyframes slug-drop { 0% { transform: translateY(-48px) scale(.98, 1.06); opacity: 0 } 60% { transform: translateY(0) scale(1.02, .96); opacity: 1 } 100% { transform: none; opacity: 1 } }
+@keyframes slug-draw { from { stroke-dashoffset: 100 } to { stroke-dashoffset: 0 } }
+@keyframes slug-stick { 0% { transform: scale(0) } 60% { transform: scale(1.16) } 100% { transform: scale(1) } }
+@keyframes slug-grow { from { transform: scaleX(0) } to { transform: none } }
+@keyframes slug-wipe { from { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0 0 0 0) } }
+html[data-arrive] .m-arrive [data-letter] { transform-box: fill-box; transform-origin: 50% 100%; animation: slug-arrive var(--tk-motion-arrive) var(--tk-motion-ooze) both; animation-delay: calc(var(--i) * var(--tk-motion-stagger)); }
+.c-sticker[data-pop] { animation: slug-pop var(--tk-motion-move) var(--tk-motion-ooze) both; }
+.ledger-row[data-drop] { animation: slug-drop var(--tk-motion-move) var(--tk-motion-ooze) both; }
+.m-on .ill-draw { stroke-dasharray: 100; animation: slug-draw var(--tk-motion-draw) var(--tk-motion-settle) both; }
+.m-on .ill-stick { transform-box: fill-box; animation: slug-stick var(--tk-motion-move) var(--tk-motion-ooze) both; animation-delay: calc(var(--at) * var(--tk-motion-draw)); }
+.m-grow-on { transform-origin: left center; transform-box: fill-box; animation: slug-grow var(--tk-motion-move) var(--tk-motion-ooze) both; }
+/* Cut: page changes wipe with a hard edge through the View Transitions API (types "cut"), and simply change where it isn't. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html:active-view-transition-type(cut)::view-transition-new(root) { animation: slug-wipe var(--tk-motion-wipe) var(--tk-motion-cut) both; }
+html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(root) { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-arrive] .m-arrive [data-letter], .c-sticker[data-pop], .ledger-row[data-drop], .m-on .ill-draw, .m-on .ill-stick, .m-grow-on { animation: none !important; }
+  html:active-view-transition-type(cut)::view-transition-new(root) { animation: none !important; }
+}

@@ -10,7 +10,7 @@ const FILTERS: { id: "all" | Outcome | "open"; label: string }[] = [{ id: "all",
 
 /** One call, in words. Hits and misses share the same badge and weight so neither reads louder. */
 export function LedgerCall({ c, showName = true }: { c: LedgerItem; showName?: boolean }) {
-  return <li className="ed-hair grid grid-cols-1 gap-x-8 gap-y-2 pt-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+  return <li className="ledger-row grid grid-cols-1 gap-x-8 gap-y-2 px-2 py-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" data-ledger-row="">
     <div className="min-w-0">
       {showName && <p className="ed-h3"><Link to="/signals/$key" params={{ key: c.trait }} className="no-underline hover:underline" {...pr(c.explainer_path)}>{c.name}</Link> <Dim d={c.dimension} /> <BasisWord b={basis(c.trait)} /></p>}
       <p className="ed-data ed-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1"><span>{c.scope_text}</span><span>called {longDay(c.made_at)}</span><StageWord stage={stageName(c.stage_at_call)} />{c.origin === "alert" && <span>alert</span>}{c.backfilled && <span title="Recorded from a run stored before the ledger existed">backfilled</span>}</p>
@@ -69,7 +69,7 @@ export function LedgerView({ ledger: l }: { ledger: Ledger }) {
       <section aria-labelledby="ed-l-calls" className="ed-wrap mt-14">
         <SectionHead n="04" id="ed-l-calls" title="Every call" kicker="Newest first. Misses are shown exactly like hits." />
         <div className="no-print mb-4 flex flex-wrap gap-x-4" role="group" aria-label="Filter calls by outcome">{FILTERS.map(x => <button key={x.id} type="button" aria-pressed={f === x.id} onClick={() => setF(x.id)} className={`ed-tap ed-data cursor-pointer ${f === x.id ? "underline" : "ed-muted"}`}>{x.label}</button>)}</div>
-        {shown.length ? <ul className="space-y-6">{shown.map(c => <LedgerCall key={c.id} c={c} />)}</ul> : <p className="ed-body">{l.calls.length ? "No calls with this outcome yet." : "No calls recorded yet. The first ones are written after the next Sunday forecast."}</p>}
+        {shown.length ? <ul className="ledger" data-ledger="">{shown.map(c => <LedgerCall key={c.id} c={c} />)}</ul> : <p className="ed-body">{l.calls.length ? "No calls with this outcome yet." : "No calls recorded yet. The first ones are written after the next Sunday forecast."}</p>}
         <p className="ed-caption mt-6">Share figures are the share of tracked homepages; the band is the forecast's 80% interval. Percent signs are points of share, not growth.</p>
       </section>
     </article>

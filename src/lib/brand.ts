@@ -24,3 +24,14 @@ export const titled = (page: string) => `${page} · ${BRAND_NAME}`;
 export const sourceName = (source: string) => ((LEGACY_NAMES as readonly string[]).includes(source) ? BRAND_NAME : source);
 /** Turns an absolute link on this site (current or legacy origin) into a relative path; other links pass through. */
 export const sitePath = (url: string) => { for (const o of [SITE_ORIGIN, ...LEGACY_ORIGINS]) if (url.startsWith(`${o}/`) || url === o) return url.slice(o.length) || "/"; return url; };
+/** Stored copy written under an earlier name ("WIRE · DSGN/TERMINAL" in a Digest receipt) reads with today's name. Applied at render
+ * time by the view models; stored rows are never rewritten. Machine names (URLs, keys, the UA token) are not touched. */
+export function deLegacy(text: string): string;
+export function deLegacy(text: string | null): string | null;
+export function deLegacy(text: string | undefined): string | undefined;
+export function deLegacy(text: string | null | undefined): string | null | undefined {
+  if (!text) return text;
+  let out = text;
+  for (const n of LEGACY_NAMES) out = out.split(n).join(BRAND_NAME);
+  return out;
+}

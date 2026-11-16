@@ -4,8 +4,9 @@
 import { useId, type CSSProperties } from "react";
 import type { Crop } from "@/lib/crops";
 import { CropFigure } from "./Evidence";
+import { SlugFilters } from "@/components/brand/Illustration";
 
-export const TREATMENTS = ["none", "duotone", "halftone", "overprint", "grain"] as const;
+export const TREATMENTS = ["none", "duotone", "halftone", "overprint", "grain", "print-ink", "print-green", "print-pink"] as const;
 export type Treatment = (typeof TREATMENTS)[number];
 export const TREATMENT_NOTE: Record<Treatment, string> = {
   none: "The crop as captured.",
@@ -13,7 +14,12 @@ export const TREATMENT_NOTE: Record<Treatment, string> = {
   halftone: "Greyscale under a fine dot screen in the paper token.",
   overprint: "Two token inks, the second slightly out of register.",
   grain: "A still film-grain layer over the crop.",
+  "print-ink": "Printed in one ink: ink on paper (the kit's slug-duoK).",
+  "print-green": "Printed in one ink: green on paper (the kit's slug-duoG).",
+  "print-pink": "Printed in one ink: pink on paper (the kit's slug-duoP).",
 };
+/** The one-ink prints use the kit's own filters (brand/illustration/slug-filters.svg). */
+const isPrint = (t: Treatment) => t.startsWith("print-");
 
 /** A neutral, generated stand-in used only when no crop exists yet (grey steps and letterforms; it is not a capture). */
 export const SPECIMEN_SRC = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400"><rect width="640" height="400" fill="#f4f4f4"/>${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect x="${i * 80}" y="300" width="80" height="100" fill="rgb(${30 + i * 30},${30 + i * 30},${30 + i * 30})"/>`).join("")}<circle cx="500" cy="140" r="96" fill="#222"/><circle cx="530" cy="120" r="40" fill="#bbb"/><text x="40" y="200" font-family="Georgia, serif" font-size="180" fill="#111">Aa</text><text x="44" y="262" font-family="monospace" font-size="22" fill="#555">PLACEHOLDER SPECIMEN</text></svg>`)}`;
@@ -50,7 +56,7 @@ export function Treated({ crop, treatment = "none", label, sizes }: { crop: Crop
   const src = crop?.src ?? SPECIMEN_SRC;
   const vars = { "--tk-src": `url("${src}")`, "--tk-f-duo": `url(#${id}-duo)`, "--tk-f-ink1": `url(#${id}-ink1)`, "--tk-f-ink2": `url(#${id}-ink2)`, "--tk-f-grain": `url(#${id}-grain)` } as CSSProperties;
   return <div className="tk-treated" data-treatment={treatment} style={vars}>
-    {treatment !== "none" && <Filters id={id} />}
+    {treatment !== "none" && (isPrint(treatment) ? <SlugFilters /> : <Filters id={id} />)}
     {crop ? <CropFigure crop={crop} label={label} {...(sizes ? { sizes } : {})} /> : <figure className="min-w-0" data-crop-placeholder="">
       {label && <p className="ed-kicker mb-2">{label}</p>}
       <span className="tk-media block"><img src={SPECIMEN_SRC} width={640} height={400} alt="Placeholder specimen: grey steps and letterforms (no section crop captured yet)" className="ed-thumb" /></span>

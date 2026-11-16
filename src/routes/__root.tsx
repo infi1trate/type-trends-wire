@@ -17,6 +17,7 @@ import { GATE_ENABLED } from "../lib/gate";
 import { activeCss, fontLinks } from "../lib/theme";
 import { modeOf } from "../lib/theme/route-mode";
 import { densityOf } from "../lib/ia";
+import { HEAD_SCRIPT } from "../lib/motion";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_DESCRIPTION, BRAND_LINE, BRAND_NAME } from "@/lib/brand";
 
@@ -93,8 +94,10 @@ function RootShell({ children }: { children: ReactNode }) {
   // The page's density (Quiet, Steady, Loud) is recorded per route in ia.ts; the shell reads it here.
   const density = useRouterState({ select: s => densityOf(s.matches[s.matches.length - 1]?.routeId ?? "/") });
   return (
-    <html lang="en" data-mode={mode} data-density={density}>
+    // The head script may add data-arrive / data-save-data to <html> before hydration; the markup itself never depends on them.
+    <html lang="en" data-mode={mode} data-density={density} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: HEAD_SCRIPT }} />
         <style id="tk-theme" dangerouslySetInnerHTML={{ __html: activeCss() }} />
         <HeadContent />
       </head>

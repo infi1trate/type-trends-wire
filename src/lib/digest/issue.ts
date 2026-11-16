@@ -1,5 +1,6 @@
 // The Digest: one issue assembled deterministically from stored rows for its week. Pure (no I/O, no AI);
 // every trait name, dimension and stage word comes from labels.ts, and stored text is only unticked at render time.
+import { deLegacy } from "../brand";
 import { alertDisplayTitle, basis, briefDisplay, explainerPath, label, scopeText, stageName, untick, type Basis, type Dimension, type StageName } from "../labels";
 import { colorTicker } from "../taste/color";
 import { colorName } from "../labels";
@@ -105,7 +106,7 @@ export function issueModel(r: IssueRows): Issue | null {
   // Cover: brief headline, stored standfirst or the brief's own opening sentences, lead signal from the stored chart card.
   const standfirst = standfirstOf(r.brief), shown = briefDisplay({ headline: r.brief.headline, caveats: r.brief.caveats ?? "", refs: r.brief.refs, sections: r.brief.sections });
   // A derived standfirst is the first section's opening, so the body continues after it instead of repeating it.
-  const body = shown.sections.map((s, i) => ({ title: s.title, body: i === 0 && !r.brief!.standfirst?.trim() && s.body.startsWith(standfirst) ? s.body.slice(standfirst.length).trim() : s.body, citations: s.citations.map(c => ({ text: c.text, href: citationHref(c, r.brief!.refs) })) }));
+  const body = shown.sections.map((s, i) => ({ title: deLegacy(s.title), body: deLegacy(i === 0 && !r.brief!.standfirst?.trim() && s.body.startsWith(standfirst) ? s.body.slice(standfirst.length).trim() : s.body), citations: s.citations.map(c => ({ text: deLegacy(c.text), href: citationHref(c, r.brief!.refs) })) }));
   // Tiers: with a headline set, the cover lead and Movers must be headline signals (the stored brief text is shown as written).
   const head = r.headline ? new Set(r.headline) : null, isHead = (k: string) => !head || head.has(k);
   const storedLead = r.card?.trait ?? (r.brief.watch?.id ? r.brief.watch.id.split(":").slice(0, 2).join(":") : null);
@@ -118,7 +119,7 @@ export function issueModel(r: IssueRows): Issue | null {
   const lead = leadKey ? { ...ref(leadKey, leadStage), share: leadShare, momentum: leadMom, scopeText: scopeText(leadScope) } : null;
   const call = card ? (card.origin === "alert" ? alertDisplayTitle(card.call, card.trait) : untick(card.call)) : keepStored && r.brief.watch?.call ? untick(r.brief.watch.call) : null;
   const why = keepStored && r.brief.why_it_matters?.trim() ? untick(r.brief.why_it_matters) : lead ? whyItMatters(lead.key, leadStage, leadShare, leadMom) : null;
-  const cover = { kicker: lead ? `Cover story · ${lead.dimension}` : "Cover story", headline: shown.headline, standfirst, why, body, caveats: shown.caveats || null, lead, card: figureOf(card), call };
+  const cover = { kicker: lead ? `Cover story · ${lead.dimension}` : "Cover story", headline: deLegacy(shown.headline), standfirst: deLegacy(standfirst), why: deLegacy(why), body, caveats: deLegacy(shown.caveats) || null, lead, card: figureOf(card), call };
 
   // Movers: breakout alerts first, then stage changes between this run and the previous one.
   const movers = new Map<string, Mover>();
