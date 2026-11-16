@@ -34,6 +34,14 @@ describe("sector report", () => {
     expect(m.basis).toBe("Based on 2 brands tracked in Fintech and the forecast run of 16 November 2026 (run 15). Stage, share and Momentum are measured; stories link to their receipts.");
     expect(m.note).toBeNull();
   });
+  it("Momentum appears once, as all-sector: the sides compare stage and share only", () => {
+    const m = sectorReport({ ...base, sector: "fintech" });
+    for (const s of [...m.signals, ...m.contrast.risingHere, ...m.contrast.risingElsewhere]) {
+      expect(Object.keys(s.here).sort()).toEqual(["share", "stage"]);
+      expect(Object.keys(s.all).sort()).toEqual(["share", "stage"]);
+      expect(s).toHaveProperty("momentum_all");
+    }
+  });
   it("an uncovered sector shows no sector numbers and says why", () => {
     const m = sectorReport({ ...base, sector: "dev-tools" });
     expect(m.coverage.enough).toBe(false);

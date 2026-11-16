@@ -57,12 +57,12 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
         <div className="label mb-1 text-compare-muted">Y · {ay ? `↓ ${ay.negative.map(tagPhrase).join(" · ")}   ${ay.positive.map(tagPhrase).join(" · ")} ↑` : "—"}</div>
         <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-260px))] max-md:max-w-full">
           <svg ref={svgRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full border border-rule outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-ink" tabIndex={0} role="group" aria-label={`Vibe map of ${data.n} sites in ${data.k} clusters. Use arrow keys to move between sites, Enter to open.`} aria-describedby="vibe-readout" onKeyDown={onKey}>
-            <line x1={SIZE / 2} y1={0} x2={SIZE / 2} y2={SIZE} stroke="var(--rule)" strokeWidth={1} />
-            <line x1={0} y1={SIZE / 2} x2={SIZE} y2={SIZE / 2} stroke="var(--rule)" strokeWidth={1} />
+            <line x1={SIZE / 2} y1={0} x2={SIZE / 2} y2={SIZE} stroke="var(--tk-rule-hairline)" strokeWidth={1} />
+            <line x1={0} y1={SIZE / 2} x2={SIZE} y2={SIZE / 2} stroke="var(--tk-rule-hairline)" strokeWidth={1} />
             {points.map(p => {
               const dim = sector !== "all" && p.sector !== sector, on = selected == null || p.cluster === selected, isFocus = p.domain === focus;
               return <rect key={p.domain} x={scale.X(p.x) - DOT / 2} y={scale.Y(p.y) - DOT / 2} width={DOT} height={DOT}
-                fill={isFocus ? "var(--signal)" : on && selected != null ? "var(--white)" : "var(--grey-500)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
+                fill={isFocus ? "var(--tk-accent-1)" : on && selected != null ? "var(--tk-text-primary)" : "var(--tk-text-muted)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
                 onMouseEnter={() => setFocus(p.domain)} onClick={() => { setFocus(p.domain); setSelected(p.cluster); svgRef.current?.focus(); }} className="cursor-pointer"><title>{p.domain}</title></rect>;
             })}
           </svg>

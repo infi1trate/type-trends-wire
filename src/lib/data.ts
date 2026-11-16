@@ -15,7 +15,7 @@ import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit } from "./read.functions";
 import { comparisonPair } from "./run-gap";
 import { fetchRealRuns, fetchStageRows, readerRunId } from "./real-runs";
 import type { StageRow, TodayInput } from "./today";
@@ -417,3 +417,5 @@ export const siteCropsQuery = (domain: string) => queryOptions({ queryKey: ["sit
 export const patternQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern", key, sector], staleTime: 10 * 60_000, queryFn: () => getPattern({ data: { key, sector } }) });
 export const signalSeriesQuery = (scope: string) => queryOptions({ queryKey: ["signal-series", scope], staleTime: 10 * 60_000, queryFn: () => getSignalSeries({ data: { scope } }) });
 export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], staleTime: 10 * 60_000, queryFn: () => getModelCard() });
+/** /kit: every shared component on live data (composites, stories, crops). */
+export const kitQuery = () => queryOptions({ queryKey: ["kit"], staleTime: 5 * 60_000, queryFn: () => getKit() });

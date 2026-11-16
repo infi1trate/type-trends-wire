@@ -6,7 +6,7 @@ import { label, basis } from "./labels";
 import { fromEvent, fromRebrand, type Story } from "./stories";
 import { storyIndex } from "./stories/read.server";
 import { liveModel, resolveTypeFilter, storiesAbout, storyForSource, storyPath } from "./stories/view";
-import { brandModel, type BrandRows } from "./brand";
+import { brandModel, type BrandRows } from "./brand-page";
 import { patternIndex, patternModel, type PatternSite } from "./patterns";
 import { lensSignals, resolveSector } from "./sector-lens";
 import { signalPath } from "./ia";

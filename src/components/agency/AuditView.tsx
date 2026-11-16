@@ -5,6 +5,7 @@ import type { Audit, TraitRef, Matrix } from "@/lib/agency/audit";
 import { scopeText, label as traitLabel } from "@/lib/labels";
 import { BasisWord, SectionHead, SiteCard, StageWord, Swatches, Dim, pr } from "@/components/digest/Editorial";
 import { AgencyShell, Btn, CopyField, day } from "./Shell";
+import { BRAND_NAME } from "@/lib/brand";
 
 const pct = (x: number | null) => (x == null ? "—" : `${Math.round(x * 100)}%`);
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
@@ -44,7 +45,7 @@ export function AuditView({ a }: { a: Audit }) {
   const num = (k: string) => String(a.sections.indexOf(k) + 1).padStart(2, "0");
   return <AgencyShell label={`Competitive audit of ${list(a.domains)}`} crumb="Competitive audit">
     <header className="ed-wrap pb-10 pt-10">
-      <p className="ed-kicker">Competitive audit · DSGN/TERMINAL</p>
+      <p className="ed-kicker">Competitive audit · <span className="normal-case">{BRAND_NAME}</span></p>
       <h1 className="ed-cover mt-4 break-words">{list(a.domains)}</h1>
       <p className="ed-standfirst mt-6">{n} sites compared on type, color, layout and voice, read against {where}{a.sectorSource === "majority" ? " (their most common sector)" : a.sectorSource === "chosen" ? "" : ""}.</p>
       <p className="ed-data mt-4">{latest ? `Latest capture ${day(latest)}` : "No captures yet"}{a.dataThrough ? ` · forecast data through ${a.dataThrough}` : ""} · prepared {day(a.now)}</p>
@@ -137,7 +138,7 @@ export function AuditView({ a }: { a: Audit }) {
       <ul className="ed-small ed-body flex flex-col gap-2">{a.method.notes.map(x => <li key={x}>{x}</li>)}</ul>
       <table className="ed-data mt-6 border-collapse text-left"><caption className="ed-caption mb-2 text-left">Capture dates</caption>
         <tbody>{a.method.captures.map(c => <tr key={c.domain} className="ed-hair"><th scope="row" className="py-1 pr-6 font-normal">{c.domain}</th><td className="py-1 pr-6">{day(c.at)}</td><td className="py-1">{c.source}</td></tr>)}</tbody></table>
-      <div className="no-print mt-8 max-w-xl"><CopyField label="Share this audit" value={a.url} note="The page is behind the site password while DSGN/TERMINAL is in private preview." /></div>
+      <div className="no-print mt-8 max-w-xl"><CopyField label="Share this audit" value={a.url} note={`The page is behind the site password while ${BRAND_NAME} is in private preview.`} /></div>
     </section>
   </AgencyShell>;
 }

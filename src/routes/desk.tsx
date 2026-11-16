@@ -4,8 +4,9 @@ import { storyQueueQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { DeskView } from "@/components/read/DeskView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Editor's desk — the story queue · DSGN/TERMINAL";
+const TITLE = `Editor's desk — the story queue · ${BRAND_NAME}`;
 const DESC = "What the story engine ran, what it held and why, with score components and the editor's log.";
 export const Route = createFileRoute("/desk")({
   validateSearch: (s: Record<string, unknown>): { day?: string | undefined } => (typeof s["day"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s["day"]) ? { day: s["day"] } : {}),

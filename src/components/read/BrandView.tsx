@@ -1,6 +1,6 @@
 // BRAND object page (/brands/<domain>): Headline → Evidence → So what → Related.
 import { Link } from "@tanstack/react-router";
-import type { BrandPage } from "@/lib/brand";
+import type { BrandPage } from "@/lib/brand-page";
 import type { Story } from "@/lib/stories";
 import { RelatedStories } from "./StoryCard";
 import type { TraitRef } from "@/lib/agency/audit";

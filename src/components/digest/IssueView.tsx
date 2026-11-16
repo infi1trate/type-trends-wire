@@ -77,7 +77,7 @@ export function IssueView({ issue }: { issue: Issue }) {
           {([["Rising", issue.specimens.rising], ["Fading", issue.specimens.fading], ["Seen this week", issue.specimens.seen]] as const).filter(([, l]) => l.length).map(([title, list]) => <div key={title}>
             <h3 className="ed-kicker mb-3">{title}</h3>
             <ul className="space-y-8">{list.map(s => <li key={s.family} className="ed-hair grid grid-cols-1 gap-2 pt-4 lg:grid-cols-12">
-              <p className="ed-specimen lg:col-span-8" style={s.google ? { fontFamily: `"${s.family}", var(--font-text)` } : undefined} lang="en">{s.google ? s.family : <span className="italic">{s.family}</span>}</p>
+              <p className="ed-specimen lg:col-span-8" style={s.google ? { fontFamily: `"${s.family}", var(--tk-font-text)` } : undefined} lang="en">{s.google ? s.family : <span className="italic">{s.family}</span>}</p>
               <div className="lg:col-span-4">
                 <p className="ed-data">{s.family} · {s.role}</p>
                 <p className="ed-small mt-1">{s.line}</p>
@@ -120,7 +120,7 @@ export function IssueView({ issue }: { issue: Issue }) {
         <SectionHead n={n("numbers")} id="ed-numbers" title="The Numbers" />
         <dl className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">{issue.numbers.map(x => <div key={x.label} className="ed-hair pt-3">
           <dt className="ed-kicker">{x.label}</dt>
-          <dd className="ed-data mt-1 text-[32px] leading-[40px] md:text-[44px] md:leading-[48px]">{x.value}</dd>
+          <dd className="ed-data ed-stat mt-1">{x.value}</dd>
           <dd className="ed-caption mt-1">{x.note}</dd>
         </div>)}</dl>
       </section>

@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -13,10 +14,13 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GATE_ENABLED } from "../lib/gate";
+import { activeCss, fontLinks } from "../lib/theme";
+import { modeOf } from "../lib/theme/route-mode";
+import { BRAND_DESCRIPTION, BRAND_LINE, BRAND_NAME } from "@/lib/brand";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div data-mode="dark" className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
@@ -44,7 +48,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div data-mode="dark" className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
@@ -82,11 +86,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DSGN/TERMINAL — design trend terminal" },
-      { name: "description", content: "A live terminal for design trends: typefaces, color, layout and design news, measured weekly." },
+      { title: `${BRAND_NAME} — ${BRAND_LINE}` },
+      { name: "description", content: BRAND_DESCRIPTION },
       { name: "author", content: "Brandon Forant" },
-      { property: "og:title", content: "DSGN/TERMINAL — design trend terminal" },
-      { property: "og:description", content: "A live terminal for design trends: typefaces, color, layout and design news, measured weekly." },
+      { property: "og:title", content: `${BRAND_NAME} — ${BRAND_LINE}` },
+      { property: "og:description", content: BRAND_DESCRIPTION },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       ...(GATE_ENABLED ? [{ name: "robots", content: "noindex" }] : []),
@@ -97,9 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&display=swap" },
+      ...fontLinks("base"),
     ],
   }),
   shellComponent: RootShell,
@@ -109,9 +111,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // The route sets the mode (light Read pages, dark terminal); the active theme's tokens are written once, here.
+  const mode = useRouterState({ select: s => modeOf(s.matches) });
   return (
-    <html lang="en">
+    <html lang="en" data-mode={mode}>
       <head>
+        <style id="tk-theme" dangerouslySetInnerHTML={{ __html: activeCss() }} />
         <HeadContent />
       </head>
       <body>

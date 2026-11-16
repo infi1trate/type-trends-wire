@@ -5,9 +5,10 @@ import { SITE_URL } from "@/lib/site";
 import { fontLinks } from "@/lib/digest/meta";
 import { WhatWeShowView } from "@/components/digest/WhatWeShowView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "What we show and why · DSGN/TERMINAL";
-const DESC = "How DSGN/TERMINAL decides which design signals deserve attention: three jobs, four questions, three tiers, twelve composite signals, and how Momentum and Confidence are derived.";
+const TITLE = `What we show and why · ${BRAND_NAME}`;
+const DESC = `How ${BRAND_NAME} decides which design signals deserve attention: three jobs, four questions, three tiers, twelve composite signals, and how Momentum and Confidence are derived.`;
 export const Route = createFileRoute("/what-we-show")({
   loader: ({ context }) => context.queryClient.ensureQueryData(signalsQuery()).then(() => undefined),
   head: () => ({

@@ -29,12 +29,14 @@ import { parseAuditSites } from "@/lib/agency/audit";
 import { keyView, resolveKey, resolveView, sectionById, sectionOf, stepTab, type TerminalSearch, type ViewId } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
 import { useModeToggle, useSectorLens } from "@/components/read/lens";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Terminal — DSGN/TERMINAL";
-const DESC = "The dense, keyboard-first view of DSGN/TERMINAL: six sections (Live, Signals, Brands, Patterns, Digest, Tools) with every number's receipts.";
+const TITLE = `Terminal — ${BRAND_NAME}`;
+const DESC = `The dense, keyboard-first view of ${BRAND_NAME}: six sections (Live, Signals, Brands, Patterns, Digest, Tools) with every number's receipts.`;
 const str = (v: unknown) => (typeof v === "string" ? v : undefined);
 
 export const Route = createFileRoute("/terminal")({
+  staticData: { mode: "dark" },
   validateSearch: (s: Record<string, unknown>): TerminalSearch => ({ panel: str(s["panel"]) ?? "today", ...(str(s["sector"]) ? { sector: str(s["sector"])! } : {}), q: str(s["q"]) ?? "", sort: str(s["sort"]) ?? "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0, cmd: str(s["cmd"])?.slice(0, 4096), trait: str(s["trait"]), story: str(s["story"])?.slice(0, 200) }),
   loaderDeps: ({ search }) => ({ panel: resolveView(search.panel), sector: resolveSector(search.sector) }),
   // Every panel filters by tier, so the signal snapshot loads with the page (SSR and client then render the same headline set).
@@ -151,7 +153,7 @@ function Terminal() {
         {view === "console" && <ConsoleTab onRun={c => openConsole(c)} />}
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
-        <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · DSGN-CRAWLER (WEEKLY) · DESIGN RSS · HACKER NEWS</span>
+        <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · <span className="normal-case">{BRAND_NAME}</span> CRAWLER · DESIGN RSS · HACKER NEWS</span>
         <div className="flex shrink-0 flex-wrap items-center">
           <HealthLine />
           <Link to="/status" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">STATUS</Link>

@@ -16,7 +16,7 @@ const words = (v: string | null | undefined) => (v ? v.replace(/_/g, " ").toUppe
 
 function Chip({ hex }: { hex: string | null }) {
   if (!hex) return null;
-  return <span className="inline-flex items-center gap-1"><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill={hex} stroke="var(--rule)" /></svg><span className="num">{hex.toUpperCase()}</span></span>;
+  return <span className="inline-flex items-center gap-1"><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill={hex} stroke="var(--tk-rule-hairline)" /></svg><span className="num">{hex.toUpperCase()}</span></span>;
 }
 function Fonts({ s }: { s: Side }) {
   if (!s.h1 && !s.body) return <span className="text-compare-muted">No fonts measured on this capture</span>;

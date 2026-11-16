@@ -5,9 +5,10 @@ import { SITE_URL } from "@/lib/site";
 import { fontLinks } from "@/lib/digest/meta";
 import { LedgerView } from "@/components/digest/LedgerView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "The Ledger — every forecast call, scored · DSGN/TERMINAL";
-const DESC = "Every call the DSGN/TERMINAL forecast makes, recorded as made and scored when its quarter closes: hits, misses and voids, with the rule that picks them.";
+const TITLE = `The Ledger — every forecast call, scored · ${BRAND_NAME}`;
+const DESC = `Every call the ${BRAND_NAME} forecast makes, recorded as made and scored when its quarter closes: hits, misses and voids, with the rule that picks them.`;
 export const Route = createFileRoute("/ledger")({
   loader: ({ context }) => context.queryClient.ensureQueryData(ledgerQuery()).then(() => undefined),
   head: () => ({

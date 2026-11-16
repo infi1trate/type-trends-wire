@@ -33,8 +33,10 @@ export type SectorInput = {
   stories: StoryRecord[];
   patterns: SectorPatternBlock[];
 };
-type Side = { stage: StageName | null; share: number | null; momentum_index: number | null };
-const side = (s: Signal | undefined): Side => ({ stage: s?.stage ?? null, share: s?.share ?? null, momentum_index: s?.momentum_index ?? null });
+/** What a sector report compares: stage and share. Momentum is not computed per sector, so it is reported once, as all-sector. */
+type Side = { stage: StageName | null; share: number | null };
+const side = (s: Signal | undefined): Side => ({ stage: s?.stage ?? null, share: s?.share ?? null });
+const momentumAll = (s: Signal | undefined) => s?.momentum_index ?? null;
 const storyLine = (s: StoryRecord) => ({ id: s.id, type: s.type, kicker: s.kicker, headline: s.headline, at: s.happened_at, score: s.score, href: storyPath(s.id) });
 const byScore = (a: StoryRecord, b: StoryRecord) => b.score - a.score || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id);
 
@@ -45,11 +47,11 @@ export function sectorReport(i: SectorInput) {
   const all = new Map(buildSignals(i.rows, i.tiers, "all").map(s => [s.key, s]));
   const here = cov.enough ? buildSignals(i.rows, i.tiers, sector) : [];
   const shown = here.filter(s => s.tier === "headline" || s.tier === "supporting");
-  const signals = shown.filter(s => s.tier === "headline").map(s => ({ key: s.key, name: s.name, dimension: s.dimension, basis: s.basis, here: side(s), all: side(all.get(s.key)), href: signalPath(s.key) }))
-    .sort((a, b) => (b.here.momentum_index ?? -1) - (a.here.momentum_index ?? -1) || a.name.localeCompare(b.name)).slice(0, SECTOR_SIGNALS_MAX);
-  const pair = (s: Signal) => ({ key: s.key, name: s.name, dimension: s.dimension, here: side(s), all: side(all.get(s.key)), href: signalPath(s.key) });
-  const risingHere = shown.filter(s => RISING.has(s.stage) && !RISING.has(all.get(s.key)?.stage ?? null)).sort((a, b) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || a.name.localeCompare(b.name)).slice(0, SECTOR_CONTRAST_MAX).map(pair);
-  const risingElsewhere = shown.filter(s => !RISING.has(s.stage) && s.stage !== null && RISING.has(all.get(s.key)?.stage ?? null)).sort((a, b) => (all.get(b.key)?.momentum_index ?? -1) - (all.get(a.key)?.momentum_index ?? -1) || a.name.localeCompare(b.name)).slice(0, SECTOR_CONTRAST_MAX).map(pair);
+  const signals = shown.filter(s => s.tier === "headline").map(s => ({ key: s.key, name: s.name, dimension: s.dimension, basis: s.basis, here: side(s), all: side(all.get(s.key)), momentum_all: momentumAll(all.get(s.key)), href: signalPath(s.key) }))
+    .sort((a, b) => (b.momentum_all ?? -1) - (a.momentum_all ?? -1) || a.name.localeCompare(b.name)).slice(0, SECTOR_SIGNALS_MAX);
+  const pair = (s: Signal) => ({ key: s.key, name: s.name, dimension: s.dimension, here: side(s), all: side(all.get(s.key)), momentum_all: momentumAll(all.get(s.key)), href: signalPath(s.key) });
+  const risingHere = shown.filter(s => RISING.has(s.stage) && !RISING.has(all.get(s.key)?.stage ?? null)).sort((a, b) => (momentumAll(all.get(b.key)) ?? -1) - (momentumAll(all.get(a.key)) ?? -1) || a.name.localeCompare(b.name)).slice(0, SECTOR_CONTRAST_MAX).map(pair);
+  const risingElsewhere = shown.filter(s => !RISING.has(s.stage) && s.stage !== null && RISING.has(all.get(s.key)?.stage ?? null)).sort((a, b) => (momentumAll(all.get(b.key)) ?? -1) - (momentumAll(all.get(a.key)) ?? -1) || a.name.localeCompare(b.name)).slice(0, SECTOR_CONTRAST_MAX).map(pair);
 
   const stream = streamOf(i.stories).filter(s => s.sector === sector && s.type !== "launch"), since = i.now - SECTOR_LOOKBACK_DAYS * 864e5;
   const recent = (s: StoryRecord) => Date.parse(s.happened_at) >= since && Date.parse(s.happened_at) <= i.now;

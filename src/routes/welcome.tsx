@@ -4,9 +4,10 @@ import { welcomeQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { WelcomeView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
 // Private: gated like every page (LANDING_PUBLIC = false, not in OPEN_PATHS) and kept out of search results.
-const TITLE = "Welcome — the live newsroom for how brands look and sound · DSGN/TERMINAL";
+const TITLE = `Welcome — the live newsroom for how brands look and sound · ${BRAND_NAME}`;
 const DESC = "Spot, prove and act on how brands look and sound on the web: stories with receipts, daily and weekly editions, sector reports and tools.";
 export const Route = createFileRoute("/welcome")({
   loader: ({ context }) => context.queryClient.ensureQueryData(welcomeQuery()).then(() => undefined),

@@ -76,3 +76,8 @@ export const getWelcome = createServerFn({ method: "GET" }).handler(async () => 
   const { loadWelcome } = await import("./editions/welcome.server");
   return loadWelcome();
 });
+/** /kit: live examples for the component kit (stored data only, no AI). */
+export const getKit = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadKit } = await import("./kit.server");
+  return loadKit();
+});

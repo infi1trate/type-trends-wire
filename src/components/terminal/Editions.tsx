@@ -5,6 +5,7 @@ import { morningQuery, sectorIndexQuery, sectorReportQuery } from "@/lib/data";
 import { storyTime } from "@/lib/stories";
 import { Empty, PanelHeader } from "./primitives";
 import { StageBadge } from "./Info";
+const pct = (v: number | null) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
 import type { MorningItem } from "@/lib/editions/morning";
 
 const Row = ({ s, n }: { s: MorningItem; n: number | string }) => <li className="border-b border-rule last:border-b-0">
@@ -56,8 +57,8 @@ export function SectorsTab({ sector }: { sector: string }) {
     {r && <div className="border-t border-rule">
       <PanelHeader title={r.title.toUpperCase()} meta={<>AS OF {storyTime(r.as_of).toUpperCase()}</>} />
       {r.signals.length ? <table className="w-full text-left"><caption className="sr-only">Headline signals in {r.name}</caption>
-        <thead><tr className="label text-g500"><th scope="col" className="p-2 font-normal">SIGNAL</th><th scope="col" className="p-2 font-normal">HERE</th><th scope="col" className="p-2 font-normal">ALL</th></tr></thead>
-        <tbody>{r.signals.map(s => <tr key={s.key} className="border-t border-rule"><th scope="row" className="p-2 font-normal text-ink">{s.name}</th><td className="p-2"><StageBadge stage={s.here.stage} /> <span className="num">{s.here.momentum_index ?? "—"}</span></td><td className="p-2"><StageBadge stage={s.all.stage} /> <span className="num">{s.all.momentum_index ?? "—"}</span></td></tr>)}</tbody>
+        <thead><tr className="label text-g500"><th scope="col" className="p-2 font-normal">SIGNAL</th><th scope="col" className="p-2 font-normal">HERE</th><th scope="col" className="p-2 font-normal">ALL</th><th scope="col" className="p-2 font-normal">MOMENTUM · ALL SECTORS</th></tr></thead>
+        <tbody>{r.signals.map(s => <tr key={s.key} className="border-t border-rule"><th scope="row" className="p-2 font-normal text-ink">{s.name}</th><td className="p-2"><StageBadge stage={s.here.stage} /> <span className="num">{pct(s.here.share)}</span></td><td className="p-2"><StageBadge stage={s.all.stage} /> <span className="num">{pct(s.all.share)}</span></td><td className="num p-2">{s.momentum_all ?? "—"}</td></tr>)}</tbody>
       </table> : <Empty why={r.note ?? "No headline signal measured in this sector yet."} />}
       <p className="label p-3 text-g500">{r.basis}</p>
     </div>}

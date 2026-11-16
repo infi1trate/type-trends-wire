@@ -197,7 +197,7 @@ function Drawer({ row, latest, onClose }: { row: FamilyRow; latest: string; onCl
         </div>
         <div className="border-b border-rule p-3">
           <div className="label mb-2 text-g500">SPECIMEN</div>
-          <p className="break-words text-ink" style={{ fontFamily: `"${row.family}", var(--font-mono)`, fontSize: 28, lineHeight: "36px" }}>
+          <p className="break-words text-ink" style={{ fontFamily: `"${row.family}", var(--tk-font-mono)`, fontSize: 28, lineHeight: "36px" }}>
             The quick brown fox — 0123456789
           </p>
         </div>

@@ -31,7 +31,7 @@ export function WhatWeShowView({ tiers, signals, runId }: { tiers: Map<string, T
           <p className="ed-standfirst mt-6">We measure hundreds of things on every homepage. By default you see only the signals a brand, marketing or design lead can act on. Nothing else is deleted; it is one filter away.</p>
         </div>
         <aside className="lg:col-span-4 lg:self-end" aria-label="Signals per tier">
-          <dl className="ed-data grid grid-cols-3 gap-4">{TIERS.map(t => <div key={t} className="ed-hair pt-2"><dt className="ed-kicker">{TIER_WORD[t]}</dt><dd className="mt-1 text-[32px] leading-[40px]">{counts[t]}</dd></div>)}</dl>
+          <dl className="ed-data grid grid-cols-3 gap-4">{TIERS.map(t => <div key={t} className="ed-hair pt-2"><dt className="ed-kicker">{TIER_WORD[t]}</dt><dd className="ed-figure-num mt-1">{counts[t]}</dd></div>)}</dl>
           <p className="ed-caption mt-2">Every named signal, including crawl-only ones the forecast does not stage (the terminal counts forecast rows only). Forecast run {runId ?? "—"}; open-ended fonts, colors and words are listed by category below.</p>
         </aside>
       </header>

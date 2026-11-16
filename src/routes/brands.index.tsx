@@ -5,8 +5,9 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { BrandsIndexView } from "@/components/read/BrandsIndexView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Brands — who is doing it · DSGN/TERMINAL";
+const TITLE = `Brands — who is doing it · ${BRAND_NAME}`;
 const DESC = "Every tracked brand: identity, confirmed moves and rebrands, searchable by name and filtered by sector.";
 export const Route = createFileRoute("/brands/")({
   validateSearch: (s: Record<string, unknown>): { tab?: string | undefined; sector?: string | undefined; sort?: string | undefined } => ({

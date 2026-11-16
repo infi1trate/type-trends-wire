@@ -53,7 +53,7 @@ function Lexicon({data,index}:{data:CrawlData;index:IndexFilter}) {
 }
 export function WildFamily({family,google}:{family:string;google:boolean}) {
   useEffect(()=>{if(!google)return;const id=`wild-${family.replace(/\W/g,"-")}`;if(document.getElementById(id))return;const link=document.createElement("link");link.id=id;link.rel="stylesheet";link.href=`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g,"+")}&display=swap`;document.head.appendChild(link);},[family,google]);
-  return <span style={google?{fontFamily:`"${family}", var(--font-mono)`}:undefined}>{family}</span>;
+  return <span style={google?{fontFamily:`"${family}", var(--tk-font-mono)`}:undefined}>{family}</span>;
 }
 export function InTheWild() {
   const [role,setRole]=useState("HEADLINE"),[index,setIndex]=useState<IndexFilter>("ALL");

@@ -34,7 +34,7 @@ const key = (r: { dimension: string; value: string }) => `${r.dimension}:${r.val
 type Pt = { q: string; s: number | null; n: number; c: number };
 function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }: { quarters: Pt[]; proj: { h: number; mid: number | null; lo: number | null; hi: number | null }[]; fitted?: { quarter: string; value: number }[] | undefined; backtest?: { quarter: string; predicted: number }[] | undefined; large?: boolean; sectors?: { scope: string; pts: Pt[] }[] }) {
   const quarters = raw, pts = raw.filter(p => p.s !== null && p.n >= 15 && p.c >= .25), faint = raw.filter(p => p.s !== null && p.n > 0 && !(p.n >= 15 && p.c >= .25));
-  if (!pts.length) return <svg viewBox="0 0 120 32" className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label="No history"><line x1="0" x2="120" y1="31" y2="31" stroke="var(--rule)" /></svg>;
+  if (!pts.length) return <svg viewBox="0 0 120 32" className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label="No history"><line x1="0" x2="120" y1="31" y2="31" stroke="var(--tk-rule-hairline)" /></svg>;
   const p0 = pts[0]!, pn = pts[pts.length - 1]!, first = qi(quarters[0]?.q ?? p0.q), latest = qi(pn.q), last = latest + 4, W = large ? 600 : 120, H = large ? 220 : 32;
   const all = [...pts.map(p => p.s ?? 0), ...(large ? faint.map(p => p.s ?? 0) : []), ...proj.flatMap(p => [p.hi ?? 0, p.mid ?? 0]), ...(fitted ?? []).map(f => f.value), ...(sectors ?? []).flatMap(s => s.pts.map(p => p.s ?? 0))];
   const max = Math.max(0.05, ...all);
@@ -42,21 +42,21 @@ function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }:
   const cone = proj.filter(p => p.lo !== null && p.hi !== null);
   const conePath = cone.length ? `M${x(latest)},${y(pn.s ?? 0)} ${cone.map(p => `L${x(latest + p.h)},${y(p.hi!)}`).join(" ")} ${[...cone].reverse().map(p => `L${x(latest + p.h)},${y(p.lo!)}`).join(" ")} Z` : "";
   return <svg viewBox={`0 0 ${W} ${H}`} className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label={`Share ${p0.q} to ${pn.q}${cone.length ? " with projection cone" : ""}`}>
-    <line x1="0" x2={W} y1={H - 2} y2={H - 2} stroke="var(--rule)" />
-    {sectors?.map(s => { const sp = s.pts.filter(p => p.s !== null && p.n >= 8 && p.c >= .25); return <polyline key={s.scope} fill="none" stroke="var(--compare-muted)" strokeOpacity=".35" strokeWidth="1" points={sp.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")}><title>{s.scope}</title></polyline>; })}
-    {conePath && <path d={conePath} fill="var(--signal)" fillOpacity=".18" stroke="none" />}
-    {fitted && <polyline fill="none" stroke="var(--color-ink)" strokeOpacity=".5" strokeDasharray="4 3" points={fitted.filter(f => qi(f.quarter) <= last).map(f => `${x(qi(f.quarter))},${y(f.value)}`).join(" ")} />}
-    {backtest && backtest.length > 0 && <polyline fill="none" stroke="var(--compare-muted)" strokeDasharray="2 3" points={backtest.map(b => `${x(qi(b.quarter))},${y(b.predicted)}`).join(" ")}><title>Backtest prediction from 2025Q2</title></polyline>}
-    <polyline fill="none" stroke="var(--color-ink)" strokeWidth={large ? 2 : 1} points={pts.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")} />
-    {large && faint.map(p => <circle key={`f${p.q}`} cx={x(qi(p.q))} cy={y(p.s!)} r="2" fill="var(--compare-muted)" fillOpacity=".5"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · not usable`}</title></circle>)}
-    {pts.map(p => <circle key={p.q} cx={x(qi(p.q))} cy={y(p.s!)} r={large ? 3 : 1.5} fill="var(--color-ink)"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · coverage ${(p.c * 100).toFixed(0)}%`}</title></circle>)}
-    {proj.filter(p => p.mid !== null).map(p => <circle key={p.h} cx={x(latest + p.h)} cy={y(p.mid!)} r={large ? 3 : 1.5} fill="var(--signal)"><title>{`+${p.h}Q ${ql(latest + p.h)} · ${pct(p.mid)} (${pct(p.lo)}–${pct(p.hi)})`}</title></circle>)}
+    <line x1="0" x2={W} y1={H - 2} y2={H - 2} stroke="var(--tk-rule-hairline)" />
+    {sectors?.map(s => { const sp = s.pts.filter(p => p.s !== null && p.n >= 8 && p.c >= .25); return <polyline key={s.scope} fill="none" stroke="var(--tk-text-secondary)" strokeOpacity=".35" strokeWidth="1" points={sp.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")}><title>{s.scope}</title></polyline>; })}
+    {conePath && <path d={conePath} fill="var(--tk-accent-1)" fillOpacity=".18" stroke="none" />}
+    {fitted && <polyline fill="none" stroke="var(--tk-text-primary)" strokeOpacity=".5" strokeDasharray="4 3" points={fitted.filter(f => qi(f.quarter) <= last).map(f => `${x(qi(f.quarter))},${y(f.value)}`).join(" ")} />}
+    {backtest && backtest.length > 0 && <polyline fill="none" stroke="var(--tk-text-secondary)" strokeDasharray="2 3" points={backtest.map(b => `${x(qi(b.quarter))},${y(b.predicted)}`).join(" ")}><title>Backtest prediction from 2025Q2</title></polyline>}
+    <polyline fill="none" stroke="var(--tk-text-primary)" strokeWidth={large ? 2 : 1} points={pts.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")} />
+    {large && faint.map(p => <circle key={`f${p.q}`} cx={x(qi(p.q))} cy={y(p.s!)} r="2" fill="var(--tk-text-secondary)" fillOpacity=".5"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · not usable`}</title></circle>)}
+    {pts.map(p => <circle key={p.q} cx={x(qi(p.q))} cy={y(p.s!)} r={large ? 3 : 1.5} fill="var(--tk-text-primary)"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · coverage ${(p.c * 100).toFixed(0)}%`}</title></circle>)}
+    {proj.filter(p => p.mid !== null).map(p => <circle key={p.h} cx={x(latest + p.h)} cy={y(p.mid!)} r={large ? 3 : 1.5} fill="var(--tk-accent-1)"><title>{`+${p.h}Q ${ql(latest + p.h)} · ${pct(p.mid)} (${pct(p.lo)}–${pct(p.hi)})`}</title></circle>)}
   </svg>;
 }
 const projOf = (r: Pick<ForecastRow, "proj_q1" | "proj_q1_lo" | "proj_q1_hi" | "proj_q2" | "proj_q2_lo" | "proj_q2_hi" | "proj_q4" | "proj_q4_lo" | "proj_q4_hi">) => [{ h: 1, mid: r.proj_q1, lo: r.proj_q1_lo, hi: r.proj_q1_hi }, { h: 2, mid: r.proj_q2, lo: r.proj_q2_lo, hi: r.proj_q2_hi }, { h: 4, mid: r.proj_q4, lo: r.proj_q4_lo, hi: r.proj_q4_hi }];
 function ZBar({ z, label }: { z: number | null | undefined; label: string }) {
   const v = z == null ? null : Math.max(-2, Math.min(2, z));
-  return <svg viewBox="0 0 40 6" width="40" height="6" role="img" aria-label={`${label} ${z == null ? "n/a" : z.toFixed(2)}`}><rect width="40" height="6" fill="var(--rule)" /><line x1="20" x2="20" y1="0" y2="6" stroke="var(--compare-muted)" />{v !== null && <rect x={v < 0 ? 20 + v * 10 : 20} width={Math.abs(v) * 10} height="6" fill={v > 0 ? "var(--signal)" : "var(--compare-muted)"} />}<title>{`${label}: ${z == null ? "n/a" : `z ${z.toFixed(2)}`}`}</title></svg>;
+  return <svg viewBox="0 0 40 6" width="40" height="6" role="img" aria-label={`${label} ${z == null ? "n/a" : z.toFixed(2)}`}><rect width="40" height="6" fill="var(--tk-rule-hairline)" /><line x1="20" x2="20" y1="0" y2="6" stroke="var(--tk-text-secondary)" />{v !== null && <rect x={v < 0 ? 20 + v * 10 : 20} width={Math.abs(v) * 10} height="6" fill={v > 0 ? "var(--tk-accent-1)" : "var(--tk-text-secondary)"} />}<title>{`${label}: ${z == null ? "n/a" : `z ${z.toFixed(2)}`}`}</title></svg>;
 }
 function StageTag({ stage }: { stage: string | null }) { return <StageBadge stage={stage} />; }
 

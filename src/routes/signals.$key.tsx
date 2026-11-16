@@ -5,6 +5,7 @@ import { traitHead } from "@/lib/digest/meta";
 import { resolveSector } from "@/lib/sector-lens";
 import { SignalView } from "@/components/read/SignalView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/signals/$key")({
   validateSearch: (s: Record<string, unknown>): { sector?: string | undefined } => (typeof s["sector"] === "string" ? { sector: s["sector"] } : {}),
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/signals/$key")({
     if (!page) throw notFound();
     return { page };
   },
-  head: ({ loaderData }) => loaderData?.page ? traitHead(loaderData.page) : { meta: [{ title: "Signal not found — DSGN/TERMINAL" }, { name: "robots", content: "noindex" }] },
+  head: ({ loaderData }) => loaderData?.page ? traitHead(loaderData.page) : { meta: [{ title: `Signal not found — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] },
   component: Signal,
   notFoundComponent: () => <DigestNotFound title="No page for this signal" body="We only write signal pages for signals in the latest weekly forecast. The key may be misspelled, or the signal may have dropped out of the forecast." />,
   errorComponent: () => <DigestNotFound title="This signal page didn't load" body="The data behind it couldn't be read just now. Try again in a minute." />,

@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { embedSnippet, embedSrc, type Theme } from "@/lib/embed/embed";
 import { SITE_URL } from "@/lib/site";
+import { BRAND_NAME } from "@/lib/brand";
 
 type Target = { kind: "trait"; key: string } | { kind: "chart"; week: string };
 /** "Embed" action: iframe snippet with copy, light/dark toggle and a live preview. Works in the editorial and terminal skins. */
@@ -21,7 +22,7 @@ export function EmbedPanel({ target, title, scope, variant = "editorial" }: { ta
         <span role="status" className={ed ? "ed-caption" : "label text-g500"}>{copied === "failed" ? "Copy failed: select the snippet and copy it." : "Responsive from 280 to 800 px wide, 4:3."}</span>
       </div>
       <p className={ed ? "ed-kicker" : "label text-g500"}>Preview</p>
-      <iframe key={preview} src={preview} title={`${title} — DSGN/TERMINAL signal chart (preview)`} style={{ width: "100%", maxWidth: 800, minWidth: 280, aspectRatio: "4 / 3", height: "auto", border: 0 }} loading="lazy" />
+      <iframe key={preview} src={preview} title={`${title} — ${BRAND_NAME} signal chart (preview)`} style={{ width: "100%", maxWidth: 800, minWidth: 280, aspectRatio: "4 / 3", height: "auto", border: 0 }} loading="lazy" />
     </div>}
   </div>;
 }

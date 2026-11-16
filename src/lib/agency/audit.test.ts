@@ -19,7 +19,7 @@ describe("auditModel", () => {
     expect(a.sector).toBe("dev-tools");
     expect(a.sectorSource).toBe("majority");
     expect(a.sections).toEqual(["glance", "type", "color", "layout", "vibe", "market", "moves", "whitespace", "method"]);
-    expect(a.url).toBe("https://type-trends-wire.lovable.app/audit?sites=linear.app,newco.io,supabase.com,vercel.com");
+    expect(a.url).toBe("https://slug.global/audit?sites=linear.app,newco.io,supabase.com,vercel.com");
   });
   it("flags untracked domains as pending and leaves them out of comparisons", () => {
     expect(a.pending).toEqual(["newco.io"]);

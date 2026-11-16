@@ -6,6 +6,8 @@ import { BASIS_WORD, basis, canonical, label, scopeText, stageName, type Basis, 
 import { soWhat } from "../digest/copy";
 import { callSentence, direction, quarterText } from "../ledger/ledger";
 import { SITE_URL } from "../site";
+import { BRAND_NAME } from "../brand";
+import { activeTheme, svgMono } from "../theme";
 
 export const EMBED_ASPECT = { w: 4, h: 3 } as const;
 export const EMBED_MIN_W = 280, EMBED_MAX_W = 800;
@@ -37,13 +39,14 @@ export function chartEmbedModel(m: CardModel | null, headline = false): EmbedMod
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 // One plot per width band so axis text stays 11–17 px from 280 to 800 px wide.
 const VIEWS = [{ cls: "v-s", w: 520, h: 170 }, { cls: "v-m", w: 800, h: 330 }, { cls: "v-l", w: 1100, h: 560 }] as const;
-const FONT = "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&display=swap";
+const FONT = activeTheme.shared.fonts.base, IMG = activeTheme.shared.image;
+/** Embed colours come from the theme's image palettes (embeds are standalone HTML). */
 const THEMES: Record<Theme, { bg: string; ink: string; muted: string; rule: string }> = {
-  dark: { bg: "#000000", ink: "#ededed", muted: "#9a9a9a", rule: "#262626" },
-  light: { bg: "#ffffff", ink: "#111111", muted: "#5c5c5c", rule: "#d6d6d6" },
+  dark: { bg: IMG.dark.bg, ink: IMG.dark.ink, muted: IMG.dark.secondary, rule: IMG.dark.rule },
+  light: { bg: IMG.light.bg, ink: IMG.light.ink, muted: IMG.light.muted, rule: IMG.light.rule },
 };
 const css = (t: Theme) => { const c = THEMES[t]; return `*{box-sizing:border-box;margin:0}html,body{height:100%}
-body{background:${c.bg};color:${c.ink};font:400 11px/16px "Geist Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;min-width:${EMBED_MIN_W}px;overflow:hidden}
+body{background:${c.bg};color:${c.ink};font:400 11px/16px ${svgMono('"')};font-variant-numeric:tabular-nums;min-width:${EMBED_MIN_W}px;overflow:hidden}
 main{height:100vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:6px;padding:10px 12px 0}
 .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
 h1{font-size:13px;line-height:20px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -51,7 +54,7 @@ h1{font-size:13px;line-height:20px;font-weight:600;min-width:0;overflow:hidden;t
 .badge{flex:none;border:1px solid ${c.ink};padding:0 4px;text-transform:uppercase;letter-spacing:.04em}.badges{display:flex;gap:6px;flex:none}.basis{border-style:dashed}
 .so{color:${c.muted};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .scope{color:${c.muted}}
-figure{min-height:0;display:flex}figure svg{width:100%;height:100%;display:none}figure svg text{font-family:"Geist Mono",ui-monospace,monospace;white-space:pre}
+figure{min-height:0;display:flex}figure svg{width:100%;height:100%;display:none}figure svg text{font-family:${svgMono('"')};white-space:pre}
 .call{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 footer{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;border-top:1px solid ${c.rule};color:${c.muted};text-transform:uppercase;letter-spacing:.04em}
 footer a{color:${c.ink};font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}footer a:hover,footer a:focus-visible{text-decoration:underline}
@@ -62,22 +65,22 @@ a:focus-visible{outline:1px solid ${c.ink};outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}`; };
 const shell = (theme: Theme, title: string, label: string, body: string) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(title)}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${FONT}">
+<title>${esc(title)}</title><link rel="preconnect" href="${activeTheme.shared.fonts.preconnect[0]}"><link rel="preconnect" href="${activeTheme.shared.fonts.preconnect[1]}" crossorigin><link rel="stylesheet" href="${FONT}">
 <style>${css(theme)}</style></head><body><main aria-label="${esc(label)}">${body}</main></body></html>`;
 
 export function renderEmbed(m: EmbedModel, theme: Theme): string {
   const stage = m.stage ?? "Not staged yet", label = `${m.title}, ${BASIS_WORD[m.basis]}, ${m.scope}: ${stage}. ${m.call}${m.soWhat ? ` ${m.soWhat}` : ""} Data through ${m.dataThrough}.`;
   const svgs = VIEWS.map(v => renderPrimsSvg(v.w, v.h, chartPrims(m.chart, 0, 4, v.w, v.h - 4), { label: `${m.name}: share of tracked homepages by quarter, with the forecast band`, className: v.cls, ...(theme === "light" ? { palette: LIGHT_PALETTE } : {}) })).join("");
-  return shell(theme, `${m.title} — DSGN/TERMINAL`, label, `<div class="head"><h1>${esc(m.name)} <span class="dim">[${m.dimension}]</span></h1><span class="badges"><span class="badge basis" title="${m.basis === "ai" ? "AI estimate: read by an AI tagger from homepage captures" : "Measured from page code and rendered styles"}">${BASIS_WORD[m.basis]}</span><span class="badge" title="Stage">${esc(stage)}</span></span></div>
+  return shell(theme, `${m.title} — ${BRAND_NAME}`, label, `<div class="head"><h1>${esc(m.name)} <span class="dim">[${m.dimension}]</span></h1><span class="badges"><span class="badge basis" title="${m.basis === "ai" ? "AI estimate: read by an AI tagger from homepage captures" : "Measured from page code and rendered styles"}">${BASIS_WORD[m.basis]}</span><span class="badge" title="Stage">${esc(stage)}</span></span></div>
 <figure>${svgs}</figure>
 <p class="call">${esc(m.call)} <span class="scope">· ${esc(m.scope)}</span></p>
 ${m.soWhat ? `<p class="so">${esc(m.soWhat)}</p>` : "<span></span>"}
-<footer><span>Data through ${esc(m.dataThrough)}</span><a href="${esc(m.href)}" target="_blank" rel="noopener">DSGN/TERMINAL →</a></footer>`);
+<footer><span>Data through ${esc(m.dataThrough)}</span><a href="${esc(m.href)}" target="_blank" rel="noopener">${BRAND_NAME} →</a></footer>`);
 }
 export function renderEmbedNotFound(theme: Theme): string {
-  return shell(theme, "Signal not found — DSGN/TERMINAL", "Signal not found", `<div class="head"><h1>Signal not found</h1></div>
+  return shell(theme, `Signal not found — ${BRAND_NAME}`, "Signal not found", `<div class="head"><h1>Signal not found</h1></div>
 <p style="align-self:center">This signal or chart isn't in the latest forecast. The link may be misspelled, or the signal dropped out.</p><span></span><span></span>
-<footer><span>DSGN/TERMINAL</span><a href="${SITE_URL}/" target="_blank" rel="noopener">DSGN/TERMINAL →</a></footer>`);
+<footer><span>${BRAND_NAME}</span><a href="${SITE_URL}/" target="_blank" rel="noopener">${BRAND_NAME} →</a></footer>`);
 }
 
 /** Path of the embed for a trait or chart page URL path (also accepts the embed paths themselves). */
@@ -93,15 +96,15 @@ export function embedSrc(target: NonNullable<ReturnType<typeof embedTarget>>, op
 }
 /** Copy-paste snippet: responsive width, fixed 4:3 aspect, lazy, borderless, with an accessible title. */
 export function embedSnippet(src: string, title: string): string {
-  return `<iframe src="${esc(src)}" title="${esc(`${title} — DSGN/TERMINAL signal chart`)}" style="width:100%;max-width:${EMBED_MAX_W}px;min-width:${EMBED_MIN_W}px;aspect-ratio:${EMBED_ASPECT.w}/${EMBED_ASPECT.h};height:auto;border:0" loading="lazy"></iframe>`;
+  return `<iframe src="${esc(src)}" title="${esc(`${title} — ${BRAND_NAME} signal chart`)}" style="width:100%;max-width:${EMBED_MAX_W}px;min-width:${EMBED_MIN_W}px;aspect-ratio:${EMBED_ASPECT.w}/${EMBED_ASPECT.h};height:auto;border:0" loading="lazy"></iframe>`;
 }
 /** oEmbed 1.0 "rich" response for a trait or chart page. Width clamps to 280–800; height follows the 4:3 aspect. */
 export function oembedResponse(src: string, title: string, maxwidth?: number | null, maxheight?: number | null) {
   let width = Math.max(EMBED_MIN_W, Math.min(EMBED_MAX_W, maxwidth && maxwidth > 0 ? Math.floor(maxwidth) : EMBED_MAX_W));
   if (maxheight && maxheight > 0) width = Math.max(EMBED_MIN_W, Math.min(width, Math.floor((maxheight * EMBED_ASPECT.w) / EMBED_ASPECT.h)));
   const height = Math.round((width * EMBED_ASPECT.h) / EMBED_ASPECT.w);
-  return { version: "1.0", type: "rich", provider_name: "DSGN/TERMINAL", provider_url: SITE_URL, title: `${title} — DSGN/TERMINAL`, cache_age: 3600, width, height,
-    html: `<iframe src="${esc(src)}" title="${esc(`${title} — DSGN/TERMINAL signal chart`)}" width="${width}" height="${height}" style="border:0;max-width:100%" loading="lazy"></iframe>` };
+  return { version: "1.0", type: "rich", provider_name: `${BRAND_NAME}`, provider_url: SITE_URL, title: `${title} — ${BRAND_NAME}`, cache_age: 3600, width, height,
+    html: `<iframe src="${esc(src)}" title="${esc(`${title} — ${BRAND_NAME} signal chart`)}" width="${width}" height="${height}" style="border:0;max-width:100%" loading="lazy"></iframe>` };
 }
 export const oembedLink = (pageUrl: string, title: string) => ({ rel: "alternate", type: "application/json+oembed", href: `${SITE_URL}/api/public/oembed?url=${encodeURIComponent(pageUrl)}&format=json`, title });
 

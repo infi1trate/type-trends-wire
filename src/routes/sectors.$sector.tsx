@@ -5,6 +5,7 @@ import { fontLinks } from "@/lib/digest/meta";
 import { LENS_SECTORS } from "@/lib/sector-lens";
 import { SectorReportView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/sectors/$sector")({
   loader: async ({ context, params }) => {
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/sectors/$sector")({
   },
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: "Sector not found — Sector reports" }, { name: "robots", content: "noindex" }] };
-    const title = `${loaderData.title} · DSGN/TERMINAL`;
+    const title = `${loaderData.title} · ${BRAND_NAME}`;
     return { meta: [{ title }, { name: "description", content: loaderData.basis }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.basis }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary" }], links: fontLinks() };
   },
   component: Report,

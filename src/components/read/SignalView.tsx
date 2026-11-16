@@ -27,8 +27,8 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
           {lens && <p className="ed-data mt-2">In {sectorName(sector)}: <StageWord stage={lens.stage} /> {lens.share != null && <span>{pct(lens.share, 1)} of its homepages</span>}</p>}
           <p className="ed-standfirst mt-6">{p.definition}</p>
           <dl className="ed-data mt-6 grid max-w-xl grid-cols-2 gap-4">
-            <div className="ed-hair pt-2"><dt className="ed-kicker">Momentum</dt><dd className="mt-1"><span className="text-[32px] leading-[40px]">{p.momentumIndex ?? "—"}</span>{p.direction && <span className="ml-2">{p.direction}</span>}</dd></div>
-            <div className="ed-hair pt-2"><dt className="ed-kicker">Confidence</dt><dd className="mt-1"><span className="text-[32px] leading-[40px]">{p.confidence ?? "—"}</span></dd></div>
+            <div className="ed-hair pt-2"><dt className="ed-kicker">Momentum</dt><dd className="mt-1"><span className="ed-figure-num">{p.momentumIndex ?? "—"}</span>{p.direction && <span className="ml-2">{p.direction}</span>}</dd></div>
+            <div className="ed-hair pt-2"><dt className="ed-kicker">Confidence</dt><dd className="mt-1"><span className="ed-figure-num">{p.confidence ?? "—"}</span></dd></div>
           </dl>
           {p.confidenceReason && <p className="ed-caption mt-2">{p.confidenceReason}. Momentum ranks the stored next-wave score among headline and supporting signals (0–100). <Link to="/what-we-show" className="ed-tap" {...pr("/what-we-show")}>How we derive these →</Link></p>}
         </div>

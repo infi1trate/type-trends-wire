@@ -3,6 +3,7 @@ import { methodologyLines } from '../what-we-show';
 import { SHOWCASE_METHODOLOGY } from '../showcase-methodology';
 import { label, stageName } from '../labels';
 import { computeBand, pointAtLeast, daysBetween, METHODOLOGY as BAND_RULES } from '../bands';
+import { BRAND_NAME } from "../brand";
 export type FontRow = { captured_on: string; family: string; category: string; popularity_rank: number; trending_rank: number; is_variable: boolean };
 export function analyzeFamily(history: FontRow[]) {
   const sorted = [...history].sort((a,b) => a.captured_on.localeCompare(b.captured_on));
@@ -27,7 +28,7 @@ export function movers(latest: FontRow[], earlier: FontRow[], opts: {direction: 
 }
 export const METHODOLOGY = [
   'Data: daily Google Fonts Developer API snapshots: popularity and trending ranks only, not raw embed counts.',
-  'Wire: 9 design RSS feeds + Hacker News every 15 minutes; sampled Bluesky posts (crawler-side Jetstream sampler, every 4 hours); Product Hunt top launches daily (only when a token is configured); weekly DSGN/TERMINAL alerts. Keyword-tagged type/color/brand/ui/web/motion/ai. Headline + source + link only.',
+  `Wire: 9 design RSS feeds + Hacker News every 15 minutes; sampled Bluesky posts (crawler-side Jetstream sampler, every 4 hours); Product Hunt top launches daily (only when a token is configured); weekly ${BRAND_NAME} alerts. Keyword-tagged type/color/brand/ui/web/motion/ai. Headline + source + link only.`,
   ...BAND_RULES,
   'BASELINE also applies when there is no snapshot at least 28 days older. Rules are evaluated in the order shown.',
   'Crawler: weekly derived design signals, comparing vanguard and mainstream. EN includes English-language successful sites; ALL includes every language. Spread is (vanguard share − mainstream share) × 100.',

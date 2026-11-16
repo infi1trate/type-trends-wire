@@ -5,6 +5,11 @@ import {createRateLimiter} from './rate-limit';
 import {createKeyedLimiter,usageTool} from './keys';
 import {createKeyResolver,type Caller} from './keys.server';
 import {primeSignalIndex} from './signal-index';
+import {LEGACY_MCP_NAME} from '../brand';
+/** Clients that stored the server under its old (or new) name may prefix tool names with it, e.g. `type-trends-wire__stories` or `slug.stories`; the prefix is dropped so they keep working. */
+export const ALIAS_PREFIX=new RegExp(`^(?:${[LEGACY_MCP_NAME,BRAND_NAME].map(n=>n.replace(/[-.]/g,'\\$&')).join('|')})(?:__|[.:/])([a-z][a-z0-9_]*)$`);
+export const unaliasTool=(name:string)=>name.match(ALIAS_PREFIX)?.[1]??name;
+import { BRAND_NAME } from "../brand";
 export const TOOL_NAMES=['get_trend','search_trends','wire','library_site','library_events','library_sector','crawl_spread','library_trends','library_history','site_history','forecast','next_wave','trendsetters','weekly_brief','recommend_type','recommend_palette','differentiate','critique','rebrands','vibe_map','audit_sites','watchlist_changes','forecast_ledger'];
 const KNOWN=new Set(TOOL_NAMES);
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, POST, DELETE, OPTIONS','Access-Control-Allow-Headers':'authorization, content-type, mcp-session-id, mcp-protocol-version, accept','Access-Control-Expose-Headers':'mcp-session-id'};
@@ -25,7 +30,7 @@ export async function handleMcp(req:Request,deps?:McpDeps):Promise<Response>{
   const counted=caller.kind==='key'?caller.id:null;
   const count=async()=>{if(counted)await d.count(counted,usageTool(method,toolName,KNOWN,req.method)).catch(()=>{console.error('MCP usage count failed');});};
   try{
-     if(req.method==='GET'&&!(req.headers.get('accept')??'').includes('text/event-stream')){await count();return Response.json({name:definition.name,version:definition.version,transport:'streamable-http',tools:TOOL_NAMES,resources:['trend://methodology'],keys:'optional: Authorization: Bearer dsgn_… raises the rate limit'},{headers:CORS});}
+     if(req.method==='GET'&&!(req.headers.get('accept')??'').includes('text/event-stream')){await count();return Response.json({name:definition.name,aliases:[LEGACY_MCP_NAME],version:definition.version,transport:'streamable-http',tools:TOOL_NAMES,resources:['trend://methodology'],keys:'optional: Authorization: Bearer dsgn_… raises the rate limit'},{headers:CORS});}
     // The SDK supports tools/app resources, but not arbitrary read-only resources.
     // This compatibility layer adds only the requested methodology resource.
     if(req.method==='POST'){
@@ -34,8 +39,9 @@ export async function handleMcp(req:Request,deps?:McpDeps):Promise<Response>{
       let data:unknown;try{data=JSON.parse(body);}catch{return rpcError('Parse error',-32700,400);}
       if(data && typeof data==='object' && !Array.isArray(data)){
         const msg=data as {jsonrpc?:unknown;method?:unknown;id?:unknown;params?:{uri?:unknown;name?:unknown}};method=msg.method;toolName=msg.params?.name;
+        if(method==='tools/call'&&typeof toolName==='string'&&unaliasTool(toolName)!==toolName&&msg.params){toolName=unaliasTool(toolName);msg.params.name=toolName;const h=new Headers(req.headers);h.delete('content-length');req=new Request(req.url,{method:'POST',headers:h,body:JSON.stringify(msg)});}
         if(msg.jsonrpc==='2.0'&&(typeof msg.id==='string'||typeof msg.id==='number'||msg.id===null)){
-          if(method==='resources/list'){await count();return Response.json({jsonrpc:'2.0',id:msg.id,result:{resources:[{uri:'trend://methodology',name:'methodology',title:'How DSGN/TERMINAL scores trends',mimeType:'text/plain'}]}},{headers:CORS});}
+          if(method==='resources/list'){await count();return Response.json({jsonrpc:'2.0',id:msg.id,result:{resources:[{uri:'trend://methodology',name:'methodology',title:`How ${BRAND_NAME} scores trends`,mimeType:'text/plain'}]}},{headers:CORS});}
           if(method==='resources/read'){await count();return msg.params?.uri==='trend://methodology'?Response.json({jsonrpc:'2.0',id:msg.id,result:{contents:[{uri:'trend://methodology',mimeType:'text/plain',text:METHODOLOGY}]}},{headers:CORS}):Response.json({jsonrpc:'2.0',id:msg.id,error:{code:-32002,message:'Resource not found'}},{headers:CORS});}
         }
       }

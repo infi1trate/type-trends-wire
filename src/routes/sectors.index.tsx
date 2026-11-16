@@ -4,8 +4,9 @@ import { sectorIndexQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { SectorsIndexView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Sector reports — the state of each sector · DSGN/TERMINAL";
+const TITLE = `Sector reports — the state of each sector · ${BRAND_NAME}`;
 const DESC = "A quarterly report for each tracked sector: its signals against all sectors, white space, counter-moves, leading brands and patterns.";
 export const Route = createFileRoute("/sectors/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(sectorIndexQuery()).then(() => undefined),

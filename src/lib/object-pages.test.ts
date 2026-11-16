@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { OBJECT_BLOCKS } from "./ia";
-import { brandModel, brandSoWhat } from "./brand";
+import { brandModel, brandSoWhat } from "./brand-page";
 import { PATTERN_NOTE, patternIndex, patternModel, type PatternSite } from "./patterns";
 import { traitModel } from "./digest/trait";
 import { traitFixture } from "./digest/__fixtures__/trait";

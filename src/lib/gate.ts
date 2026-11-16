@@ -2,6 +2,8 @@
 // Runs in src/server.ts before any SSR, so locked visitors never receive page data or meta.
 // Set SITE_PASSWORD_SHA256 to "" to switch the gate off; robots/noindex then revert too.
 import { createRateLimiter } from "./mcp/rate-limit";
+import { BRAND_NAME } from "./brand";
+import { activeTheme, svgMono, tokensFor } from "./theme";
 
 /** sha256 (lowercase hex) of the shared password. The plaintext is never stored. */
 export const SITE_PASSWORD_SHA256: string = "1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032";
@@ -81,40 +83,43 @@ const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
 const NO_STORE = { "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" };
 
 export function renderGatePage(next: string, wrong = false): string {
+  // Standalone HTML (served before the app): colours and faces come from the theme's dark tokens.
+  const D = tokensFor("dark"), F = activeTheme.shared.fonts;
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>DSGN/TERMINAL</title>
+<title>${BRAND_NAME}</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&display=swap">
+<link rel="preconnect" href="${F.preconnect[0]}">
+<link rel="preconnect" href="${F.preconnect[1]}" crossorigin>
+<link rel="stylesheet" href="${F.base}">
 <style>
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:#000;color:#fff;font:400 13px/1.5 "Geist Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
-header,footer{display:flex;align-items:center;min-height:24px;padding:0 12px;border-bottom:1px solid #262626;background:#0e0e0e;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
-footer{border-bottom:0;border-top:1px solid #262626;color:#6b6b6b;margin-top:auto}
+body{background:${D.surface.page};color:${D.text.emphasis};font:400 13px/1.5 ${svgMono(`"`)};font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+header,footer{display:flex;align-items:center;min-height:24px;padding:0 12px;border-bottom:1px solid ${D.rule.hairline};background:${D.surface.card};font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+footer{border-bottom:0;border-top:1px solid ${D.rule.hairline};color:${D.text.muted};margin-top:auto}
 main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 12px}
 form{width:100%;max-width:360px;display:grid;gap:8px}
 h1{font-size:20px;font-weight:600;letter-spacing:.02em;margin-bottom:16px}
+.wordmark{text-transform:lowercase;letter-spacing:0}
 label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .row{display:flex;gap:0}
-input{flex:1;min-width:0;height:44px;padding:0 12px;background:#000;color:#fff;border:1px solid #6b6b6b;border-radius:0;font:inherit;font-size:13px}
-button{height:44px;min-width:88px;padding:0 16px;background:#fff;color:#000;border:1px solid #fff;border-left:0;border-radius:0;font:inherit;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
-input:focus-visible,button:focus-visible{outline:1px solid #fff;outline-offset:2px}
+input{flex:1;min-width:0;height:44px;padding:0 12px;background:${D.surface.page};color:${D.text.emphasis};border:1px solid ${D.text.muted};border-radius:0;font:inherit;font-size:13px}
+button{height:44px;min-width:88px;padding:0 16px;background:${D.text.emphasis};color:${D.text.inverse};border:1px solid ${D.text.emphasis};border-left:0;border-radius:0;font:inherit;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+input:focus-visible,button:focus-visible{outline:1px solid ${D.text.emphasis};outline-offset:2px}
 .msg{min-height:20px;font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<header>DSGN/TERMINAL</header>
+<header><span class="wordmark">${BRAND_NAME}</span></header>
 <main>
 <form method="post" action="/unlock">
-<h1>DSGN/TERMINAL</h1>
+<h1 class="wordmark">${BRAND_NAME}</h1>
 <label for="password">Password</label>
 <div class="row">
 <input id="password" name="password" type="password" autocomplete="current-password" required autofocus${wrong ? ' aria-invalid="true" aria-describedby="gate-msg"' : ""}>

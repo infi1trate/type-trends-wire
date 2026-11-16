@@ -6,8 +6,10 @@ import { SITE_URL } from "@/lib/site";
 import { cardText } from "@/lib/chart/card";
 import { oembedLink } from "@/lib/embed/embed";
 import { EmbedPanel } from "@/components/embed/EmbedPanel";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/chart/$week")({
+  staticData: { mode: "dark" },
   loader: async ({ context, params }) => {
     if (!/^\d{4}-W\d{2}$/.test(params.week)) throw notFound();
     const card = await context.queryClient.ensureQueryData(chartCardQuery(params.week));
@@ -16,8 +18,8 @@ export const Route = createFileRoute("/chart/$week")({
     return { name: `${t.name} [${t.dimension}]`, call: t.call };
   },
   head: ({ params, loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Chart unavailable — DSGN/TERMINAL" }, { name: "robots", content: "noindex" }] };
-    const title = `${loaderData.name} · Chart of the Week ${params.week} — DSGN/TERMINAL`, url = `${SITE_URL}/chart/${params.week}`, img = `${SITE_URL}/chart/${params.week}.png`;
+    if (!loaderData) return { meta: [{ title: `Chart unavailable — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] };
+    const title = `${loaderData.name} · Chart of the Week ${params.week} — ${BRAND_NAME}`, url = `${SITE_URL}/chart/${params.week}`, img = `${SITE_URL}/chart/${params.week}.png`;
     return {
       meta: [{ title }, { name: "description", content: loaderData.call }, { property: "og:title", content: title }, { property: "og:description", content: loaderData.call }, { property: "og:type", content: "article" }, { property: "og:url", content: url },
         { property: "og:image", content: img }, { property: "og:image:width", content: "1200" }, { property: "og:image:height", content: "675" }, { name: "twitter:card", content: "summary_large_image" }, { name: "twitter:image", content: img }],

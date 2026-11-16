@@ -5,6 +5,7 @@ import { wireQuery, type WireItem } from "@/lib/data";
 import { decodeEntities } from "@/lib/entities";
 import { alertDisplayTitle } from "@/lib/labels";
 import { Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
+import { sitePath, sourceName } from "@/lib/brand";
 
 const TAGS = ["ALL", "TYPE", "COLOR", "BRAND", "UI", "WEB", "MOTION", "AI"] as const;
 const KINDS = ["ALL", "RSS", "HN", "BSKY", "PH", "ALERT"] as const;
@@ -44,9 +45,9 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
   const [source, setSource] = useState("ALL");
   const [q, setQ] = useState("");
 
-  const sources = useMemo(() => [...new Set((data ?? []).map((d) => d.source))].sort(), [data]);
+  const sources = useMemo(() => [...new Set((data ?? []).map((d) => sourceName(d.source)))].sort(), [data]);
   const rows = useMemo(() => {
-    const all = (data ?? []).map(r => ({ ...r, title: r.source_kind === "alert" ? alertDisplayTitle(decodeEntities(r.title), r.ref) : decodeEntities(r.title), excerpt: r.excerpt ? alertDisplayTitle(decodeEntities(r.excerpt), r.ref) : null }));
+    const all = (data ?? []).map(r => ({ ...r, source: sourceName(r.source), title: r.source_kind === "alert" ? alertDisplayTitle(decodeEntities(r.title), r.ref) : decodeEntities(r.title), excerpt: r.excerpt ? alertDisplayTitle(decodeEntities(r.excerpt), r.ref) : null }));
     if (compact) return all;
     const ql = q.trim().toLowerCase();
     return all.filter(
@@ -101,7 +102,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
               <span className="label hidden w-[18ch] shrink-0 truncate text-g500 sm:inline">{r.source.toUpperCase()}</span>
               <span className="min-w-0 flex-1">
                 {r.source_kind === "alert" ? (
-                  <a href={r.url.replace(/^https:\/\/type-trends-wire\.lovable\.app/, "")} className="text-ink hover:underline">{r.title}</a>
+                  <a href={sitePath(r.url)} className="text-ink hover:underline">{r.title}</a>
                 ) : (
                   <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-ink hover:underline">
                     {r.title}

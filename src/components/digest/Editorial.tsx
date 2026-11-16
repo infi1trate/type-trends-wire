@@ -18,7 +18,7 @@ type EditionId = "morning" | "digest" | "sectors";
 export function DigestShell({ children, label, section = "digest", lens = false, note = null, tour = false, edition = "digest", fixedSector }: { children: ReactNode; label: string; section?: SectionId; lens?: boolean; note?: string | null; tour?: boolean; edition?: EditionId | null; fixedSector?: { value: string; onChange: (s: string) => void } }) {
   const cur = (id: EditionId) => (edition === id ? { "aria-current": "page" as const, className: "ed-tap py-2 font-semibold no-underline" } : { className: "ed-tap py-2 no-underline" });
   const sub = section === "digest" ? <nav aria-label="Editions" className="ed-nav no-print mt-2 border-y border-ed-ink">
-    <div className="ed-wrap flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
+    <div className="ed-wrap ed-navtext flex flex-wrap items-center justify-between gap-x-4">
       <span className="flex flex-wrap items-center gap-x-4">
         <Link to="/editions" className="ed-tap py-2 no-underline">Editions</Link>
         <Link to="/morning" {...cur("morning")}>Morning Line</Link>
@@ -36,11 +36,11 @@ export function DigestShell({ children, label, section = "digest", lens = false,
 }
 
 export function StageWord({ stage }: { stage: StageName | null }) {
-  return stage ? <span className="ed-badge" title="Stage">{stage}</span> : <span className="ed-badge ed-muted">Not staged yet</span>;
+  return stage ? <span className="ed-badge" data-stage={stage.toLowerCase()} title="Stage">{stage}</span> : <span className="ed-badge ed-muted">Not staged yet</span>;
 }
 export const Dim = ({ d }: { d: string }) => <span className="ed-data ed-muted">[{d}]</span>;
 /** MEASURED / AI ESTIMATE in the editorial system: a small outlined word, no color. */
-export const BasisWord = ({ b }: { b: Basis }) => <span className="ed-badge ed-basis" title={b === "ai" ? "Read by our AI tagger from homepage captures: an estimate." : "Measured from each page's code and rendered styles."}>{BASIS_WORD[b]}</span>;
+export const BasisWord = ({ b }: { b: Basis }) => <span className="ed-badge ed-basis" data-basis={b} title={b === "ai" ? "Read by our AI tagger from homepage captures: an estimate." : "Measured from each page's code and rendered styles."}>{BASIS_WORD[b]}</span>;
 
 export function SectionHead({ n, title, kicker, id }: { n: string; title: string; kicker?: string | undefined; id: string }) {
   return <header className="ed-rule mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 pt-3">

@@ -1,4 +1,6 @@
-export const SITE_URL = "https://type-trends-wire.lovable.app";
+import { SITE_ORIGIN } from "./brand";
+/** Absolute URLs use the brand origin (src/lib/brand.ts). */
+export const SITE_URL = SITE_ORIGIN;
 /** The consumer edition's name. Rename here only. */
 export const DIGEST_NAME = "The Digest";
 /** Corrections address shown in the Digest footer; the line is hidden while empty. */

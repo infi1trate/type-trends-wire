@@ -1,10 +1,14 @@
 // Chart of the Week: pure card model + display list. One scene feeds both the SVG and the PNG rasterizer.
 import { GLYPH_ADVANCE, GLYPH_ASCENT } from "./glyphs.gen";
 import { alertDisplayTitle, basisWord, label as traitLabel, scopeText, stageName } from "../labels";
+import { BRAND_NAME, SITE_HOST } from "../brand";
+import { activeTheme, svgTextStyle } from "../theme";
 export const CARD_SIZES = { "1200x675": { w: 1200, h: 675 }, "1080x1350": { w: 1080, h: 1350 } } as const;
 export type CardSize = keyof typeof CARD_SIZES;
-export const COLORS = { bg: "#000000", rule: "#262626", g500: "#6b6b6b", muted: "#9a9a9a", ink: "#ededed", signal: "#ff4f00" } as const;
-export const CARD_HOST = "type-trends-wire.lovable.app";
+const IMG = activeTheme.shared.image;
+/** Card colours come from the theme's image palette (PNG cards cannot read CSS variables). */
+export const COLORS = { bg: IMG.dark.bg, rule: IMG.dark.rule, g500: IMG.dark.muted, muted: IMG.dark.secondary, ink: IMG.dark.ink, signal: IMG.dark.accent } as const;
+export const CARD_HOST = SITE_HOST;
 export type CardPoint = { q: string; s: number; n: number };
 export type CardModel = {
   /** `ticker` only exists on cards stored before labels; names are always computed from `trait` at render time. */
@@ -72,8 +76,8 @@ function chart(m: Pick<CardModel, "series" | "forecast">, x0: number, y0: number
 function stats(m: CardModel): [string, string][] {
   return [["SHARE", pct(m.share)], ["MOMENTUM", m.momentum_pts_q == null ? "—" : `${m.momentum_pts_q >= 0 ? "+" : ""}${m.momentum_pts_q.toFixed(2)} PTS/Q`], ["STAGE", stageWord(m.stage)], ["N", m.n == null ? "—" : String(m.n)]];
 }
-export const footerText = (m: CardModel) => `DSGN/TERMINAL · ${CARD_HOST} · data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`;
-const footerLines = (m: CardModel) => [`DSGN/TERMINAL · ${CARD_HOST}`, `data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`];
+export const footerText = (m: CardModel) => `${BRAND_NAME} · ${CARD_HOST} · data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`;
+const footerLines = (m: CardModel) => [`${BRAND_NAME} · ${CARD_HOST}`, `data through ${m.data_through ?? "—"} · N=${m.n ?? "—"}`];
 
 /** Display list for one card size. Deterministic: same model → same primitives. */
 export function cardScene(m: CardModel, size: CardSize, opts: { head?: string } = {}): { w: number; h: number; prims: Prim[] } {
@@ -117,10 +121,10 @@ export function renderPrimsSvg(w: number, h: number, prims: Prim[], o: { label: 
 /** SVG serialization of the scene. Text y is top-of-line; baseline = y + ascent·size, matching the rasterizer. */
 export function renderCardSvg(m: CardModel, size: CardSize): string {
   const { w, h, prims } = cardScene(m, size);
-  return renderPrimsSvg(w, h, prims, { label: `${cardText(m).name} share by quarter with forecast band. ${cardText(m).call}`, style: "@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;display=swap');text{font-family:'Geist Mono',ui-monospace,monospace;white-space:pre}" });
+  return renderPrimsSvg(w, h, prims, { label: `${cardText(m).name} share by quarter with forecast band. ${cardText(m).call}`, style: svgTextStyle() });
 }
 /** Light chrome for editorial pages; the data line and band keep the card's signal color. */
-export const LIGHT_PALETTE: Record<string, string> = { [COLORS.bg]: "#ffffff", [COLORS.rule]: "#d6d6d6", [COLORS.g500]: "#5c5c5c", [COLORS.muted]: "#6b6b6b", [COLORS.ink]: "#111111" };
+export const LIGHT_PALETTE: Record<string, string> = { [COLORS.bg]: IMG.light.bg, [COLORS.rule]: IMG.light.rule, [COLORS.g500]: IMG.light.muted, [COLORS.muted]: IMG.light.secondary, [COLORS.ink]: IMG.light.ink };
 /** Chart-only figure (no card chrome) for Digest and explainer pages. */
 export function figureSvg(m: Pick<CardModel, "series" | "forecast">, w: number, h: number, label: string): string {
   return renderPrimsSvg(w, h, [{ k: "rect", x: 0, y: 0, w, h, fill: COLORS.bg }, ...chart(m, 0, 8, w, h - 8)], { label, palette: LIGHT_PALETTE, className: "digest-figure" });

@@ -4,8 +4,9 @@ import { morningQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { MorningView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "The Morning Line — today's edition · DSGN/TERMINAL";
+const TITLE = `The Morning Line — today's edition · ${BRAND_NAME}`;
 const DESC = "The daily edition: the day's lead, five more stories ranked by score, what is moving, one opening and what the desk held.";
 export const Route = createFileRoute("/morning/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(morningQuery(null)).then(() => undefined),

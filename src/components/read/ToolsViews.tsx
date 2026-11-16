@@ -33,7 +33,7 @@ export function ToolsView() {
     <section aria-labelledby="tools-console" className="ed-wrap mt-16">
       <h2 id="tools-console" className="ed-kicker ed-rule pt-3">In context, in the terminal</h2>
       <p className="ed-small mt-2 max-w-[72ch]">Type and palette recommendations, differentiation and critiques run in the terminal console. Brand pages offer “Differentiate from this brand” and “Recommend type for its sector”; signal pages offer “Who uses this well”. Each opens Terminal mode with the command filled in.</p>
-      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link><Link to="/welcome" className="ed-tap">Private landing page (draft)</Link><Link to="/desk" className="ed-tap">Editor's desk</Link></p>
+      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link><Link to="/welcome" className="ed-tap">Private landing page (draft)</Link><Link to="/kit" className="ed-tap">Design kit</Link><Link to="/desk" className="ed-tap">Editor's desk</Link></p>
     </section>
     <ReadFooter terminal="/terminal?panel=watch" />
   </DigestShell>;

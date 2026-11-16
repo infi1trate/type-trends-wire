@@ -202,7 +202,7 @@ export function readSectionOf(pathname: string): SectionId | null {
   if (s === "brands") return "brands";
   if (s === "patterns") return "patterns";
   if (["digest", "chart", "morning", "sectors", "editions"].includes(s)) return "digest";
-  if (["tools", "status", "watch", "audit", "ledger", "desk", "welcome"].includes(s)) return "tools";
+  if (["tools", "status", "watch", "audit", "ledger", "desk", "welcome", "kit"].includes(s)) return "tools";
   return null;
 }
 
@@ -242,6 +242,7 @@ export const SURFACES: Record<string, Surface> = {
   "chart.{$week}[.]png": S("digest", "both", "quiet", "Chart share image (open)."),
   "chart.{$week}[.]svg": S("digest", "both", "quiet", "Chart vector image (open)."),
   "tools": S("tools", "read", "shown", "One page linking every ACT tool."),
+  "kit": S("tools", "read", "quiet", "Design kit: every shared component on live data in the current theme, light/dark/vibes side by side; gated, linked from /tools only."),
   "status": S("tools", "read", "quiet", "Health, model card and ops details; out of the reader's path."),
   "audit.index": S("tools", "read", "shown", "Competitive audit."),
   "audit.new": S("tools", "read", "shown", "Start an audit."),

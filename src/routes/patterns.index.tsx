@@ -6,8 +6,9 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { PatternsIndexView } from "@/components/read/PatternViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Patterns — signals seen as examples · DSGN/TERMINAL";
+const TITLE = `Patterns — signals seen as examples · ${BRAND_NAME}`;
 const DESC = "Headline layout and composite design signals, each with the tracked brands that show it.";
 export const Route = createFileRoute("/patterns/")({
   validateSearch: (s: Record<string, unknown>): { sector?: string | undefined; illustrated?: string | undefined } => ({ ...(typeof s["sector"] === "string" ? { sector: s["sector"] } : {}), ...(s["illustrated"] === "1" || s["illustrated"] === 1 ? { illustrated: "1" } : {}) }),

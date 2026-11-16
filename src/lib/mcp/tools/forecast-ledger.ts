@@ -3,9 +3,10 @@ import { z } from "zod";
 import { SITE_URL } from "@/lib/site";
 import { explainerUrl } from "@/lib/labels";
 import { json, READ } from "./shared";
+import { BRAND_NAME } from "../../brand";
 export default defineTool({
   name: "forecast_ledger", title: "Forecast ledger",
-  description: "The durable, immutable record of DSGN/TERMINAL's forecast calls and how they resolved (hit, miss, void or still open), plus the live hit rate with n. Filter by trait, scope, outcome or since. The backtest (history replay) is returned separately and is never part of the live hit rate. Each call keeps its stable trait key and adds label, dimension and explainer_url.",
+  description: `The durable, immutable record of ${BRAND_NAME}'s forecast calls and how they resolved (hit, miss, void or still open), plus the live hit rate with n. Filter by trait, scope, outcome or since. The backtest (history replay) is returned separately and is never part of the live hit rate. Each call keeps its stable trait key and adds label, dimension and explainer_url.`,
   inputSchema: {
     trait: z.string().min(3).max(120).optional().describe("Trait key such as css:subgrid."),
     scope: z.string().min(1).max(40).optional().describe("all or a sector, e.g. fintech."),

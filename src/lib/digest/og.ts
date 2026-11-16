@@ -4,6 +4,7 @@ import { chartPrims, fit, wrap, LIGHT_PALETTE, COLORS, type Prim } from "../char
 import { CARD_HOST } from "../chart/card";
 import type { Issue } from "./issue";
 import { basisWord } from "../labels";
+import { BRAND_NAME } from "../brand";
 export const OG_SIZE = { w: 1200, h: 630 } as const;
 const P = LIGHT_PALETTE, INK = P[COLORS.ink]!, MUTED = P[COLORS.g500]!, RULE = P[COLORS.rule]!, BG = P[COLORS.bg]!;
 export function issueOgScene(i: Pick<Issue, "name" | "number" | "dates" | "cover" | "dataThrough">): { w: number; h: number; prims: Prim[] } {
@@ -19,7 +20,7 @@ export function issueOgScene(i: Pick<Issue, "name" | "number" | "dates" | "cover
   const card = i.cover.card, chartTop = top + 40, chartH = h - chartTop - 70;
   if (card && card.series.length && chartH > 120) prims.push(...chartPrims(card, pad, chartTop, inner, chartH).map(p => recolor(p)));
   prims.push({ k: "rect", x: pad, y: h - pad - 18, w: inner, h: 1, fill: RULE });
-  t(pad, h - pad - 4, fit(`DSGN/TERMINAL · ${CARD_HOST}/digest${i.dataThrough ? ` · data through ${i.dataThrough}` : ""}`, 22, inner), 22, 400, MUTED);
+  t(pad, h - pad - 4, fit(`${BRAND_NAME} · ${CARD_HOST}/digest${i.dataThrough ? ` · data through ${i.dataThrough}` : ""}`, 22, inner), 22, 400, MUTED);
   return { w, h, prims };
 }
 function recolor(p: Prim): Prim {

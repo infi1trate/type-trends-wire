@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { JOBS, LATE_FACTOR, freshness, freshnessLine, nextExpected, rhythmText, wireOnTime } from "./freshness";
+import { JOBS, LATE_FACTOR, READER_FACING, VANGUARD_RUN_PREFIX, freshness, freshnessLine, nextExpected, rhythmText, wireOnTime } from "./freshness";
 
 const NOW = Date.parse("2026-11-16T12:00:00Z"), ago = (min: number) => new Date(NOW - min * 60_000).toISOString();
 const row = (rows: ReturnType<typeof freshness>, id: string) => rows.find(r => r.id === id)!;
@@ -16,10 +16,10 @@ describe("freshness", () => {
   it("on time: wire finished 6 minutes ago; the line states the times", () => {
     const rows = freshness({ wire: { ran: ago(7), finished: ago(6) }, library_check: { ran: ago(3 * 1440) }, forecast: { ran: "2026-11-15T15:33:42Z" } }, NOW);
     expect(row(rows, "wire").state).toBe("on_time");
-    expect(row(rows, "library_check").state).toBe("late"); // daily job, 3 days old
+    expect(row(rows, "library_check").state).toBe("late"); // hourly slices, 3 days old
     expect(wireOnTime(rows)).toBe(true);
-    const ok = freshness({ wire: { ran: ago(7), finished: ago(6) }, library_check: { ran: ago(20 * 60) }, forecast: { ran: "2026-11-15T15:33:42Z" } }, NOW, JOBS.filter(j => ["wire", "library_check", "forecast"].includes(j.id)));
-    expect(freshnessLine(ok, NOW)).toEqual({ late: false, text: "Wire checked 6 minutes ago · Library crawl 20 hours ago · Forecast 15 Nov" });
+    const ok = freshness({ wire: { ran: ago(7), finished: ago(6) }, library_check: { ran: ago(40) }, forecast: { ran: "2026-11-15T15:33:42Z" } }, NOW, JOBS.filter(j => ["wire", "library_check", "forecast"].includes(j.id)));
+    expect(freshnessLine(ok, NOW)).toEqual({ late: false, text: "Wire checked 6 minutes ago · Library crawl 40 minutes ago · Forecast 15 Nov" });
   });
   it("late: more than twice the interval since the last finish turns the line into a plain warning", () => {
     const rows = freshness({ wire: { ran: ago(47), finished: ago(47) } }, NOW, JOBS.filter(j => j.id === "wire"));
@@ -36,6 +36,25 @@ describe("freshness", () => {
     expect(row(rows, "library_ai").state).toBe("on_time");
     expect(row(rows, "follow_ups").state).toBe("late"); // 90 minutes > 2 × 30
     expect(freshnessLine(freshness({}, NOW, JOBS.filter(j => j.id === "crops")), NOW).late).toBe(false);
+  });
+  it("crawler-side lateness stays on /status: the shell line states its time but raises no warning", () => {
+    const rows = freshness({ wire: { ran: ago(7), finished: ago(6) }, library_check: { ran: ago(3 * 1440) }, discourse: { ran: ago(22 * 60) }, forecast: { ran: "2026-11-15T15:33:42Z" } }, NOW);
+    expect(row(rows, "library_check").state).toBe("late");
+    expect(row(rows, "discourse").state).toBe("late");
+    expect(freshnessLine(rows, NOW)).toEqual({ late: false, text: "Wire checked 6 minutes ago · Library crawl 3 days ago · Forecast 15 Nov" });
+    for (const id of ["library_check", "vanguard", "library_full", "crawl", "crops", "discourse", "wayback"] as const) expect(READER_FACING.has(id)).toBe(false);
+  });
+  it("reader-facing lateness raises the warning (wire, story build, forecast and its follow-ups)", () => {
+    expect([...READER_FACING].sort()).toEqual(["digest", "follow_ups", "forecast", "stories", "wire"]);
+    const rows = freshness({ wire: { ran: ago(7), finished: ago(6) }, stories: { ran: ago(3 * 1440) } }, NOW, JOBS.filter(j => ["wire", "stories"].includes(j.id)));
+    expect(freshnessLine(rows, NOW)).toEqual({ late: true, text: "Late: Story build last ran 3 days ago (expected after each wire, library and forecast job)" });
+  });
+  it("knows the crawler's rhythms: hourly check slices and the daily vanguard crawl", () => {
+    const rows = freshness({ vanguard: { ran: ago(30 * 60) } }, NOW);
+    expect(row(rows, "library_check").rhythm).toBe("Hourly slices, every site once a day");
+    expect(row(rows, "vanguard")).toMatchObject({ name: "Vanguard crawl", rhythm: "Daily", state: "on_time", runs_on: "crawler" });
+    expect(VANGUARD_RUN_PREFIX).toBe("lib-vanguard-");
+    expect(row(freshness({}, NOW), "vanguard").state).toBe("never");
   });
   it("next expected follows the stored schedules", () => {
     expect(nextExpected({ kind: "every", ms: 15 * 60_000, aligned: true }, null, NOW)).toBe("16 Nov 12:15 UTC");

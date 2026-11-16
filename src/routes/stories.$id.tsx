@@ -5,6 +5,7 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { StoryView } from "@/components/read/StoryView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/stories/$id")({
   loader: async ({ context, params }) => {
@@ -14,8 +15,8 @@ export const Route = createFileRoute("/stories/$id")({
     return { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published" };
   },
   head: ({ params, loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Story unavailable — DSGN/TERMINAL" }, { name: "robots", content: "noindex" }] };
-    const title = `${loaderData.headline} — DSGN/TERMINAL`, desc = loaderData.deck ?? `${loaderData.kicker}: a story from DSGN/TERMINAL, every number with receipts.`, url = `${SITE_URL}/stories/${encodeURIComponent(params.id)}`;
+    if (!loaderData) return { meta: [{ title: `Story unavailable — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] };
+    const title = `${loaderData.headline} — ${BRAND_NAME}`, desc = loaderData.deck ?? `${loaderData.kicker}: a story from ${BRAND_NAME}, every number with receipts.`, url = `${SITE_URL}/stories/${encodeURIComponent(params.id)}`;
     return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: loaderData.headline }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData.ran ? [] : [{ name: "robots", content: "noindex" }])], links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
   component: StoryPage,

@@ -41,7 +41,7 @@ describe("trait explainer", () => {
   });
   it("explainer URLs use the stable key on SITE_URL, only for forecast traits", () => {
     expect(explainerPath("css:subgrid:all")).toBe("/signals/css%3Asubgrid");
-    expect(explainerUrl("spread:tight_tracking")).toBe("https://type-trends-wire.lovable.app/signals/tracking%3Atight");
+    expect(explainerUrl("spread:tight_tracking")).toBe("https://slug.global/signals/tracking%3Atight");
     expect(explainerUrl("family:Inter")).toBeNull();
   });
 });

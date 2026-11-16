@@ -5,10 +5,12 @@ import { ChartOfWeek } from "@/components/terminal/ChartCard";
 import { SITE_URL } from "@/lib/site";
 import { cardText } from "@/lib/chart/card";
 import { EmbedPanel } from "@/components/embed/EmbedPanel";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Chart of the Week — DSGN/TERMINAL";
+const TITLE = `Chart of the Week — ${BRAND_NAME}`;
 const DESC = "The weekly brief's one design trend to watch: quarterly library share, forecast band, stage and momentum.";
 export const Route = createFileRoute("/chart/")({
+  staticData: { mode: "dark" },
   loader: ({ context }) => context.queryClient.ensureQueryData(chartCardQuery(null)),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/chart` }, { name: "twitter:card", content: "summary_large_image" }], links: [{ rel: "canonical", href: `${SITE_URL}/chart` }] }),
   component: LatestChart,

@@ -4,9 +4,11 @@ import { cardScene, renderPrimsSvg, type Prim } from "../chart/card";
 import { cardModel } from "../chart/model";
 import { traitDefinition } from "./copy";
 import { label } from "../labels";
+import { BRAND_NAME } from "../brand";
+import { svgTextStyle } from "../theme";
 const nf = () => new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 async function respond(scene: { w: number; h: number; prims: Prim[] }, format: "png" | "svg", alt: string) {
-  if (format === "svg") return new Response(renderPrimsSvg(scene.w, scene.h, scene.prims, { label: alt, style: "@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600&amp;display=swap');text{font-family:'Geist Mono',ui-monospace,monospace;white-space:pre}" }), { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": CARD_CACHE } });
+  if (format === "svg") return new Response(renderPrimsSvg(scene.w, scene.h, scene.prims, { label: alt, style: svgTextStyle() }), { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": CARD_CACHE } });
   const { renderScenePng } = await import("../chart/raster");
   const png = await renderScenePng(scene);
   return new Response(png as BodyInit, { headers: { "Content-Type": "image/png", "Cache-Control": CARD_CACHE, "Content-Length": String(png.length) } });
@@ -29,5 +31,5 @@ export async function traitImage(rawKey: string, format: "png" | "svg") {
   if (!t || !all) return nf();
   const call = traitDefinition(t.key).split(". ")[0]! + ".";
   const model = cardModel({ week: "", run_id: all.run_id ?? 0, origin: "call", call, row: all, data_through: t.data_through, source_ref: `forecast:${t.key}:all` });
-  return respond(cardScene(model, "1200x675", { head: "SIGNAL EXPLAINER · DSGN/TERMINAL" }), format, `${label(t.key).name} share by quarter. ${call}`);
+  return respond(cardScene(model, "1200x675", { head: `SIGNAL EXPLAINER · ${BRAND_NAME}` }), format, `${label(t.key).name} share by quarter. ${call}`);
 }

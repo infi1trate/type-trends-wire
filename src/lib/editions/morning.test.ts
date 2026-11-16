@@ -71,7 +71,7 @@ describe("Morning Line", () => {
     const raw: MorningRaw = { edits: [], lines: [], stories: [story({ id: "x", headline: "Fintech goes <serif>", happened_at: "2026-11-18T08:00:00Z" }), story({ id: "today", happened_at: "2026-11-20T08:00:00Z" })] };
     const xml = morningRss(morningArchive(raw, NOW));
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
-    expect(xml).toContain("<link>https://type-trends-wire.lovable.app/morning/2026-11-18</link>");
+    expect(xml).toContain("<link>https://slug.global/morning/2026-11-18</link>");
     expect(xml).toContain("Fintech goes &lt;serif&gt;");
     expect(xml).not.toContain("/morning/2026-11-20<");
     expect(xml).toContain("<pubDate>Thu, 19 Nov 2026 00:00:00 GMT</pubDate>");

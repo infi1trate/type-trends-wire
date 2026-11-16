@@ -2,7 +2,9 @@ import {TasteError} from "./errors";
 import {checkResolved,safeUrl} from "./ssrf";
 import {siteFromSignals,type TasteSite} from "./store.server";
 import {decodeEntities} from "../entities";
-const UA="DSGNTerminalBot/0.1 (+https://type-trends-wire.lovable.app)";
+import { LEGACY_UA_TOKEN, SITE_ORIGIN } from "../brand";
+// The user-agent token stays as published so site owners' robots.txt rules keep matching; only the info URL moved.
+const UA=`${LEGACY_UA_TOKEN}/0.1 (+${SITE_ORIGIN})`;
 async function resolve(host:string){const results=await Promise.all(["A","AAAA"].map(async type=>{const r=await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=${type}`,{headers:{accept:"application/dns-json"},signal:AbortSignal.timeout(2000)});if(!r.ok)throw new Error("DNS validation failed");const json=await r.json() as {Answer?:{type:number;data:string}[]};return json.Answer?.filter(a=>a.type===1||a.type===28).map(a=>a.data)??[];}));return results.flat();}
 export function robotsAllowed(text:string,path:string){let active=false;const rules:{path:string;allow:boolean}[]=[];for(const line of text.split(/\r?\n/)){const m=/^\s*(user-agent|disallow|allow):\s*([^#]*)/i.exec(line);if(!m)continue;const key=m[1]?.toLowerCase(),value=m[2]?.trim()??"";if(key==="user-agent")active=value==='*'||/dsgnterminalbot/i.test(value);else if(active&&value)rules.push({path:value,allow:key==="allow"});}const matched=rules.filter(r=>new RegExp('^'+r.path.split('*').map(p=>p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*').replace(/\\\$$/,'$')).test(path)).sort((a,b)=>b.path.length-a.path.length||Number(b.allow)-Number(a.allow));return matched[0]?.allow??true;}
 export const LITE_UNAVAILABLE="LITE analysis unavailable on this host; URL queued for rendering";

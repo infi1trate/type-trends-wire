@@ -3,7 +3,8 @@ import { z } from "zod";
 import { forecasts, modelCard, nextWave, trendsetters, weeklyBrief } from "@/lib/forecast-store.server";
 import { json, READ, TIER_INPUT } from "./shared";
 import { byTier } from "../signal-index";
-const receipts = { source: "DSGN/TERMINAL forecast run (library history + crawler spread + wire + Google Fonts)", method: "trend://methodology#FORECAST" };
+import { BRAND_NAME } from "../../brand";
+const receipts = { source: `${BRAND_NAME} forecast run (library history + crawler spread + wire + Google Fonts)`, method: "trend://methodology#FORECAST" };
 const scope = z.string().min(1).max(40).describe("'all' or a library sector slug.");
 export const forecastTool = defineTool({ name: "forecast", title: "Trait forecast", description: "Fitted adoption curve, +1/+2/+4 quarter projections with 80% intervals, stage, momentum, evidence and backtest for design traits. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).", inputSchema: { dimension: z.string().max(40).optional(), value: z.string().max(80).optional(), scope: scope.optional(), tier: TIER_INPUT }, annotations: READ,
   handler: async ({ tier, ...input }) => json({ model_card: await modelCard(), rows: byTier(await forecasts(input), tier, r => `${r.dimension}:${r.value}`), receipts }) });

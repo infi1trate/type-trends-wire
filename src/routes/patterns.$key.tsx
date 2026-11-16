@@ -6,13 +6,14 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { PatternView } from "@/components/read/PatternViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/patterns/$key")({
   validateSearch: (s: Record<string, unknown>): { sector?: string | undefined } => (typeof s["sector"] === "string" ? { sector: s["sector"] } : {}),
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector) }),
   loader: async ({ context, params, deps }) => { const p = await context.queryClient.ensureQueryData(patternQuery(params.key, deps.sector)); if (!p) throw notFound(); return { name: p.name, total: p.total }; },
   head: ({ params, loaderData }) => {
-    const title = `${loaderData?.name ?? "Pattern"} — pattern · DSGN/TERMINAL`, desc = loaderData ? `${loaderData.total} tracked brands showing ${loaderData.name}, by sector and capture date.` : "Pattern not found.";
+    const title = `${loaderData?.name ?? "Pattern"} — pattern · ${BRAND_NAME}`, desc = loaderData ? `${loaderData.total} tracked brands showing ${loaderData.name}, by sector and capture date.` : "Pattern not found.";
     const url = `${SITE_URL}/patterns/${encodeURIComponent(params.key)}`;
     return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])], links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },

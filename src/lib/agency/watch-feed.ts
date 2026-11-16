@@ -5,6 +5,7 @@ import { xmlEscape } from "../digest/rss";
 import { pickThumb, type Thumb, type ThumbRow } from "../thumbs";
 import { eventDetail, eventSentence, rebrandSentence, type EventRow, type RebrandRow } from "./changes";
 import { feedPath, viewPath, type WatchPublic } from "./watch";
+import { BRAND_NAME } from "../brand";
 
 export const FEED_DAYS = 30;
 export const FEED_MAX = 50;
@@ -112,6 +113,6 @@ export function watchFeedXml(r: WatchRows): string {
   const w = r.watch, self = `${SITE_URL}${feedPath(w.feed_token)}`, page = `${SITE_URL}${viewPath(w.id)}`;
   const items = watchItems(r, sinceFor(r.now, "30d")).slice(0, FEED_MAX);
   const body = items.map(i => `<item><title>${xmlEscape(i.title)}</title><link>${page}#c-${xmlEscape(i.guid)}</link><guid isPermaLink="false">${xmlEscape(`${w.id}:${i.guid}`)}</guid><pubDate>${new Date(i.at).toUTCString()}</pubDate>${i.detail ? `<description>${xmlEscape(i.detail)}</description>` : ""}</item>`).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${xmlEscape(`${w.name} · DSGN/TERMINAL watchlist`)}</title><link>${page}</link><description>${xmlEscape(`Changes on the sites and signals in “${w.name}” over the last ${FEED_DAYS} days.`)}</description><language>en</language><lastBuildDate>${new Date(items[0]?.at ?? r.now).toUTCString()}</lastBuildDate><atom:link href="${self}" rel="self" type="application/rss+xml"/>${body}</channel></rss>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${xmlEscape(`${w.name} · ${BRAND_NAME} watchlist`)}</title><link>${page}</link><description>${xmlEscape(`Changes on the sites and signals in “${w.name}” over the last ${FEED_DAYS} days.`)}</description><language>en</language><lastBuildDate>${new Date(items[0]?.at ?? r.now).toUTCString()}</lastBuildDate><atom:link href="${self}" rel="self" type="application/rss+xml"/>${body}</channel></rss>`;
 }
 export const WATCH_FEED_HEADERS = { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, max-age=900", "X-Robots-Tag": "noindex" };

@@ -7,7 +7,7 @@ import { DimTag, Info, StageBadge } from "./Info";
 /** MEASURED / AI ESTIMATE: one small word chip, outlined, no color. */
 export function BasisChip({ k, basis, info = false }: { k?: string; basis?: Basis; info?: boolean }) {
   const b = basis ?? (k ? basisOf(k) : "measured");
-  return <span className="inline-flex items-center"><span className="label inline-block whitespace-nowrap border border-dashed border-g500 px-1 leading-[14px] text-g500">{BASIS_WORD[b]}</span>{info && <Info g={b === "ai" ? "basis-ai" : "basis-measured"} />}</span>;
+  return <span className="inline-flex items-center"><span className="tk-chip inline-block whitespace-nowrap border border-dashed px-1" data-basis={b}>{BASIS_WORD[b]}</span>{info && <Info g={b === "ai" ? "basis-ai" : "basis-measured"} />}</span>;
 }
 export function TierChip({ tier, info = false }: { tier: Tier; info?: boolean }) {
   return <span className="inline-flex items-center"><span className="label inline-block whitespace-nowrap px-1 leading-[14px] text-g500 underline underline-offset-2">{TIER_WORD[tier]}</span>{info && <Info g={`tier-${tier}`} />}</span>;

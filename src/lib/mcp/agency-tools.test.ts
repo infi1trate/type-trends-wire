@@ -8,7 +8,7 @@ const FEED = "F".repeat(22);
 vi.mock("@/lib/agency/audit.server", () => ({ loadAudit: vi.fn(async () => auditModel(auditFixture())) }));
 vi.mock("@/lib/agency/watch.server", () => ({
   prodDeps: vi.fn(async () => ({})),
-  feedItems: vi.fn(async (t: string) => (t === FEED ? { name: "Acme & co", page_url: "https://type-trends-wire.lovable.app/watch/x", items: watchItems(feedRows(), sinceFor("2026-11-15T18:00:00Z", "30d")) } : null)),
+  feedItems: vi.fn(async (t: string) => (t === FEED ? { name: "Acme & co", page_url: "https://slug.global/watch/x", items: watchItems(feedRows(), sinceFor("2026-11-15T18:00:00Z", "30d")) } : null)),
 }));
 import { handleMcp } from "./server.server";
 const call = async (name: string, args: unknown, ip = "agency-test") => {
@@ -21,10 +21,10 @@ describe("MCP audit_sites", () => {
     const r = await call("audit_sites", { domains: ["linear.app", "vercel.com", "supabase.com", "newco.io"] });
     expect(r.isError).toBeFalsy();
     const out = JSON.parse(r.content[0]!.text);
-    expect(out.audit_url).toBe("https://type-trends-wire.lovable.app/audit?sites=linear.app,newco.io,supabase.com,vercel.com");
+    expect(out.audit_url).toBe("https://slug.global/audit?sites=linear.app,newco.io,supabase.com,vercel.com");
     expect(out.sections).toEqual(["glance", "type", "color", "layout", "vibe", "market", "moves", "whitespace", "method"]);
     expect(out.pending).toEqual(["newco.io"]);
-    expect(out.white_space.traits[0]).toMatchObject({ trait: "components:pricing_table", label: "Pricing tables", dimension: "LAYOUT", explainer_url: "https://type-trends-wire.lovable.app/signals/components%3Apricing_table" });
+    expect(out.white_space.traits[0]).toMatchObject({ trait: "components:pricing_table", label: "Pricing tables", dimension: "LAYOUT", explainer_url: "https://slug.global/signals/components%3Apricing_table" });
     expect(out.market.sites[0].ahead[0]).toMatchObject({ trait: expect.any(String), label: expect.any(String), dimension: expect.any(String), explainer_url: expect.stringMatching(/^https:\/\/.+\/signals\//) });
     expect(out.layout.components.rows[0]).toMatchObject({ trait: "components:logo_wall", label: expect.any(String), explainer_url: expect.any(String) });
     expect(out.vibe.ai_estimate).toBe(true);
@@ -45,7 +45,7 @@ describe("MCP watchlist_changes", () => {
     expect(out.watchlist).toBe("Acme & co");
     expect(out.items.length).toBeLessThanOrEqual(50);
     const stage = out.items.find((i: { guid: string }) => i.guid === "stage-9-all-css:subgrid");
-    expect(stage).toMatchObject({ kind: "stage", trait: "css:subgrid", label: "Subgrid layouts", dimension: "LAYOUT", explainer_url: "https://type-trends-wire.lovable.app/signals/css%3Asubgrid" });
+    expect(stage).toMatchObject({ kind: "stage", trait: "css:subgrid", label: "Subgrid layouts", dimension: "LAYOUT", explainer_url: "https://slug.global/signals/css%3Asubgrid" });
     expect(out.items[0].link).toMatch(/#c-/);
   });
   it("rejects malformed and unknown tokens", async () => {

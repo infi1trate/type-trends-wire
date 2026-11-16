@@ -7,7 +7,7 @@ import { ReadShell } from "@/components/read/ReadShell";
 
 export function AgencyShell({ children, label, crumb }: { children: ReactNode; label: string; crumb: string }) {
   return <ReadShell label={label} section="tools" sub={<nav aria-label="Agency tools" className="ed-nav no-print mt-2 border-y border-ed-ink">
-      <div className="ed-wrap flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
+      <div className="ed-wrap ed-navtext flex flex-wrap items-center justify-between gap-x-4">
         <Link to="/tools" className="ed-tap py-2 font-semibold no-underline">Tools · {crumb}</Link>
         <span className="flex flex-wrap items-center gap-x-4">
           <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap py-2">New audit</Link>

@@ -122,8 +122,8 @@ export function Sparkline({ ranks }: { ranks: number[] | undefined }) {
   const last = pts[pts.length - 1]!;
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="inline-block align-middle">
-      <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="var(--white)" strokeWidth="1" />
-      {rising && <rect x={last[0] - 1} y={last[1] - 1} width="2" height="2" fill="var(--signal)" />}
+      <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="var(--tk-text-primary)" strokeWidth="1" />
+      {rising && <rect x={last[0] - 1} y={last[1] - 1} width="2" height="2" fill="var(--tk-accent-1)" />}
     </svg>
   );
 }
@@ -142,14 +142,14 @@ export function LineChart({ points }: { points: { date: string; rank: number }[]
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`Popularity rank from #${first.rank} to #${lastP.rank}`}>
       {grid.map((g) => (
         <g key={g}>
-          <line x1={pl} x2={w} y1={y(g)} y2={y(g)} stroke="var(--rule)" strokeWidth="1" />
-          <text x={pl - 4} y={y(g) + 3} textAnchor="end" fontSize="9" fill="var(--grey-500)">#{g}</text>
+          <line x1={pl} x2={w} y1={y(g)} y2={y(g)} stroke="var(--tk-rule-hairline)" strokeWidth="1" />
+          <text x={pl - 4} y={y(g) + 3} textAnchor="end" fontSize="9" fill="var(--tk-text-muted)">#{g}</text>
         </g>
       ))}
-      <text x={pl} y={h - 4} fontSize="9" fill="var(--grey-500)">{first.date}</text>
-      <text x={w - 4} y={h - 4} fontSize="9" textAnchor="end" fill="var(--grey-500)">{lastP.date}</text>
-      <polyline points={points.map((p, i) => `${x(i)},${y(p.rank)}`).join(" ")} fill="none" stroke="var(--white)" strokeWidth="1" />
-      <rect x={x(points.length - 1) - 1.5} y={y(lastP.rank) - 1.5} width="3" height="3" fill="var(--signal)" />
+      <text x={pl} y={h - 4} fontSize="9" fill="var(--tk-text-muted)">{first.date}</text>
+      <text x={w - 4} y={h - 4} fontSize="9" textAnchor="end" fill="var(--tk-text-muted)">{lastP.date}</text>
+      <polyline points={points.map((p, i) => `${x(i)},${y(p.rank)}`).join(" ")} fill="none" stroke="var(--tk-text-primary)" strokeWidth="1" />
+      <rect x={x(points.length - 1) - 1.5} y={y(lastP.rank) - 1.5} width="3" height="3" fill="var(--tk-accent-1)" />
     </svg>
   );
 }

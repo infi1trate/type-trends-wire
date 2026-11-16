@@ -19,7 +19,7 @@ describe("site gate", () => {
     expect(r.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(r.headers.get("cache-control")).toBe("no-store");
     const html = await r.text();
-    expect(html).toContain("<title>DSGN/TERMINAL</title>");
+    expect(html).toContain("<title>slug</title>");
     expect(html).toContain('<label for="password">Password</label>');
     expect(html).toContain('value="/digest/2026-W46"');
     expect(html).not.toMatch(/og:|twitter:|Subgrid|The Digest No/);

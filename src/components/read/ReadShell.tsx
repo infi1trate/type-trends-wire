@@ -12,6 +12,8 @@ import { Methodology } from "@/components/terminal/Methodology";
 import { Tour } from "@/components/terminal/Tour";
 import { useLocationParts, useModeToggle, useSectorLens } from "./lens";
 import { FreshnessLine } from "./Freshness";
+import { Wordmark } from "@/components/brand/Wordmark";
+import { BRAND_NAME } from "@/lib/brand";
 
 /** `fixedSector`: the page is about one sector (a sector report); the lens shows it and changing it moves to that sector's page. */
 type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean; fixedSector?: { value: string; onChange: (s: string) => void } | undefined };
@@ -57,8 +59,8 @@ export function ReadShell({ children, label, section, lens = false, note = null,
     <div className="digest">
       <a href="#ed-main" className="sr-only focus:not-sr-only">Skip to the content</a>
       <header className="no-print border-b border-ed-ink">
-        <div className="ed-wrap ed-nav flex flex-wrap items-center justify-between gap-x-4 text-[11px] uppercase tracking-[.08em]">
-          <Link to="/" className="ed-tap py-2 font-semibold no-underline">DSGN/TERMINAL</Link>
+        <div className="ed-wrap ed-nav ed-navtext flex flex-wrap items-center justify-between gap-x-4">
+          <Link to="/" className="ed-tap py-2 no-underline" aria-label={`${BRAND_NAME}, the front page`}><Wordmark size={20} leading={16} /></Link>
           <span className="flex flex-wrap items-center gap-x-4">
             <button type="button" onClick={() => setOverlay("glossary")} className="ed-tap cursor-pointer py-2 uppercase" aria-label="Open the glossary (?)">Glossary</button>
             <a href={mode.href} onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); }} data-tour="r-terminal" className="ed-tap py-2 font-semibold" title="Switch to Terminal mode (`)">Terminal ⇄</a>
@@ -66,13 +68,13 @@ export function ReadShell({ children, label, section, lens = false, note = null,
             <button type="button" className="ed-tap cursor-pointer py-2 uppercase md:hidden" aria-expanded={open} aria-controls="read-sections" onClick={() => setOpen(o => !o)}>{open ? "Close" : "Sections"}</button>
           </span>
         </div>
-        <nav aria-label="Sections" className="ed-wrap ed-nav border-t border-ed-rule text-[11px] uppercase tracking-[.08em] md:border-t-0">
+        <nav aria-label="Sections" className="ed-wrap ed-nav ed-navtext border-t border-ed-rule md:border-t-0">
           <div className="flex flex-col gap-y-1 py-1 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-6">
             <ul id="read-sections" className={`${open ? "flex" : "hidden"} flex-col md:flex md:flex-row md:flex-wrap md:gap-x-6`}>
               {SECTIONS.map(s => <li key={s.id}><SectionLink s={s} active={active === s.id} onGo={() => setOpen(false)} /></li>)}
             </ul>
             <label className="flex items-center gap-2 normal-case tracking-normal">
-              <span className="uppercase tracking-[.08em]">Sector</span>
+              <span className="ed-navtext">Sector</span>
               <select value={sector} onChange={e => setSector(e.target.value)} className="ed-data min-h-11 border border-ed-ink bg-transparent px-2 lg:min-h-8">
                 {LENS_SECTORS.map(s => <option key={s} value={s}>{sectorName(s)}</option>)}
               </select>
@@ -85,8 +87,11 @@ export function ReadShell({ children, label, section, lens = false, note = null,
       {sub}
       <main id="ed-main" aria-label={label}>{children}</main>
     </div>
-    {overlay === "glossary" && <Glossary onClose={close} onTour={startTour} focus={anchor} />}
-    {overlay === "method" && <Methodology onClose={close} focus={anchor} />}
-    {touring && <Tour mode="read" onDone={() => setTouring(false)} />}
+    {/* Glossary, methodology and tour are terminal-density overlays: they keep the dark mode on Read pages. */}
+    <div data-mode="dark" className="contents">
+      {overlay === "glossary" && <Glossary onClose={close} onTour={startTour} focus={anchor} />}
+      {overlay === "method" && <Methodology onClose={close} focus={anchor} />}
+      {touring && <Tour mode="read" onDone={() => setTouring(false)} />}
+    </div>
   </>;
 }

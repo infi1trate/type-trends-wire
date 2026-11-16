@@ -4,6 +4,7 @@ import { crawlQuery, type CrawlData } from "@/lib/data";
 import { readScope, saveScope, type IndexFilter, type Scope } from "@/lib/crawl";
 import { Button } from "@/components/ui/button";
 import { Loading } from "./primitives";
+import { BRAND_NAME } from "@/lib/brand";
 
 const ScopeContext = createContext<{scope:Scope;setScope:(scope:Scope)=>void}>({scope:"en",setScope:()=>{}});
 export function CrawlScopeProvider({children}:{children:React.ReactNode}) {
@@ -31,7 +32,7 @@ export function CrawlControls({index,onIndex}:{index?:IndexFilter;onIndex?:(inde
     <Toggle label="SCOPE" options={["EN","ALL"]} value={scope.toUpperCase()} onChange={v=>setScope(v==="EN"?"en":"all")} />
     {index && onIndex && <Toggle label="INDEX" options={["ALL","VANGUARD","MAINSTREAM","CURATED"]} value={index} onChange={onIndex}/>}
     {data && <div tabIndex={0} className="crawl-tip label relative ml-auto text-compare-muted">
-      SOURCE DSGN-CRAWLER · RUN {data.run.id} · {data.run.finished_at?.slice(0,10)} · V {data.sites.filter(s=>s.index_name==="vanguard").length} / M {data.sites.filter(s=>s.index_name==="mainstream").length} / C {data.sites.filter(s=>s.index_name==="curated").length} SITES · LANG {scope.toUpperCase()}
+      SOURCE <span className="normal-case">{BRAND_NAME}</span> CRAWLER · RUN {data.run.id} · {data.run.finished_at?.slice(0,10)} · V {data.sites.filter(s=>s.index_name==="vanguard").length} / M {data.sites.filter(s=>s.index_name==="mainstream").length} / C {data.sites.filter(s=>s.index_name==="curated").length} SITES · LANG {scope.toUpperCase()}
       <pre className="crawl-tooltip whitespace-pre-wrap">{errorText}</pre>
     </div>}
   </div>;

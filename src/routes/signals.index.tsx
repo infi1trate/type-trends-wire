@@ -7,8 +7,9 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { SignalsIndexView } from "@/components/read/SignalsIndexView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Signals — what deserves your attention · DSGN/TERMINAL";
+const TITLE = `Signals — what deserves your attention · ${BRAND_NAME}`;
 const DESC = "Headline design signals ranked by Momentum, by dimension (type, color, layout, voice, vibe), each with stage, Confidence and a so-what line.";
 export const Route = createFileRoute("/signals/")({
   validateSearch: (s: Record<string, unknown>): { tab?: string | undefined; tier?: string | undefined; sector?: string | undefined } => ({

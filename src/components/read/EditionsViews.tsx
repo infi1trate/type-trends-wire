@@ -96,8 +96,8 @@ export function MorningView({ d }: { d: MorningData }) {
 
 // SECTOR REPORTS ------------------------------------------------------------------------------------
 const share = (v: number | null) => pct(v, 1) ?? "—";
-function Side({ s }: { s: { stage: StageName | null; share: number | null; momentum_index: number | null } }) {
-  return <span className="flex flex-wrap items-center gap-2"><StageWord stage={s.stage} /><span>{share(s.share)}</span><span className="ed-muted">Momentum {s.momentum_index ?? "—"}</span></span>;
+function Side({ s }: { s: { stage: StageName | null; share: number | null } }) {
+  return <span className="flex flex-wrap items-center gap-2"><StageWord stage={s.stage} /><span>{share(s.share)}</span></span>;
 }
 const StoryList = ({ items, empty }: { items: { id: string; kicker: string; headline: string; at: string; score: number }[]; empty: string }) => items.length
   ? <ul className="space-y-3">{items.map(s => <li key={s.id} className="ed-hair pt-2"><p className="ed-kicker">{s.kicker}</p><Link to="/stories/$id" params={{ id: s.id }} className="ed-h3 no-underline hover:underline" {...pr(`/stories/${encodeURIComponent(s.id)}`)}>{s.headline}</Link><p className="ed-data ed-muted mt-1">{storyTime(s.at)} · score {s.score}</p></li>)}</ul>
@@ -119,11 +119,11 @@ export function SectorReportView({ r }: { r: SectorReport }) {
         <p className="ed-caption mt-3 max-w-[72ch]">{r.basis}</p>
         <p className="print-only ed-caption mt-3" {...pr(r.href)}>{r.href}</p>
       </header>
-      <Block n={num("signals")} id="sr-signals" title="Headline signals" kicker={`Stage, share and Momentum in ${r.name} against all sectors.`}>
-        {r.signals.length ? <div className="overflow-x-auto"><table className="ed-data w-full min-w-[620px] border-collapse text-left">
+      <Block n={num("signals")} id="sr-signals" title="Headline signals" kicker={`Stage and share in ${r.name} against all sectors. Momentum is computed across all sectors only, so it appears once.`}>
+        {r.signals.length ? <div className="overflow-x-auto"><table className="ed-data w-full min-w-[720px] border-collapse text-left">
           <caption className="sr-only">Headline signals in {r.name} against all sectors</caption>
-          <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Signal</th><th scope="col" className="py-2 pr-3 font-semibold">{r.name}</th><th scope="col" className="py-2 font-semibold">All sectors</th></tr></thead>
-          <tbody>{r.signals.map(s => <tr key={s.key} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal"><Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="ed-tap">{s.name}</Link> <span className="ed-muted">[{s.dimension}]</span> {s.basis === "ai" && <BasisWord b="ai" />}</th><td className="py-2 pr-3"><Side s={s.here} /></td><td className="py-2"><Side s={s.all} /></td></tr>)}</tbody>
+          <thead><tr className="ed-kicker"><th scope="col" className="py-2 pr-3 font-semibold">Signal</th><th scope="col" className="py-2 pr-3 font-semibold">{r.name}</th><th scope="col" className="py-2 pr-3 font-semibold">All sectors</th><th scope="col" className="py-2 font-semibold">Momentum (all sectors)</th></tr></thead>
+          <tbody>{r.signals.map(s => <tr key={s.key} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal"><Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="ed-tap">{s.name}</Link> <span className="ed-muted">[{s.dimension}]</span> {s.basis === "ai" && <BasisWord b="ai" />}</th><td className="py-2 pr-3"><Side s={s.here} /></td><td className="py-2 pr-3"><Side s={s.all} /></td><td className="py-2" data-testid="momentum-all">{s.momentum_all ?? "—"}</td></tr>)}</tbody>
         </table></div> : <p className="ed-small">{r.note ?? "No headline signal is measured in this sector yet."}</p>}
       </Block>
       <Block n={num("contrast")} id="sr-contrast" title="Here, not elsewhere" kicker="Rising or emerging in this sector while not rising across all sectors, and the reverse.">

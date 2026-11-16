@@ -3,7 +3,7 @@
 // Cached per runtime for 60 s. Nothing here writes.
 import { supabaseAnon } from "./mcp/supabase";
 import { healthFactsSchema } from "./health";
-import { freshness, freshnessLine, wireOnTime, type FreshRow, type JobFact, type JobId } from "./freshness";
+import { VANGUARD_RUN_PREFIX, freshness, freshnessLine, wireOnTime, type FreshRow, type JobFact, type JobId } from "./freshness";
 import { progress, type StepRow } from "./jobs/steps";
 import { fetchRealRuns } from "./real-runs";
 
@@ -20,13 +20,15 @@ export function loadFreshness(): Promise<FreshnessPayload> {
 async function build(): Promise<FreshnessPayload> {
   const db = supabaseAnon(), now = Date.now();
   const lastOk = (job: string) => db.from("ingest_runs").select("started_at,finished_at").eq("job", job).order("started_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0] ?? null);
-  const [hf, wire, gfonts, ph, real, steps, story, crop] = await Promise.all([
+  const [hf, wire, gfonts, ph, real, steps, story, crop, vanguard] = await Promise.all([
     db.rpc("health_facts").then(r => (r.error ? null : healthFactsSchema.safeParse(r.data).data ?? null)),
     lastOk("ingest-wire"), lastOk("ingest-gfonts"), lastOk("ingest-producthunt"),
     fetchRealRuns(db).catch(() => []),
     db.from("job_steps").select("*").order("queued_at", { ascending: false }).limit(60).then(r => (r.data ?? []) as StepRow[]),
     db.from("stories").select("created_at").order("created_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0]?.created_at ?? null),
     db.from("site_crops").select("last_seen_at").order("last_seen_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0]?.last_seen_at ?? null),
+    // Vanguard runs are recognised by their run id prefix on the public snapshot rows (read-only).
+    db.from("library_snapshots").select("received_at").eq("source", "live").like("run_id", `${VANGUARD_RUN_PREFIX}%`).order("received_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0]?.received_at ?? null, () => null),
   ]);
   const ing = (key: string) => hf?.ingest[key] ?? {};
   const fact = (okRow: { started_at: string; finished_at: string | null } | null, key: string): JobFact => {
@@ -43,10 +45,12 @@ async function build(): Promise<FreshnessPayload> {
     producthunt: { ...fact(ph, "ingest-producthunt"), dormant: ph ? null : "Waiting for a Product Hunt developer token" },
     library_ai: { ran: hf?.ai_jobs?.last_activity_at ?? null, finished: hf?.ai_jobs?.last_done_at ?? null, idle: !(hf?.ai_jobs?.pending ?? 0), waiting_since: (hf?.ai_jobs?.pending ?? 0) > 0 ? hf?.ai_jobs?.oldest_pending_at ?? null : null, dormant: hf?.ai_jobs?.paused ? "Paused by the owner" : null },
     library_check: { ran: hf?.library_check_at ?? null },
+    vanguard: { ran: vanguard },
     library_full: { ran: hf?.library_full_at ?? null },
     crawl: { ran: fullRun?.started_at ?? null, finished: fullRun?.finished_at ?? null },
     crops: { ran: crop },
     discourse: { ran: hf?.bluesky_window_end ?? null },
+    wayback: { ran: hf?.wayback_received_at ?? null },
     forecast: { ran: latestReal?.at ?? null, finished: latestReal?.at ?? null },
     follow_ups: lastSteps ? { ran: lastSteps.queued_at, finished: lastSteps.finished_at, waiting_since: open?.queued_at ?? null, failing: lastSteps.failed.length > 0 } : { ran: null },
     stories: { ran: story },

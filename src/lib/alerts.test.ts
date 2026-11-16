@@ -41,7 +41,7 @@ describe('alert selection', () => {
   });
   it('rows link to the trait drawer and carry the dedupe key', () => {
     const r = alertRow(c[0]!, 42, new Date('2026-11-15T09:30:00Z'));
-    expect(r).toMatchObject({ source_kind: 'alert', ref: 'aesthetic:a', tags: ['alert', 'sentiment_turn'], url: 'https://type-trends-wire.lovable.app/?panel=brief&trait=aesthetic%3Aa&sector=all&alert=42-sentiment_turn' });
+    expect(r).toMatchObject({ source_kind: 'alert', ref: 'aesthetic:a', tags: ['alert', 'sentiment_turn'], url: 'https://slug.global/?panel=brief&trait=aesthetic%3Aa&sector=all&alert=42-sentiment_turn' });
     expect(r.excerpt).toContain('run 42');
   });
   it('titles use the label map, never $ tickers', () => {

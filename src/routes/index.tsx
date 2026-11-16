@@ -8,8 +8,9 @@ import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { LiveView } from "@/components/read/LiveView";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "DSGN/TERMINAL — the live newsroom for how brands look and sound";
+const TITLE = `${BRAND_NAME} — the live newsroom for how brands look and sound`;
 const DESC = "What is changing in how brands look and sound on the web, who is doing it and where the opening is: stories, signals and brands, every number with receipts.";
 
 export const Route = createFileRoute("/")({

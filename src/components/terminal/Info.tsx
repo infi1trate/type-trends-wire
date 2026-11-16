@@ -74,7 +74,7 @@ export function Term({ children, g }: { children: React.ReactNode; g: string }) 
 export function StageBadge({ stage, info = false }: { stage: string | null | undefined; info?: boolean }) {
   const s = stageName(stage);
   if (!s) return <span className="label text-g500">Not staged yet</span>;
-  return <span className="inline-flex items-center"><span className="label inline-block border border-ink px-1 leading-[14px] text-ink">{s}</span>{info && <Info g={stageId(s)} />}</span>;
+  return <span className="inline-flex items-center"><span className="tk-chip inline-block border px-1" data-stage={s.toLowerCase()}>{s}</span>{info && <Info g={stageId(s)} />}</span>;
 }
 
 export function DimTag({ d, info = false }: { d: Dimension; info?: boolean }) {

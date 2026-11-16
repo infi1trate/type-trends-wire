@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as DeskRouteImport } from './routes/desk'
 import { Route as EditionsRouteImport } from './routes/editions'
+import { Route as KitRouteImport } from './routes/kit'
 import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as StatusRouteImport } from './routes/status'
@@ -95,6 +96,11 @@ const DeskRoute = DeskRouteImport.update({
 const EditionsRoute = EditionsRouteImport.update({
   id: '/editions',
   path: '/editions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KitRoute = KitRouteImport.update({
+  id: '/kit',
+  path: '/kit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LedgerRoute = LedgerRouteImport.update({
@@ -426,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
+  '/kit': typeof KitRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
@@ -495,6 +502,7 @@ export interface FileRoutesByTo {
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
+  '/kit': typeof KitRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
@@ -565,6 +573,7 @@ export interface FileRoutesById {
   '/audit.png': typeof AuditDotpngRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
+  '/kit': typeof KitRoute
   '/ledger': typeof LedgerRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/status': typeof StatusRoute
@@ -636,6 +645,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/desk'
     | '/editions'
+    | '/kit'
     | '/ledger'
     | '/robots.txt'
     | '/status'
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/desk'
     | '/editions'
+    | '/kit'
     | '/ledger'
     | '/robots.txt'
     | '/status'
@@ -774,6 +785,7 @@ export interface FileRouteTypes {
     | '/audit.png'
     | '/desk'
     | '/editions'
+    | '/kit'
     | '/ledger'
     | '/robots.txt'
     | '/status'
@@ -844,6 +856,7 @@ export interface RootRouteChildren {
   AuditDotpngRoute: typeof AuditDotpngRoute
   DeskRoute: typeof DeskRoute
   EditionsRoute: typeof EditionsRoute
+  KitRoute: typeof KitRoute
   LedgerRoute: typeof LedgerRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   StatusRoute: typeof StatusRoute
@@ -937,6 +950,13 @@ declare module '@tanstack/react-router' {
       path: '/editions'
       fullPath: '/editions'
       preLoaderRoute: typeof EditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kit': {
+      id: '/kit'
+      path: '/kit'
+      fullPath: '/kit'
+      preLoaderRoute: typeof KitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ledger': {
@@ -1388,6 +1408,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditDotpngRoute: AuditDotpngRoute,
   DeskRoute: DeskRoute,
   EditionsRoute: EditionsRoute,
+  KitRoute: KitRoute,
   LedgerRoute: LedgerRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   StatusRoute: StatusRoute,

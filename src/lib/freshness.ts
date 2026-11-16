@@ -9,8 +9,13 @@ export type Rhythm =
   | { kind: "daily"; h: number; m: number }
   | { kind: "weekly"; dow: number; h?: number; m?: number }
   | { kind: "after"; of: string; ms: number };
-export type JobId = "wire" | "library_ai" | "gfonts" | "producthunt" | "library_check" | "library_full" | "crawl" | "crops" | "discourse" | "forecast" | "follow_ups" | "stories" | "digest";
-export type JobDef = { id: JobId; name: string; feeds: string; rhythm: Rhythm; runs_on: "scheduled" | "crawler" | "chained"; note?: string };
+export type JobId = "wire" | "library_ai" | "gfonts" | "producthunt" | "library_check" | "vanguard" | "library_full" | "crawl" | "crops" | "discourse" | "wayback" | "forecast" | "follow_ups" | "stories" | "digest";
+/** `rhythm_text` overrides the generated words when the cadence needs more than one interval to describe. */
+export type JobDef = { id: JobId; name: string; feeds: string; rhythm: Rhythm; rhythm_text?: string; runs_on: "scheduled" | "crawler" | "chained"; note?: string };
+/** Jobs whose lateness a reader notices directly: only these raise the warning in the Read shell. Crawler-side lateness shows on /status only. */
+export const READER_FACING: ReadonlySet<JobId> = new Set<JobId>(["wire", "stories", "forecast", "follow_ups", "digest"]);
+/** Crawler runs whose id starts with this prefix are the daily vanguard crawl (read from stored snapshots; nothing is written). */
+export const VANGUARD_RUN_PREFIX = "lib-vanguard-";
 
 /** The registry. Times are UTC and match the stored schedules; crawler jobs run on the repo's GitHub Actions. */
 export const JOBS: readonly JobDef[] = [
@@ -18,11 +23,13 @@ export const JOBS: readonly JobDef[] = [
   { id: "library_ai", name: "AI reading of captured pages", feeds: "Pricing, message and product changes on brand pages", rhythm: { kind: "every", ms: 5 * MIN, aligned: true }, runs_on: "scheduled", note: "Only works when captures are waiting" },
   { id: "gfonts", name: "Google Fonts popularity", feeds: "Type signals", rhythm: { kind: "daily", h: 6, m: 17 }, runs_on: "scheduled" },
   { id: "producthunt", name: "Product Hunt launches", feeds: "Launch stories", rhythm: { kind: "daily", h: 8, m: 37 }, runs_on: "scheduled" },
-  { id: "library_check", name: "Library check", feeds: "Brand pages, moves and stories", rhythm: { kind: "every", ms: DAY }, runs_on: "crawler" },
+  { id: "library_check", name: "Library check", feeds: "Brand pages, moves and stories", rhythm: { kind: "every", ms: HOUR }, rhythm_text: "Hourly slices, every site once a day", runs_on: "crawler" },
+  { id: "vanguard", name: "Vanguard crawl", feeds: "Daily full look at the brands most likely to move (top trendsetters and recent movers)", rhythm: { kind: "every", ms: DAY }, rhythm_text: "Daily", runs_on: "crawler" },
   { id: "library_full", name: "Full library crawl", feeds: "Every brand page and the weekly forecast", rhythm: { kind: "weekly", dow: 6 }, runs_on: "crawler" },
   { id: "crawl", name: "Design-signal crawl", feeds: "Vanguard and curation inputs to the weekly forecast", rhythm: { kind: "weekly", dow: 6 }, runs_on: "crawler" },
   { id: "crops", name: "Section crops", feeds: "Before/after images on brand, pattern and story pages", rhythm: { kind: "every", ms: DAY }, runs_on: "crawler" },
   { id: "discourse", name: "Discourse sample", feeds: "What people say about design (forecast input)", rhythm: { kind: "every", ms: 6 * HOUR }, runs_on: "crawler" },
+  { id: "wayback", name: "Wayback history", feeds: "Archive captures behind quarterly history", rhythm: { kind: "every", ms: 6 * HOUR }, runs_on: "crawler", note: "Runs while the archive backfill is active" },
   { id: "forecast", name: "Weekly forecast", feeds: "Signals, sector reports, the Digest", rhythm: { kind: "weekly", dow: 0, h: 9, m: 30 }, runs_on: "scheduled" },
   { id: "follow_ups", name: "Forecast follow-ups", feeds: "Weekly brief, chart of the week, ledger, taste tables, story build", rhythm: { kind: "after", of: "the next forecast", ms: 30 * MIN }, runs_on: "chained", note: "One step per five-minute call after the forecast is stored" },
   { id: "stories", name: "Story build", feeds: "Live front page, Morning Line", rhythm: { kind: "after", of: "each wire, library and forecast job", ms: DAY }, runs_on: "chained", note: "Shown as the newest stored story; builds that find nothing new leave no trace" },
@@ -94,14 +101,15 @@ export function freshness(facts: Partial<Record<JobId, JobFact>>, now: number, j
     else if (ms(last) === null) state = "never";
     else state = now - ms(last)! > limit ? "late" : "on_time";
     const note = [f.dormant, f.failing && state !== "dormant" ? "Last attempt failed" : null, waiting !== null ? `Work waiting since ${ago(f.waiting_since ?? null, now)}` : f.idle ? "Idle: nothing waiting" : null, j.note].filter(Boolean).join(" · ") || null;
-    return { id: j.id, name: j.name, feeds: j.feeds, rhythm: rhythmText(j.rhythm), runs_on: j.runs_on, last_ran: f.ran, last_finished: f.finished ?? null, next: nextExpected(j.rhythm, f.ran, now), state, note };
+    return { id: j.id, name: j.name, feeds: j.feeds, rhythm: j.rhythm_text ?? rhythmText(j.rhythm), runs_on: j.runs_on, last_ran: f.ran, last_finished: f.finished ?? null, next: nextExpected(j.rhythm, f.ran, now), state, note };
   });
 }
 
-/** The single quiet line in the Read shell: three times, or a plain warning naming whatever is late. */
+/** The single quiet line in the Read shell: three times, or a plain warning naming a late reader-facing job (READER_FACING).
+ *  A late crawler-side job does not raise it; its last-run time is still stated plainly and its lateness shows on /status. */
 export function freshnessLine(rows: FreshRow[], now: number): { text: string; late: boolean } {
   const by = (id: JobId) => rows.find(r => r.id === id);
-  const late = rows.filter(r => r.state === "late");
+  const late = rows.filter(r => r.state === "late" && READER_FACING.has(r.id));
   if (late.length) {
     const words = late.slice(0, 2).map(r => `${r.name} last ran ${ago(r.last_finished ?? r.last_ran, now)} (expected ${r.rhythm.toLowerCase()})`);
     return { late: true, text: `Late: ${words.join(" · ")}${late.length > 2 ? ` · and ${late.length - 2} more on the status page` : ""}` };

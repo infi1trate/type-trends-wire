@@ -4,8 +4,9 @@ import { editionsQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { EditionsView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
+import { BRAND_NAME } from "@/lib/brand";
 
-const TITLE = "Editions — daily, weekly, quarterly · DSGN/TERMINAL";
+const TITLE = `Editions — daily, weekly, quarterly · ${BRAND_NAME}`;
 const DESC = "The Morning Line every day, the Digest every week and a report on each sector every quarter, all built from stored stories and signals.";
 export const Route = createFileRoute("/editions")({
   loader: ({ context }) => context.queryClient.ensureQueryData(editionsQuery()).then(() => undefined),

@@ -5,7 +5,7 @@ const edition = { day: "2026-11-16", title: "The Morning Line · 16 November 202
   lead: item, more: [], moving: { pair: null, items: [] }, opening: null, figure: null, desk: [{ id: "h1", headline: "Held one", score: 40, reason: "below threshold", href: "/stories/h1" }], lastFull: null };
 const loadMorning = vi.fn(async (day: string | null) => (day === "2020-01-01" ? null : { edition, archive: [{ day: "2026-11-16", title: edition.title, count: 1, lead: item.headline, final: false, href: edition.href }], today: "2026-11-16" }));
 const loadSectorReport = vi.fn(async (sector: string) => ({ sector, name: "Fintech", title: "State of Fintech · Q4 2026", quarter: { key: "2026Q4", label: "Q4 2026", start: "", end: "" }, as_of: "2026-11-16T00:39:00Z", asOfText: "16 November 2026", href: `/sectors/${sector}`,
-  brands: 30, coverage: { covered: 5, total: 8, enough: true }, note: null, signals: [{ key: "css:subgrid", name: "Subgrid layouts", dimension: "LAYOUT", basis: "measured", here: { stage: "Rising", share: 0.3, momentum_index: 80 }, all: { stage: "Steady", share: 0.2, momentum_index: 60 }, href: "/signals/css%3Asubgrid" }],
+  brands: 30, coverage: { covered: 5, total: 8, enough: true }, note: null, signals: [{ key: "css:subgrid", name: "Subgrid layouts", dimension: "LAYOUT", basis: "measured", here: { stage: "Rising", share: 0.3 }, all: { stage: "Steady", share: 0.2 }, momentum_all: 60, href: "/signals/css%3Asubgrid" }],
   contrast: { risingHere: [], risingElsewhere: [] }, whiteSpace: [], counterMoves: [], leaders: [{ domain: "stripe.com", name: "Stripe", rank: 2, href: "/brands/stripe.com", latest: null }], patterns: [], stories: [], storiesInQuarter: 0, basis: "Based on 30 brands tracked in Fintech.", blocks: [] }));
 vi.mock("@/lib/editions/editions.server", () => ({ loadMorning: (d: string | null) => loadMorning(d), loadSectorReport: (s: string) => loadSectorReport(s) }));
 import { handleMcp } from "./server.server";
@@ -17,8 +17,8 @@ describe("MCP editions tools", () => {
     expect(res.isError).toBeFalsy();
     expect(loadMorning).toHaveBeenCalledWith(null);
     const out = JSON.parse(res.content[0].text);
-    expect(out).toMatchObject({ day: "2026-11-16", thin: true, url: "https://type-trends-wire.lovable.app/morning/2026-11-16", rss: "https://type-trends-wire.lovable.app/morning/rss.xml" });
-    expect(out.lead).toMatchObject({ id: "s1", score: 72, url: "https://type-trends-wire.lovable.app/stories/s1", why: { basis: "measured" } });
+    expect(out).toMatchObject({ day: "2026-11-16", thin: true, url: "https://slug.global/morning/2026-11-16", rss: "https://slug.global/morning/rss.xml" });
+    expect(out.lead).toMatchObject({ id: "s1", score: 72, url: "https://slug.global/stories/s1", why: { basis: "measured" } });
     expect(out.on_the_desk[0]).toMatchObject({ held_because: "below threshold" });
     expect((await (await handleMcp(req("morning_line", { date: "2020-01-01" }))).json()).result.isError).toBe(true);
     expect((await (await handleMcp(req("morning_line", { date: "16 Nov" }))).json()).result.isError).toBe(true);
@@ -27,7 +27,7 @@ describe("MCP editions tools", () => {
     const res = (await (await handleMcp(req("sector_report", { sector: "fintech" }))).json()).result;
     expect(res.isError).toBeFalsy();
     const out = JSON.parse(res.content[0].text);
-    expect(out).toMatchObject({ sector: "fintech", title: "State of Fintech · Q4 2026", url: "https://type-trends-wire.lovable.app/sectors/fintech", brands_tracked: 30 });
+    expect(out).toMatchObject({ sector: "fintech", title: "State of Fintech · Q4 2026", url: "https://slug.global/sectors/fintech", brands_tracked: 30 });
     expect(out.signals[0]).toMatchObject({ key: "css:subgrid", here: { stage: "Rising" }, all_sectors: { stage: "Steady" } });
     expect(out.leaders[0]).toMatchObject({ domain: "stripe.com", trendsetter_rank: 2 });
     expect((await (await handleMcp(req("sector_report", { sector: "crypto" }))).json()).result.isError).toBe(true);

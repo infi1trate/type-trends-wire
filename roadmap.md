@@ -215,3 +215,14 @@
 - [x] /welcome private landing (LANDING_PUBLIC = false), linked from /tools only
 - [x] Watchlist feed run-to-run uses real runs + gap rule
 - [x] Tests, screenshots, report
+
+# Phase 17a — design-language groundwork + rename to "slug" (no visual change; don't publish)
+- [x] Before screenshots (9 pages × 1440/360)
+- [x] src/lib/brand.ts + Wordmark; rename user-facing DSGN/TERMINAL; MCP name slug + old-name alias; legacy-name test
+- [x] src/lib/theme/ token contract, legacy theme (light/dark/vibes), blank stub + README; root mode attribute per route; fonts from theme
+- [x] Move hard-coded colours/fonts/radii/shadows onto tokens
+- [x] /kit (gated, Tools only, ia.ts) with all sections; consolidation list
+- [x] <Treated> crop treatments
+- [x] Chart primitives (scatter, line, bar, donut) + shared frame
+- [x] Sector report Momentum once; freshness shell warns only on reader-facing jobs; /status crawler rhythms + lib-vanguard- runs
+- [x] Tests, after screenshots + diff, report

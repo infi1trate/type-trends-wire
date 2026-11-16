@@ -23,7 +23,7 @@ describe("embed widget", () => {
     expect(html).toContain(">Rising</span>");
     expect(html).toContain("Subgrid layouts: rising from 12.0% to 12.5–17.0% of homepages by Q1 2027.");
     expect(html).toContain("Data through Q4 2026");
-    expect(html).toContain('<a href="https://type-trends-wire.lovable.app/trait/css%3Asubgrid" target="_blank" rel="noopener">DSGN/TERMINAL →</a>');
+    expect(html).toContain('<a href="https://slug.global/trait/css%3Asubgrid" target="_blank" rel="noopener">slug →</a>');
     expect(html.match(/<svg /g)!.length).toBe(3);
     expect(html).toContain('stroke="#ff4f00"');
     expect(html).toMatch(/<main aria-label="Subgrid layouts \[LAYOUT\], MEASURED, all sectors: Rising\./);
@@ -53,9 +53,9 @@ describe("embed widget", () => {
   });
   it("snippet: responsive 280–800 px, fixed 4:3, lazy, borderless, titled", () => {
     const src = embedSrc({ kind: "trait", key: "css:subgrid" }, { theme: "light", scope: "fintech" });
-    expect(src).toBe("https://type-trends-wire.lovable.app/embed/trait/css%3Asubgrid?scope=fintech&theme=light");
-    expect(embedSnippet(src, "Subgrid layouts [LAYOUT]")).toBe('<iframe src="https://type-trends-wire.lovable.app/embed/trait/css%3Asubgrid?scope=fintech&amp;theme=light" title="Subgrid layouts [LAYOUT] — DSGN/TERMINAL signal chart" style="width:100%;max-width:800px;min-width:280px;aspect-ratio:4/3;height:auto;border:0" loading="lazy"></iframe>');
-    expect(embedSrc({ kind: "chart", week: "2026-W46" })).toBe("https://type-trends-wire.lovable.app/embed/chart/2026-W46");
+    expect(src).toBe("https://slug.global/embed/trait/css%3Asubgrid?scope=fintech&theme=light");
+    expect(embedSnippet(src, "Subgrid layouts [LAYOUT]")).toBe('<iframe src="https://slug.global/embed/trait/css%3Asubgrid?scope=fintech&amp;theme=light" title="Subgrid layouts [LAYOUT] — slug signal chart" style="width:100%;max-width:800px;min-width:280px;aspect-ratio:4/3;height:auto;border:0" loading="lazy"></iframe>');
+    expect(embedSrc({ kind: "chart", week: "2026-W46" })).toBe("https://slug.global/embed/chart/2026-W46");
   });
 });
 
@@ -72,21 +72,21 @@ describe("embed gate", () => {
 
 describe("oEmbed", () => {
   const ld = { trait: async (k: string) => (k === "css:subgrid" ? { title: "Subgrid layouts [LAYOUT]" } : null), chart: async (w: string) => (w === "2026-W46" ? { title: "Subgrid layouts [LAYOUT]" } : null) };
-  const ask = (q: string) => handleOembed(new Request(`https://type-trends-wire.lovable.app/api/public/oembed?${q}`), ld);
+  const ask = (q: string) => handleOembed(new Request(`https://slug.global/api/public/oembed?${q}`), ld);
   it("returns a valid rich response for trait and chart page URLs", async () => {
-    const r = await ask(`url=${encodeURIComponent("https://type-trends-wire.lovable.app/trait/css%3Asubgrid")}&maxwidth=500`);
+    const r = await ask(`url=${encodeURIComponent("https://slug.global/trait/css%3Asubgrid")}&maxwidth=500`);
     expect(r.status).toBe(200);
     const o = await r.json();
-    expect(o).toMatchObject({ version: "1.0", type: "rich", provider_name: "DSGN/TERMINAL", provider_url: "https://type-trends-wire.lovable.app", title: "Subgrid layouts [LAYOUT] — DSGN/TERMINAL", width: 500, height: 375, cache_age: 3600 });
-    expect(o.html).toBe('<iframe src="https://type-trends-wire.lovable.app/embed/trait/css%3Asubgrid" title="Subgrid layouts [LAYOUT] — DSGN/TERMINAL signal chart" width="500" height="375" style="border:0;max-width:100%" loading="lazy"></iframe>');
-    const c = await (await ask(`url=${encodeURIComponent("https://type-trends-wire.lovable.app/chart/2026-W46")}`)).json();
+    expect(o).toMatchObject({ version: "1.0", type: "rich", provider_name: "slug", provider_url: "https://slug.global", title: "Subgrid layouts [LAYOUT] — slug", width: 500, height: 375, cache_age: 3600 });
+    expect(o.html).toBe('<iframe src="https://slug.global/embed/trait/css%3Asubgrid" title="Subgrid layouts [LAYOUT] — slug signal chart" width="500" height="375" style="border:0;max-width:100%" loading="lazy"></iframe>');
+    const c = await (await ask(`url=${encodeURIComponent("https://slug.global/chart/2026-W46")}`)).json();
     expect(c).toMatchObject({ type: "rich", width: 800, height: 600 });
     expect(c.html).toContain("/embed/chart/2026-W46");
   });
   it("404s other hosts, other paths and unknown signals; 501 for non-JSON formats", async () => {
     expect((await ask(`url=${encodeURIComponent("https://evil.example/trait/css%3Asubgrid")}`)).status).toBe(404);
-    expect((await ask(`url=${encodeURIComponent("https://type-trends-wire.lovable.app/ledger")}`)).status).toBe(404);
-    expect((await ask(`url=${encodeURIComponent("https://type-trends-wire.lovable.app/trait/css%3Anope")}`)).status).toBe(404);
+    expect((await ask(`url=${encodeURIComponent("https://slug.global/ledger")}`)).status).toBe(404);
+    expect((await ask(`url=${encodeURIComponent("https://slug.global/trait/css%3Anope")}`)).status).toBe(404);
     expect((await ask(`url=x&format=xml`)).status).toBe(501);
     expect(oembedResponse("https://x/embed", "T", 100).width).toBe(280);
     expect(embedTarget("/embed/chart/2026-W46")).toEqual({ kind: "chart", week: "2026-W46" });

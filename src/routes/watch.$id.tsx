@@ -4,6 +4,7 @@ import { watchViewQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { WatchPage } from "@/components/agency/WatchPage";
 import { AgencyShell } from "@/components/agency/Shell";
+import { BRAND_NAME } from "@/lib/brand";
 
 export const Route = createFileRoute("/watch/$id")({
   validateSearch: (s: Record<string, unknown>): { k?: string | undefined; range: "week" | "30d" } => ({ k: typeof s["k"] === "string" ? s["k"].slice(0, 40) : undefined, range: s["range"] === "30d" ? "30d" : "week" }),
@@ -14,8 +15,8 @@ export const Route = createFileRoute("/watch/$id")({
     return { name: v.name, n: v.sites.length + v.pending.length };
   },
   head: ({ loaderData }) => ({
-    meta: [{ title: loaderData ? `${loaderData.name} — watchlist — DSGN/TERMINAL` : "Watchlist — DSGN/TERMINAL" }, { name: "description", content: loaderData ? `Design changes on the ${loaderData.n} sites in “${loaderData.name}”.` : "A DSGN/TERMINAL watchlist." },
-      { property: "og:title", content: loaderData ? `${loaderData.name} — watchlist` : "Watchlist" }, { property: "og:description", content: "Confirmed design changes on a competitive set, from DSGN/TERMINAL." },
+    meta: [{ title: loaderData ? `${loaderData.name} — watchlist — ${BRAND_NAME}` : `Watchlist — ${BRAND_NAME}` }, { name: "description", content: loaderData ? `Design changes on the ${loaderData.n} sites in “${loaderData.name}”.` : `A ${BRAND_NAME} watchlist.` },
+      { property: "og:title", content: loaderData ? `${loaderData.name} — watchlist` : "Watchlist" }, { property: "og:description", content: `Confirmed design changes on a competitive set, from ${BRAND_NAME}.` },
       { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }, { name: "referrer", content: "no-referrer" }],
     links: fontLinks(),
   }),

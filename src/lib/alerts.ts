@@ -3,6 +3,7 @@ import { isCrossover } from "./curation";
 import type { DiscourseSignal } from "./discourse";
 import { SITE_URL } from "./site";
 import { scopeText, stageName, traitText } from "./labels";
+import { BRAND_NAME } from "./brand";
 
 export const ALERT_KINDS = ["sentiment_turn", "crossover", "breakout", "discourse_spike", "saturation"] as const; // priority order
 export type AlertKind = (typeof ALERT_KINDS)[number];
@@ -58,5 +59,5 @@ export function selectAlerts(candidates: Alert[], recentTraits: Set<string>, max
 
 export function alertRow(a: Alert, runId: number, now: Date) {
   const link = `${SITE_URL}/?panel=brief&trait=${encodeURIComponent(a.trait)}&sector=${encodeURIComponent(a.scope)}&alert=${runId}-${a.kind}`;
-  return { url: link, title: a.title.slice(0, 300), source: "DSGN/TERMINAL", source_kind: "alert", published_at: now.toISOString(), excerpt: `${a.excerpt} · run ${runId}`.slice(0, 600), link: null, ref: a.trait, tags: ["alert", a.kind] };
+  return { url: link, title: a.title.slice(0, 300), source: `${BRAND_NAME}`, source_kind: "alert", published_at: now.toISOString(), excerpt: `${a.excerpt} · run ${runId}`.slice(0, 600), link: null, ref: a.trait, tags: ["alert", a.kind] };
 }

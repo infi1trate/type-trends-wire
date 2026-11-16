@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { NO_CAPTURE_TEXT, beforeAfterAt, isIllustrated, patternCountLine, type CropRow } from "./crops";
 import { changeSection, patternSection, storySection } from "./evidence-map";
-import { brandModel } from "./brand";
+import { brandModel } from "./brand-page";
 import { patternIndex, patternModel, type PatternSite } from "./patterns";
 import { storyEvidence, storyEventIds } from "./stories/evidence";
 import { alertBaseline, readerRuns, READABLE_SANDBOX_RUN } from "./run-gap";

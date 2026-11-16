@@ -46,12 +46,12 @@ describe("watch RSS feed", () => {
     expect(XMLValidator.validate(xml)).toBe(true);
     const doc = new XMLParser({ ignoreAttributes: false }).parse(xml);
     expect(doc.rss["@_version"]).toBe("2.0");
-    expect(doc.rss.channel["atom:link"]["@_href"]).toBe(`https://type-trends-wire.lovable.app/api/public/watch-feed/${FEED}.xml`);
+    expect(doc.rss.channel["atom:link"]["@_href"]).toBe(`https://slug.global/api/public/watch-feed/${FEED}.xml`);
     expect(doc.rss.channel["atom:link"]["@_rel"]).toBe("self");
     const items = doc.rss.channel.item as { title: string; guid: { "#text": string }; link: string; pubDate: string }[];
     expect(items.length).toBe(FEED_MAX);
     expect(new Set(items.map(i => i.guid["#text"])).size).toBe(items.length);
-    expect(items[0]!.link).toMatch(new RegExp(`^https://type-trends-wire\\.lovable\\.app/watch/${ID}#c-`));
+    expect(items[0]!.link).toMatch(new RegExp(`^https://slug\\.global/watch/${ID}#c-`));
     expect(items.every(i => !Number.isNaN(Date.parse(i.pubDate)))).toBe(true);
   });
   it("names come from labels, no $ tickers, escaped text", () => {
