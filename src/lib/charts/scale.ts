@@ -41,4 +41,6 @@ export function arcPath(cx: number, cy: number, r0: number, r1: number, start: n
   const [ax, ay] = pt(cx, cy, r1, start), [bx, by] = pt(cx, cy, r1, end), [c1, c2] = pt(cx, cy, r0, end), [d1, d2] = pt(cx, cy, r0, start);
   return `M${f(ax)} ${f(ay)}A${r1} ${r1} 0 ${large} 1 ${f(bx)} ${f(by)}L${f(c1)} ${f(c2)}A${r0} ${r0} 0 ${large} 0 ${f(d1)} ${f(d2)}Z`;
 }
-export const point = pt;
+/** A point on a circle, rounded to 0.01 so the server and the browser print the same coordinate (their sin/cos can differ in the last digit,
+ *  which broke hydration on /kit's donut labels). */
+export const point = (cx: number, cy: number, r: number, a: number) => { const [x, y] = pt(cx, cy, r, a); return [Math.round(x * 100) / 100, Math.round(y * 100) / 100] as const; };

@@ -1,3 +1,4 @@
+import { MCP_TOOL_NAMES } from "./mcp/tool-names";
 import { SITE_ORIGIN } from "./brand";
 /** Absolute URLs use the brand origin (src/lib/brand.ts). */
 export const SITE_URL = SITE_ORIGIN;
@@ -7,7 +8,7 @@ export const DIGEST_NAME = "The Digest";
 export const CONTACT_EMAIL = "";
 /** Issue No. 1. Weeks before this have no issue. */
 export const DIGEST_FIRST_WEEK = "2026-W46";
-/** Tools the MCP server exposes (src/lib/mcp/index.ts); pages quote it and mcp/server.test.ts checks it. */
-export const MCP_TOOL_COUNT = 26;
+/** Tools the MCP server exposes, counted from the registry's name list; pages quote it and mcp/server.test.ts checks the list. */
+export const MCP_TOOL_COUNT = MCP_TOOL_NAMES.length;
 /** The landing page (/welcome) stays private: it is gated like every other page and is not in OPEN_PATHS. Only the owner flips this. */
 export const LANDING_PUBLIC = false;

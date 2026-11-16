@@ -226,3 +226,12 @@
 - [x] Chart primitives (scatter, line, bar, donut) + shared frame
 - [x] Sector report Momentum once; freshness shell warns only on reader-facing jobs; /status crawler rhythms + lib-vanguard- runs
 - [x] Tests, after screenshots + diff, report
+
+# Phase 18a — the live front page (don't publish)
+- [x] Pure front model + loader; page renders the model (masthead clock, ticker, lead, Moving now, live column, chart of the day, launches, your sector, editions, footer)
+- [x] BUSY / STEADY / QUIET; QUIET archive fill labelled and dated; nothing restamped
+- [x] /front.json (gated, ETag/304) + polling helper, new-stories control, since-your-last-visit marker
+- [x] Formats mapping + front filter (?format=) + terminal Live tabs
+- [x] story_numbers table + backfill (No. 1–48) + shown on front, story page, Morning Line, Digest, RSS, MCP; /stories/no/$number redirect
+- [x] Small fixes: /tools tool count from registry; /terminal hydration (SSR query hand-off); StoryRow light mode; font-flow labels on dark
+- [x] Tests, screenshots, report

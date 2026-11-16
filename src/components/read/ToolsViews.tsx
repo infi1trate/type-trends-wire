@@ -6,7 +6,7 @@ import { cropCoverageLine } from "@/lib/crops";
 import { realRunLine } from "@/lib/run-gap";
 import { coverageSentences } from "@/lib/model-card-copy";
 import { storyTime } from "@/lib/stories";
-import { SITE_URL } from "@/lib/site";
+import { MCP_TOOL_COUNT, SITE_URL } from "@/lib/site";
 import { DigestShell, pr } from "@/components/digest/Editorial";
 import { AppLink } from "@/components/terminal/AppLink";
 import { ReadFooter } from "./Bits";
@@ -17,7 +17,7 @@ const TOOLS: { title: string; line: string; href: string; cta: string }[] = [
   { title: "Forecast ledger", line: "Every forecast call we recorded and how it resolved, with the live hit rate once 20 calls resolve.", href: "/ledger", cta: "Read the ledger" },
   { title: "What we show and why", line: "The so-what test: how tiers, composites, Momentum and Confidence decide what you see by default, and where everything lives.", href: "/what-we-show", cta: "Read the rules" },
   { title: "Embeds", line: "Put a live signal chart on your own site or deck: every signal page and chart of the week has an embed panel with the iframe code.", href: "/signals", cta: "Pick a signal" },
-  { title: "Agent access (MCP)", line: `Connect an AI agent to ${SITE_URL}/api/public/mcp: 24 read-only tools with the same numbers and receipts. Owner-issued keys raise the rate limit.`, href: "/terminal#mcp", cta: "How to connect" },
+  { title: "Agent access (MCP)", line: `Connect an AI agent to ${SITE_URL}/api/public/mcp: ${MCP_TOOL_COUNT} read-only tools with the same numbers and receipts. Owner-issued keys raise the rate limit.`, href: "/terminal#mcp", cta: "How to connect" },
 ];
 export function ToolsView() {
   return <DigestShell label="Tools" section="tools">
