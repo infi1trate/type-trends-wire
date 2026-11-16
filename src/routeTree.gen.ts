@@ -31,6 +31,9 @@ import { Route as ChartWeekRouteImport } from './routes/chart.$week'
 import { Route as ChartChar123weekChar125DotpngRouteImport } from './routes/chart.{$week}[.]png'
 import { Route as ChartChar123weekChar125DotsvgRouteImport } from './routes/chart.{$week}[.]svg'
 import { Route as CropsSplatRouteImport } from './routes/crops.$'
+import { Route as DataIndexRouteImport } from './routes/data.index'
+import { Route as DataSlugRouteImport } from './routes/data.$slug'
+import { Route as DataWhereYouSitRouteImport } from './routes/data.where-you-sit'
 import { Route as DigestIndexRouteImport } from './routes/digest.index'
 import { Route as DigestWeekRouteImport } from './routes/digest.$week'
 import { Route as DigestArchiveRouteImport } from './routes/digest.archive'
@@ -190,6 +193,21 @@ const ChartChar123weekChar125DotsvgRoute =
 const CropsSplatRoute = CropsSplatRouteImport.update({
   id: '/crops/$',
   path: '/crops/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataIndexRoute = DataIndexRouteImport.update({
+  id: '/data/',
+  path: '/data/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataSlugRoute = DataSlugRouteImport.update({
+  id: '/data/$slug',
+  path: '/data/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataWhereYouSitRoute = DataWhereYouSitRouteImport.update({
+  id: '/data/where-you-sit',
+  path: '/data/where-you-sit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DigestIndexRoute = DigestIndexRouteImport.update({
@@ -459,6 +477,8 @@ export interface FileRoutesByFullPath {
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
   '/crops/$': typeof CropsSplatRoute
+  '/data/$slug': typeof DataSlugRoute
+  '/data/where-you-sit': typeof DataWhereYouSitRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -478,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/audit/': typeof AuditIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
+  '/data/': typeof DataIndexRoute
   '/digest/': typeof DigestIndexRoute
   '/morning/': typeof MorningIndexRoute
   '/patterns/': typeof PatternsIndexRoute
@@ -531,6 +552,8 @@ export interface FileRoutesByTo {
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
   '/crops/$': typeof CropsSplatRoute
+  '/data/$slug': typeof DataSlugRoute
+  '/data/where-you-sit': typeof DataWhereYouSitRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -550,6 +573,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuditIndexRoute
   '/brands': typeof BrandsIndexRoute
   '/chart': typeof ChartIndexRoute
+  '/data': typeof DataIndexRoute
   '/digest': typeof DigestIndexRoute
   '/morning': typeof MorningIndexRoute
   '/patterns': typeof PatternsIndexRoute
@@ -604,6 +628,8 @@ export interface FileRoutesById {
   '/chart/{$week}.png': typeof ChartChar123weekChar125DotpngRoute
   '/chart/{$week}.svg': typeof ChartChar123weekChar125DotsvgRoute
   '/crops/$': typeof CropsSplatRoute
+  '/data/$slug': typeof DataSlugRoute
+  '/data/where-you-sit': typeof DataWhereYouSitRoute
   '/digest/$week': typeof DigestWeekRoute
   '/digest/archive': typeof DigestArchiveRoute
   '/digest/rss.xml': typeof DigestRssDotxmlRoute
@@ -623,6 +649,7 @@ export interface FileRoutesById {
   '/audit/': typeof AuditIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
+  '/data/': typeof DataIndexRoute
   '/digest/': typeof DigestIndexRoute
   '/morning/': typeof MorningIndexRoute
   '/patterns/': typeof PatternsIndexRoute
@@ -678,6 +705,8 @@ export interface FileRouteTypes {
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
     | '/crops/$'
+    | '/data/$slug'
+    | '/data/where-you-sit'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -697,6 +726,7 @@ export interface FileRouteTypes {
     | '/audit/'
     | '/brands/'
     | '/chart/'
+    | '/data/'
     | '/digest/'
     | '/morning/'
     | '/patterns/'
@@ -750,6 +780,8 @@ export interface FileRouteTypes {
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
     | '/crops/$'
+    | '/data/$slug'
+    | '/data/where-you-sit'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -769,6 +801,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/brands'
     | '/chart'
+    | '/data'
     | '/digest'
     | '/morning'
     | '/patterns'
@@ -822,6 +855,8 @@ export interface FileRouteTypes {
     | '/chart/{$week}.png'
     | '/chart/{$week}.svg'
     | '/crops/$'
+    | '/data/$slug'
+    | '/data/where-you-sit'
     | '/digest/$week'
     | '/digest/archive'
     | '/digest/rss.xml'
@@ -841,6 +876,7 @@ export interface FileRouteTypes {
     | '/audit/'
     | '/brands/'
     | '/chart/'
+    | '/data/'
     | '/digest/'
     | '/morning/'
     | '/patterns/'
@@ -895,6 +931,8 @@ export interface RootRouteChildren {
   ChartChar123weekChar125DotpngRoute: typeof ChartChar123weekChar125DotpngRoute
   ChartChar123weekChar125DotsvgRoute: typeof ChartChar123weekChar125DotsvgRoute
   CropsSplatRoute: typeof CropsSplatRoute
+  DataSlugRoute: typeof DataSlugRoute
+  DataWhereYouSitRoute: typeof DataWhereYouSitRoute
   DigestWeekRoute: typeof DigestWeekRoute
   DigestArchiveRoute: typeof DigestArchiveRoute
   DigestRssDotxmlRoute: typeof DigestRssDotxmlRoute
@@ -914,6 +952,7 @@ export interface RootRouteChildren {
   AuditIndexRoute: typeof AuditIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
+  DataIndexRoute: typeof DataIndexRoute
   DigestIndexRoute: typeof DigestIndexRoute
   MorningIndexRoute: typeof MorningIndexRoute
   PatternsIndexRoute: typeof PatternsIndexRoute
@@ -1102,6 +1141,27 @@ declare module '@tanstack/react-router' {
       path: '/crops/$'
       fullPath: '/crops/$'
       preLoaderRoute: typeof CropsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data/': {
+      id: '/data/'
+      path: '/data'
+      fullPath: '/data/'
+      preLoaderRoute: typeof DataIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data/$slug': {
+      id: '/data/$slug'
+      path: '/data/$slug'
+      fullPath: '/data/$slug'
+      preLoaderRoute: typeof DataSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data/where-you-sit': {
+      id: '/data/where-you-sit'
+      path: '/data/where-you-sit'
+      fullPath: '/data/where-you-sit'
+      preLoaderRoute: typeof DataWhereYouSitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/digest/': {
@@ -1463,6 +1523,8 @@ const rootRouteChildren: RootRouteChildren = {
   ChartChar123weekChar125DotpngRoute: ChartChar123weekChar125DotpngRoute,
   ChartChar123weekChar125DotsvgRoute: ChartChar123weekChar125DotsvgRoute,
   CropsSplatRoute: CropsSplatRoute,
+  DataSlugRoute: DataSlugRoute,
+  DataWhereYouSitRoute: DataWhereYouSitRoute,
   DigestWeekRoute: DigestWeekRoute,
   DigestArchiveRoute: DigestArchiveRoute,
   DigestRssDotxmlRoute: DigestRssDotxmlRoute,
@@ -1482,6 +1544,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuditIndexRoute: AuditIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,
   ChartIndexRoute: ChartIndexRoute,
+  DataIndexRoute: DataIndexRoute,
   DigestIndexRoute: DigestIndexRoute,
   MorningIndexRoute: MorningIndexRoute,
   PatternsIndexRoute: PatternsIndexRoute,

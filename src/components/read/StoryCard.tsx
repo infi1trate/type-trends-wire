@@ -24,10 +24,11 @@ export function RelatedStories({ stories, empty }: { stories: Story[]; empty: st
 }
 /** The compact story card (terminal row): one token-driven rendering for every mode, so it reads right on the dark terminal, the Read
  * pages and the kit. `kicker`, `line` and `time` let the front page's live column add its type chip, one line and relative time. */
-export function StoryRow({ s, n, tour, id, kicker, line, time }: { s: Story; n?: number | string | undefined; tour?: string | undefined; id?: string | undefined; kicker?: ReactNode; line?: string | null | undefined; time?: ReactNode }) {
+/** The compact story row. `n` is the row's left column: a position, or the story's permanent number ("NO. 48") with `wide`. */
+export function StoryRow({ s, n, tour, id, kicker, line, time, wide }: { s: Story; n?: number | string | undefined; tour?: string | undefined; id?: string | undefined; kicker?: ReactNode; line?: string | null | undefined; time?: ReactNode; wide?: boolean }) {
   return <li className="tk-row" id={id}>
-    <Receipt href={s.evidence} data-tour={tour} className="tk-row-link group grid min-h-11 grid-cols-[3ch_1fr] gap-x-2 gap-y-1 p-3 md:grid-cols-[3ch_1fr_auto]">
-      <span className="num label tk-row-muted">{n ?? "·"}</span>
+    <Receipt href={s.evidence} data-tour={tour} className={`tk-row-link group grid min-h-11 gap-x-2 gap-y-1 p-3 ${wide ? "grid-cols-[8ch_1fr] md:grid-cols-[8ch_1fr_auto]" : "grid-cols-[3ch_1fr] md:grid-cols-[3ch_1fr_auto]"}`}>
+      <span className={`num label ${wide ? "tk-row-ink" : "tk-row-muted"}`} data-story-number={wide ? "" : undefined}>{n ?? "·"}</span>
       <span className="tk-row-ink min-w-0">{kicker ?? <span className="label tk-row-muted">{s.kicker.toUpperCase()} · </span>}<span className="group-hover:underline">{s.headline}</span>{s.basis && <> <BasisChip basis={s.basis} /></>} <span aria-hidden>→</span>{line && <span className="tk-row-line">{line}</span>}</span>
       <span className="label tk-row-muted col-start-2 md:col-start-3">{time ?? <time dateTime={s.at}>{storyTime(s.at).toUpperCase()}</time>}</span>
     </Receipt>

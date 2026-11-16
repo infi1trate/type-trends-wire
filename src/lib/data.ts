@@ -422,3 +422,10 @@ export const kitQuery = () => queryOptions({ queryKey: ["kit"], staleTime: 5 * 6
 
 /** `/`: the front page model for one sector lens and format filter. */
 export const frontQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front", sector, format], staleTime: 30_000, queryFn: () => getFront({ data: { sector, format } }) });
+
+// DATA STORIES (Phase 19a): models built on the server from stored data; the pages render them and nothing else.
+import { getDataIndex, getDataStory, getTrackedBrands, getWhereYouSit } from "./data-stories.functions";
+export const dataIndexQuery = () => queryOptions({ queryKey: ["data-index"], staleTime: 5 * 60_000, queryFn: () => getDataIndex() });
+export const dataStoryQuery = (slug: string) => queryOptions({ queryKey: ["data-story", slug], staleTime: 5 * 60_000, queryFn: () => getDataStory({ data: { slug } }) });
+export const trackedBrandsQuery = () => queryOptions({ queryKey: ["tracked-brands"], staleTime: 10 * 60_000, queryFn: () => getTrackedBrands() });
+export const whereYouSitQuery = (brand: string) => queryOptions({ queryKey: ["where-you-sit", brand], staleTime: 5 * 60_000, queryFn: () => getWhereYouSit({ data: { brand } }) });

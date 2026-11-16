@@ -53,8 +53,8 @@ export function FrontTicker({ items }: { items: TickerItem[] }) {
 export function LiveItem({ s, now }: { s: FrontStory; now: number }) {
   return <StoryRow id={`fs-${s.id}`} s={{ id: s.id, type: s.type as never, kicker: s.kicker, headline: s.headline, at: s.at, signalKeys: [], domains: [], evidence: s.href, basis: s.basis, number: s.number }}
     kicker={<span className="label tk-row-muted"><span className="tk-chip mr-1 inline-block border px-1">{s.typeName}</span>{s.sectorName ? `${s.sectorName.toUpperCase()} · ` : ""}</span>}
-    line={s.line}
-    time={<>{s.number != null && <span>{numberLabel(s.number).toUpperCase()} · </span>}<time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now).toUpperCase()}</time></>} />;
+    line={s.line} wide n={s.number != null ? numberLabel(s.number).toUpperCase() : "·"}
+    time={<time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now).toUpperCase()}</time>} />;
 }
 
 type ColumnProps = { initial: FrontStory[]; serverNow: string; sector: string; format: string; quiet: boolean; onUpdates?: (u: FrontUpdates) => void; empty: string };

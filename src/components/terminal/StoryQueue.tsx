@@ -49,12 +49,13 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
     {isPending ? <p className="p-3 text-g500">LOADING STORIES…</p> : isError ? <p className="p-3 text-g500">STORIES UNAVAILABLE</p>
       : !rows.length ? <p className="p-3 text-g500">{format === "all" ? "NO STORY HAS RUN IN THE LAST 7 DAYS." : format === "explore" ? "EXPLORE IS FOR PATTERN AND BRAND PAGES; NO STORY TYPE IS IN THIS FORMAT. SEE F4 PATTERNS AND F3 BRANDS." : `NO ${FORMAT_LABEL[format].toUpperCase()} STORY IN THE LAST 7 DAYS.`}</p>
       : <ol className="flex flex-col">{rows.map(s => <li key={s.id} id={`story-${s.id}`} className={`border-b border-rule last:border-b-0 ${s.id === focus ? "border-l-2 border-l-signal bg-g900" : ""}`}>
-        <AppLink href={s.evidence} className="group grid min-h-11 grid-cols-[4ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[4ch_14ch_1fr_auto]">
+        <AppLink href={s.evidence} className="group grid min-h-11 grid-cols-[4ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[4ch_8ch_14ch_1fr_auto]">
           <span className="num label text-g500" title="Newsworthiness score">{s.score}</span>
+          <span className="num label text-ink max-md:hidden" data-story-number="">{s.number != null ? `NO. ${s.number}` : "—"}</span>
           <span className="label text-g500 max-md:hidden">{s.type.replace("_", " ").toUpperCase()}</span>
-          <span className="min-w-0 text-ink"><span className="label text-g500 md:hidden">{s.type.replace("_", " ").toUpperCase()} · </span><span className="group-hover:underline">{s.headline}</span>
+          <span className="min-w-0 text-ink"><span className="label text-g500 md:hidden">{s.number != null ? <span className="text-ink">NO. {s.number} · </span> : null}{s.type.replace("_", " ").toUpperCase()} · </span><span className="group-hover:underline">{s.headline}</span>
             {s.state !== "published" && <span className="label mt-1 block text-g500">{s.state === "killed" ? "KILLED" : "HELD"} · {s.state === "killed" ? s.killReason ?? "by the editor" : s.reason}</span>}</span>
-          <span className="label col-start-2 text-g500 md:col-start-4"><time dateTime={s.at}>{hm(s.at)} UTC</time></span>
+          <span className="label col-start-2 text-g500 md:col-start-5"><time dateTime={s.at}>{hm(s.at)} UTC</time></span>
         </AppLink>
       </li>)}</ol>}
     </div>
