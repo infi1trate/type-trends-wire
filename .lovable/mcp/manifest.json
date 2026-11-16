@@ -152,7 +152,7 @@
       {
         "name": "library_site",
         "title": "Library site fingerprint",
-        "description": "Latest design fingerprint, snapshot metadata and last 20 change events for a tracked domain; excludes skeleton and private text. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Latest design fingerprint, snapshot metadata and last 20 change events for a tracked domain; excludes skeleton and private text. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady). `similar` lists up to six tracked brands with the most measured headline signals in common (Jaccard overlap at least 60% and two shared signals), each with the signals it shares.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -1144,6 +1144,30 @@
           "properties": {
             "slug": {
               "description": "A data story slug from the list, e.g. who-went-big-first.",
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9-]+$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "collections",
+        "title": "Collections",
+        "description": "slug collections: numbered, saved views of the pattern gallery (walls of stored homepage captures). Without slug: the list with status and capture counts. With slug: title, deck, the saved filter, the count and the first 12 tiles as text with urls.",
+        "annotations": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "description": "A collection slug from the list, e.g. who-went-big.",
               "type": "string",
               "minLength": 3,
               "maxLength": 80,
