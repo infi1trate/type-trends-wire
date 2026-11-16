@@ -7,9 +7,9 @@
   },
   "mcp": {
     "server": {
-      "name": "type-trends-wire",
+      "name": "slug",
       "version": "0.1.0",
-      "title": "Type Trends Wire"
+      "title": "slug"
     },
     "tools": [
       {
@@ -89,7 +89,7 @@
       {
         "name": "wire",
         "title": "Design news wire",
-        "description": "Recent design news (RSS, Hacker News, Bluesky, Product Hunt) and DSGN/TERMINAL trend-signal alerts. Alerts name each signal in plain words with its dimension (FONT, COLOR, LAYOUT, VIBE) and keep the stable trait key. Filter by keyword, tag, source or source_kind. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
+        "description": "Recent design news (RSS, Hacker News, Bluesky, Product Hunt) and slug trend-signal alerts. Alerts name each signal in plain words with its dimension (FONT, COLOR, LAYOUT, VIBE) and keep the stable trait key. Filter by keyword, tag, source or source_kind. Each trait or signal keeps its stable key and adds a plain-English label, a dimension (FONT, COLOR, LAYOUT or VIBE), basis (measured or ai), tier (headline, supporting or archive), momentum_index (0–100 percentile of the stored next-wave score among headline + supporting signals), confidence (High, Medium or Low, with confidence_reason) and, where staged, stage_label (Emerging, Rising, Peaking, Fading or Steady).",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -952,7 +952,7 @@
       {
         "name": "forecast_ledger",
         "title": "Forecast ledger",
-        "description": "The durable, immutable record of DSGN/TERMINAL's forecast calls and how they resolved (hit, miss, void or still open), plus the live hit rate with n. Filter by trait, scope, outcome or since. The backtest (history replay) is returned separately and is never part of the live hit rate. Each call keeps its stable trait key and adds label, dimension and explainer_url.",
+        "description": "The durable, immutable record of slug's forecast calls and how they resolved (hit, miss, void or still open), plus the live hit rate with n. Filter by trait, scope, outcome or since. The backtest (history replay) is returned separately and is never part of the live hit rate. Each call keeps its stable trait key and adds label, dimension and explainer_url.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false,
@@ -1003,7 +1003,7 @@
       {
         "name": "stories",
         "title": "Stories",
-        "description": "Published DSGN/TERMINAL stories, newest first: what the product judged newsworthy from its own data (brand moves, rebrands, stage shifts, breakouts, first sightings, crossovers, counter-moves, white space, roundups, news naming a tracked brand). Each story has a type, headline, deck, facts with receipts (basis measured or ai), an optional why-it-matters line (basis ai, validated against the facts) or the deterministic so-what (basis measured), the newsworthiness score with its four components, and urls. Signals in signal_keys keep their stable key and add a plain-English label.",
+        "description": "Published slug stories, newest first: what the product judged newsworthy from its own data (brand moves, rebrands, stage shifts, breakouts, first sightings, crossovers, counter-moves, white space, roundups, news naming a tracked brand). Each story has a type, headline, deck, facts with receipts (basis measured or ai), an optional why-it-matters line (basis ai, validated against the facts) or the deterministic so-what (basis measured), the newsworthiness score with its four components, and urls. Signals in signal_keys keep their stable key and add a plain-English label.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -1097,7 +1097,7 @@
       {
         "name": "sector_report",
         "title": "State of a sector",
-        "description": "The quarterly report for one sector, built from stored data: headline signals with stage, share and Momentum against all sectors, what is rising only here (and the reverse), white space, counter-moves, leading brands with their latest move, pattern examples and the quarter's stories. No AI text.",
+        "description": "The quarterly report for one sector, built from stored data: headline signals with stage and share against all sectors (Momentum is all-sector only and reported once as momentum_all_sectors), what is rising only here (and the reverse), white space, counter-moves, leading brands with their latest move, pattern examples and the quarter's stories. No AI text.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
