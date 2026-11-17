@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { DWELL, EMPTY_BOARD_LINE, LEDGER_SIZE, SCENE_IDS, WALL_SIZE, ambientSearch, parseAmbient, playlist, playlistKey, type AmbientInput, type AmbientStory } from "./playlist";
 import { BOARD_TYPE, LATE_MS, POINTER_IDLE_MS, TAP_BAR_MS, asOfText, boardKey, boardPoll, feedStart, idle, isLate, pxAt, shiftOf, slabCorner, step, wakeLock, type Feed, type Timers } from "./board";
-import { gate } from "../gate";
+import { gate, sha256Hex } from "../gate";
+import { createRateLimiter } from "../mcp/rate-limit";
 import type { Frame } from "../data-stories/types";
 
 const st = (n: number, sector: string | null = "fintech"): AmbientStory => ({ id: `s${n}`, number: n, headline: `Story ${n}`, typeName: "Move", sector, sectorName: sector, at: `2026-11-${String(10 + (n % 9)).padStart(2, "0")}T10:00:00Z`, line: null });
@@ -165,10 +166,11 @@ describe("ambient board behaviour", () => {
   });
 });
 
-describe("ambient is gated", () => {
+describe("ambient is gated whenever a password is set", () => {
   it("answers the password page without the cookie", async () => {
+    const cfg = { hash: await sha256Hex("x"), allow: createRateLimiter(10, 60_000) };
     for (const p of ["/ambient", "/ambient/setup"]) {
-      const r = await gate(new Request(`https://slug.global${p}`));
+      const r = await gate(new Request(`https://slug.global${p}`), cfg);
       expect(r?.status).toBe(401);
       expect(r?.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     }

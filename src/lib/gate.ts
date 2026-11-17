@@ -6,7 +6,7 @@ import { BRAND_LINE, BRAND_NAME } from "./brand";
 import { standaloneHead, standaloneMark } from "./standalone-page";
 
 /** sha256 (lowercase hex) of the shared password. The plaintext is never stored. */
-export const SITE_PASSWORD_SHA256: string = "1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032";
+export const SITE_PASSWORD_SHA256: string = "";
 export const GATE_ENABLED = SITE_PASSWORD_SHA256 !== "";
 
 export const GATE_COOKIE = "dsgn_gate";

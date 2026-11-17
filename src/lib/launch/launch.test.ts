@@ -10,10 +10,10 @@ const base: LaunchFacts = { now: NOW, crawlAt: "2026-11-10T23:10:28Z", crawlRuns
 const by = (f: LaunchFacts) => (id: string) => launchChecks(f).find(c => c.id === id)!;
 
 describe("launch readiness", () => {
-  it("lists every switch as set in code today, all still off but the gate", () => {
+  it("lists every switch as set in code today, gate now off, page switches still off", () => {
     const s = switches({ gateEnabled: GATE_ENABLED, openPaths: OPEN_PATHS, landing: LANDING_PUBLIC, brand: BRAND_PUBLIC, dataStories: DATA_STORIES_PUBLIC });
     expect(s.map(x => x.id)).toEqual(["gate", "open_paths", "landing", "brand", "data_stories"]);
-    expect(s.find(x => x.id === "gate")!.on).toBe(true);
+    expect(s.find(x => x.id === "gate")!.on).toBe(false);
     expect(s.filter(x => ["landing", "brand", "data_stories"].includes(x.id)).every(x => !x.on)).toBe(true);
     expect(s.find(x => x.id === "open_paths")!.now).toContain(`${OPEN_PATHS.length} paths`);
     for (const x of s) expect(x.exposes.length).toBeGreaterThan(20);

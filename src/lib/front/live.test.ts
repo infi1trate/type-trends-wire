@@ -3,7 +3,8 @@ import { createPoller, POLL_MS, type PollEnv } from "./poll";
 import { announcement, insertPending, newStoriesText, pendingStories, sinceVisit, visitStore, LAST_VISIT_KEY } from "./new-stories";
 import { updatesEtag, updatesResponse, UPDATES_PATH } from "./updates";
 import { frontModel, updatesOf } from "./front";
-import { gate, isOpenPath } from "../gate";
+import { gate, isOpenPath, sha256Hex } from "../gate";
+import { createRateLimiter } from "../mcp/rate-limit";
 import { H, NOW, input, iso, st } from "./fixtures";
 
 function fakeEnv(o: { hidden?: boolean; saveData?: boolean } = {}) {
@@ -73,9 +74,9 @@ describe("new-stories control", () => {
 
 describe("/front.json", () => {
   const model = (now = NOW) => frontModel(input({ now, stories: [st("a", { happened_at: iso(NOW - 2 * H), number: 1 })] }));
-  it("is gated like the pages", async () => {
+  it("is gated like the pages whenever a password is set", async () => {
     expect(isOpenPath(UPDATES_PATH)).toBe(false);
-    const res = await gate(new Request(`http://localhost${UPDATES_PATH}`));
+    const res = await gate(new Request(`http://localhost${UPDATES_PATH}`), { hash: await sha256Hex("x"), allow: createRateLimiter(10, 60_000) });
     expect(res?.status).toBe(401);
   });
   it("answers the changeable parts with an ETag, and 304 when nothing changed (the clock alone is not a change)", async () => {
