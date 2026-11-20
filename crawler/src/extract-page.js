@@ -52,7 +52,16 @@ export function extractInPage() {
   // of several, so the site treats their changes as rotations, not moves.
   const CAROUSEL = "[aria-roledescription=carousel i], [aria-roledescription=slide i], [class*=carousel i], [class*=swiper i], [class*=slick-slide i], [class*=slick-slider i], [class*=splide i], [class*=embla i], [class*=flickity i], [data-carousel], [data-slick]";
   const SLIDE_CONTROL = /\b(next|previous|prev)\s+(slide|item)\b|\bgo to slide\b|\bslide\s+\d+\b/i;
-  const hero_carousel = !!(h1 && h1.closest(CAROUSEL)) || [...document.querySelectorAll("button[aria-label], a[aria-label], [role=tab][aria-label]")].some((e) => SLIDE_CONTROL.test(e.getAttribute("aria-label") || "") && visible(e) && inFold(e) && !inOverlay(e));
+  // A slide counter in the fold ("05/12", "3 / 8") marks a rotating showcase even when nothing is labelled as a carousel.
+  const SLIDE_COUNTER = /^0?\d{1,2}\s*\/\s*0?\d{1,2}$/;
+  const slideCounter = [...document.querySelectorAll("body span, body div, body p, body li, body button")].some((e) => {
+    if (e.children.length > 3) return false;
+    const m = (e.textContent || "").trim().match(SLIDE_COUNTER);
+    if (!m) return false;
+    const [a, b] = m[0].split("/").map((x) => parseInt(x, 10));
+    return a >= 1 && b >= 2 && a <= b && visible(e) && inFold(e) && !inOverlay(e);
+  });
+  const hero_carousel = !!(h1 && h1.closest(CAROUSEL)) || slideCounter || [...document.querySelectorAll("button[aria-label], a[aria-label], [role=tab][aria-label]")].some((e) => SLIDE_CONTROL.test(e.getAttribute("aria-label") || "") && visible(e) && inFold(e) && !inOverlay(e));
   const bodyP = [...document.querySelectorAll("main p, article p, p")].find((e) => visible(e) && (e.textContent || "").trim().length > 40) || null;
   const firstButton = [...document.querySelectorAll("a, button")].find((e) => visible(e) && inFold(e) && px(cs(e).paddingLeft) >= 8 && cs(e).backgroundColor !== "rgba(0, 0, 0, 0)") || null;
 
