@@ -169,7 +169,8 @@ describe("E2b Part 0 · 20 Nov", () => {
   });
   it("2 · the weekly pieces run outside the daily five and neither leads on a day with a measured story", () => {
     const weekly = ran.filter(p => isWeekly(p));
-    expect(weekly.map(p => p.id.split(":")[0]).sort()).toEqual(["against", "seasonal"]);
+    // E2g: the change-based seasonal story is no longer built (the sale-mode census replaced it).
+    expect(weekly.map(p => p.id.split(":")[0]).sort()).toEqual(["against"]);
     expect(ran.filter(p => !isWeekly(p)).length).toBeLessThanOrEqual(DAILY_CAP);
     const rows = ran.map(asRow);
     for (const w of weekly) expect(leadAllowed(asRow(w), rows)).toBe(false);

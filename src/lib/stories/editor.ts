@@ -12,7 +12,8 @@ import { normalizeFont } from "../library-diff";
 import { promoWording, seasonalEventIds } from "../promo";
 import { isRebrand, REBRAND_LABEL } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
-import { tapeDate, tapeLine, tapeWhat } from "../tape";
+import { changeAt, changeFrom, changeWhen, tapeDate, tapeLine, tapeWhat } from "../tape";
+import { censusCandidates } from "../census";
 import { codeCall, headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
 import { carouselEventIds, isShowcaseSector, withoutRotation } from "../carousel";
 import { splitChecked, type Condition } from "../integrity";
@@ -158,14 +159,15 @@ export function brandStory(ctx: Ctx, g: BrandGroup, calls: Record<number, { call
   const brand = brandPath(g.domain), lib = `/library/${encodeURIComponent(g.domain)}`;
   const figure = contextFigure(ctx, cs, g.sector);
   const facts: Fact[] = [
-    ...cs.map(c => ({ text: `${tapeWhat(c.e)[0]!.toUpperCase()}${tapeWhat(c.e).slice(1)} · ${tapeDate(c.e.detected_at)}`, href: brand, basis: AI_EVENTS.has(c.e.type) ? "ai" as const : "measured" as const, kind: "member" as const })),
+    ...cs.map(c => ({ text: `${tapeWhat(c.e)[0]!.toUpperCase()}${tapeWhat(c.e).slice(1)} · ${changeWhen(c.e)}`, href: brand, basis: AI_EVENTS.has(c.e.type) ? "ai" as const : "measured" as const, kind: "member" as const })),
     ...cs.filter(c => c.position && calls[c.e.id]).map(c => ({ text: `Headline call: ${HEADLINE_CALL_NAME.position.toLowerCase()}. ${calls[c.e.id]!.reason}`, href: lib, basis: null, kind: "source" as const })),
     ...(figure ? [figure.fact] : []),
     { text: `Confirmed on a second capture, ${tapeDate(cs.at(-1)!.e.detected_at)}`, href: lib, basis: "measured", kind: "date" },
   ];
   return {
     id: g.id, type: rebrand ? "rebrand" : "move", kicker: `${label0} · ${g.sector ? sectorName(g.sector) : "Library"}`, headline,
-    deck: `${cs.map(c => `${tapeWhat(c.e)} (${tapeDate(c.e.detected_at)})`).join("; ").replace(/^./, x => x.toUpperCase())}.`,
+    // E2g: each change is dated by its captures ("between 11 and 14 Nov"), never by the day it was confirmed.
+    deck: `${cs.map(c => `${tapeWhat(c.e)} (${changeWhen(c.e)})`).join("; ").replace(/^./, x => x.toUpperCase())}.`,
     facts, sector: g.sector, signalKeys: figure?.keys ?? [], domains: [g.domain],
     evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: lib }], sourceIds: cs.map(c => `event:${c.e.id}`), basis: "measured",
     happenedAt: g.qualifiedAt ?? g.start, magnitude: Math.max(1, new Set(cs.flatMap(c => c.dims)).size + (pos ? 1 : 0) + (cs.some(c => c.typeface) ? 1 : 0)),
@@ -173,7 +175,7 @@ export function brandStory(ctx: Ctx, g: BrandGroup, calls: Record<number, { call
 }
 
 // WEEKLY GATHERINGS ----------------------------------------------------------------------------------------------------------------
-/** The seasonal story: three or more brands seasonal within seven days, at most once a week; its members never run alone. A member's
+/** E2g · no longer built (the sale-mode census replaced it); kept for its rule tests. The seasonal story: three or more brands seasonal within seven days, at most once a week; its members never run alone. A member's
  *  change must carry the sale wording itself (E2f: its new headline reads as a promotion); other changes on a seasonal page stay tape lines. */
 export function seasonalStory(input: Pick<BuildInput, "now">, events: EventRow[], seasonal: Set<number>, names: ReadonlyMap<string, string | null>): Candidate | null {
   const since = Date.parse(input.now) - PATTERN_DAYS * DAY;
@@ -198,7 +200,7 @@ export const AGAINST_NAMED_MAX = 6;
  * come first, then by trendsetter rank; at most six are named, the rest counted. `measured` is the week's tape (any confirmed live change
  * that is not reversed); it orders the piece and never decides membership.
  */
-export function againstTheGrain(ctx: Ctx, counters: Candidate[], reversedIds: Set<string>, measured: EventRow[] = []): Candidate | null {
+export function againstTheGrain(ctx: Ctx, counters: Candidate[], reversedIds: Set<string>, measured: EventRow[] = [], eventsById: ReadonlyMap<number, EventRow> = new Map()): Candidate | null {
   const since = Date.parse(ctx.now) - PATTERN_DAYS * DAY, inWeek = (iso: string) => Date.parse(iso) >= since && Date.parse(iso) <= Date.parse(ctx.now);
   const backing = new Map<string, EventRow[]>();
   for (const e of measured) if (inWeek(e.detected_at) && !AI_EVENTS.has(e.type)) backing.set(e.domain, [...(backing.get(e.domain) ?? []), e]);
@@ -211,9 +213,12 @@ export function againstTheGrain(ctx: Ctx, counters: Candidate[], reversedIds: Se
   if (picked.length < AGAINST_MIN) return null;
   const week = isoWeek(new Date(ctx.now)), domains = picked.map(c => c.domains[0]!), named = domains.slice(0, AGAINST_NAMED_MAX), rest = domains.length - named.length;
   const byTime = [...picked].sort((a, b) => a.happenedAt.localeCompare(b.happenedAt));
+  // E2g: the deck's range runs from the last capture of an old value to the first capture of a new one, where the changes carry them.
+  const evOf = (c: Candidate) => c.sourceIds.flatMap(x => { const m = /^event:(\d+)$/.exec(x); const e = m ? eventsById.get(Number(m[1])) : undefined; return e ? [e] : []; });
+  const froms = picked.flatMap(c => { const es = evOf(c); return es.length ? es.map(changeFrom) : [c.happenedAt]; }).sort(), tos = picked.flatMap(c => { const es = evOf(c); return es.length ? es.map(changeAt) : [c.happenedAt]; }).sort();
   return {
     id: `against:${week}`, type: "roundup", kicker: "Roundup · Against the grain", headline: `${countWord(domains.length)} brands moved against the grain`,
-    deck: `${named.map(d => brandName(d)).join(", ")}${rest ? `; ${countWord(rest).toLowerCase()} more moved against the grain too` : ""}, between ${tapeDate(byTime[0]!.happenedAt)} and ${tapeDate(byTime.at(-1)!.happenedAt)}.`,
+    deck: `${named.map(d => brandName(d)).join(", ")}${rest ? `; ${countWord(rest).toLowerCase()} more moved against the grain too` : ""}, between ${tapeDate(froms[0]!)} and ${tapeDate(tos.at(-1)!)}.`,
     facts: picked.flatMap(c => [{ text: c.headline, href: brandPath(c.domains[0]!), basis: c.basis, kind: "member" as const }, ...c.facts.filter(f => f.kind === "stage"),
       ...(backing.get(c.domains[0]!) ?? []).slice(0, 2).map(e => ({ text: `Measured: ${tapeLine(e)}`, href: brandPath(e.domain), basis: "measured" as const, kind: "source" as const }))]),
     sector: null, signalKeys: [...new Set(picked.flatMap(c => c.signalKeys))].slice(0, 6), domains, evidence: named.slice(0, 4).map(d => ({ label: brandName(d), href: brandPath(d) })),
@@ -231,11 +236,12 @@ export function roundups(ctx: Ctx, moves: Move[], against: Move[] = []): Candida
     const domains = [...new Set(members.map(m => m.e.domain))].sort(ctx.byRank); if (domains.length < ROUNDUP_MIN) return;
     for (const m of members) used.add(m.c.id);
     const times = members.map(m => m.e.detected_at).sort(), l = label(key), s = sector ? `${inline(sectorName(sector))} ` : "";
+    const from = members.map(m => changeFrom(m.e)).sort()[0]!, to = members.map(m => changeAt(m.e)).sort().at(-1)!;
     const lo = Date.parse(times[0]!), hi = Date.parse(times.at(-1)!);
     const other = against.filter(m => traitDelta(m.e).dropped.includes(key) && Date.parse(m.e.detected_at) >= lo - DAY && Date.parse(m.e.detected_at) <= hi + DAY && (!sector || m.e.sector === sector));
     const sorted = [...members].sort((a, b) => a.e.detected_at.localeCompare(b.e.detected_at));
     out.push({ id: `roundup:${sector ?? "all"}:${key}:${times[0]!.slice(0, 10)}`, type: "roundup", kicker: `Roundup · ${l.dimension}${sector ? ` · ${sectorName(sector)}` : ""}`,
-      headline: `${countWord(domains.length)} ${s}brands moved to ${inline(l.name)}`, deck: `${listOf(domains.map(d => brandName(d)), 4)}, between ${tapeDate(times[0]!)} and ${tapeDate(times.at(-1)!)}.`,
+      headline: `${countWord(domains.length)} ${s}brands moved to ${inline(l.name)}`, deck: `${listOf(domains.map(d => brandName(d)), 4)}, between ${tapeDate(from)} and ${tapeDate(to)}.`,
       facts: [...sorted.map(m => ({ text: tapeLine(m.e), href: brandPath(m.e.domain), basis: m.c.basis, kind: "member" as const })),
         ...(other.length ? [{ text: `Going the other way: ${listOf([...new Set(other.map(m => tapeLine(m.e)))], 3)}`, href: patternPath(key), basis: "measured" as const, kind: "count" as const }] : [])],
       sector, signalKeys: [key], domains, evidence: [{ label: "Signal page", href: signalPath(key) }, { label: "Pattern", href: patternPath(key) }],
@@ -325,15 +331,19 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   // Counter-moves are held singly on every kind of site (a media homepage dropping a rising signal is still against the grain).
   const counters = counterMoveCandidates(ctx, visible.filter(e => !seasonal.has(e.id) && (e.type !== "message_pivot" || calls[e.id]?.call === "position")).map(asMove)).map(c => ({ ...c, holdReason: c.sourceIds.some(x => /^event:(\d+)$/.test(x) && reversed.has(Number(x.slice(6)))) ? REVERSED_REASON : COUNTER_HELD_REASON }));
   const reversedCounters = new Set(counters.filter(c => c.holdReason === REVERSED_REASON).map(c => c.id));
-  const grain = againstTheGrain(ctx, counters, reversedCounters, judged.filter(e => (e.source ?? "live") === "live" && !reversed.has(e.id)));
+  const grain = againstTheGrain(ctx, counters, reversedCounters, judged.filter(e => (e.source ?? "live") === "live" && !reversed.has(e.id)), new Map(input.events.map(e => [e.id, e])));
   const notReversed = free.filter(m => !reversed.has(m.e.id));
   const pattern = roundups(ctx, notReversed, visible.filter(e => !seasonal.has(e.id) && counts(e)).map(e => ({ c: moveCandidate(e), e })));
-  const season = seasonalStory(input, judged, seasonal, names);
+  // E2g · the census replaces the change-based seasonal story (seasonalStory is no longer built; the "Seasonal" tape mark stays). Its
+  // "newly added" changes come from the confirmed live changes of the last 14 days, rotations left out.
+  const checked14 = raw.checks ? splitChecked(raw.history ?? raw.events, new Map(Object.entries(raw.checks).map(([k, v]) => [Number(k), v]))).tape : (input.history ?? input.events);
+  const census = censusCandidates({ now: input.now, census: input.census ?? null, events: checked14, rotating: carouselEventIds(checked14, carouselSnaps) },
+    new Map(input.sites.map(s => [s.domain, { domain: s.domain, name: s.name, sector: s.sector }])), ctx.rank);
   const news = newsCandidates(newsMatcher(input.sites, ctx.headline), input.wire);
   const ws = whiteSpaceCandidates(ctx);
   const candidates = [
     ...brand, ...unclear, ...shifts(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx),
-    ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...(season ? [season] : []), ...input.launches.map(launchCandidate), ...news.candidates,
+    ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...census, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => named(c, names));
   return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
 }

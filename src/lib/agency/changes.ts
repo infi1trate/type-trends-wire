@@ -4,7 +4,8 @@ import { colorTicker } from "../taste/color";
 import { isRebrand, identitySentence } from "../rebrand-rule";
 import { brandName } from "../brand-names";
 
-export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; snapshot_id?: number | null; prev_snapshot_id?: number | null; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
+export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string;
+  /** E2g · when the change happened, from its integrity check: last capture with the old value, first with the new one. */ seen?: { before: string; after: string } | null; snapshot_id?: number | null; prev_snapshot_id?: number | null; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
 export type RebrandRow = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; effective_at?: string | null; /** Either capture carries a sale or seasonal promotion (promo.ts). */ seasonal?: boolean | null; /** The library events that make up this identity change (rebrand desk), when loaded. */ event_ids?: number[] | null };
 
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});

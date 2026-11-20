@@ -13,6 +13,8 @@ const jaccard = (a: string[], b: string[]) => { const x = new Set(a), y = new Se
 const words = (value: string) => [...new Set(value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])];
 export const frameworks = ["next", "nuxt", "framer", "webflow", "wordpress", "shopify", "squarespace", "wix", "astro", "gatsby", "sveltekit"];
 const blockedHeadline = /cookie|privacy|consent|subscribe|sign in|log in|404|not found|access denied|just a moment/i;
+/** A captured headline that is a banner, wall or error page, not the page's own line (never compared as a headline). */
+export const isBlockedHeadline = (text: string) => blockedHeadline.test(text);
 export function normalizeFont(value: string): string {
   value = value.trim().replace(/^["']|["']$/g, "").replace(/^__(.+?)(?:_Fallback)?_[0-9a-f]{5,8}$/i, "$1").replace(/([a-z])([A-Z])/g, "$1 $2");
   // Suffixes may be concatenated (BasiersquareWebfont), spaced, or repeated.

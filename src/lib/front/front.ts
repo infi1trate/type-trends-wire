@@ -43,7 +43,7 @@ export function toFront(s: Numbered): FrontStory { return frontWith(s); }
 /** I1: the same row with its brand's stored icon (single-brand stories only). */
 export function frontWith(s: Numbered, icons?: Record<string, Pic>): FrontStory {
   const type = isKind(s.type) ? s.type : "news", one = s.domains?.length === 1 ? s.domains[0]! : null;
-  return { id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: STORY_TYPE_DEFS[type].kicker, kicker: noDid(s.kicker), headline: s.headline, line: oneLine(s.deck),
+  return { id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: s.id.startsWith("census:") ? "Census" : STORY_TYPE_DEFS[type].kicker, kicker: noDid(s.kicker), headline: s.headline, line: oneLine(s.deck),
     basis: s.basis === "measured" || s.basis === "ai" ? s.basis : null, at: s.happened_at, href: storyPath(s.id), format: storyFormat(type), sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
     score: s.score, corrected: s.correctedAt, domain: one, icon: one ? icons?.[one] ?? null : null };
 }

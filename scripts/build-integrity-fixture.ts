@@ -1,12 +1,27 @@
 // E2e · freeze the measurement-integrity verdicts for the golden fixtures, and the real capture sequences the rule tests read.
 // Verdicts are judged against every stored live capture at the time this runs (a change is confirmed by later captures too).
-// Usage: bun scripts/build-integrity-fixture.ts
+// Usage: bun scripts/build-integrity-fixture.ts            (everything, judged now)
+//        bun scripts/build-integrity-fixture.ts --add coinbase.com   (E2g: add one brand's sequence and its live desktop home changes,
+//        leaving the frozen verdicts and the other sequences as they are)
 import { writeFileSync } from "node:fs";
 import golden from "../src/lib/stories/golden/__fixtures__/golden.json";
 import day20 from "../src/lib/stories/golden/__fixtures__/day-2026-11-20.json";
 const { supabaseAnon } = await import("../src/lib/mcp/supabase");
 const { computeChecks, liveCaptures } = await import("../src/lib/integrity.server");
 const db = supabaseAnon();
+const addAt = process.argv.indexOf("--add"), add = addAt > 0 ? process.argv[addAt + 1] : null;
+if (add) {
+  const { readFileSync } = await import("node:fs");
+  const path = "src/lib/__fixtures__/integrity-captures.json", cur = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+  const { data: site } = await db.from("library_sites").select("domain,sector").eq("domain", add).single();
+  const caps = await liveCaptures(db, [add], new Set(), new Map([[add, site?.sector ?? ""]]));
+  const { data: evs } = await db.from("library_events").select("id,domain,type,before,after,detected_at,page_type,viewport,source,snapshot_id,prev_snapshot_id").eq("domain", add).eq("source", "live").eq("viewport", "desktop").eq("page_type", "home").order("id");
+  const KEEP = ["h1", "body", "accent", "palette", "hero_media", "h1_align", "headline"];
+  cur[add] = { captures: (caps.get(`${add}|home|desktop`) ?? []).sort((a, b) => a.at.localeCompare(b.at)).map(x => ({ ...x, fields: Object.fromEntries(Object.entries(x.fields).filter(([k]) => KEEP.includes(k))) })), events: evs ?? [] };
+  writeFileSync(path, JSON.stringify(cur, null, 0));
+  console.log({ added: add, captures: (cur[add] as { captures: unknown[] }).captures.length, events: (evs ?? []).length });
+  process.exit(0);
+}
 type E = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; page_type?: string | null; viewport?: string | null; source?: string | null; snapshot_id?: number | null; prev_snapshot_id?: number | null };
 const events = [...new Map([...(golden as { events: E[] }).events, ...(day20 as { events: E[] }).events].map(e => [e.id, e])).values()];
 const checks = await computeChecks(db, events);

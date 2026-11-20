@@ -24,8 +24,12 @@ export const INTEGRITY_RULE = `A change counts only when the earlier value was s
 
 /** One stored capture of one page and viewport: its comparable fields (library-diff) and its headline source. */
 export type Capture = { id: number; at: string; fields: Comparable; source: string | null };
-export type FieldCheck = { verdict: Verdict; failed: Condition[]; before: number; after: number; beforeHours: number; afterHours: number; transitions: number };
+/** E2g · `lastBefore` is the last capture that showed the old value and `firstAfter` the first that showed the new one (ISO): the change
+ *  happened between them. Older stored verdicts have neither; their changes are dated by when they were confirmed until re-checked. */
+export type FieldCheck = { verdict: Verdict; failed: Condition[]; before: number; after: number; beforeHours: number; afterHours: number; transitions: number; lastBefore?: string; firstAfter?: string };
 export type Check = { verdict: Verdict; fields: Record<string, FieldCheck>; pass: string[] };
+/** When a change happened, from its captures: the last capture with the old value and the first with the new one (E2g). */
+export type Seen = { before: string; after: string };
 type Ev = { id: number; type: string; before?: unknown; after?: unknown; detected_at: string; snapshot_id?: number | null; prev_snapshot_id?: number | null };
 
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
@@ -80,7 +84,8 @@ export function checkField(field: string, before: unknown, after: unknown, captu
   if (beforeRun.length < BEFORE_MIN || span(beforeRun) < MIN_SPAN_HOURS) failed.push("two_before");
   if (afterRun.length < AFTER_MIN || span(afterRun) < MIN_SPAN_HOURS) failed.push("two_after");
   if (transitions > 1) failed.push("one_transition");
-  return { verdict: failed.includes("one_transition") ? "alternating" : failed.length ? "seen_once" : "pass", failed, before: beforeRun.length, after: afterRun.length, beforeHours: round(span(beforeRun)), afterHours: round(span(afterRun)), transitions };
+  return { verdict: failed.includes("one_transition") ? "alternating" : failed.length ? "seen_once" : "pass", failed, before: beforeRun.length, after: afterRun.length, beforeHours: round(span(beforeRun)), afterHours: round(span(afterRun)), transitions,
+    ...(beforeRun.length ? { lastBefore: beforeRun.at(-1)!.at } : {}), ...(afterRun.length ? { firstAfter: afterRun[0]!.at } : {}) };
 }
 
 /** Fields the captures never carry (a new page) are not judged here. */
@@ -97,12 +102,21 @@ export function checkEvent(e: Ev, captures: Capture[]): Check {
   return { verdict, fields, pass };
 }
 
-/** The part of a change that passed (failing fields removed); null when nothing passed. A redesign keeps its name only with three or more. */
-export function confirmedPart<E extends { id: number; type: string; before?: unknown; after?: unknown }>(e: E, c: Check | undefined): E | null {
+/** When the passing part of a change happened: the earliest last-old capture and the latest first-new capture over its passing fields
+ *  (one field: exactly its two captures). Null when the verdict carries no capture dates (stored before E2g). */
+export function seenOf(c: Check | undefined): Seen | null {
+  if (!c) return null;
+  const fs = c.pass.map(k => c.fields[k]).filter((f): f is FieldCheck => !!f && !!f.lastBefore && !!f.firstAfter);
+  if (!fs.length) return null;
+  return { before: fs.map(f => f.lastBefore!).sort()[0]!, after: fs.map(f => f.firstAfter!).sort().at(-1)! };
+}
+/** The part of a change that passed (failing fields removed), carrying when it happened (`seen`); null when nothing passed. */
+export function confirmedPart<E extends { id: number; type: string; before?: unknown; after?: unknown }>(e: E, c: Check | undefined): (E & { seen?: Seen }) | null {
   if (!c || c.verdict !== "pass") return null;
   const keep = new Set(c.pass), strip = (v: unknown) => Object.fromEntries(Object.entries(o(v)).filter(([k]) => keep.has(k)));
-  if (Object.keys(c.fields).every(k => keep.has(k))) return e;
-  return { ...e, before: strip(e.before), after: strip(e.after) };
+  const seen = seenOf(c), dated = (x: E): E & { seen?: Seen } => (seen ? { ...x, seen } : x);
+  if (Object.keys(c.fields).every(k => keep.has(k))) return dated(e);
+  return dated({ ...e, before: strip(e.before), after: strip(e.after) });
 }
 /** The failing part of a change for the Data view list (headline-element fields are not a change at all, so never listed). */
 export function unconfirmedPart<E extends { id: number; type: string; before?: unknown; after?: unknown }>(e: E, c: Check | undefined): (E & { label: string; failed: Condition[] }) | null {

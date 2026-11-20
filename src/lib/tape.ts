@@ -1,5 +1,6 @@
 // THE TAPE — every confirmed live change as one plain line: brand name, what changed, from and to, date, and its label (Seasonal,
 // Reversed, Carousel). No adjectives, no story page. "Rivian · hero, video to still · 11 Nov". Pure; names from brand-names.ts.
+// E2g: the date is when the change happened by its captures ("between 11 and 14 Nov"), never the day it was confirmed.
 import { hexName, type EventRow } from "./agency/changes";
 import { brandName } from "./brand-names";
 import { label } from "./labels";
@@ -9,6 +10,20 @@ import { CAROUSEL_LABEL } from "./carousel";
 
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const tapeDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };
+/** E2g · two capture dates as one phrase: "14 Nov" when they are the same UTC day, "between 11 and 14 Nov", "between 30 Oct and 2 Nov". */
+export function betweenDates(before: string, after: string): string {
+  const a = new Date(before), b = new Date(after);
+  if (Number.isNaN(+a) || Number.isNaN(+b)) return tapeDate(after);
+  if (before.slice(0, 10) === after.slice(0, 10)) return tapeDate(after);
+  return a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear() ? `between ${a.getUTCDate()} and ${tapeDate(after)}` : `between ${tapeDate(before)} and ${tapeDate(after)}`;
+}
+/** When a change happened, never when it was confirmed: between the last capture with the old value and the first with the new one
+ *  (its integrity check), else, for a change without dated captures (archive, or a verdict stored before E2g), the day it was recorded. */
+export const changeWhen = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => (e.seen ? betweenDates(e.seen.before, e.seen.after) : tapeDate(e.detected_at));
+/** The day a change's new value was first captured (the end of its window), for sorting and ranges. */
+export const changeAt = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => e.seen?.after ?? e.detected_at;
+/** The day the old value was last captured (the start of its window). */
+export const changeFrom = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => e.seen?.before ?? e.detected_at;
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 const quote = (t: string | null, n = 70) => (t ? `“${t.length > n ? `${t.slice(0, n - 1)}…` : t}”` : "none");
@@ -65,12 +80,12 @@ export type TapeLabels = { seasonal?: boolean; reversed?: boolean; carousel?: bo
 /** The labels a tape line carries. */
 export const tapeLabels = (l: TapeLabels) => [...(l.seasonal ? [SEASONAL_LABEL] : []), ...(l.carousel ? [CAROUSEL_LABEL] : []), ...(l.reversed ? [REVERSED_LABEL] : [])];
 /** One tape line: "Rivian · hero, video to still · 11 Nov" (plus " · Seasonal" / " · Carousel" / " · Reversed"). */
-export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at">, l: TapeLabels = {}, name?: string | null): string {
-  return [brandName(e.domain, name), tapeWhat(e), tapeDate(e.detected_at), ...tapeLabels(l)].join(" · ");
+export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen">, l: TapeLabels = {}, name?: string | null): string {
+  return [brandName(e.domain, name), tapeWhat(e), changeWhen(e), ...tapeLabels(l)].join(" · ");
 }
 
 // ONE LINE PER CHANGE (E2b) ----------------------------------------------------------------------------------------------------------
-type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at"> & { viewport?: string | null };
+type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen"> & { viewport?: string | null };
 const pageName = (p: string | null | undefined) => `${p && p !== "home" ? p : "home"} page`;
 /**
  * The tape keeps one line per brand, change and UTC day: the same change seen on two viewports or several pages is one line, the earliest

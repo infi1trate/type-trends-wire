@@ -100,21 +100,28 @@ const asComponents = (v: unknown): { id: ComponentId; label: string; value: numb
 export const readFacts = (facts: Fact[]) => {
   const members = facts.filter(f => f.kind === "member");
   // "Changed: accent" only summarises the change lines; with the lines themselves present it is noise.
-  return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
+  return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "line" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
 };
+/** E2g · a census's "The lines": every member, brand name then its quoted line, linking to the brand page, in rank order (as stored). */
+export function censusLines(facts: Fact[]): { name: string; line: string; href: string | null }[] {
+  return facts.filter(f => f.kind === "line").map(f => { const i = f.text.indexOf(" · "); return i > 0 ? { name: f.text.slice(0, i), line: f.text.slice(i + 3), href: f.href } : { name: f.text, line: "", href: f.href }; });
+}
 /** Data-view lines (the desk and terminal): headline call, confirmations and other source lines. */
 export const dataFacts = (facts: Fact[]) => facts.filter(f => f.kind === "source" || f.kind === "date");
 /** The story page (Read side, E2b): kicker (kind · sector), headline, deck, the picture, the written body, one how-we-know line, the changes
  *  with receipts, then a way on. Score, threshold and why it ran stay in the Data view and on the desk; stored why lines are not shown. */
 export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[] }) {
-  const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts);
+  const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts), census = s.id.startsWith("census:");
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
   const sector = s.sector ? sectorName(s.sector) : null;
   return {
-    id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: def.kicker, kicker: type === "news" ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
+    id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: census ? "Census" : def.kicker, kicker: type === "news" || census ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
     body: (s.written?.body ?? []).map(p => deLegacy(p)), howWeKnow: noDid(s.written?.howWeKnow ?? howWeKnowOf(s)),
-    facts: readFacts(facts).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
+    // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and
+    // under "The lines".
+    facts: (census ? facts.filter(f => f.kind === "member") : readFacts(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
+    census: census ? { lines: censusLines(facts), sectors: facts.find(f => f.kind === "count" && /^By sector: /.test(f.text))?.text.replace(/^By sector: /, "") ?? null } : null,
     // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
     evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : noDid(deLegacy(e.label)) })),
     brands: s.domains.map(d => ({ domain: d, name: brandName(d), href: brandPath(d) })),

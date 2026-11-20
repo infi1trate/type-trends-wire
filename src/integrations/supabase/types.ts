@@ -146,6 +146,39 @@ export type Database = {
         }
         Relationships: []
       }
+      census_counts: {
+        Row: {
+          base: number
+          census_key: string
+          count: number
+          created_at: string
+          day: string
+          id: number
+          members: Json
+          story_id: string
+        }
+        Insert: {
+          base: number
+          census_key: string
+          count: number
+          created_at?: string
+          day: string
+          id?: never
+          members?: Json
+          story_id: string
+        }
+        Update: {
+          base?: number
+          census_key?: string
+          count?: number
+          created_at?: string
+          day?: string
+          id?: never
+          members?: Json
+          story_id?: string
+        }
+        Relationships: []
+      }
       change_checks: {
         Row: {
           checked_at: string

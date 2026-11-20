@@ -18,7 +18,8 @@ export type Shown<S extends StoredStory = StoredStory> = S & {
 };
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 /** The subset of `stored` a correction keeps (null when the payload has no list): strings only, stored order, never an addition. */
-const narrowed = (v: unknown, stored: string[]) => (Array.isArray(v) && v.length > 0 && v.every(x => typeof x === "string") ? stored.filter(x => (v as string[]).includes(x)) : null);
+// A reader that loads only some columns (the numbering pass reads id, status and dates) has no stored list: nothing to narrow.
+const narrowed = (v: unknown, stored: string[] | undefined) => (Array.isArray(stored) && Array.isArray(v) && v.length > 0 && v.every(x => typeof x === "string") ? stored.filter(x => (v as string[]).includes(x)) : null);
 /** Types a correct edit may re-label a story to (only ever downward: a rebrand that no longer qualifies becomes a move). */
 const RELABEL_TYPES = new Set(["move"]);
 

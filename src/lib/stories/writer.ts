@@ -20,7 +20,8 @@ export const HEADLINE_MIN_WORDS = 4, HEADLINE_MAX_WORDS = 9;
 
 // FACTS ---------------------------------------------------------------------------------------------------------------------------
 export type Basis = "measured" | "ai";
-export type WriterChange = { brand: string; what: string; from: string; to: string; date: string; page: string; basis: Basis; hex?: { from: string | null; to: string | null } };
+/** `since` (E2g): the last capture that showed the old value; `date`: the first capture that showed the new one. */
+export type WriterChange = { brand: string; what: string; from: string; to: string; since?: string; date: string; page: string; basis: Basis; hex?: { from: string | null; to: string | null } };
 export type WriterNumber = { text: string; basis: Basis };
 export type WriterFacts = {
   /** Story type and its kind word ("Move", "Roundup"), sector name or null. */
@@ -40,6 +41,8 @@ export type WriterFacts = {
   dates: string[];
   /** True only when type, colour and layout changed together, or a new name or logo. */
   rebrand: boolean;
+  /** E2g · at most this many brands named in the text (a census names six; the rest are counted). */
+  max_brands?: number;
 };
 export type WrittenText = { headline: string; deck: string; body: string[]; how_we_know: string };
 export const hasOurRead = (f: WriterFacts) => f.changes.some(c => c.basis === "ai") || f.numbers.some(n => n.basis === "ai") || f.lines.some(l => l.basis === "ai");
@@ -108,6 +111,8 @@ export const WRITER_SYSTEM = [
   "", "TWO FULL STORIES, for length and tone:", ...APPROVED_STORIES.map(s => [`Headline: ${s.headline}`, `Deck: ${s.deck}`, ...s.body.map(b => `Body: ${b}`), `How we know: ${s.how_we_know}`].join("\n")),
   "", "WHAT TO RETURN: headline (four to nine words, no colon, no parentheses), deck (one or two sentences), body (two to four short paragraphs, 60 to 140 words in all), how_we_know (one sentence).",
   "No \"why it matters\" line and no advice.",
+  "A change happened between its \"since\" date (the last capture with the old value) and its \"date\" (the first capture with the new one): write \"between 11 and 14 November\" when they differ. Never date a change by when it was confirmed.",
+  "A census counts what homepages say now: give the count beside its base, quote members' lines exactly, and name at most max_brands brands.",
   "Use only the facts in the FACTS block. Every number you write must appear in the facts with the same value; every quotation must be copied exactly from the captured copy; name only the brands listed, by the names given; use only the dates given.",
   "When any fact has basis \"ai\", it is our read: say so in how_we_know (\"our read\", an AI estimate) and never present it as measured.",
   "Never use hex codes in the text; give colours a plain word. Write \"rebrand\" only when the facts say rebrand is true.",
@@ -257,6 +262,11 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
       if (start && NEWS_NAME_STOPWORDS.has(name.toLowerCase())) continue;
       fail.push(`brand not in the story: ${name}`); break;
     }
+  }
+  // E2g: a census names at most `max_brands` brands; the rest are counted.
+  if (f.max_brands != null) {
+    const named = mine.filter(m => new RegExp(`(?<![\\p{L}\\p{N}])${esc(m)}(?![\\p{L}\\p{N}])`, "u").test(free));
+    if (named.length > f.max_brands) fail.push(`names ${named.length} brands (at most ${f.max_brands})`);
   }
   // Banned words and phrases (outside quoted homepage copy).
   for (const p of [...ADVICE, ...STOCK_ENDINGS, ...TREND_SPEAK]) if (has(free, p)) fail.push(`banned phrase: ${p}`);

@@ -59,6 +59,8 @@ export type BuildDeps = {
   keepCrops?: () => Promise<number>;
   /** E2e · append the integrity verdicts that changed (change_checks, read by every tape surface); returns how many were written. */
   recordChecks?: (checks: Record<number, Check>) => Promise<number>;
+  /** E2g · append the count each census story runs on (census_counts) before the story is stored; a census whose count can't be recorded is not stored. */
+  recordCensus?: (rows: import("../census").CensusRow[]) => Promise<number>;
   /** Append a kill to every published single-brand story told only by these reversed events (retire.ts reversedStory); returns how many. */
   retireReversed?: (eventIds: number[], identityIds: string[]) => Promise<number>;
 };
@@ -114,7 +116,13 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       });
     } else if (todo.length) timedOut = true;
   }
-  const rows = plan.map(p => toRow(p, lines.get(p.id) ?? null));
+  let rows = plan.map(p => toRow(p, lines.get(p.id) ?? null));
+  // E2g: a census story is stored only once the count it runs on is recorded (the next census compares with that count).
+  const census = plan.filter(p => p.status === "published" && p.census);
+  if (census.length && deps.recordCensus) {
+    const ok = await deps.recordCensus(census.map(p => ({ ...p.census!, story_id: p.id }))).then(() => true, () => false);
+    if (!ok) { const drop = new Set(census.map(p => p.id)); rows = rows.filter(r => !drop.has(r.id)); }
+  }
   const inserted = rows.length ? await deps.insert(rows) : 0;
   const linesLater = later.length && deps.insertLines ? await deps.insertLines(later) : 0;
   // Numbers come after the insert so a story is numbered once it is published; a failure here never fails the build (the next build retries).
@@ -197,11 +205,13 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   // build (fail closed: no change reaches a story unchecked).
   const checkEvents = await pages<EventRow & { viewport: string | null }>((f, t) => db.from("library_events").select("id,domain,type,before,after,detected_at,source,page_type,viewport,snapshot_id,prev_snapshot_id").eq("source", "live").gte("detected_at", new Date(now - (o.days + REVERSAL_DAYS) * 864e5).toISOString()).order("id").range(f, t) as never);
   const checks = await (await import("../integrity.server")).computeChecks(db, checkEvents);
-  const [texts, calls, carousel] = await Promise.all([
+  const [texts, calls, carousel, census] = await Promise.all([
     (await import("../promo.server")).snapshotTexts(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id])),
     (await import("./headline-call.server")).storedCalls(db as never, events.filter(e => e.type === "message_pivot").map(e => e.id)).catch(() => ({})),
     // E2c: snapshots whose first screen is a carousel (a failure reads as none: changes are judged as before).
     (await import("../carousel.server")).carouselSnapshots(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id])).catch(() => new Set<number>()),
+    // E2g: the census captures and stored counts (a failure means no census this build; everything else is unaffected).
+    (await import("../census.server")).censusInput(db, now).catch(() => null),
   ]);
   const h = new Map(now_.map(r => [r.domain, r]));
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
@@ -216,6 +226,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     calls,
     carousel: [...carousel],
     checks: Object.fromEntries(checks),
+    census,
   };
 }
 
@@ -232,6 +243,7 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
       const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
       return rows.map(r => { const v = applyEdits(r, by.get(r.id) ?? [], Date.now()); return { id: r.id, type: v.type as Existing["type"], status: r.status, state: v.state, score: r.score, basis: r.basis, happened_at: r.happened_at, domains: r.domains, signal_keys: r.signal_keys, sector: r.sector, headline: v.headline, deck: v.deck, facts: v.facts, source_ids: r.source_ids }; });
     },
+    recordCensus: async rows => (await import("../census.server")).recordCensus(admin as never, rows),
     recordChecks: async checks => (await import("../integrity.server")).recordChecks(admin as never, new Map(Object.entries(checks).map(([k, v]) => [Number(k), v]))),
     calls: async (events, deadline, carousel) => (await import("./headline-call.server")).headlineCalls(admin, events.filter(e => e.type === "message_pivot" && (!e.page_type || e.page_type === "home")), { deadline, ...(carousel ? { carousel } : {}) }),
     appendFolds: async folds => {

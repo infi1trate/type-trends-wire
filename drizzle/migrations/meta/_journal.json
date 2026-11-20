@@ -421,6 +421,13 @@
       "when": 1795190028872,
       "tag": "0059_change_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795194211887,
+      "tag": "0060_census_counts",
+      "breakpoints": true
     }
   ]
 }

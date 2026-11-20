@@ -16,8 +16,10 @@ export const PUBLISH_MIN = 45;
 export const DEDUPE_DAYS = 7;
 /** At most 5 published stories per UTC day (E2a), at most 3 of them about a single brand and at most 3 outside news; often fewer. */
 export const DAILY_CAP = 5, SINGLE_BRAND_DAILY_CAP = 3, NEWS_DAILY_CAP = 3;
-/** The weekly pieces (seasonal story, against the grain) run once a week outside the daily five (E2b). */
-export const isWeekly = (c: { id: string }) => /^(seasonal|against):/.test(c.id);
+/** The weekly pieces (seasonal story, against the grain, and each census, E2g) run once a week outside the daily five (E2b). */
+export const isWeekly = (c: { id: string }) => /^(seasonal|against|census):/.test(c.id);
+/** A census (E2g): a weekly piece counting what homepages say now. */
+export const isCensus = (c: { id: string }) => c.id.startsWith("census:");
 /** Our read: a story whose basis is an AI estimate. Measured (and outside news, which has no basis) takes its places first. */
 export const isOurRead = (c: { basis: string | null }) => c.basis === "ai";
 /** A roundup of AI-read moves (not a weekly piece): at most one a day, never ranked above a measured story of that day. */
@@ -101,8 +103,10 @@ export const FIRST_SEEN_PER_SECTOR_DAYS = DEDUPE_DAYS;
 const keysOf = (c: { type: string; domains: string[]; signal_keys?: string[]; signalKeys?: string[]; sector: string | null }) => {
   const sig = c.signalKeys ?? c.signal_keys ?? [];
   if (c.type === "first_seen") return [`${c.type}|x|${c.sector ?? "all"}`];
-  // The weekly gatherings (seasonal story, against-the-grain roundup) dedupe by their kind: one a week.
-  const weekly = /^(seasonal|against):/.exec((c as { id?: string }).id ?? "");
+  // The weekly gatherings (seasonal story, against-the-grain roundup) dedupe by their kind: one a week; each census by its own key.
+  const id = (c as { id?: string }).id ?? "";
+  if (id.startsWith("census:")) return [`${c.type}|w|census:${id.split(":")[1] ?? ""}`];
+  const weekly = /^(seasonal|against):/.exec(id);
   if (weekly) return [`${c.type}|w|${weekly[1]}`];
   // Brand stories dedupe by their brand; signal stories by their signal(s); a roundup by its first signal or brands.
   return c.domains.length === 1 || !sig.length ? c.domains.map(d => `${c.type}|d|${d}`) : sig.map(k => `${c.type}|s|${k}`);
@@ -193,10 +197,12 @@ export function rankScores<S extends { id: string; type: string; basis: string |
   for (const s of stories) if (!isOurRead(s) && s.type !== "launch" && !isWeekly(s)) { const d = utcDay(s.happened_at); lowest.set(d, Math.min(lowest.get(d) ?? Infinity, s.score)); }
   return new Map(stories.map(s => { const low = isAiRoundup(s) ? lowest.get(utcDay(s.happened_at)) : undefined; return [s.id, low != null && s.score >= low ? low - 0.5 : s.score]; }));
 }
-/** A day with a measured story: neither weekly piece may lead then, and no AI-read roundup either. */
-export function leadAllowed<S extends { id: string; type: string; basis: string | null; happened_at: string }>(s: S, all: S[]): boolean {
+/** A day with a measured story: neither weekly piece may lead then, and no AI-read roundup either. A census never leads on a day that
+ *  has a measured single-brand story (E2g). */
+export function leadAllowed<S extends { id: string; type: string; basis: string | null; happened_at: string; domains?: string[] }>(s: S, all: S[]): boolean {
   if (!isWeekly(s) && !isAiRoundup(s)) return true;
   const d = utcDay(s.happened_at);
+  if (isCensus(s)) return !all.some(x => x.id !== s.id && utcDay(x.happened_at) === d && x.basis === "measured" && !isWeekly(x) && isSingleBrand({ type: x.type, domains: x.domains ?? [] }));
   return !all.some(x => x.id !== s.id && utcDay(x.happened_at) === d && !isOurRead(x) && x.basis === "measured" && !isWeekly(x) && x.type !== "launch");
 }
 /** Read-time ordering under a sector lens: that sector's stories get LENS_BOOST points; stored scores are untouched. */

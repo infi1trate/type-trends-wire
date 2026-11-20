@@ -17,7 +17,13 @@ export type StoryEvidence = {
 export function storyEventIds(sourceIds: string[]): number[] {
   return [...new Set(sourceIds.map(x => /^(?:event|story:move):(\d+)$/.exec(x)?.[1]).filter((x): x is string => !!x).map(Number))];
 }
-export function storyEvidence(s: { type: string; domains: string[] }, changes: ChangeRef[], pivot: string, crops: CropRow[]): StoryEvidence {
+/** A census shows the first-screen crops of its first members that have one (E2g), at most this many. */
+export const CENSUS_GRID_MAX = 4;
+export function storyEvidence(s: { type: string; domains: string[]; id?: string }, changes: ChangeRef[], pivot: string, crops: CropRow[]): StoryEvidence {
+  if (s.type === "roundup" && s.id?.startsWith("census:")) {
+    const grid = s.domains.flatMap(d => { const v = versionsOf(crops, d, "hero")[0]; return v ? [{ domain: d, crop: toCrop(v) }] : []; }).slice(0, CENSUS_GRID_MAX);
+    return { section: "hero", sectionName: sectionName("hero"), compare: null, grid: grid.length ? grid : null, note: null };
+  }
   if (s.type === "roundup") {
     const grid = s.domains.slice(0, ROUNDUP_GRID_MAX).map(d => { const v = versionsOf(crops, d, "hero")[0]; return { domain: d, crop: v ? toCrop(v) : null }; });
     return { section: "hero", sectionName: sectionName("hero"), compare: null, grid, note: grid.some(g => g.crop) ? null : "No hero captures of these brands yet; each is shown as a card." };

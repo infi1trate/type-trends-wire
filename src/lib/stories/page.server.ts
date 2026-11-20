@@ -107,7 +107,7 @@ export async function evidenceOf(s: { id?: string; type: string; domains: string
   const changes = type === "rebrand" ? [{ kind: "rebrand" as const, reasons: [] }] : events.map(e => ({ kind: "event" as const, type: e.type, fields: [...new Set([...keys(e.before), ...keys(e.after)])] }));
   // Pivot: when the change first appeared (effective time of its earliest event), else when the story happened.
   const pivot = events.map(e => e.effective_at ?? e.detected_at).filter((x): x is string => !!x).sort()[0] ?? s.happened_at;
-  return withKept(storyEvidence({ type, domains: s.domains }, changes, pivot, crops), kept, crops);
+  return withKept(storyEvidence({ type, domains: s.domains, ...(s.id ? { id: s.id } : {}) }, changes, pivot, crops), kept, crops);
 }
 export async function loadQueue(day: string | null, fresh: boolean) {
   return queueModel(await (fresh ? deskIndex() : storyIndex()), day, Date.now());

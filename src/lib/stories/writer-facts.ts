@@ -7,7 +7,8 @@ import { brandName } from "../brand-names";
 import { label, sectorName } from "../labels";
 import { STORY_TYPE_DEFS, AI_EVENTS, type Fact, type StoryKind } from "./types";
 import type { WriterChange, WriterFacts, WriterNumber, WrittenText } from "./writer";
-import { howWeKnow } from "./writer";
+import { howWeKnow, quotesOf } from "./writer";
+import { CENSUS_HOW, CENSUS_NAMED_MAX, SALE_KEY, censusKeyOf } from "../census";
 
 export type FactStory = { id: string; type: string; headline: string; deck: string | null; facts: unknown; sector: string | null; signal_keys: string[]; domains: string[]; source_ids: string[]; basis: string | null; happened_at: string; kicker: string };
 export type FactSource = {
@@ -58,7 +59,8 @@ export const eventIdsOf = (s: { id: string; source_ids: string[] }) => [...new S
 /** One event as the writer's change lines (a palette change with an accent and a palette is two lines). */
 export function changesOf(e: EventRow, brand: string): WriterChange[] {
   const b = o(e.before), a = o(e.after), basis = AI_EVENTS.has(e.type) ? "ai" as const : "measured" as const, page = e.page_type || "home";
-  const c = (what: string, from: string, to: string, hex?: WriterChange["hex"]): WriterChange => ({ brand, what, from, to, date: e.detected_at, page, basis, ...(hex ? { hex } : {}) });
+  // E2g: a change is dated by its captures: `since` is the last capture with the old value, `date` the first with the new one.
+  const c = (what: string, from: string, to: string, hex?: WriterChange["hex"]): WriterChange => ({ brand, what, from, to, ...(e.seen ? { since: e.seen.before } : {}), date: e.seen?.after ?? e.detected_at, page, basis, ...(hex ? { hex } : {}) });
   const out: WriterChange[] = [];
   switch (e.type) {
     case "palette_shift":
@@ -88,6 +90,7 @@ export function changesOf(e: EventRow, brand: string): WriterChange[] {
 
 /** The facts block and the template text (the fallback) for one story. */
 export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts; template: WrittenText } {
+  if (censusKeyOf(s.id)) return censusFacts(s, src);
   const type = (s.type in STORY_TYPE_DEFS ? s.type : "news") as StoryKind, stored = asFacts(s.facts);
   const subjects = s.domains.map(d => brandName(d, src.names.get(d)));
   const events = eventIdsOf(s).map(id => src.events.get(id)).filter((e): e is EventRow => !!e).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
@@ -95,11 +98,12 @@ export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts
   const changes = events.flatMap(e => changesOf(e, brandName(e.domain, src.names.get(e.domain)))).sort((a, b) => (a.basis === b.basis ? 0 : a.basis === "measured" ? -1 : 1)).slice(0, MAX_CHANGES).sort((a, b) => a.date.localeCompare(b.date));
   const copy = [...new Set(events.flatMap(e => [...(e.type === "message_pivot" ? [o(e.before)["headline"], o(e.after)["headline"]] : []), ...(src.texts.get(e.snapshot_id ?? -1) ?? []), ...(src.texts.get(e.prev_snapshot_id ?? -1) ?? [])]).filter((x): x is string => typeof x === "string" && !!x.trim()))];
   const call = events.map(e => src.calls[e.id]).find(Boolean) ?? null;
-  const lines = stored.filter(f => !(f.kind === "member" && changes.length) && !/^Headline call:/.test(f.text)).map(f => ({ text: f.text.replace(/\s*\((?:forecast )?run \d+\)/gi, ""), basis: f.basis === "ai" || f.basis === "measured" ? f.basis : null }));
+  // The confirmation date is machinery (Data view): the writer dates changes by their captures only (E2g).
+  const lines = stored.filter(f => !(f.kind === "member" && changes.length) && f.kind !== "date" && !/^Headline call:/.test(f.text)).map(f => ({ text: f.text.replace(/\s*\((?:forecast )?run \d+\)/gi, ""), basis: f.basis === "ai" || f.basis === "measured" ? f.basis : null }));
   const lower = new Set(subjects);
   const cited = [...new Set(src.known.filter(n => n.length >= 3 && !lower.has(n) && stored.some(f => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(f.text))))];
   const numbers = src.numbers?.(s.signal_keys, s.sector) ?? [];
-  const dates = [...new Set([s.happened_at, ...events.map(e => e.detected_at)].map(d => d.slice(0, 10)))].sort();
+  const dates = [...new Set((events.length ? events.flatMap(e => (e.seen ? [e.seen.before, e.seen.after] : [e.detected_at])) : [s.happened_at]).map(d => d.slice(0, 10)))].sort();
   const facts: WriterFacts = {
     type, kind: s.id.startsWith("against:") ? "Against the grain (weekly piece)" : s.id.startsWith("seasonal:") ? "Seasonal (weekly piece)" : STORY_TYPE_DEFS[type].kicker, sector: s.sector ? sectorName(s.sector) : null,
     brands: [...subjects.map(name => ({ name, role: "subject" as const })), ...cited.map(name => ({ name, role: "cited" as const }))],
@@ -109,4 +113,23 @@ export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts
   const news = type === "news" ? s.kicker.split(" · ").slice(1).join(" · ") || "outside news" : null;
   const template: WrittenText = { headline: s.headline, deck: s.deck || s.headline, body: [], how_we_know: howWeKnow({ dates, ourRead, measured: s.basis === "measured" || changes.some(c => c.basis === "measured"), news }) };
   return { facts, template };
+}
+
+/** E2g · the facts of a census: the count with its base, the sector counts, every member's quoted line and the members whose confirmed
+ *  change added the word (with both capture dates). The writer names at most six brands; quotes must match a member's line exactly. */
+export function censusFacts(s: FactStory, src: FactSource): { facts: WriterFacts; template: WrittenText } {
+  const stored = asFacts(s.facts), key = censusKeyOf(s.id)!;
+  const lines = stored.filter(f => f.kind === "line"), counts = stored.filter(f => f.kind === "count");
+  const added = eventIdsOf({ id: "", source_ids: s.source_ids.map(x => x.replace(/^added:/, "event:")) }).map(id => src.events.get(id)).filter((e): e is EventRow => !!e);
+  const changes = added.flatMap(e => changesOf(e, brandName(e.domain, src.names.get(e.domain))));
+  const copy = [...new Set([...lines.flatMap(f => quotesOf(f.text)), ...changes.flatMap(c => [c.from, c.to])].filter(x => !!x && x !== "none"))];
+  const facts: WriterFacts = {
+    type: "census", kind: key === SALE_KEY ? "Census: sale mode (weekly piece)" : "Census: words in headlines (weekly piece)", sector: null,
+    brands: s.domains.map(d => ({ name: brandName(d, src.names.get(d)), role: "subject" as const })),
+    changes, copy, headline_call: null, numbers: counts.map(f => ({ text: f.text, basis: "measured" as const })),
+    lines: lines.map(f => ({ text: f.text, basis: "measured" as const })),
+    dates: [...new Set([s.happened_at, ...added.flatMap(e => (e.seen ? [e.seen.before, e.seen.after] : [e.detected_at]))].map(d => d.slice(0, 10)))].sort(),
+    rebrand: false, max_brands: CENSUS_NAMED_MAX,
+  };
+  return { facts, template: { headline: s.headline, deck: s.deck || s.headline, body: [], how_we_know: key === SALE_KEY ? CENSUS_HOW.sale : CENSUS_HOW.words } };
 }

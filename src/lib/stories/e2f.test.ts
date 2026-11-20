@@ -30,7 +30,8 @@ describe("1 · the seasonal story counts promotion wording only", () => {
     expect(s.domains.sort()).toEqual(["onepeloton.com", "parachutehome.com", "skims.com"]);
     expect(s.sourceIds).not.toContain(`event:${GOPRO}`);
   });
-  it("/what-we-show states the member rule", () => expect(storyRules().map(r => r.text).join(" ")).toMatch(/new headline reads as a promotion/));
+  // E2g: the change-based seasonal story is no longer built; /what-we-show says the sale-mode census counts sale skins instead.
+  it("/what-we-show says sale skins are counted by the sale-mode census", () => expect(storyRules().map(r => r.text).join(" ")).toMatch(/counted by the sale-mode census/));
 });
 
 describe("2 · a carousel flag applies to the page", () => {

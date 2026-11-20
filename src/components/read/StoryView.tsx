@@ -112,11 +112,17 @@ export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNod
       evidence: <>
         {s.body.length > 0 && <div className="ed-body my-10 space-y-5 md:my-14" data-story-body="">{s.body.map((p, i) => <p key={i} className="max-w-[62ch] text-[1.125rem] leading-relaxed">{p}</p>)}</div>}
         <p className="ed-small max-w-[62ch]" data-how-we-know=""><span className="ed-kicker mr-2">How we know</span>{s.howWeKnow}</p>
-        <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : "The numbers"} kicker="Each line links to its receipt.">
+        {s.census && <BlockPart title="The lines" kicker={s.census.sectors ? `By sector: ${s.census.sectors}.` : undefined}>
+          <ul className="ledger" data-story-lines="">{s.census.lines.map((l, i) => <li key={i} className="ledger-row flex flex-col gap-1 px-2 py-3 md:flex-row md:items-baseline md:gap-4">
+            {l.href ? <Link to="/brands/$domain" params={{ domain: decodeURIComponent(l.href.replace(/^\/brands\//, "")) }} className="ed-tap ed-kicker inline-flex min-h-11 shrink-0 items-center md:w-40">{l.name}</Link> : <span className="ed-kicker shrink-0 md:w-40">{l.name}</span>}
+            <span className="ed-small min-w-0 break-words">{l.line}</span>
+          </li>)}</ul>
+        </BlockPart>}
+        {(!s.census || s.facts.length > 0) && <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : "The numbers"} kicker="Each line links to its receipt.">
           {s.facts.length ? <ul className="ledger" data-story-changes="">{s.facts.map((f, i) => <li key={i} className="ledger-row px-2 py-3">
             <span className="ed-small">{f.href ? <Receipt href={f.href} {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>
           </li>)}</ul> : <p className="ed-small">{voiced("read.storyView.1")}</p>}
-        </BlockPart>
+        </BlockPart>}
       </>,
       "so-what": null,
       related: related ?? <StoryRelated s={s} />,

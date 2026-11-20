@@ -55,6 +55,8 @@ export type BuildInput = {
   calls?: Record<number, { call: string; reason: string }>;
   /** E2c · snapshot ids whose first screen is a carousel (`layout.hero_carousel`); their headline and hero changes are rotations (carousel.ts). */
   carousel?: number[];
+  /** E2g · the census: the last eight days of live desktop home captures and the stored counts behind published census stories (census.ts). */
+  census?: import("../census").CensusInput | null;
 };
 
 const day = 864e5;

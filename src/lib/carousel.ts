@@ -1,5 +1,5 @@
 // THE CAROUSEL RULE (E2c, widened E2d) — when a homepage's first screen is a rotating hero (a carousel), the headline, hero image, hero
-// video and first-screen colours (palette, accent) we capture belong to one slide of it: a change to them is a rotation, never a move.
+// video and first-screen colours (palette, accent) we capture, and our AI reads of its imagery and style (E2g), belong to one slide of it: a change to them is a rotation, never a move.
 // Such changes stay on the tape, marked "Carousel" the way seasonal lines are marked "Seasonal", and cannot make or join a story; type
 // (fonts) and layout (alignment, grid, button corners) on the same page are judged as before. The crawler reports the carousel as the
 // optional boolean `layout.hero_carousel` in a snapshot's signals; a change is on a carousel when either its before or its after snapshot
@@ -9,7 +9,7 @@
 // treated as an editorial homepage (tape lines only, with or without the carousel flag; editor.ts applies it). A studio's own type,
 // headline and layout changes are judged as before, and roundups gathering studios are unaffected. Decided from the sector. Pure.
 export const CAROUSEL_LABEL = "Carousel";
-export const CAROUSEL_RULE = "When the first screen is a carousel, a headline, hero image, hero video, palette or accent change is one slide replacing another: it stays on the tape, marked Carousel, and never makes or joins a story. Type and layout changes on such a page are judged as usual. A capture taken before we recorded carousels takes the answer of the page's next capture that has one.";
+export const CAROUSEL_RULE = "When the first screen is a carousel, a headline, hero image, hero video, palette or accent change, or our AI read of its imagery or style, is one slide replacing another: it stays on the tape, marked Carousel, and never makes or joins a story. Type and layout changes on such a page are judged as usual. A capture taken before we recorded carousels takes the answer of the page's next capture that has one.";
 /** Sectors whose homepages are showcases of client work (studio rule). */
 export const SHOWCASE_SECTORS: ReadonlySet<string> = new Set(["studios"]);
 export const SHOWCASE_RULE = "A studio's homepage shows its newest or featured client work, so its palette, accent, hero image and hero video follow that work: those changes stay on the tape and never make or join a story. A studio's own typeface, headline and layout changes are judged as usual.";
@@ -35,21 +35,23 @@ export const isShowcaseSector = (sector: string | null | undefined) => !!sector 
 type Follow = { headline: boolean };
 const CAROUSEL: Follow = { headline: true };
 const slideFields = (f: Follow) => (f.headline ? new Set([...SLIDE_FIELDS, "headline"]) : SLIDE_FIELDS);
+/** AI reads of the first screen that follow the slide: the imagery read (E2c) and the style read, aesthetic (E2g). */
+const SLIDE_READS: ReadonlySet<string> = new Set(["imagery_shift", "aesthetic_shift"]);
 function touches(e: Pick<Ev, "type" | "before" | "after">, f: Follow): boolean {
-  if (e.type === "imagery_shift") return true;
+  if (SLIDE_READS.has(e.type)) return true;
   if (e.type === "message_pivot") return f.headline;
   if (FIELD_TYPES.has(e.type)) { const s = slideFields(f); return fieldsOf(e).some(k => s.has(k)); }
   return false;
 }
 function strip<E extends Ev>(e: E, f: Follow): E | null {
-  if (e.type === "imagery_shift" || (f.headline && e.type === "message_pivot")) return null;
+  if (SLIDE_READS.has(e.type) || (f.headline && e.type === "message_pivot")) return null;
   if (!FIELD_TYPES.has(e.type)) return e;
   const s = slideFields(f), keep = (v: unknown) => Object.fromEntries(Object.entries(o(v)).filter(([k]) => !s.has(k)));
   const before = keep(e.before), after = keep(e.after);
   return Object.keys({ ...before, ...after }).length ? { ...e, before, after } : null;
 }
 
-/** The change touches what a carousel rotates: the headline copy, the hero media, the first-screen colours, or the imagery read. */
+/** The change touches what a carousel rotates: the headline copy, the hero media, the first-screen colours, or the imagery or style read. */
 export const touchesRotation = (e: Pick<Ev, "type" | "before" | "after">) => touches(e, CAROUSEL);
 /** Event ids whose change is a carousel rotation (tape label "Carousel"). */
 export function carouselEventIds(events: readonly Ev[], snaps: ReadonlySet<number>): Set<number> {
