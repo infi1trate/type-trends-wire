@@ -1,11 +1,29 @@
 // Writes precomputed page inputs (records.ts) from the jobs that change them: the 15-minute wire job sweeps whatever is due, a library
-// batch rewrites the cards of the brands it captured, the crawl finish sweeps everything. Time-boxed, never throws, service role only.
-// Every body is computed with the same anonymous reads and pure models the pages use, so a page serving a record shows the same thing.
+// batch rewrites only the cards of the brands it captured (`only: "captured"`, a few seconds), the crawl finish forces everything.
+// Time-boxed, never throws, service role only. Every body is computed with the same anonymous reads and pure models the pages use,
+// so a page serving a record shows the same thing.
+//
+// Deadline rules: each step has a cost estimate (the last run's duration on this instance, else STEP_ESTIMATE_MS). A step whose
+// estimate does not fit in the time left is skipped (the next sweep picks it up), and a step that starts is still cut off at the
+// deadline, so no call runs past it by more than a timer tick. Card loops check the per-chunk estimate before each chunk.
 import { SHARED, brandKey, cardsDue, due, pageKey, PAGES, type PageKind, type SharedKey } from "./records";
-import { recordMetas, writeRecords } from "./store.server";
 import { CALL_BUDGET_MS } from "../jobs/steps";
 
 export type RefreshResult = { written: string[]; skipped: number; timed_out: boolean; errors: string[] };
+type Site = { domain: string; sector: string; last_snapshot_at: string | null };
+type Row = { key: string; body: unknown };
+/** Everything the refresh reads, computes and writes; injectable so tests run with fake steps and a fake clock. */
+export type RefreshDeps = {
+  metas: () => Promise<{ key: string; computed_at: string }[]>;
+  write: (rows: (Row & { source: string })[]) => Promise<string[]>;
+  card: (domain: string) => Promise<unknown>;
+  shared: (k: SharedKey) => Promise<unknown>;
+  sites: () => Promise<Site[]>;
+  similar: (sites: Site[]) => Promise<Row[]>;
+  sector: (sites: Site[]) => Promise<Row[]>;
+  pageKeys: () => Promise<string[]>;
+  page: (key: string) => Promise<unknown>;
+};
 const short = (e: unknown) => (e instanceof Error ? e.message : String(e)).replace(/\s+/g, " ").slice(0, 120);
 
 async function sharedBody(k: SharedKey): Promise<unknown> {
@@ -36,71 +54,134 @@ export async function pageBody(key: string): Promise<unknown> {
     case "brands-index": return (await import("../read.server")).computeBrands();
   }
 }
+const DEFAULT_DEPS: RefreshDeps = {
+  metas: async () => (await import("./store.server")).recordMetas(),
+  write: async rows => (await import("./store.server")).writeRecords(rows),
+  card: async d => (await import("../brand-read.server")).computeBrandCard(d),
+  shared: sharedBody,
+  sites: async () => {
+    const { supabaseAnon } = await import("../mcp/supabase");
+    const { data, error } = await supabaseAnon().from("library_sites").select("domain,sector,active,last_snapshot_at").eq("active", true).order("domain").limit(2000);
+    if (error) throw new Error("site list read failed");
+    return (data ?? []) as Site[];
+  },
+  similar: async sites => {
+    const { computeBrandSimilar } = await import("../brand-read.server");
+    const bodies = await Promise.all(sites.map(s => computeBrandSimilar(s.domain)));
+    return sites.map((s, k) => ({ key: brandKey("brand-similar", s.domain), body: bodies[k] }));
+  },
+  sector: async sites => {
+    const [{ sectorFor }, { dataInput }, { sectorField, signalContrast }] = await Promise.all([import("../brand-read.server"), import("../data-stories/data.server"), import("../data-stories/stories")]);
+    const input = await dataInput(), fields = new Map<string, ReturnType<typeof sectorField> | null>();
+    for (const s of sites) if (!fields.has(s.sector)) fields.set(s.sector, sectorField(input, s.sector));
+    return sites.map(s => ({ key: brandKey("brand-sector", s.domain), body: sectorFor(input, s.sector, s.domain, sectorField, signalContrast, fields.get(s.sector) ?? null) }));
+  },
+  pageKeys,
+  page: pageBody,
+};
 
-/** Rewrite what is due (or forced) until the deadline. `domains`: brands just captured, whose cards are rewritten first. */
-export async function refreshRecords(o: { job: string; deadline: number; domains?: string[]; force?: boolean; now?: () => number }): Promise<RefreshResult> {
-  const now = o.now ?? Date.now, out: RefreshResult = { written: [], skipped: 0, timed_out: false, errors: [] };
+/** Fixed starting estimates (ms) per step, used until this instance has timed the step once. Generous on purpose. */
+export const STEP_ESTIMATE_MS: Readonly<Record<string, number>> = {
+  metas: 1_500, sites: 1_500, "page-keys": 1_500, "card-chunk": 2_500,
+  "site-index": 5_000, signals: 5_000, rebrands: 4_000, "moving-runs": 4_000, "quarter-series": 4_000,
+  "brand-similar": 12_000, "brand-sector": 15_000, page: 5_000, "page:digest": 6_000,
+};
+const learned = new Map<string, number>();
+export const resetStepEstimates = () => learned.clear();
+/** The estimate bucket: a named step, or `page:<kind>` / `page` for a page model key (`brands-index`, `digest:2026-W46`, …). */
+const stepOf = (what: string) => {
+  if (what in STEP_ESTIMATE_MS) return what;
+  const kind = what.split(":")[0] ?? what;
+  return kind in PAGES ? (`page:${kind}` in STEP_ESTIMATE_MS ? `page:${kind}` : "page") : what;
+};
+export const estimateOf = (what: string, seed: Partial<Record<string, number>> = {}) => learned.get(stepOf(what)) ?? seed[stepOf(what)] ?? STEP_ESTIMATE_MS[stepOf(what)] ?? 5_000;
+
+const TIMED_OUT = Symbol("timed out");
+/** Resolve with the work, or with TIMED_OUT once `ms` passes (the work is abandoned, not awaited). */
+function within<T>(ms: number, work: Promise<T>): Promise<T | typeof TIMED_OUT> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const stop = new Promise<typeof TIMED_OUT>(r => { timer = setTimeout(() => r(TIMED_OUT), Math.max(0, ms)); });
+  work.catch(() => {}); // an abandoned step's late failure must not surface as an unhandled rejection
+  return Promise.race([work, stop]).finally(() => clearTimeout(timer));
+}
+
+export type RefreshOptions = { job: string; deadline: number; domains?: string[]; force?: boolean; only?: "captured"; now?: () => number; deps?: Partial<RefreshDeps>; estimates?: Partial<Record<string, number>> };
+/** Rewrite what is due (or forced) until the deadline. `domains`: brands just captured, whose cards are rewritten first.
+ *  `only: "captured"`: those cards and nothing else (a crawl batch). */
+export async function refreshRecords(o: RefreshOptions): Promise<RefreshResult> {
+  const now = o.now ?? Date.now, deps: RefreshDeps = { ...DEFAULT_DEPS, ...o.deps }, out: RefreshResult = { written: [], skipped: 0, timed_out: false, errors: [] };
   const left = () => o.deadline - now();
-  const metas = new Map((await recordMetas()).map(m => [m.key, m.computed_at]));
-  const metaOf = (key: string) => (metas.has(key) ? { key, computed_at: metas.get(key)! } : undefined);
-  const write = async (rows: { key: string; body: unknown }[]) => { out.written.push(...await writeRecords(rows.map(r => ({ ...r, source: o.job })))); };
-  const attempt = async (what: string, f: () => Promise<void>) => { if (left() < 3000) { out.timed_out = true; return; } try { await f(); } catch (e) { out.errors.push(`${what}: ${short(e)}`); } };
-
-  // 1. Cards of the brands this job just captured (cheap: a few audit reads each).
-  const { computeBrandCard, computeBrandSimilar, sectorFor } = await import("../brand-read.server");
+  const write = async (rows: Row[]) => { if (rows.length) out.written.push(...await deps.write(rows.map(r => ({ ...r, source: o.job })))); };
+  /** Run one step if its estimate fits; cut it off at the deadline. Returns false when the step was skipped or cut off. */
+  const attempt = async (what: string, f: () => Promise<void>): Promise<boolean> => {
+    const step = stepOf(what), est = estimateOf(what, o.estimates);
+    if (left() < est) { out.timed_out = true; out.skipped++; return false; }
+    const t0 = now();
+    try {
+      const r = await within(left(), f());
+      const took = now() - t0;
+      if (r === TIMED_OUT) { out.timed_out = true; out.errors.push(`${what}: cut off at the deadline`); learned.set(step, Math.min(60_000, Math.max(est, took) * 1.5)); return false; }
+      learned.set(step, took);
+      return true;
+    } catch (e) { out.errors.push(`${what}: ${short(e)}`); return false; }
+  };
   const cards = async (domains: string[]) => {
     for (let i = 0; i < domains.length; i += 4) {
-      if (left() < 4000) { out.timed_out = true; return; }
-      const chunk = domains.slice(i, i + 4), bodies = await Promise.all(chunk.map(d => computeBrandCard(d).catch(e => { out.errors.push(`card ${d}: ${short(e)}`); return undefined; })));
-      await write(chunk.flatMap((d, k) => (bodies[k] === undefined ? [] : [{ key: brandKey("brand-card", d), body: bodies[k] }])));
+      const chunk = domains.slice(i, i + 4);
+      const ok = await attempt("card-chunk", async () => {
+        const bodies = await Promise.all(chunk.map(d => deps.card(d).catch(e => { out.errors.push(`card ${d}: ${short(e)}`); return undefined; })));
+        await write(chunk.flatMap((d, k) => (bodies[k] === undefined ? [] : [{ key: brandKey("brand-card", d), body: bodies[k] }])));
+      });
+      if (!ok && out.timed_out) return; // the rest wait for the next sweep (cardsDue puts them first)
     }
   };
-  if (o.domains?.length) await attempt("cards (captured)", () => cards([...new Set(o.domains!.map(d => d.toLowerCase()))]));
+  const captured = [...new Set((o.domains ?? []).map(d => d.toLowerCase()))];
+
+  // 1. Cards of the brands this job just captured (cheap: a few audit reads each).
+  if (captured.length) await cards(captured);
+  if (o.only === "captured") return out;
+
+  let metas = new Map<string, string>();
+  if (!await attempt("metas", async () => { metas = new Map((await deps.metas()).map(m => [m.key, m.computed_at])); })) return out;
+  const metaOf = (key: string) => (metas.has(key) ? { key, computed_at: metas.get(key)! } : undefined);
 
   // 2. Shared inputs that are due (forced on a crawl finish).
   for (const k of Object.keys(SHARED) as SharedKey[]) {
     if (!o.force && !due(metaOf(k), now())) { out.skipped++; continue; }
-    await attempt(k, async () => { const body = await sharedBody(k); await write([{ key: k, body }]); });
+    await attempt(k, async () => { const body = await deps.shared(k); await write([{ key: k, body }]); });
   }
   // 3. Similar brands and the sector field for every brand (one pass over the shared inputs).
-  const { supabaseAnon } = await import("../mcp/supabase");
-  const { data: siteRows } = await supabaseAnon().from("library_sites").select("domain,sector,active,last_snapshot_at").eq("active", true).order("domain").limit(2000);
-  const sites = (siteRows ?? []) as { domain: string; sector: string; last_snapshot_at: string | null }[];
+  let sites: Site[] = [];
+  if (!await attempt("sites", async () => { sites = await deps.sites(); })) return out;
   const oldest = (kind: "brand-similar" | "brand-sector") => sites.map(s => metaOf(brandKey(kind, s.domain))).reduce<{ key: string; computed_at: string } | undefined>((m, x) => (!x ? undefined : !m ? x : x.computed_at < m.computed_at ? x : m), sites.length ? { key: brandKey(kind, "~"), computed_at: "9999" } : undefined);
   const missingAny = (kind: "brand-similar" | "brand-sector") => sites.some(s => !metas.has(brandKey(kind, s.domain)));
   for (const kind of ["brand-similar", "brand-sector"] as const) {
     const meta = missingAny(kind) ? undefined : oldest(kind);
     if (!o.force && meta && !due(meta, now())) { out.skipped++; continue; }
-    await attempt(kind, async () => {
-      if (kind === "brand-similar") {
-        const bodies = await Promise.all(sites.map(s => computeBrandSimilar(s.domain)));
-        await write(sites.map((s, k) => ({ key: brandKey(kind, s.domain), body: bodies[k] })));
-      } else {
-        const [{ dataInput }, { sectorField, signalContrast }] = await Promise.all([import("../data-stories/data.server"), import("../data-stories/stories")]);
-        const input = await dataInput(), fields = new Map<string, ReturnType<typeof sectorField> | null>();
-        for (const s of sites) if (!fields.has(s.sector)) fields.set(s.sector, sectorField(input, s.sector));
-        await write(sites.map(s => ({ key: brandKey(kind, s.domain), body: sectorFor(input, s.sector, s.domain, sectorField, signalContrast, fields.get(s.sector) ?? null) })));
-      }
-    });
+    await attempt(kind, async () => { await write(await (kind === "brand-similar" ? deps.similar(sites) : deps.sector(sites))); });
   }
   // 4. Page models that are due.
-  for (const key of await pageKeys().catch(() => [] as string[])) {
+  let keys: string[] = [];
+  await attempt("page-keys", async () => { keys = await deps.pageKeys(); });
+  for (const key of keys) {
     if (!o.force && !due(metaOf(key), now(), null, PAGES[key.split(":")[0] as PageKind]?.every)) { out.skipped++; continue; }
-    await attempt(key, async () => { const body = await pageBody(key); if (body !== undefined) await write([{ key, body }]); });
+    await attempt(key, async () => { const body = await deps.page(key); if (body !== undefined) await write([{ key, body }]); });
   }
   // 5. Cards that are missing, dirtied by a newer capture or a newer signals record, or old — most out of date first, until the deadline.
-  const queue = cardsDue(sites, metas, now(), metas.get("signals") ?? null).filter(d => !o.domains?.includes(d));
-  if (queue.length) await attempt("cards (due)", () => cards(queue));
+  const queue = cardsDue(sites, metas, now(), metas.get("signals") ?? null).filter(d => !captured.includes(d));
+  if (queue.length) await cards(queue);
   return out;
 }
 
-const MIN_LEFT_MS = 6_000;
-/** The end of a job's call: whatever time the call has left (CALL_BUDGET_MS minus a safety margin) goes to records. Never throws. */
-export async function refreshAfterJob(job: string, jobStartedAt: number, o: { domains?: string[]; force?: boolean } = {}): Promise<RefreshResult | null> {
+const MIN_LEFT_MS = 6_000, MIN_LEFT_CAPTURED_MS = 1_000;
+/** The end of a job's call: whatever time the call has left (CALL_BUDGET_MS minus a safety margin, or `limitMs` from `jobStartedAt`
+ *  when shorter) goes to records. Never throws. */
+export async function refreshAfterJob(job: string, jobStartedAt: number, o: { domains?: string[]; force?: boolean; only?: "captured"; limitMs?: number; deps?: Partial<RefreshDeps> } = {}): Promise<RefreshResult | null> {
   try {
-    const deadline = jobStartedAt + CALL_BUDGET_MS - 5_000;
-    if (deadline - Date.now() < MIN_LEFT_MS) return null;
-    const r = await refreshRecords({ job, deadline, ...o });
+    const { limitMs, ...rest } = o;
+    const deadline = Math.min(jobStartedAt + CALL_BUDGET_MS - 5_000, limitMs !== undefined ? jobStartedAt + limitMs : Infinity);
+    if (deadline - Date.now() < (o.only === "captured" ? MIN_LEFT_CAPTURED_MS : MIN_LEFT_MS)) return null;
+    const r = await refreshRecords({ job, deadline, ...rest });
     console.info("records refresh", job, { written: r.written.length, skipped: r.skipped, timed_out: r.timed_out, errors: r.errors.length });
     return r;
   } catch (e) { console.error("records refresh failed", job, short(e)); return null; }

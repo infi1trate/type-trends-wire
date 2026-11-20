@@ -47,6 +47,18 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+type WaitUntil = (p: Promise<unknown>) => void;
+/** The host's waitUntil, wherever this runtime puts it: the worker context argument, or (behind the Nitro Cloudflare handler, which
+ *  calls the entry with the request only) the `waitUntil` / `runtime.cloudflare.context` it attaches to the request. */
+function hostWaitUntil(request: Request, ctx: { waitUntil?: WaitUntil } | undefined): WaitUntil | undefined {
+  if (typeof ctx?.waitUntil === "function") return p => ctx.waitUntil!(p);
+  const r = request as Request & { waitUntil?: WaitUntil; runtime?: { cloudflare?: { context?: { waitUntil?: WaitUntil } } } };
+  if (typeof r.waitUntil === "function") return p => r.waitUntil!(p);
+  const cf = r.runtime?.cloudflare?.context;
+  if (typeof cf?.waitUntil === "function") return p => cf.waitUntil!(p);
+  return undefined;
+}
+
 /** Public Read pages kept in memory for five minutes per server instance (page-cache.ts: the host's Cache API is a no-op). */
 const pages = createPageCache();
 
@@ -63,8 +75,15 @@ export default {
         const { handleMcp } = await import("./lib/mcp/server.server");
         return await handleMcp(request);
       }
-      // P1/I1: public Read pages are the same for every visitor; serve a copy drawn in the last five minutes when there is one.
       const c = ctx as { waitUntil?: (p: Promise<unknown>) => void } | undefined;
+      // The crawl intake answers as soon as a batch is stored and runs its card refresh after the response when the host offers
+      // waitUntil (crawl-ingest.server.ts); the route file stays as the inline fallback.
+      if (request.method === "POST" && new URL(request.url).pathname === "/api/public/ingest-crawl") {
+        const { handleCrawlIngest } = await import("./lib/crawl-ingest.server");
+        const waitUntil = hostWaitUntil(request, c);
+        return await handleCrawlIngest(request, waitUntil ? { waitUntil } : {});
+      }
+      // P1/I1: public Read pages are the same for every visitor; serve a copy drawn in the last five minutes when there is one.
       // The dev server skips the copy (code changes between requests would serve stale pages); the live host keeps it.
       return await servePage(request, GATE_ENABLED || import.meta.env.DEV, pages, async () => {
         const handler = await getServerEntry();

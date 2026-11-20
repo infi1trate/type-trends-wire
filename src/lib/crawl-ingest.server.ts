@@ -66,7 +66,12 @@ async function refreshAggregates(): Promise<void> {
   if (error) throw new Error("Crawler aggregate refresh failed");
 }
 
-export async function handleCrawlIngest(request: Request): Promise<Response> {
+/** A crawl batch's card refresh gets at most this long, measured from when its snapshots were stored. */
+export const BATCH_REFRESH_MS = 8_000;
+export type IngestContext = { waitUntil?: (p: Promise<unknown>) => void };
+const pause = (ms: number) => new Promise<void>(r => setTimeout(r, Math.max(0, ms)));
+
+export async function handleCrawlIngest(request: Request, ctx: IngestContext = {}): Promise<Response> {
   const started = Date.now();
   try {
     if (!await authenticateCrawler(request)) return forbidden();
@@ -82,9 +87,24 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
       const { ingestLibrary } = await import("./library-ingest.server");
       const res = await ingestLibrary(payload);
       if (res.ok && payload.kind === "library_snapshots") {
+        const stored = Date.now();
         await (await import("./stories/build.server")).afterJob("library", started);
-        // The brands this batch captured get fresh identity cards first (records/refresh.server.ts).
-        await (await import("./records/refresh.server")).refreshAfterJob("library", started, { domains: [...new Set(payload.snapshots.map(s => s.domain))] });
+        // Only the brands this batch captured get fresh identity cards, within BATCH_REFRESH_MS of storing; the wire poll's sweep
+        // does everything else. With waitUntil the crawler gets its answer now and the cards are written after; without it they are
+        // written inline, and a slow refresh is abandoned at the limit so a stored batch always answers with its counts.
+        const domains = [...new Set(payload.snapshots.map(s => s.domain))];
+        const refresh = import("./records/refresh.server")
+          .then(m => m.refreshAfterJob("library", stored, { domains, only: "captured", limitMs: BATCH_REFRESH_MS }))
+          .catch(() => null);
+        let mode: "background" | "inline" = "inline";
+        if (typeof ctx.waitUntil === "function") {
+          try { ctx.waitUntil(refresh); mode = "background"; } catch { /* fall back to inline */ }
+        }
+        if (mode === "inline") await Promise.race([refresh, pause(stored + BATCH_REFRESH_MS + 500 - Date.now())]);
+        console.info("crawl batch card refresh", mode, domains.length);
+        const out = new Response(res.body, res);
+        out.headers.set("x-records-refresh", mode);
+        return out;
       }
       return res;
     }

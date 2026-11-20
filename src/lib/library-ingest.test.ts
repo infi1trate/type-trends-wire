@@ -92,3 +92,44 @@ it("archive state contains sorted desktop home timestamps and live hashes stay s
  const response=await handleLibraryState(new Request("http://localhost/api/public/library-state",{headers:{"x-crawl-secret":credential}}));
  expect((await response.json()).sites[0]).toMatchObject({wayback:["2021-01-03T01:00:00Z","2021-07-03T01:00:00Z"],latest:{"home:desktop":{captured_at:snapshot.captured_at}}});
 });
+// Fix · the crawl intake answers quickly: a batch refreshes only its own brands' cards, and a refresh can never fail a stored batch.
+it("a snapshot batch asks only for its own brands' cards, within 8 s of storing", async () => {
+  refreshAfterJob.mockClear();
+  await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }));
+  expect(refreshAfterJob).toHaveBeenCalledWith("library", expect.any(Number), { domains: ["example.com"], only: "captured", limitMs: 8_000 });
+});
+it("a throwing refresh still answers 200 with the stored counts", async () => {
+  refreshAfterJob.mockImplementationOnce(async () => { throw new Error("boom"); });
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }));
+  expect(res.status).toBe(200);
+  expect(res.headers.get("x-records-refresh")).toBe("inline");
+  expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
+});
+it("a refresh that never ends is abandoned at the limit and the batch still answers 200", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    refreshAfterJob.mockImplementationOnce(() => new Promise<null>(() => {}));
+    let res: Response | undefined;
+    const pending = handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] })).then(r => { res = r; });
+    // Module loads are not timers: keep the fake clock moving until the answer is in (never more than ~9 s of fake time).
+    for (let i = 0; i < 400 && !res; i++) { await vi.advanceTimersByTimeAsync(25); await new Promise(r => setImmediate(r)); }
+    await pending;
+    if (!res) throw new Error("no answer");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
+  } finally { vi.useRealTimers(); }
+});
+it("with waitUntil the answer goes out before the refresh, which runs in the background", async () => {
+  let finish: ((v: null) => void) | undefined;
+  refreshAfterJob.mockClear();
+  refreshAfterJob.mockImplementationOnce(() => new Promise<null>(r => { finish = r; }));
+  const kept: Promise<unknown>[] = [];
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }), { waitUntil: p => { kept.push(p); } });
+  expect(res.status).toBe(200);
+  expect(res.headers.get("x-records-refresh")).toBe("background");
+  expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
+  expect(kept).toHaveLength(1);
+  await vi.waitFor(() => expect(finish).toBeDefined());
+  finish!(null);
+  await kept[0];
+});
