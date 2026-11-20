@@ -35,15 +35,7 @@ const may = (name: string) => (name in SKIPPED ? it.skip : it);
 // different page elements read as one headline. Those six are now "must not run" cases, each asserting the condition that fails.
 const check = (id: number) => goldenChecks[id];
 const failedOn = (id: number, field: string) => check(id)?.fields[field];
-describe("golden set · must run (7: five live, two skipped)", () => {
-  it("6 · the seasonal story gathers Peloton, GoPro and Brooklinen; none runs alone; Lucid's changes fail the check", () => {
-    const s = one(published.filter(p => p.id.startsWith("seasonal:")));
-    expect(s.domains).toEqual(expect.arrayContaining(["onepeloton.com", "gopro.com", "brooklinen.com"]));
-    expect(s.domains).not.toContain("lucidmotors.com");
-    expect(failedOn(3371, "headline")?.verdict).toBe("headline_element");
-    expect(failedOn(3373, "aesthetic")?.failed).toContain("two_before");
-    for (const d of ["brooklinen.com", "lucidmotors.com", "onepeloton.com", "gopro.com"]) expect(single(d)).toHaveLength(0);
-  });
+describe("golden set · must run (6: four live, two skipped)", () => {
   it("8 · white space: almost no dev tools homepage uses lifestyle photography", () =>
     expect(published.some(p => p.type === "white_space" && p.sector === "dev-tools" && p.signalKeys.includes("imagery:photography_lifestyle"))).toBe(true));
   may("9 · one story from the two AI stage notices")("9 · one story from the two AI stage notices", () => {
@@ -56,7 +48,9 @@ describe("golden set · must run (7: five live, two skipped)", () => {
     expect(published.some(p => p.type === "breakout" && p.sector === "dev-tools" && p.signalKeys.includes("imagery:data_viz"))).toBe(true));
   it("12 · against the grain: one weekly roundup of held counter-moves that pass; Wired, Resend and Bun fail the check", () => {
     const s = one(published.filter(p => p.id.startsWith("against:")));
-    expect(s.domains).toEqual(expect.arrayContaining(["netlify.com", "on.com", "sofi.com"]));
+    expect(s.domains).toEqual(expect.arrayContaining(["netlify.com", "on.com"]));
+    // E2f: SoFi's flat-illustration read is a rotation (its page is a carousel, inherited by the earlier capture) and is not a member.
+    expect(s.sourceIds.some(x => x.startsWith("story:counter:4784:"))).toBe(false);
     for (const d of ["wired.com", "resend.com", "bun.sh"]) expect(s.domains).not.toContain(d);
     expect(failedOn(3419, "imagery")?.verdict).toBe("alternating"); // Wired
     expect(failedOn(3412, "imagery")?.failed).toContain("two_before"); // Resend
@@ -71,7 +65,17 @@ describe("golden set · must run (7: five live, two skipped)", () => {
   });
 });
 
-describe("golden set · must not run (6: the facts failed)", () => {
+describe("golden set · must not run (7: the facts failed)", () => {
+  it("6 · the seasonal story does not run (E2f): only Peloton's confirmed change carries sale wording; GoPro's corners and Brooklinen's accent are tape lines marked Seasonal", () => {
+    expect(published.some(p => p.id.startsWith("seasonal:"))).toBe(false);
+    expect(check(1322)?.pass).toContain("headline"); // Peloton: “Up to $1,300 off Peloton equipment*”
+    expect(check(3678)?.pass).toEqual(expect.arrayContaining(["cta_radius_px", "grid_max_cols"])); // GoPro: corners and grid only
+    expect(check(3681)?.pass).toEqual(["accent"]); // Brooklinen: accent only
+    expect(failedOn(3691, "headline")?.verdict).toBe("headline_element"); // GoPro's sale headline is not compared
+    expect(failedOn(3682, "headline")?.verdict).toBe("alternating"); // Brooklinen's alternates
+    expect(failedOn(3371, "headline")?.verdict).toBe("headline_element");
+    for (const d of ["brooklinen.com", "lucidmotors.com", "onepeloton.com", "gopro.com"]) expect(single(d)).toHaveLength(0);
+  });
   it("1 · DocuSign: the earlier headline was a different element in one capture; the accent was seen once before", () => {
     expect(failedOn(3387, "headline")?.verdict).toBe("headline_element");
     expect(failedOn(3386, "accent")).toMatchObject({ verdict: "seen_once", before: 1 });

@@ -7,7 +7,7 @@ import { WHITE_SPACE_NOT_APPLICABLE } from "./types";
 import { label } from "../labels";
 import { WRITER_PER_BUILD, WRITER_PER_DAY } from "./writer";
 import { REBRAND_RULE } from "../rebrand-rule";
-import { PROMO_RULE } from "../promo";
+import { PROMO_RULE, SEASONAL_MEMBER_RULE } from "../promo";
 import { REVERSED_RULE } from "../reversal";
 import { CAROUSEL_RULE, SHOWCASE_RULE } from "../carousel";
 import { INTEGRITY_RULE } from "../integrity";
@@ -32,7 +32,7 @@ export function storyRules() {
     { id: "identity", title: "One brand, one story", text: `An identity change is two or more of type, colour, layout and headline changing on one standard homepage within ${GROUP_DAYS} days; a change of the headline typeface family (not a weight, width or fallback) runs on any homepage. Changes to one brand inside ${GROUP_DAYS} days are one story carrying every specific; a later change in that window is appended to the story as a correction with its update time, never a second story. A single-brand story may cite one library figure for the signal the change relates to, in the brand's sector or across the library, whichever has the larger base.` },
     { id: "weekly", title: "Weekly roundups", text: `When ${SEASONAL_STORY_MIN} or more brands are seasonal within 7 days, one story a week may gather them, and its members never run on their own. Counter-moves are held singly; once a week, when at least ${AGAINST_MIN} exist, each with a measured change behind it, one roundup may gather them.` },
     { id: "rebrand", title: "A rebrand has to be earned", text: REBRAND_RULE },
-    { id: "seasonal", title: "Sale skins are not identity changes", text: PROMO_RULE },
+    { id: "seasonal", title: "Sale skins are not identity changes", text: `${PROMO_RULE} ${SEASONAL_MEMBER_RULE}` },
     { id: "reversed", title: "A change undone is not a move", text: REVERSED_RULE },
     { id: "news", title: "Outside news needs a subject", text: `An outside item runs only when its title names a tracked brand by name (a bare domain, link, handle or the publication naming itself does not count) or a headline signal by its label, and its title or excerpt is about design: a logo, typeface, redesign, website, campaign, packaging, interface and the like. Bluesky posts stay on the wire and never become stories. At most ${NEWS_DAILY_CAP} news stories run a day.` },
     { id: "estimate", title: "Estimates and counter-moves don't run alone", text: `A single brand's change read only by AI (aesthetic or imagery) is held: "${ESTIMATE_ONLY_REASON}". Counter-moves are held for a weekly roundup: "${COUNTER_HELD_REASON}". Both stay on the event tape and the brand page.` },

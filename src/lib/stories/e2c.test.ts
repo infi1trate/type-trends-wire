@@ -26,7 +26,8 @@ describe("E2c · the SoFi change of 20 Nov", () => {
   it("until the crawler sends the flag: a headline ending in a dash is a fragment, called unclear in code (held), never a story", () => {
     expect(ruleCall("NEW IPO", "Bank smarter–")).toEqual({ call: "unclear", reason: FRAGMENT_REASON, source: "rule" });
     for (const h of ["Bank smarter -", "Meet the new:", "Fast, simple,"]) expect(ruleCall("Old line here", h)?.call).toBe("unclear");
-    const { plan, all } = runGolden(input);
+    // As the page read before the flag existed (E2f: the fixture now carries the page's inherited flag, so drop it here).
+    const { plan, all } = runGolden({ ...input, carousel: [] });
     // The stored call for this change said "position"; the code call wins over it.
     expect(all.candidates.find(c => c.id === `call:${SOFI_HEADLINE}`)?.holdReason).toMatch(/unclear headline call/);
     expect(plan.filter(p => p.status === "published").some(p => tells(p, SOFI_HEADLINE))).toBe(false);

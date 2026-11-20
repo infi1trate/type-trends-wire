@@ -3,13 +3,13 @@
 // Such changes stay on the tape, marked "Carousel" the way seasonal lines are marked "Seasonal", and cannot make or join a story; type
 // (fonts) and layout (alignment, grid, button corners) on the same page are judged as before. The crawler reports the carousel as the
 // optional boolean `layout.hero_carousel` in a snapshot's signals; a change is on a carousel when either its before or its after snapshot
-// says so.
+// says so. A capture from before the flag existed takes the value of the page's nearest later flagged capture (E2f, inheritedCarousel).
 // THE STUDIO RULE (E2d) — a studio's first screen shows its newest or featured client work, so on homepages in the studios sector the
 // palette, accent, hero image and hero video follow that work, as a media homepage follows its lead story: for those fields a studio is
 // treated as an editorial homepage (tape lines only, with or without the carousel flag; editor.ts applies it). A studio's own type,
 // headline and layout changes are judged as before, and roundups gathering studios are unaffected. Decided from the sector. Pure.
 export const CAROUSEL_LABEL = "Carousel";
-export const CAROUSEL_RULE = "When the first screen is a carousel, a headline, hero image, hero video, palette or accent change is one slide replacing another: it stays on the tape, marked Carousel, and never makes or joins a story. Type and layout changes on such a page are judged as usual.";
+export const CAROUSEL_RULE = "When the first screen is a carousel, a headline, hero image, hero video, palette or accent change is one slide replacing another: it stays on the tape, marked Carousel, and never makes or joins a story. Type and layout changes on such a page are judged as usual. A capture taken before we recorded carousels takes the answer of the page's next capture that has one.";
 /** Sectors whose homepages are showcases of client work (studio rule). */
 export const SHOWCASE_SECTORS: ReadonlySet<string> = new Set(["studios"]);
 export const SHOWCASE_RULE = "A studio's homepage shows its newest or featured client work, so its palette, accent, hero image and hero video follow that work: those changes stay on the tape and never make or join a story. A studio's own typeface, headline and layout changes are judged as usual.";
@@ -60,3 +60,21 @@ export function carouselEventIds(events: readonly Ev[], snaps: ReadonlySet<numbe
  * keeps its other fields (fonts, headline alignment, grid, button corners) without the hero media and colours. Null when nothing is left.
  */
 export const withoutRotation = <E extends Ev>(e: E): E | null => strip(e, CAROUSEL);
+
+/**
+ * E2f · the flag belongs to the page. The crawler began sending `hero_carousel` on 20 Nov, so older captures have no key: a capture with
+ * no key takes the value of the nearest later capture of the same brand, page and viewport that has it; a capture with the key keeps its
+ * own value. Returns the ids (of `captures`) that are on a carousel. `page` is any key naming brand|page|viewport.
+ */
+export type FlagCapture = { id: number; page: string; at: string; flag: boolean | null };
+export function inheritedCarousel(captures: readonly FlagCapture[], keyed: readonly FlagCapture[]): Set<number> {
+  const by = new Map<string, FlagCapture[]>();
+  for (const k of keyed) if (k.flag !== null) by.set(k.page, [...(by.get(k.page) ?? []), k]);
+  for (const xs of by.values()) xs.sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
+  const out = new Set<number>();
+  for (const c of captures) {
+    const flag = c.flag !== null ? c.flag : (by.get(c.page) ?? []).find(k => k.at > c.at)?.flag ?? false;
+    if (flag) out.add(c.id);
+  }
+  return out;
+}

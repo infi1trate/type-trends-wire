@@ -43,3 +43,11 @@ export const SEASONAL_HELD_EVENTS = new Set(["palette_shift", "theme_flip", "lay
 export const SEASONAL_REASON = "Seasonal promotion on the page";
 export const SEASONAL_LABEL = "Seasonal";
 export const PROMO_RULE = "A change made when either capture carries a sale or seasonal promotion (Black Friday, holiday, gift guide, percent or money off, free shipping and similar wording in the headline or buttons), whether the page enters a sale, moves between two sales or leaves one, is held as seasonal: it stays in the data, marked Seasonal, but is never a rebrand, a counter-move or a story.";
+
+/** E2f · the change carries the promotion itself: its new headline reads as a promotion (the only wording a change records; button
+ * labels are read for the seasonal mark but are not a change field). Only such a change makes a brand a member of the seasonal story. */
+export function promoWording(e: { after?: unknown }): string | null {
+  const a = e.after && typeof e.after === "object" && !Array.isArray(e.after) ? (e.after as Record<string, unknown>)["headline"] : null;
+  return typeof a === "string" ? promoSignal(a) : null;
+}
+export const SEASONAL_MEMBER_RULE = "A brand joins the weekly seasonal story only when a confirmed change carries the sale wording itself: its new headline reads as a promotion. Any other confirmed change on a seasonal page stays a tape line marked Seasonal.";

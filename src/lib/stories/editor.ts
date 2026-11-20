@@ -9,7 +9,7 @@ import { brandPath, patternPath, signalPath } from "../ia";
 import { pct } from "../digest/copy";
 import { isoWeek } from "../digest/week";
 import { normalizeFont } from "../library-diff";
-import { seasonalEventIds } from "../promo";
+import { promoWording, seasonalEventIds } from "../promo";
 import { isRebrand, REBRAND_LABEL } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import { tapeDate, tapeLine, tapeWhat } from "../tape";
@@ -173,10 +173,11 @@ export function brandStory(ctx: Ctx, g: BrandGroup, calls: Record<number, { call
 }
 
 // WEEKLY GATHERINGS ----------------------------------------------------------------------------------------------------------------
-/** The seasonal story: three or more brands seasonal within seven days, at most once a week; its members never run alone. */
+/** The seasonal story: three or more brands seasonal within seven days, at most once a week; its members never run alone. A member's
+ *  change must carry the sale wording itself (E2f: its new headline reads as a promotion); other changes on a seasonal page stay tape lines. */
 export function seasonalStory(input: Pick<BuildInput, "now">, events: EventRow[], seasonal: Set<number>, names: ReadonlyMap<string, string | null>): Candidate | null {
   const since = Date.parse(input.now) - PATTERN_DAYS * DAY;
-  const members = sortByTime(events.filter(e => seasonal.has(e.id) && isHome(e) && Date.parse(e.detected_at) >= since && Date.parse(e.detected_at) <= Date.parse(input.now)).map(e => ({ e })));
+  const members = sortByTime(events.filter(e => seasonal.has(e.id) && promoWording(e) !== null && isHome(e) && Date.parse(e.detected_at) >= since && Date.parse(e.detected_at) <= Date.parse(input.now)).map(e => ({ e })));
   const domains = [...new Set(members.map(m => m.e.domain))];
   if (domains.length < SEASONAL_STORY_MIN) return null;
   const week = isoWeek(new Date(input.now)), last = members.at(-1)!.e.detected_at, first = members[0]!.e.detected_at;
