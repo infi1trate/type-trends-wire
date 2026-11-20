@@ -1306,6 +1306,33 @@ export type Database = {
         }
         Relationships: []
       }
+      read_records: {
+        Row: {
+          body: Json
+          bytes: number
+          computed_at: string
+          key: string
+          kind: string
+          source: string
+        }
+        Insert: {
+          body: Json
+          bytes?: number
+          computed_at?: string
+          key: string
+          kind: string
+          source: string
+        }
+        Update: {
+          body?: Json
+          bytes?: number
+          computed_at?: string
+          key?: string
+          kind?: string
+          source?: string
+        }
+        Relationships: []
+      }
       site_crops: {
         Row: {
           bytes: number

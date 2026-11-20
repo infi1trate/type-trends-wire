@@ -52,15 +52,15 @@ function Filters({ id }: { id: string }) {
   </svg>;
 }
 
-export function Treated({ crop, treatment = "none", label, sizes }: { crop: Crop | null; treatment?: Treatment; label?: string | undefined; sizes?: string }) {
+export function Treated({ crop, treatment = "none", label, sizes, priority = false }: { crop: Crop | null; treatment?: Treatment; label?: string | undefined; sizes?: string; priority?: boolean }) {
   const id = useId().replace(/:/g, "");
   const src = crop?.src ?? SPECIMEN_SRC;
   const vars = { "--tk-src": `url("${src}")`, "--tk-f-duo": `url(#${id}-duo)`, "--tk-f-ink1": `url(#${id}-ink1)`, "--tk-f-ink2": `url(#${id}-ink2)`, "--tk-f-grain": `url(#${id}-grain)` } as CSSProperties;
   return <div className="tk-treated" data-treatment={treatment} style={vars}>
     {treatment !== "none" && (isPrint(treatment) ? <SlugFilters /> : <Filters id={id} />)}
-    {crop ? <CropFigure crop={crop} label={label} {...(sizes ? { sizes } : {})} /> : <figure className="min-w-0" data-crop-placeholder="">
+    {crop ? <CropFigure crop={crop} label={label} priority={priority} {...(sizes ? { sizes } : {})} /> : <figure className="min-w-0" data-crop-placeholder="">
       {label && <p className="ed-kicker mb-2">{label}</p>}
-      <span className="tk-media block"><img src={SPECIMEN_SRC} width={640} height={400} alt="Placeholder specimen: grey steps and letterforms (no section crop captured yet)" className="ed-thumb" /></span>
+      <span className="tk-media block"><img src={SPECIMEN_SRC} width={640} height={400} decoding="async" alt="Placeholder specimen: grey steps and letterforms (no section crop captured yet)" className="ed-thumb" /></span>
       <figcaption className="ed-caption mt-1">{voiced("read.treated.1")}</figcaption>
     </figure>}
   </div>;

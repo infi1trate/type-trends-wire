@@ -19,7 +19,11 @@ export type PatternId = (typeof PATTERNS)[number]["id"];
 export const MOTION_LOOPS = ["ticker", "live-dot"] as const;
 export const TERMINAL_MOTION = ["live-dot", "cursor"] as const;
 /** CSS keyframe names allowed to run `infinite`, and the loop each one is. */
-export const LOOP_KEYFRAMES: Record<string, (typeof MOTION_LOOPS)[number] | "cursor"> = { crawl: "ticker", "pulse-dot": "live-dot", blink: "cursor" };
+/** `glisten` is the loading placeholder's sweep (P1): it runs only while a deferred section is on its way, never on content, and stops
+ * under reduced motion. */
+export const LOOP_KEYFRAMES: Record<string, (typeof MOTION_LOOPS)[number] | "cursor" | "placeholder"> = { crawl: "ticker", "pulse-dot": "live-dot", blink: "cursor", glisten: "placeholder" };
+/** The placeholder sweep's period. */
+export const GLISTEN_MS = 1600;
 
 /** How long the arrival takes for n letters: the Arrive timing plus the stagger between letters. */
 export const arriveMs = (letters = 4) => MOTION_MS.arrive + MOTION_MS.stagger * (letters - 1);

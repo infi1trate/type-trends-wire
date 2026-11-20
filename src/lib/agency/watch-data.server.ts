@@ -39,7 +39,7 @@ export async function loadWatchRows(w: WatchPublic, now: Date): Promise<WatchRow
   ]);
   const weekOf = new Map((briefs ?? []).map(b => [b.run_id, b.week]));
   const runs: RunRow[] = runList.map(r => ({ id: r.id, computed_at: r.computed_at, week: weekOf.get(r.id) ?? null }));
-  const { rebrandRows } = await import("../rebrands.server");
+  const { readerRebrands: rebrandRows } = await import("../rebrands.server");
   const rb = (await rebrandRows()).rows.filter(x => x.source === "live" && domains.includes(x.domain) && x.confirmed_at >= since)
     .map((x): RebrandRow => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, seasonal: x.seasonal }));
   const traitsBy: Record<string, string[]> = {};

@@ -105,6 +105,7 @@ export const VOICE = {
   "ambient.wakeLock.checking": loading("/ambient/setup, wake lock line before the check", "Checking whether this browser can keep the screen awake."),
 
   // ── Loading and busy labels (always words, never a bare spinner) ───────────────────────────────────────────────────────────────
+  "read.section.failed": { kind: "failed", where: "Any deferred section of a Read page or terminal panel that failed on its own (the rest of the page stays)", text: "This part didn't arrive this time. The rest of the page is here; try again in a minute.", next: [RETRY] },
   "busy.retry": loading("Gallery and collection retry button", "Trying again…"),
   "busy.more": loading("Pattern wall “More” button while the next page loads", "Loading the next captures…"),
   "busy.audit": loading("/audit/new submit button", "Checking the sites…"),

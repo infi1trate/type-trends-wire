@@ -2,6 +2,7 @@ import { line as voiced } from "@/lib/voice";
 // STORY object page (/stories/<id>), Quiet density: a cover (an ink slab the full width, the headline in Display crossing ONE
 // tilted object, number and date pinned left, sector and type pinned right, the deck on its own ink backing), then the off-centre
 // column: Evidence, So what (the quote role), Related as a Ledger. The editor's edits are applied before this renders.
+import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { StoryPageModel } from "@/lib/stories/view";
 import type { Thumb } from "@/lib/thumbs";
@@ -60,7 +61,7 @@ function Compare({ s }: { s: StoryPageData }) {
   return null;
 }
 
-export function StoryView({ s }: { s: StoryPageData }) {
+export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNode }) {
   const notRun = s.state === "held" ? `This story did not run on the front page: ${s.heldReason}.` : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
   const seed = s.number ?? s.id, kind = compareKind({ crops: !!s.crops?.compare, frames: !!s.frames, text: !!s.beforeAfter });
   return <DigestShell label={s.headline} section="live">
@@ -100,7 +101,16 @@ export function StoryView({ s }: { s: StoryPageData }) {
         <p className="ed-pull max-w-[44ch]">{s.soWhat.text}</p>
         <p className="ed-data mt-3 flex flex-wrap items-center gap-2"><BasisWord b={s.soWhat.basis} /></p>
       </> : null,
-      related: <>
+      related: related ?? <StoryRelated s={s} />,
+    }} />
+    </FiltersScope>
+    <ReadFooter terminal={`/terminal?panel=today&story=${encodeURIComponent(s.id)}`} />
+  </DigestShell>;
+}
+
+/** Related: signals and patterns, receipts, earlier stories and the editor's log (P1: streamed after the story on its page). */
+export function StoryRelated({ s }: { s: Pick<StoryPageData, "signals" | "patterns" | "evidence" | "earlier" | "edits"> }) {
+  return <>
         {(s.signals.length > 0 || s.patterns.length > 0) && <BlockPart title="Signals and patterns">
           <Ledger small label="Signals and patterns in this story" rows={[...s.signals.map(x => ({ key: `s:${x.key}`, href: x.href, title: x.name, facts: [x.dimension], tags: ["Signal"] })), ...s.patterns.map(p => ({ key: `p:${p.key}`, href: p.href, title: `${p.name} examples`, tags: ["Pattern"] }))]} />
         </BlockPart>}
@@ -110,9 +120,5 @@ export function StoryView({ s }: { s: StoryPageData }) {
             : <p className="ed-small">{voiced("read.storyView.2")}</p>}
         </BlockPart>
         {s.edits.length > 0 && <BlockPart title="Editor's log"><ol className="ed-data space-y-1">{s.edits.map((e, i) => <li key={i}><time dateTime={e.at}>{day(e.at)}</time> · {e.action}{e.note ? ` · ${e.note}` : ""}</li>)}</ol></BlockPart>}
-      </>,
-    }} />
-    </FiltersScope>
-    <ReadFooter terminal={`/terminal?panel=today&story=${encodeURIComponent(s.id)}`} />
-  </DigestShell>;
+  </>;
 }

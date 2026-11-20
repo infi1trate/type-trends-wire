@@ -95,6 +95,46 @@ export function brandSoWhat(ahead: number, behind: number, where = "its sector")
   return `${a}; ${b}.`;
 }
 
+/** What the Moves list needs (the brand page reads it in its own deferred section). */
+export type MovesRows = { domain: string; name: string; events: EventRow[]; rebrands: AuditRows["rebrands"]; seasonal: number[]; storyOf: [string, string][]; crops: CropRow[]; captures: CaptureRaw[] };
+/** The brand's moves, newest first: every live change and confirmed rebrand, back-and-forth runs folded, before/after where it exists. */
+export function brandTimeline(r: MovesRows): Move[] {
+  const d = r.domain;
+  const stories = new Map(r.storyOf), link = (src: string) => { const h = stories.get(src); return h ? { href: h, story: true } : { href: `/library/${d}`, story: false }; };
+  const crops = r.crops.filter(c => c.domain === d);
+  // A timeline entry shows before/after only when two versions of its section sit on either side of the change (effective time).
+  const compareAt = (section: CropSection | null, pivot: string) => { if (!section) return null; const p = beforeAfterAt(versionsOf(crops, d, section), pivot); return p ? { before: toCrop(p.before), after: toCrop(p.after) } : null; };
+  const fieldsOf = (e: EventRow) => Object.keys({ ...(e.before && typeof e.before === "object" ? e.before : {}), ...(e.after && typeof e.after === "object" ? e.after : {}) });
+  const caps = r.captures, usedPairs = new Set<string>();
+  let pairs = 0;
+  const pairAt = (pivot: string, compare: unknown): { pair: BeforeAfterFig | null; pairShared: boolean } => {
+    if (compare || !caps.length) return { pair: null, pairShared: false };
+    const p = capturePair(caps, pivot); if (!p) return { pair: null, pairShared: false };
+    const k = `${p.before.id}:${p.after.id}`;
+    if (usedPairs.has(k)) return { pair: null, pairShared: true };
+    if (pairs >= MOVE_PAIRS_MAX) return { pair: null, pairShared: false };
+    const fig = beforeAfter({ title: "Before → after", note: `${FRAME_LABEL}: the two captures either side of the change, in their own colours. No screenshot is stored.`, domain: d, name: r.name, a: p.before, b: p.after, crops: [] });
+    if (!fig.before.boxes.length || !fig.after.boxes.length) return { pair: null, pairShared: false };
+    usedPairs.add(k); pairs++;
+    // Side by side in the column, each cut to the first screen, so a move's pair stays about one screen tall.
+    return { pair: { ...fig, before: firstScreen(fig.before), after: firstScreen(fig.after) }, pairShared: false };
+  };
+  const seasonalSet = new Set(r.seasonal), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
+  const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [
+    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
+    ...r.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: identityLabel(x), text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: isRebrand(x), seasonal: !!x.seasonal, reversed: false, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
+  ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
+  return foldFlips(raw, r.events.filter(e => e.domain === d)).map(({ pivot, ...m }) => (m.folded ? { ...m, pair: null, pairShared: false, folded: m.folded.map(({ pivot: _p, ...x }) => ({ ...x, pair: null, pairShared: false })) } : { ...withoutFolded(m), ...pairAt(pivot, m.compare) }));
+}
+/** Sections strip and per-section history from this brand's crops. */
+export function brandSections(crops: CropRow[], d: string): Pick<BrandPage, "sections" | "history"> {
+  const own = crops.filter(c => c.domain === d);
+  return { sections: latestSections(own, d), history: Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(own, d, s).map(toCrop)])) as Record<CropSection, Crop[]> };
+}
+/** The part of the brand page a page sends first: the identity card, the head's line and what needs no list (P1). */
+export type BrandCard = Omit<BrandPage, "timeline" | "sections" | "history" | "field" | "contrast" | "similar">;
+export const cardOf = ({ timeline: _t, sections: _s, history: _h, field: _f, contrast: _c, similar: _m, ...card }: BrandPage): BrandCard => card;
+
 export function brandModel(r: BrandRows): BrandPage {
   const a = auditModel(r.audit), d = r.domain, site = r.audit.sites.find(s => s.domain === d) ?? null, g = a.glance[0]!;
   const tiers = new Map(r.tiers), shown = (k: string) => { const t = tiers.get(k); return t === "headline" || t === "supporting"; };
@@ -104,31 +144,8 @@ export function brandModel(r: BrandRows): BrandPage {
     ...(color?.theme ? [{ key: `theme:${color.theme}`, name: label(`theme:${color.theme}`).name, basis: basis(`theme:${color.theme}`), kind: "theme" as const }] : []),
     ...(["aesthetic", "imagery", "tone"] as const).flatMap(kind => (vibe?.[kind] ?? []).map(v => ({ key: `${kind}:${v}`, name: label(`${kind}:${v}`).name, basis: basis(`${kind}:${v}`), kind }))),
   ];
-  const stories = new Map(r.storyOf ?? []), link = (src: string) => { const h = stories.get(src); return h ? { href: h, story: true } : { href: `/library/${d}`, story: false }; };
+  const timeline = brandTimeline({ domain: d, name: site?.site?.name ?? d, events: r.events, rebrands: r.audit.rebrands, seasonal: r.seasonal ?? [], storyOf: r.storyOf ?? [], crops: r.crops ?? [], captures: r.captures ?? [] });
   const crops = (r.crops ?? []).filter(c => c.domain === d);
-  // A timeline entry shows before/after only when two versions of its section sit on either side of the change (effective time).
-  const compareAt = (section: CropSection | null, pivot: string) => { if (!section) return null; const p = beforeAfterAt(versionsOf(crops, d, section), pivot); return p ? { before: toCrop(p.before), after: toCrop(p.after) } : null; };
-  const fieldsOf = (e: EventRow) => Object.keys({ ...(e.before && typeof e.before === "object" ? e.before : {}), ...(e.after && typeof e.after === "object" ? e.after : {}) });
-  const caps = r.captures ?? [], usedPairs = new Set<string>();
-  let pairs = 0;
-  const pairAt = (pivot: string, compare: unknown): { pair: BeforeAfterFig | null; pairShared: boolean } => {
-    if (compare || !caps.length) return { pair: null, pairShared: false };
-    const p = capturePair(caps, pivot); if (!p) return { pair: null, pairShared: false };
-    const k = `${p.before.id}:${p.after.id}`;
-    if (usedPairs.has(k)) return { pair: null, pairShared: true };
-    if (pairs >= MOVE_PAIRS_MAX) return { pair: null, pairShared: false };
-    const fig = beforeAfter({ title: "Before → after", note: `${FRAME_LABEL}: the two captures either side of the change, in their own colours. No screenshot is stored.`, domain: d, name: site?.site?.name ?? d, a: p.before, b: p.after, crops: [] });
-    if (!fig.before.boxes.length || !fig.after.boxes.length) return { pair: null, pairShared: false };
-    usedPairs.add(k); pairs++;
-    // Side by side in the column, each cut to the first screen, so a move's pair stays about one screen tall.
-    return { pair: { ...fig, before: firstScreen(fig.before), after: firstScreen(fig.after) }, pairShared: false };
-  };
-  const seasonalSet = new Set(r.seasonal ?? []), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
-  const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [
-    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
-    ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: identityLabel(x), text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: isRebrand(x), seasonal: !!x.seasonal, reversed: false, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
-  ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
-  const timeline: Move[] = foldFlips(raw, r.events.filter(e => e.domain === d)).map(({ pivot, ...m }) => (m.folded ? { ...m, pair: null, pairShared: false, folded: m.folded.map(({ pivot: _p, ...x }) => ({ ...x, pair: null, pairShared: false })) } : { ...withoutFolded(m), ...pairAt(pivot, m.compare) }));
   const history = Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(crops, d, s).map(toCrop)])) as Record<CropSection, Crop[]>;
   const m = a.market?.sites.find(s => s.domain === d) ?? null;
   const versus = m ? { scope: m.scope, scopeName: sectorName(m.scope), ahead: m.ahead.filter(x => shown(x.trait)), behind: m.behind.filter(x => shown(x.trait)) } : null;

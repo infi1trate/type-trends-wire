@@ -22,6 +22,12 @@ export const getFront = createServerFn({ method: "GET" }).inputValidator(z.objec
   const { loadFront } = await import("./front/front.server");
   return loadFront(data.sector, data.format);
 });
+export const getFrontTop = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontTop(data.sector, data.format));
+export const getFrontRest = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontRest(data.sector, data.format));
+export const getStoryLead = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryLead(data.id));
+export const getStoryRelated = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryRelated(data.id));
+export const getPatternHead = createServerFn({ method: "GET" }).inputValidator(z.object({ key: z.string().min(3).max(120), sector })).handler(async ({ data }) => (await import("./read.server")).loadPatternHead(data.key, data.sector));
+export const getSectorHead = createServerFn({ method: "GET" }).inputValidator(z.object({ sector: z.string().min(2).max(40) })).handler(async ({ data }) => (await import("./editions/editions.server")).loadSectorHead(data.sector));
 export const getStoryQueue = createServerFn({ method: "GET" }).inputValidator(z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), fresh: z.boolean().default(false) })).handler(async ({ data }) => {
   const { loadQueue } = await import("./stories/page.server");
   // The terminal's Today queue: always the cached index. The desk's fresh queue loads only through /api/public/desk with the editor key.
@@ -35,6 +41,14 @@ export const getBrand = createServerFn({ method: "GET" }).inputValidator(z.objec
   const { loadBrand } = await import("./read.server");
   return loadBrand(data.domain.toLowerCase());
 });
+// The brand page in parts (P1): the card is critical; the rest are deferred sections, each its own read.
+const domainInput = z.object({ domain: z.string().min(3).max(253) });
+export const getBrandCard = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandCard(data.domain.toLowerCase()));
+export const getBrandMoves = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandMoves(data.domain.toLowerCase()));
+export const getBrandSections = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSections(data.domain.toLowerCase()));
+export const getBrandSector = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSector(data.domain.toLowerCase()));
+export const getBrandSimilar = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSimilar(data.domain.toLowerCase()));
+export const getBrandStories = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandStories(data.domain.toLowerCase()));
 export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
   const { loadBrands } = await import("./read.server");
   return loadBrands();
@@ -98,8 +112,8 @@ export const getKit = createServerFn({ method: "GET" }).handler(async () => {
 // Pattern gallery and collections (gallery.ts + collections/registry.ts over stored captures; no AI).
 const gallerySearchInput = z.object({ sector: z.string().max(40).optional(), pattern: z.string().max(80).optional(), period: z.string().max(10).optional(), basis: z.string().max(10).optional(), section: z.string().max(10).optional(), page: z.number().int().min(1).max(999).optional() });
 export const getGallery = createServerFn({ method: "GET" }).inputValidator(gallerySearchInput).handler(async ({ data }) => {
-  const [{ loadGallery }, { parseGallerySearch }] = await Promise.all([import("./gallery.server"), import("./gallery")]);
-  return loadGallery(parseGallerySearch(data));
+  const [{ loadGalleryView }, { parseGallerySearch }] = await Promise.all([import("./gallery.server"), import("./gallery")]);
+  return loadGalleryView(parseGallerySearch(data));
 });
 export const getCollections = createServerFn({ method: "GET" }).handler(async () => {
   const { loadCollections } = await import("./gallery.server");

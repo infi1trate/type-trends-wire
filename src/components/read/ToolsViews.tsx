@@ -1,4 +1,5 @@
 import { line as voiced } from "@/lib/voice";
+import { SPEED_AFTER_SOURCE, SPEED_ROWS, SPEED_TARGETS, meets } from "@/lib/perf/speed";
 // /tools (every ACT tool, one line each) and /status (health, model card and ops details, out of the reader's path).
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -87,6 +88,21 @@ export function StatusView() {
         <tbody>{health.jobs.map(j => <tr key={j.job} className="ed-hair align-top"><th scope="row" className="py-2 pr-3 font-normal">{j.job.replace(/_/g, " ")}{j.note && <span className="ed-caption block">{j.note}</span>}</th><td className="py-2 pr-3">{j.expected_every}</td><td className="py-2 pr-3">{j.last_ok_at ? storyTime(j.last_ok_at) : "never"}</td><td className="py-2">{(j.stale || j.consecutive_failures > 0) && <LateMark />}{j.stale ? "stale" : j.last_status}{j.consecutive_failures > 0 ? ` · ${j.consecutive_failures} failures` : ""}</td></tr>)}</tbody>
       </table></div> : <p className="ed-small mt-3">{voiced("read.toolsViews.2")}</p>}
       <p className="ed-caption mt-2">Checked {health ? storyTime(health.checked_at) : "—"}. Machine-readable at /api/public/health.</p>
+    </section>
+    <section aria-labelledby="st-speed" className="ed-wrap mt-14">
+      <h2 id="st-speed" className="ed-h2 ed-rule pt-3">Page speed</h2>
+      <p className="ed-small mt-3 max-w-[72ch]">Time until the server sends the first byte, first visit and repeat. Targets: first under {SPEED_TARGETS.firstMs} ms, repeat under {SPEED_TARGETS.repeatMs} ms; largest paint under {SPEED_TARGETS.lcpMs / 1000} s and layout shift under {SPEED_TARGETS.cls} on a mid-range phone.</p>
+      <div className="mt-4 overflow-x-auto"><table className="ed-data w-full min-w-[560px] text-left">
+        <caption className="sr-only">First-byte times before and after, against targets</caption>
+        <thead><tr><th scope="col" className="py-2">Page</th><th scope="col">Before · first</th><th scope="col">Before · repeat</th><th scope="col">After · first</th><th scope="col">After · repeat</th></tr></thead>
+        <tbody>{SPEED_ROWS.map(r => <tr key={r.path} className="ed-hair">
+          <th scope="row" className="py-2 font-normal">{r.page}</th>
+          <td>{r.before ? `${(r.before.first / 1000).toFixed(1)} s` : "—"}</td><td>{r.before ? `${(r.before.repeat / 1000).toFixed(1)} s` : "—"}</td>
+          <td>{r.after ? `${r.after.first} ms${meets(r.after.first, SPEED_TARGETS.firstMs) ? "" : " · over"}` : "—"}</td>
+          <td>{r.after ? `${r.after.repeat} ms${meets(r.after.repeat, SPEED_TARGETS.repeatMs) ? "" : " · over"}` : "—"}</td>
+        </tr>)}</tbody>
+      </table></div>
+      <p className="ed-caption mt-2">Before: outside measurement, 20 Nov 2026. After: {SPEED_AFTER_SOURCE}.</p>
     </section>
     <section aria-labelledby="st-desk" className="ed-wrap mt-14">
       <h2 id="st-desk" className="ed-h2 ed-rule pt-3">Story desk</h2>

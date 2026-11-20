@@ -94,3 +94,15 @@ export const loadEditions = memo(TTL, async (_: null) => {
   const [m, s, digest] = await Promise.all([loadMorning(null), loadSectorIndex(null), supabaseAnon().from("weekly_briefs").select("week,created_at").not("brief", "is", null).order("week", { ascending: false }).limit(1).then(must)]);
   return { morning: m ? { title: m.edition.title, href: m.edition.href, lead: m.edition.lead, count: m.edition.count, thin: m.edition.thin, archive: m.archive.slice(0, 7) } : null, digest: (digest ?? [])[0] ?? null, sectors: s.sectors, run: s.run };
 });
+
+/** P1, critical for /sectors/<sector>: the head's title and basis (two small reads); null for an unknown sector (404). */
+export async function loadSectorHead(raw: string) {
+  const sector = resolveSector(raw);
+  if (sector === "all" || sector !== raw) return null;
+  const { sectorHead } = await import("./sector");
+  const db = supabaseAnon();
+  const [reader, count] = await Promise.all([fetchReaderRuns(db), db.from("library_sites").select("domain", { count: "exact", head: true }).eq("active", true).eq("sector", sector)]);
+  if (count.error) throw count.error;
+  const run = reader.latest;
+  return sectorHead({ sector, now: Date.now(), run: run ? { id: run.id, at: run.at } : null, brands: count.count ?? 0 });
+}

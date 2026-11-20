@@ -4,7 +4,7 @@
 // The footer is a slab too (DigestFooter).
 // Reuses the Digest editorial system; no health or model jargon here (that lives on /status).
 import { PrintFrame, PrintMark } from "./PrintFrame";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SECTIONS, readSectionOf, type SectionId } from "@/lib/ia";
 import { LENS_SECTORS } from "@/lib/sector-lens";
@@ -52,7 +52,20 @@ export function ShellClock() {
 const INLINE_CLS: Record<BarItem, string> = { switch: "max-md:hidden", sections: "max-lg:hidden", glossary: "max-xl:hidden", lock: "max-xl:hidden" };
 const SHEET_CLS: Record<BarItem, string> = { switch: "md:hidden", sections: "lg:hidden", glossary: "xl:hidden", lock: "xl:hidden" };
 
-export function ReadShell({ children, label, section, lens = false, note = null, sub, tour = false, fixedSector, dateline }: Props) {
+// P1 · shell first: a route draws the shell at once and the page's full view arrives later inside it. A view's own shell then
+// renders only its children (no second bar); its lens note, which may depend on the data, is handed up to the shell already drawn.
+const ShellCtx = createContext<null | { setNote: (n: string | null | undefined) => void }>(null);
+export function ReadShell(p: Props) {
+  return useContext(ShellCtx) ? <ShellInside note={p.note}>{p.children}</ShellInside> : <ReadShellFrame {...p} />;
+}
+function ShellInside({ note, children }: { note?: string | null | undefined; children: ReactNode }) {
+  const outer = useContext(ShellCtx)!;
+  useEffect(() => { if (note === undefined) return; outer.setNote(note); return () => outer.setNote(undefined); }, [note, outer]);
+  return <>{children}</>;
+}
+function ReadShellFrame({ children, label, section, lens = false, note: ownNote = null, sub, tour = false, fixedSector, dateline }: Props) {
+  const [handed, setHanded] = useState<string | null | undefined>(undefined), note = ownNote ?? handed ?? null;
+  const ctx = useRef({ setNote: (n: string | null | undefined) => setHanded(n) }).current;
   const loc = useLocationParts(), active = section === undefined ? readSectionOf(loc.pathname) : section;
   const [lensSector, setLensSector] = useSectorLens(), mode = useModeToggle();
   const sector = fixedSector?.value ?? lensSector, setSector = fixedSector?.onChange ?? setLensSector;
@@ -128,7 +141,7 @@ export function ReadShell({ children, label, section, lens = false, note = null,
       </div>
       {sub}
       <PrintMark />
-      <main id="ed-main" aria-label={label}>{children}</main>
+      <main id="ed-main" aria-label={label}><ShellCtx.Provider value={ctx}>{children}</ShellCtx.Provider></main>
       <PrintFrame path={loc.pathname} />
     </div>
     {/* Glossary, methodology and tour are terminal-density overlays: they keep the dark mode on Read pages. */}

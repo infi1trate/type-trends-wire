@@ -261,3 +261,9 @@ export function leadFigure(e: LeadEvidence | null): LeadFigure | null {
   const trail = e.points.length >= 2 ? e.points.map((y, i) => ({ x: e.quarters?.[i] ?? `p${i + 1}`, y })) : null;
   return { value: `${(last * 100).toFixed(1)}%`, unit: "of tracked homepages", date: q ? qLabel(q) : null, trail, caption: LEAD_COVERAGE, key: e.key, name: e.name };
 }
+
+/** P1 · shell first: the lead, ticker and live column are critical; these parts stream in after the shell. */
+export const FRONT_REST_KEYS = ["chart", "launches", "strip", "collections", "editions", "dataStories", "archive"] as const;
+type RestKey = (typeof FRONT_REST_KEYS)[number];
+export type FrontTop = Omit<FrontModel, RestKey>;
+export type FrontRest = Pick<FrontModel, RestKey | "sections" | "format" | "sector" | "now" | "state">;

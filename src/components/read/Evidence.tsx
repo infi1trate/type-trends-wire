@@ -7,11 +7,12 @@ import { pr } from "@/components/digest/Editorial";
 const day = (iso: string) => iso.slice(0, 10);
 
 /** The crop at its natural ratio (width/height set, lazy), captioned and linked. */
-export function CropFigure({ crop, label, sizes = "(min-width: 1024px) 33vw, 100vw" }: { crop: Crop; label?: string | undefined; sizes?: string }) {
+/** `priority`: the page's first-screen picture (a cover) loads at once with high priority; every other crop waits until near view. */
+export function CropFigure({ crop, label, sizes = "(min-width: 1024px) 33vw, 100vw", priority = false }: { crop: Crop; label?: string | undefined; sizes?: string; priority?: boolean }) {
   return <figure className="min-w-0" data-crop={crop.section}>
     {label && <p className="ed-kicker mb-2">{label}</p>}
     <a href={crop.live} target="_blank" rel="noopener" aria-label={`Open ${crop.domain} (live site)`} {...pr(crop.live)}>
-      <img src={crop.src} width={crop.width} height={crop.height} sizes={sizes} loading="lazy" decoding="async" alt={crop.alt} className="ed-thumb" />
+      <img src={crop.src} width={crop.width} height={crop.height} sizes={sizes} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" alt={crop.alt} className="ed-thumb" />
     </a>
     <figcaption className="ed-caption mt-1">
       <span className="block">{crop.sectionName} · {crop.domain} · captured <time dateTime={crop.captured_at}>{day(crop.captured_at)}</time></span>

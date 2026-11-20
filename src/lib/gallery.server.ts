@@ -12,6 +12,9 @@ import type { HistRow } from "./data-stories/series";
 import { HIST } from "./data-stories/data.server";
 import { MEASURED_EVENT_TYPES } from "./rebrands";
 import { memo, memoBy, withRetry } from "./memo";
+import { storedBy } from "./records/store.server";
+import { pageKey } from "./records/records";
+import { parseGallerySearch } from "./gallery";
 
 const TTL = 10 * 60_000;
 /** Ids checked per "can it be redrawn" request, stamps per drawable-scan page (wide JSON scans stay under 1000 rows), frames per request. */
@@ -136,11 +139,12 @@ export function statusNow(c: Collection, count: number): CollectionStatus {
   const s = collectionStatus(count);
   return s.status === "live" ? s : { status: "draft", reason: `It no longer clears the minimum on current data: ${s.reason}` };
 }
-export async function loadCollections(): Promise<CollectionRow[]> {
+/** /collections, /collections/<slug> (first page) and the unfiltered /patterns wall read precomputed models (records.ts); these compute live. */
+export async function computeCollections(): Promise<CollectionRow[]> {
   const i = await galleryInput();
   return COLLECTIONS.map(c => { const count = galleryModel(i, c.filter).total, s = statusNow(c, count); return { slug: c.slug, number: c.number, title: c.title, deck: c.deck, pairs: c.pairs, ...s, count, href: s.status === "live" ? `/collections/${c.slug}` : null }; });
 }
-export async function loadCollection(slug: string, page = 1) {
+export async function computeCollection(slug: string, page = 1) {
   const c = collectionOf(slug);
   if (!c) return { kind: "missing" as const };
   const g = await loadGallery({ ...c.filter, page });
@@ -148,3 +152,13 @@ export async function loadCollection(slug: string, page = 1) {
   const row = { slug: c.slug, number: c.number, title: c.title, deck: c.deck, pairs: c.pairs };
   return s.status === "live" ? { kind: "live" as const, ...row, gallery: g } : { kind: "draft" as const, ...row, reason: s.reason, count: g.total };
 }
+
+const collectionsRecord = storedBy((_: null) => pageKey("collections"), () => computeCollections());
+const collectionRecord = storedBy((k: { slug: string; page: number }) => pageKey("collection", k.slug, k.page), k => computeCollection(k.slug, k.page));
+export const loadCollections = (): Promise<CollectionRow[]> => collectionsRecord(null);
+export const loadCollection = (slug: string, page = 1) => (page === 1 && collectionOf(slug) ? collectionRecord({ slug, page }) : computeCollection(slug, page));
+/** The unfiltered gallery (/patterns with no filter): the precomputed view, else live. */
+export const DEFAULT_GALLERY = (): GalleryFilter => parseGallerySearch({}) as GalleryFilter;
+export const computeDefaultGallery = () => views(DEFAULT_GALLERY());
+const defaultRecord = storedBy((_: null) => pageKey("gallery", "default"), () => computeDefaultGallery());
+export const loadGalleryView = (f: GalleryFilter) => (JSON.stringify(f) === JSON.stringify(DEFAULT_GALLERY()) ? defaultRecord(null) : views(f));

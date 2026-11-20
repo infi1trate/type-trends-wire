@@ -30,6 +30,9 @@ export function fontLinks(kind: "base" | "editorial" = "editorial") {
   return [
     { rel: "preconnect", href: f.preconnect[0]! },
     { rel: "preconnect", href: f.preconnect[1]!, crossOrigin: "anonymous" as const },
+    // P1: the font stylesheet is fetched at top priority so the first-screen faces swap in early; size-adjusted fallbacks
+    // (styles.css) keep the swap from moving the layout. The font files' own URLs change upstream, so they are not preloaded by name.
+    { rel: "preload", as: "style", href: kind === "base" ? f.base : f.editorial },
     { rel: "stylesheet", href: kind === "base" ? f.base : f.editorial },
   ];
 }

@@ -4,7 +4,12 @@ import { line as voiced } from "@/lib/voice";
 import { SEASONAL_LABEL } from "@/lib/promo";
 import { REVERSED_LABEL } from "@/lib/reversal";
 import { Link } from "@tanstack/react-router";
-import { faceLine, openPairId, type BrandPage, type Face } from "@/lib/brand-page";
+import { faceLine, openPairId, type BrandCard, type BrandPage, type Face } from "@/lib/brand-page";
+import type { ReactNode } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { brandMovesQuery, brandSectionsQuery, brandSectorQuery, brandSimilarQuery, brandStoriesQuery } from "@/lib/data";
+import type { SimilarResult } from "@/lib/similar";
+import { Later, ROW } from "./Later";
 import type { Story } from "@/lib/stories";
 import { RelatedStories, Receipt } from "./StoryCard";
 import type { TraitRef } from "@/lib/agency/audit";
@@ -28,7 +33,8 @@ const Refs = ({ xs, empty }: { xs: TraitRef[]; empty: string }) => xs.length ? <
 </li>)}</ul> : <p className="ed-small">{empty}</p>;
 
 /** Sections strip: the latest crop of each section that exists; each opens its history (?section=…). Zero crops → the honest fallback. */
-function Sections({ b, open }: { b: BrandPage; open: CropSection | null }) {
+type SectionsIn = Pick<BrandPage, "domain" | "sections" | "history">;
+function Sections({ b, open }: { b: SectionsIn; open: CropSection | null }) {
   const hist = open ? b.history[open] : [];
   return <div id="ed-sections">
     {b.sections.length ? <ul className="tile-wall" data-tile-wall="">{b.sections.map((c, i) => <li key={c.section} className={i === 0 ? "tile-lg" : "tile-sm"}>
@@ -58,7 +64,7 @@ function FaceValue({ f }: { f: Face | null }) {
   </span>;
 }
 
-function IdentityCard({ b }: { b: BrandPage }) {
+function IdentityCard({ b }: { b: BrandCard }) {
   const i = b.identity;
   return <Card as="section" aria-labelledby="ed-brand-title" className="p-5 md:p-8" data-identity-card="">
     <p className="ed-kicker">Brand · {b.sectorName}</p>
@@ -78,7 +84,7 @@ function IdentityCard({ b }: { b: BrandPage }) {
   </Card>;
 }
 
-function Moves({ b }: { b: BrandPage }) {
+function Moves({ b }: { b: Pick<BrandPage, "timeline" | "name"> }) {
   if (!b.timeline.length) return <p className="ed-small max-w-[60ch]">No change recorded on {b.name} yet. Every new capture is compared with the last; when two captures agree on a change, it lands here with the pictures either side.</p>;
   const open = openPairId(b.timeline);
   return <ol className="space-y-8" aria-label="Moves, newest first">{b.timeline.map(t => {
@@ -94,7 +100,7 @@ function Moves({ b }: { b: BrandPage }) {
     </li>; })}</ol>;
 }
 
-function Sector({ b }: { b: BrandPage }) {
+function Sector({ b }: { b: Pick<BrandPage, "domain" | "sectorName" | "field" | "contrast"> }) {
   const c = b.contrast, list = (xs: NonNullable<typeof c>["has"], has: boolean) => xs.length ? <ul className="space-y-2">{xs.map(x => <li key={x.key} className="ed-hair pt-2">
     <Link to="/signals/$key" params={{ key: x.key }} className="ed-small font-medium">{traitLabel(x.key).name}</Link>
     <p className="ed-data mt-1">{has ? "It shows it; " : "It doesn't; "}{pct(x.sector.v, 0)} of {x.sector.n} other {b.sectorName} brands do</p></li>)}</ul>
@@ -109,8 +115,13 @@ function Sector({ b }: { b: BrandPage }) {
   </>;
 }
 
-export function BrandView({ b, section = null }: { b: BrandPage & { stories?: Story[] }; section?: string | null }) {
-  const open = isCropSection(section) ? section : null;
+const SIMILAR_TITLE = "Similar brands";
+function SimilarList({ similar }: { similar: SimilarResult }) {
+  return similar.items.length > 0 ? <Ledger label="Similar brands" rows={similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: x.name, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} /> : null;
+}
+/** The parts that may arrive after the card; BrandView passes them ready, BrandPageView passes deferred slots. */
+type Parts = { moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
+function BrandBody({ b, parts }: { b: BrandCard; parts: Parts }) {
   return <DigestShell label={`${b.name} brand`} section="brands" lens={false}>
     <ObjectPage kind="brand" id="ed-brand" blocks={{
       headline: <>
@@ -123,11 +134,11 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
       </>,
       evidence: <>
         <BlockPart title="Moves" kicker="Every dated, measured change, newest first, with the two captures either side. Rebrands are confirmed by the rebrand desk.">
-          <Moves b={b} />
+          {parts.moves}
         </BlockPart>
-        <BlockPart title="Sections" kicker="Credited crops of the desktop homepage: hero, navigation, pricing, call to action and footer, each with its history."><Sections b={b} open={open} /></BlockPart>
+        <BlockPart title="Sections" kicker="Credited crops of the desktop homepage: hero, navigation, pricing, call to action and footer, each with its history.">{parts.sections}</BlockPart>
         <BlockPart title={`How it sits in ${b.sectorName}`} kicker="Every brand in its sector by headline size and white space, this brand marked, with the sector centre; then the headline signals that set it apart.">
-          <Sector b={b} />
+          {parts.sector}
         </BlockPart>
         {b.versus && <BlockPart title={`Versus ${b.versus.scopeName}`} kicker="Signals this brand shows, read in its own sector's forecast (headline and supporting signals only).">
           <div className="ed-grid"><div className="lg:col-span-6"><h4 className="ed-kicker">Ahead · rising or emerging</h4><div className="mt-2"><Refs xs={b.versus.ahead} empty={voiced("read.brandView.5")} /></div></div>
@@ -136,10 +147,8 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
       </>,
       "so-what": <p className="ed-pull max-w-[44ch]">{b.soWhat}</p>,
       related: <>
-        <BlockPart title="Similar brands" kicker={b.similar.line}>
-          {b.similar.items.length > 0 && <Ledger label="Similar brands" rows={b.similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: x.name, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} />}
-        </BlockPart>
-        <BlockPart title="Stories about this brand"><RelatedStories stories={b.stories ?? []} empty={voiced("read.brandView.6")} /></BlockPart>
+        <BlockPart title={SIMILAR_TITLE} kicker={undefined}>{parts.similarLine}{parts.similar}</BlockPart>
+        <BlockPart title="Stories about this brand">{parts.stories}</BlockPart>
         <BlockPart title="Signals it shows">
           {b.shows.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-2">{b.shows.map(s => <li key={s.key} className="flex items-center gap-1"><Link to="/signals/$key" params={{ key: s.key }} className="ed-tap">{s.name}</Link><StageWord stage={s.stage} />{s.tier === "headline" && <span className="ed-muted">headline</span>}</li>)}</ul> : <p className="ed-small">{voiced("read.brandView.7")}</p>}
         </BlockPart>
@@ -155,4 +164,30 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
     }} />
     <ReadFooter terminal={b.actions.terminal} />
   </DigestShell>;
+}
+const similarLine = (line: string) => <p className="ed-caption -mt-2 mb-3 max-w-[72ch]" data-similar-line="">{line}</p>;
+
+/** The whole brand page from one model (tests, kit, share). */
+export function BrandView({ b, section = null }: { b: BrandPage & { stories?: Story[] }; section?: string | null }) {
+  const open = isCropSection(section) ? section : null;
+  return <BrandBody b={b} parts={{ moves: <Moves b={b} />, sections: <Sections b={b} open={open} />, sector: <Sector b={b} />, similarLine: similarLine(b.similar.line), similar: <SimilarList similar={b.similar} />,
+    stories: <RelatedStories stories={b.stories ?? []} empty={voiced("read.brandView.6")} /> }} />;
+}
+
+// P1 · shell first: the card arrives with the page; each section below fills its own slot as its read lands.
+function MovesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandMovesQuery(b.domain)); return <Moves b={{ name: b.name, timeline: data.timeline }} />; }
+function SectionsPart({ b, open }: { b: BrandCard; open: CropSection | null }) { const { data } = useSuspenseQuery(brandSectionsQuery(b.domain)); return <Sections b={{ domain: b.domain, ...data }} open={open} />; }
+function SectorPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSectorQuery(b.domain)); return <Sector b={{ domain: b.domain, sectorName: b.sectorName, ...data }} />; }
+function SimilarPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSimilarQuery(b.domain)); return <>{similarLine(data.line)}<SimilarList similar={data} /></>; }
+function StoriesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandStoriesQuery(b.domain)); return <RelatedStories stories={data} empty={voiced("read.brandView.6")} />; }
+export function BrandPageView({ card, section = null }: { card: BrandCard; section?: string | null }) {
+  const open = isCropSection(section) ? section : null;
+  return <BrandBody b={card} parts={{
+    moves: <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }, { kind: "picture", ratio: 2 * 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={card} /></Later>,
+    sections: <Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }, { kind: "text", lines: 1 }]}><SectionsPart b={card} open={open} /></Later>,
+    sector: <Later shapes={[{ kind: "picture", ratio: 4 / 3, maxWidth: 768 }, { kind: "rows", n: 4, height: ROW.compact }]}><SectorPart b={card} /></Later>,
+    similarLine: null,
+    similar: <Later shapes={[{ kind: "text", lines: 1 }, { kind: "rows", n: 4, height: ROW.ledger }]}><SimilarPart b={card} /></Later>,
+    stories: <Later shapes={[{ kind: "rows", n: 3, height: ROW.ledger }]}><StoriesPart b={card} /></Later>,
+  }} />;
 }

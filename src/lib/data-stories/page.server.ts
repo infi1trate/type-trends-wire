@@ -4,18 +4,21 @@ import { BUILDERS, buildStory, buildWhereYouSit, indexRows, isTracked, normDomai
 import { entryOf, templateName } from "./registry";
 import type { StoryModel } from "./types";
 import { memoBy } from "../memo";
+import { storedBy } from "../records/store.server";
+import { pageKey } from "../records/records";
 
 const TTL = 10 * 60_000;
 const built = memoBy(TTL, (job: { k: string; f: () => Promise<StoryModel | null> }) => job.f(), { key: j => j.k, max: 80 });
 const memo = (k: string, f: () => Promise<StoryModel | null>) => built({ k, f });
 const through = (i: Awaited<ReturnType<typeof dataInput>>) => i.captures.reduce<string | null>((m, c) => (!m || c.at > m ? c.at : m), null);
 
-export async function loadDataIndex() {
+/** /data and its stories read precomputed models (records.ts "data-index", "data-story"); these compute them live. */
+export async function computeDataIndex() {
   const i = await dataInput().catch(() => null);
   return { rows: indexRows(i, i ? through(i) : null) };
 }
 export type DataStoryPage = { kind: "live"; story: StoryModel } | { kind: "draft"; number: number; question: string; deck: string; template: string; reason: string | null } | { kind: "missing" };
-export async function loadDataStory(slug: string): Promise<DataStoryPage> {
+export async function computeDataStory(slug: string): Promise<DataStoryPage> {
   const e = entryOf(slug);
   if (!e) return { kind: "missing" };
   const i = await dataInput();
@@ -24,6 +27,10 @@ export async function loadDataStory(slug: string): Promise<DataStoryPage> {
   const { statusOf } = await import("./build");
   return { kind: "draft", number: e.number, question: e.question, deck: e.deck, template: templateName(e), reason: statusOf(e, i).reason };
 }
+const dataIndexRecord = storedBy((_: null) => pageKey("data-index"), () => computeDataIndex());
+const dataStoryRecord = storedBy((slug: string) => pageKey("data-story", slug), computeDataStory);
+export const loadDataIndex = () => dataIndexRecord(null);
+export const loadDataStory = (slug: string): Promise<DataStoryPage> => (entryOf(slug) ? dataStoryRecord(slug) : Promise.resolve({ kind: "missing" }));
 /** Every tracked brand for the picker (the only brands a reader can choose). */
 export async function loadTrackedBrands() {
   const i = await dataInput();

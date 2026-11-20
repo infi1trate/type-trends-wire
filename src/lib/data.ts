@@ -10,12 +10,13 @@ import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functio
 import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 import { getHealth } from "./health.functions";
-import { getIssue, getArchive, getTrait } from "./digest.functions";
+import { getIssue, getArchive, getTrait, getTraitHead } from "./digest.functions";
 import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
+import { getBrandCard, getBrandMoves, getBrandSections, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
 import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
@@ -404,11 +405,28 @@ export const sectorReportQuery = (sector: string) => queryOptions({ queryKey: ["
 export const sectorIndexQuery = () => queryOptions({ queryKey: ["sector-index"], staleTime: 5 * 60_000, queryFn: () => getSectorIndex() });
 export const editionsQuery = () => queryOptions({ queryKey: ["editions"], staleTime: 60_000, queryFn: () => getEditions() });
 export const liveQuery = (sector: string, page: number, type: LiveTypeFilter = "all") => queryOptions({ queryKey: ["live", sector, page, type], staleTime: 60_000, queryFn: () => getLive({ data: { sector, page, type } }) });
+// P1 · shell first: each Read page's critical read (title, head, 404) and its deferred parts are separate queries, so the loader
+// awaits only the first and streams the rest into <Later> slots.
+export const storyLeadQuery = (id: string) => queryOptions({ queryKey: ["story-lead", id], staleTime: 60_000, queryFn: () => getStoryLead({ data: { id } }) });
+export const storyRelatedQuery = (id: string) => queryOptions({ queryKey: ["story-related", id], staleTime: 60_000, queryFn: () => getStoryRelated({ data: { id } }) });
+export const frontTopQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front-top", sector, format], staleTime: 60_000, queryFn: () => getFrontTop({ data: { sector, format } }) });
+export const frontRestQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front-rest", sector, format], staleTime: 60_000, queryFn: () => getFrontRest({ data: { sector, format } }) });
+export const traitHeadQuery = (key: string) => queryOptions({ queryKey: ["trait-head", key], staleTime: 10 * 60_000, queryFn: () => getTraitHead({ data: { key } }) });
+export const patternHeadQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern-head", key, sector], staleTime: 10 * 60_000, queryFn: () => getPatternHead({ data: { key, sector } }) });
+export const sectorHeadQuery = (sector: string) => queryOptions({ queryKey: ["sector-head", sector], staleTime: 10 * 60_000, queryFn: () => getSectorHead({ data: { sector } }) });
 export const storyQuery = (id: string) => queryOptions({ queryKey: ["story", id], staleTime: 60_000, queryFn: () => getStory({ data: { id } }) });
 /** Today's queue (published, held, killed) for the desk and Terminal › Live › Today; `fresh` skips the server's short cache. */
 /** Real runs, the valid week-over-week pair (or null) and when the next one can land (/status). */
 export const runComparisonQuery = () => queryOptions({ queryKey: ["run-comparison"], staleTime: 5 * 60_000, queryFn: () => getRunComparison() });
 export const storyQueueQuery = (day: string | null, fresh = false) => queryOptions({ queryKey: ["story-queue", day ?? "recent", fresh], staleTime: fresh ? 0 : 60_000, queryFn: () => getStoryQueue({ data: { ...(day ? { day } : {}), fresh } }) });
+/** Brand page, critical: the identity card (null → 404). */
+export const brandCardQuery = (domain: string) => queryOptions({ queryKey: ["brand-card", domain], staleTime: 10 * 60_000, queryFn: () => getBrandCard({ data: { domain } }) });
+// Brand page, deferred sections (a route loader may start these but must never await them; see DEFERRED_QUERIES).
+export const brandMovesQuery = (domain: string) => queryOptions({ queryKey: ["brand-moves", domain], staleTime: 10 * 60_000, queryFn: () => getBrandMoves({ data: { domain } }) });
+export const brandSectionsQuery = (domain: string) => queryOptions({ queryKey: ["brand-sections", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSections({ data: { domain } }) });
+export const brandSectorQuery = (domain: string) => queryOptions({ queryKey: ["brand-sector", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSector({ data: { domain } }) });
+export const brandSimilarQuery = (domain: string) => queryOptions({ queryKey: ["brand-similar", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSimilar({ data: { domain } }) });
+export const brandStoriesQuery = (domain: string) => queryOptions({ queryKey: ["brand-stories", domain], staleTime: 60_000, queryFn: () => getBrandStories({ data: { domain } }) });
 export const brandQuery = (domain: string) => queryOptions({ queryKey: ["brand", domain], staleTime: 10 * 60_000, queryFn: () => getBrand({ data: { domain } }) });
 export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime: 10 * 60_000, queryFn: () => getBrands() });
 export const patternsQuery = (sector: string, illustrated = false) => queryOptions({ queryKey: ["patterns", sector, illustrated], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector, illustrated } }) });

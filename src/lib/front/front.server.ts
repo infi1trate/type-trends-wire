@@ -12,14 +12,15 @@ import { issueNumber, weekRange } from "../digest/week";
 import { wellCovered, type QuarterSeries } from "../kit";
 import { supabaseAnon } from "../mcp/supabase";
 import { readerRunId } from "../real-runs";
-import { memo, memoBy } from "../memo";
-import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, type FrontModel } from "./front";
+import { memoBy } from "../memo";
+import { stored } from "../records/store.server";
+import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, type FrontModel, type FrontTop, type FrontRest } from "./front";
 import { resolveFormat, type FormatFilter } from "./formats";
 import { streamOf } from "../stories/view";
 import { collectionPath, liveCollections } from "../collections/registry";
 
 /** Quarter series (with quarter labels) for every library-wide row of the reader run: chart of the day and the lead's sparkline. */
-const quarterSeries = memo(10 * 60_000, async (): Promise<QuarterSeries[]> => {
+export const quarterSeries = stored("quarter-series", async (): Promise<QuarterSeries[]> => {
     const db = supabaseAnon(), runId = await readerRunId(db), out: QuarterSeries[] = [];
     for (let from = 0; from < 20000; from += 200) {
       const { data, error } = await db.from("forecasts").select("dimension,value,quarters:evidence->quarters").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(from, from + 199);
@@ -28,14 +29,14 @@ const quarterSeries = memo(10 * 60_000, async (): Promise<QuarterSeries[]> => {
       if (!data || data.length < 200) break;
     }
     return out;
-});
+}, { ttl: 10 * 60_000 });
 const clip = (s: string, n = 180) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-async function build(sector: string, format: FormatFilter): Promise<FrontModel> {
+async function build(sector: string, format: FormatFilter, withEditions = true): Promise<FrontModel> {
   const now = Date.now();
   const [read, { loadFreshness }, { loadEditions }, { siteTraitIndex }] = await Promise.all([import("../read.server"), import("../freshness.server"), import("../editions/editions.server"), import("../read.server")]);
   const [all, { snap, tiers, signals }, moves, fresh, editions, series, index] = await Promise.all([
-    storyIndex(), latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), loadEditions(null).catch(() => null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
+    storyIndex(), latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), withEditions ? loadEditions(null).catch(() => null) : Promise.resolve(null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
   ]);
   const headlineKeys = new Set([...tiers.values()].filter(t => t.tier === "headline").map(t => t.key));
   const byKey = new Map(signals.map(s => [s.key, s]));
@@ -43,7 +44,7 @@ async function build(sector: string, format: FormatFilter): Promise<FrontModel> 
   const points: Record<string, number[]> = Object.fromEntries(series.map(s => [s.key, s.quarters.filter(wellCovered).map(p => p.s as number)]));
   const quarters: Record<string, string[]> = Object.fromEntries(series.map(s => [s.key, s.quarters.filter(wellCovered).map(p => p.q)]));
   const quiet = pageState(streamOf(all).filter(s => s.type !== "launch").map(s => s.happened_at), now) === "quiet";
-  const archiveMoves: ArchiveMove[] = quiet ? await import("../rebrands.server").then(m => m.rebrandRows()).then(r => r.rows.map(x => ({ id: `rebrand:${x.id}`, at: x.confirmed_at, headline: rebrandSentence(x), line: x.read ? clip(untick(x.read)) : null, href: `/brands/${encodeURIComponent(x.domain)}`, source: x.source }))).catch(() => []) : [];
+  const archiveMoves: ArchiveMove[] = quiet ? await import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: `rebrand:${x.id}`, at: x.confirmed_at, headline: rebrandSentence(x), line: x.read ? clip(untick(x.read)) : null, href: `/brands/${encodeURIComponent(x.domain)}`, source: x.source }))).catch(() => []) : [];
   const digestWeek = editions?.digest?.week ?? null, digestNo = digestWeek ? issueNumber(digestWeek) : null;
   const input: FrontInput = {
     now, sector, format, stories: all, signals, lens, stages: new Map(signals.map(s => [s.key, s.stage])),
@@ -72,5 +73,18 @@ export const FRONT_TTL_MS = 20_000;
 const fronts = memoBy(FRONT_TTL_MS, (k: { sector: string; format: FormatFilter }) => build(k.sector, k.format), { key: k => `${k.sector}|${k.format}`, max: 100 });
 export function loadFront(rawSector: unknown, rawFormat: unknown): Promise<FrontModel> {
   return fronts({ sector: resolveSector(rawSector), format: resolveFormat(rawFormat) });
+}
+// P1 · shell first: the lead and the live column are critical (built without the editions read); the side column, chart of the day
+// and lower lists are deferred and come from the full model, memoised, so the server builds each lens once.
+const tops = memoBy(FRONT_TTL_MS, (k: { sector: string; format: FormatFilter }) => build(k.sector, k.format, false), { key: k => `${k.sector}|${k.format}`, max: 100 });
+export async function loadFrontTop(rawSector: unknown, rawFormat: unknown): Promise<FrontTop> {
+  const k = { sector: resolveSector(rawSector), format: resolveFormat(rawFormat) };
+  const m = fronts.peek(k) ?? await tops(k);
+  const { chart: _c, launches: _l, strip: _s, collections: _co, editions: _e, dataStories: _d, archive: _a, ...top } = m;
+  return top;
+}
+export async function loadFrontRest(rawSector: unknown, rawFormat: unknown): Promise<FrontRest> {
+  const m = await loadFront(rawSector, rawFormat);
+  return { chart: m.chart, launches: m.launches, strip: m.strip, collections: m.collections, editions: m.editions, dataStories: m.dataStories, archive: m.archive, sections: m.sections, format: m.format, sector: m.sector, now: m.now, state: m.state };
 }
 export const loadFrontUpdates = async (sector: unknown, format: unknown) => updatesOf(await loadFront(sector, format));

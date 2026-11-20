@@ -13,6 +13,10 @@ export const getRouter = () => {
     scrollRestoration: true,
     // Lets Query own freshness; set caching defaults on the QueryClient, not the router.
     defaultPreloadStaleTime: 0,
+    // P1: pointing at, focusing or touching a link starts that page's reads (its critical read and its deferred parts), so most
+    // clicks land on data already in hand.
+    defaultPreload: "intent",
+    defaultPreloadDelay: 50,
     // Cut (brand motion): a page change wipes with a hard edge where the View Transitions API exists; search-only changes
     // (a format filter, a data-story step) never wipe. Where transition types are unsupported, the CSS leaves the change instant.
     defaultViewTransition: { types: ({ pathChanged }) => (pathChanged ? ["cut"] : false) },

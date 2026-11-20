@@ -3,6 +3,7 @@ import { supabaseAnon } from "./mcp/supabase";
 import { buildRebrands, filterRebrands, rebrandCounts, MEASURED_EVENT_TYPES, MAX_REBRAND_LIMIT, type Rebrand, type EventIn, type SideIn, type ForecastIn, type WireIn } from "./rebrands";
 import { readerRunId } from "./real-runs";
 import { memo } from "./memo";
+import { stored } from "./records/store.server";
 import { PROMO_COLS, promoTexts } from "./promo";
 type Db = ReturnType<typeof supabaseAnon>;
 async function all<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
@@ -42,9 +43,12 @@ async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | n
 const CACHE_MS = 10 * 60_000;
 const rows = memo(CACHE_MS, () => load(supabaseAnon()));
 export const rebrandRows = (): Promise<{ rows: Rebrand[]; data_through: string | null }> => rows();
+/** Rebrands for public pages: the precomputed record (rewritten by the scheduled sweeper), else the live load. The story build keeps
+ * reading `rebrandRows` live so a new rebrand is never held back by a record's age. */
+export const readerRebrands = stored("rebrands", () => load(supabaseAnon()), { ttl: CACHE_MS });
 export type RebrandFilter = { sector?: string | undefined; source?: "live" | "archive" | undefined; year?: number | undefined; since?: string | undefined; limit?: number | undefined; offset?: number | undefined };
 export async function rebrands(f: RebrandFilter, maxLimit = 200) {
-  const { rows, data_through } = await rebrandRows();
+  const { rows, data_through } = await readerRebrands();
   const scoped = filterRebrands(rows, f), limit = Math.min(Math.max(f.limit ?? 25, 1), maxLimit), offset = Math.max(f.offset ?? 0, 0);
   const years = [...new Set(rows.map(r => Number(r.confirmed_at.slice(0, 4))))].sort((a, b) => b - a);
   return { counts: rebrandCounts(rows), filtered: { ...rebrandCounts(scoped), total: scoped.length }, years, data_through, offset, limit, rows: scoped.slice(offset, offset + limit) };

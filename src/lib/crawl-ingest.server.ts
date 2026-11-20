@@ -81,7 +81,11 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
     if (payload.kind === "library_sync" || payload.kind === "library_snapshots") {
       const { ingestLibrary } = await import("./library-ingest.server");
       const res = await ingestLibrary(payload);
-      if (res.ok && payload.kind === "library_snapshots") await (await import("./stories/build.server")).afterJob("library", started);
+      if (res.ok && payload.kind === "library_snapshots") {
+        await (await import("./stories/build.server")).afterJob("library", started);
+        // The brands this batch captured get fresh identity cards first (records/refresh.server.ts).
+        await (await import("./records/refresh.server")).refreshAfterJob("library", started, { domains: [...new Set(payload.snapshots.map(s => s.domain))] });
+      }
       return res;
     }
     if (payload.kind === "start") {
@@ -120,6 +124,7 @@ export async function handleCrawlIngest(request: Request): Promise<Response> {
     if (!data?.length) return Response.json({ error: "Unknown run" }, { status: 404 });
     await refreshAggregates();
     await (await import("./stories/build.server")).afterJob("crawl-finish", started);
+    await (await import("./records/refresh.server")).refreshAfterJob("crawl-finish", started, { force: true });
     return Response.json({ ok: true, written: data.length });
   } catch (error) {
     // Never log payloads, credentials, or provider errors that may contain input.

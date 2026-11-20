@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { frontQuery } from "@/lib/data";
+import { frontRestQuery, frontTopQuery } from "@/lib/data";
 import { legacyTerminalSearch } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
 import { resolveFormat, type Format } from "@/lib/front/formats";
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
-import { FrontView } from "@/components/read/FrontView";
+import { FrontPageView } from "@/components/read/FrontView";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME, BRAND_LINE } from "@/lib/brand";
 import { withShare, shareImageFor } from "@/lib/share/meta";
@@ -25,7 +25,11 @@ export const Route = createFileRoute("/")({
     if (legacy) throw redirect({ to: "/terminal", search: legacy, statusCode: 301 });
   },
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(frontQuery(deps.sector, deps.format)).then(() => undefined),
+  // P1: only the lead and live column are awaited; the side column and lower lists start now and stream into their slots.
+  loader: ({ context, deps }) => {
+    void context.queryClient.prefetchQuery(frontRestQuery(deps.sector, deps.format));
+    return context.queryClient.ensureQueryData(frontTopQuery(deps.sector, deps.format)).then(() => undefined);
+  },
   head: () => ({
     meta: withShare(shareImageFor("front", "today"), [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: SITE_URL }, { name: "twitter:card", content: "summary_large_image" }]),
     links: [{ rel: "canonical", href: SITE_URL }, ...fontLinks()],
@@ -36,6 +40,6 @@ export const Route = createFileRoute("/")({
 });
 function Front() {
   const { sector, format } = Route.useSearch();
-  const { data } = useSuspenseQuery(frontQuery(resolveSector(sector), resolveFormat(format)));
-  return <FrontView m={data} />;
+  const { data } = useSuspenseQuery(frontTopQuery(resolveSector(sector), resolveFormat(format)));
+  return <FrontPageView m={data} />;
 }

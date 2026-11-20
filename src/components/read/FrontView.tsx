@@ -6,7 +6,10 @@ import { line as voiced } from "@/lib/voice";
 import { useCallback, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { BRAND_NAME } from "@/lib/brand";
-import type { FrontModel, FrontUpdates } from "@/lib/front/front";
+import type { FrontModel, FrontRest, FrontTop, FrontUpdates } from "@/lib/front/front";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { frontRestQuery } from "@/lib/data";
+import { Later, ROW } from "./Later";
 import { FORMAT_LABEL, FORMAT_NOTE, FORMATS, frontSearch, type FormatFilter } from "@/lib/front/formats";
 import { numberLabel } from "@/lib/stories/numbers";
 import { storyTime } from "@/lib/stories";
@@ -32,7 +35,7 @@ const Kicker = ({ id, children }: { id: string; children: ReactNode }) => <h2 id
 const STATE_WORD = { busy: "Busy", steady: "Steady", quiet: "Quiet" } as const;
 const STATE_NOTE = { busy: "Three or more stories in the last six hours", steady: "A story in the last day", quiet: voiced("read.frontView.1") } as const;
 
-function FormatRow({ m }: { m: FrontModel }) {
+function FormatRow({ m }: { m: Pick<FrontModel, "sector" | "format"> }) {
   return <nav aria-label="Formats" className="no-print min-w-0 md:flex-1">
     <ul className="ed-navtext front-formats flex gap-x-5 overflow-x-auto">{FILTERS.map(f => <li key={f} className="shrink-0">
       <Link to="/" search={frontSearch({ sector: m.sector, format: f })} aria-current={m.format === f ? "true" : undefined} resetScroll={false}
@@ -43,7 +46,7 @@ function FormatRow({ m }: { m: FrontModel }) {
 }
 
 /** The lead: the page's one Plate. Kicker with the story number, H1, deck, a Raised "Receipts" button, the basis mark and the evidence slot. */
-function Lead({ m, now }: { m: FrontModel; now: number }) {
+function Lead({ m, now }: { m: FrontTop; now: number }) {
   const l = m.lead!, fig = leadFigure(l.evidence);
   return <section aria-labelledby="front-lead"><Plate className="md:p-10">
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
@@ -105,7 +108,7 @@ function Strip({ s, format, now }: { s: NonNullable<FrontModel["strip"]>; format
 }
 
 /** Date and state, pinned to the left and right edges; from 768 px the format filter shares the row between them (lib/shell.ts). */
-function DateState({ m }: { m: FrontModel }) {
+function DateState({ m }: { m: Pick<FrontModel, "sector" | "format" | "now" | "state"> }) {
   return <div className="flex flex-wrap items-end justify-between gap-x-6 border-b-[3px] border-ed-ink md:flex-nowrap" data-front-dateline="">
     <div className="flex min-h-11 items-center"><FrontDate now={m.now} /></div>
     <div className="order-last w-full md:order-none md:w-auto md:min-w-0 md:flex-1"><FormatRow m={m} /></div>
@@ -113,12 +116,76 @@ function DateState({ m }: { m: FrontModel }) {
   </div>;
 }
 
+type Slots = { archive: ReactNode; aside: ReactNode; lower: ReactNode };
+const exploreRow = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
+
+function FrontArchive({ r }: { r: Pick<FrontRest, "archive" | "sections"> }) {
+  if (!r.sections.archive) return null;
+  return <section aria-labelledby="front-archive" className="mt-8">
+    <h3 id="front-archive" className="ed-kicker">From the archive</h3>
+    <Ledger className="mt-2" rows={r.archive.map(a => ({ key: a.id, href: a.href, number: a.number != null ? String(a.number) : "·", title: a.headline, line: a.line, tags: [a.match], time: <time dateTime={a.at}>{a.date}</time> }))} />
+  </section>;
+}
+function FrontAside({ m, r }: { m: FrontTop; r: FrontRest }) {
+  const now = useNow(m.now, 30_000);
+  return <>
+    {r.chart && <ChartOfDay c={r.chart} />}
+    {r.sections.launches && <section aria-labelledby="front-launches"><RuleBox>
+      <Kicker id="front-launches">New on the scene</Kicker>
+      <p className="ed-caption mt-1">Product Hunt launches. They never rank in the live column.</p>
+      <ul className="ledger mt-2">{r.launches.map(s => <LiveItem key={s.id} s={s} now={now} />)}</ul>
+    </RuleBox></section>}
+    {r.strip && <Strip s={r.strip} format={m.format} now={now} />}
+    {m.format === "all" && m.sections.explore && <section aria-labelledby="front-explore"><RuleBox>
+      <Kicker id="front-explore">Explore</Kicker>
+      <p className="ed-caption mt-1">Brand and pattern pages behind this week's stories.</p>
+      <Ledger className="mt-2" small rows={m.explore.map(exploreRow)} label="Brand and pattern pages" />
+    </RuleBox></section>}
+    {r.sections.collections && <section aria-labelledby="front-collections" data-shelf="collections"><RuleBox>
+      <Kicker id="front-collections">Collections</Kicker>
+      <p className="ed-caption mt-1">Numbered walls of homepage captures from the pattern gallery.</p>
+      <Ledger className="mt-2" small rows={r.collections.map(c => ({ key: c.slug, href: c.href, number: c.number, title: c.title }))} label="Collections" />
+      <p className="ed-data mt-3"><Receipt href="/collections" className="ed-tap">All collections →</Receipt></p>
+    </RuleBox></section>}
+  </>;
+}
+function FrontLower({ r }: { r: Pick<FrontRest, "editions" | "dataStories" | "sections"> }) {
+  return <>
+    {r.sections.editions && <section aria-labelledby="front-editions"><RuleBox>
+      <Kicker id="front-editions">Editions</Kicker>
+      <Ledger className="mt-3" small rows={r.editions.map(e => ({ key: e.id, href: e.href, title: e.title, time: e.date }))} />
+    </RuleBox></section>}
+    {r.sections.dataStories && <section aria-labelledby="front-data" data-shelf="data-stories"><RuleBox>
+      <Kicker id="front-data">Data stories</Kicker>
+      <Ledger className="mt-3" rows={r.dataStories.map(d => ({ key: d.slug, href: d.href, number: d.number, title: d.question }))} />
+      <p className="ed-data mt-3"><Receipt href="/data" className="ed-tap">All data stories →</Receipt></p>
+    </RuleBox></section>}
+  </>;
+}
+
+/** The whole front page from one full model (tests, /front.json consumers). */
 export function FrontView({ m }: { m: FrontModel }) {
+  return <FrontLayout m={m} slots={{ archive: <FrontArchive r={m} />, aside: <FrontAside m={m} r={m} />, lower: <FrontLower r={m} /> }} />;
+}
+// P1 · shell first: the lead, ticker and live column render from the critical read; the archive, side column and lower lists stream
+// into <Later> slots from the deferred read (same model, built once per lens on the server).
+const useRest = (m: FrontTop) => useSuspenseQuery(frontRestQuery(m.sector, m.format)).data;
+function RestArchive({ m }: { m: FrontTop }) { return <FrontArchive r={useRest(m)} />; }
+function RestAside({ m }: { m: FrontTop }) { return <FrontAside m={m} r={useRest(m)} />; }
+function RestLower({ m }: { m: FrontTop }) { return <FrontLower r={useRest(m)} />; }
+export function FrontPageView({ m }: { m: FrontTop }) {
+  return <FrontLayout m={m} slots={{
+    archive: m.sections.archive ? <Later id="front-archive-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><RestArchive m={m} /></Later> : null,
+    aside: <Later id="front-aside-later" shapes={[{ kind: "block", height: 380 }, { kind: "rows", n: 4, height: ROW.compact }]}><RestAside m={m} /></Later>,
+    lower: m.sections.editions || m.sections.dataStories ? <Later id="front-lower-later" shapes={[{ kind: "rows", n: 4, height: ROW.compact }]}><RestLower m={m} /></Later> : null,
+  }} />;
+}
+
+function FrontLayout({ m, slots }: { m: FrontTop; slots: Slots }) {
   const now = useNow(m.now, 30_000), staff = !!useStaffKey();
   const [moving, setMoving] = useState(m.moving);
   const onUpdates = useCallback((u: FrontUpdates) => { if (u.moving) setMoving(u.moving); }, []);
   const empty = m.format === "all" ? voiced("read.frontView.2") : `No ${FORMAT_LABEL[m.format]} stories this week.`;
-  const explore = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
   return <DigestShell label="Live" section="live" lens tour edition={null} note={m.sector !== "all" ? `${sectorName(m.sector)} stories first in each group` : null}>
     <FrontTicker items={m.ticker} />
     <FiltersScope>
@@ -132,45 +199,17 @@ export function FrontView({ m }: { m: FrontModel }) {
           <h2 id="front-live" className="ed-h2">{m.format === "explore" ? "Explore" : "Live"}</h2>
           {m.state === "quiet" && m.format !== "explore" && <p className="ed-caption mt-1" role="note">Quiet: no new story in the last 24 hours. Below is the rest of this week{m.sections.archive ? ", then the same week from the archive" : ""}, each with the date it happened.</p>}
           {m.format === "explore"
-            ? <Ledger className="mt-4" rows={m.explore.map(explore)} label="Brand and pattern pages" />
+            ? <Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" />
             : <LiveColumn initial={m.column.items} serverNow={m.now} sector={m.sector} format={m.format} quiet={m.column.quiet} onUpdates={onUpdates} empty={empty} />}
           {m.format === "explore" && !m.sections.explore && <p className="ed-small mt-3">{voiced("read.frontView.4")}</p>}
-          {m.sections.archive && <section aria-labelledby="front-archive" className="mt-8">
-            <h3 id="front-archive" className="ed-kicker">From the archive</h3>
-            <Ledger className="mt-2" rows={m.archive.map(a => ({ key: a.id, href: a.href, number: a.number != null ? String(a.number) : "·", title: a.headline, line: a.line, tags: [a.match], time: <time dateTime={a.at}>{a.date}</time> }))} />
-          </section>}
+          {slots.archive}
           <p className="ed-data mt-6"><Link to="/morning" className="ed-tap">Older stories, day by day, in the Morning Line →</Link></p>
         </section>
         <aside className="space-y-10 lg:col-span-4" aria-label="Chart of the day, new on the scene and your sector">
-          {m.chart && <ChartOfDay c={m.chart} />}
-          {m.sections.launches && <section aria-labelledby="front-launches"><RuleBox>
-            <Kicker id="front-launches">New on the scene</Kicker>
-            <p className="ed-caption mt-1">Product Hunt launches. They never rank in the live column.</p>
-            <ul className="ledger mt-2">{m.launches.map(s => <LiveItem key={s.id} s={s} now={now} />)}</ul>
-          </RuleBox></section>}
-          {m.strip && <Strip s={m.strip} format={m.format} now={now} />}
-          {m.format === "all" && m.sections.explore && <section aria-labelledby="front-explore"><RuleBox>
-            <Kicker id="front-explore">Explore</Kicker>
-            <p className="ed-caption mt-1">Brand and pattern pages behind this week's stories.</p>
-            <Ledger className="mt-2" small rows={m.explore.map(explore)} label="Brand and pattern pages" />
-          </RuleBox></section>}
-          {m.sections.collections && <section aria-labelledby="front-collections" data-shelf="collections"><RuleBox>
-            <Kicker id="front-collections">Collections</Kicker>
-            <p className="ed-caption mt-1">Numbered walls of homepage captures from the pattern gallery.</p>
-            <Ledger className="mt-2" small rows={m.collections.map(c => ({ key: c.slug, href: c.href, number: c.number, title: c.title }))} label="Collections" />
-            <p className="ed-data mt-3"><Receipt href="/collections" className="ed-tap">All collections →</Receipt></p>
-          </RuleBox></section>}
+          {slots.aside}
         </aside>
       </div>
-      {m.sections.editions && <section aria-labelledby="front-editions"><RuleBox>
-        <Kicker id="front-editions">Editions</Kicker>
-        <Ledger className="mt-3" small rows={m.editions.map(e => ({ key: e.id, href: e.href, title: e.title, time: e.date }))} />
-      </RuleBox></section>}
-      {m.sections.dataStories && <section aria-labelledby="front-data" data-shelf="data-stories"><RuleBox>
-        <Kicker id="front-data">Data stories</Kicker>
-        <Ledger className="mt-3" rows={m.dataStories.map(d => ({ key: d.slug, href: d.href, number: d.number, title: d.question }))} />
-        <p className="ed-data mt-3"><Receipt href="/data" className="ed-tap">All data stories →</Receipt></p>
-      </RuleBox></section>}
+      {slots.lower}
       <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.filter(f => staff || !STAFF_HREFS.has(f.href)).map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     </div>
     </FiltersScope>

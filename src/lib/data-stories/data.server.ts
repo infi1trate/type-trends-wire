@@ -39,7 +39,7 @@ async function load(): Promise<DataInput> {
   ]);
   const [snaps, rebrands] = await Promise.all([
     snapMeta(db, [...new Set(history.map(r => r.snapshot_id).filter((x): x is number => x != null))]),
-    import("../rebrands.server").then(m => m.rebrandRows()).then(r => r.rows.map(x => ({ id: x.id, domain: x.domain, at: x.confirmed_at, source: x.source }))).catch(() => []),
+    import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: x.id, domain: x.domain, at: x.confirmed_at, source: x.source }))).catch(() => []),
   ]);
   const ev: EventRow[] = events.flatMap(e => { const at = e.effective_at ?? e.detected_at; return at ? [{ id: e.id, domain: e.domain, type: e.type, source: e.source, at, snapshot_id: e.snapshot_id }] : []; });
   return { now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,

@@ -1,6 +1,8 @@
 // Read-mode loaders (Live, brands, patterns, signal series): anonymous SELECT-only reads assembled by pure models. No AI per view.
 import { supabaseAnon } from "./mcp/supabase";
 import { memo } from "./memo";
+import { stored, storedBy } from "./records/store.server";
+import { pageKey } from "./records/records";
 import { forecastSiteTraits, type SiteRow } from "./forecast-signals";
 import { latestSignals } from "./signals.server";
 import { label, basis } from "./labels";
@@ -29,7 +31,7 @@ const TTL = 5 * 60_000;
 const day = 864e5;
 
 /** Every active brand's current traits (forecastSiteTraits over its latest library history row), name, sector and capture date. */
-export const siteTraitIndex = memo(10 * 60_000, async (): Promise<PatternSite[]> => {
+export const siteTraitIndex = stored("site-index", async (): Promise<PatternSite[]> => {
   const db = supabaseAnon();
   const [sites, hist] = await Promise.all([
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_snapshot_at: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_snapshot_at").order("domain").range(f, t) as never),
@@ -37,7 +39,7 @@ export const siteTraitIndex = memo(10 * 60_000, async (): Promise<PatternSite[]>
   ]);
   const h = new Map(hist.map(r => [r.domain, r]));
   return sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; });
-});
+}, { ttl: 10 * 60_000 });
 const CROP_COLS = "domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash";
 /** Every visible section crop (opted-out sites are hidden by policy). Zero rows until the crawler sends crops. */
 export const allCrops = memo(10 * 60_000, () => pages<CropRow>((f, t) => supabaseAnon().from("site_crops").select(CROP_COLS).order("id").range(f, t) as never));
@@ -58,7 +60,7 @@ export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
   const db = supabaseAnon(), now = Date.now(), since = (d: number) => new Date(now - d * day).toISOString();
   const [events, rebrandAll] = await Promise.all([
     db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").gte("detected_at", since(30)).order("detected_at", { ascending: false }).limit(120).then(must),
-    import("./rebrands.server").then(m => m.rebrandRows()),
+    import("./rebrands.server").then(m => m.readerRebrands()),
   ]);
   return { stories: [
     ...((events ?? []) as EventRow[]).map(fromEvent),
@@ -84,19 +86,19 @@ export function movingItems(moves: Awaited<ReturnType<typeof movingRuns>>, headl
   }).sort((a, b) => (b.momentum_index ?? -1) - (a.momentum_index ?? -1) || a.name.localeCompare(b.name)) : [];
 }
 /** The valid comparison for Moving now: real runs, the gap pair and both runs' library-wide stages (cached like other public reads). */
-export const movingRuns = memo(TTL, async () => {
+export const movingRuns = stored("moving-runs", async () => {
   const db = supabaseAnon(), runs = await fetchRealRuns(db), pair = comparisonPair(runs), next = nextComparison(runs, Date.now());
   if (!pair) return { pair: null, next, latest: [], earlier: [] };
   const [latest, earlier] = await Promise.all([fetchStageRows(db, pair.latest.id), fetchStageRows(db, pair.earlier.id)]);
   return { pair: { latest: pair.latest, earlier: pair.earlier, days: pair.days }, next, latest, earlier };
-});
+}, { ttl: TTL });
 export async function runComparison() {
   const runs = await fetchRealRuns(supabaseAnon()), pair = comparisonPair(runs);
   return { real: runs, pair, next: nextComparison(runs, Date.now()) };
 }
 
 /** Signals similarity may compare: headline tier and measured (the brand page and MCP `library_site` share this). */
-const similarEligible = (signals: { key: string; tier: string; basis: string }[]) => new Set(signals.filter(s => s.tier === "headline" && s.basis === "measured").map(s => s.key));
+export const similarEligible = (signals: { key: string; tier: string; basis: string }[]) => new Set(signals.filter(s => s.tier === "headline" && s.basis === "measured").map(s => s.key));
 /** The similar brands for one tracked domain, for MCP. */
 export async function similarFor(domain: string) {
   const [{ similarBrands }, index, { signals }] = await Promise.all([import("./similar"), siteTraitIndex(), latestSignals("all")]);
@@ -135,7 +137,7 @@ const moveCounts = memo(TTL, async () => {
   const db = supabaseAnon();
   const [events, rebrandAll] = await Promise.all([
     pages<{ domain: string; detected_at: string }>((f, t) => db.from("library_event_feed").select("domain,detected_at").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("id").range(f, t) as never, 1000),
-    import("./rebrands.server").then(m => m.rebrandRows()).then(r => r.rows).catch(() => []),
+    import("./rebrands.server").then(m => m.readerRebrands()).then(r => r.rows).catch(() => []),
   ]);
   const out = new Map<string, { n: number; last: string | null }>();
   const add = (d: string, at: string) => { const c = out.get(d) ?? { n: 0, last: null }; c.n++; if (!c.last || at > c.last) c.last = at; out.set(d, c); };
@@ -144,8 +146,9 @@ const moveCounts = memo(TTL, async () => {
   return out;
 });
 
-/** /brands: the directory plus recent moves across every brand. */
-export async function loadBrands() {
+/** /brands: the directory plus recent moves across every brand (precomputed record "brands-index"; computeBrands is the live load). */
+export const loadBrands = () => brandsRecord(null);
+export async function computeBrands() {
   const db = supabaseAnon();
   const [sites, { stories }, counts] = await Promise.all([
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_change_at: string | null; last_snapshot_at: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_change_at,last_snapshot_at").order("domain").range(f, t) as never),
@@ -160,6 +163,13 @@ export async function loadBrands() {
   };
 }
 
+const brandsRecord = storedBy((_: null) => pageKey("brands-index"), () => computeBrands());
+/** P1, critical for /patterns/<key>: name and count (head and title) from the shared records; null → 404. */
+export async function loadPatternHead(key: string, sector: string) {
+  const [index, { signals }] = await Promise.all([siteTraitIndex(), latestSignals("all")]);
+  const m = patternModel(key, index, signals, [], sector);
+  return m ? { key, name: m.name, total: m.total, dimension: m.dimension } : null;
+}
 export async function loadPatterns(sector: string, illustrated = false) {
   const [index, { signals }, crops] = await Promise.all([siteTraitIndex(), latestSignals("all"), allCrops()]);
   const all = patternIndex(index, signals, sector, crops);

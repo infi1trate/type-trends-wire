@@ -13,3 +13,7 @@ export const getTrait = createServerFn({ method: "GET" }).inputValidator(z.objec
   const { loadTrait } = await import("./digest/digest.server");
   return loadTrait(data.key);
 });
+export const getTraitHead = createServerFn({ method: "GET" }).inputValidator(z.object({ key: z.string().min(3).max(120) })).handler(async ({ data }) => {
+  const { loadTraitHead } = await import("./digest/digest.server");
+  return loadTraitHead(data.key);
+});

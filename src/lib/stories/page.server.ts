@@ -16,6 +16,33 @@ export async function loadStory(id: string) {
   return { ...page, thumb, crops, frames: crops.compare ? null : await framesOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
 }
 
+/** P1 · shell first, critical: the story with its cover evidence (crops, redrawn frames, the signal's trail and the latest capture),
+ * from the story's own rows and indexed per-brand reads; the quarter trail comes from the precomputed series record. No story index. */
+export async function loadStoryLead(id: string) {
+  const s = await storyById(id); if (!s) return null;
+  const type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0], d = s.domains[0];
+  const [{ quarterSeries }, { wellCovered }, { pickThumb }, { supabaseAnon }] = await Promise.all([import("../front/front.server"), import("../kit"), import("../thumbs"), import("../mcp/supabase")]);
+  const wantThumb = (type === "move" || type === "rebrand" || type === "counter_move") && !!d;
+  const [series, thumbs, crops, frames] = await Promise.all([
+    key ? quarterSeries().then(all => all.find(x => x.key === key)?.quarters.filter(wellCovered).map(p => p.s as number) ?? []).catch(() => []) : Promise.resolve([] as number[]),
+    wantThumb ? supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", d!).order("captured_at", { ascending: false }).limit(8).then(r => r.data ?? []) : Promise.resolve([]),
+    evidenceOf(s, type),
+    framesOf(s, type).catch(() => null),
+  ]);
+  const page = storyPage(s, { earlier: [], patterns: [] });
+  return { ...page, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: crops.compare ? null : frames, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+}
+/** P1, deferred: earlier stories on the same signal or brand, and the patterns among its signals. */
+export async function loadStoryRelated(id: string) {
+  const s = await storyById(id); if (!s) return { earlier: [], patterns: [] };
+  const [{ latestSignals }, { isPatternSignal }] = await Promise.all([import("../signals.server"), import("../patterns")]);
+  const [all, { signals }] = await Promise.all([storyIndex().catch(() => []), latestSignals("all")]);
+  const byKey = new Map(signals.map(x => [x.key, x]));
+  const earlier = storiesAbout(all, { signals: s.signal_keys, domain: s.domains.length === 1 ? s.domains[0] : undefined, exclude: s.id, limit: 6 }).filter(x => x.at <= s.happened_at || s.type === "white_space");
+  const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
+  return { earlier: page.earlier, patterns: page.patterns };
+}
+
 /** No crops either side of the change: the stored captures either side of it, redrawn from their skeletons (anonymous reads). */
 export async function framesOf(s: { type: string; domains: string[]; happened_at: string }, type: string) {
   const d = s.domains[0];

@@ -55,3 +55,15 @@ export async function storyIdByNumber(n: number): Promise<string | null> {
 }
 /** The desk reads fresh, not through the TTL cache. */
 export async function deskIndex(): Promise<StoryRecord[]> { index.clear(); return storyIndex(); }
+/** Stories that name one brand (indexed on `domains`), with edits, late lines and numbers overlaid: what a brand page needs, without
+ * reading the whole story window. Roundups and rebrands holding the brand's moves name it too, so source links still resolve. */
+export async function storiesForDomain(domain: string): Promise<StoryRecord[]> {
+  const db = supabaseAnon(), since = new Date(Date.now() - STORY_WINDOW_DAYS * 864e5).toISOString();
+  const s = await db.from("stories").select(COLS).contains("domains", [domain]).gte("happened_at", since).order("happened_at", { ascending: false }).limit(200);
+  if (s.error) throw s.error;
+  const rows = (s.data ?? []) as unknown as StoredStory[], ids = rows.map(r => r.id);
+  if (!ids.length) return [];
+  const [e, l, n] = await Promise.all([db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids).order("id"), db.from("story_lines").select("story_id,why_line,why_model,why_at").in("story_id", ids), db.from("story_numbers").select("story_id,number").in("story_id", ids)]);
+  if (e.error) throw e.error; if (l.error) throw l.error; if (n.error) throw n.error;
+  return withNumbers(overlay(withLines(rows, (l.data ?? []) as LineRow[]), (e.data ?? []) as unknown as EditRow[], Date.now()), (n.data ?? []) as NumberRow[]);
+}

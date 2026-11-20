@@ -22,7 +22,7 @@ import { HEAD_SCRIPT } from "../lib/motion";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { BRAND_DESCRIPTION, BRAND_LINE, BRAND_NAME } from "@/lib/brand";
 import { say } from "@/lib/voice";
-import { FOCUS_TARGETS, shouldMoveFocus } from "@/lib/route-focus";
+import { FOCUS_TARGETS, laterFocus, shouldMoveFocus } from "@/lib/route-focus";
 import { NotFoundLookup } from "@/components/read/NotFoundLookup";
 
 function ErrorPage({ code, title, line, children }: { code: string; title: string; line: string; children: ReactNode }) {
@@ -127,6 +127,7 @@ function RouteFocus() {
       if (!el) return;
       if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
       el.focus({ preventScroll: true });
+      laterFocus.pending = !!el.closest('[aria-busy="true"]');
     });
   }), [router]);
   return null;

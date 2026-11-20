@@ -134,7 +134,7 @@ function Drift({ f, v }: { f: DriftFig; v: View }) {
 // CAPTURES ------------------------------------------------------------------------------------------
 /** One capture redrawn: boxes from the stored skeleton, in the capture's own background, ink and accent. Upgrades to the crop when present. */
 export function CaptureFrame({ fr, label, slim = false, className = "" }: { fr: Frame; label: string; slim?: boolean; className?: string }) {
-  if (fr.crop && !slim) return <img src={fr.crop.src} width={fr.crop.width} height={fr.crop.height} alt={fr.crop.alt} className={`block h-auto w-full border ${className}`} style={{ borderColor: RULE }} loading="lazy" data-frame="crop" />;
+  if (fr.crop && !slim) return <img src={fr.crop.src} width={fr.crop.width} height={fr.crop.height} alt={fr.crop.alt} className={`block h-auto w-full border ${className}`} style={{ borderColor: RULE }} loading="lazy" decoding="async" data-frame="crop" />;
   const bg = fr.bg ?? PAGE, ink = fr.ink ?? INK, acc = fr.accent ?? ink, tone = fr.tones.find(t => t !== fr.bg && t !== fr.ink) ?? ink;
   const boxes = slim ? fr.boxes.filter(b => b[0] === "h" || b[0] === "m" || b[0] === "c") : fr.boxes;
   return <svg viewBox={`0 0 ${fr.w} ${fr.h}`} className={`block h-auto w-full border ${className}`} style={{ borderColor: RULE }} role="img" aria-label={`${label}: redrawn from the stored layout, no screenshot`} data-frame="skeleton" preserveAspectRatio="xMidYMin meet">

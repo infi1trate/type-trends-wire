@@ -24,6 +24,8 @@ export async function handleIngestWire(request: Request): Promise<Response> {
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) return Response.json({ error: "Expected empty JSON object" }, { status: 400 });
       const { ingestWire } = await import("./ingest.server"), res = await ingestWire();
       if (res.ok) await (await import("./stories/build.server")).afterJob("wire", started);
+      // The 15-minute wire call is the records sweeper (records/refresh.server.ts): whatever time the call has left rewrites due records.
+      await (await import("./records/refresh.server")).refreshAfterJob("wire", started);
       return res;
     }
     const text = await boundedText(request, WIRE_INGEST_BODY_LIMIT);

@@ -20,7 +20,7 @@ export function issueHead(i: Issue, path: string, specimenLinks: { rel: string; 
   const url = `${SITE_URL}${path}`, title = `${i.cover.headline} — ${i.name} No. ${i.number}`, desc = (i.cover.standfirst || `${i.name} No. ${i.number}, ${i.dates.label}.`).slice(0, 300);
   return { meta: card(title, desc, url, `${SITE_URL}/digest/${i.week}.png`, 1200, 630, "article"), links: [{ rel: "canonical", href: url }, rss, ...fontLinks(), ...specimenLinks] };
 }
-export function traitHead(p: TraitPage) {
+export function traitHead(p: Pick<TraitPage, "key" | "name" | "dimension" | "definition" | "stage" | "share" | "momentum">) {
   // Canonical is the signal page (/signals/<key>); the share image stays at the open /trait/<key>.png path.
   const path = `/signals/${encodeURIComponent(p.key)}`, url = `${SITE_URL}${path}`, title = `${p.name} [${p.dimension}] — signal · ${BRAND_NAME}`;
   const desc = `${traitSummary(p)}. ${p.definition}`.slice(0, 300);

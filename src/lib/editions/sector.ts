@@ -40,6 +40,11 @@ const momentumAll = (s: Signal | undefined) => s?.momentum_index ?? null;
 const storyLine = (s: StoryRecord) => ({ id: s.id, type: s.type, kicker: s.kicker, headline: s.headline, at: s.happened_at, score: s.score, href: storyPath(s.id) });
 const byScore = (a: StoryRecord, b: StoryRecord) => b.score - a.score || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id);
 
+/** The report's title and basis line from what a head needs: the sector, the reader run and how many brands it tracks (P1). */
+export function sectorHead(i: { sector: string; now: number; run: { id: number; at: string } | null; brands: number }) {
+  const sector = resolveSector(i.sector), name = sectorName(sector), q = quarterOf(i.now);
+  return { sector, name, title: `State of ${name} · ${q.label}`, basis: `Based on ${i.brands} brands tracked in ${name} and ${i.run ? `the forecast run of ${longDate(i.run.at)} (run ${i.run.id})` : "no stored forecast run yet"}. Stage, share and Momentum are measured; stories link to their receipts.` };
+}
 export type SectorReport = ReturnType<typeof sectorReport>;
 export function sectorReport(i: SectorInput) {
   const sector = resolveSector(i.sector), name = sectorName(sector), q = quarterOf(i.now);
@@ -67,12 +72,12 @@ export function sectorReport(i: SectorInput) {
   });
   const asOf = i.run?.at ?? new Date(i.now).toISOString();
   return {
-    sector, name, quarter: q, title: `State of ${name} · ${q.label}`, as_of: asOf, asOfText: longDate(asOf), href: sectorPath(sector),
+    sector, name, quarter: q, title: sectorHead({ sector, now: i.now, run: i.run, brands: sites.length }).title, as_of: asOf, asOfText: longDate(asOf), href: sectorPath(sector),
     brands: sites.length, coverage: { covered: cov.covered, total: cov.total, enough: cov.enough },
     note: cov.enough ? null : `${name} doesn't have enough forecast coverage yet (${cov.covered} of ${cov.total} headline signals measured there), so this report shows stories, brands and patterns but no sector signal numbers.`,
     signals, contrast: { risingHere, risingElsewhere }, whiteSpace, counterMoves, leaders, patterns: i.patterns,
     stories: quarter.slice(0, SECTOR_STORIES_MAX).map(storyLine), storiesInQuarter: quarter.length,
-    basis: `Based on ${sites.length} brands tracked in ${name} and ${i.run ? `the forecast run of ${longDate(i.run.at)} (run ${i.run.id})` : "no stored forecast run yet"}. Stage, share and Momentum are measured; stories link to their receipts.`,
+    basis: sectorHead({ sector, now: i.now, run: i.run, brands: sites.length }).basis,
     blocks: SECTOR_BLOCKS,
   };
 }

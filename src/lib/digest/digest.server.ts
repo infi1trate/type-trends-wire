@@ -8,11 +8,14 @@ import { issueModel, archiveEntries, STORIES_FIRST_WEEK, type WeekStory, type Is
 import { traitModel, type TraitRows } from "./trait";
 import type { CardModel } from "../chart/card";
 import type { ThumbRow } from "../thumbs";
-import { basis, canonical, explainerPath, label } from "../labels";
+import { basis, canonical, explainerPath, label, stageName } from "../labels";
+import { traitDefinition } from "./copy";
 import { evidenceKeys, tierFor } from "../tiers";
 import { tiersFrom } from "../signals";
 import { asOf, ledgerSummary, type StoredCall } from "../ledger/ledger";
 import { readerRunId } from "../real-runs";
+import { storedBy } from "../records/store.server";
+import { pageKey } from "../records/records";
 type Db = ReturnType<typeof supabaseAnon>;
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500) {
   const out: T[] = [];
@@ -78,7 +81,7 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   const [google, fonts, rebrandAll] = await Promise.all([
     families.length ? db.from("font_catalog").select("family").eq("source", "google").in("family", families).then(must) : Promise.resolve([]),
     fontMoves(db, range.start, range.end),
-    import("../rebrands.server").then(m => m.rebrandRows()),
+    import("../rebrands.server").then(m => m.readerRebrands()),
   ]);
   const crawlSites = crawl?.stats && typeof crawl.stats === "object" ? Object.values(crawl.stats as Record<string, { ok?: number }>).reduce((s, v) => s + (typeof v?.ok === "number" ? v.ok : 0), 0) : 0;
   const rebrands: RebrandLite[] = rebrandAll.rows.filter(x => x.source === "live" && x.confirmed_at >= range.startIso && x.confirmed_at < range.endIso)
@@ -98,7 +101,20 @@ async function weekStories(startIso: string, endIso: string): Promise<WeekStory[
   return streamOf(shownAsOf(await storyRaw(), end, known)).filter(s => s.type !== "launch" && s.happened_at >= startIso && s.happened_at < endIso)
     .map(s => ({ id: s.id, number: s.number ?? null, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, score: s.score }));
 }
-export async function loadIssue(week: string | null) { const rows = await issueRows(week); return rows ? issueModel(rows) : null; }
+export async function computeIssue(week: string | null) { const rows = await issueRows(week); return rows ? issueModel(rows) : null; }
+// P1: an issue whose week has ended never changes (stories as they stood at its end, the run it was written from), so finished
+// weeks are precomputed records (records.ts "digest"); the issue still in its week, or one not yet stored, is computed live.
+const issueRecord = storedBy((week: string) => pageKey("digest", week), (week: string) => computeIssue(week));
+export const finishedWeek = (week: string, now = Date.now()) => { const r = weekRange(week); return !!r && Date.parse(r.endIso) <= now; };
+/** The newest issue weeks (records the sweeper keeps). */
+export async function latestIssueWeeks(n = 4): Promise<string[]> {
+  return ((must(await supabaseAnon().from("weekly_briefs").select("week").gte("week", DIGEST_FIRST_WEEK).order("week", { ascending: false }).limit(n)) ?? []) as { week: string }[]).map(b => b.week);
+}
+export async function loadIssue(week: string | null) {
+  const w = week ?? (await latestIssueWeeks(1))[0] ?? null;
+  if (!w) return null;
+  return finishedWeek(w) ? issueRecord(w) : computeIssue(w);
+}
 export async function loadArchive(limit = 60) {
   const db = supabaseAnon();
   const [briefs, cards] = await Promise.all([
@@ -139,3 +155,15 @@ export async function traitRows(rawKey: string): Promise<TraitRows | null> {
   return { key, showing, stories, signal: byKey.get(key) ?? null, tier: tiers.get(key) ?? null, evidence, headline: tiers.size ? [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key) : null, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
 }
 export async function loadTrait(key: string) { const rows = await traitRows(key); return rows ? traitModel(rows) : null; }
+/** P1, critical for /signals/<key>: what the head and the title need, from the stored signals snapshot alone (the same reader run
+ * as the full page), or null when the run has no all-sector row for the key (404). Examples, peers, calls and stories are deferred. */
+export async function loadTraitHead(rawKey: string) {
+  const key = canonical(rawKey), i = key.indexOf(":");
+  if (i <= 0) return null;
+  const { latestSignals } = await import("../signals.server");
+  const { snap, tiers } = await latestSignals("all");
+  const all = snap.rows.find(r => r.scope === "all" && r.dimension === key.slice(0, i) && r.value === key.slice(i + 1));
+  if (!all) return null;
+  const l = label(key);
+  return { key, name: l.name, dimension: l.dimension, basis: basis(key), stage: stageName(all.stage), tier: tiers.get(key)?.tier ?? null, share: all.current_share, momentum: all.momentum, definition: traitDefinition(key) };
+}

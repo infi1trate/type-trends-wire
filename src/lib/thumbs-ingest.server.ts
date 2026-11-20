@@ -157,5 +157,5 @@ export async function serveThumb(path: string): Promise<Response> {
   const file = await supabaseAdmin.storage.from(BUCKET).download(path);
   if (file.error || !file.data) return nf();
   const bytes = new Uint8Array(await file.data.arrayBuffer());
-  return new Response(bytes as BodyInit, { headers: { "Content-Type": "image/webp", "Content-Length": String(bytes.length), "Cache-Control": "public, max-age=3600, s-maxage=3600", "X-Content-Type-Options": "nosniff" } });
+  return new Response(bytes as BodyInit, { headers: { "Content-Type": "image/webp", "Content-Length": String(bytes.length), "Cache-Control": "public, max-age=86400, s-maxage=3600, stale-while-revalidate=86400", "X-Content-Type-Options": "nosniff" } });
 }

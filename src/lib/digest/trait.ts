@@ -91,5 +91,5 @@ export function traitModel(t: TraitRows): TraitPage | null {
     stories: (t.stories ?? []).filter(s => s.signalKeys.includes(key)).slice(0, 5), whoUses: consoleHref(`q ${key} AND all`), blocks: OBJECT_BLOCKS,
   };
 }
-export const traitSummary = (p: TraitPage) => [p.stage ? `${p.stage}` : "Not staged yet", pct(p.share, 1) ? `${pct(p.share, 1)} of tracked homepages` : null, p.momentum != null ? `${p.momentum >= 0 ? "gaining" : "losing"} ${pts(p.momentum)}` : null].filter(Boolean).join(" · ");
+export const traitSummary = (p: Pick<TraitPage, "stage" | "share" | "momentum">) => [p.stage ? `${p.stage}` : "Not staged yet", pct(p.share, 1) ? `${pct(p.share, 1)} of tracked homepages` : null, p.momentum != null ? `${p.momentum >= 0 ? "gaining" : "losing"} ${pts(p.momentum)}` : null].filter(Boolean).join(" · ");
 export { scopeText };
