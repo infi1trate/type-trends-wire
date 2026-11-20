@@ -12,6 +12,7 @@ import { planStories, type Existing, type Planned } from "./score";
 import { knownFrom, validateWhy, whyFacts, whyPrompt, WHY_KIND, WHY_PER_BUILD, WHY_PER_DAY, WHY_SYSTEM, WHY_TOOL } from "./why";
 import { soWhatOf } from "./view";
 import { CALL_BUDGET_MS } from "../jobs/steps";
+import { REVERSAL_DAYS } from "../reversal";
 
 /** Hard time budget for a build called at the end of a job; the rest waits for the next run. */
 export const BUILD_BUDGET_MS = 20_000;
@@ -33,9 +34,11 @@ export type BuildDeps = {
   lineless?: (limit: number) => Promise<WhyInput[]>; insertLines?: (rows: LineRow[]) => Promise<number>;
   /** Give newly published stories their permanent numbers (story_numbers); returns how many were numbered. */
   assignNumbers?: () => Promise<number>;
+  /** Append a kill to every published single-brand story told only by these reversed events (retire.ts reversedStory); returns how many. */
+  retireReversed?: (eventIds: number[], identityIds: string[]) => Promise<number>;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number };
-export type BuildResult = { ok: true; skipped?: "dev"; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[] };
+export type BuildResult = { ok: true; skipped?: "dev"; retired_reversed?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[] };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -50,7 +53,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const clock = o.now ?? Date.now, start = clock(), budget = o.budgetMs ?? BUILD_BUDGET_MS, days = o.days ?? BUILD_DAYS;
   const input = await deps.load({ days, allRuns: !!o.allRuns, realRunIds: o.realRunIds ?? [] });
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
-  const { candidates, ctx, newsDropped, newsKept, newsDrops } = allCandidates(input);
+  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity } = allCandidates(input);
   const allShare = (k: string) => ctx.row(ctx.cur, canonical(k))?.current_share ?? null;
   const tracked = new Set(input.sites.map(s => s.domain));
   const plan = planStories(candidates, existing, { tierOf: k => ctx.tiers.get(canonical(k)) ?? null, rankOf: d => ctx.rank.get(d) ?? null, tracked: d => tracked.has(d), covered: ctx.covered, shareOf: allShare });
@@ -79,7 +82,9 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const linesLater = later.length && deps.insertLines ? await deps.insertLines(later) : 0;
   // Numbers come after the insert so a story is numbered once it is published; a failure here never fails the build (the next build retries).
   const numbered = deps.assignNumbers ? await deps.assignNumbers().catch(() => 0) : 0;
-  return { ok: true, numbered, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+  // A change back retires the story that already ran on the change it reverses (append-only kill edits; never fails the build).
+  const retired = reversed.length && deps.retireReversed ? await deps.retireReversed(reversed, reversedIdentity).catch(() => 0) : 0;
+  return { ok: true, numbered, retired_reversed: retired, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
 }
 
 // ---- Real I/O ---------------------------------------------------------------------------------------------------
@@ -101,8 +106,9 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const chosen = [...new Map([...pick, ...realRuns.filter(r => r.id === pair?.earlier.id)].map(r => [r.id, r])).values()].sort((a, b) => a.id - b.id);
   const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await pages<SignalRow>((f, t) => db.from("forecasts").select(COLS).eq("run_id", r.id).order("scope").order("dimension").order("value").range(f, t) as never, 1000)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
   const latest = chosen.at(-1)?.id ?? null;
-  const [events, alerts, wire, launches, sites, now_, archive, setters, rebrands] = await Promise.all([
-    pages<EventRow>((f, t) => db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").gte("detected_at", since).order("id").range(f, t) as never),
+  const [historyRows, alerts, wire, launches, sites, now_, archive, setters, rebrands] = await Promise.all([
+    // From REVERSAL_DAYS before the window, so a change back inside the window finds the change it reverses (reversal.ts).
+    pages<EventRow>((f, t) => db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").gte("detected_at", new Date(now - (o.days + REVERSAL_DAYS) * 864e5).toISOString()).order("id").range(f, t) as never),
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt,ref").eq("source_kind", "alert").gte("published_at", since).order("id").limit(500),
     pages<BuildInput["wire"][number]>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", since).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").eq("source_kind", "producthunt").gte("published_at", since).order("id").limit(200),
@@ -113,11 +119,12 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     import("../rebrands.server").then(m => m.rebrandRows()),
   ]);
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
+  const history = historyRows, events = history.filter(e => e.detected_at >= since);
   const texts = await (await import("../promo.server")).snapshotTexts(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id]));
   const h = new Map(now_.map(r => [r.domain, r]));
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
   return {
-    now: new Date(now).toISOString(), events, runs,
+    now: new Date(now).toISOString(), events, history, runs,
     rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since) as unknown as RebrandRow[],
     alerts: (alerts.data ?? []).map(a => dec({ ...a, ref: a.ref ?? null })) as BuildInput["alerts"], wire: wire.map(dec), launches: (launches.data ?? []).map(dec) as BuildInput["launches"],
     sites: sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; }),
@@ -154,6 +161,7 @@ export function dbDeps(admin: Admin, withWhy = true): BuildDeps {
       return (st.data ?? []).filter(r => !done.has(r.id)).slice(0, limit).map(r => ({ id: r.id, type: r.type as Planned["type"], headline: r.headline, deck: r.deck, facts: (Array.isArray(r.facts) ? r.facts : []) as unknown as Planned["facts"], signalKeys: r.signal_keys, domains: r.domains }));
     },
     assignNumbers: () => assignStoryNumbers(admin, { sinceDays: NUMBER_LOOKBACK_DAYS }),
+    retireReversed: (ids, identity) => retireReversedStories(admin, ids, identity),
     insertLines: async rows => { const { data, error } = await admin.from("story_lines").upsert(rows, { onConflict: "story_id", ignoreDuplicates: true }).select("story_id"); if (error) throw new Error("line_insert_failed"); return data?.length ?? 0; },
   };
 }
@@ -182,6 +190,25 @@ export async function assignStoryNumbers(admin: Admin, o: { sinceDays: number | 
     if (error.code !== "23505") throw new Error("story_numbers_insert_failed");
   }
   throw new Error("story_numbers_contended");
+}
+
+/** Stories that ran on a change since reversed get a kill edit "Retired: reversed within seven days" (once; stories are never rewritten). */
+export async function retireReversedStories(admin: Admin, eventIds: number[], identityIds: string[] = []): Promise<number> {
+  const { applyEdits } = await import("./edits"), { reversedStory, E0_RETIRE } = await import("./retire");
+  const marked = new Set(eventIds), identity = new Set(identityIds), since = new Date(Date.now() - (BUILD_DAYS + 30) * 864e5).toISOString();
+  const cols = "id,type,status,reason,score,components,why_ran,kicker,headline,deck,facts,why_line,why_model,why_at,sector,signal_keys,domains,evidence,source_ids,basis,happened_at,created_at";
+  const stories = await pages<import("./edits").StoredStory>((f, t) => admin.from("stories").select(cols).in("type", ["move", "counter_move", "rebrand"]).gte("happened_at", since).order("id").range(f, t) as never, 1000);
+  if (!stories.length) return 0;
+  const edits: import("./edits").EditRow[] = [];
+  for (let i = 0; i < stories.length; i += 200) { const { data, error } = await admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", stories.slice(i, i + 200).map(s => s.id)).order("id"); if (error) throw new Error("edits_read_failed"); edits.push(...((data ?? []) as unknown as import("./edits").EditRow[])); }
+  const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
+  const now = Date.now(), why = E0_RETIRE.reversed;
+  const kills = stories.filter(s => { const shown = applyEdits(s, by.get(s.id) ?? [], now); return shown.state === "published" && (reversedStory({ id: s.id, type: shown.type, source_ids: s.source_ids }, marked) || (shown.type === "move" && identity.has(s.id))); })
+    .map(s => ({ story_id: s.id, action: "kill" as const, payload: { reason: why }, note: why }));
+  if (!kills.length) return 0;
+  const { error } = await admin.from("story_edits").insert(kills as never);
+  if (error) throw new Error("reversed_kill_failed");
+  return kills.length;
 }
 
 /** Budget-guarded line writer: reserve under the story_why purpose, call once, settle; unknown outcomes are charged in full and never replayed. */

@@ -1,6 +1,7 @@
 // Job health: pure staleness + status rules over timestamps from the public health_facts() RPC.
 // Shared by GET /api/public/health and the terminal status bar so both always agree.
 import { z } from "zod";
+import { pauseNote } from "./ai-probe";
 
 export type Every = "15m" | "6h" | "1d" | "7d";
 export const EVERY_MS: Record<Every, number> = { "15m": 15 * 60_000, "6h": 6 * 3_600_000, "1d": 86_400_000, "7d": 7 * 86_400_000 };
@@ -29,6 +30,8 @@ export const healthFactsSchema = z.object({
   forecast_runs: z.array(z.object({ status: z.string().nullable().optional(), computed_at: ts, error: z.string().nullable().optional() })).nullable().optional().transform(v => v ?? []),
   ai_jobs: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts, last_activity_at: ts, paused: z.boolean().nullable().optional() }).nullable().optional(),
   ai_interrupted_24h: num,
+  // The AI worker's pause, from the public ai_pause_facts() facade (reason and times only), merged in by health.server.ts.
+  ai_pause: z.object({ paused: z.boolean().nullable().optional(), reason: z.string().nullable().optional(), paused_at: ts, probed_at: ts }).nullable().optional(),
   render_queue: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts }).nullable().optional(),
   bluesky_window_end: ts, taste_refreshed_at: ts,
   brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),
@@ -89,7 +92,7 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
   {
     const q = f.ai_jobs, pending = q?.pending ?? 0, oldest = q?.oldest_pending_at ?? null;
     jobs.push({ job: "library_ai", last_ok_at: q?.last_done_at ?? null, last_run_at: q?.last_activity_at ?? null, last_status: q?.paused ? "paused" : pending ? "pending" : "ok", expected_every: "6h", stale: pending > 0 && olderThan(oldest, QUEUE_MAX_AGE_MS, t), consecutive_failures: 0,
-      ...notes(`${pending} pending${pending ? `, oldest ${age(oldest, t)}` : ""}`, f.ai_interrupted_24h > 0 && `${f.ai_interrupted_24h} text jobs interrupted in 24h — callback may be cut off`, timeoutMissing("dsgn-library-ai-worker") && TIMEOUT_NOTE) });
+      ...notes(f.ai_pause?.paused ? pauseNote({ paused: true, reason: f.ai_pause.reason ?? null, paused_at: f.ai_pause.paused_at, probed_at: f.ai_pause.probed_at }, t) : null, `${pending} pending${pending ? `, oldest ${age(oldest, t)}` : ""}`, f.ai_interrupted_24h > 0 && `${f.ai_interrupted_24h} text jobs interrupted in 24h — callback may be cut off`, timeoutMissing("dsgn-library-ai-worker") && TIMEOUT_NOTE) });
   }
   {
     const q = f.render_queue, pending = q?.pending ?? 0, oldest = q?.oldest_pending_at ?? null;

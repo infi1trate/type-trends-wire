@@ -96,6 +96,7 @@ export const E0_RETIRE = {
   bluesky: "Retired: Bluesky post",
   estimate: "Retired: estimate only",
   counter: "Retired: held for the weekly counter-move roundup",
+  reversed: "Retired: reversed within seven days",
 } as const;
 export type E0Reason = keyof typeof E0_RETIRE;
 export const E0_WINDOW_DAYS = 30;
@@ -105,17 +106,27 @@ export type E0Story = RetireStory & { kicker: string; headline: string; deck: st
 export type E0Ctx = {
   /** A stored library event by id (live, with its sector), or null when it is not loaded. */
   event: (id: number) => EventRow | null;
-  /** True when the event's after capture reads like a promotion and its before capture does not (promo.ts). */
+  /** True when either capture of the event reads like a promotion (promo.ts). */
   seasonal: (eventId: number) => boolean;
   /** The rebrand desk row behind a rebrand story's source id (domain + confirmation time), or null. */
   rebrand: (domain: string, confirmedAt: string) => RebrandRow | null;
   /** The outside-news verdict for a wire item: why it is dropped now, null when it still qualifies, "unknown" when not loaded. */
   news: (wireId: number) => NewsDropReason | null | "unknown";
+  /** True when the event was changed back within seven days, or is the change back (reversal.ts). Absent = nothing is reversed. */
+  reversed?: (eventId: number) => boolean;
 };
 export type E0Verdict = { kill: E0Reason } | { correct: { type: "move"; kicker: string; headline: string; deck: string | null; facts: Fact[] } } | null;
 
 const eventIdOf = (x: string) => { const m = /^(?:story:)?(?:move:|event:)(\d+)$/.exec(x); return m ? Number(m[1]) : null; };
 const ids = (xs: string[]) => [...new Set(xs.map(eventIdOf).filter((n): n is number => n != null))];
+/** The library events a single-brand story tells: a move's own event, a counter-move's move, an identity move's member moves. */
+export const storyEventIds = (s: { id: string; source_ids: string[] }) => ids([s.id, ...s.source_ids]);
+/** A published move, counter-move or identity move (shown type) told only by reversed events: the build retires it. */
+export function reversedStory(s: { id: string; type: string; source_ids: string[] }, marked: ReadonlySet<number>): boolean {
+  if (s.type !== "move" && s.type !== "counter_move") return false;
+  const evs = storyEventIds(s);
+  return evs.length > 0 && evs.every(id => marked.has(id));
+}
 
 /** What the E0 rules do with one published story: kill it (with a reason), re-word a non-rebrand as a move, or leave it. */
 export function e0Verdict(s: E0Story, c: E0Ctx): E0Verdict {
@@ -126,20 +137,32 @@ export function e0Verdict(s: E0Story, c: E0Ctx): E0Verdict {
     if (v === "no_name" || v === "no_subject") return { kill: "news" };
     return null;
   }
+  const rev = (id: number) => !!c.reversed?.(id);
   if (s.type === "move") {
-    // A rebrand already re-worded as a move (id "rebrand:…") was decided by the rebrand rule; only a move's own event counts here.
-    if (s.id.startsWith("rebrand:")) return null;
+    // A rebrand already re-worded as a move (id "rebrand:…"): seasonal when its desk row or a member move is, reversed when every member move is.
+    if (s.id.startsWith("rebrand:")) {
+      const src = /^rebrand:(.+):(\d{4}-\d{2}-\d{2}T.*)$/.exec(s.source_ids.find(x => x.startsWith("rebrand:")) ?? "");
+      const r = src ? c.rebrand(src[1]!, src[2]!) : null;
+      const events = ids(s.source_ids.filter(x => x.startsWith("story:move:"))).map(id => c.event(id)).filter((e): e is EventRow => !!e);
+      if (r?.seasonal || events.some(e => c.seasonal(e.id) && SEASONAL_HELD_EVENTS.has(e.type))) return { kill: "seasonal" };
+      // Its own events (the desk row's) decide; without them, its member moves do.
+      const own = r?.event_ids?.length ? r.event_ids : events.map(e => e.id);
+      if (own.length && own.every(rev)) return { kill: "reversed" };
+      return null;
+    }
     const id = ids([s.id, ...s.source_ids.filter(x => x.startsWith("event:"))])[0], e = id != null ? c.event(id) : null;
     if (!e) return null;
     if (c.seasonal(e.id) && SEASONAL_HELD_EVENTS.has(e.type)) return { kill: "seasonal" };
+    if (rev(e.id)) return { kill: "reversed" };
     if (AI_EVENTS.has(e.type)) return { kill: "estimate" };
     return null;
   }
   if (s.type === "roundup") {
     const members = ids(s.source_ids.filter(x => x.startsWith("story:move:"))).map(id => c.event(id)).filter((e): e is EventRow => !!e);
     if (!members.length) return null;
-    const brands = new Set(members.filter(e => !c.seasonal(e.id)).map(e => e.domain));
-    return brands.size < ROUNDUP_MIN ? { kill: "seasonal" } : null;
+    const kept = members.filter(e => !c.seasonal(e.id));
+    if (new Set(kept.map(e => e.domain)).size < ROUNDUP_MIN) return { kill: "seasonal" };
+    return new Set(kept.filter(e => !rev(e.id)).map(e => e.domain)).size < ROUNDUP_MIN ? { kill: "reversed" } : null;
   }
   if (s.type === "rebrand") {
     const src = /^rebrand:(.+):(\d{4}-\d{2}-\d{2}T.*)$/.exec(s.source_ids.find(x => x.startsWith("rebrand:")) ?? "");
@@ -151,6 +174,8 @@ export function e0Verdict(s: E0Story, c: E0Ctx): E0Verdict {
     if (!r) return { kill: "rebrand" };
     const measured = events.filter(e => !AI_EVENTS.has(e.type));
     if (events.length && !measured.length) return { kill: "estimate" };
+    const own = r.event_ids?.length ? r.event_ids : measured.map(e => e.id);
+    if (own.length && own.every(rev)) return { kill: "reversed" };
     const m = identityMove(r, measured.map(moveCandidate));
     return { correct: { type: "move", kicker: m.kicker, headline: noDollar(m.headline), deck: m.deck == null ? null : noDollar(m.deck), facts: m.facts.map(f => ({ ...f, text: noDollar(f.text) })) } };
   }

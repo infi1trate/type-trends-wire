@@ -12,6 +12,7 @@ import type { Tier } from "../tiers";
 import { comparisonPair } from "../run-gap";
 import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../promo";
 import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
+import { REVERSED_REASON, reversalIds } from "../reversal";
 import {
   AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
   REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
@@ -44,6 +45,8 @@ export type BuildInput = {
   trendsetters: { domain: string; rank: number }[];
   /** Headline, sub-headline and button texts per library snapshot id, for the seasonal check (promo.ts). */
   texts?: Record<number, string[]>;
+  /** Live events from REVERSAL_DAYS before the window onwards (a superset of `events`), so a change back inside the window finds the change it reverses. */
+  history?: EventRow[];
 };
 
 const day = 864e5;
@@ -475,28 +478,37 @@ export function launchCandidate(w: WireIn): Candidate {
 }
 
 /** Every candidate for one build, plus how many outside news items were dropped and why. */
-export function allCandidates(input: BuildInput): { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops } {
+export function allCandidates(input: BuildInput): { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[] } {
   const ctx = context(input);
   const texts = new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v]));
   const seasonal = seasonalEventIds(input.events, texts);
+  // Changes reversed within seven days (and the change back) are tests or rotating content, not moves (reversal.ts).
+  const reversed = reversalIds([...new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e])).values()]);
   const moves = input.events.filter(isVisibleMove).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id).map(e => {
     const c = moveCandidate(e);
     // Seasonal skins are held; a single brand's AI-only read never runs alone. Both stay on the tape and the brand page.
     if (seasonal.has(e.id) && SEASONAL_HELD_EVENTS.has(e.type)) c.holdReason = SEASONAL_REASON;
+    else if (reversed.has(e.id)) c.holdReason = REVERSED_REASON;
     else if (AI_EVENTS.has(e.type)) c.holdReason = ESTIMATE_ONLY_REASON;
     return { c, e };
   });
-  const rebrands = input.rebrands.map(r => rebrandCandidate(r, moves));
+  const eventOf = new Map(moves.map(m => [m.c.id, m.e.id]));
+  const allReversed = (ids: string[] | undefined) => !!ids?.length && ids.every(id => { const e = eventOf.get(id); return e != null && reversed.has(e); });
+  // A downgraded identity move made only of reversed changes is held like any other reversed move. Its own events (the desk row's
+  // event ids that this build loaded) decide; without them, its member moves do.
+  const known = new Set([...(input.history ?? []), ...input.events].map(e => e.id));
+  const ownReversed = (r: RebrandRow, c: Candidate) => { const own = (r.event_ids ?? []).filter(id => known.has(id)); return own.length ? own.every(id => reversed.has(id)) : allReversed(c.members); };
+  const rebrands = input.rebrands.map(r => { const c = rebrandCandidate(r, moves); return c.type === "move" && !c.holdReason && ownReversed(r, c) ? { ...c, holdReason: REVERSED_REASON } : c; });
   const inRebrand = new Set(rebrands.flatMap(r => r.members ?? []));
-  // A seasonal change is never a counter-move and never counts toward a roundup.
+  // A seasonal change is never a counter-move and never counts toward a roundup; a reversed one is held and never counts toward a roundup.
   const free = moves.filter(m => !inRebrand.has(m.c.id) && !seasonal.has(m.e.id));
-  const counters = counterMoveCandidates(ctx, free).map(c => ({ ...c, holdReason: COUNTER_HELD_REASON }));
-  const roundups = roundupCandidates(ctx, free);
+  const counters = counterMoveCandidates(ctx, free).map(c => ({ ...c, holdReason: allReversed(c.members) ? REVERSED_REASON : COUNTER_HELD_REASON }));
+  const roundups = roundupCandidates(ctx, free.filter(m => !reversed.has(m.e.id)));
   const news = newsCandidates(newsMatcher(input.sites, ctx.headline), input.wire);
   const candidates = [
     ...moves.map(m => m.c), ...rebrands, ...shiftCandidates(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive),
     ...crossoverCandidates(ctx), ...counters, ...whiteSpaceCandidates(ctx), ...roundups, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => ({ ...c, headline: noDollar(c.headline), deck: c.deck == null ? null : noDollar(c.deck), facts: c.facts.map(f => ({ ...f, text: noDollar(f.text) })) }));
-  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops };
+  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: rebrands.filter(c => c.holdReason === REVERSED_REASON).map(c => c.id) };
 }
 export const soWhatFor = (c: Pick<Candidate, "type" | "signalKeys" | "stage">) => STORY_TYPE_DEFS[c.type].soWhat;

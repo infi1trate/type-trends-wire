@@ -8,8 +8,10 @@ export async function healthPayload(): Promise<HealthPayload> {
   if (cache && now - cache.at < 60_000) return cache.value;
   let value: HealthPayload;
   try {
-    const { data, error } = await supabaseAnon().rpc("health_facts");
-    value = error ? unavailableHealth(new Date(now)) : buildHealth(data as never, new Date(now));
+    const db = supabaseAnon();
+    const [{ data, error }, pause] = await Promise.all([db.rpc("health_facts"), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null)]);
+    // The pause reason and probe times only add to the library_ai note; when they can't be read the job reads as before.
+    value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}) } as never, new Date(now));
   } catch { value = unavailableHealth(new Date(now)); }
   cache = { at: now, value };
   return value;

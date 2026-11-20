@@ -108,6 +108,6 @@ export type Candidate = {
   runId?: number | null;
   /** Stage the signal is in now (so-what copy). */
   stage?: string | null;
-  /** Set when a rule holds the candidate before scoring (seasonal, estimate only, counter-move roundup); planStories keeps it held with this reason. */
+  /** Set when a rule holds the candidate before scoring (seasonal, reversed, estimate only, counter-move roundup); planStories keeps it held with this reason. */
   holdReason?: string;
 };

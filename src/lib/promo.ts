@@ -1,5 +1,5 @@
-// Seasonal and promotional skins (pure, dependency-free): a sale or holiday headline, sub-headline or button on the after capture,
-// absent from the before capture, makes a change seasonal. Seasonal changes stay in the data as measured; they never run as stories.
+// Seasonal and promotional skins (pure, dependency-free): a sale or holiday headline, sub-headline or button on either capture of a
+// change (entering a sale, moving between two sales, leaving a sale) makes it seasonal. Seasonal changes stay in the data as measured; they never run as stories.
 /** Terms matched case-insensitively on word boundaries ("wholesale" and "Salesforce" do not match "sale"). Edit here only. */
 export const PROMO_TERMS = ["black friday", "cyber monday", "cyber week", "holiday", "gift guide", "gifting", "sale", "deals", "% off", "percent off", "<currency amount> off", "save $", "save up to", "limited time", "free shipping", "doorbuster", "clearance"] as const;
 const L = "(?<![\\p{L}\\p{N}])", R = "(?![\\p{L}\\p{N}])";
@@ -28,8 +28,8 @@ export function promoTexts(r: { lx_h1?: unknown; lx_h2?: unknown; lx_ctas?: unkn
 /** PostgREST select fragment for promoTexts (library_snapshots). */
 export const PROMO_COLS = "lx_h1:signals->lexicon->>h1,lx_h2:signals->lexicon->h2,lx_ctas:signals->lexicon->ctas";
 export const isPromo = (texts: readonly string[] | null | undefined) => (texts ?? []).some(t => promoSignal(t) !== null);
-/** Seasonal: the after capture reads like a promotion and the before capture (when there is one) does not. */
-export const seasonalChange = (after: readonly string[] | null | undefined, before: readonly string[] | null | undefined) => isPromo(after) && !isPromo(before);
+/** Seasonal: the after capture or the before capture (when there is one) reads like a promotion. */
+export const seasonalChange = (after: readonly string[] | null | undefined, before: readonly string[] | null | undefined) => isPromo(after) || isPromo(before);
 /** Event ids whose change is seasonal, from snapshot texts keyed by snapshot id. */
 export function seasonalEventIds(events: { id: number; snapshot_id?: number | null; prev_snapshot_id?: number | null }[], texts: ReadonlyMap<number, string[]>): Set<number> {
   const out = new Set<number>();
@@ -40,4 +40,4 @@ export function seasonalEventIds(events: { id: number; snapshot_id?: number | nu
 export const SEASONAL_HELD_EVENTS = new Set(["palette_shift", "theme_flip", "layout_change", "message_pivot", "redesign", "imagery_shift", "aesthetic_shift"]);
 export const SEASONAL_REASON = "Seasonal promotion on the page";
 export const SEASONAL_LABEL = "Seasonal";
-export const PROMO_RULE = "A change made while the page carries a sale or seasonal promotion (Black Friday, holiday, gift guide, percent or money off, free shipping and similar wording in the headline or buttons) is held as seasonal: it stays in the data, marked Seasonal, but is never a rebrand, a counter-move or a story.";
+export const PROMO_RULE = "A change made when either capture carries a sale or seasonal promotion (Black Friday, holiday, gift guide, percent or money off, free shipping and similar wording in the headline or buttons), whether the page enters a sale, moves between two sales or leaves one, is held as seasonal: it stays in the data, marked Seasonal, but is never a rebrand, a counter-move or a story.";

@@ -309,3 +309,11 @@
 - [x] Tests, full suite, report
 - [ ] Owner decision: promo→promo captures (e.g. "Gift Guide" → "Black Friday Sale") are not seasonal under the stated rule and still run as moves
 - [ ] Later phase: the weekly counter-move roundup (counter-moves are held until it exists)
+
+# Phase E0b
+- [x] Seasonal = sale wording on either capture (promo.ts and callers, PROMO_RULE).
+- [x] Reversed within seven days: pure marks, holds, build kills, "Reversed" label on tape and brand page, rules sentence.
+- [x] Front lead prefers a pattern story (72 h), then best single-brand story (24 h); pin wins.
+- [x] Morning Line Read rows and share card without "Score N".
+- [x] AI worker probes once an hour while paused for credits or rate limits; health/status note.
+- [x] Re-run cleanup over 30 days; report counts.

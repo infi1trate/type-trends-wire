@@ -4,6 +4,7 @@ import { DAILY_CAP, DEDUPE_DAYS, NEWS_DAILY_CAP, PUBLISH_MIN } from "./score";
 import { WHY_LINE_MAX, WHY_PER_BUILD, WHY_PER_DAY } from "./why";
 import { REBRAND_RULE } from "../rebrand-rule";
 import { PROMO_RULE } from "../promo";
+import { REVERSED_RULE } from "../reversal";
 import {
   CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_EXCLUDED, FIRST_SEEN_MAX_BRANDS,
   FIRST_SEEN_MIN_BRANDS, ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, STORY_KINDS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON,
@@ -20,6 +21,7 @@ export function storyRules() {
     { id: "spread", title: "Spread and openings", text: `A crossover needs a leading sector at ${pc(CROSSOVER_LEAD_MIN)} or more and a second sector passing ${pc(CROSSOVER_FLOOR)}. A white space is a headline signal Rising or Emerging overall on at most ${pc(WHITE_SPACE_MAX_SHARE)} of a covered sector's brands, one per sector per week. A roundup folds ${ROUNDUP_MIN} or more same-kind moves inside ${ROUNDUP_WINDOW_DAYS} days.` },
     { id: "rebrand", title: "A rebrand has to be earned", text: REBRAND_RULE },
     { id: "seasonal", title: "Sale skins are not identity changes", text: PROMO_RULE },
+    { id: "reversed", title: "A change undone is not a move", text: REVERSED_RULE },
     { id: "news", title: "Outside news needs a subject", text: `An outside item runs only when its title names a tracked brand by name (a bare domain, link, handle or the publication naming itself does not count) or a headline signal by its label, and its title or excerpt is about design: a logo, typeface, redesign, website, campaign, packaging, interface and the like. Bluesky posts stay on the wire and never become stories. At most ${NEWS_DAILY_CAP} news stories run a day.` },
     { id: "estimate", title: "Estimates and counter-moves don't run alone", text: `A single brand's change read only by AI (aesthetic or imagery) is held: "${ESTIMATE_ONLY_REASON}". Counter-moves are held for a weekly roundup: "${COUNTER_HELD_REASON}". Both stay on the event tape and the brand page.` },
     { id: "score", title: "Score and caps", text: `Each candidate scores 0–100 from size, brand weight, novelty and sector relevance (0–25 each) and runs at ${PUBLISH_MIN} or more. The same brand or signal and type within ${DEDUPE_DAYS} days keeps the higher score. At most ${DAILY_CAP} stories run per UTC day, ${NEWS_DAILY_CAP} of them news. Everything else is held with its reason, never thrown away.` },

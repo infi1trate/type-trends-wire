@@ -3,6 +3,8 @@
 // skips stories that already have a kill, and only corrects when the shown text still differs from the current template.
 // Phase E0 adds a pass over the last 30 days with the "stop the noise" rules (retire.ts e0Verdict): kills with a plain reason, and
 // a correct that re-labels a rebrand that no longer qualifies as a move. That pass runs first; its stories skip the older pass.
+// Phase E0b adds sale wording on either capture (promo.ts seasonalChange) and changes reversed within seven days (reversal.ts),
+// read from every live event since seven days before the window.
 // Usage: bun scripts/retire-stories.ts          (writes)
 //        bun scripts/retire-stories.ts --dry    (prints what it would do)
 import { applyEdits, type EditRow, type StoredStory } from "../src/lib/stories/edits";
@@ -12,6 +14,7 @@ import { newsMatcher, newsVerdict } from "../src/lib/stories/candidates";
 import { seasonalChange } from "../src/lib/promo";
 import type { EventRow } from "../src/lib/agency/changes";
 import { fetchRealRuns } from "../src/lib/real-runs";
+import { REVERSAL_DAYS, reversalIds, type ReversalEvent } from "../src/lib/reversal";
 
 const dry = process.argv.includes("--dry");
 const { supabaseAdmin: db } = await import("../src/integrations/supabase/client.server");
@@ -51,13 +54,15 @@ const [evRows, siteRows, wireRows, { latestSignals }, { snapshotTexts }, { decod
   chunked<{ id: number; title: string; url: string; source: string; source_kind: string; published_at: string; excerpt: string | null }>(wireIds, c => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("id", c) as never),
   import("../src/lib/signals.server"), import("../src/lib/promo.server"), import("../src/lib/entities"),
 ]);
+const timeline = await all<ReversalEvent>((f, t) => db.from("library_events").select("id,domain,page_type,viewport,detected_at,before,after").eq("source", "live").gte("detected_at", new Date(Date.parse(since) - REVERSAL_DAYS * 864e5).toISOString()).order("id").range(f, t) as never);
+const reversed = reversalIds(timeline);
 const sectorOf = new Map(siteRows.map(x => [x.domain, x.sector]));
 const evById = new Map(evRows.map(e => [e.id, { ...e, sector: sectorOf.get(e.domain) ?? null } as EventRow]));
 const texts = await snapshotTexts(db as never, evRows.flatMap(e => [(e as { snapshot_id?: number | null }).snapshot_id, (e as { prev_snapshot_id?: number | null }).prev_snapshot_id]));
 const { signals } = await latestSignals("all");
 const matcher = newsMatcher(siteRows.filter(x => x.active), signals.filter(x => x.tier === "headline").map(x => x.key));
 const wireById = new Map(wireRows.map(w => [w.id, { ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null }]));
-const e0Tally: Record<E0Reason, number> = { rebrand: 0, seasonal: 0, news: 0, bluesky: 0, estimate: 0, counter: 0 };
+const e0Tally: Record<E0Reason, number> = { rebrand: 0, seasonal: 0, news: 0, bluesky: 0, estimate: 0, counter: 0, reversed: 0 };
 let e0Corrected = 0;
 const e0Done = new Set<string>();
 for (const s of recent) {
@@ -67,6 +72,7 @@ for (const s of recent) {
     seasonal: id => { const e = evById.get(id) as (EventRow & { snapshot_id?: number | null; prev_snapshot_id?: number | null }) | undefined; return !!e && seasonalChange(texts.get(e.snapshot_id ?? -1), texts.get(e.prev_snapshot_id ?? -1)); },
     rebrand: (domain, at) => rebrands.get(`${domain}|${at}`) ?? null,
     news: id => { const w = wireById.get(id); return w ? newsVerdict(matcher, w).drop : "unknown"; },
+    reversed: id => reversed.has(id),
   });
   if (!v) continue;
   e0Done.add(s.id);
@@ -102,5 +108,5 @@ if (!dry) {
   for (let i = 0; i < corrects.length; i += 200) { const { error } = await db.from("story_edits").insert(corrects.slice(i, i + 200) as never); if (error) throw new Error(`correct insert failed: ${error.message}`); }
 }
 const byType = (rows: { story_id: string }[]) => { const m: Record<string, number> = {}; for (const r of rows) { const t = stories.find(s => s.id === r.story_id)!.type; m[t] = (m[t] ?? 0) + 1; } return m; };
-console.log(JSON.stringify({ dry, e0: { window_days: E0_WINDOW_DAYS, checked: recent.length, killed: Object.fromEntries(Object.entries(e0Tally).map(([k, n]) => [E0_RETIRE[k as E0Reason], n])), corrected_as_move: e0Corrected }, stories: stories.length, already_killed: killedAlready.size, real_runs: real.map(r => `${r.id}@${r.at.slice(0, 16)}`), retired: kills.length, retired_by_type: byType(kills), retired_by_reason: [...tally].sort((a, b) => b[1] - a[1]), retired_published: kills.filter(k => stories.find(s => s.id === k.story_id)!.status === "published").length, corrected: corrects.length, corrected_by_type: Object.fromEntries(correctedByType) }, null, 1));
+console.log(JSON.stringify({ dry, e0: { window_days: E0_WINDOW_DAYS, checked: recent.length, timeline_events: timeline.length, reversed_events: reversed.size, killed: Object.fromEntries(Object.entries(e0Tally).map(([k, n]) => [E0_RETIRE[k as E0Reason], n])), corrected_as_move: e0Corrected }, stories: stories.length, already_killed: killedAlready.size, real_runs: real.map(r => `${r.id}@${r.at.slice(0, 16)}`), retired: kills.length, retired_by_type: byType(kills), retired_by_reason: [...tally].sort((a, b) => b[1] - a[1]), retired_published: kills.filter(k => stories.find(s => s.id === k.story_id)!.status === "published").length, corrected: corrects.length, corrected_by_type: Object.fromEntries(correctedByType) }, null, 1));
 if (process.argv.includes("--list")) { for (const k of kills) console.log("KILL", k.story_id, "|", k.note); for (const c of corrects) console.log("CORRECT", c.story_id, "|", JSON.stringify(c.payload).slice(0, 300)); }

@@ -79,3 +79,5 @@
 - Retroactive rule changes run through `retire.ts` verdicts + `scripts/retire-stories.ts` as appended kill/correct edits only; a correct may relabel a story down to `move` (overlay), and the older template pass skips relabelled stories so re-runs stay idempotent.
 - Staff pages (/desk, /status, /status/launch, /welcome, /kit) render behind `StaffGate` with the editor key held only in tab memory (`staff-key.ts`); their data comes from `/api/public/desk` after crawler-secret auth, never from a route loader, so the server never renders staff data.
 
+- Reversals are pure `reversal.ts` (per domain/page/viewport/field, library-diff equality); builds load events from `REVERSAL_DAYS` before their window as `history` and retire stories on reversed events only by appending kill edits, so stored stories never change.
+- The AI worker's self-recovery is pure `ai-probe.ts` with injected I/O over the additive `library_ai_probe_acquire`/`library_ai_probe_settle` RPCs, because the existing acquire/next functions stay untouched; health reads the pause only through the anonymous `ai_pause_facts()` facade into the existing library_ai note.

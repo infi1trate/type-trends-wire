@@ -11,7 +11,10 @@ export const getLibrary = createServerFn({ method: "GET" }).handler(async () => 
   // Changes made on a sale or seasonal capture keep their row on the tape with a plain "Seasonal" label (promo.ts).
   const [{ seasonalIds }, { supabaseAnon }] = await Promise.all([import("./promo.server"), import("./mcp/supabase")]);
   const seasonal = new Set(await seasonalIds(supabaseAnon(), events as { id: number; snapshot_id: number | null; prev_snapshot_id: number | null }[]));
-  return { rows, events: events.map(e => ({ ...e, seasonal: seasonal.has(e.id as number) })), sectors, ai: await aiTrends() };
+  // Changes undone within seven days (and the change back) carry a plain "Reversed" label (reversal.ts).
+  const { reversalIds } = await import("./reversal");
+  const reversed = reversalIds(events.filter(e => e.id != null && e.domain && e.detected_at).map(e => ({ id: e.id as number, domain: e.domain as string, page_type: e.page_type, viewport: e.viewport, detected_at: e.detected_at as string, before: e.before, after: e.after })));
+  return { rows, events: events.map(e => ({ ...e, seasonal: seasonal.has(e.id as number), reversed: reversed.has(e.id as number) })), sectors, ai: await aiTrends() };
 });
 export const getLibrarySite = createServerFn({ method: "GET" }).inputValidator(z.object({ domain: z.string().min(3).max(253) })).handler(async ({ data }) => {
   const { librarySite } = await import("./library-store.server");

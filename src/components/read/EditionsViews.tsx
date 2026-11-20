@@ -29,6 +29,10 @@ import { RuleBox } from "@/components/brand/Containers";
 const storyRow = (s: { id: string; kicker: string; headline: string; at: string; score: number; number?: number | null; deck?: string | null }, i: number): LedgerRow => ({
   key: s.id, href: `/stories/${encodeURIComponent(s.id)}`, number: s.number != null ? numberLabel(s.number) : String(i + 1).padStart(2, "0"),
   title: s.headline, line: s.deck ?? s.kicker, facts: [`Score ${s.score}`], time: <time dateTime={s.at}>{storyTime(s.at)}</time> });
+/** A Morning Line row on the Read side: number, headline, deck and time. The score stays in the terminal's Morning panel. */
+export const morningRow = (s: { id: string; kicker: string; headline: string; at: string; number?: number | null; deck?: string | null }, i: number): LedgerRow => ({
+  key: s.id, href: `/stories/${encodeURIComponent(s.id)}`, number: s.number != null ? numberLabel(s.number) : String(i + 1).padStart(2, "0"),
+  title: s.headline, line: s.deck ?? s.kicker, time: <time dateTime={s.at}>{storyTime(s.at)}</time> });
 /** A titled rule box: one section of an edition. */
 const Box = ({ id, title, caption, children, className = "" }: { id: string; title: ReactNode; caption?: ReactNode; children: ReactNode; className?: string }) =>
   <section aria-labelledby={id} className={className}><RuleBox><h2 id={id} className="ed-kicker">{title}</h2>{caption && <p className="ed-caption mt-1">{caption}</p>}<div className="mt-4">{children}</div></RuleBox></section>;
@@ -38,7 +42,7 @@ const Item = ({ s, lead = false }: { s: MorningItem; lead?: boolean }) => <artic
   <h3 className={`${lead ? "ed-h1" : "ed-h3"} mt-2`}><Link to="/stories/$id" params={{ id: s.id }} className="no-underline hover:underline" {...pr(s.href)}>{s.headline}</Link></h3>
   {s.deck && <p className={lead ? "ed-standfirst mt-4" : "ed-small mt-2"}>{s.deck}</p>}
   {s.why.basis === "ai" && readerWhy(s.why.text) && <p className="ed-small mt-2"><span className="ed-kicker mr-2">Why it matters</span>{readerWhy(s.why.text)} <BasisWord b="ai" /></p>}
-  <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time><span>Score {s.score}</span><Link to="/stories/$id" params={{ id: s.id }} className="ed-tap">Receipts →</Link></p>
+  <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time><Link to="/stories/$id" params={{ id: s.id }} className="ed-tap">Receipts →</Link></p>
 </article>;
 
 function LeadSpark({ k }: { k: string }) {
@@ -62,7 +66,7 @@ export function MorningView({ d }: { d: MorningData }) {
     </FiltersScope>
     <nav aria-labelledby="ml-contents" className="ed-wrap d-air d-quiet">
       <h2 id="ml-contents" className="d-quiet-label ed-kicker">Today, by score</h2>
-      {e.lead ? <Ledger label="Today, by score" rows={[e.lead, ...e.more].map(storyRow)} /> : <p className="ed-small">{voiced("read.editionsViews.1")}</p>}
+      {e.lead ? <Ledger label="Today, by score" rows={[e.lead, ...e.more].map(morningRow)} /> : <p className="ed-small">{voiced("read.editionsViews.1")}</p>}
     </nav>
     <div className="ed-wrap ed-grid d-air">
       <div className="space-y-10 lg:col-span-8">
@@ -70,7 +74,7 @@ export function MorningView({ d }: { d: MorningData }) {
         <Box id="ml-opening" title="The opening of the day" caption="The best white-space story of the last seven days not used in the previous three editions.">{e.opening ? <Item s={e.opening} /> : <p className="ed-small">{e.openingInList ? "This week's white-space stories already run above, so there is no separate opening today." : voiced("read.editionsViews.2")}</p>}</Box>
         {e.lastFull && <Box id="ml-last" title={<>The last full edition · <Link to="/morning/$date" params={{ date: e.lastFull.day }} className="ed-tap">{e.lastFull.title}</Link></>}>
           <Item s={e.lastFull.lead} />
-          {e.lastFull.more.length > 0 && <Ledger small label="The rest of that edition" className="mt-4" rows={e.lastFull.more.map(storyRow)} />}
+          {e.lastFull.more.length > 0 && <Ledger small label="The rest of that edition" className="mt-4" rows={e.lastFull.more.map(morningRow)} />}
         </Box>}
       </div>
       <aside className="space-y-10 lg:col-span-4" aria-label="Moving now, figure and the desk">
@@ -91,7 +95,7 @@ export function MorningView({ d }: { d: MorningData }) {
         <section aria-labelledby="ml-desk"><RuleBox>
           <h2 id="ml-desk" className="ed-kicker">On the desk</h2>
           <p className="ed-caption mt-1">Stories the engine held in this window, and why.</p>
-          {e.desk.length ? <ul className="mt-3 space-y-3">{e.desk.map(h => <li key={h.id} className="ed-hair pt-2 ed-small"><Link to="/stories/$id" params={{ id: h.id }} className="ed-tap">{h.headline}</Link><span className="ed-caption block">Held: {h.reason} · score {h.score}</span></li>)}</ul> : <p className="ed-small mt-3">{voiced("read.editionsViews.5")}</p>}
+          {e.desk.length ? <ul className="mt-3 space-y-3">{e.desk.map(h => <li key={h.id} className="ed-hair pt-2 ed-small"><Link to="/stories/$id" params={{ id: h.id }} className="ed-tap">{h.headline}</Link><span className="ed-caption block">Held: {h.reason}</span></li>)}</ul> : <p className="ed-small mt-3">{voiced("read.editionsViews.5")}</p>}
         </RuleBox></section>
         <section aria-labelledby="ml-archive"><RuleBox>
           <h2 id="ml-archive" className="ed-kicker">Archive</h2>

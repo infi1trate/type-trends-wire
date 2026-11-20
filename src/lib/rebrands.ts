@@ -24,7 +24,7 @@ export type TraitStage = { trait: string; label: string; scope: string; stage: s
 export type Rebrand = {
   id: string; domain: string; sector: string; name: string | null; source: "live" | "archive"; confirmed_at: string; effective_at: string; detected_at: string;
   reasons: RebrandReason[]; fields: string[]; event_ids: number[];
-  /** Seasonal promotion on the after capture (never a rebrand); label is "Rebrand" only when the rebrand rule holds (rebrand-rule.ts). */ seasonal: boolean; label: "Rebrand" | "Identity change"; before: Side; after: Side; read: string; new_traits: TraitStage[];
+  /** Seasonal promotion on either capture (never a rebrand); label is "Rebrand" only when the rebrand rule holds (rebrand-rule.ts). */ seasonal: boolean; label: "Rebrand" | "Identity change"; before: Side; after: Side; read: string; new_traits: TraitStage[];
   links: { library: string; archive: string | null; archive_before: string | null }; wire: { title: string; url: string; source: string | null; published_at: string } | null;
 };
 

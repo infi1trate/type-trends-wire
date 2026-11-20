@@ -1,4 +1,5 @@
 // BRAND object: one Read page per tracked site, built from stored rows (the audit's single-site model plus its full move history). Pure.
+import { reversalIds } from "./reversal";
 import { auditModel, traitsOf, type AuditRows, type TraitRef } from "./agency/audit";
 import { eventSentence, rebrandSentence, EVENT_KIND, FIELD, type EventRow } from "./agency/changes";
 import { identityLabel, isRebrand } from "./rebrand-rule";
@@ -24,7 +25,7 @@ export type BrandTag = { key: string; name: string; basis: Basis; kind: "aesthet
 export type BrandShow = { key: string; name: string; dimension: Dimension; basis: Basis; stage: StageName | null; tier: Tier; href: string };
 export type Face = { family: string; google: boolean; size: number | null; css: string | null };
 export type LayoutFact = { id: "theme" | "hero" | "h1" | "whitespace"; label: string; value: string };
-export type Move = { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; rebrand: boolean; seasonal: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null; pair: BeforeAfterFig | null; pairShared: boolean;
+export type Move = { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; rebrand: boolean; seasonal: boolean; /** Changed back within seven days, or the change back (reversal.ts): labelled, never hidden. */ reversed: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null; pair: BeforeAfterFig | null; pairShared: boolean;
   /** A back-and-forth run folded into this one row (flips.ts); its single moves sit behind a disclosure. */ folded?: Move[] };
 export type BrandPage = {
   domain: string; name: string; sector: string | null; sectorName: string; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
@@ -122,10 +123,10 @@ export function brandModel(r: BrandRows): BrandPage {
     // Side by side in the column, each cut to the first screen, so a move's pair stays about one screen tall.
     return { pair: { ...fig, before: firstScreen(fig.before), after: firstScreen(fig.after) }, pairShared: false };
   };
-  const seasonalSet = new Set(r.seasonal ?? []);
+  const seasonalSet = new Set(r.seasonal ?? []), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
   const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [
-    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
-    ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: identityLabel(x), text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: isRebrand(x), seasonal: !!x.seasonal, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
+    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
+    ...r.audit.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: identityLabel(x), text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: isRebrand(x), seasonal: !!x.seasonal, reversed: false, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
   ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
   const timeline: Move[] = foldFlips(raw, r.events.filter(e => e.domain === d)).map(({ pivot, ...m }) => (m.folded ? { ...m, pair: null, pairShared: false, folded: m.folded.map(({ pivot: _p, ...x }) => ({ ...x, pair: null, pairShared: false })) } : { ...withoutFolded(m), ...pairAt(pivot, m.compare) }));
   const history = Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(crops, d, s).map(toCrop)])) as Record<CropSection, Crop[]>;

@@ -41,9 +41,8 @@ describe("B · seasonal and promotional skins", () => {
     for (const t of ["25% OFF SITEWIDE BLACK FRIDAY SALE", "UP TO $200 OFF TOP CAMERAS", "The Gift Guide's Here!"]) expect(promoSignal(t), t).not.toBeNull();
     for (const t of ["Wholesale pricing", "Salesforce", "Reach new peaks"]) expect(promoSignal(t), t).toBeNull();
   });
-  it("a change is seasonal when the after capture reads like a promotion and the before does not", () => {
+  it("a change is seasonal when the after capture reads like a promotion (E0b: either capture, see e0b.test.ts)", () => {
     expect(seasonalChange(["Black Friday: 30% off"], ["Reach new peaks"])).toBe(true);
-    expect(seasonalChange(["Black Friday: 30% off"], ["Holiday sale"])).toBe(false);
     expect(seasonalChange(["Black Friday: 30% off"], null)).toBe(true);
   });
   it("seasonal changes are held, never a rebrand, never counted in a roundup", () => {

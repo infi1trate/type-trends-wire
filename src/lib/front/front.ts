@@ -54,11 +54,24 @@ export function relTime(iso: string, now: number): string {
 // LEAD ---------------------------------------------------------------------------------------------
 /** Lead windows in order; the label says which one the lead came from. Past the week, the most recent story leads with its date. */
 export const LEAD_WINDOWS = [{ hours: 24, label: "Today" }, { hours: 72, label: "This week" }, { hours: 24 * 7, label: "This week" }] as const;
+/** Story types that describe a pattern across brands or signals; one of these leads whenever one ran in the pattern window. */
+export const PATTERN_TYPES = new Set(["roundup", "breakout", "crossover", "white_space", "shift", "first_seen"]);
+/** A pattern story from the last 72 hours leads first; only without one may a single-brand story lead, the best of the last 24 hours. */
+export const PATTERN_LEAD_HOURS = 72, SINGLE_LEAD_HOURS = 24;
 export type LeadLabel = "Today" | "This week" | "Latest story" | "Pinned by the editor";
 export function pickLead(ranked: StoryRecord[], sector: string, now: number): { story: StoryRecord; label: LeadLabel } | null {
   const pinned = ranked.filter(s => s.pinnedUntil).sort((a, b) => (b.edits.at(-1)?.at ?? "").localeCompare(a.edits.at(-1)?.at ?? ""))[0];
   if (pinned) return { story: pinned, label: "Pinned by the editor" };
   const best = (xs: StoryRecord[]) => [...xs].sort((a, b) => lensScore(b, sector) - lensScore(a, sector) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id))[0];
+  const labelOf = (s: StoryRecord): LeadLabel => (within(s.happened_at, now, 24 * HOUR) ? "Today" : "This week");
+  // Killed stories never reach here (ranked is the published stream).
+  const pattern = best(ranked.filter(x => PATTERN_TYPES.has(x.type) && within(x.happened_at, now, PATTERN_LEAD_HOURS * HOUR)));
+  if (pattern) return { story: pattern, label: labelOf(pattern) };
+  const single = best(ranked.filter(x => !PATTERN_TYPES.has(x.type) && within(x.happened_at, now, SINGLE_LEAD_HOURS * HOUR)));
+  if (single) return { story: single, label: "Today" };
+  // A quiet stretch: the week's best pattern story, then the week's best story, then the latest story with its date.
+  const weekPattern = best(ranked.filter(x => PATTERN_TYPES.has(x.type) && within(x.happened_at, now, 24 * 7 * HOUR)));
+  if (weekPattern) return { story: weekPattern, label: "This week" };
   for (const w of LEAD_WINDOWS) { const s = best(ranked.filter(x => within(x.happened_at, now, w.hours * HOUR))); if (s) return { story: s, label: w.label }; }
   const latest = [...ranked].sort((a, b) => b.happened_at.localeCompare(a.happened_at))[0];
   return latest ? { story: latest, label: "Latest story" } : null;

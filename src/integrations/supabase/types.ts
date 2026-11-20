@@ -776,6 +776,8 @@ export type Database = {
           lease_until: string | null
           name: string
           paused: boolean
+          paused_at: string | null
+          probed_at: string | null
           rate_limits: number
           reason: string | null
         }
@@ -784,6 +786,8 @@ export type Database = {
           lease_until?: string | null
           name: string
           paused?: boolean
+          paused_at?: string | null
+          probed_at?: string | null
           rate_limits?: number
           reason?: string | null
         }
@@ -792,6 +796,8 @@ export type Database = {
           lease_until?: string | null
           name?: string
           paused?: boolean
+          paused_at?: string | null
+          probed_at?: string | null
           rate_limits?: number
           reason?: string | null
         }
@@ -3106,6 +3112,7 @@ export type Database = {
       }
     }
     Functions: {
+      ai_pause_facts: { Args: never; Returns: Json }
       ai_reserve:
         | {
             Args: {
@@ -3155,6 +3162,11 @@ export type Database = {
           p_snapshot: number
           p_token: string
         }
+        Returns: boolean
+      }
+      library_ai_probe_acquire: { Args: { p_token: string }; Returns: Json }
+      library_ai_probe_settle: {
+        Args: { p_ok: boolean; p_reason: string; p_token: string }
         Returns: boolean
       }
       library_ai_release: { Args: { p_token: string }; Returns: undefined }
