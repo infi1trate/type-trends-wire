@@ -59,11 +59,11 @@ export const allThumbs = memo(10 * 60_000, () => pages<ThumbRow>((f, t) => supab
 export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
   const db = supabaseAnon(), now = Date.now(), since = (d: number) => new Date(now - d * day).toISOString();
   const [events, rebrandAll] = await Promise.all([
-    db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").gte("detected_at", since(30)).order("detected_at", { ascending: false }).limit(120).then(must),
+    db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").gte("detected_at", since(30)).order("detected_at", { ascending: false }).limit(120).then(must),
     import("./rebrands.server").then(m => m.readerRebrands()),
   ]);
   return { stories: [
-    ...(await (async () => { const evs = (events ?? []) as EventRow[], { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id) })); })()),
+    ...(await (async () => { const evs = (events ?? []) as EventRow[], { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
     ...rebrandAll.rows.filter(x => x.source === "live" && Date.parse(x.confirmed_at) >= now - 120 * day).map(x => fromRebrand(x as RebrandRow)),
   ] };
 });
@@ -126,8 +126,8 @@ export async function loadBrand(domain: string) {
   const storyOf: [string, string][] = [...storyForSource(all)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
   const field = input && own ? sectorField(input, own.sector) : null;
   const contrast = input ? signalContrast(input, domain) : null;
-  const seasonal = await import("./promo.server").then(m => m.seasonalIds(db, (events ?? []) as EventRow[]));
-  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], seasonal, peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops,
+  const [seasonal, carousel] = await Promise.all([import("./promo.server").then(m => m.seasonalIds(db, (events ?? []) as EventRow[])), import("./carousel.server").then(m => m.carouselIds(db, (events ?? []) as EventRow[]))]);
+  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], seasonal, carousel, peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops,
     captures, similar: similarBrands(domain, index, eligible), field, contrast: contrast ? { has: contrast.has.map(x => ({ key: x.key, name: x.name, sector: x.sector })), lacks: contrast.lacks.map(x => ({ key: x.key, name: x.name, sector: x.sector })) } : null };
   return { ...brandModel(rows), stories: storiesAbout(all, { domain, limit: 8 }) };
 }

@@ -17,10 +17,11 @@ import { CALL_BUDGET_MS } from "../jobs/steps";
 import { REVERSAL_DAYS } from "../reversal";
 import { basis as basisOf, label, sectorName } from "../labels";
 import { seededNames } from "../brand-names";
-import { writerFacts, type FactSource, type FactStory } from "./writer-facts";
+import { shareLine, writerFacts, type FactSource, type FactStory, type ShareBase } from "./writer-facts";
 import { triedWriter, writeStories, writerIO, type WriterIO, type WriteResult } from "./writer.server";
 import { AI_MODELS } from "../ai-models";
 import type { Ctx } from "./candidates";
+import { carouselEventIds } from "../carousel";
 
 /** Hard time budget for a build called at the end of a job; the rest waits for the next run. */
 export const BUILD_BUDGET_MS = 20_000;
@@ -41,7 +42,7 @@ export type ExistingShown = Existing & Partial<Pick<ShownStory, "headline" | "de
 export type BuildDeps = {
   load: (o: { days: number; allRuns: boolean; realRunIds: number[] }) => Promise<BuildInput>; existing: (sinceIso: string) => Promise<ExistingShown[]>; insert: (rows: StoryRowOut[]) => Promise<number>; why?: WhyWriter | null;
   /** The editor's headline calls for these events (stored, rule pass, model inside the budget); merged over the loaded calls. */
-  calls?: (events: EventRow[], deadline: number) => Promise<Record<number, { call: string; reason: string }>>;
+  calls?: (events: EventRow[], deadline: number, carousel?: ReadonlySet<number>) => Promise<Record<number, { call: string; reason: string }>>;
   /** Append the fold corrections (one brand, one story) as `correct` edits; returns how many were written. */
   appendFolds?: (folds: Fold[]) => Promise<number>;
   /** Stored published stories without a line yet, best first (lines left over after new stories go to these). */
@@ -51,12 +52,16 @@ export type BuildDeps = {
   /** E2b · the writer: its I/O, and the stories to write now (fresh ones first, then published in the last seven days without a version
    *  newer than their last correction). */
   writer?: WriterIO | null; toWrite?: (freshIds: string[], limit: number) => Promise<FactStory[]>;
+  /** E2c · count and base per "key|scope" for the latest run's shares (writer facts). */
+  bases?: (runId: number, keys: string[], scopes: string[]) => Promise<Map<string, ShareBase>>;
+  /** E2c · keep the crops each published story cites (story_kept_crops); returns how many were kept. */
+  keepCrops?: () => Promise<number>;
   /** Append a kill to every published single-brand story told only by these reversed events (retire.ts reversedStory); returns how many. */
   retireReversed?: (eventIds: number[], identityIds: string[]) => Promise<number>;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number;
   /** When the writer must stop starting calls (absolute ms); default the build's own budget. */ writeDeadline?: number; writerPerBuild?: number; writeLimit?: number };
-export type BuildResult = { ok: true; skipped?: "dev"; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
+export type BuildResult = { ok: true; skipped?: "dev"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -72,7 +77,8 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const loaded = await deps.load({ days, allRuns: !!o.allRuns, realRunIds: o.realRunIds ?? [] });
   // Headline calls first (they decide which headline changes count), inside a third of the budget; failures leave the change uncounted.
   const kinds = new Map(loaded.sites.map(x => [x.domain, x.kind ?? null]));
-  const fresh = deps.calls ? await deps.calls(loaded.events.filter(e => siteKind(e.domain, kinds.get(e.domain)) === "standard"), start + budget / 3).catch(() => ({})) : {};
+  const rotating = carouselEventIds(loaded.events, new Set(loaded.carousel ?? []));
+  const fresh = deps.calls ? await deps.calls(loaded.events.filter(e => siteKind(e.domain, kinds.get(e.domain)) === "standard"), start + budget / 3, rotating).catch(() => ({})) : {};
   const input: BuildInput = { ...loaded, calls: { ...(loaded.calls ?? {}), ...fresh } };
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
   const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity } = allCandidates(input);
@@ -107,6 +113,8 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const linesLater = later.length && deps.insertLines ? await deps.insertLines(later) : 0;
   // Numbers come after the insert so a story is numbered once it is published; a failure here never fails the build (the next build retries).
   const numbered = deps.assignNumbers ? await deps.assignNumbers().catch(() => 0) : 0;
+  // E2c: a published story keeps the crops it cites (never fails the build; the next build retries).
+  const kept = deps.keepCrops ? await deps.keepCrops().catch(() => 0) : 0;
   // A change back retires the story that already ran on the change it reverses (append-only kill edits; never fails the build).
   const retired = reversed.length && deps.retireReversed ? await deps.retireReversed(reversed, reversedIdentity).catch(() => 0) : 0;
   const folded = folds.length && deps.appendFolds ? await deps.appendFolds(folds).catch(() => 0) : 0;
@@ -115,26 +123,30 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   if (deps.writer && deps.toWrite) {
     try {
       const fresh = plan.filter(p => p.status === "published" && p.type !== "launch").sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).map(p => p.id);
-      const stories = await deps.toWrite(fresh, o.writeLimit ?? 12), src = factSource(input, ctx);
+      const stories = await deps.toWrite(fresh, o.writeLimit ?? 12);
+      // E2c: the count and base behind each share the writer may cite (one read for the stories being written; none = the share alone).
+      const keys = [...new Set(stories.flatMap(st => st.signal_keys.slice(0, 3).map(canonical)))], scopes = [...new Set(["all", ...stories.map(st => st.sector).filter((x): x is string => !!x)])];
+      const bases = ctx.cur && keys.length && deps.bases ? await deps.bases(ctx.cur.id, keys, scopes).catch(() => new Map<string, ShareBase>()) : new Map<string, ShareBase>();
+      const src = factSource(input, ctx, bases);
       const r = await writeStories(stories.map(st => ({ story: st, ...writerFacts(st, src) })), deps.writer, { names: src.known }, { deadline: o.writeDeadline ?? start + budget, now: clock, ...(o.writerPerBuild != null ? { perBuild: o.writerPerBuild } : {}) });
       texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
-  return { ok: true, numbered, ...(texts ? { texts } : {}), retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+  return { ok: true, numbered, kept_crops: kept, ...(texts ? { texts } : {}), retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
 }
 
 /** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */
-export function factSource(input: BuildInput, ctx: Ctx): FactSource {
+export function factSource(input: BuildInput, ctx: Ctx, bases: ReadonlyMap<string, ShareBase> = new Map()): FactSource {
   const events = new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e]));
   const names = new Map(input.sites.map(x => [x.domain, x.name]));
   const known = [...new Set([...seededNames(), ...input.sites.map(x => x.name).filter((n): n is string => !!n)])];
-  const pct1 = (v: number) => `${(Math.round(v * 1000) / 10).toFixed(1)}%`;
+  // E2c: every share carries its own count and base ("4 of 29"), never the number of tracked brands, which can differ from the homepages counted.
   const numbers = (keys: string[], sector: string | null) => keys.slice(0, 3).flatMap(k => {
-    const all = ctx.row(ctx.cur, canonical(k)), sec = sector ? ctx.row(ctx.cur, canonical(k), sector) : null, b = basisOf(k) === "ai" ? "ai" as const : "measured" as const, n = label(k).name;
-    const stage = (r: typeof all) => (r?.stage ? `, ${r.stage}` : ""), mom = (r: typeof all) => (typeof r?.momentum === "number" ? `, momentum ${r.momentum.toFixed(1)} points a quarter` : "");
+    const ck = canonical(k), all = ctx.row(ctx.cur, ck), sec = sector ? ctx.row(ctx.cur, ck, sector) : null, b = basisOf(k) === "ai" ? "ai" as const : "measured" as const, n = label(k).name;
+    const line = (r: NonNullable<typeof all>, scope: string, where: string) => ({ text: shareLine({ name: n, share: r.current_share!, where, basis: b, base: bases.get(`${ck}|${scope}`) ?? null, stage: r.stage, momentum: r.momentum }), basis: b });
     return [
-      ...(all?.current_share != null ? [{ text: `${n}: ${pct1(all.current_share)} of ${ctx.sites.length} tracked homepages${stage(all)}${mom(all)}`, basis: b }] : []),
-      ...(sector && sec?.current_share != null ? [{ text: `${n}: ${pct1(sec.current_share)} of ${ctx.bySector.get(sector)?.length ?? 0} tracked ${sectorName(sector)} homepages${stage(sec)}${mom(sec)}`, basis: b }] : []),
+      ...(all?.current_share != null ? [line(all, "all", "")] : []),
+      ...(sector && sec?.current_share != null ? [line(sec, sector, `${sectorName(sector)} `)] : []),
     ];
   });
   return { events, texts: new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v])), calls: input.calls ?? {}, names, known, numbers };
@@ -175,9 +187,11 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
   const sectorOf = new Map(sites.map(x => [x.domain, x.sector]));
   const history = historyRows.filter(e => sectorOf.has(e.domain)).map(e => ({ ...e, sector: sectorOf.get(e.domain) ?? null })), events = history.filter(e => e.detected_at >= since);
-  const [texts, calls] = await Promise.all([
+  const [texts, calls, carousel] = await Promise.all([
     (await import("../promo.server")).snapshotTexts(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id])),
     (await import("./headline-call.server")).storedCalls(db as never, events.filter(e => e.type === "message_pivot").map(e => e.id)).catch(() => ({})),
+    // E2c: snapshots whose first screen is a carousel (a failure reads as none: changes are judged as before).
+    (await import("../carousel.server")).carouselSnapshots(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id])).catch(() => new Set<number>()),
   ]);
   const h = new Map(now_.map(r => [r.domain, r]));
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
@@ -190,6 +204,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     trendsetters: (setters.data ?? []) as { domain: string; rank: number }[],
     texts: Object.fromEntries(texts),
     calls,
+    carousel: [...carousel],
   };
 }
 
@@ -206,7 +221,7 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
       const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
       return rows.map(r => { const v = applyEdits(r, by.get(r.id) ?? [], Date.now()); return { id: r.id, type: v.type as Existing["type"], status: r.status, state: v.state, score: r.score, basis: r.basis, happened_at: r.happened_at, domains: r.domains, signal_keys: r.signal_keys, sector: r.sector, headline: v.headline, deck: v.deck, facts: v.facts, source_ids: r.source_ids }; });
     },
-    calls: async (events, deadline) => (await import("./headline-call.server")).headlineCalls(admin, events.filter(e => e.type === "message_pivot" && (!e.page_type || e.page_type === "home")), { deadline }),
+    calls: async (events, deadline, carousel) => (await import("./headline-call.server")).headlineCalls(admin, events.filter(e => e.type === "message_pivot" && (!e.page_type || e.page_type === "home")), { deadline, ...(carousel ? { carousel } : {}) }),
     appendFolds: async folds => {
       if (!folds.length) return 0;
       const { error } = await admin.from("story_edits").insert(folds.map(f => ({ story_id: f.story_id, action: "correct", payload: f.payload, note: f.note })) as never);
@@ -238,8 +253,26 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
     },
     assignNumbers: () => assignStoryNumbers(admin, { sinceDays: NUMBER_LOOKBACK_DAYS }),
     retireReversed: (ids, identity) => retireReversedStories(admin, ids, identity),
+    bases: shareBases,
+    keepCrops: async () => (await import("./kept-crops.server")).keepStoryCrops(admin),
     insertLines: async rows => { const { data, error } = await admin.from("story_lines").upsert(rows, { onConflict: "story_id", ignoreDuplicates: true }).select("story_id"); if (error) throw new Error("line_insert_failed"); return data?.length ?? 0; },
   };
+}
+
+/** Count and base behind each share of the run (anonymous read of the forecast rows' stored quarters; see writer-facts.ts baseOf). */
+export async function shareBases(runId: number, keys: string[], scopes: string[]): Promise<Map<string, ShareBase>> {
+  const { supabaseAnon } = await import("../mcp/supabase"), { baseOf } = await import("./writer-facts");
+  const split = keys.map(k => { const i = k.indexOf(":"); return [k.slice(0, i), k.slice(i + 1)] as const; }).filter(([d, v]) => d && v);
+  if (!split.length) return new Map();
+  const { data, error } = await supabaseAnon().from("forecasts").select("dimension,value,scope,current_share,quarters:evidence->quarters").eq("run_id", runId)
+    .in("dimension", [...new Set(split.map(x => x[0]))]).in("value", [...new Set(split.map(x => x[1]))]).in("scope", scopes).limit(500);
+  if (error) throw new Error("share_bases_failed");
+  const want = new Set(keys), out = new Map<string, ShareBase>();
+  for (const r of (data ?? []) as unknown as { dimension: string; value: string; scope: string; current_share: number | null; quarters: unknown }[]) {
+    const k = `${r.dimension}:${r.value}`; if (!want.has(k)) continue;
+    const b = baseOf(r.quarters, r.current_share); if (b) out.set(`${k}|${r.scope}`, b);
+  }
+  return out;
 }
 
 /** Stories the writer owes a version: the fresh ids first, then stories published in the last seven days (editor's overlay applied) with no
@@ -250,18 +283,21 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const cols = "id,type,status,reason,score,components,why_ran,kicker,headline,deck,facts,why_line,why_model,why_at,sector,signal_keys,domains,evidence,source_ids,basis,happened_at,created_at";
   const rows = await pages<import("./edits").StoredStory>((f, t) => admin.from("stories").select(cols).gte("happened_at", since).neq("type", "launch").order("id").range(f, t) as never, 1000);
   if (!rows.length) return [];
-  const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, { created_at: string; model: string; attempts: number }>();
+  type Last = { created_at: string; model: string; attempts: number; checked: boolean; headline: string; deck: string; body: string[] | null; how_we_know: string };
+  const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, Last>();
   for (let i = 0; i < ids.length; i += 200) {
-    const [e, t] = await Promise.all([admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids.slice(i, i + 200)).order("id"), admin.from("story_texts").select("story_id,created_at,model,attempts").in("story_id", ids.slice(i, i + 200))]);
+    const [e, t] = await Promise.all([admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids.slice(i, i + 200)).order("id"), admin.from("story_texts").select("story_id,created_at,model,attempts,checked,headline,deck,body,how_we_know").in("story_id", ids.slice(i, i + 200))]);
     if (e.error || t.error) throw new Error("to_write_read_failed");
     edits.push(...((e.data ?? []) as unknown as import("./edits").EditRow[]));
-    for (const x of t.data ?? []) if ((last.get(x.story_id)?.created_at ?? "") < x.created_at) last.set(x.story_id, x);
+    for (const x of (t.data ?? []) as unknown as (Last & { story_id: string })[]) if ((last.get(x.story_id)?.created_at ?? "") < x.created_at) last.set(x.story_id, x);
   }
   const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
   const shown = rows.map(r => applyEdits(r, by.get(r.id) ?? [], Date.now())).filter(s => s.state === "published");
   const { foldedIds } = await import("./edits"), folded = foldedIds(shown);
-  // Owed: no version since the last correction, or the newest one never reached the writer (made while the writer was out of calls).
-  const owed = shown.filter(s => { if (folded.has(s.id)) return false; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)); });
+  // Owed: no version since the last correction, the newest one never reached the writer (made while the writer was out of calls), or (E2c)
+  // the newest checked version puts a share beside a base it was not counted on (today's check would refuse it).
+  const { shareBaseFailures, textOf } = await import("./writer");
+  const owed = shown.filter(s => { if (folded.has(s.id)) return false; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)) || (l.checked && shareBaseFailures(textOf(l)).length > 0); });
   const order = new Map(fresh.map((id, i) => [id, i]));
   return owed.sort((a, b) => (order.get(a.id) ?? 1e9) - (order.get(b.id) ?? 1e9) || b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit)
     .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker }));

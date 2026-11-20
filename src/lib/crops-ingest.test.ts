@@ -100,6 +100,23 @@ describe("POST /api/public/ingest-crops", () => {
     expect(m.objects.has(oldest)).toBe(false);
     expect(m.objects.size).toBe(12);
   });
+  it("E2c: a crop a published story cites is never evicted, and an owner's removal still deletes it", async () => {
+    const m = memory(), kept = new Set<number>();
+    m.store.keptIds = async ids => new Set(ids.filter(i => kept.has(i)));
+    for (let i = 1; i <= 12; i++) await send(m, [cap({ hash: hash(i), captured_at: `2026-0${i < 10 ? i : 9}-${String(i).padStart(2, "0")}T06:00:00Z` })]);
+    const oldest = m.rows.find(r => r.hash === hash(1))!; kept.add(oldest.id);
+    await send(m, [cap({ hash: hash(13), captured_at: "2026-11-20T06:00:00Z" })]);
+    expect(m.rows.some(x => x.hash === hash(1))).toBe(true);
+    expect(m.rows).toHaveLength(13); // the kept crop does not count toward the 12
+    await send(m, [cap({ hash: hash(15), captured_at: "2026-11-19T06:00:00Z" })]);
+    expect(m.rows.some(x => x.hash === hash(2))).toBe(false); expect(m.rows.some(x => x.hash === hash(1))).toBe(true);
+    // The kept-crop lookup failing evicts nothing (never a kept crop by mistake).
+    m.store.keptIds = async () => { throw new Error("down"); };
+    await send(m, [cap({ hash: hash(14), captured_at: "2026-11-21T06:00:00Z" })]);
+    expect(m.rows).toHaveLength(14);
+    expect(await deleteCropsFor("vercel.com", m.store)).toBe(14);
+    expect(m.rows).toHaveLength(0); expect(m.objects.size).toBe(0);
+  });
   it("opt-out cleanup deletes every crop of the domain", async () => {
     const m = memory();
     await send(m, [cap(), cap({ section: "nav" }), cap({ domain: "linear.app" })]);

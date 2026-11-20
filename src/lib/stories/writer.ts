@@ -192,6 +192,28 @@ function rebrandClaim(text: string): boolean {
   return false;
 }
 
+// SHARES AND THEIR BASES (E2c) ------------------------------------------------------------------------------------------------------
+/** "13.8% of the 30 tracked health homepages", "23.1% of 26 studios". */
+const PCT_OF_BASE = /(?<![\p{L}\p{N}.])(\d+(?:\.\d+)?)\s?%\s+of\s+(?:the\s+|all\s+|its\s+|our\s+)?(\d{1,3}(?:,\d{3})*)(?!\p{N}|[.,]\p{N}|\s?%)/gu;
+/** "Across all 300 tracked homepages, 51.6% use…", "of the 30 tracked health homepages, 13.8%…". */
+const BASE_THEN_PCT = /\b(?:of|across|among)\s+(?:the\s+|all\s+|its\s+)?(\d{1,3}(?:,\d{3})*)\s+[^.;%\d]{1,60}?,\s*(\d+(?:\.\d+)?)\s?%/giu;
+/** Some whole count over `base` gives `pct` at the precision it is written (to one decimal place for "13.8%", whole for "21%"). */
+export function shareFits(pct: string, base: number): boolean {
+  if (!Number.isInteger(base) || base <= 0) return false;
+  const d = Math.min(2, (pct.split(".")[1] ?? "").length), f = 10 ** d, x = Math.round(Number(pct) * f);
+  for (let k = 0; k <= base; k++) if (Math.round((k / base) * 100 * f) === x) return true;
+  return false;
+}
+/** Every percentage written beside a base that no whole count over that base gives ("13.8% of the 30": no count of 30 is 13.8%). */
+export function shareBaseFailures(text: string): string[] {
+  const out: string[] = [], num = (v: string) => Number(v.replace(/,/g, ""));
+  for (const m of text.matchAll(PCT_OF_BASE)) if (!shareFits(m[1]!, num(m[2]!))) out.push(`a share beside the wrong base: ${m[1]}% of ${m[2]}`);
+  for (const m of text.matchAll(BASE_THEN_PCT)) if (!shareFits(m[2]!, num(m[1]!))) out.push(`a share beside the wrong base: ${m[2]}% of ${m[1]}`);
+  return [...new Set(out)];
+}
+/** A stored text read whole (headline, deck, body, how we know), for the share check. */
+export const textOf = (t: { headline: string; deck: string; body?: string[] | null; how_we_know?: string | null }) => [t.headline, t.deck, ...(t.body ?? []), t.how_we_know ?? ""].join("\n");
+
 export type Known = { names: string[] };
 /**
  * Every failure of a written text against the story's facts (empty = it may be stored). `body` is required for a stored text; the approved
@@ -221,6 +243,8 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
   const nums = factNumbers(f), dates = factDates(f);
   for (const d of datesIn(free)) if (!dates.has(`${d.day}|${d.month}`)) fail.push(`date not in the facts: ${d.day} ${MONTHS[d.month] ?? "?"}`);
   for (const x of numbersIn(stripDates(free))) if (!nums.has(x)) fail.push(`number not in the facts: ${x}`);
+  // A share sits beside the base it was counted on: count over base gives the percentage (E2c).
+  fail.push(...shareBaseFailures(free));
   // Brands: only the story's brands, by name; never a bare tracked domain.
   if (parts.some(p => hasBareDomain(p))) fail.push("a bare tracked domain");
   const mine = f.brands.map(b => b.name);

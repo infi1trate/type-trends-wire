@@ -28,3 +28,26 @@ export function storyEvidence(s: { type: string; domains: string[] }, changes: C
   return { section, sectionName: sectionName(section), compare: p ? { before: toCrop(p.before), after: toCrop(p.after) } : null, after: after ? toCrop(after) : null, grid: null,
     note: p || after ? null : NO_CAPTURE_LINE };
 }
+
+// KEPT CROPS (E2c) ---------------------------------------------------------------------------------------------------------------
+// A published story keeps the crops it cites (story_kept_crops): its before and after, or a gathered story's member heroes. A kept crop is
+// never replaced by a newer one on the story page, and crop history never evicts it while the story is published.
+export type KeptRole = "before" | "after" | "member";
+export type KeptCrop = { path: string; domain: string; role: KeptRole };
+const pathOf = (c: Crop) => c.src.replace(/^\/crops\//, "");
+/** The crops a story's evidence shows, to keep: the pair, else the one after, else the first four member heroes. */
+export function keepFromEvidence(ev: StoryEvidence): KeptCrop[] {
+  if (ev.compare) return [{ path: pathOf(ev.compare.before), domain: ev.compare.before.domain, role: "before" }, { path: pathOf(ev.compare.after), domain: ev.compare.after.domain, role: "after" }];
+  if (ev.after) return [{ path: pathOf(ev.after), domain: ev.after.domain, role: "after" }];
+  return (ev.grid ?? []).filter(g => g.crop).slice(0, 4).map(g => ({ path: pathOf(g.crop!), domain: g.domain, role: "member" as const }));
+}
+/** The evidence with the story's kept crops in place (only those still stored and visible in `crops`). */
+export function withKept(ev: StoryEvidence, kept: KeptCrop[], crops: CropRow[]): StoryEvidence {
+  if (!kept.length) return ev;
+  const byPath = new Map(crops.map(c => [c.path, c])), row = (k: KeptCrop | undefined) => (k ? byPath.get(k.path) ?? null : null);
+  if (ev.grid) return { ...ev, grid: ev.grid.map(g => { const r = row(kept.find(k => k.role === "member" && k.domain === g.domain)); return r ? { domain: g.domain, crop: toCrop(r) } : g; }) };
+  const b = row(kept.find(k => k.role === "before")), a = row(kept.find(k => k.role === "after"));
+  if (b && a) return { ...ev, compare: { before: toCrop(b), after: toCrop(a) }, after: null, note: null };
+  if (a && !ev.compare) return { ...ev, after: toCrop(a), note: null };
+  return ev;
+}

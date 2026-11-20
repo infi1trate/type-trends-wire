@@ -25,8 +25,6 @@ const one = <T,>(xs: T[]) => { expect(xs).toHaveLength(1); return xs[0]!; };
 export const SKIPPED: Record<string, string> = {
   "9 · one story from the two AI stage notices":
     "Both stage notices come from comparing forecast runs 9 (14 Nov) and 13 (15 Nov), 39 hours apart. The standing rule compares only real runs at least six days apart, so no shift exists in this data; the engine does merge AI-positioning stage changes from one valid run pair into one story (editor.test.ts).",
-  "12 · against the grain: Wired, Resend and Bun among the named brands":
-    "E2b Part 0.3 (approved): a counter-move enters the piece only when the same brand has a measured change on the tape in the same seven days. Wired, Resend and Bun have only AI-read changes (14 Nov imagery and style reads) and no measured change, so the approved rule keeps them out. The piece itself still runs (see the Part 0 cases).",
   "10 · studios and Swiss-grid layouts as a crossover or breakout":
     "The crossover came from the same 39-hour run pair (retired by the six-day rule) and no breakout alert fired for Swiss grid, so the forecast data holds neither. The AI-read Swiss-grid roundup exists but is neither type.",
 };
@@ -64,7 +62,7 @@ describe("golden set · must run as stories (12)", () => {
     expect(published.some(p => (p.type === "crossover" || p.type === "breakout") && p.sector === "studios" && p.signalKeys.includes("aesthetic:swiss_grid"))).toBe(true));
   it("11 · charts and data visuals breaking out in dev tools", () =>
     expect(published.some(p => p.type === "breakout" && p.sector === "dev-tools" && p.signalKeys.includes("imagery:data_viz"))).toBe(true));
-  may("12 · against the grain: Wired, Resend and Bun among the named brands")("12 · against the grain: one weekly roundup of the held counter-moves, Wired, Resend and Bun among them", () => {
+  it("12 · against the grain: one weekly roundup of the held counter-moves, Wired, Resend and Bun among them", () => {
     const s = one(published.filter(p => p.id.startsWith("against:")));
     expect(s.domains).toEqual(expect.arrayContaining(["wired.com", "resend.com", "bun.sh"]));
     expect(published.filter(p => p.type === "counter_move")).toHaveLength(0);
@@ -140,20 +138,31 @@ describe("E2b Part 0 · 20 Nov", () => {
     const rows = ran.map(asRow);
     for (const w of weekly) expect(leadAllowed(asRow(w), rows)).toBe(false);
   });
-  it("3 · against the grain: every brand has a measured change on the tape in the same seven days; at most six named, the rest counted", () => {
+  // E2c restores the approved membership (E2a): a held counter-move, not reversed, with a stored stage and share behind its signal.
+  // Brands with a measured change on the tape that week come first, then by trendsetter rank; at most six named, the rest counted.
+  const all20 = runGolden(input).all, ctx20 = all20.ctx;
+  it("3 · against the grain (E2c): members are held counter-moves with a stage and share behind their signal; measured-backed brands first", () => {
     const g = one(ran.filter(p => p.id.startsWith("against:")));
+    const counters = all20.candidates.filter(c => c.type === "counter_move");
+    for (const id of g.members ?? []) {
+      const c = counters.find(x => x.id === id)!;
+      expect(c, id).toBeTruthy();
+      for (const k of c.signalKeys) { const st = ctx20.stageFor(k, c.sector); expect(!!st.stage && ctx20.row(ctx20.cur, k, st.scope)?.current_share != null, `${id} ${k}`).toBe(true); }
+    }
     const since = Date.parse("2026-11-20T14:00:00Z") - 7 * 864e5;
-    const measured = new Set(input.events.filter(e => !AI_EVENTS.has(e.type) && Date.parse(e.detected_at) >= since).map(e => e.domain));
-    for (const d of g.domains) expect(measured.has(d), d).toBe(true);
+    const rev = new Set(all20.reversed);
+    const measured = new Set(input.events.filter(e => !AI_EVENTS.has(e.type) && !rev.has(e.id) && Date.parse(e.detected_at) >= since).map(e => e.domain));
+    const backed = g.domains.map(d => measured.has(d));
+    expect(backed.indexOf(false) === -1 || backed.slice(backed.indexOf(false)).every(b => !b)).toBe(true);
+    expect(g.domains.some(d => !measured.has(d))).toBe(true);
     const names = new Map(input.sites.map(x => [x.domain, x.name]));
     const named = g.domains.filter(d => (g.deck ?? "").includes(brandName(d, names.get(d))));
     expect(named.length).toBeLessThanOrEqual(AGAINST_NAMED_MAX);
-    if (g.domains.length > AGAINST_NAMED_MAX) expect(g.deck).toMatch(/six more moved against the grain too/);
-    for (const d of ["wired.com", "resend.com", "bun.sh"]) expect(g.domains).not.toContain(d);
+    if (g.domains.length > AGAINST_NAMED_MAX) expect(g.deck).toMatch(/more moved against the grain too/);
   });
   it("3 · fewer than three qualifying brands: the piece does not run that week", () => {
-    const keep = new Set(["netlify.com", "pentagram.com"]);
-    const thin = { ...input, events: input.events.filter(e => AI_EVENTS.has(e.type) || keep.has(e.domain)) } as BuildInput;
+    const counters = all20.candidates.filter(c => c.type === "counter_move"), keep = new Set([...new Set(counters.map(c => c.domains[0]!))].slice(0, 2));
+    const thin = { ...input, events: input.events.filter(e => keep.has(e.domain) || !counters.some(c => c.domains[0] === e.domain)) } as BuildInput;
     expect(runGolden(thin).plan.some(p => p.id.startsWith("against:") && p.status === "published")).toBe(false);
   });
   it("4 · the tape keeps one line per brand, change and day; a change seen on two pages ends with the pages", () => {
@@ -176,7 +185,9 @@ describe("E2b Part 0 · 20 Nov", () => {
     ];
     const r = replanEdits(stored, p20.map(p => ({ id: p.id, status: p.status, reason: p.reason })), "2026-11-20");
     expect(r.restores.map(x => x.id)).toEqual(["brand:netlify.com:2026-11-20"]);
-    expect(r.kills).toEqual(expect.arrayContaining([{ id: "roundup:all:aesthetic:minimal:2026-11-13", note: E2B_REPLAN.cap }, { id: "roundup:dev-tools:aesthetic:editorial:2026-11-14", note: E2B_REPLAN.cap }, { id: "against:2026-W47", note: E2B_REPLAN.against }]));
+    expect(r.kills).toEqual(expect.arrayContaining([{ id: "roundup:all:aesthetic:minimal:2026-11-13", note: E2B_REPLAN.cap }, { id: "roundup:dev-tools:aesthetic:editorial:2026-11-14", note: E2B_REPLAN.cap }]));
+    // E2c: the approved against-the-grain reading is back, so today's plan produces that piece again and a re-plan would no longer retire it.
+    expect(r.kills.some(k => k.id === "against:2026-W47")).toBe(false);
     expect(r.kills.some(k => k.id === "brand:sofi.com:2026-11-20")).toBe(false);
   });
 });

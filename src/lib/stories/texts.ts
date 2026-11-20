@@ -1,7 +1,7 @@
 // The writer's text on the Read side (E2b): the latest checked version of a story's written text replaces its headline and deck wherever
 // stories are read; the template headline and deck stay on the record for the Data view and the desk. A correction newer than the
 // latest version shows the corrected template until the next version is written. Pure; rows come from story_texts (checked only).
-import { howWeKnow } from "./writer";
+import { howWeKnow, shareBaseFailures, textOf } from "./writer";
 
 export type TextRow = { story_id: string; version: number; headline: string; deck: string; body: string[]; how_we_know: string; model: string; created_at: string };
 export type Written = { headline: string; deck: string; body: string[]; howWeKnow: string; model: string; version: number; at: string };
@@ -9,7 +9,8 @@ type Overlaid = { id: string; headline: string; deck: string | null; correctedAt
 /** Latest checked version per story. */
 export function latestTexts(rows: TextRow[]): Map<string, TextRow> {
   const out = new Map<string, TextRow>();
-  for (const r of rows) { const cur = out.get(r.story_id); if (!cur || r.version > cur.version) out.set(r.story_id, r); }
+  // E2c: a version that puts a share beside a base it was not counted on is never shown (the story reads as its template until rewritten).
+  for (const r of rows.filter(x => !shareBaseFailures(textOf(x)).length)) { const cur = out.get(r.story_id); if (!cur || r.version > cur.version) out.set(r.story_id, r); }
   return out;
 }
 export function withTexts<S extends Overlaid>(stories: S[], rows: TextRow[]): (S & { written: Written | null; template: { headline: string; deck: string | null } })[] {

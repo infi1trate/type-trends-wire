@@ -65,10 +65,10 @@ export async function loadBrandMoves(domain: string): Promise<{ timeline: BrandP
   const db = supabaseAnon();
   const [{ cropsFor }, { capturesOf }, { readerRebrands }, { storiesForDomain }, { storyForSource, storyPath }] = await Promise.all([import("./read.server"), import("./data-stories/data.server"), import("./rebrands.server"), import("./stories/read.server"), import("./stories/view")]);
   const [site, events, rebrands, stories, crops, captures] = await Promise.all([siteOf(domain), eventsOf(domain), readerRebrands().then(r => r.rows).catch(() => []), storiesForDomain(domain).catch(() => []), cropsFor([domain]), capturesOf(domain).catch(() => [])]);
-  const seasonal = await import("./promo.server").then(m => m.seasonalIds(db, events));
+  const [seasonal, carousel] = await Promise.all([import("./promo.server").then(m => m.seasonalIds(db, events)), import("./carousel.server").then(m => m.carouselIds(db, events))]);
   const storyOf: [string, string][] = [...storyForSource(stories)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
   const own = rebrands.filter(x => x.source === "live" && x.domain === domain).map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, effective_at: x.effective_at, seasonal: x.seasonal }));
-  return { timeline: brandTimeline({ domain, name: site?.name ?? domain, events, rebrands: own, seasonal, storyOf, crops, captures }) };
+  return { timeline: brandTimeline({ domain, name: site?.name ?? domain, events, rebrands: own, seasonal, carousel, storyOf, crops, captures }) };
 }
 /** Deferred: the sections strip and each section's history (one indexed crop read). */
 export async function loadBrandSections(domain: string) {

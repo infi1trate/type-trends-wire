@@ -88,10 +88,14 @@ export function planCrop<T extends CropRow>(versions: T[], c: { hash: string; ca
   if (same) return { action: "unchanged", row: same, last_seen_at: laterOf(same.last_seen_at, c.captured_at) };
   return { action: "insert" };
 }
-/** Versions beyond the newest `keep` (12) for each domain + section, oldest last: these rows and objects are removed. */
-export function cropEvictions<T extends CropRow>(rows: T[], keep: number = CROP_LIMITS.keep): T[] {
+/**
+ * Versions beyond the newest `keep` (12) for each domain + section, oldest last: these rows and objects are removed. E2c: a crop a published
+ * story cites (`kept` ids) is never removed by history and does not count toward the 12, so a newer version never replaces it. (An owner's
+ * removal request is a separate path and still removes every crop of the brand.)
+ */
+export function cropEvictions<T extends CropRow>(rows: T[], keep: number = CROP_LIMITS.keep, kept: ReadonlySet<number> = new Set()): T[] {
   const groups = new Map<string, T[]>();
-  for (const r of rows) { const k = `${r.domain}|${r.section}|${r.viewport}`; groups.set(k, [...(groups.get(k) ?? []), r]); }
+  for (const r of rows) { if (r.id != null && kept.has(r.id)) continue; const k = `${r.domain}|${r.section}|${r.viewport}`; groups.set(k, [...(groups.get(k) ?? []), r]); }
   return [...groups.values()].flatMap(g => [...g].sort(newestFirst).slice(keep));
 }
 
@@ -169,7 +173,7 @@ export function imagePolicy(): { id: string; title: string; text: string }[] {
   return [
     { id: "what", title: "What we keep", text: `Small crops of each tracked brand's public desktop homepage: ${names.slice(0, -1).join(", ")} and ${names.at(-1)}. WebP, at most ${CROP_LIMITS.maxWidth}×${CROP_LIMITS.maxHeight} and ${CROP_LIMITS.imageBytes / 1024} KB each. Never full-page captures.` },
     { id: "assets", title: "The brand's own pictures", text: `Two pictures each brand publishes itself: its site icon (the small picture browsers show beside its name), kept between 48 and 256 pixels on each side, and the social share image it gives link previews. Both are re-saved as WebP of at most ${CROP_LIMITS.imageBytes / 1024} KB, ${CROP_LIMITS.keep} versions at most, with the same credit, live-site link and removal as the crops.` },
-    { id: "history", title: "How history works", text: `A new version is stored only when a section looks different from its last stored version; otherwise we only note that it was seen again. At most ${CROP_LIMITS.keep} versions per section are kept; the oldest is deleted when a newer one arrives.` },
+    { id: "history", title: "How history works", text: `A new version is stored only when a section looks different from its last stored version; otherwise we only note that it was seen again. At most ${CROP_LIMITS.keep} versions per section are kept; the oldest is deleted when a newer one arrives. A crop a published story shows is kept for as long as the story is published.` },
     { id: "credit", title: "Credit and access", text: "Every image shows the brand's domain and capture date and links to the live site. Every image is served with a do-not-index header, so search engines are asked not to list it, and none is used as this site's link-preview picture." },
     { id: "crawler", title: "How pages are read", text: `Our crawler announces itself as ${BOT_NAME} and as ${LEGACY_UA_TOKEN} (the name it used first). robots.txt rules for either name are honoured: disallow either one and it stops reading those pages.` },
     { id: "removal", title: "Removal", text: `Owners can ask for removal${CONTACT_EMAIL ? ` at ${CONTACT_EMAIL}` : " by writing to the editor, Brandon Forant (brandon.wtf)"}. Once a site opts out, every stored crop, site icon, social share image and thumbnail of it is deleted, new captures are refused, and the site is shown by name only.` },

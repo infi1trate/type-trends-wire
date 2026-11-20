@@ -3,7 +3,7 @@
 // event's snapshot id, so the per-day story-line count (which reads rows without a snapshot) is not used up. Never throws.
 import type { EventRow } from "../agency/changes";
 import { brandName } from "../brand-names";
-import { callHeadline, ruleCall, headlineCallPrompt, headlineOf, HEADLINE_CALL_SYSTEM, HEADLINE_CALL_TOOL, HEADLINE_CALLS_PER_BUILD, type HeadlineCall } from "./headline-call";
+import { callHeadline, codeCall, ruleCall, headlineCallPrompt, headlineOf, HEADLINE_CALL_SYSTEM, HEADLINE_CALL_TOOL, HEADLINE_CALLS_PER_BUILD, type HeadlineCall } from "./headline-call";
 import { WHY_KIND } from "./why";
 
 type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
@@ -48,7 +48,7 @@ async function ask(admin: Admin, e: EventRow, signal: AbortSignal): Promise<unkn
  * Calls for these headline changes: stored ones, then new rule calls (all stored), then at most `limit` model calls before the deadline
  * (answers stored; failures are returned as unclear for this build and asked again next time). Never throws.
  */
-export async function headlineCalls(admin: Admin, events: EventRow[], o: { limit?: number; deadline: number; recheckRules?: boolean }): Promise<CallMap> {
+export async function headlineCalls(admin: Admin, events: EventRow[], o: { limit?: number; deadline: number; recheckRules?: boolean; /** E2c: event ids captured on a carousel. */ carousel?: ReadonlySet<number> }): Promise<CallMap> {
   const pivots = events.filter(e => e.type === "message_pivot");
   let have: CallMap = {};
   try { have = await storedCalls(admin, pivots.map(e => e.id)); } catch { return {}; }
@@ -58,14 +58,17 @@ export async function headlineCalls(admin: Admin, events: EventRow[], o: { limit
     const r = ruleCall(headlineOf(e.before), headlineOf(e.after), brandName(e.domain));
     return h.source === "rule" ? !r || r.call !== h.call || r.reason !== h.reason : !!r;
   };
-  const todo = pivots.filter(e => !have[e.id] || stale(e)), rows: CallRow[] = [], out: CallMap = { ...have };
+  // E2c: a call code makes (carousel, fragment) supersedes any stored call; it is appended as a new row once, with no AI call.
+  const code = (e: EventRow) => codeCall(headlineOf(e.before), headlineOf(e.after), { carousel: !!o.carousel?.has(e.id) });
+  const recode = (e: EventRow) => { const c = code(e), h = have[e.id]; return !!c && !!h && (h.call !== c.call || h.reason !== c.reason); };
+  const todo = pivots.filter(e => !have[e.id] || stale(e) || recode(e)), rows: CallRow[] = [], out: CallMap = { ...have };
   const { AI_MODELS } = await import("../ai-models");
   let asked = 0;
   for (const e of todo) {
     const before = headlineOf(e.before), after = headlineOf(e.after);
     const left = o.deadline - Date.now();
     const canAsk = asked < (o.limit ?? HEADLINE_CALLS_PER_BUILD) && left > 4000;
-    const c = await callHeadline(before, after, () => { if (!canAsk) return Promise.resolve(undefined); asked++; return ask(admin, e, AbortSignal.timeout(Math.min(15_000, left - 2000))); }, AI_MODELS.text, brandName(e.domain));
+    const c = await callHeadline(before, after, () => { if (!canAsk) return Promise.resolve(undefined); asked++; return ask(admin, e, AbortSignal.timeout(Math.min(15_000, left - 2000))); }, AI_MODELS.text, brandName(e.domain), { carousel: !!o.carousel?.has(e.id) });
     if (c.source === "model" && !canAsk) continue; // not asked yet: no call this build
     out[e.id] = { call: c.call, reason: c.reason };
     if (!c.failed) rows.push({ event_id: e.id, domain: e.domain, before_text: before, after_text: after, call: c.call, reason: c.reason, source: c.source, model: c.model ?? null });

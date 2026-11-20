@@ -22,6 +22,31 @@ export type FactSource = {
   numbers?: (keys: string[], sector: string | null) => WriterNumber[];
 };
 export const MAX_CHANGES = 40;
+
+// SHARES WITH THEIR BASES (E2c) ---------------------------------------------------------------------------------------------------
+export type ShareBase = { count: number; base: number };
+/**
+ * The count and base behind a stored share: the latest stored quarter whose share is the signal's current share (a forecast row's
+ * `evidence.quarters`, each { q, n, s }), counted as round(s × n) of n. Null when no quarter matches.
+ */
+export function baseOf(quarters: unknown, share: number | null | undefined): ShareBase | null {
+  if (share == null || !Array.isArray(quarters)) return null;
+  for (const q of [...quarters].reverse()) {
+    const x = q && typeof q === "object" ? (q as { n?: unknown; s?: unknown }) : {};
+    if (typeof x.n !== "number" || typeof x.s !== "number" || x.n <= 0 || Math.abs(x.s - share) > 1e-9) continue;
+    const count = Math.round(x.s * x.n);
+    return Math.abs(count / x.n - share) < 1e-9 ? { count, base: x.n } : null;
+  }
+  return null;
+}
+const pct1 = (v: number) => `${(Math.round(v * 1000) / 10).toFixed(1)}%`;
+/** One library number for the writer, its share beside its own count and base: "Technical voice: 4 of 29 tracked Health homepages with an AI read (13.8%), Rising". */
+export function shareLine(o: { name: string; share: number; where: string; basis: "ai" | "measured"; base: ShareBase | null; stage?: string | null; momentum?: number | null }): string {
+  const tail = `${o.stage ? `, ${o.stage}` : ""}${typeof o.momentum === "number" ? `, momentum ${o.momentum.toFixed(1)} points a quarter` : ""}`;
+  if (!o.base) return `${o.name}: ${pct1(o.share)} of tracked ${o.where}homepages${tail}`;
+  const read = o.basis === "ai" ? " with an AI read" : " in the latest quarter";
+  return `${o.name}: ${o.base.count} of ${o.base.base} tracked ${o.where}homepages${read} (${pct1(o.base.count / o.base.base)})${tail}`;
+}
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : "none");
 const HERO: Record<string, string> = { image: "still", video: "video", webgl: "3D", canvas: "3D", none: "none" };

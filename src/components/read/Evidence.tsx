@@ -16,7 +16,7 @@ export function CropFigure({ crop, label, sizes = "(min-width: 1024px) 33vw, 100
       <img src={crop.src} width={crop.width} height={crop.height} sizes={sizes} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" alt={crop.alt} className="ed-thumb" />
     </a>
     <figcaption className="ed-caption mt-1">
-      <span className="block">{crop.sectionName} · {crop.domain} · captured <time dateTime={crop.captured_at}>{day(crop.captured_at)}</time></span>
+      <span className="block">{crop.sectionName} · {crop.domain} · captured <time dateTime={crop.captured_at} className="whitespace-nowrap">{day(crop.captured_at)}</time></span>
       <span className="flex flex-wrap gap-x-4">
         <a href={crop.live} target="_blank" rel="noopener" className="ed-tap" {...pr(crop.live)}>Live site ↗</a>
         <a href={crop.report} className="ed-tap">Report this image</a>

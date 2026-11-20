@@ -20,7 +20,7 @@ import { firstScreen } from "./gallery";
 
 export type BrandPeer = { domain: string; name: string | null; sector: string; traits: string[] };
 export type ContrastItem = { key: string; name: string; sector: { v: number; n: number } };
-export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; /** Event ids changed on a seasonal capture (promo.ts): labelled, never hidden. */ seasonal?: number[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][]; /** This brand's stored section crops (any order). */ crops?: CropRow[];
+export type BrandRows = { domain: string; audit: AuditRows; events: EventRow[]; /** Event ids changed on a seasonal capture (promo.ts): labelled, never hidden. */ seasonal?: number[]; /** E2c · event ids that are carousel rotations (carousel.ts): labelled Carousel. */ carousel?: number[]; peers: BrandPeer[]; tiers: [string, Tier][]; /** source id ("event:12", "rebrand:<domain>:<at>") → story path, when a story tells it. */ storyOf?: [string, string][]; /** This brand's stored section crops (any order). */ crops?: CropRow[];
   /** Stored home/desktop captures of this brand (skeletons), for the before/after pair either side of each move. */ captures?: CaptureRaw[];
   /** Similar brands (similar.ts), the sector's brand field and the "where you sit" contrast (data-stories/stories.ts). */ similar?: SimilarResult; field?: FieldFig | null; contrast?: { has: ContrastItem[]; lacks: ContrastItem[] } | null };
 export type BrandTag = { key: string; name: string; basis: Basis; kind: "aesthetic" | "imagery" | "tone" | "theme" };
@@ -98,7 +98,7 @@ export function brandSoWhat(ahead: number, behind: number, where = "its sector")
 }
 
 /** What the Moves list needs (the brand page reads it in its own deferred section). */
-export type MovesRows = { domain: string; name: string; events: EventRow[]; rebrands: AuditRows["rebrands"]; seasonal: number[]; storyOf: [string, string][]; crops: CropRow[]; captures: CaptureRaw[] };
+export type MovesRows = { domain: string; name: string; events: EventRow[]; rebrands: AuditRows["rebrands"]; seasonal: number[]; carousel?: number[]; storyOf: [string, string][]; crops: CropRow[]; captures: CaptureRaw[] };
 /** The brand's moves, newest first: every live change and confirmed rebrand, back-and-forth runs folded, before/after where it exists. */
 export function brandTimeline(r: MovesRows): Move[] {
   const d = r.domain;
@@ -122,9 +122,9 @@ export function brandTimeline(r: MovesRows): Move[] {
     // I1: each drawing can reveal the brand's real hero crop (the one current at its capture), requested only on intent.
     return { pair: { ...fig, before: { ...firstScreen(fig.before), reveal: heroRevealFor(crops, d, fig.before.at) }, after: { ...firstScreen(fig.after), reveal: heroRevealFor(crops, d, fig.after.at) } }, pairShared: false };
   };
-  const seasonalSet = new Set(r.seasonal), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
+  const seasonalSet = new Set(r.seasonal), carouselSet = new Set(r.carousel ?? []), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
   const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [
-    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: tapeLine(e, { seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id) }, r.name), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
+    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: tapeLine(e, { seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), carousel: carouselSet.has(e.id) }, r.name), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
     ...r.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: identityLabel(x), text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: isRebrand(x), seasonal: !!x.seasonal, reversed: false, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
   ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
   return foldFlips(raw, r.events.filter(e => e.domain === d)).map(({ pivot, ...m }) => (m.folded ? { ...m, pair: null, pairShared: false, folded: m.folded.map(({ pivot: _p, ...x }) => ({ ...x, pair: null, pairShared: false })) } : { ...withoutFolded(m), ...pairAt(pivot, m.compare) }));
@@ -147,7 +147,7 @@ export function brandModel(r: BrandRows): BrandPage {
     ...(color?.theme ? [{ key: `theme:${color.theme}`, name: label(`theme:${color.theme}`).name, basis: basis(`theme:${color.theme}`), kind: "theme" as const }] : []),
     ...(["aesthetic", "imagery", "tone"] as const).flatMap(kind => (vibe?.[kind] ?? []).map(v => ({ key: `${kind}:${v}`, name: label(`${kind}:${v}`).name, basis: basis(`${kind}:${v}`), kind }))),
   ];
-  const timeline = brandTimeline({ domain: d, name: site?.site?.name ?? d, events: r.events, rebrands: r.audit.rebrands, seasonal: r.seasonal ?? [], storyOf: r.storyOf ?? [], crops: r.crops ?? [], captures: r.captures ?? [] });
+  const timeline = brandTimeline({ domain: d, name: site?.site?.name ?? d, events: r.events, rebrands: r.audit.rebrands, seasonal: r.seasonal ?? [], carousel: r.carousel ?? [], storyOf: r.storyOf ?? [], crops: r.crops ?? [], captures: r.captures ?? [] });
   const crops = (r.crops ?? []).filter(c => c.domain === d);
   const history = Object.fromEntries(CROP_SECTIONS.map(s => [s, versionsOf(crops, d, s).map(toCrop)])) as Record<CropSection, Crop[]>;
   const m = a.market?.sites.find(s => s.domain === d) ?? null;

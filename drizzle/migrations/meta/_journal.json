@@ -407,6 +407,13 @@
       "when": 1795185096751,
       "tag": "0057_story_writer_facts",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795187096940,
+      "tag": "0058_story_kept_crops",
+      "breakpoints": true
     }
   ]
 }

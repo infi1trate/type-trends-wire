@@ -19,6 +19,8 @@ export type CropStore = {
   insert(row: Omit<CropRow, "id">): Promise<"ok" | "exists" | "opted_out">;
   removeObjects(paths: string[]): Promise<void>;
   deleteRows(ids: number[]): Promise<void>;
+  /** E2c · crop ids among `ids` that a published story cites (never evicted by history). Absent = none. */
+  keptIds?(ids: number[]): Promise<Set<number>>;
   /** Every stored version of a domain (opt-out cleanup). */
   domainRows(domain: string): Promise<StoredCrop[]>;
   /** The visible row at `path` (hidden when the domain opted out), for serving. */
@@ -84,7 +86,13 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
     }
     for (const k of touched) {
       const [domain, section, viewport] = k.split("|") as [string, CropSection, string];
-      const old = cropEvictions(await db.versions(domain, section, viewport));
+      const versions = await db.versions(domain, section, viewport);
+      if (!cropEvictions(versions).length) continue;
+      // E2c: crops a published story cites are kept; the 12 apply to the rest.
+      // When that cannot be read, nothing is evicted this time (the next new version tries again).
+      const kept = db.keptIds ? await db.keptIds(versions.map(v => v.id)).catch(() => null) : new Set<number>();
+      if (!kept) continue;
+      const old = cropEvictions(versions, CROP_LIMITS.keep, kept);
       if (!old.length) continue;
       await db.removeObjects(old.map(o => o.path)); await db.deleteRows(old.map(o => o.id));
     }
@@ -154,6 +162,15 @@ async function adminCropStore(): Promise<CropStore> {
     },
     async removeObjects(paths) { for (let i = 0; i < paths.length; i += 100) { const r = await db.storage.from(CROP_BUCKET).remove(paths.slice(i, i + 100)); if (r.error) fail("Crop delete failed"); } },
     async deleteRows(ids) { const r = await db.from("site_crops").delete().in("id", ids); if (r.error) fail("Crop row delete failed"); },
+    async keptIds(ids) {
+      if (!ids.length) return new Set();
+      const r = await db.from("story_kept_crops").select("crop_id,story_id").in("crop_id", ids);
+      if (r.error) fail("Kept crop lookup failed");
+      const rows = r.data ?? []; if (!rows.length) return new Set();
+      const { publishedStoryIds } = await import("./stories/kept-crops.server");
+      const live = await publishedStoryIds(db, [...new Set(rows.map(x => x.story_id))]);
+      return new Set(rows.filter(x => live.has(x.story_id)).map(x => x.crop_id));
+    },
     async domainRows(domain) { const r = await db.from("site_crops").select(COLS).eq("domain", domain).limit(1000); if (r.error) fail("Crop lookup failed"); return (r.data ?? []) as StoredCrop[]; },
     // Serving checks visibility with the anonymous client, so the opt-out policy applies exactly as it does for readers.
     async visibleRow(path) { const r = await supabaseAnon().from("site_crops").select("domain").eq("path", path).maybeSingle(); if (r.error) fail("Crop lookup failed"); return r.data ?? null; },

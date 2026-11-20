@@ -1698,6 +1698,51 @@ export type Database = {
           },
         ]
       }
+      story_kept_crops: {
+        Row: {
+          created_at: string
+          crop_id: number
+          domain: string
+          id: number
+          path: string
+          role: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          crop_id: number
+          domain: string
+          id?: never
+          path: string
+          role: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          crop_id?: number
+          domain?: string
+          id?: never
+          path?: string
+          role?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_kept_crops_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "site_crops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_kept_crops_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_lines: {
         Row: {
           story_id: string

@@ -1,10 +1,11 @@
 // THE TAPE — every confirmed live change as one plain line: brand name, what changed, from and to, date, and its label (Seasonal,
-// Reversed). No adjectives, no story page. "Rivian · hero, video to still · 11 Nov". Pure; names from brand-names.ts.
+// Reversed, Carousel). No adjectives, no story page. "Rivian · hero, video to still · 11 Nov". Pure; names from brand-names.ts.
 import { hexName, type EventRow } from "./agency/changes";
 import { brandName } from "./brand-names";
 import { label } from "./labels";
 import { SEASONAL_LABEL } from "./promo";
 import { REVERSED_LABEL } from "./reversal";
+import { CAROUSEL_LABEL } from "./carousel";
 
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const tapeDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };
@@ -60,10 +61,10 @@ export function tapeWhat(e: Pick<EventRow, "type" | "before" | "after" | "page_t
   const page = e.page_type && e.page_type !== "home" && e.type !== "new_surface" ? ` (${e.page_type} page)` : "";
   return `${parts.join("; ") || e.type.replace(/_/g, " ")}${page}`;
 }
-export type TapeLabels = { seasonal?: boolean; reversed?: boolean };
+export type TapeLabels = { seasonal?: boolean; reversed?: boolean; carousel?: boolean };
 /** The labels a tape line carries. */
-export const tapeLabels = (l: TapeLabels) => [...(l.seasonal ? [SEASONAL_LABEL] : []), ...(l.reversed ? [REVERSED_LABEL] : [])];
-/** One tape line: "Rivian · hero, video to still · 11 Nov" (plus " · Seasonal" / " · Reversed"). */
+export const tapeLabels = (l: TapeLabels) => [...(l.seasonal ? [SEASONAL_LABEL] : []), ...(l.carousel ? [CAROUSEL_LABEL] : []), ...(l.reversed ? [REVERSED_LABEL] : [])];
+/** One tape line: "Rivian · hero, video to still · 11 Nov" (plus " · Seasonal" / " · Carousel" / " · Reversed"). */
 export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at">, l: TapeLabels = {}, name?: string | null): string {
   return [brandName(e.domain, name), tapeWhat(e), tapeDate(e.detected_at), ...tapeLabels(l)].join(" · ");
 }
@@ -85,7 +86,7 @@ export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => Tap
     const k = key(e); if (done.has(k)) continue; done.add(k);
     const g = groups.get(k)!, first = [...g].sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id)[0]!;
     const pages = [...new Set(g.map(x => pageName(x.page_type)))].sort((a, b) => (a === "home page" ? -1 : b === "home page" ? 1 : a.localeCompare(b)));
-    const l = g.reduce<TapeLabels>((acc, x) => { const y = labels(x); return { seasonal: !!(acc.seasonal || y.seasonal), reversed: !!(acc.reversed || y.reversed) }; }, {});
+    const l = g.reduce<TapeLabels>((acc, x) => { const y = labels(x); return { seasonal: !!(acc.seasonal || y.seasonal), reversed: !!(acc.reversed || y.reversed), carousel: !!(acc.carousel || y.carousel) }; }, {});
     const base = pages.length > 1 ? { ...first, page_type: "home" } : first;
     const line = tapeLine(base, l, name?.(e.domain));
     out.push({ ...e, tape: pages.length > 1 ? `${line} · ${pages.join(", ")}` : line, also: g.filter(x => x.id !== e.id).map(x => x.id), pages });

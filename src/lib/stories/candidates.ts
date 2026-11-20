@@ -49,6 +49,8 @@ export type BuildInput = {
   history?: EventRow[];
   /** The editor's headline calls per library event id (headline-call.ts); a headline change without one is not counted yet. */
   calls?: Record<number, { call: string; reason: string }>;
+  /** E2c · snapshot ids whose first screen is a carousel (`layout.hero_carousel`); their headline and hero changes are rotations (carousel.ts). */
+  carousel?: number[];
 };
 
 const day = 864e5;

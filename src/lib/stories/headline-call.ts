@@ -26,10 +26,24 @@ const PRODUCT_MARK = /[™®]|(?<![\p{L}])(?:collection|new arrivals|just (?:in|
 /** Company-name endings: "Zed Industries" is still only the name. */
 const NAME_ENDINGS = new Set(["inc", "industries", "labs", "lab", "technologies", "technology", "co", "company", "corp", "corporation", "group", "hq", "ltd", "llc", "gmbh", "ai", "app", "official"]);
 const onlyName = (text: string, brand: string) => { const w = words(text).filter(x => !NAME_ENDINGS.has(x)), n = words(brand).filter(x => !NAME_ENDINGS.has(x)); return w.length > 0 && w.join(" ") === n.join(" "); };
-export function ruleCall(before: string | null | undefined, after: string | null | undefined, brand?: string | null): HeadlineCall | null {
+/** E2c · the carousel: either capture's first screen rotates, so the headline is one slide of it (made in code, no AI call). */
+export const CAROUSEL_REASON = "carousel";
+/** E2c · a captured headline that ends in a dash, a colon or a comma is a fragment (often the first line of one slide): held for the desk. */
+export const FRAGMENT_REASON = "The captured headline ends in a dash, a colon or a comma, so it is a fragment of a longer line, not a full headline.";
+const FRAGMENT_END = /[-‐‑‒–—―:,;]$/u;
+export const isFragment = (h: string | null | undefined) => FRAGMENT_END.test(clean(h));
+/** The calls code makes before any other rule and over any stored call: the carousel, then a fragment. Null = the usual rules decide. */
+export function codeCall(before: string | null | undefined, after: string | null | undefined, o: { carousel?: boolean } = {}): HeadlineCall | null {
+  if (o.carousel) return { call: "product_rotation", reason: CAROUSEL_REASON, source: "rule" };
+  if (isFragment(before) || isFragment(after)) return { call: "unclear", reason: FRAGMENT_REASON, source: "rule" };
+  return null;
+}
+export function ruleCall(before: string | null | undefined, after: string | null | undefined, brand?: string | null, o: { carousel?: boolean } = {}): HeadlineCall | null {
   const b = clean(before), a = clean(after);
+  if (o.carousel) return codeCall(b, a, o);
   const promo = promoSignal(a) ?? promoSignal(b);
   if (promo) return { call: "promotion", reason: `Sale or seasonal wording (“${promo}”) on ${promoSignal(a) ? "the new" : "the old"} headline.`, source: "rule" };
+  const code = codeCall(b, a); if (code) return code;
   if (!b || !a) return null;
   // The headline is now (or was) only the company's name: it says nothing about what the brand is or does.
   if (brand && (onlyName(a, brand) || onlyName(b, brand))) return { call: "unclear", reason: `The ${onlyName(a, brand) ? "new" : "old"} headline is only the company's name, which says nothing about what it does.`, source: "rule" };
@@ -72,8 +86,8 @@ export function parseCall(raw: unknown, model: string): HeadlineCall {
   return { call, reason, source: "model", model };
 }
 /** The call for one headline change: the rule pass, else the model's answer; a model failure is unclear. */
-export async function callHeadline(before: string | null, after: string | null, ask: () => Promise<unknown>, model: string, brand?: string | null): Promise<HeadlineCall & { failed?: true }> {
-  const r = ruleCall(before, after, brand); if (r) return r;
+export async function callHeadline(before: string | null, after: string | null, ask: () => Promise<unknown>, model: string, brand?: string | null, o: { carousel?: boolean } = {}): Promise<HeadlineCall & { failed?: true }> {
+  const r = ruleCall(before, after, brand, o); if (r) return r;
   try { const raw = await ask(); return raw == null ? { call: "unclear", reason: MODEL_FAILED_REASON, source: "model", model, failed: true } : parseCall(raw, model); }
   catch { return { call: "unclear", reason: MODEL_FAILED_REASON, source: "model", model, failed: true }; }
 }

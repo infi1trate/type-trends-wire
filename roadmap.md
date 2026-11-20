@@ -1,15 +1,8 @@
-# Phase E2b · The writer and the story page
+# Phase E2c · Four corrections after E2b
 
-- [x] 0.1 Measured first in daily cap; max one AI-read roundup/day, never above measured
-- [x] 0.2 Weekly pieces (seasonal, against-the-grain) outside daily five; not lead when a measured story exists
-- [x] 0.3 Against the grain: measured tape change same brand same 7 days; max 6 named; <3 no run
-- [x] 0.4 Terminal tape dedupe per brand/change/day with pages suffix
-- [x] 0.5 Re-plan 20 Nov on live data (Netlify runs; losers "Held: over the daily cap")
-- [x] 0.x Golden test cases per rule from 20 Nov data
-- [x] 1 Writer: AI_MODELS.writer, cost ledger, limits 12/day 6/build, health count, fallback chain
-- [x] 1 Writer check (code), story_texts table, write at publish + 7-day rewrite
-- [x] 1 Written text used on front page, story page, brand links, Digest, RSS, titles, previews
-- [x] 1 Drop why lines from Read side; remove imperative angle prompts
-- [x] 2 Story page Read order; changes list w/ receipts; Next / study / brand links
-- [x] 2 Drop basis pills from Read-side lists
-- [x] Tests, full suite, build, report
+- [x] 1 Against the grain: E2a membership back (stage + share), measured-backed brands first then rank; golden 12 live (34/36)
+- [x] 2 SoFi No. 79 retired ("one slide of a rotating hero"); carousel rule (tape "Carousel", never a story); hero_carousel intake check; fragment guard; tests
+- [x] 3 Shares carry count and base in writer facts; check rejects % beside a wrong base; health story owed a new version
+- [x] 4 Keep the crops a published story cites (additive table; eviction skips them; opt-out still removes)
+- [x] Story page at 768 and 1024
+- [x] Full suite, build, report

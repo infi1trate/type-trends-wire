@@ -13,7 +13,8 @@ import { seasonalEventIds } from "../promo";
 import { isRebrand, REBRAND_LABEL } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import { tapeDate, tapeLine, tapeWhat } from "../tape";
-import { headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
+import { codeCall, headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
+import { carouselEventIds, withoutRotation } from "../carousel";
 import {
   breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, inline, isVisibleMove, launchCandidate, moveCandidate,
   newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops,
@@ -188,22 +189,27 @@ export function seasonalStory(input: Pick<BuildInput, "now">, events: EventRow[]
 }
 /** Against the grain names at most this many brands, strongest first; the rest are counted in the last sentence and listed in the facts. */
 export const AGAINST_NAMED_MAX = 6;
-/** Against the grain (E2b): once a week, three or more held counter-moves, each backed by a measured change on the same brand's tape in the same
- *  seven days (its own move when that is measured, else any measured, not reversed confirmed change), in one piece outside the daily five. */
+/**
+ * Against the grain (E2c, the approved reading of E2a): once a week, three or more held counter-moves, not reversed, each with a stored
+ * stage and share behind its signal, in one piece outside the daily five. Brands that also have a measured change on the tape that week
+ * come first, then by trendsetter rank; at most six are named, the rest counted. `measured` is the week's tape (any confirmed live change
+ * that is not reversed); it orders the piece and never decides membership.
+ */
 export function againstTheGrain(ctx: Ctx, counters: Candidate[], reversedIds: Set<string>, measured: EventRow[] = []): Candidate | null {
   const since = Date.parse(ctx.now) - PATTERN_DAYS * DAY, inWeek = (iso: string) => Date.parse(iso) >= since && Date.parse(iso) <= Date.parse(ctx.now);
   const backing = new Map<string, EventRow[]>();
   for (const e of measured) if (inWeek(e.detected_at) && !AI_EVENTS.has(e.type)) backing.set(e.domain, [...(backing.get(e.domain) ?? []), e]);
-  const ok = counters.filter(c => !reversedIds.has(c.id) && inWeek(c.happenedAt) && (backing.get(c.domains[0]!)?.length ?? 0) > 0);
+  const staged = (c: Candidate) => c.signalKeys.every(k => { const s = ctx.stageFor(k, c.sector); const r = ctx.row(ctx.cur, k, s.scope); return r?.current_share != null && !!s.stage; });
+  const ok = counters.filter(c => !reversedIds.has(c.id) && inWeek(c.happenedAt) && staged(c));
   const first = new Map<string, Candidate>(); for (const c of [...ok].sort((a, b) => a.happenedAt.localeCompare(b.happenedAt) || a.id.localeCompare(b.id))) if (!first.has(c.domains[0]!)) first.set(c.domains[0]!, c);
-  // Strongest first: the brand's trendsetter rank, then how many measured changes back it.
-  const strength = (d: string) => backing.get(d)?.length ?? 0;
-  const picked = [...first.values()].sort((a, b) => ((ctx.rank.get(a.domains[0]!) ?? 999) - (ctx.rank.get(b.domains[0]!) ?? 999)) || strength(b.domains[0]!) - strength(a.domains[0]!) || a.domains[0]!.localeCompare(b.domains[0]!));
+  // Strongest first: a measured change on the brand's tape that week, then the brand's trendsetter rank.
+  const backed = (d: string) => ((backing.get(d)?.length ?? 0) > 0 ? 1 : 0);
+  const picked = [...first.values()].sort((a, b) => backed(b.domains[0]!) - backed(a.domains[0]!) || ((ctx.rank.get(a.domains[0]!) ?? 999) - (ctx.rank.get(b.domains[0]!) ?? 999)) || a.domains[0]!.localeCompare(b.domains[0]!));
   if (picked.length < AGAINST_MIN) return null;
   const week = isoWeek(new Date(ctx.now)), domains = picked.map(c => c.domains[0]!), named = domains.slice(0, AGAINST_NAMED_MAX), rest = domains.length - named.length;
   const byTime = [...picked].sort((a, b) => a.happenedAt.localeCompare(b.happenedAt));
   return {
-    id: `against:${week}:measured`, type: "roundup", kicker: "Roundup · Against the grain", headline: `${countWord(domains.length)} brands moved against the grain`,
+    id: `against:${week}`, type: "roundup", kicker: "Roundup · Against the grain", headline: `${countWord(domains.length)} brands moved against the grain`,
     deck: `${named.map(d => brandName(d)).join(", ")}${rest ? `; ${countWord(rest).toLowerCase()} more moved against the grain too` : ""}, between ${tapeDate(byTime[0]!.happenedAt)} and ${tapeDate(byTime.at(-1)!.happenedAt)}.`,
     facts: picked.flatMap(c => [{ text: c.headline, href: brandPath(c.domains[0]!), basis: c.basis, kind: "member" as const }, ...c.facts.filter(f => f.kind === "stage"),
       ...(backing.get(c.domains[0]!) ?? []).slice(0, 2).map(e => ({ text: `Measured: ${tapeLine(e)}`, href: brandPath(e.domain), basis: "measured" as const, kind: "source" as const }))]),
@@ -277,9 +283,14 @@ export function allCandidates(input: BuildInput): AllCandidates {
   const texts = new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v]));
   const seasonal = seasonalEventIds(input.events, texts);
   const reversed = reversalIds([...new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e])).values()]);
-  const calls = input.calls ?? {};
-  const tape = Object.fromEntries(input.events.map(e => [e.id, tapeLine(e, { seasonal: seasonal.has(e.id), reversed: reversed.has(e.id) }, names.get(e.domain))]));
-  const visible = input.events.filter(e => isVisibleMove(e) && isHome(e)).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
+  // E2c · the carousel: a headline, hero or imagery change captured on a rotating first screen is a tape line marked Carousel and never
+  // makes or joins a story (its other layout fields are judged as before). Calls code makes (carousel, fragment) win over stored calls.
+  const carouselSnaps = new Set(input.carousel ?? []), rotating = carouselEventIds(input.events, carouselSnaps);
+  const calls: Record<number, { call: string; reason: string }> = { ...(input.calls ?? {}) };
+  for (const e of input.events) if (e.type === "message_pivot") { const c = codeCall(headlineOf(e.before), headlineOf(e.after), { carousel: rotating.has(e.id) }); if (c) calls[e.id] = { call: c.call, reason: c.reason }; }
+  const tape = Object.fromEntries(input.events.map(e => [e.id, tapeLine(e, { seasonal: seasonal.has(e.id), reversed: reversed.has(e.id), carousel: rotating.has(e.id) }, names.get(e.domain))]));
+  const judged = input.events.flatMap(e => { if (!rotating.has(e.id)) return [e]; const k = withoutRotation(e); return k ? [k] : []; });
+  const visible = judged.filter(e => isVisibleMove(e) && isHome(e)).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
   // Story-eligible: measured, not seasonal, not reversed. Everything else stays a tape line.
   const eligible = visible.filter(e => !seasonal.has(e.id) && !reversed.has(e.id) && !AI_EVENTS.has(e.type));
   const changes = eligible.map(e => changeOf(e, kind(e.domain), (calls[e.id]?.call as HeadlineCallClass | undefined) ?? null));
@@ -296,10 +307,10 @@ export function allCandidates(input: BuildInput): AllCandidates {
   // Counter-moves are held singly on every kind of site (a media homepage dropping a rising signal is still against the grain).
   const counters = counterMoveCandidates(ctx, visible.filter(e => !seasonal.has(e.id) && (e.type !== "message_pivot" || calls[e.id]?.call === "position")).map(asMove)).map(c => ({ ...c, holdReason: c.sourceIds.some(x => /^event:(\d+)$/.test(x) && reversed.has(Number(x.slice(6)))) ? REVERSED_REASON : COUNTER_HELD_REASON }));
   const reversedCounters = new Set(counters.filter(c => c.holdReason === REVERSED_REASON).map(c => c.id));
-  const grain = againstTheGrain(ctx, counters, reversedCounters, input.events.filter(e => (e.source ?? "live") === "live" && !reversed.has(e.id)));
+  const grain = againstTheGrain(ctx, counters, reversedCounters, judged.filter(e => (e.source ?? "live") === "live" && !reversed.has(e.id)));
   const notReversed = free.filter(m => !reversed.has(m.e.id));
   const pattern = roundups(ctx, notReversed, visible.filter(e => !seasonal.has(e.id) && counts(e)).map(e => ({ c: moveCandidate(e), e })));
-  const season = seasonalStory(input, input.events, seasonal, names);
+  const season = seasonalStory(input, judged, seasonal, names);
   const news = newsCandidates(newsMatcher(input.sites, ctx.headline), input.wire);
   const ws = whiteSpaceCandidates(ctx);
   const candidates = [
