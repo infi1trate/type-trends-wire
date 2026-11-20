@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
-import { readSeeds, npmPoint, githubPoints, batches, getJson, collect } from "../src/indicators.js";
+import { readSeeds, npmPoint, githubPoints, batches, getJson, collect, makePoster } from "../src/indicators.js";
 
 const seed = { label: "Tailwind CSS", topic: "styling", npm: "tailwindcss", repo: "tailwindlabs/tailwindcss" };
 const noWait = async () => {};
@@ -63,5 +63,28 @@ test("collect: reads both sources, sends the token only to GitHub, and keeps goi
     assert.ok(seen.filter((s) => s.url.startsWith("/npm")).every((s) => s.auth === null));
     assert.ok(seen.filter((s) => s.url.startsWith("/gh")).every((s) => s.auth === "Bearer test-token"));
     assert.equal(await getJson(`${base}/nothing`, { wait: noWait }), null);
+  } finally { await new Promise((r) => srv.close(r)); }
+});
+
+test("the collector imports nothing from node_modules (its workflow installs nothing)", () => {
+  const src = readFileSync(new URL("../src/indicators.js", import.meta.url), "utf8");
+  const froms = [...src.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1]);
+  assert.ok(froms.length > 0 && froms.every((f) => f.startsWith("node:")), `unexpected imports: ${froms}`);
+});
+
+test("poster: sends the secret header, retries a 503, and stops at once on a 400", async () => {
+  const seen = []; let n = 0;
+  const srv = createServer((req, res) => {
+    seen.push({ url: req.url, secret: req.headers["x-crawl-secret"] }); n++;
+    if (req.url === "/ok") { res.writeHead(n === 1 ? 503 : 200, { "content-type": "application/json" }); return res.end(JSON.stringify({ accepted: 2 })); }
+    res.writeHead(400); res.end("points.0.value: must be a whole number");
+  });
+  await new Promise((r) => srv.listen(4874, "127.0.0.1", r));
+  try {
+    const mk = (path) => makePoster({ endpoint: `http://127.0.0.1:4874${path}`, secret: "s3", dry: false, runId: "t", wait: noWait });
+    assert.deepEqual(await mk("/ok")({ points: [] }), { accepted: 2 });
+    assert.equal(seen.length, 2); assert.ok(seen.every((s) => s.secret === "s3"));
+    await assert.rejects(mk("/bad")({ points: [] }), /ingest rejected \(400\): points\.0\.value/);
+    assert.equal(seen.length, 3);
   } finally { await new Promise((r) => srv.close(r)); }
 });

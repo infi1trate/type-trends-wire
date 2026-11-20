@@ -3,9 +3,24 @@
 // record (api.github.com, public) gives stars, forks and open issues. Numbers only: no code, pages or user data are read.
 // Env: CRAWL_ENDPOINT (…/api/public/ingest-crawl; this posts to its sibling ingest-series), CRAWL_SECRET, DRY_RUN=1 to print,
 // GITHUB_TOKEN (optional, raises GitHub's rate limit), NPM_API / GITHUB_API (test overrides), SEEDS (path to the list).
-import { readFileSync } from "node:fs";
+// No package imports: the workflow runs this without installing anything (like the Bluesky sampler).
+import { readFileSync, mkdirSync, appendFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { makePoster } from "./core.js";
+
+/** POST one batch with the crawler secret. 4xx (except 429) is a refusal and throws at once; anything else waits and retries. */
+export function makePoster({ endpoint, secret, dry, runId, tries = 4, wait = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+  return async function post(body) {
+    if (dry) { mkdirSync("out", { recursive: true }); appendFileSync(`out/${runId}.jsonl`, JSON.stringify(body) + "\n"); return {}; }
+    for (let attempt = 1; attempt <= tries; attempt++) {
+      const r = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body: JSON.stringify(body), signal: AbortSignal.timeout(60_000) }).catch((e) => ({ ok: false, status: 0, text: async () => String(e?.message ?? e) }));
+      if (r.ok) return r.json().catch(() => ({}));
+      const msg = await r.text();
+      if (r.status >= 400 && r.status < 500 && r.status !== 429) throw new Error(`ingest rejected (${r.status}): ${msg.slice(0, 300)}`);
+      if (attempt < tries) await wait(attempt * 3000);
+    }
+    throw new Error(`ingest failed after ${tries} attempts`);
+  };
+}
 
 export const SERIES_LIMITS = { batch: 200, timeoutMs: 15_000, tries: 3, gapMs: 150 };
 const UA = "slugbot/0.1 (+https://slug.global)";
