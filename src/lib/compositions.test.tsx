@@ -59,16 +59,19 @@ describe("compositions", () => {
     for (const c of Object.values(COMPOSITIONS)) { for (const n of c.containers) expect(CONTAINER_NAMES as readonly string[]).toContain(n); expect(c.plates).toBeLessThanOrEqual(1); }
     expect(Object.entries(COMPOSITIONS).filter(([, c]) => c.plates === 1).map(([k]) => k)).toEqual(["front"]);
   });
-  it("story: an ink cover with one cut-and-paste object, frames before text, no plate", async () => {
+  it("story (E2b order): an ink cover with kicker, headline and italic deck, then the picture, then the body", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 304 })));
     const [s] = overlay([story()], [], NOW);
     const page = { ...storyPage(s!, { earlier: [], patterns: [] }), thumb: null, series: null };
     const r = await html(() => createElement(StoryView, { s: page }), "/stories/move%3A1");
     const cover = r.querySelector('[data-cover="story"]')!;
     expect(cover.getAttribute("data-container")).toBe("slab");
-    expect(cover.querySelector('[data-illustration="cut"]')).not.toBeNull();
+    // The picture (here the drawn before/after) follows the deck instead of sitting inside the cover.
+    expect(cover.querySelector('[data-illustration="cut"]')).toBeNull();
     expect(cover.querySelectorAll("[data-pin]").length).toBe(2);
-    expect(cover.querySelector(".cover-deck")).not.toBeNull();
+    const deck = cover.querySelector(".cover-deck")!, picture = r.querySelector("[data-story-picture]")!;
+    expect(deck.className).toContain("italic");
+    expect(deck.compareDocumentPosition(picture) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(r.querySelector("[data-composition]")!.getAttribute("data-composition")).toBe("quiet");
     checkComposition(r, "story");
   });

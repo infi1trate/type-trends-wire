@@ -8,7 +8,7 @@ import type { StoryPageModel } from "@/lib/stories/view";
 import type { Thumb } from "@/lib/thumbs";
 import type { Frame } from "@/lib/data-stories/types";
 import { storyTime } from "@/lib/stories";
-import { BasisWord, DigestShell, SiteCard, pr } from "@/components/digest/Editorial";
+import { DigestShell, SiteCard, pr } from "@/components/digest/Editorial";
 import { Ledger, StoryNo } from "@/components/brand/Ledger";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { CaptureFrame } from "@/components/data/Figures";
@@ -16,6 +16,7 @@ import { ObjectPage, BlockPart } from "./ObjectPage";
 import { ReadFooter } from "./Bits";
 import { Receipt } from "./StoryCard";
 import { BeforeAfter, CropFallback, CropFigure } from "./Evidence";
+import type { Story } from "@/lib/stories";
 import { StoryCover, frameObject, type CoverObject } from "./Covers";
 import type { StoryEvidence } from "@/lib/stories/evidence";
 import { numberLabel } from "@/lib/stories/numbers";
@@ -70,46 +71,54 @@ function Compare({ s }: { s: StoryPageData }) {
   return null;
 }
 
+/** 4 · The picture: real pictures before wireframes. Before and after first-screen crops side by side (stacked on narrow screens), each
+ *  with its date; one crop when only one exists; up to four hero crops in a row for a gathered story. Credit, link and "Report this
+ *  image" stay on every crop (CropFigure). */
+function Picture({ s }: { s: StoryPageData }) {
+  const kind = kindOf(s);
+  if (kind === "crops") return <figure className="ed-wrap mt-10 md:mt-14" data-story-picture="pair">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <CropFigure crop={s.crops!.compare!.before} label={`Before · ${day(s.crops!.compare!.before.captured_at)}`} sizes="(min-width: 768px) 50vw, 100vw" priority />
+      <CropFigure crop={s.crops!.compare!.after} label={`After · ${day(s.crops!.compare!.after.captured_at)}`} sizes="(min-width: 768px) 50vw, 100vw" priority />
+    </div>
+  </figure>;
+  if (kind === "crop") return <figure className="ed-wrap mt-10 md:mt-14 max-w-[720px]" data-story-picture="one"><CropFigure crop={s.crops!.after!} label={`${s.crops!.sectionName} · ${day(s.crops!.after!.captured_at)}`} sizes="(min-width: 768px) 720px, 100vw" priority /></figure>;
+  if (s.crops?.grid?.length) return <figure className="ed-wrap mt-10 md:mt-14" data-story-picture="grid">
+    <ul className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">{s.crops.grid.slice(0, 4).map(g => <li key={g.domain} className="min-w-0">
+      {g.crop ? <CropFigure crop={g.crop} sizes="(min-width: 768px) 25vw, 50vw" /> : <CropFallback domain={g.domain} section="Hero" />}
+    </li>)}</ul>
+  </figure>;
+  if (kind === "frames" || kind === "text") return <div className="ed-wrap mt-10 md:mt-14" data-story-picture="drawn"><Compare s={s} /></div>;
+  if (s.thumb && s.brands[0]) return <div className="ed-wrap mt-10 max-w-md md:mt-14" data-story-picture="latest"><SiteCard domain={s.brands[0].domain} name={s.brands[0].name} sector={s.sectorName ?? ""} thumb={s.thumb} lines={["latest capture"]} /></div>;
+  return null;
+}
+
 export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNode }) {
   const notRun = s.state === "held" ? `This story did not run on the front page: ${s.heldReason}.` : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
   const seed = s.number ?? s.id, kind = kindOf(s);
+  // The cover carries kicker, headline and deck; its object is the signal's trail only when the story has no picture of a page.
+  const cover = kind === "none" && !s.crops?.grid?.length && !s.thumb ? coverObject(s) : null;
   return <DigestShell label={s.headline} section="live">
     <FiltersScope>
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>
-        <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={coverObject(s)}
-          kicker={<>{s.icon && <BrandMark icon={s.icon} size={24} eager className="mr-2" />}<span>{s.kicker}</span>{s.basis && <> <BasisWord b={s.basis} /></>}</>}
-          left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Corrected {day(s.correctedAt)}</span>}</>}
-          right={<>{s.sectorName && <span className="block">{s.sectorName}</span>}<span className="block">{s.typeName}</span>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
+        <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={cover} italicDeck
+          kicker={<>{s.icon && <BrandMark icon={s.icon} size={24} eager className="mr-2" />}<span>{s.kicker}</span></>}
+          left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Updated {day(s.correctedAt)}</span>}</>}
+          right={<>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
+        <Picture s={s} />
       </>,
       evidence: <>
-        <Compare s={s} />
-        {s.crops?.grid && <BlockPart title="The brands in this roundup · hero" kicker={s.crops.note ?? "Each brand's current hero, credited and linked."}>
-          <ul className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2">{s.crops.grid.map(g => <li key={g.domain}>
-            {g.crop ? <CropFigure crop={g.crop} sizes="(min-width: 768px) 33vw, 100vw" /> : <CropFallback domain={g.domain} section="Hero" />}
-            <p className="ed-data mt-1"><Link to="/brands/$domain" params={{ domain: g.domain }} className="ed-tap">Brand page →</Link></p>
-          </li>)}</ul>
-        </BlockPart>}
-        {kind === "none" && s.crops?.note && !s.crops.grid && <p className="ed-caption">{s.crops.note}</p>}
-        {kind === "none" && s.thumb && s.brands[0] && <BlockPart title="Latest capture"><div className="max-w-md"><SiteCard domain={s.brands[0].domain} name={null} sector={s.sectorName ?? ""} thumb={s.thumb} lines={["latest capture"]} /></div></BlockPart>}
-        <BlockPart title="Facts" kicker="Every line links to its receipt.">
-          {s.facts.length ? <ul className="ledger">{s.facts.map((f, i) => <li key={i} className="ledger-row flex flex-wrap items-baseline gap-x-3 px-2 py-3">
-            <span className="ed-small">{f.href ? <Receipt href={f.href} {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>{f.basis && <BasisWord b={f.basis} />}
+        {s.body.length > 0 && <div className="ed-body my-10 space-y-5 md:my-14" data-story-body="">{s.body.map((p, i) => <p key={i} className="max-w-[62ch] text-[1.125rem] leading-relaxed">{p}</p>)}</div>}
+        <p className="ed-small max-w-[62ch]" data-how-we-know=""><span className="ed-kicker mr-2">How we know</span>{s.howWeKnow}</p>
+        <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : "The numbers"} kicker="Each line links to its receipt.">
+          {s.facts.length ? <ul className="ledger" data-story-changes="">{s.facts.map((f, i) => <li key={i} className="ledger-row px-2 py-3">
+            <span className="ed-small">{f.href ? <Receipt href={f.href} {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>
           </li>)}</ul> : <p className="ed-small">{voiced("read.storyView.1")}</p>}
         </BlockPart>
-        {s.series && s.series.points.length > 0 && <BlockPart title={`${s.series.name}: share by quarter`} kicker="Usable quarters only (15+ sites, 25% coverage), library-wide.">
-          <p className="ed-data"><span className="ed-figure-num">{(s.series.points.at(-1)! * 100).toFixed(1)}%</span> <span>of tracked homepages, latest quarter</span> · <Link to="/signals/$key" params={{ key: s.series.key }} className="ed-tap">Full chart →</Link></p>
-        </BlockPart>}
-        {s.brands.length > 0 && <BlockPart title="Brands named">
-          <ul className="flex flex-wrap gap-x-6 gap-y-1">{s.brands.map(b => <li key={b.domain}><Link to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap ed-code">{b.domain}</Link></li>)}</ul>
-        </BlockPart>}
       </>,
-      // Reader pages carry no machinery: only an AI line that says something about the story (reader.ts) gets the block.
-      "so-what": s.soWhat ? <>
-        <p className="ed-pull max-w-[44ch]">{s.soWhat.text}</p>
-        <p className="ed-data mt-3 flex flex-wrap items-center gap-2"><BasisWord b={s.soWhat.basis} /></p>
-      </> : null,
+      "so-what": null,
       related: related ?? <StoryRelated s={s} />,
     }} />
     </FiltersScope>
@@ -117,13 +126,19 @@ export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNod
   </DigestShell>;
 }
 
-/** Related: signals and patterns, receipts, earlier stories and the editor's log (P1: streamed after the story on its page). */
-export function StoryRelated({ s }: { s: Pick<StoryPageData, "signals" | "patterns" | "evidence" | "earlier" | "edits"> }) {
+export type StoryWayOn = { next?: Story | null; study?: { href: string; title: string } | null };
+/** 8 · A way on: Next (the next story of the day by rank, else the newest earlier one), the study that covers the signal, the brands by
+ *  name. Then signals and patterns, earlier stories and the editor's log (P1: streamed after the story on its page). */
+export function StoryRelated({ s }: { s: Pick<StoryPageData, "signals" | "patterns" | "evidence" | "earlier" | "edits" | "brands"> & StoryWayOn }) {
   return <>
+        {(s.next || s.study || s.brands.length > 0) && <nav aria-label="A way on" className="ed-data flex flex-col gap-3" data-story-way-on="">
+          {s.next && <p><span className="ed-kicker mr-2">Next</span><Link to="/stories/$id" params={{ id: s.next.id }} className="ed-tap">{s.next.headline} →</Link></p>}
+          {s.study && <p><span className="ed-kicker mr-2">Part of the study</span><Receipt href={s.study.href} className="ed-tap">{s.study.title} →</Receipt></p>}
+          {s.brands.length > 0 && <p className="flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap">{b.name}</Link>)}</p>}
+        </nav>}
         {(s.signals.length > 0 || s.patterns.length > 0) && <BlockPart title="Signals and patterns">
           <Ledger small label="Signals and patterns in this story" rows={[...s.signals.map(x => ({ key: `s:${x.key}`, href: x.href, title: x.name, facts: [x.dimension], tags: ["Signal"] })), ...s.patterns.map(p => ({ key: `p:${p.key}`, href: p.href, title: `${p.name} examples`, tags: ["Pattern"] }))]} />
         </BlockPart>}
-        {s.evidence.length > 0 && <BlockPart title="Receipts"><Ledger small label="Receipts" rows={s.evidence.map(e => ({ key: e.href, href: e.href, title: `${e.label}${e.href.startsWith("/") ? " →" : " ↗"}` }))} /></BlockPart>}
         <BlockPart title="Earlier stories on the same signal or brand">
           {s.earlier.length ? <Ledger label="Earlier stories" rows={s.earlier.map(x => ({ key: x.id, href: `/stories/${encodeURIComponent(x.id)}`, number: x.number != null ? <StoryNo n={x.number} /> : "·", title: x.headline, line: x.deck, tags: [x.kicker.split(" · ")[0] ?? x.kicker], time: <time dateTime={x.at}>{storyTime(x.at)}</time> }))} />
             : <p className="ed-small">{voiced("read.storyView.2")}</p>}

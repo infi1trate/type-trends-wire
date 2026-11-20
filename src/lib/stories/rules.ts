@@ -5,7 +5,7 @@ import { AGAINST_MIN, GROUP_DAYS, PATTERN_DAYS, SEASONAL_STORY_MIN, SHIFT_MIN_SH
 import { SITE_KIND_RULE } from "../brand-names";
 import { WHITE_SPACE_NOT_APPLICABLE } from "./types";
 import { label } from "../labels";
-import { WHY_LINE_MAX, WHY_PER_BUILD, WHY_PER_DAY } from "./why";
+import { WRITER_PER_BUILD, WRITER_PER_DAY } from "./writer";
 import { REBRAND_RULE } from "../rebrand-rule";
 import { PROMO_RULE } from "../promo";
 import { REVERSED_RULE } from "../reversal";
@@ -34,7 +34,7 @@ export function storyRules() {
     { id: "news", title: "Outside news needs a subject", text: `An outside item runs only when its title names a tracked brand by name (a bare domain, link, handle or the publication naming itself does not count) or a headline signal by its label, and its title or excerpt is about design: a logo, typeface, redesign, website, campaign, packaging, interface and the like. Bluesky posts stay on the wire and never become stories. At most ${NEWS_DAILY_CAP} news stories run a day.` },
     { id: "estimate", title: "Estimates and counter-moves don't run alone", text: `A single brand's change read only by AI (aesthetic or imagery) is held: "${ESTIMATE_ONLY_REASON}". Counter-moves are held for a weekly roundup: "${COUNTER_HELD_REASON}". Both stay on the event tape and the brand page.` },
     { id: "score", title: "Score and caps", text: `Each candidate scores 0–100 from size, brand weight, novelty and sector relevance (0–25 each) and runs at ${PUBLISH_MIN} or more. The same brand or signal and type within ${DEDUPE_DAYS} days keeps the higher score. At most ${DAILY_CAP} stories run per UTC day, at most ${SINGLE_BRAND_DAILY_CAP} of them about a single brand and ${NEWS_DAILY_CAP} of them news; often fewer, and none when nothing qualifies. Everything else is held with its reason, never thrown away.` },
-    { id: "why", title: "Facts first, one AI line", text: `Headline, deck and facts are templated from data. One optional line says what to do or watch next: written by AI at build time (at most ${WHY_PER_BUILD} a build and ${WHY_PER_DAY} a day, ${WHY_LINE_MAX} characters), checked for new numbers, unknown names and hedging, and labelled AI ESTIMATE. Story pages show it only when it says something about the story itself; generic advice (audit, compare, evaluate your own site) and the fixed so-what stay on the editor's desk and in the terminal.` },
+    { id: "why", title: "Written from the facts, checked by code", text: `Each story's headline, deck and body are written by an AI model from that story's own facts only (at most ${WRITER_PER_BUILD} writer calls a build and ${WRITER_PER_DAY} a day). Code then checks every number, quotation, brand name and date against the facts, and refuses advice, stock endings, trend-speak and "rebrand" for anything less than type, colour and layout changing together. A text that fails twice falls back once to a smaller model, then to the plain template text, so no story waits on the writer. One line under each story says how we know: measured from captures, or our read, an AI estimate.` },
     { id: "edits", title: "Editors overrule, nothing is rewritten", text: "Stored stories never change. Editors pin, kill, correct and restore by appending edits that apply when the page is read; a corrected story says so." },
   ];
 }

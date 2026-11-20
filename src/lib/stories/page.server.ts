@@ -36,15 +36,22 @@ export async function loadStoryLead(id: string) {
   const drawn = crops.compare || crops.after ? null : frames ? { before: { ...frames.before, reveal }, after: { ...frames.after, reveal } } : null;
   return { ...page, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
 }
-/** P1, deferred: earlier stories on the same signal or brand, and the patterns among its signals. */
+/** P1, deferred: earlier stories on the same signal or brand, the patterns among its signals, and the way on (Next, the study). */
 export async function loadStoryRelated(id: string) {
-  const s = await storyById(id); if (!s) return { earlier: [], patterns: [] };
-  const [{ latestSignals }, { isPatternSignal }] = await Promise.all([import("../signals.server"), import("../patterns")]);
+  const s = await storyById(id); if (!s) return { earlier: [], patterns: [], next: null, study: null };
+  const [{ latestSignals }, { isPatternSignal }, { nextStory }] = await Promise.all([import("../signals.server"), import("../patterns"), import("./view")]);
   const [all, { signals }] = await Promise.all([storyIndex().catch(() => []), latestSignals("all")]);
   const byKey = new Map(signals.map(x => [x.key, x]));
   const earlier = storiesAbout(all, { signals: s.signal_keys, domain: s.domains.length === 1 ? s.domains[0] : undefined, exclude: s.id, limit: 6 }).filter(x => x.at <= s.happened_at || s.type === "white_space");
   const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
-  return { earlier: page.earlier, patterns: page.patterns };
+  return { earlier: page.earlier, patterns: page.patterns, next: nextStory(all, s.id), study: await studyFor(s.signal_keys) };
+}
+/** "Part of the study": a live data story covering one of the story's signals, only while data stories are public. */
+export async function studyFor(keys: string[]): Promise<{ href: string; title: string } | null> {
+  const [{ DATA_STORIES_PUBLIC }, { liveEntries }] = await Promise.all([import("../site"), import("../data-stories/registry")]);
+  if (!DATA_STORIES_PUBLIC) return null;
+  const e = liveEntries().find(x => x.params.signal && keys.includes(x.params.signal));
+  return e ? { href: `/data/${e.slug}`, title: e.question } : null;
 }
 
 /** No crops either side of the change: the stored captures either side of it, redrawn from their skeletons (anonymous reads). */

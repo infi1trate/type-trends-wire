@@ -3,7 +3,8 @@
 // before max(cut, MORNING_BASELINE), edits and late why-lines from before that moment — so once D is over it never changes.
 import { overlay, type EditRow, type StoredStory } from "../stories/edits";
 import { withNumbers, type NumberRow } from "../stories/numbers";
-import { isKind, soWhatOf, storyPath, streamOf, type StoryRecord } from "../stories/view";
+import { howWeKnowOf, withTexts, type TextRow } from "../stories/texts";
+import { storyPath, streamOf, type StoryRecord } from "../stories/view";
 import { sectorName } from "../labels";
 import { isoWeek, longDate } from "../digest/week";
 import type { CardModel } from "../chart/card";
@@ -38,7 +39,7 @@ export function isEditionDay(day: string, now: number): boolean {
 }
 
 export type LineRow = { story_id: string; why_line: string; why_model: string; why_at: string };
-export type MorningRaw = { stories: StoredStory[]; edits: EditRow[]; lines: LineRow[]; numbers?: NumberRow[] };
+export type MorningRaw = { stories: StoredStory[]; edits: EditRow[]; lines: LineRow[]; numbers?: NumberRow[]; texts?: TextRow[] };
 export type ChartRow = { week: string; trait: string; created_at: string; model: CardModel };
 export type MovingInput = { pair: { latest: { id: number; at: string }; earlier: { id: number; at: string }; days: number } | null; items: { key: string; name: string; dimension: string; from: string; to: string; share: number | null }[] };
 
@@ -57,13 +58,15 @@ export function shownAsOf(raw: MorningRaw, asOf: number, known: number): StoryRe
   const stories = raw.stories.filter(s => Date.parse(s.happened_at) < asOf && Date.parse(s.created_at) < known);
   const lines = new Map(raw.lines.filter(l => Date.parse(l.why_at) < known).map(l => [l.story_id, l]));
   const withLines = stories.map(s => { const l = s.why_line ? null : lines.get(s.id); return l ? { ...s, why_line: l.why_line, why_model: l.why_model, why_at: l.why_at } : s; });
-  return withNumbers(overlay(withLines, raw.edits.filter(e => Date.parse(e.at) < known), asOf), raw.numbers ?? []);
+  // Written text (E2b) only when it was stored before the edition's moment, so a closed edition never changes.
+  return withTexts(withNumbers(overlay(withLines, raw.edits.filter(e => Date.parse(e.at) < known), asOf), raw.numbers ?? []), (raw.texts ?? []).filter(t => Date.parse(t.created_at) < known));
 }
 
 export type MorningItem = { id: string; number: number | null; type: string; kicker: string; headline: string; deck: string | null; at: string; sector: string | null; sectorName: string | null; score: number; why: { text: string; basis: "ai" | "measured" }; href: string };
 const item = (s: StoryRecord): MorningItem => ({
   id: s.id, number: s.number ?? null, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null, score: s.score,
-  why: s.why_line ? { text: s.why_line, basis: "ai" } : { text: soWhatOf({ type: isKind(s.type) ? s.type : "news", signalKeys: s.signal_keys, stage: null }), basis: "measured" },
+  // E2b: stored why lines no longer show on the Read side; the item carries its how-we-know line instead.
+  why: { text: (s as StoryRecord).written?.howWeKnow ?? howWeKnowOf(s), basis: s.basis === "ai" ? "ai" : "measured" },
   href: storyPath(s.id),
 });
 const byScore = (a: StoryRecord, b: StoryRecord) => b.score - a.score || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id);

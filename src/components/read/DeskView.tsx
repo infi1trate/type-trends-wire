@@ -41,8 +41,12 @@ function Row({ s, send }: { s: Item; send: ((body: Record<string, unknown>) => P
     <p className="ed-kicker flex flex-wrap gap-x-3"><span>{s.kicker}</span><span className="ed-muted">Score {s.score}</span><time dateTime={s.at} className="ed-muted">{storyTime(s.at)}</time>{s.pinnedUntil && <span>Pinned until {s.pinnedUntil.slice(0, 16).replace("T", " ")}</span>}{s.corrected && <span>Corrected {day(s.corrected)}</span>}</p>
     <h3 className="ed-h3 mt-1"><Link to="/stories/$id" params={{ id: s.id }} className="no-underline hover:underline">{s.headline}</Link></h3>
     {s.state !== "published" && <p className="ed-small mt-1">{s.state === "killed" ? `Killed: ${s.killReason ?? "by the editor"}` : `Held: ${s.reason}`}</p>}
+    {s.written && <p className="ed-data mt-1">Template · {s.template.headline}{s.template.deck ? ` — ${s.template.deck}` : ""}</p>}
+    <p className="ed-caption mt-1">{s.written ? `Written by ${s.written.model}, version ${s.written.version}, ${day(s.written.at)}` : "Template text (no checked written version yet)"}</p>
     <details className="mt-2"><summary className="ed-tap ed-data cursor-pointer">Score parts and log</summary>
       <p className="ed-caption mt-2">{s.whyRan}</p>
+      {s.dataLines.length > 0 && <ul className="ed-data mt-2 space-y-1">{s.dataLines.map((l, i) => <li key={i}>{l}</li>)}</ul>}
+      {s.whyLine && <p className="ed-caption mt-2">Stored why line (not shown to readers): {s.whyLine}</p>}
       <ul className="ed-data mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">{s.components.map(c => <li key={c.id}><span className="ed-kicker">{c.label}</span> <span className="num">{c.value}/25</span><span className="ed-caption block">{c.why}</span></li>)}</ul>
       {s.edits.length > 0 && <ol className="ed-data mt-2">{s.edits.map((e, i) => <li key={i}>{day(e.at)} · {e.action}{e.note ? ` · ${e.note}` : ""}</li>)}</ol>}
     </details>

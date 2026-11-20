@@ -3,7 +3,7 @@
 // restamped to look new (an item's `at` is always its stored time).
 import { isKind, soWhatOf, storyPath, streamOf, type StoryRecord } from "../stories/view";
 import { noDid } from "../stories/reader";
-import { lensScore } from "../stories/score";
+import { lensScore, leadAllowed, rankScores } from "../stories/score";
 import { STORY_TYPE_DEFS } from "../stories/types";
 import { label, sectorName, type StageName } from "../labels";
 import { SECTORS } from "../library";
@@ -67,7 +67,10 @@ export type LeadLabel = "Today" | "This week" | "Latest story" | "Pinned by the 
 export function pickLead(ranked: StoryRecord[], sector: string, now: number): { story: StoryRecord; label: LeadLabel } | null {
   const pinned = ranked.filter(s => s.pinnedUntil).sort((a, b) => (b.edits.at(-1)?.at ?? "").localeCompare(a.edits.at(-1)?.at ?? ""))[0];
   if (pinned) return { story: pinned, label: "Pinned by the editor" };
-  const best = (xs: StoryRecord[]) => [...xs].sort((a, b) => lensScore(b, sector) - lensScore(a, sector) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id))[0];
+  // E2b: rank, not raw score: an AI-read roundup never ranks above a measured story of its day; it and the weekly pieces never lead on a day
+  // that has a measured story.
+  const rank = rankScores(ranked), r = (x: StoryRecord) => ({ score: rank.get(x.id) ?? x.score, sector: x.sector });
+  const best = (xs: StoryRecord[]) => [...xs].filter(x => leadAllowed(x, ranked)).sort((a, b) => lensScore(r(b), sector) - lensScore(r(a), sector) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id))[0];
   const labelOf = (s: StoryRecord): LeadLabel => (within(s.happened_at, now, 24 * HOUR) ? "Today" : "This week");
   // Killed stories never reach here (ranked is the published stream).
   const pattern = best(ranked.filter(x => PATTERN_TYPES.has(x.type) && within(x.happened_at, now, PATTERN_LEAD_HOURS * HOUR)));

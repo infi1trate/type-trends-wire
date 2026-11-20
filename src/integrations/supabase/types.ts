@@ -1753,6 +1753,62 @@ export type Database = {
           },
         ]
       }
+      story_texts: {
+        Row: {
+          attempts: number
+          body: string[]
+          checked: boolean
+          cost: number
+          created_at: string
+          deck: string
+          failures: string[]
+          headline: string
+          how_we_know: string
+          id: number
+          model: string
+          story_id: string
+          version: number
+        }
+        Insert: {
+          attempts?: number
+          body?: string[]
+          checked: boolean
+          cost?: number
+          created_at?: string
+          deck: string
+          failures?: string[]
+          headline: string
+          how_we_know: string
+          id?: never
+          model: string
+          story_id: string
+          version: number
+        }
+        Update: {
+          attempts?: number
+          body?: string[]
+          checked?: boolean
+          cost?: number
+          created_at?: string
+          deck?: string
+          failures?: string[]
+          headline?: string
+          how_we_know?: string
+          id?: never
+          model?: string
+          story_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_texts_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thumb_optouts: {
         Row: {
           created_at: string
@@ -3427,6 +3483,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      story_writer_facts: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never

@@ -243,6 +243,15 @@ describe("build", () => {
       why: null,
     } };
   };
+  it("E2b: a writer that fails every time never stops a story from publishing; the template text stays", async () => {
+    const m = memory(); let called = 0;
+    const writer = { used: async () => 0, runs: () => true, call: async () => { called++; throw new Error("down"); }, versions: async () => new Map<string, number>(), insert: async () => { throw new Error("db down"); } };
+    const r = await runBuild({ ...m.deps, writer, toWrite: async (fresh: string[]) => fresh.map(id => { const x = m.rows.get(id)!; return { id, type: x.type, headline: x.headline, deck: x.deck, facts: x.facts, sector: x.sector, signal_keys: x.signal_keys, domains: x.domains, source_ids: x.source_ids, basis: x.basis, happened_at: x.happened_at, kicker: x.kicker }; }) }, { writeDeadline: Date.now() + 120_000 });
+    expect(r.published).toBeGreaterThan(0);
+    expect([...m.rows.values()].filter(x => x.status === "published").length).toBe(r.published);
+    expect(called).toBeGreaterThan(0);
+    expect(r.texts?.written).toBe(0);
+  });
   it("running twice inserts nothing new", async () => {
     const m = memory(), a = await runBuild(m.deps), b = await runBuild(m.deps);
     expect(a.inserted).toBeGreaterThan(0); expect(b.inserted).toBe(0);

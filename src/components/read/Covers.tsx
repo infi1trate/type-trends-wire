@@ -38,7 +38,7 @@ export type CoverObject =
   | null;
 /** The story cover: an ink slab the full width; the headline in Display crossing the one object; number and date pinned left,
  * sector and type pinned right at mid-height; the deck on its own ink backing. */
-export function StoryCover({ seed, headline, long, deck, left, right, object, kicker }: { seed: number | string; headline: string; long: boolean; deck: string | null | undefined; left: ReactNode; right: ReactNode; object: CoverObject; kicker: ReactNode }) {
+export function StoryCover({ seed, headline, long, deck, left, right, object, kicker, italicDeck = false }: { seed: number | string; headline: string; long: boolean; deck: string | null | undefined; left: ReactNode; right: ReactNode; object: CoverObject; kicker: ReactNode; italicDeck?: boolean }) {
   const picture = object?.kind === "crop" ? <Treated crop={object.crop} treatment="print-ink" priority />
     : object?.kind === "frame" ? <CaptureFrame fr={object.frame} label={object.label} />
     : object?.kind === "text" ? <div className="ed-typo cover-typo" role="img" aria-label={`Before: ${object.before}. After: ${object.after}.`}><span className="ed-kicker">Before</span><span className="ed-h3 break-words">{object.before}</span><span className="ed-kicker">After</span><span className="ed-h3 break-words">{object.after}</span></div>
@@ -53,7 +53,7 @@ export function StoryCover({ seed, headline, long, deck, left, right, object, ki
           : <CutAndPaste seed={seed} picture={picture} note={object.note} />}
       </div>}
       <h1 id="ed-story-title" className={`cover-head ${long ? "ed-h1" : "ed-cover"} break-words`}><HeadlineStrips text={headline} seed={seed} /></h1>
-      {deck && <p className="cover-deck ed-standfirst"><span>{deck}</span></p>}
+      {deck && <p className={`cover-deck ed-standfirst${italicDeck ? " italic" : ""}`}><span>{deck}</span></p>}
     </div>
   </header>;
 }

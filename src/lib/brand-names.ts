@@ -27,6 +27,8 @@ export const seedModule = (rows: SeedRow[]) =>
 
 const SEED = new Map(BRAND_SEED.map(([d, n, k]) => [d, { name: n, kind: k as SiteKind }]));
 export const seededDomains = () => [...SEED.keys()];
+/** Every seeded display name (the writer's check refuses a tracked brand the story is not about). */
+export const seededNames = () => [...new Set([...SEED.values()].map(v => v.name))];
 const bare = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
 
 /** A tidy form of a domain for a brand without a name: the registrable label, capitalised ("acme-labs.co.uk" → "Acme-labs"). */

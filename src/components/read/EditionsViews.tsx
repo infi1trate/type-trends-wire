@@ -16,7 +16,7 @@ import { MCP_TOOL_COUNT } from "@/lib/site";
 import { signalSeriesQuery } from "@/lib/data";
 import type { MorningItem } from "@/lib/editions/morning";
 import { numberLabel } from "@/lib/stories/numbers";
-import { noDid, readerWhy } from "@/lib/stories/reader";
+import { noDid } from "@/lib/stories/reader";
 import type { loadMorning, loadSectorIndex, loadEditions } from "@/lib/editions/editions.server";
 import type { SectorReport } from "@/lib/editions/sector";
 import type { loadWelcome } from "@/lib/editions/welcome.server";
@@ -43,7 +43,6 @@ const Item = ({ s, lead = false }: { s: MorningItem; lead?: boolean }) => <artic
   <p className="ed-kicker flex flex-wrap items-center gap-2">{noDid(s.kicker)}</p>
   <h3 className={`${lead ? "ed-h1" : "ed-h3"} mt-2`}><Link to="/stories/$id" params={{ id: s.id }} className="no-underline hover:underline" {...pr(s.href)}>{s.headline}</Link></h3>
   {s.deck && <p className={lead ? "ed-standfirst mt-4" : "ed-small mt-2"}>{s.deck}</p>}
-  {s.why.basis === "ai" && readerWhy(s.why.text) && <p className="ed-small mt-2"><span className="ed-kicker mr-2">Why it matters</span>{readerWhy(s.why.text)} <BasisWord b="ai" /></p>}
   <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time><Link to="/stories/$id" params={{ id: s.id }} className="ed-tap">Receipts →</Link></p>
 </article>;
 

@@ -12,6 +12,8 @@ export type CompleteInput = {
   tool_choice?: { type: "function"; function: { name: string } };
   temperature?: number;
   max_tokens?: number;
+  /** Structured output for models that refuse forced tools on this route (the writer); the JSON arrives as the message text. */
+  response_format?: { type: "json_schema"; json_schema: { name: string; strict: boolean; schema: Record<string, unknown> } };
   signal?: AbortSignal;
 };
 export type Usage = { prompt_tokens: number; completion_tokens: number };

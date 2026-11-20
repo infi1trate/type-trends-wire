@@ -2,13 +2,16 @@
 import { deLegacy } from "../brand";
 import { basis as basisOf, label, sectorName, type Basis } from "../labels";
 import { brandPath, patternPath, signalPath } from "../ia";
+import { brandName } from "../brand-names";
 import { STORIES_PER_PAGE, type Story } from "../stories";
 import { sectorFirst } from "../sector-lens";
 import { COMPONENT_LABEL, LEAD_WINDOW_HOURS, lensScore, type ComponentId, type Components } from "./score";
 import { STORY_KINDS, STORY_TYPE_DEFS, type EvidenceLink, type Fact, type StoryKind } from "./types";
 import { foldedIds, type Shown, type StoredStory } from "./edits";
 import { soWhat } from "../digest/copy";
-import { noDid, readerWhy } from "./reader";
+import { noDid } from "./reader";
+import { howWeKnowOf, type Written } from "./texts";
+import { leadAllowed, rankScores } from "./score";
 
 /** The deterministic so-what: the signal's own line for signal stories, the type's line otherwise. */
 export const soWhatOf = (p: { type: StoryKind; signalKeys: string[]; stage?: string | null | undefined }) => {
@@ -16,7 +19,7 @@ export const soWhatOf = (p: { type: StoryKind; signalKeys: string[]; stage?: str
   return ["shift", "breakout", "crossover", "white_space", "first_seen"].includes(p.type) && key ? soWhat(key, p.stage ?? null) : STORY_TYPE_DEFS[p.type].soWhat || (key ? soWhat(key, p.stage ?? null) : "");
 };
 
-export type StoryRecord = Shown<StoredStory>;
+export type StoryRecord = Shown<StoredStory> & { written?: Written | null; template?: { headline: string; deck: string | null } };
 export const storyPath = (id: string) => `/stories/${encodeURIComponent(id)}`;
 export const isKind = (t: string): t is StoryKind => (STORY_KINDS as readonly string[]).includes(t);
 
@@ -49,7 +52,9 @@ export function liveModel(all: StoryRecord[], o: { sector: string; page: number;
   const stream = streamOf(all), ranked = stream.filter(s => s.type !== "launch");
   const pinned = ranked.filter(s => s.pinnedUntil).sort((a, b) => (b.edits.at(-1)?.at ?? "").localeCompare(a.edits.at(-1)?.at ?? ""))[0] ?? null;
   const recent = ranked.filter(s => Date.parse(s.happened_at) >= o.now - LEAD_WINDOW_HOURS * 36e5 && Date.parse(s.happened_at) <= o.now + 36e5);
-  const best = [...(recent.length ? recent : ranked.slice(0, 30))].sort((a, b) => lensScore(b, o.sector) - lensScore(a, o.sector) || b.happened_at.localeCompare(a.happened_at))[0] ?? null;
+  // E2b: an AI-read roundup never ranks above a measured story of its day, and neither it nor a weekly piece leads on a day with a measured story.
+  const rank = rankScores(ranked), pool = (recent.length ? recent : ranked.slice(0, 30)), allowed = pool.filter(s => leadAllowed(s, ranked));
+  const best = [...(allowed.length ? allowed : pool)].sort((a, b) => lensScore({ score: rank.get(b.id) ?? b.score, sector: b.sector }, o.sector) - lensScore({ score: rank.get(a.id) ?? a.score, sector: a.sector }, o.sector) || b.happened_at.localeCompare(a.happened_at))[0] ?? null;
   const lead = pinned ?? best;
   const rest = ranked.filter(s => s.id !== lead?.id && inFilter(s.type, o.type));
   const ordered = o.sector !== "all" ? sectorFirst(rest, o.sector, s => s.sector) : rest;
@@ -90,25 +95,46 @@ const asComponents = (v: unknown): { id: ComponentId; label: string; value: numb
   const o = (v && typeof v === "object" ? v : {}) as Partial<Components>;
   return (Object.keys(COMPONENT_LABEL) as ComponentId[]).map(id => ({ id, label: COMPONENT_LABEL[id], value: typeof o[id]?.value === "number" ? o[id]!.value : 0, why: typeof o[id]?.why === "string" ? o[id]!.why : "" }));
 };
-/** The story page (Read side): facts and receipts only. The score, the threshold, the job and the deterministic so-what stay on
- *  the desk and in the terminal; an AI line shows only when it says something about the story (`readerWhy`), never generic advice. */
+/** The changes on the Read side: the tape lines the story is built from (and its numbers), each with its receipt. The headline call, the
+ *  confirmation line and other source lines are machinery: they stay in the Data view. */
+export const readFacts = (facts: Fact[]) => {
+  const members = facts.filter(f => f.kind === "member");
+  // "Changed: accent" only summarises the change lines; with the lines themselves present it is noise.
+  return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
+};
+/** Data-view lines (the desk and terminal): headline call, confirmations and other source lines. */
+export const dataFacts = (facts: Fact[]) => facts.filter(f => f.kind === "source" || f.kind === "date");
+/** The story page (Read side, E2b): kicker (kind · sector), headline, deck, the picture, the written body, one how-we-know line, the changes
+ *  with receipts, then a way on. Score, threshold and why it ran stay in the Data view and on the desk; stored why lines are not shown. */
 export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[] }) {
   const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts);
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
-  const why = readerWhy(s.why_line);
+  const sector = s.sector ? sectorName(s.sector) : null;
   return {
-    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, kicker: noDid(deLegacy(s.kicker)), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
+    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, kicker: type === "news" ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
-    facts: facts.filter(f => f.kind !== "before" && f.kind !== "after").map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
+    body: (s.written?.body ?? []).map(p => deLegacy(p)), howWeKnow: noDid(s.written?.howWeKnow ?? howWeKnowOf(s)),
+    facts: readFacts(facts).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
     // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
     evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : noDid(deLegacy(e.label)) })),
-    brands: s.domains.map(d => ({ domain: d, href: brandPath(d) })),
+    brands: s.domains.map(d => ({ domain: d, name: brandName(d), href: brandPath(d) })),
     signals: s.signal_keys.map(k => ({ key: k, name: label(k).name, dimension: label(k).dimension, basis: basisOf(k), href: signalPath(k) })),
     patterns: related.patterns.map(k => ({ key: k, name: label(k).name, href: patternPath(k) })),
-    soWhat: why ? { text: deLegacy(why), basis: "ai" as const } : null,
     earlier: related.earlier, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note })),
     blocks: STORY_BLOCKS,
   };
+}
+/** "Next": the next story of the same UTC day by rank, else the newest earlier story (published, not folded). */
+export function nextStory(all: StoryRecord[], id: string): Story | null {
+  const stream = streamOf(all).filter(s => s.type !== "launch"), me = stream.find(s => s.id === id) ?? all.find(s => s.id === id);
+  if (!me) return null;
+  const day = me.happened_at.slice(0, 10), rank = rankScores(stream);
+  const sameDay = stream.filter(s => s.happened_at.slice(0, 10) === day).sort((a, b) => (rank.get(b.id) ?? b.score) - (rank.get(a.id) ?? a.score) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id));
+  const i = sameDay.findIndex(s => s.id === id);
+  const next = i >= 0 ? sameDay[i + 1] : undefined;
+  const earlier = stream.filter(s => s.id !== id && s.happened_at < me.happened_at && !sameDay.slice(0, Math.max(0, i + 1)).some(x => x.id === s.id)).sort((a, b) => b.happened_at.localeCompare(a.happened_at))[0];
+  const pick = next ?? earlier;
+  return pick ? toStory(pick) : null;
 }
 export type StoryPageModel = ReturnType<typeof storyPage>;
 export type LiveStories = ReturnType<typeof liveModel>;
@@ -120,7 +146,8 @@ export function queueModel(all: StoryRecord[], day: string | null, now: number) 
   const today = new Date(now).toISOString().slice(0, 10), since = new Date(now - QUEUE_DAYS * 864e5).toISOString().slice(0, 10);
   const days = [...new Set(all.map(s => dayOf(s.happened_at)))].filter(d => d >= since && d <= today).sort().reverse();
   const pick = day ?? null, rows = all.filter(s => (pick ? dayOf(s.happened_at) === pick : dayOf(s.happened_at) >= since)).sort((a, b) => b.happened_at.localeCompare(a.happened_at) || b.score - a.score);
-  const item = (s: StoryRecord) => ({ ...toStory(s), kicker: s.kicker, state: s.state, reason: s.reason, whyRan: s.why_ran, components: asComponents(s.components), whyLine: s.why_line, pinnedUntil: s.pinnedUntil, killReason: s.killReason, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note, payload: e.payload as Record<string, string> })) });
+  const item = (s: StoryRecord) => ({ ...toStory(s), kicker: s.kicker, state: s.state, reason: s.reason, whyRan: s.why_ran, components: asComponents(s.components), whyLine: s.why_line,
+    template: s.template ?? { headline: s.headline, deck: s.deck }, written: s.written ? { model: s.written.model, version: s.written.version, at: s.written.at } : null, dataLines: dataFacts(asFacts(s.facts)).map(f => f.text), pinnedUntil: s.pinnedUntil, killReason: s.killReason, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note, payload: e.payload as Record<string, string> })) });
   // Counts read the overlay: a killed story no longer counts as ran.
   const count = (d: string, st: StoryRecord["state"]) => all.filter(s => s.state === st && (st !== "published" || s.type !== "launch") && dayOf(s.happened_at) === d).length;
   return {

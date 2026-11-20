@@ -2,7 +2,7 @@
 // at most a few "why it matters" lines inside the AI budget, and insert with ON CONFLICT DO NOTHING. Never runs in DEV runs.
 import { decodeEntities } from "../entities";
 import { forecastSiteTraits, type SiteRow } from "../forecast-signals";
-import { canonical, label } from "../labels";
+import { canonical } from "../labels";
 import type { EventRow, RebrandRow } from "../agency/changes";
 import type { SignalRow } from "../signals";
 import { allCandidates, archiveMeasured, type BuildInput, type RunRows } from "./candidates";
@@ -11,10 +11,16 @@ import { fetchRealRuns } from "../real-runs";
 import { planStories, type Existing, type Planned } from "./score";
 import { brandFolds, type Fold, type ShownStory } from "./editor";
 import { siteKind } from "../brand-names";
-import { knownFrom, validateWhy, whyFacts, whyPrompt, WHY_KIND, WHY_PER_BUILD, WHY_PER_DAY, WHY_SYSTEM, WHY_TOOL } from "./why";
+import { knownFrom, validateWhy, WHY_PER_BUILD, WHY_PER_DAY } from "./why";
 import { soWhatOf } from "./view";
 import { CALL_BUDGET_MS } from "../jobs/steps";
 import { REVERSAL_DAYS } from "../reversal";
+import { basis as basisOf, label, sectorName } from "../labels";
+import { seededNames } from "../brand-names";
+import { writerFacts, type FactSource, type FactStory } from "./writer-facts";
+import { triedWriter, writeStories, writerIO, type WriterIO, type WriteResult } from "./writer.server";
+import { AI_MODELS } from "../ai-models";
+import type { Ctx } from "./candidates";
 
 /** Hard time budget for a build called at the end of a job; the rest waits for the next run. */
 export const BUILD_BUDGET_MS = 20_000;
@@ -42,11 +48,15 @@ export type BuildDeps = {
   lineless?: (limit: number) => Promise<WhyInput[]>; insertLines?: (rows: LineRow[]) => Promise<number>;
   /** Give newly published stories their permanent numbers (story_numbers); returns how many were numbered. */
   assignNumbers?: () => Promise<number>;
+  /** E2b · the writer: its I/O, and the stories to write now (fresh ones first, then published in the last seven days without a version
+   *  newer than their last correction). */
+  writer?: WriterIO | null; toWrite?: (freshIds: string[], limit: number) => Promise<FactStory[]>;
   /** Append a kill to every published single-brand story told only by these reversed events (retire.ts reversedStory); returns how many. */
   retireReversed?: (eventIds: number[], identityIds: string[]) => Promise<number>;
 };
-export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number };
-export type BuildResult = { ok: true; skipped?: "dev"; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[] };
+export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number;
+  /** When the writer must stop starting calls (absolute ms); default the build's own budget. */ writeDeadline?: number; writerPerBuild?: number; writeLimit?: number };
+export type BuildResult = { ok: true; skipped?: "dev"; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -100,7 +110,34 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   // A change back retires the story that already ran on the change it reverses (append-only kill edits; never fails the build).
   const retired = reversed.length && deps.retireReversed ? await deps.retireReversed(reversed, reversedIdentity).catch(() => 0) : 0;
   const folded = folds.length && deps.appendFolds ? await deps.appendFolds(folds).catch(() => 0) : 0;
-  return { ok: true, numbered, retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+  // The writer comes last: every story above is already stored with its template text, so nothing waits on it and a failure changes nothing.
+  let texts: BuildResult["texts"];
+  if (deps.writer && deps.toWrite) {
+    try {
+      const fresh = plan.filter(p => p.status === "published" && p.type !== "launch").sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).map(p => p.id);
+      const stories = await deps.toWrite(fresh, o.writeLimit ?? 12), src = factSource(input, ctx);
+      const r = await writeStories(stories.map(st => ({ story: st, ...writerFacts(st, src) })), deps.writer, { names: src.known }, { deadline: o.writeDeadline ?? start + budget, now: clock, ...(o.writerPerBuild != null ? { perBuild: o.writerPerBuild } : {}) });
+      texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
+    } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
+  }
+  return { ok: true, numbered, ...(texts ? { texts } : {}), retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+}
+
+/** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */
+export function factSource(input: BuildInput, ctx: Ctx): FactSource {
+  const events = new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e]));
+  const names = new Map(input.sites.map(x => [x.domain, x.name]));
+  const known = [...new Set([...seededNames(), ...input.sites.map(x => x.name).filter((n): n is string => !!n)])];
+  const pct1 = (v: number) => `${(Math.round(v * 1000) / 10).toFixed(1)}%`;
+  const numbers = (keys: string[], sector: string | null) => keys.slice(0, 3).flatMap(k => {
+    const all = ctx.row(ctx.cur, canonical(k)), sec = sector ? ctx.row(ctx.cur, canonical(k), sector) : null, b = basisOf(k) === "ai" ? "ai" as const : "measured" as const, n = label(k).name;
+    const stage = (r: typeof all) => (r?.stage ? `, ${r.stage}` : ""), mom = (r: typeof all) => (typeof r?.momentum === "number" ? `, momentum ${r.momentum.toFixed(1)} points a quarter` : "");
+    return [
+      ...(all?.current_share != null ? [{ text: `${n}: ${pct1(all.current_share)} of ${ctx.sites.length} tracked homepages${stage(all)}${mom(all)}`, basis: b }] : []),
+      ...(sector && sec?.current_share != null ? [{ text: `${n}: ${pct1(sec.current_share)} of ${ctx.bySector.get(sector)?.length ?? 0} tracked ${sectorName(sector)} homepages${stage(sec)}${mom(sec)}`, basis: b }] : []),
+    ];
+  });
+  return { events, texts: new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v])), calls: input.calls ?? {}, names, known, numbers };
 }
 
 // ---- Real I/O ---------------------------------------------------------------------------------------------------
@@ -158,7 +195,8 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
 
 
 type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
-export function dbDeps(admin: Admin, withWhy = true): BuildDeps {
+/** `withAi` false: no model calls at all (dry runs and backfills). */
+export function dbDeps(admin: Admin, withAi = true): BuildDeps {
   return {
     load: loadInput,
     existing: async since => {
@@ -166,7 +204,7 @@ export function dbDeps(admin: Admin, withWhy = true): BuildDeps {
       const rows = await pages<import("./edits").StoredStory>((f, t) => admin.from("stories").select("id,type,status,reason,score,components,why_ran,kicker,headline,deck,facts,why_line,why_model,why_at,sector,signal_keys,domains,evidence,source_ids,basis,happened_at,created_at").gte("happened_at", since).order("id").range(f, t) as never, 1000);
       const edits = await pages<import("./edits").EditRow>((f, t) => admin.from("story_edits").select("id,story_id,action,payload,note,at").order("id").range(f, t) as never, 1000);
       const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
-      return rows.map(r => { const v = applyEdits(r, by.get(r.id) ?? [], Date.now()); return { id: r.id, type: v.type as Existing["type"], status: r.status, state: v.state, score: r.score, happened_at: r.happened_at, domains: r.domains, signal_keys: r.signal_keys, sector: r.sector, headline: v.headline, deck: v.deck, facts: v.facts, source_ids: r.source_ids }; });
+      return rows.map(r => { const v = applyEdits(r, by.get(r.id) ?? [], Date.now()); return { id: r.id, type: v.type as Existing["type"], status: r.status, state: v.state, score: r.score, basis: r.basis, happened_at: r.happened_at, domains: r.domains, signal_keys: r.signal_keys, sector: r.sector, headline: v.headline, deck: v.deck, facts: v.facts, source_ids: r.source_ids }; });
     },
     calls: async (events, deadline) => (await import("./headline-call.server")).headlineCalls(admin, events.filter(e => e.type === "message_pivot" && (!e.page_type || e.page_type === "home")), { deadline }),
     appendFolds: async folds => {
@@ -184,7 +222,10 @@ export function dbDeps(admin: Admin, withWhy = true): BuildDeps {
       }
       return n;
     },
-    why: withWhy ? aiWhy(admin) : null,
+    // E2b: the writer replaced the "why it matters" line; stored lines stay in the database but no new ones are written.
+    why: null,
+    writer: withAi ? writerIO(admin) : null,
+    toWrite: (fresh, limit) => storiesToWrite(admin, fresh, limit, writerIO(admin).runs(AI_MODELS.writer)),
     lineless: async limit => {
       const since = new Date(Date.now() - 30 * 864e5).toISOString();
       const [st, have] = await Promise.all([
@@ -199,6 +240,31 @@ export function dbDeps(admin: Admin, withWhy = true): BuildDeps {
     retireReversed: (ids, identity) => retireReversedStories(admin, ids, identity),
     insertLines: async rows => { const { data, error } = await admin.from("story_lines").upsert(rows, { onConflict: "story_id", ignoreDuplicates: true }).select("story_id"); if (error) throw new Error("line_insert_failed"); return data?.length ?? 0; },
   };
+}
+
+/** Stories the writer owes a version: the fresh ids first, then stories published in the last seven days (editor's overlay applied) with no
+ *  version yet, or whose last correction is newer than their last version. Best first. */
+export async function storiesToWrite(admin: Admin, fresh: string[], limit: number, writerRuns = true): Promise<FactStory[]> {
+  const { applyEdits } = await import("./edits");
+  const since = new Date(Date.now() - BUILD_DAYS * 864e5).toISOString();
+  const cols = "id,type,status,reason,score,components,why_ran,kicker,headline,deck,facts,why_line,why_model,why_at,sector,signal_keys,domains,evidence,source_ids,basis,happened_at,created_at";
+  const rows = await pages<import("./edits").StoredStory>((f, t) => admin.from("stories").select(cols).gte("happened_at", since).neq("type", "launch").order("id").range(f, t) as never, 1000);
+  if (!rows.length) return [];
+  const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, { created_at: string; model: string; attempts: number }>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const [e, t] = await Promise.all([admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids.slice(i, i + 200)).order("id"), admin.from("story_texts").select("story_id,created_at,model,attempts").in("story_id", ids.slice(i, i + 200))]);
+    if (e.error || t.error) throw new Error("to_write_read_failed");
+    edits.push(...((e.data ?? []) as unknown as import("./edits").EditRow[]));
+    for (const x of t.data ?? []) if ((last.get(x.story_id)?.created_at ?? "") < x.created_at) last.set(x.story_id, x);
+  }
+  const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
+  const shown = rows.map(r => applyEdits(r, by.get(r.id) ?? [], Date.now())).filter(s => s.state === "published");
+  const { foldedIds } = await import("./edits"), folded = foldedIds(shown);
+  // Owed: no version since the last correction, or the newest one never reached the writer (made while the writer was out of calls).
+  const owed = shown.filter(s => { if (folded.has(s.id)) return false; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)); });
+  const order = new Map(fresh.map((id, i) => [id, i]));
+  return owed.sort((a, b) => (order.get(a.id) ?? 1e9) - (order.get(b.id) ?? 1e9) || b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit)
+    .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker }));
 }
 
 /** Builds number stories first published in this many days (older ones were numbered by earlier builds or the backfill). */
@@ -246,46 +312,11 @@ export async function retireReversedStories(admin: Admin, eventIds: number[], id
   return kills.length;
 }
 
-/** Budget-guarded line writer: reserve under the story_why purpose, call once, settle; unknown outcomes are charged in full and never replayed. */
-export function aiWhy(admin: Admin): WhyWriter {
-  return {
-    used: async () => {
-      const dayStart = new Date(); dayStart.setUTCHours(0, 0, 0, 0);
-      // Story lines only: headline calls share the purpose but carry the event's snapshot id (headline-call.server.ts).
-      const { count, error } = await admin.from("ai_usage").select("id", { count: "exact", head: true }).eq("kind", WHY_KIND).is("snapshot_id", null).neq("state", "rejected").gte("created_at", dayStart.toISOString());
-      if (error) throw new Error("why_usage_failed");
-      return count ?? 0;
-    },
-    write: async (p, soWhatText, signal) => {
-      const { aiClient, markProvider, ProviderError } = await import("../ai-provider.server");
-      const { AI_MODELS } = await import("../ai-models"), { estimateCost } = await import("../ai-budget");
-      const ai = aiClient(), provider = ai.provider, model = AI_MODELS.text;
-      const estimate = estimateCost({ provider, model, input_tokens: 1500, output_tokens: 200 });
-      const res = await admin.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: WHY_KIND, p_model: model, p_estimate: estimate });
-      const r = res.data as { ok?: boolean; id?: number } | null;
-      if (res.error || !r?.ok || typeof r.id !== "number") return null; // budget short: skip the line
-      const uid = r.id;
-      if (!await markProvider(admin, uid, provider)) { await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: "usage_write_failed", p_state: "rejected" }); return null; }
-      try {
-        const resp = await ai.complete({ model, max_tokens: 200, temperature: 0.3, signal, messages: [{ role: "system", content: WHY_SYSTEM }, { role: "user", content: [{ type: "text", text: whyPrompt(whyFacts(p, soWhatText)) }] }], tools: [WHY_TOOL], tool_choice: { type: "function", function: { name: "emit_line" } } });
-        const u = resp.usage, cost = estimateCost({ provider, model, input_tokens: u.prompt_tokens, output_tokens: u.completion_tokens });
-        let line: unknown = null; try { line = resp.tool_call_args ? (JSON.parse(resp.tool_call_args) as { line?: unknown }).line : resp.text; } catch { line = null; }
-        await admin.rpc("ai_settle", { p_id: uid, p_input: u.prompt_tokens, p_output: u.completion_tokens, p_cost: cost, p_ok: typeof line === "string", p_error: typeof line === "string" ? null as unknown as string : "no_line", p_state: "done" });
-        return typeof line === "string" ? { line, model } : null;
-      } catch (e) {
-        if (e instanceof ProviderError && e.usage) { await admin.rpc("ai_settle", { p_id: uid, p_input: e.usage.prompt_tokens, p_output: e.usage.completion_tokens, p_cost: estimateCost({ provider, model, input_tokens: e.usage.prompt_tokens, output_tokens: e.usage.completion_tokens }), p_ok: false, p_error: `${provider}_${e.code}`, p_state: "done" }); return null; }
-        await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: estimate, p_ok: false, p_error: "why_unknown_outcome", p_state: "unknown" });
-        return null;
-      }
-    },
-  };
-}
-
 /** Entry point for jobs and the backfill script. */
-export async function buildStories(o: BuildOptions & { withWhy?: boolean } = {}): Promise<BuildResult> {
+export async function buildStories(o: BuildOptions & { withAi?: boolean } = {}): Promise<BuildResult> {
   if (o.dev) return runBuild({ load: async () => { throw new Error("unreachable"); }, existing: async () => [], insert: async () => 0 }, o);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return runBuild(dbDeps(supabaseAdmin, o.withWhy !== false), o);
+  return runBuild(dbDeps(supabaseAdmin, o.withAi !== false), o);
 }
 
 /** Wrapped call at the end of a job: never throws, never fails the job, skips when the job already used most of its time. */
@@ -297,9 +328,9 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     const now = Date.now(), left = JOB_LIMIT_MS - (now - jobStartedAt) - 10_000;
     if (left < 5000 || now - lastRun < MIN_INTERVAL_MS) return;
     lastRun = now;
-    const budgetMs = Math.min(BUILD_BUDGET_MS, left);
-    const r = await Promise.race([buildStories({ ...extra, budgetMs }), new Promise<null>(res => setTimeout(() => res(null), budgetMs + 2000))]);
-    if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, why_lines: r.why_lines });
+    const budgetMs = Math.min(BUILD_BUDGET_MS, left), writeDeadline = jobStartedAt + JOB_LIMIT_MS - 8000;
+    const r = await Promise.race([buildStories({ ...extra, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
+    if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
     else console.warn("story build timed out", job);
   } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); }
 }

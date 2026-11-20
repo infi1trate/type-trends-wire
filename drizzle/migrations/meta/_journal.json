@@ -393,6 +393,20 @@
       "when": 1795180601915,
       "tag": "0055_headline_calls_latest_wins",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795183436060,
+      "tag": "0056_story_texts",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795185096751,
+      "tag": "0057_story_writer_facts",
+      "breakpoints": true
     }
   ]
 }

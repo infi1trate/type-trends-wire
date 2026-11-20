@@ -7,6 +7,7 @@ import { AI_EVENTS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTE
 import { SEASONAL_HELD_EVENTS } from "../promo";
 import { isRebrand } from "../rebrand-rule";
 import type { EventRow, RebrandRow } from "../agency/changes";
+import { AI_ROUNDUP_DAILY_CAP, isAiRoundup } from "./score";
 
 export type RetireStory = { id: string; type: string; sector: string | null; signal_keys: string[]; domains: string[]; source_ids: string[] };
 export type RetireCtx = {
@@ -245,4 +246,29 @@ export function e2Plan(stories: E2Story[], c: E2Ctx): E2Plan {
     out.corrects.push({ id: target.id, payload: { deck: cand.deck ?? target.deck ?? "", facts }, note: E2_FOLD_NOTE(add.map(f => f.text)) });
   }
   return out;
+}
+
+// PHASE E2b · RE-PLAN ONE DAY ---------------------------------------------------------------------
+// After the plan rules changed (measured first, one AI-read roundup a day, weekly pieces outside the five, against the grain backed by a
+// measured change), a day is re-planned once: stored stories that lose their place get a kill ("Held: over the daily cap"), held stories
+// that now win one get a restore, and the old against-the-grain piece is retired. Pure; appended edits are the only write, numbers stay.
+export const E2B_REPLAN = {
+  cap: "Held: over the daily cap",
+  against: "Retired: against the grain now needs a measured change behind each brand",
+  restore: "Re-planned: measured stories take their places first",
+} as const;
+export type ReplanStored = { id: string; type: string; state: "published" | "held" | "killed"; happened_at: string; basis?: string | null };
+export type ReplanPlanned = { id: string; status: "published" | "held"; reason: string; type?: string; basis?: string | null };
+export function replanEdits(stored: ReplanStored[], plan: ReplanPlanned[], day: string): { kills: { id: string; note: string }[]; restores: { id: string; note: string }[] } {
+  const by = new Map(plan.map(p => [p.id, p])), kills: { id: string; note: string }[] = [], restores: { id: string; note: string }[] = [];
+  for (const s of stored.filter(x => x.happened_at.slice(0, 10) === day && x.type !== "launch")) {
+    const p = by.get(s.id);
+    if (s.state === "published") {
+      if (p?.status === "held") kills.push({ id: s.id, note: /^over the daily cap/.test(p.reason) ? E2B_REPLAN.cap : `Held: ${p.reason}`.slice(0, 200) });
+      else if (!p && /^against:\d{4}-W\d{2}$/.test(s.id)) kills.push({ id: s.id, note: E2B_REPLAN.against });
+      // An AI-read roundup the new plan no longer holds under this id (its window moved) loses its place when the day already has its one.
+      else if (!p && isAiRoundup({ id: s.id, type: s.type, basis: s.basis ?? null }) && plan.filter(x => x.status === "published" && x.type != null && isAiRoundup({ id: x.id, type: x.type, basis: x.basis ?? null })).length >= AI_ROUNDUP_DAILY_CAP) kills.push({ id: s.id, note: E2B_REPLAN.cap });
+    } else if (s.state === "held" && p?.status === "published") restores.push({ id: s.id, note: E2B_REPLAN.restore });
+  }
+  return { kills, restores };
 }

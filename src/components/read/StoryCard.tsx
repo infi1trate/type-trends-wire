@@ -3,7 +3,6 @@ import type { AnchorHTMLAttributes, ReactNode } from "react";
 import type { Story } from "@/lib/stories";
 import { storyTime } from "@/lib/stories";
 import { AppLink } from "@/components/terminal/AppLink";
-import { BasisWord } from "@/components/digest/Editorial";
 import { BasisChip } from "@/components/terminal/SignalBits";
 import { numberLabel } from "@/lib/stories/numbers";
 import { Ledger, StoryNo } from "@/components/brand/Ledger";
@@ -13,7 +12,7 @@ export function Receipt({ href, children, ...rest }: { href: string; children: R
 }
 export function StoryCard({ s, lead = false, tour }: { s: Story; lead?: boolean; tour?: string | undefined }) {
   return <article className={lead ? "" : "ed-hair pt-4"} data-tour={tour}>
-    <p className="ed-kicker flex flex-wrap items-center gap-2">{s.kicker}{s.basis && <BasisWord b={s.basis} />}</p>
+    <p className="ed-kicker flex flex-wrap items-center gap-2">{s.kicker}</p>
     <h3 className={`${lead ? "ed-h1" : "ed-h3"} mt-2`}><Receipt href={s.evidence} className="no-underline hover:underline">{s.headline}</Receipt></h3>
     {s.deck && <p className={`${lead ? "ed-standfirst mt-4" : "ed-small mt-2"}`}>{s.deck}</p>}
     <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time>{s.corrected && <span>Corrected {s.corrected.slice(0, 10)}</span>}<Receipt href={s.evidence} className="ed-tap">{s.evidence.startsWith("/") ? "Receipts →" : "Source ↗"}</Receipt></p>
@@ -22,7 +21,7 @@ export function StoryCard({ s, lead = false, tour }: { s: Story; lead?: boolean;
 /** RELATED block on signal, brand and pattern pages: a Ledger (lists are ruled tables, not stacks of cards). */
 export function RelatedStories({ stories, empty }: { stories: Story[]; empty: string }) {
   return stories.length ? <Ledger label="Related stories" rows={stories.map(s => ({ key: s.id, href: s.evidence, number: s.number != null ? <StoryNo n={s.number} /> : "·",
-    title: <>{s.headline}{s.basis && <> <BasisWord b={s.basis} /></>}</>, line: s.deck ?? null, tags: [s.kicker], time: <time dateTime={s.at}>{storyTime(s.at)}</time> }))} /> : <p className="ed-small">{empty}</p>;
+    title: <>{s.headline}</>, line: s.deck ?? null, tags: [s.kicker], time: <time dateTime={s.at}>{storyTime(s.at)}</time> }))} /> : <p className="ed-small">{empty}</p>;
 }
 /** The compact story card (terminal row): one token-driven rendering for every mode, so it reads right on the dark terminal, the Read
  * pages and the kit. `kicker`, `line` and `time` let the front page's live column add its type chip, one line and relative time. */

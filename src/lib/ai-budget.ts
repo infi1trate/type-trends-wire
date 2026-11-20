@@ -4,6 +4,7 @@ export type Budget = { scope: "monthly" | "backfill"; cap_usd: number; active: b
 export function estimateCost(usage: { provider?: AiProvider; model: AiModel; input_tokens: number; output_tokens: number }) {
   if (![usage.input_tokens, usage.output_tokens].every(n => Number.isFinite(n) && n >= 0)) throw new Error("Invalid token usage");
   const price = AI_PRICES[usage.provider ?? "lovable"][usage.model];
+  if (!price) throw new Error("No price for this model on this provider");
   return (usage.input_tokens * price.input + usage.output_tokens * price.output) / 1000000;
 }
 export function canSpend(spentMonth: number, spentBackfill: number, budgets: Budget[], estimate: number, now = new Date()): { ok: boolean; scope: Budget["scope"] | null } {

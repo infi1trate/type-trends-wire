@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { pauseNote } from "./ai-probe";
 import { historyNote } from "./history-refresh";
+import { WRITER_PER_DAY } from "./stories/writer";
 
 export type Every = "15m" | "6h" | "1d" | "7d";
 export const EVERY_MS: Record<Every, number> = { "15m": 15 * 60_000, "6h": 6 * 3_600_000, "1d": 86_400_000, "7d": 7 * 86_400_000 };
@@ -39,6 +40,8 @@ export const healthFactsSchema = z.object({
   indicators: z.object({ last_run_at: ts, points: num }).nullable().optional(),
   // Library history series: when the last stepwise refresh finished, from the public library_history_facts() facade, merged in by health.server.ts.
   library_history: z.object({ refreshed_at: ts }).nullable().optional(),
+  // E2b · the story writer: calls today and the last call / checked text, from the public story_writer_facts() facade.
+  story_writer: z.object({ calls_today: num, last_call_at: ts, last_checked_at: ts }).nullable().optional(),
   brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),
   // Optional cron-introspection flags (job name → has callback timeout). Not available on managed Cloud.
   timeouts: z.array(z.object({ job: z.string(), has_timeout: z.boolean() })).nullable().optional().transform(v => v ?? []),
@@ -70,6 +73,12 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
     jobs.push({ job, last_ok_at: r.last_ok_at ?? null, last_run_at: r.last_run_at ?? null, last_status: r.last_ok == null ? "never" : r.last_ok ? "ok" : "error", expected_every: every, stale: isStale(r.last_ok_at, every, t), consecutive_failures: r.failures_since_ok ?? 0 });
   }
   jobs.push({ job: "library_check", last_ok_at: f.library_check_at, last_run_at: f.library_check_at, last_status: f.library_check_at ? "ok" : "never", expected_every: "1d", stale: isStale(f.library_check_at, "1d", t), consecutive_failures: 0, note: ["newest live capture (daily check or Saturday full)", historyNote(f.library_history ?? null, t)].filter(Boolean).join("; ") });
+  {
+    // Never stale: a quiet news day writes nothing. The count is the hard daily limit's meter.
+    const w = f.story_writer;
+    jobs.push({ job: "story_writer", last_ok_at: w?.last_checked_at ?? null, last_run_at: w?.last_call_at ?? null, last_status: w ? (w.last_call_at ? "ok" : "never") : "unknown", expected_every: "1d", stale: false, consecutive_failures: 0,
+      note: w ? `${w.calls_today} of ${WRITER_PER_DAY} writer calls today (UTC)` : "writer facts unavailable" });
+  }
   jobs.push({ job: "library_full", last_ok_at: f.library_full_at, last_run_at: f.library_full_at, last_status: f.library_full_at ? "ok" : "never", expected_every: "7d", stale: isStale(f.library_full_at, "7d", t), consecutive_failures: 0, note: "newest Saturday full capture" });
   {
     // Older rows only carry a day-level receipt (run id date at 00:00 UTC): count it as end of that day.

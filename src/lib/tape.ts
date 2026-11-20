@@ -67,3 +67,28 @@ export const tapeLabels = (l: TapeLabels) => [...(l.seasonal ? [SEASONAL_LABEL] 
 export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at">, l: TapeLabels = {}, name?: string | null): string {
   return [brandName(e.domain, name), tapeWhat(e), tapeDate(e.detected_at), ...tapeLabels(l)].join(" · ");
 }
+
+// ONE LINE PER CHANGE (E2b) ----------------------------------------------------------------------------------------------------------
+type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at"> & { viewport?: string | null };
+const pageName = (p: string | null | undefined) => `${p && p !== "home" ? p : "home"} page`;
+/**
+ * The tape keeps one line per brand, change and UTC day: the same change seen on two viewports or several pages is one line, the earliest
+ * sighting first, and when it was seen on more than one page the line ends with the pages ("home page, product page"). Pure; order kept.
+ */
+export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => TapeLabels = () => ({}), name?: (domain: string) => string | null | undefined): (E & { tape: string; also: number[]; pages: string[] })[] {
+  const key = (e: E) => `${e.domain}|${e.detected_at.slice(0, 10)}|${tapeWhat({ ...e, page_type: "home" })}`;
+  const groups = new Map<string, E[]>();
+  for (const e of events) groups.set(key(e), [...(groups.get(key(e)) ?? []), e]);
+  const out: (E & { tape: string; also: number[]; pages: string[] })[] = [];
+  const done = new Set<string>();
+  for (const e of events) {
+    const k = key(e); if (done.has(k)) continue; done.add(k);
+    const g = groups.get(k)!, first = [...g].sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id)[0]!;
+    const pages = [...new Set(g.map(x => pageName(x.page_type)))].sort((a, b) => (a === "home page" ? -1 : b === "home page" ? 1 : a.localeCompare(b)));
+    const l = g.reduce<TapeLabels>((acc, x) => { const y = labels(x); return { seasonal: !!(acc.seasonal || y.seasonal), reversed: !!(acc.reversed || y.reversed) }; }, {});
+    const base = pages.length > 1 ? { ...first, page_type: "home" } : first;
+    const line = tapeLine(base, l, name?.(e.domain));
+    out.push({ ...e, tape: pages.length > 1 ? `${line} · ${pages.join(", ")}` : line, also: g.filter(x => x.id !== e.id).map(x => x.id), pages });
+  }
+  return out;
+}

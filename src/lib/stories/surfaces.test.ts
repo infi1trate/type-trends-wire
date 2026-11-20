@@ -31,15 +31,26 @@ describe("story page", () => {
     expect(html).toContain("Before → after"); expect(html).not.toContain("$");
     for (const t of ["Why this ran", "threshold", "Deterministic so-what", "Written from the facts above", "Prove who is doing it", "Act on the opening", "Spot what is changing"]) expect(html).not.toContain(t);
   });
-  it("keeps an AI line only when it says something about the story; generic advice and audits never reach the reader", () => {
+  it("E2b: the Read view shows no score, threshold or why it ran, and every change line links to its receipt", async () => {
+    const facts = [{ text: "Dropbox · accent, blue to lime · 11 Nov", href: "/library/dropbox.com?event=1", basis: "measured", kind: "member" }, { text: "Dropbox · headline, left · 14 Nov", href: "/library/dropbox.com?event=2", basis: "measured", kind: "member" }, { text: "Headline call: position. The brand shifted.", href: "/library/dropbox.com", basis: "ai", kind: "source" }, { text: "Confirmed on a second capture, 12 Nov", href: "/library/dropbox.com", basis: "measured", kind: "date" }];
+    const [s] = overlay([story({ facts, domains: ["dropbox.com"] })], [], NOW);
+    const page = { ...storyPage(s!, { earlier: [], patterns: [] }), thumb: null, series: null };
+    expect(page.facts.map(f => f.text)).toEqual(["Dropbox · accent, blue to lime · 11 Nov", "Dropbox · headline, left · 14 Nov"]);
+    const root = createRootRoute({ component: () => createElement(StoryView, { s: page }) });
+    const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/stories/move%3A1"] }) });
+    await router.load();
+    const html = renderToString(createElement(RouterProvider, { router } as never));
+    for (const t of [/score/i, /threshold/i, /why (it|this) ran/i, /Headline call/, /Score 60/]) expect(html).not.toMatch(t);
+    const list = html.slice(html.indexOf("data-story-changes"));
+    const items = [...list.slice(0, list.indexOf("</ul>")).matchAll(/<li[^>]*>(.*?)<\/li>/g)].map(m => m[1]!);
+    expect(items).toHaveLength(2);
+    for (const [i, it] of items.entries()) expect(it).toContain(`href="/library/dropbox.com?event=${i + 1}"`);
+    expect(html).toContain("data-how-we-know");
+  });
+  it("E2b: a stored why line stays in the record but is never shown on the Read side", () => {
     const [ai] = overlay([story({ why_line: "The accent now matches the rest of the sector.", why_model: "m", why_at: "2026-11-15T11:00:00Z" })], [], NOW);
-    expect(storyPage(ai!, { earlier: [], patterns: [] }).soWhat).toEqual({ text: "The accent now matches the rest of the sector.", basis: "ai" });
-    for (const line of ["Audit your own hero section to see if video fits.", "Competitors should evaluate whether the shift helps.", "Cash.app's new palette requires a direct visual comparison.", "Review the chat interface on vercel.com."]) {
-      const [x] = overlay([story({ why_line: line, why_model: "m", why_at: "2026-11-15T11:00:00Z" })], [], NOW);
-      expect(storyPage(x!, { earlier: [], patterns: [] }).soWhat, line).toBeNull();
-    }
-    const [plain] = overlay([story({})], [], NOW);
-    expect(storyPage(plain!, { earlier: [], patterns: [] }).soWhat).toBeNull();
+    expect(ai!.why_line).toBe("The accent now matches the rest of the sector.");
+    expect(JSON.stringify(storyPage(ai!, { earlier: [], patterns: [] }))).not.toContain("matches the rest of the sector");
   });
   it("never shows a Bluesky DID as a byline on the reader page", () => {
     const [n] = overlay([story({ id: "news:9", type: "news", kicker: "News · Bluesky @did:plc:7wezy25y7gq5vzfmcdwunnuc", facts: [{ text: "Source: Bluesky @did:plc:7wezy25y7gq5vzfmcdwunnuc, 12 Nov", href: "https://bsky.app/x" }], evidence: [{ label: "Read at Bluesky @did:plc:7wezy25y7gq5vzfmcdwunnuc", href: "https://bsky.app/x" }] })], [], NOW);

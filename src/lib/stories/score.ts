@@ -16,6 +16,13 @@ export const PUBLISH_MIN = 45;
 export const DEDUPE_DAYS = 7;
 /** At most 5 published stories per UTC day (E2a), at most 3 of them about a single brand and at most 3 outside news; often fewer. */
 export const DAILY_CAP = 5, SINGLE_BRAND_DAILY_CAP = 3, NEWS_DAILY_CAP = 3;
+/** The weekly pieces (seasonal story, against the grain) run once a week outside the daily five (E2b). */
+export const isWeekly = (c: { id: string }) => /^(seasonal|against):/.test(c.id);
+/** Our read: a story whose basis is an AI estimate. Measured (and outside news, which has no basis) takes its places first. */
+export const isOurRead = (c: { basis: string | null }) => c.basis === "ai";
+/** A roundup of AI-read moves (not a weekly piece): at most one a day, never ranked above a measured story of that day. */
+export const isAiRoundup = (c: { id: string; type: string; basis: string | null }) => c.type === "roundup" && isOurRead(c) && !isWeekly(c);
+export const AI_ROUNDUP_DAILY_CAP = 1;
 /** Stories about one brand for the single-brand cap (outside news has its own cap). */
 export const isSingleBrand = (c: { type: string; domains: string[] }) => (c.type === "move" || c.type === "rebrand" || c.type === "counter_move") && c.domains.length === 1;
 /** Under a sector lens, that sector's stories get this many points in ordering only (the stored score never changes). */
@@ -34,7 +41,7 @@ export type ScoreCtx = {
   /** Library-wide share of a signal in the latest real run (rarity). */
   shareOf: (key: string) => number | null;
 };
-export type Existing = { id: string; type: StoryKind; status: "published" | "held"; score: number; happened_at: string; domains: string[]; signal_keys: string[]; sector: string | null;
+export type Existing = { id: string; type: StoryKind; status: "published" | "held"; score: number; basis?: string | null; happened_at: string; domains: string[]; signal_keys: string[]; sector: string | null;
   /** State with the editor's edits applied, when loaded: a killed story no longer counts toward dedupe, novelty or the daily caps. */
   state?: "published" | "held" | "killed" };
 export type Planned = Candidate & { status: "published" | "held"; reason: string; score: number; components: Components; whyRan: string };
@@ -113,7 +120,7 @@ export function planStories(candidates: Candidate[], existingAll: Existing[], ct
   const times = new Map<string, { t: number; id: string }[]>();
   const note = (keys: string[], t: number, id: string) => { for (const k of keys) times.set(k, [...(times.get(k) ?? []), { t, id }]); };
   const refs = (c: { domains: string[]; signalKeys?: string[]; signal_keys?: string[] }) => [...c.domains.map(d => `d|${d}`), ...(c.signalKeys ?? c.signal_keys ?? []).map(k => `s|${k}`)];
-  for (const e of existing) if (e.status === "published") note(refs(e), Date.parse(e.happened_at), e.id);
+  for (const e of existing) if ((e.state ?? e.status) === "published") note(refs(e), Date.parse(e.happened_at), e.id);
   for (const c of fresh) note(refs(c), Date.parse(c.happenedAt), c.id);
   const plan: Planned[] = fresh.map(c => {
     // Earlier stories on the same brand or signal, not counting the stories this one tells (its members).
@@ -145,7 +152,7 @@ export function planStories(candidates: Candidate[], existingAll: Existing[], ct
   }
   // 2) Dedupe: same brand or signal + type within 7 days. A story that already ran wins; in this batch the higher score wins.
   const ran = new Map<string, number[]>();
-  for (const e of existing) if (e.status === "published") for (const k of keysOf(e)) ran.set(k, [...(ran.get(k) ?? []), Date.parse(e.happened_at)]);
+  for (const e of existing) if ((e.state ?? e.status) === "published") for (const k of keysOf(e)) ran.set(k, [...(ran.get(k) ?? []), Date.parse(e.happened_at)]);
   const taken = new Map<string, Planned[]>();
   for (const p of ranked().sort(byScore)) {
     const t = Date.parse(p.happenedAt), ks = keysOf(p);
@@ -159,19 +166,39 @@ export function planStories(candidates: Candidate[], existingAll: Existing[], ct
   for (const p of ranked()) if (p.score < PUBLISH_MIN) hold(p, `score ${p.score} below the publish threshold of ${PUBLISH_MIN}`);
   // 4) Fold: members of a running roundup, rebrand or counter-move stop running as separate stories.
   for (const parent of ranked().filter(p => p.members?.length)) for (const id of parent.members!) { const m = plan.find(p => p.id === id); if (m) hold(m, `told in ${parent.id}`); }
-  // 5) Daily caps by UTC day of happened_at, counting stories that already ran that day.
-  const counts = new Map<string, { all: number; news: number; one: number }>();
-  for (const e of existing) if (e.status === "published" && e.type !== "launch") { const d = counts.get(utcDay(e.happened_at)) ?? { all: 0, news: 0, one: 0 }; d.all++; if (e.type === "news") d.news++; if (isSingleBrand(e)) d.one++; counts.set(utcDay(e.happened_at), d); }
-  for (const p of ranked().sort(byScore)) {
-    const d = counts.get(utcDay(p.happenedAt)) ?? { all: 0, news: 0, one: 0 };
+  // 5) Daily caps by UTC day of happened_at, counting stories that already ran that day (the editor's overlay decides what ran).
+  //    Measured stories take their places before any story that is our read; at most one AI-read roundup a day; the weekly pieces sit outside.
+  type Day = { all: number; news: number; one: number; aiRoundup: number };
+  const counts = new Map<string, Day>(), zero = (): Day => ({ all: 0, news: 0, one: 0, aiRoundup: 0 });
+  const ranNow = (e: Existing) => (e.state ?? e.status) === "published";
+  for (const e of existing) if (ranNow(e) && e.type !== "launch" && !isWeekly(e)) { const d = counts.get(utcDay(e.happened_at)) ?? zero(); d.all++; if (e.type === "news") d.news++; if (isSingleBrand(e)) d.one++; if (e.type === "roundup" && isOurRead({ basis: e.basis ?? null })) d.aiRoundup++; counts.set(utcDay(e.happened_at), d); }
+  const capOrder = (a: Planned, b: Planned) => Number(isOurRead(a)) - Number(isOurRead(b)) || byScore(a, b);
+  for (const p of ranked().filter(x => !isWeekly(x)).sort(capOrder)) {
+    const d = counts.get(utcDay(p.happenedAt)) ?? zero();
     if (d.all >= DAILY_CAP) { hold(p, `over the daily cap of ${DAILY_CAP} stories`); continue; }
     if (p.type === "news" && d.news >= NEWS_DAILY_CAP) { hold(p, `over the daily cap of ${NEWS_DAILY_CAP} news stories`); continue; }
     if (isSingleBrand(p) && d.one >= SINGLE_BRAND_DAILY_CAP) { hold(p, `over the daily cap of ${SINGLE_BRAND_DAILY_CAP} single-brand stories`); continue; }
-    d.all++; if (p.type === "news") d.news++; if (isSingleBrand(p)) d.one++; counts.set(utcDay(p.happenedAt), d);
+    if (isAiRoundup(p) && d.aiRoundup >= AI_ROUNDUP_DAILY_CAP) { hold(p, `over the daily cap of ${AI_ROUNDUP_DAILY_CAP} AI-read roundup`); continue; }
+    d.all++; if (p.type === "news") d.news++; if (isSingleBrand(p)) d.one++; if (isAiRoundup(p)) d.aiRoundup++; counts.set(utcDay(p.happenedAt), d);
   }
   return plan.sort((a, b) => a.happenedAt.localeCompare(b.happenedAt) || a.id.localeCompare(b.id));
 }
 
+/**
+ * RANK (E2b) — read-time order of stories wherever they are ordered by rank (front page, Live, Next): score, except that an AI-read roundup
+ * never ranks above a measured story of its UTC day (it sits just under the lowest of them). Pure; stored scores never change.
+ */
+export function rankScores<S extends { id: string; type: string; basis: string | null; score: number; happened_at: string }>(stories: S[]): Map<string, number> {
+  const lowest = new Map<string, number>();
+  for (const s of stories) if (!isOurRead(s) && s.type !== "launch" && !isWeekly(s)) { const d = utcDay(s.happened_at); lowest.set(d, Math.min(lowest.get(d) ?? Infinity, s.score)); }
+  return new Map(stories.map(s => { const low = isAiRoundup(s) ? lowest.get(utcDay(s.happened_at)) : undefined; return [s.id, low != null && s.score >= low ? low - 0.5 : s.score]; }));
+}
+/** A day with a measured story: neither weekly piece may lead then, and no AI-read roundup either. */
+export function leadAllowed<S extends { id: string; type: string; basis: string | null; happened_at: string }>(s: S, all: S[]): boolean {
+  if (!isWeekly(s) && !isAiRoundup(s)) return true;
+  const d = utcDay(s.happened_at);
+  return !all.some(x => x.id !== s.id && utcDay(x.happened_at) === d && !isOurRead(x) && x.basis === "measured" && !isWeekly(x) && x.type !== "launch");
+}
 /** Read-time ordering under a sector lens: that sector's stories get LENS_BOOST points; stored scores are untouched. */
 export const lensScore = (s: { score: number; sector: string | null }, sector: string) => s.score + (sector !== "all" && s.sector === sector ? LENS_BOOST : 0);
 export const typeName = (t: StoryKind) => STORY_TYPE_DEFS[t].kicker;

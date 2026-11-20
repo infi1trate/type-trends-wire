@@ -5,7 +5,7 @@ import type { SignalRow } from "../signals";
 import { comparisonPair, MIN_RUN_GAP_DAYS, nextComparison, realRunLine, realRuns } from "../run-gap";
 import { archiveMeasured, context, crossoverCandidates, firstSeenCandidates, firstSeenEligible, moveCandidate, rebrandCandidate, rebrandDeck, shiftCandidates, type BuildInput, type SiteNow, type ArchiveRow } from "./candidates";
 import { FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, FIRST_SEEN_DIMENSIONS } from "./types";
-import { BANNED_PHRASES, knownFrom, validateWhy, whyAngle, WHY_SYSTEM } from "./why";
+import { BANNED_PHRASES, knownFrom, validateWhy } from "./why";
 import { oneBrandFact, retireReason, reword, RETIRE, type RetireCtx } from "./retire";
 import { applyEdits, type StoredStory } from "./edits";
 import { liveModel, queueModel, type StoryRecord } from "./view";
@@ -155,9 +155,9 @@ describe("the AI line says what to do next, without hedging", () => {
     expect(validateWhy("Test dark mode on 40% of pages.", story, known)).toMatchObject({ ok: false });
     expect(validateWhy("Spend $ on dark mode.", story, known)).toMatchObject({ ok: false, reason: "contains $" });
   });
-  it("prompt asks for one concrete next step and varies the opening by story", () => {
-    expect(WHY_SYSTEM).toMatch(/do or watch next/); expect(WHY_SYSTEM).toMatch(/160 characters/); for (const w of BANNED_PHRASES) expect(WHY_SYSTEM).toContain(w);
-    expect(new Set(["move:1", "move:2", "move:3", "move:4", "move:5"].map(id => whyAngle("move", id))).size).toBeGreaterThan(1);
+  it("E2b: the angle prompts that asked for an imperative or a competitor check are gone", async () => {
+    const why = await import("./why");
+    for (const k of ["WHY_ANGLES", "whyAngle", "WHY_SYSTEM", "WHY_TOOL", "whyPrompt"]) expect(k in why, k).toBe(false);
   });
 });
 

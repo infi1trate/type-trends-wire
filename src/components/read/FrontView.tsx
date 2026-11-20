@@ -15,7 +15,7 @@ import { numberLabel } from "@/lib/stories/numbers";
 import { storyTime } from "@/lib/stories";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
-import { BasisWord, DigestShell, Dim, StageWord } from "@/components/digest/Editorial";
+import { DigestShell, Dim, StageWord } from "@/components/digest/Editorial";
 import { BarChart, DonutChart, LineChart, ScatterChart } from "@/components/charts/Charts";
 import { Card, Plate, Raised, RuleBox } from "@/components/brand/Containers";
 import { Ledger } from "@/components/brand/Ledger";
@@ -56,7 +56,6 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
         {l.story.line && <p className="ed-standfirst mt-5">{l.story.line}</p>}
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
           <Raised href={`/stories/${encodeURIComponent(l.story.id)}`}>Receipts →</Raised>
-          {l.story.basis && <BasisWord b={l.story.basis} />}
           <span className="ed-data"><time dateTime={l.story.at}>{storyTime(l.story.at)}</time> · {relTime(l.story.at, now)}{l.story.corrected && <> · Corrected {l.story.corrected.slice(0, 10)}</>}</span>
         </div>
       </div>
