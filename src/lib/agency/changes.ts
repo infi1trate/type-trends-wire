@@ -2,6 +2,7 @@
 import { colorName, label } from "../labels";
 import { colorTicker } from "../taste/color";
 import { isRebrand, identitySentence } from "../rebrand-rule";
+import { brandName } from "../brand-names";
 
 export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; snapshot_id?: number | null; prev_snapshot_id?: number | null; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
 export type RebrandRow = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; effective_at?: string | null; /** Either capture carries a sale or seasonal promotion (promo.ts). */ seasonal?: boolean | null; /** The library events that make up this identity change (rebrand desk), when loaded. */ event_ids?: number[] | null };
@@ -20,7 +21,8 @@ const tagNames = (dim: string, v: unknown) => (Array.isArray(v) ? v : typeof v =
 
 /** One plain sentence per event, e.g. "linear.app changed its accent: Muted dark violet → Vivid blue". */
 export function eventSentence(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary">): string {
-  const d = e.domain, b = o(e.before), a = o(e.after);
+  // E2a: sentences call the brand by its name (brand-names.ts); the domain stays the link.
+  const d = brandName(e.domain), b = o(e.before), a = o(e.after);
   switch (e.type) {
     case "palette_shift":
       if ("accent" in a || "accent" in b) return `${d} changed its accent: ${hexName(b["accent"])} → ${hexName(a["accent"])}`;
@@ -62,4 +64,4 @@ export const eventDetail = (e: Pick<EventRow, "type" | "page_type" | "viewport">
 
 export const REBRAND_WORDS: Record<string, string> = { font: "font", accent: "accent", palette: "palette", theme: "theme", redesign: "redesign" };
 /** "x confirmed a rebrand (font, palette, theme)" only when the rebrand rule holds (rebrand-rule.ts); otherwise the plain "x changed its palette". */
-export const rebrandSentence = (r: Pick<RebrandRow, "domain" | "reasons" | "seasonal">) => (isRebrand(r) ? `${r.domain} confirmed a rebrand (${r.reasons.map(x => REBRAND_WORDS[x] ?? x).join(", ") || "identity change"})` : identitySentence(r.domain, r.reasons));
+export const rebrandSentence = (r: Pick<RebrandRow, "domain" | "reasons" | "seasonal">) => (isRebrand(r) ? `${brandName(r.domain)} confirmed a rebrand (${r.reasons.map(x => REBRAND_WORDS[x] ?? x).join(", ") || "identity change"})` : identitySentence(brandName(r.domain), r.reasons));

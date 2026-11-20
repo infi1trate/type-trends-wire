@@ -1,4 +1,6 @@
 // The editor's overlay: stored stories never change; edits (pin, kill, correct, restore) are appended and applied at read time.
+// Brand names are applied here too (E2a): every reader of a stored story sees "DocuSign", never "docusign.com"; ids, domains and links stay.
+import { nameText } from "../brand-names";
 export const EDIT_ACTIONS = ["pin", "kill", "correct", "restore"] as const;
 export type EditAction = (typeof EDIT_ACTIONS)[number];
 export type EditRow = { id: number; story_id: string; action: EditAction; payload: Record<string, unknown>; note: string | null; at: string };
@@ -38,7 +40,9 @@ export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: n
     }
   }
   if (pinnedUntil && (Date.parse(pinnedUntil) <= now || state !== "published")) pinnedUntil = null;
-  return { ...s, type, kicker, headline, deck, why_line: why, facts, state, pinnedUntil, correctedAt, killReason, edits: mine, stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
+  const namedFacts = Array.isArray(facts) ? facts.map(f => (f && typeof f === "object" && typeof (f as { text?: unknown }).text === "string" ? { ...f, text: nameText((f as { text: string }).text) } : f)) : facts;
+  const evidence = Array.isArray(s.evidence) ? s.evidence.map(e => (e && typeof e === "object" && typeof (e as { label?: unknown }).label === "string" ? { ...e, label: nameText((e as { label: string }).label) } : e)) : s.evidence;
+  return { ...s, type, kicker: nameText(kicker), headline: nameText(headline), deck: nameText(deck), why_line: nameText(why), facts: namedFacts, evidence, state, pinnedUntil, correctedAt, killReason, edits: mine, stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
 }
 export const overlay = <S extends StoredStory>(stories: S[], edits: EditRow[], now: number) => {
   const by = new Map<string, EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);

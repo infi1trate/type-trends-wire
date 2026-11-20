@@ -14,8 +14,10 @@ export const COMPONENT_MAX = 25;
 export const PUBLISH_MIN = 45;
 /** Same brand (or same signal) and same type within 7 days: only the higher score runs. */
 export const DEDUPE_DAYS = 7;
-/** At most 8 published stories per UTC day, at most 3 of them outside news. */
-export const DAILY_CAP = 8, NEWS_DAILY_CAP = 3;
+/** At most 5 published stories per UTC day (E2a), at most 3 of them about a single brand and at most 3 outside news; often fewer. */
+export const DAILY_CAP = 5, SINGLE_BRAND_DAILY_CAP = 3, NEWS_DAILY_CAP = 3;
+/** Stories about one brand for the single-brand cap (outside news has its own cap). */
+export const isSingleBrand = (c: { type: string; domains: string[] }) => (c.type === "move" || c.type === "rebrand" || c.type === "counter_move") && c.domains.length === 1;
 /** Under a sector lens, that sector's stories get this many points in ordering only (the stored score never changes). */
 export const LENS_BOOST = 15;
 /** Lead story window: the best of the last 48 hours. */
@@ -32,7 +34,9 @@ export type ScoreCtx = {
   /** Library-wide share of a signal in the latest real run (rarity). */
   shareOf: (key: string) => number | null;
 };
-export type Existing = { id: string; type: StoryKind; status: "published" | "held"; score: number; happened_at: string; domains: string[]; signal_keys: string[]; sector: string | null };
+export type Existing = { id: string; type: StoryKind; status: "published" | "held"; score: number; happened_at: string; domains: string[]; signal_keys: string[]; sector: string | null;
+  /** State with the editor's edits applied, when loaded: a killed story no longer counts toward dedupe, novelty or the daily caps. */
+  state?: "published" | "held" | "killed" };
 export type Planned = Candidate & { status: "published" | "held"; reason: string; score: number; components: Components; whyRan: string };
 
 const clamp = (v: number) => Math.max(0, Math.min(COMPONENT_MAX, Math.round(v)));
@@ -90,6 +94,9 @@ export const FIRST_SEEN_PER_SECTOR_DAYS = DEDUPE_DAYS;
 const keysOf = (c: { type: string; domains: string[]; signal_keys?: string[]; signalKeys?: string[]; sector: string | null }) => {
   const sig = c.signalKeys ?? c.signal_keys ?? [];
   if (c.type === "first_seen") return [`${c.type}|x|${c.sector ?? "all"}`];
+  // The weekly gatherings (seasonal story, against-the-grain roundup) dedupe by their kind: one a week.
+  const weekly = /^(seasonal|against):/.exec((c as { id?: string }).id ?? "");
+  if (weekly) return [`${c.type}|w|${weekly[1]}`];
   // Brand stories dedupe by their brand; signal stories by their signal(s); a roundup by its first signal or brands.
   return c.domains.length === 1 || !sig.length ? c.domains.map(d => `${c.type}|d|${d}`) : sig.map(k => `${c.type}|s|${k}`);
 };
@@ -97,8 +104,10 @@ const what = (k: string) => (k.includes("|d|") ? "brand" : k.includes("|x|") ? "
 const utcDay = (iso: string) => iso.slice(0, 10);
 
 /** Score, merge, dedupe, threshold, fold and cap. Candidates already stored are dropped first (idempotent). */
-export function planStories(candidates: Candidate[], existing: Existing[], ctx: ScoreCtx): Planned[] {
-  const stored = new Set(existing.map(e => e.id));
+export function planStories(candidates: Candidate[], existingAll: Existing[], ctx: ScoreCtx, o: { told?: ReadonlyMap<string, string> } = {}): Planned[] {
+  const stored = new Set(existingAll.map(e => e.id));
+  // Killed stories (editor's overlay) no longer count as having run.
+  const existing = existingAll.filter(e => e.state !== "killed");
   const fresh = [...new Map(candidates.filter(c => !stored.has(c.id)).map(c => [c.id, c])).values()];
   // Last story on the same brand or signal (stored published stories and this batch), for novelty.
   const times = new Map<string, { t: number; id: string }[]>();
@@ -117,8 +126,10 @@ export function planStories(candidates: Candidate[], existing: Existing[], ctx: 
   });
   const hold = (p: Planned, reason: string) => { if (p.status === "published") { p.status = "held"; p.reason = reason; } };
   const live = () => plan.filter(p => p.status === "published");
-  // 0) Rule holds decided before scoring (seasonal skins, estimate-only moves, counter-moves waiting for their roundup).
+  // 0) Rule holds decided before scoring (seasonal skins, estimate-only moves, counter-moves waiting for their roundup), then
+  //    brand stories whose brand already has a story in the window: that story gains the specifics as a correction (editor.ts brandFolds).
   for (const p of plan) if (p.holdReason) hold(p, p.holdReason);
+  for (const p of plan) { const t = o.told?.get(p.id); if (t) hold(p, `told in ${t} (one brand, one story: added as a correction)`); }
   const byScore = (a: Planned, b: Planned) => b.score - a.score || b.happenedAt.localeCompare(a.happenedAt) || a.id.localeCompare(b.id);
 
   // Launches never rank: they only appear in New on the scene.
@@ -149,13 +160,14 @@ export function planStories(candidates: Candidate[], existing: Existing[], ctx: 
   // 4) Fold: members of a running roundup, rebrand or counter-move stop running as separate stories.
   for (const parent of ranked().filter(p => p.members?.length)) for (const id of parent.members!) { const m = plan.find(p => p.id === id); if (m) hold(m, `told in ${parent.id}`); }
   // 5) Daily caps by UTC day of happened_at, counting stories that already ran that day.
-  const counts = new Map<string, { all: number; news: number }>();
-  for (const e of existing) if (e.status === "published" && e.type !== "launch") { const d = counts.get(utcDay(e.happened_at)) ?? { all: 0, news: 0 }; d.all++; if (e.type === "news") d.news++; counts.set(utcDay(e.happened_at), d); }
+  const counts = new Map<string, { all: number; news: number; one: number }>();
+  for (const e of existing) if (e.status === "published" && e.type !== "launch") { const d = counts.get(utcDay(e.happened_at)) ?? { all: 0, news: 0, one: 0 }; d.all++; if (e.type === "news") d.news++; if (isSingleBrand(e)) d.one++; counts.set(utcDay(e.happened_at), d); }
   for (const p of ranked().sort(byScore)) {
-    const d = counts.get(utcDay(p.happenedAt)) ?? { all: 0, news: 0 };
+    const d = counts.get(utcDay(p.happenedAt)) ?? { all: 0, news: 0, one: 0 };
     if (d.all >= DAILY_CAP) { hold(p, `over the daily cap of ${DAILY_CAP} stories`); continue; }
     if (p.type === "news" && d.news >= NEWS_DAILY_CAP) { hold(p, `over the daily cap of ${NEWS_DAILY_CAP} news stories`); continue; }
-    d.all++; if (p.type === "news") d.news++; counts.set(utcDay(p.happenedAt), d);
+    if (isSingleBrand(p) && d.one >= SINGLE_BRAND_DAILY_CAP) { hold(p, `over the daily cap of ${SINGLE_BRAND_DAILY_CAP} single-brand stories`); continue; }
+    d.all++; if (p.type === "news") d.news++; if (isSingleBrand(p)) d.one++; counts.set(utcDay(p.happenedAt), d);
   }
   return plan.sort((a, b) => a.happenedAt.localeCompare(b.happenedAt) || a.id.localeCompare(b.id));
 }

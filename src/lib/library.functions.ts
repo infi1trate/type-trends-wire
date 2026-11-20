@@ -17,7 +17,10 @@ export const getLibrary = createServerFn({ method: "GET" }).handler(async () => 
   // I1: each brand's stored site icon for the library list (the pictures index; empty when it can't be read).
   const [{ picturesSafe }, { iconsFor }] = await Promise.all([import("./pictures.server"), import("./pictures")]);
   const icons = iconsFor(await picturesSafe(), rows.map(r => r.domain).filter((d): d is string => !!d));
-  return { rows, icons, events: events.map(e => ({ ...e, seasonal: seasonal.has(e.id as number), reversed: reversed.has(e.id as number) })), sectors, ai: await aiTrends() };
+  // E2a: each change reads as its tape line (brand name, what changed, from and to, date); labels stay separate badges.
+  const { tapeLine } = await import("./tape");
+  const tape = (e: (typeof events)[number]) => (e.domain && e.type && e.detected_at ? tapeLine({ domain: e.domain, type: e.type, before: e.before, after: e.after, page_type: e.page_type ?? null, summary: e.summary ?? null, detected_at: e.detected_at }) : null);
+  return { rows, icons, events: events.map(e => ({ ...e, tape: tape(e), seasonal: seasonal.has(e.id as number), reversed: reversed.has(e.id as number) })), sectors, ai: await aiTrends() };
 });
 export const getLibrarySite = createServerFn({ method: "GET" }).inputValidator(z.object({ domain: z.string().min(3).max(253) })).handler(async ({ data }) => {
   const { librarySite } = await import("./library-store.server");

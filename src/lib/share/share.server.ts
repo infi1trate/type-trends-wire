@@ -1,4 +1,5 @@
 // Loads the words for one share card from memoised loaders the pages already use (anonymous SELECT only; no AI). Null → 404.
+import { brandName } from "../brand-names";
 import { resolveLabel, sectorName } from "../labels";
 import { pct } from "../digest/copy";
 import { dayText } from "../data-stories/text";
@@ -23,7 +24,7 @@ export async function shareCard(kind: ShareKind, id: string): Promise<ShareCard 
       const b = await loadBrand(id);
       if (!b) return null;
       const moves = b.timeline.length;
-      return { kicker: `Brand · ${b.sectorName}`, title: b.name || b.domain, figure: { value: String(moves), label: `${moves === 1 ? "confirmed move" : "confirmed moves"} on record for ${b.domain}` }, deck: b.lastMove ? `Latest: ${b.lastMove.text}` : null, path: `/brands/${b.domain}` };
+      return { kicker: `Brand · ${b.sectorName}`, title: b.name || b.domain, figure: { value: String(moves), label: `${moves === 1 ? "confirmed move" : "confirmed moves"} on record for ${b.name || brandName(b.domain)}` }, deck: b.lastMove ? `Latest: ${b.lastMove.text}` : null, path: `/brands/${b.domain}` };
     }
     case "pattern": {
       const [{ latestSignals }, { traitDefinition }, { rowKey }] = await Promise.all([import("../signals.server"), import("../digest/copy"), import("../signals")]);

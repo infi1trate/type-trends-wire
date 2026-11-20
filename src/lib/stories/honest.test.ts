@@ -128,7 +128,7 @@ describe("wording", () => {
     const src = { move: (id: number) => (id === 214 ? moveCandidate(e) : null), rebrandDeck: () => "One identity change confirmed on 12 Nov: palette." };
     const stored = { id: "move:214", type: "move", sector: "hardware", signal_keys: [], domains: ["apple.com"], source_ids: ["event:214"], headline: "apple.com changed its palette to Off-white, Navy", deck: "Confirmed 13 Nov.", facts: [] };
     const w = reword(stored, src)!;
-    expect(w.headline).toBe("apple.com changed its palette"); expect(w.deck?.startsWith("Now ")).toBe(true);
+    expect(w.headline).toBe("Apple changed its palette"); expect(w.deck?.startsWith("Now ")).toBe(true);
     expect(reword({ ...stored, ...w }, src)).toBeNull(); // idempotent
     expect(oneBrandFact("Seen on 1 tracked studios brand, including ragged-edge.com")).toBe("Seen on 1 tracked studios brand: ragged-edge.com");
     const reb = reword({ id: "rebrand:a.com:2026-11-12", type: "rebrand", sector: "ai", signal_keys: [], domains: ["a.com"], source_ids: ["rebrand:a.com:2026-11-12T08:00:00+00:00"], headline: "a.com rebranded: new palette", deck: "Desk text", facts: [] }, src)!;
@@ -165,7 +165,7 @@ describe("What makes a story", () => {
   it("is generated from the type definitions and constants", () => {
     expect(storyTypeList()).toHaveLength(11);
     const text = storyRules().map(r => r.text).join(" ");
-    expect(text).toContain(`${MIN_RUN_GAP_DAYS} days older`); expect(text).toContain("8 stories run per UTC day, 3 of them news"); expect(text).toContain("8 brands and 4 quarters");
+    expect(text).toContain(`${MIN_RUN_GAP_DAYS} days older`); expect(text).toContain("5 stories run per UTC day, at most 3 of them about a single brand and 3 of them news"); expect(text).toContain("8 brands and 4 quarters");
     expect(text).not.toMatch(/\$/);
   });
 });

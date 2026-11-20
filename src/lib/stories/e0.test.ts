@@ -47,8 +47,9 @@ describe("B · seasonal and promotional skins", () => {
   });
   it("seasonal changes are held, never a rebrand, never counted in a roundup", () => {
     const input: BuildInput = { now: NOW, events: [{ ...ev(5, "palette_shift", { palette: ["#000"] }, { palette: ["#f00"] }), snapshot_id: 50, prev_snapshot_id: 49 } as EventRow], rebrands: [], alerts: [], wire: [], launches: [], archive: [], trendsetters: [], runs: [], sites: [], texts: { 50: ["Black Friday sale"], 49: ["Reach new peaks"] } };
-    const c = allCandidates(input).candidates.find(x => x.id === "move:5")!;
-    expect(c.holdReason).toBe("Seasonal promotion on the page");
+    // E2a: a seasonal change is a tape line marked Seasonal; no candidate tells it (the weekly seasonal story needs three brands).
+    const r = allCandidates(input);
+    expect(r.candidates.some(x => x.sourceIds.includes("event:5"))).toBe(false); expect(r.tape[5]).toMatch(/· Seasonal$/);
   });
 });
 
@@ -73,18 +74,20 @@ describe("C · outside news needs a subject", () => {
 describe("D · estimates and counter-moves don't run alone; caps", () => {
   it("an AI-only single-brand move is held with the stated reason", () => {
     const input: BuildInput = { now: NOW, events: [ev(7, "aesthetic_shift", { aesthetic: ["minimal"] }, { aesthetic: ["maximal"] })], rebrands: [], alerts: [], wire: [], launches: [], archive: [], trendsetters: [], runs: [], sites: [] };
-    expect(allCandidates(input).candidates.find(x => x.id === "move:7")!.holdReason).toBe(ESTIMATE_ONLY_REASON);
+    // E2a: an AI read of one brand is a tape line, never a story candidate.
+    const r = allCandidates(input);
+    expect(r.candidates.some(x => x.sourceIds.includes("event:7"))).toBe(false); expect(r.tape[7]).toBeTruthy();
     expect(ESTIMATE_ONLY_REASON).toBe("Estimate only: one brand, one AI read");
     expect(COUNTER_HELD_REASON).toBe("Held for the weekly counter-move roundup");
   });
-  it("caps are 8 stories a day and 3 news", () => { expect(DAILY_CAP).toBe(8); expect(NEWS_DAILY_CAP).toBe(3); });
+  it("caps are 5 stories a day (E2a) and 3 news", () => { expect(DAILY_CAP).toBe(5); expect(NEWS_DAILY_CAP).toBe(3); });
   it("the reader-facing rule list states each new rule", () => {
     const text = storyRules().map(r => r.text).join(" ");
     expect(text).toMatch(/rebrand only when it covers at least 3 of 4/);
     expect(text).toMatch(/seasonal/);
     expect(text).toMatch(/names a tracked brand by name/);
     expect(text).toContain(ESTIMATE_ONLY_REASON); expect(text).toContain(COUNTER_HELD_REASON);
-    expect(text).toMatch(/At most 8 stories run per UTC day, 3 of them news/);
+    expect(text).toMatch(/At most 5 stories run per UTC day, at most 3 of them about a single brand and 3 of them news/);
   });
 });
 

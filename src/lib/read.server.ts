@@ -63,7 +63,7 @@ export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
     import("./rebrands.server").then(m => m.readerRebrands()),
   ]);
   return { stories: [
-    ...((events ?? []) as EventRow[]).map(fromEvent),
+    ...(await (async () => { const evs = (events ?? []) as EventRow[], { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id) })); })()),
     ...rebrandAll.rows.filter(x => x.source === "live" && Date.parse(x.confirmed_at) >= now - 120 * day).map(x => fromRebrand(x as RebrandRow)),
   ] };
 });

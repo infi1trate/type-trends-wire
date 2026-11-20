@@ -46,20 +46,19 @@ describe("2 · a change that reverses within seven days is not a move", () => {
   });
   it("another page type or viewport is not a reversal", () => expect(reversalMarks([ev(1, "theme_flip", dark, light, 0), ev(2, "theme_flip", light, dark, 1, { viewport: "mobile" })]).size).toBe(0));
   const input = (events: EventRow[], o: Partial<BuildInput> = {}): BuildInput => ({ now: at(3), events, rebrands: [], alerts: [], wire: [], launches: [], archive: [], trendsetters: [], runs: [], sites: [], ...o });
-  it("both moves are held with the stated reason; a change back finds an earlier change kept in history", () => {
+  it("both changes are tape lines marked Reversed; a change back finds an earlier change kept in history", () => {
     const a = ev(1, "theme_flip", dark, light, 0), b = ev(2, "theme_flip", light, dark, 2);
     const r = allCandidates(input([a, b]));
-    for (const id of ["move:1", "move:2"]) expect(r.candidates.find(c => c.id === id)?.holdReason).toBe(REVERSED_REASON);
+    expect(r.candidates.some(c => c.sourceIds.includes("event:1") || c.sourceIds.includes("event:2"))).toBe(false);
+    expect(r.tape[1]).toMatch(/· Reversed$/); expect(r.tape[2]).toMatch(/· Reversed$/);
     expect(REVERSED_REASON).toBe("Reversed within seven days");
     const late = allCandidates(input([b], { history: [a, b] }));
-    expect(late.candidates.find(c => c.id === "move:2")?.holdReason).toBe(REVERSED_REASON);
-    expect(late.reversed).toEqual([1, 2]);
+    expect(late.tape[2]).toMatch(/· Reversed$/); expect(late.reversed).toEqual([1, 2]);
   });
-  it("a downgraded identity move made only of reversed changes is held, judged by its own events", () => {
+  it("an identity change made only of reversed changes is no story, judged by its own events", () => {
     const a = ev(1, "palette_shift", { accent: "#FF5128" }, { accent: "#FFAE02" }, 0, { domain: "mistral.ai" }), b = ev(2, "palette_shift", { accent: "#FFAE02" }, { accent: "#FF5127" }, 3, { domain: "mistral.ai" });
     const r = allCandidates(input([a, b], { rebrands: [{ domain: "mistral.ai", sector: "ai", name: "Mistral", confirmed_at: at(0), read: "", reasons: ["accent"], event_ids: [1] }] }));
-    const c = r.candidates.find(x => x.id.startsWith("rebrand:mistral.ai"))!;
-    expect(c.type).toBe("move"); expect(c.holdReason).toBe(REVERSED_REASON); expect(r.reversedIdentity).toEqual([c.id]);
+    expect(r.candidates.filter(x => x.domains.includes("mistral.ai"))).toEqual([]);
   });
   it("a build that sees the reversal asks to retire the story that ran on the first change", async () => {
     const a = ev(1, "theme_flip", dark, light, 0), b = ev(2, "theme_flip", light, dark, 2), asked: number[][] = [];

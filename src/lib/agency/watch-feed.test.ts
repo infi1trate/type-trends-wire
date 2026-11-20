@@ -10,7 +10,7 @@ describe("watch items", () => {
   const items = watchItems(feedRows(), sinceFor("2026-11-15T18:00:00Z", "30d"));
   const by = (g: string) => items.find(i => i.guid === g);
   it("site changes in plain words with readable color names, only for watched sites", () => {
-    expect(by("event-1")!.title).toMatch(/^linear\.app changed its accent: .+ → .+$/);
+    expect(by("event-1")!.title).toMatch(/^Linear changed its accent: .+ → .+$/);
     expect(by("event-1")!.title).not.toContain("#");
     expect(items.some(i => i.domain === "other.com")).toBe(false);
   });
@@ -36,7 +36,7 @@ describe("watch items", () => {
     const v = watchView(feedRows(), "week");
     expect(v.items.every(i => i.kind !== "summary" && i.at > "2026-11-08T18:00:00Z")).toBe(true);
     const quiet = { ...feedRows(), events: [], rebrands: [], stages: [], alerts: [], lastEvent: feedRows().events[1]! };
-    expect(watchView(quiet, "week").empty).toBe("Nothing changed on these 2 sites or signals this week. Last change: vercel.com changed its headline: “Ship faster” → “Build & ship <AI>”, 2026-11-02.");
+    expect(watchView(quiet, "week").empty).toBe("Nothing changed on these 2 sites or signals this week. Last change: Vercel changed its headline: “Ship faster” → “Build & ship <AI>”, 2026-11-02.");
   });
 });
 

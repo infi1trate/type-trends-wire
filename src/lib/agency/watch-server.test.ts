@@ -87,7 +87,7 @@ describe("watchlist server", () => {
     expect(res.headers.get("x-robots-tag")).toBe("noindex");
     expect(res.headers.get("cache-control")).toBe("public, max-age=900");
     expect(await feedItems(old, d)).toBeNull();
-    expect((await feedItems(fresh, d))!.items[0]!.title).toBe("linear.app switched to a dark theme (was light)");
+    expect((await feedItems(fresh, d))!.items[0]!.title).toBe("Linear switched to a dark theme (was light)");
   });
 
   it("unknown or malformed tokens and ids → 404 / null without detail", async () => {

@@ -1,7 +1,8 @@
 // BRAND object: one Read page per tracked site, built from stored rows (the audit's single-site model plus its full move history). Pure.
+import { tapeLine } from "./tape";
 import { reversalIds } from "./reversal";
 import { auditModel, traitsOf, type AuditRows, type TraitRef } from "./agency/audit";
-import { eventSentence, rebrandSentence, EVENT_KIND, FIELD, type EventRow } from "./agency/changes";
+import { rebrandSentence, EVENT_KIND, FIELD, type EventRow } from "./agency/changes";
 import { identityLabel, isRebrand } from "./rebrand-rule";
 import { flipRuns, flipSentence, type FlipIn } from "./flips";
 import { basis, label, sectorName, stageName, type Basis, type Dimension, type StageName } from "./labels";
@@ -123,7 +124,7 @@ export function brandTimeline(r: MovesRows): Move[] {
   };
   const seasonalSet = new Set(r.seasonal), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
   const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [
-    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: eventSentence(e), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
+    ...r.events.filter(e => e.domain === d).map(e => { const section = changeSection({ kind: "event", type: e.type, fields: fieldsOf(e) }); return { id: `event:${e.id}`, at: e.detected_at, pivot: e.effective_at ?? e.detected_at, kind: EVENT_KIND[e.type] ?? "Change", text: tapeLine(e, { seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id) }, r.name), basis: (e.type === "imagery_shift" || e.type === "aesthetic_shift" ? "ai" : "measured") as Basis, ...link(`event:${e.id}`), rebrand: false, seasonal: seasonalSet.has(e.id), reversed: reversedSet.has(e.id), section, compare: compareAt(section, e.effective_at ?? e.detected_at) }; }),
     ...r.rebrands.filter(x => x.domain === d).map(x => { const section = changeSection({ kind: "rebrand", reasons: x.reasons }); return { id: `rebrand:${x.confirmed_at}`, at: x.confirmed_at, pivot: x.effective_at ?? x.confirmed_at, kind: identityLabel(x), text: `${rebrandSentence(x)}. ${x.read}`, basis: "measured" as Basis, ...link(`rebrand:${d}:${x.confirmed_at}`), rebrand: isRebrand(x), seasonal: !!x.seasonal, reversed: false, section, compare: compareAt(section, x.effective_at ?? x.confirmed_at) }; }),
   ].sort((x, y) => y.at.localeCompare(x.at) || x.id.localeCompare(y.id)).slice(0, TIMELINE_MAX);
   return foldFlips(raw, r.events.filter(e => e.domain === d)).map(({ pivot, ...m }) => (m.folded ? { ...m, pair: null, pairShared: false, folded: m.folded.map(({ pivot: _p, ...x }) => ({ ...x, pair: null, pairShared: false })) } : { ...withoutFolded(m), ...pairAt(pivot, m.compare) }));

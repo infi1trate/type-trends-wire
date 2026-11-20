@@ -181,3 +181,68 @@ export function e0Verdict(s: E0Story, c: E0Ctx): E0Verdict {
   }
   return null;
 }
+
+// PHASE E2a · THE EDITOR'S CALL ----------------------------------------------------------------------
+// The tiers applied to stories already published: a story the E2a engine would not run is retired (a tape line, a desk hold, a Brief
+// table row), and a brand's several stories inside seven days are folded into the first with one correction. Pure: the script supplies
+// the shown stories and the current candidates; the answer is kills and corrections, appended as story_edits.
+export const E2_RETIRE = {
+  tape: "Retired: now a tape line",
+  folded: "Retired: folded into one story about this brand",
+  desk: "Retired: held for the desk (unclear headline call)",
+  brief: "Retired: Brief table only (signal on under 10% of tracked homepages)",
+  firstSeen: "Retired: a first sighting needs at least two brands",
+  whiteSpace: "Retired: the gap could not be filled",
+} as const;
+export type E2Reason = keyof typeof E2_RETIRE;
+export const E2_WINDOW_DAYS = 14;
+/** "Accent, vivid dark purple to vivid violet · 14 Nov" → "accent". */
+export const factWhat = (text: string) => text.split(" · ")[0]!.split(",")[0]!.trim().toLowerCase();
+const andList = (xs: string[]) => { const u = [...new Set(xs)]; return u.length < 2 ? u.join("") : `${u.slice(0, -1).join(", ")} and ${u.at(-1)}`; };
+export const E2_FOLD_NOTE = (added: string[]) => `Folded: one brand, one story. Added the ${andList(added.map(factWhat))} change${new Set(added.map(factWhat)).size > 1 ? "s" : ""} from the brand's other changes that week.`;
+export type E2Story = { id: string; type: string; sector: string | null; signal_keys: string[]; domains: string[]; source_ids: string[]; happened_at: string; headline: string; deck: string | null; facts: unknown };
+export type E2Ctx = {
+  candidates: Candidate[];
+  /** The signal's share of tracked homepages in the latest run (0–1), or null when unknown. */
+  shareOf: (key: string) => number | null;
+  /** The reason a white space could not be filled in this sector, or null. */
+  notApplicable: (sector: string, key: string) => string | null;
+  shiftMinShare: number;
+};
+export type E2Plan = { kills: { id: string; reason: E2Reason }[]; corrects: { id: string; payload: { deck: string; facts: Fact[] }; note: string }[] };
+const SINGLE = new Set(["move", "rebrand", "counter_move"]);
+export function e2Plan(stories: E2Story[], c: E2Ctx): E2Plan {
+  const out: E2Plan = { kills: [], corrects: [] };
+  const brand = c.candidates.filter(x => x.id.startsWith("brand:") && !x.holdReason), desk = c.candidates.filter(x => x.id.startsWith("call:"));
+  const tellsAny = (x: Candidate, evs: number[]) => x.sourceIds.some(s => { const n = eventIdOf(s); return n != null && evs.includes(n); });
+  const groups = new Map<string, E2Story[]>();
+  for (const s of stories) {
+    if (SINGLE.has(s.type)) {
+      const evs = storyEventIds(s); if (!evs.length) continue;
+      const b = brand.find(x => x.domains[0] === s.domains[0] && tellsAny(x, evs));
+      if (b) { groups.set(b.id, [...(groups.get(b.id) ?? []), s]); continue; }
+      out.kills.push({ id: s.id, reason: desk.some(x => tellsAny(x, evs)) ? "desk" : "tape" });
+    } else if (s.type === "roundup") {
+      const key = s.signal_keys[0];
+      const keep = key && c.candidates.some(x => x.id.startsWith("roundup:") && x.signalKeys.includes(key) && (x.sector ?? null) === (s.sector ?? null) && s.domains.filter(d => x.domains.includes(d)).length >= ROUNDUP_MIN);
+      if (!keep) out.kills.push({ id: s.id, reason: "tape" });
+    } else if (s.type === "shift") {
+      const share = s.signal_keys[0] ? c.shareOf(s.signal_keys[0]) : null;
+      if (share != null && share < c.shiftMinShare) out.kills.push({ id: s.id, reason: "brief" });
+    } else if (s.type === "first_seen") {
+      if (s.domains.length < FIRST_SEEN_MIN_BRANDS) out.kills.push({ id: s.id, reason: "firstSeen" });
+    } else if (s.type === "white_space") {
+      if (s.sector && s.signal_keys[0] && c.notApplicable(s.sector, s.signal_keys[0])) out.kills.push({ id: s.id, reason: "whiteSpace" });
+    }
+  }
+  // One brand, one story: the story whose id the candidate carries (else the earliest) keeps running and gains the missing specifics.
+  for (const [cid, ss] of groups) {
+    const cand = brand.find(x => x.id === cid)!, target = ss.find(s => s.id === cid) ?? [...ss].sort((a, b) => a.happened_at.localeCompare(b.happened_at) || a.id.localeCompare(b.id))[0]!;
+    for (const s of ss) if (s !== target) out.kills.push({ id: s.id, reason: "folded" });
+    const have = new Set(asFacts(target.facts).map(f => f.text)), add = cand.facts.filter(f => f.kind === "member" && !have.has(f.text));
+    if (!add.length) continue;
+    const facts = [...cand.facts.filter(f => f.kind === "member"), ...asFacts(target.facts).filter(f => f.kind !== "member" && f.kind !== "before" && f.kind !== "after" && f.kind !== "date"), ...cand.facts.filter(f => f.kind === "share" && !have.has(f.text))];
+    out.corrects.push({ id: target.id, payload: { deck: cand.deck ?? target.deck ?? "", facts }, note: E2_FOLD_NOTE(add.map(f => f.text)) });
+  }
+  return out;
+}

@@ -5,12 +5,13 @@ import type { SignalRow } from "../signals";
 import { STORY_KINDS, STORY_TYPE_DEFS, type Candidate } from "./types";
 import {
   allCandidates, breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, isVisibleMove, moveCandidate, newsCandidates, newsMatcher,
-  rebrandCandidate, roundupCandidates, shiftCandidates, traitDelta, whiteSpaceCandidates, noDollar, type BuildInput, type SiteNow,
+  rebrandCandidate, shiftCandidates, traitDelta, whiteSpaceCandidates, noDollar, type BuildInput, type SiteNow,
 } from "./candidates";
 import { COMPONENT_MAX, DAILY_CAP, NEWS_DAILY_CAP, PUBLISH_MIN, WEIGHTS, brandComponent, lensScore, noveltyComponent, planStories, relevanceComponent, sizeComponent, total, type ScoreCtx } from "./score";
 import { validateWhy, knownFrom, WHY_LINE_MAX, WHY_MAX_CHARS } from "./why";
 import { applyEdits, foldedIds, overlay, type EditRow, type StoredStory } from "./edits";
 import { runBuild, toRow, type StoryRowOut } from "./build.server";
+import { roundups } from "./editor";
 
 const NOW = "2026-11-16T12:00:00.000Z";
 const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => { const [dimension, value] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)]; return { dimension, value, scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, ...o }; };
@@ -46,7 +47,7 @@ describe("story types", () => {
     expect(isVisibleMove({ type: "layout_change", before: { grid_max_cols: 2 }, after: { grid_max_cols: 3 } })).toBe(false);
     expect(isVisibleMove({ type: "layout_change", before: { hero_media: "image" }, after: { hero_media: "video" } })).toBe(true);
     const c = moveCandidate(ev(5, "linear.app", "dev-tools", "palette_shift", { accent: "#5E6AD2" }, { accent: "#0055FF" }));
-    expect(c.id).toBe("move:5"); expect(c.headline).toBe("linear.app changed its accent");
+    expect(c.id).toBe("move:5"); expect(c.headline).toBe("Linear changed its accent");
     expect(c.facts.find(f => f.kind === "before")?.text).toMatch(/^Before: /); expect(c.facts.find(f => f.kind === "after")?.text).toMatch(/^After: /);
     expect(c.facts.find(f => f.kind === "date")?.text).toContain("12 Nov"); expect(c.facts.every(f => f.href)).toBe(true);
   });
@@ -74,12 +75,13 @@ describe("story types", () => {
     const b = breakoutCandidates(ctx, alerts);
     expect(b.map(x => x.id)).toEqual(["breakout:theme:dark:all:13"]); expect(b[0]!.headline).toContain(label("theme:dark").name);
   });
-  it("FIRST SEEN: library-wide 2 brands, or 1 brand on a headline signal; the archive must measure that kind of signal", () => {
-    const one = base({ sites: [...sites(), { domain: "solo.com", name: null, sector: "fintech", captured: NOW, traits: ["headline:serif"] }] });
-    const noHistory = firstSeenCandidates(context(one), []);
-    expect(noHistory).toEqual([]); // nothing in the archive measures headline:* → no claim
+  it("FIRST SEEN: at least 2 brands (E2a: one brand is not an arrival); the archive must measure that kind of signal", () => {
+    const solo = { domain: "solo.com", name: null, sector: "fintech", captured: NOW, traits: ["headline:serif"] };
     const arch = Array.from({ length: 8 }, (_, i) => ({ domain: `old${i}.com`, sector: "fintech", quarter: `2024Q${(i % 4) + 1}`, traits: ["headline:sans", "theme:light"], measured: ["headline", "theme"] }));
-    const f = firstSeenCandidates(context(one), arch);
+    expect(firstSeenCandidates(context(base({ sites: [...sites(), solo] })), arch).map(x => x.id)).not.toContain("first:headline:serif:all");
+    const two = base({ sites: [...sites(), solo, { ...solo, domain: "duo.com", sector: "ai" }] });
+    expect(firstSeenCandidates(context(two), [])).toEqual([]); // nothing in the archive measures headline:* → no claim
+    const f = firstSeenCandidates(context(two), arch);
     expect(f.map(x => x.id)).toContain("first:headline:serif:all");
     expect(f.find(x => x.id === "first:headline:serif:all")!.firstSeen).toBe(true);
   });
@@ -99,11 +101,13 @@ describe("story types", () => {
     expect(w[0]!.headline).toBe(`Almost no fintech brand uses ${label("theme:dark").name.toLowerCase()}; it is rising everywhere else`);
     expect(STORY_TYPE_DEFS.white_space.job).toBe("act");
   });
-  it("ROUNDUP: three brands, same kind, inside 14 days", () => {
+  it("ROUNDUP: three brands gaining the same signal inside 7 days (E2a)", () => {
     const evs = [1, 2, 3].map(i => ev(20 + i, `ai${i}.com`, "ai", "theme_flip", { theme: "light" }, { theme: "dark" }, `2026-11-1${i}T00:00:00Z`));
-    const r = roundupCandidates(context(base()), evs.map(e => ({ c: moveCandidate(e), e })));
-    expect(r[0]!.headline).toBe(`Three AI brands moved to ${label("theme:dark").name.toLowerCase()}`); expect(r[0]!.members).toHaveLength(3);
-    expect(roundupCandidates(context(base()), evs.slice(0, 2).map(e => ({ c: moveCandidate(e), e })))).toEqual([]);
+    const r = roundups(context(base()), evs.map(e => ({ c: moveCandidate(e), e })));
+    expect(r[0]!.headline).toBe(`Three AI brands moved to ${label("theme:dark").name.toLowerCase()}`); expect(r[0]!.sourceIds).toHaveLength(3);
+    expect(roundups(context(base()), evs.slice(0, 2).map(e => ({ c: moveCandidate(e), e })))).toEqual([]);
+    const late = { ...evs[2]!, detected_at: "2026-11-19T00:00:00Z" };
+    expect(roundups(context(base()), [...evs.slice(0, 2), late].map(e => ({ c: moveCandidate(e), e })))).toEqual([]);
   });
   it("templates never carry a $", () => {
     const evs = [ev(1, "a.com", "ai", "message_pivot", { headline: "Pay $0 today" }, { headline: "Free for $5" })];
@@ -176,8 +180,8 @@ describe("plan: threshold, dedupe, merge, caps, held reasons", () => {
     const p = planStories([...members, strong({ id: "roundup:x", type: "roundup", domains: ["b1.com", "b2.com", "b3.com"], members: members.map(m => m.id), magnitude: 3 })], [], ctx);
     expect(p.filter(x => x.id.startsWith("move:")).every(x => x.reason === "told in roundup:x")).toBe(true);
   });
-  it("caps 24 a day and 6 news a day", () => {
-    const moves = Array.from({ length: 30 }, (_, i) => strong({ id: `m${i}`, domains: [`d${i}.com`] }));
+  it("caps 5 a day and 3 news a day", () => {
+    const moves = Array.from({ length: 30 }, (_, i) => strong({ id: `m${i}`, type: "roundup", signalKeys: [`imagery:k${i}`], domains: [`d${i}.com`, `e${i}.com`, `f${i}.com`] }));
     const news = Array.from({ length: 10 }, (_, i) => strong({ id: `n${i}`, type: "news", domains: [`n${i}.com`], sector: null, magnitude: 5, happenedAt: "2026-11-13T00:00:00Z" }));
     const p = planStories([...moves, ...news], [], ctx);
     const day12 = p.filter(x => x.happenedAt.startsWith("2026-11-12")), day13 = p.filter(x => x.happenedAt.startsWith("2026-11-13"));
@@ -280,7 +284,7 @@ describe("build", () => {
 describe("move palette headline", () => {
   it("keeps the colour list out of the headline", () => {
     const c = moveCandidate({ id: 9, domain: "apple.com", sector: "hardware", type: "palette_shift", page_type: "home", viewport: "desktop", detected_at: "2026-11-12T14:44:00Z", effective_at: null, severity: 2, summary: null, before: { palette: ["#FFFFFF"] }, after: { palette: ["#F0F3F7", "#00224C", "#7A68BA"] } } as never);
-    expect(c.headline).toBe("apple.com changed its palette");
+    expect(c.headline).toBe("Apple changed its palette");
     expect(c.deck?.startsWith("Now ")).toBe(true);
     expect(c.facts.some(f => f.kind === "after")).toBe(true);
   });

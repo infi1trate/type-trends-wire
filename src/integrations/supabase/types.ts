@@ -692,6 +692,45 @@ export type Database = {
         }
         Relationships: []
       }
+      headline_calls: {
+        Row: {
+          after_text: string | null
+          before_text: string | null
+          call: string
+          created_at: string
+          domain: string
+          event_id: number
+          id: number
+          model: string | null
+          reason: string
+          source: string
+        }
+        Insert: {
+          after_text?: string | null
+          before_text?: string | null
+          call: string
+          created_at?: string
+          domain: string
+          event_id: number
+          id?: never
+          model?: string | null
+          reason: string
+          source: string
+        }
+        Update: {
+          after_text?: string | null
+          before_text?: string | null
+          call?: string
+          created_at?: string
+          domain?: string
+          event_id?: number
+          id?: never
+          model?: string | null
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
       ingest_runs: {
         Row: {
           detail: Json | null
@@ -1119,6 +1158,7 @@ export type Database = {
           name: string | null
           pages: Json | null
           sector: string
+          site_kind: string
         }
         Insert: {
           active?: boolean | null
@@ -1129,6 +1169,7 @@ export type Database = {
           name?: string | null
           pages?: Json | null
           sector: string
+          site_kind?: string
         }
         Update: {
           active?: boolean | null
@@ -1139,6 +1180,7 @@ export type Database = {
           name?: string | null
           pages?: Json | null
           sector?: string
+          site_kind?: string
         }
         Relationships: []
       }

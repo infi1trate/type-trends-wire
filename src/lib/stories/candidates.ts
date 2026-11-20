@@ -15,13 +15,13 @@ import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import {
   AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
-  REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
-  WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
+  REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
+  WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, WHITE_SPACE_NOT_APPLICABLE, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
 } from "./types";
 
 export type RunRows = { id: number; at: string; rows: SignalRow[] };
 export type WireIn = { id: number; title: string; url: string; source: string; source_kind: string; published_at: string; excerpt: string | null; ref?: string | null };
-export type SiteNow = { domain: string; name: string | null; sector: string; captured: string | null; traits: string[] };
+export type SiteNow = { domain: string; name: string | null; sector: string; captured: string | null; traits: string[]; /** Site kind (brand-names.ts); absent reads the seed. */ kind?: string | null };
 /** One archive capture: its traits and the kinds of signal (categories) the capture actually measured, positive or not. */
 export type ArchiveRow = { domain: string; sector: string; quarter: string; traits: string[]; measured: string[] };
 /** Categories an archive capture measured: a field that was read at all (light theme and sans headlines count as measured). */
@@ -47,6 +47,8 @@ export type BuildInput = {
   texts?: Record<number, string[]>;
   /** Live events from REVERSAL_DAYS before the window onwards (a superset of `events`), so a change back inside the window finds the change it reverses. */
   history?: EventRow[];
+  /** The editor's headline calls per library event id (headline-call.ts); a headline change without one is not counted yet. */
+  calls?: Record<number, { call: string; reason: string }>;
 };
 
 const day = 864e5;
@@ -284,8 +286,8 @@ export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[
       sector, signalKeys: [key], domains: domains.slice(0, 6), evidence: [{ label: "Signal page", href: signalPath(key) }, { label: "Pattern", href: patternPath(key) }],
       sourceIds: domains.map(d => `site:${d}`), basis: basis(key), happenedAt: at, magnitude: domains.length, firstSeen: true, stage: ctx.row(ctx.cur, key)?.stage ?? null };
   };
-  // Library-wide: 2 brands, or 1 brand on a headline signal. In a sector: always 2 brands (no single-brand exception).
-  const enoughAll = (key: string, n: number) => n <= FIRST_SEEN_MAX_BRANDS && (n >= FIRST_SEEN_MIN_BRANDS || (n >= 1 && ctx.headline.has(key)));
+  // E2a: at least FIRST_SEEN_MIN_BRANDS brands everywhere (one brand is a fluke or a single choice, not an arrival).
+  const enoughAll = (_key: string, n: number) => n <= FIRST_SEEN_MAX_BRANDS && n >= FIRST_SEEN_MIN_BRANDS;
   const enoughSector = (n: number) => n <= FIRST_SEEN_MAX_BRANDS && n >= FIRST_SEEN_MIN_BRANDS;
   for (const key of keys) {
     // The archive must have measured this kind of signal deeply enough, or "first" would only mean "unmeasured".
@@ -353,13 +355,16 @@ export function counterMoveCandidates(ctx: Ctx, moves: { c: Candidate; e: EventR
 }
 
 // WHITE SPACE --------------------------------------------------------------------------------------
+/** A weekly story's time: the start of its ISO week (Monday 00:00 UTC), or the forecast run behind it when that came later. */
+export const weekOpen = (now: string, runAt: string) => { const d = new Date(now), monday = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return new Date(Math.max(monday, Date.parse(runAt) || 0)).toISOString(); };
 export function whiteSpaceCandidates(ctx: Ctx): Candidate[] {
   if (!ctx.cur) return [];
   const out: Candidate[] = [], week = isoWeek(new Date(ctx.now));
   for (const [sector, list] of [...ctx.bySector].sort(([a], [b]) => a.localeCompare(b))) {
     if (list.length < WHITE_SPACE_MIN_SECTOR_SITES || !ctx.covered(sector)) continue;
     const others = ctx.sites.filter(s => s.sector !== sector);
-    const opts = [...ctx.headline].filter(key => !WHITE_SPACE_SKIP_CATEGORIES.has(category(key))).flatMap(key => {
+    // A gap that could not be filled (WHITE_SPACE_NOT_APPLICABLE) is refused: no media brand will add product screenshots.
+    const opts = [...ctx.headline].filter(key => !WHITE_SPACE_SKIP_CATEGORIES.has(category(key)) && !WHITE_SPACE_NOT_APPLICABLE[sector]?.[key]).flatMap(key => {
       const r = ctx.row(ctx.cur, key), st = stageName(r?.stage);
       if (r?.status !== "ok" || !st || !RISING.has(st)) return [];
       const k = list.filter(s => s.traits.includes(key)).length, elsewhere = others.length ? others.filter(s => s.traits.includes(key)).length / others.length : 0;
@@ -377,42 +382,7 @@ export function whiteSpaceCandidates(ctx: Ctx): Candidate[] {
         ...(ex.length ? [{ text: `Using it elsewhere: ${listOf(ex.slice(0, 4), 4)}`, href: patternPath(best.key), basis: basis(best.key), kind: "brand" as const }] : []),
       ],
       sector, signalKeys: [best.key], domains: ex.slice(0, 4), evidence: [{ label: "Signal page", href: signalPath(best.key) }, { label: "Pattern", href: patternPath(best.key) }],
-      sourceIds: [`run:${ctx.cur.id}`, `week:${week}`], basis: basis(best.key), happenedAt: ctx.now, magnitude: (best.elsewhere - best.k / list.length) * 100, runId: ctx.cur.id, stage: ctx.row(ctx.cur, best.key)?.stage ?? null });
-  }
-  return out;
-}
-
-// ROUNDUP ------------------------------------------------------------------------------------------
-const THING: Record<string, string> = { type_change: "type", palette_shift: "colors", theme_flip: "theme", layout_change: "hero", message_pivot: "headline copy", redesign: "homepage", imagery_shift: "imagery", aesthetic_shift: "look" };
-export function roundupCandidates(ctx: Ctx, moves: { c: Candidate; e: EventRow }[]): Candidate[] {
-  const out: Candidate[] = [], used = new Set<string>(), bucket = (iso: string) => Math.floor(Date.parse(iso) / (ROUNDUP_WINDOW_DAYS * day));
-  const emit = (id: string, members: { c: Candidate; e: EventRow }[], sector: string | null, what: { key: string } | { type: string }) => {
-    const domains = [...new Set(members.map(m => m.e.domain))].sort(ctx.byRank); if (domains.length < ROUNDUP_MIN) return;
-    for (const m of members) used.add(m.c.id);
-    const s = sector ? `${inline(sectorName(sector))} ` : "", times = members.map(m => m.e.detected_at).sort(), n = countWord(domains.length);
-    const key = "key" in what ? what.key : null, l = key ? label(key) : null;
-    out.push({ id, type: "roundup", kicker: `Roundup${l ? ` · ${l.dimension}` : ""}${sector ? ` · ${sectorName(sector)}` : ""}`,
-      headline: l ? `${n} ${s}brands moved to ${inline(l.name)}` : `${n} ${s}brands changed their ${THING["type" in what ? what.type : ""] ?? "look"}`,
-      deck: `${listOf(domains, 4)}, between ${shortDate(times[0]!)} and ${shortDate(times.at(-1)!)}.`,
-      facts: members.sort((a, b) => a.e.detected_at.localeCompare(b.e.detected_at)).map(m => ({ text: `${m.c.headline}${m.c.deck ? `: ${m.c.deck}` : ""}`, href: brandPath(m.e.domain), basis: m.c.basis, kind: "member" as const })),
-      sector, signalKeys: key ? [key] : [], domains, evidence: key ? [{ label: "Signal page", href: signalPath(key) }, { label: "Pattern", href: patternPath(key) }] : domains.slice(0, 4).map(d => ({ label: d, href: brandPath(d) })),
-      sourceIds: members.map(m => `story:${m.c.id}`), basis: members.some(m => m.c.basis === "ai") || (key && basis(key) === "ai") ? "ai" : "measured",
-      happenedAt: times.at(-1)!, magnitude: domains.length, members: members.map(m => m.c.id), stage: key ? ctx.row(ctx.cur, key)?.stage ?? null : null });
-  };
-  const group = (keyOf: (m: { c: Candidate; e: EventRow }) => string[]) => {
-    const g = new Map<string, { c: Candidate; e: EventRow }[]>();
-    for (const m of moves) if (!used.has(m.c.id)) for (const k of keyOf(m)) g.set(k, [...(g.get(k) ?? []), m]);
-    return [...g].sort(([a], [b]) => a.localeCompare(b));
-  };
-  // 1) Same signal gained in one sector. 2) Same signal gained across sectors. 3) Same kind of change in one sector.
-  for (const [k, ms] of group(m => traitDelta(m.e).gained.filter(t => shown(ctx, t)).map(t => `${m.e.sector ?? "all"}|${t}|${bucket(m.e.detected_at)}`))) {
-    const [sector, key, b] = k.split("|"); emit(`roundup:${sector}:${key}:${b}`, ms.filter(m => !used.has(m.c.id)), sector === "all" ? null : sector!, { key: key! });
-  }
-  for (const [k, ms] of group(m => traitDelta(m.e).gained.filter(t => shown(ctx, t)).map(t => `${t}|${bucket(m.e.detected_at)}`))) {
-    const [key, b] = k.split("|"); if (new Set(ms.map(m => m.e.sector)).size >= 2) emit(`roundup:all:${key}:${b}`, ms, null, { key: key! });
-  }
-  for (const [k, ms] of group(m => (m.e.sector ? [`${m.e.sector}|${m.e.type}|${bucket(m.e.detected_at)}`] : []))) {
-    const [sector, type, b] = k.split("|"); emit(`roundup:${sector}:${type}:${b}`, ms, sector!, { type: type! });
+      sourceIds: [`run:${ctx.cur.id}`, `week:${week}`], basis: basis(best.key), happenedAt: weekOpen(ctx.now, ctx.cur.at), magnitude: (best.elsewhere - best.k / list.length) * 100, runId: ctx.cur.id, stage: ctx.row(ctx.cur, best.key)?.stage ?? null });
   }
   return out;
 }
@@ -477,38 +447,6 @@ export function launchCandidate(w: WireIn): Candidate {
     evidence: [{ label: "Product Hunt", href: w.url }], sourceIds: [`wire:${w.id}`], basis: null, happenedAt: w.published_at, magnitude: 1 };
 }
 
-/** Every candidate for one build, plus how many outside news items were dropped and why. */
-export function allCandidates(input: BuildInput): { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[] } {
-  const ctx = context(input);
-  const texts = new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v]));
-  const seasonal = seasonalEventIds(input.events, texts);
-  // Changes reversed within seven days (and the change back) are tests or rotating content, not moves (reversal.ts).
-  const reversed = reversalIds([...new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e])).values()]);
-  const moves = input.events.filter(isVisibleMove).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id).map(e => {
-    const c = moveCandidate(e);
-    // Seasonal skins are held; a single brand's AI-only read never runs alone. Both stay on the tape and the brand page.
-    if (seasonal.has(e.id) && SEASONAL_HELD_EVENTS.has(e.type)) c.holdReason = SEASONAL_REASON;
-    else if (reversed.has(e.id)) c.holdReason = REVERSED_REASON;
-    else if (AI_EVENTS.has(e.type)) c.holdReason = ESTIMATE_ONLY_REASON;
-    return { c, e };
-  });
-  const eventOf = new Map(moves.map(m => [m.c.id, m.e.id]));
-  const allReversed = (ids: string[] | undefined) => !!ids?.length && ids.every(id => { const e = eventOf.get(id); return e != null && reversed.has(e); });
-  // A downgraded identity move made only of reversed changes is held like any other reversed move. Its own events (the desk row's
-  // event ids that this build loaded) decide; without them, its member moves do.
-  const known = new Set([...(input.history ?? []), ...input.events].map(e => e.id));
-  const ownReversed = (r: RebrandRow, c: Candidate) => { const own = (r.event_ids ?? []).filter(id => known.has(id)); return own.length ? own.every(id => reversed.has(id)) : allReversed(c.members); };
-  const rebrands = input.rebrands.map(r => { const c = rebrandCandidate(r, moves); return c.type === "move" && !c.holdReason && ownReversed(r, c) ? { ...c, holdReason: REVERSED_REASON } : c; });
-  const inRebrand = new Set(rebrands.flatMap(r => r.members ?? []));
-  // A seasonal change is never a counter-move and never counts toward a roundup; a reversed one is held and never counts toward a roundup.
-  const free = moves.filter(m => !inRebrand.has(m.c.id) && !seasonal.has(m.e.id));
-  const counters = counterMoveCandidates(ctx, free).map(c => ({ ...c, holdReason: allReversed(c.members) ? REVERSED_REASON : COUNTER_HELD_REASON }));
-  const roundups = roundupCandidates(ctx, free.filter(m => !reversed.has(m.e.id)));
-  const news = newsCandidates(newsMatcher(input.sites, ctx.headline), input.wire);
-  const candidates = [
-    ...moves.map(m => m.c), ...rebrands, ...shiftCandidates(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive),
-    ...crossoverCandidates(ctx), ...counters, ...whiteSpaceCandidates(ctx), ...roundups, ...input.launches.map(launchCandidate), ...news.candidates,
-  ].map(c => ({ ...c, headline: noDollar(c.headline), deck: c.deck == null ? null : noDollar(c.deck), facts: c.facts.map(f => ({ ...f, text: noDollar(f.text) })) }));
-  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: rebrands.filter(c => c.holdReason === REVERSED_REASON).map(c => c.id) };
-}
+/** Every candidate for one build (E2a, editor.ts): the tiers, grouping and weekly gatherings live there. */
+export { allCandidates } from "./editor";
 export const soWhatFor = (c: Pick<Candidate, "type" | "signalKeys" | "stage">) => STORY_TYPE_DEFS[c.type].soWhat;

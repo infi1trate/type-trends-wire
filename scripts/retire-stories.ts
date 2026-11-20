@@ -5,7 +5,10 @@
 // a correct that re-labels a rebrand that no longer qualifies as a move. That pass runs first; its stories skip the older pass.
 // Phase E0b adds sale wording on either capture (promo.ts seasonalChange) and changes reversed within seven days (reversal.ts),
 // read from every live event since seven days before the window.
+// Phase E2a adds a separate pass (--e2) over the last 14 days with the editor's call (retire.ts e2Plan): stories that are now tape lines,
+// desk holds or Brief table rows are killed, and a brand's stories inside seven days are folded into one with a correction.
 // Usage: bun scripts/retire-stories.ts          (writes)
+//        bun scripts/retire-stories.ts --e2 [--dry] [--list]
 //        bun scripts/retire-stories.ts --dry    (prints what it would do)
 import { applyEdits, type EditRow, type StoredStory } from "../src/lib/stories/edits";
 import { archiveDepth, moveCandidate, rebrandDeck } from "../src/lib/stories/candidates";
@@ -19,6 +22,7 @@ import { REVERSAL_DAYS, reversalIds, type ReversalEvent } from "../src/lib/rever
 const dry = process.argv.includes("--dry");
 const { supabaseAdmin: db } = await import("../src/integrations/supabase/client.server");
 const { loadInput } = await import("../src/lib/stories/build.server");
+if (process.argv.includes("--e2")) { await (await import("./retire-stories-e2")).runE2(db, loadInput, { dry, list: process.argv.includes("--list") }); process.exit(0); }
 async function all<T>(f: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
   const out: T[] = [];
   for (let from = 0; ; from += 500) { const { data, error } = await f(from, from + 499); if (error) throw error; out.push(...(data ?? [])); if (!data || data.length < 500) return out; }

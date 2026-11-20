@@ -3,9 +3,11 @@
 /** Terms matched case-insensitively on word boundaries ("wholesale" and "Salesforce" do not match "sale"). Edit here only. */
 export const PROMO_TERMS = ["black friday", "cyber monday", "cyber week", "holiday", "gift guide", "gifting", "sale", "deals", "% off", "percent off", "<currency amount> off", "save $", "save up to", "limited time", "free shipping", "doorbuster", "clearance"] as const;
 const L = "(?<![\\p{L}\\p{N}])", R = "(?![\\p{L}\\p{N}])";
-const WORDS = ["black friday", "cyber monday", "cyber week", "holidays?", "gift guides?", "gifting", "sale", "deals", "percent off", "save up to", "limited[- ]time", "free shipping", "doorbusters?", "clearance"];
+// "deals" is a promotion except after a sales-pipeline verb ("win deals", "close more deals" is a B2B product claim, not an offer).
+const DEALS = "(?<!\\b(?:win|wins|winning|won|close|closes|closing|closed|land|landing|more|bigger|faster)\\s)deals";
+const WORDS = ["black friday", "cyber monday", "cyber week", "holidays?", "gift guides?", "gifting", "sale", DEALS, "percent off", "save up to", "limited[- ]time", "free shipping", "doorbusters?", "clearance"];
 const PATTERNS: [string, RegExp][] = [
-  ...WORDS.map((w): [string, RegExp] => [w.replace(/\?|s\?$/g, "").replace("[- ]", " "), new RegExp(`${L}${w.replace(/ /g, "\\s+")}${R}`, "iu")]),
+  ...WORDS.map((w): [string, RegExp] => [w === DEALS ? "deals" : w.replace(/\?|s\?$/g, "").replace("[- ]", " "), new RegExp(`${L}${w.replace(/ /g, "\\s+")}${R}`, "iu")]),
   ["% off", /\d\s?%\s*off(?![\p{L}\p{N}])/iu],
   ["<currency amount> off", /(?:[$€£¥]\s?\d[\d,.]*k?|(?<![\p{L}\p{N}])(?:usd|eur|gbp)\s?\d[\d,.]*k?)\+?\s+off(?![\p{L}\p{N}])/iu],
   ["save $", /(?<![\p{L}\p{N}])save\s+[$€£¥]/iu],

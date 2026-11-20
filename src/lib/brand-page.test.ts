@@ -20,7 +20,7 @@ describe("brand page model", () => {
     const b = brandModel(rows({ captures: [cap(1, "2025-12-01"), cap(2, "2026-02-01"), cap(3, "2026-09-01"), cap(4, "2026-10-05")] }));
     expect(b.timeline.map(m => m.at)).toEqual(["2026-10-01T00:00:00Z", "2026-01-01T00:00:00Z"]);
     expect(b.timeline.every(m => m.basis === "measured" && m.pair !== null)).toBe(true);
-    expect(b.timeline[0]!.text).toBe("vercel.com changed its accent: Near-black → Vivid indigo");
+    expect(b.timeline[0]!.text).toBe("vercel · accent, Near-black to Vivid indigo · 1 Oct"); // E2a: a tape line
   });
   it("without stored captures a move has no pair; without events the timeline is empty", () => {
     expect(brandModel(rows()).timeline.every(m => m.pair === null)).toBe(true);
