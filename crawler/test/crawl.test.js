@@ -59,6 +59,7 @@ test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   assert.equal(dark.color.page_bg, "#0A0A0A");
   assert.ok(dark.color.body_contrast > 10);
   assert.equal(dark.layout.h1_align, "center");
+  assert.equal(dark.layout.hero_carousel, false); // a plain hero
   assert.equal(dark.layout.cta_radius_px, 999);
   assert.ok(dark.layout.cta_count >= 2);
   assert.equal(dark.layout.grid_max_cols, 3);
@@ -75,6 +76,7 @@ test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   assert.equal(light.color.theme, "light");
   assert.equal(light.layout.hero_media, "image");
   assert.equal(light.layout.h1_align, "left");
+  assert.equal(light.layout.hero_carousel, true); // the headline sits inside a carousel: one slide of several
   assert.ok(light.color.palette.some((p) => p.hex.startsWith("#2E5E4") || p.hex.startsWith("#2F5E4") || p.hex.startsWith("#2E5D4")), JSON.stringify(light.color.palette));
   console.log(JSON.stringify(dark, null, 1).slice(0, 3000));
 });

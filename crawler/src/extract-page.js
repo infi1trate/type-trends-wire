@@ -48,6 +48,11 @@ export function extractInPage() {
     if (best && bestSize >= 24) { h1 = best; headline_source = "largest_text"; }
   }
   if (h1) h1.setAttribute("data-dsgn-headline", "1");
+  // A rotating hero: the headline sits inside a carousel, or the fold holds slide controls. Its headline and hero media are one slide
+  // of several, so the site treats their changes as rotations, not moves.
+  const CAROUSEL = "[aria-roledescription=carousel i], [aria-roledescription=slide i], [class*=carousel i], [class*=swiper i], [class*=slick-slide i], [class*=slick-slider i], [class*=splide i], [class*=embla i], [class*=flickity i], [data-carousel], [data-slick]";
+  const SLIDE_CONTROL = /\b(next|previous|prev)\s+(slide|item)\b|\bgo to slide\b|\bslide\s+\d+\b/i;
+  const hero_carousel = !!(h1 && h1.closest(CAROUSEL)) || [...document.querySelectorAll("button[aria-label], a[aria-label], [role=tab][aria-label]")].some((e) => SLIDE_CONTROL.test(e.getAttribute("aria-label") || "") && visible(e) && inFold(e) && !inOverlay(e));
   const bodyP = [...document.querySelectorAll("main p, article p, p")].find((e) => visible(e) && (e.textContent || "").trim().length > 40) || null;
   const firstButton = [...document.querySelectorAll("a, button")].find((e) => visible(e) && inFold(e) && px(cs(e).paddingLeft) >= 8 && cs(e).backgroundColor !== "rgba(0, 0, 0, 0)") || null;
 
@@ -159,7 +164,7 @@ export function extractInPage() {
     layout: {
       has_h1: headline_source === "h1", headline_source, h1_align: h1Align, h1_lines: h1 && typeOf(h1).line_height ? Math.round(h1.getBoundingClientRect().height / (typeOf(h1).line_height * typeOf(h1).size_px)) : null,
       h1_words: h1 ? (headlineText(h1) || "").split(" ").filter(Boolean).length : 0,
-      has_nav: !!header, nav_links: navLinks, hero_media,
+      has_nav: !!header, nav_links: navLinks, hero_media, hero_carousel,
       cta_count: ctas.length, cta_radius_px: median(radii),
       grid_count: grids.length, grid_max_cols: gridCols.length ? Math.max(...gridCols) : 0,
       page_height_vh: +(document.documentElement.scrollHeight / VH).toFixed(1),
