@@ -301,10 +301,13 @@ async function main() {
     }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  await flush();
-  if (thumbs) await thumbs.flush();
-  if (crops) await crops.flush();
+  // A refused last snapshot batch must not strand the pictures already taken: send them, then fail the run as before.
+  let flushError = null;
+  await flush().catch((e) => { flushError = e; });
+  if (thumbs) await thumbs.flush().catch((e) => { flushError ??= e; });
+  if (crops) await crops.flush().catch((e) => { flushError ??= e; });
   await browser.close();
+  if (flushError) throw flushError;
   const summary = { run_id: RUN_ID, mode: MODE, ...(SLICE ? { slice: `${SLICE.i}/${SLICE.n}` } : {}), ...(VANGUARD ? { vanguard: { listed: vanguardListed, crawled: sites.length } } : {}), sites: sites.length, ...totals, ...(thumbs ? { thumbs: thumbs.totals } : {}), ...(crops ? { crops: crops.totals } : {}), errors };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
   console.log("done", JSON.stringify(summary));
