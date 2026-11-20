@@ -111,7 +111,7 @@ export async function loadBrand(domain: string) {
   const [{ auditRows }, { capturesOf, dataInput }, { sectorField, signalContrast }, { similarBrands }] = await Promise.all([import("./agency/audit.server"), import("./data-stories/data.server"), import("./data-stories/stories"), import("./similar")]);
   const [audit, events, index, { tiers, signals }, all, crops, captures, input] = await Promise.all([
     auditRows([domain], null),
-    db.from("library_event_feed").select("id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,sector,summary").eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80).then(must),
+    db.from("library_event_feed").select("id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80).then(must),
     siteTraitIndex(),
     latestSignals("all"),
     storyIndex().catch(() => []),
@@ -124,7 +124,8 @@ export async function loadBrand(domain: string) {
   const storyOf: [string, string][] = [...storyForSource(all)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
   const field = input && own ? sectorField(input, own.sector) : null;
   const contrast = input ? signalContrast(input, domain) : null;
-  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops,
+  const seasonal = await import("./promo.server").then(m => m.seasonalIds(db, (events ?? []) as EventRow[]));
+  const rows: BrandRows = { domain, audit, events: (events ?? []) as EventRow[], seasonal, peers: index.filter(s => s.sector === own?.sector).map(s => ({ domain: s.domain, name: s.name, sector: s.sector, traits: s.traits })), tiers: [...tiers.values()].map(t => [t.key, t.tier]), storyOf, crops,
     captures, similar: similarBrands(domain, index, eligible), field, contrast: contrast ? { has: contrast.has.map(x => ({ key: x.key, name: x.name, sector: x.sector })), lacks: contrast.lacks.map(x => ({ key: x.key, name: x.name, sector: x.sector })) } : null };
   return { ...brandModel(rows), stories: storiesAbout(all, { domain, limit: 8 }) };
 }

@@ -11,7 +11,7 @@ const plan = r.plan ?? [];
 const by = Object.fromEntries(STORY_KINDS.map(k => [k, { published: plan.filter(p => p.type === k && p.status === "published").length, held: plan.filter(p => p.type === k && p.status === "held").length }]));
 const reasons = new Map<string, number>();
 for (const p of plan) if (p.status === "held") { const k = p.reason.replace(/\d+/g, "N").replace(/(told in|merged into|duplicate of) \S+/, "$1 …"); reasons.set(k, (reasons.get(k) ?? 0) + 1); }
-console.log(JSON.stringify({ dry, considered: r.considered, inserted: r.inserted, published: r.published, held: r.held, why_lines: r.why_lines, news_kept: r.news_kept, news_dropped: r.news_dropped, by_type: by, held_reasons: [...reasons].sort((a, b) => b[1] - a[1]) }, null, 1));
+console.log(JSON.stringify({ dry, considered: r.considered, inserted: r.inserted, published: r.published, held: r.held, why_lines: r.why_lines, news_kept: r.news_kept, news_dropped: r.news_dropped, news_drops: r.news_drops, by_type: by, held_reasons: [...reasons].sort((a, b) => b[1] - a[1]) }, null, 1));
 console.log("TOP");
 for (const p of plan.filter(p => p.status === "published").sort((a, b) => b.score - a.score).slice(0, 15)) console.log(p.score, p.type, p.id, "|", p.headline, "|", Object.entries(p.components).map(([k, v]) => `${k}=${v.value}`).join(" "));
 if (process.argv.includes("--all")) for (const p of plan) console.log(p.status, p.score, p.type, p.id, "|", p.headline, "|", p.deck, "|", p.reason);

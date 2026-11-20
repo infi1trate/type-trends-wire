@@ -114,12 +114,15 @@ export function IssueView({ issue }: { issue: Issue }) {
       </RuleBox></section>}
 
       {issue.rebrands && <section id="ed-rebrands" aria-labelledby="ed-rebrands-h" className="ed-wrap d-air"><RuleBox>
-        <SectionHead n={n("rebrands")} id="ed-rebrands-h" title="Rebrands of the week" kicker="Identity changes confirmed on two captures." />
-        <ul className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2">{issue.rebrands.map(r => <li key={r.domain + r.confirmed_at} className="ed-hair pt-4">
-          <h3 className="ed-h3"><a href={r.href} className="no-underline hover:underline" {...pr(r.href)}>{r.name ?? r.domain}</a></h3>
-          <p className="ed-data ed-muted">{r.name ? `${r.domain} · ` : ""}{r.sector} · {r.reasons.join(", ")}</p>
-          <p className="mt-2">{r.read}</p>
-        </li>)}</ul>
+        <SectionHead n={n("rebrands")} id="ed-rebrands-h" title={issue.rebrands.some(r => r.rebrand) ? "Rebrands of the week" : "Identity changes of the week"} kicker="Identity changes confirmed on two captures." />
+        {[issue.rebrands.filter(r => r.rebrand), issue.rebrands.filter(r => !r.rebrand)].map((list, i) => list.length > 0 && <div key={i}>
+          {i === 1 && issue.rebrands!.some(r => r.rebrand) && <h3 className="ed-kicker mt-8">Identity changes</h3>}
+          <ul className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2">{list.map(r => <li key={r.domain + r.confirmed_at} className="ed-hair pt-4">
+            <h3 className="ed-h3"><a href={r.href} className="no-underline hover:underline" {...pr(r.href)}>{r.name ?? r.domain}</a></h3>
+            <p className="ed-data ed-muted">{r.name ? `${r.domain} · ` : ""}{r.sector} · {r.reasons.join(", ")}{r.seasonal ? " · Seasonal" : ""}</p>
+            <p className="mt-2">{r.read}</p>
+          </li>)}</ul>
+        </div>)}
       </RuleBox></section>}
 
       <section id="ed-numbers" aria-labelledby="ed-numbers-h" className="ed-wrap d-air"><RuleBox>

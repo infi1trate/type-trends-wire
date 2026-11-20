@@ -62,7 +62,7 @@ describe("compositions", () => {
   it("story: an ink cover with one cut-and-paste object, frames before text, no plate", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 304 })));
     const [s] = overlay([story()], [], NOW);
-    const page = { ...storyPage(s!, { earlier: [], soWhat: "So what.", patterns: [] }), thumb: null, series: null };
+    const page = { ...storyPage(s!, { earlier: [], patterns: [] }), thumb: null, series: null };
     const r = await html(() => createElement(StoryView, { s: page }), "/stories/move%3A1");
     const cover = r.querySelector('[data-cover="story"]')!;
     expect(cover.getAttribute("data-container")).toBe("slab");

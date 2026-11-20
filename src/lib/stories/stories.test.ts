@@ -56,8 +56,8 @@ describe("story types", () => {
   });
   it("REBRAND folds the brand's moves around the confirmation", () => {
     const m = [ev(1, "a.com", "ai", "palette_shift", { accent: "#000000" }, { accent: "#FF0000" }, "2026-11-10T00:00:00Z"), ev(2, "b.com", "ai", "palette_shift", {}, {}, "2026-11-10T00:00:00Z")].map(e => ({ c: moveCandidate(e), e }));
-    const r = rebrandCandidate({ domain: "a.com", sector: "ai", name: null, confirmed_at: "2026-11-11T00:00:00Z", read: "accent changed", reasons: ["accent", "font"] }, m);
-    expect(r.members).toEqual(["move:1"]); expect(r.headline).toBe("a.com rebranded: new accent and font"); expect(r.sourceIds).toContain("story:move:1");
+    const r = rebrandCandidate({ domain: "a.com", sector: "ai", name: null, confirmed_at: "2026-11-11T00:00:00Z", read: "accent changed", reasons: ["accent", "font", "theme"] }, m);
+    expect(r.type).toBe("rebrand"); expect(r.members).toEqual(["move:1"]); expect(r.headline).toBe("a.com rebranded: new accent, font and theme"); expect(r.sourceIds).toContain("story:move:1");
   });
   it("SHIFT: headline signal changed stage between two real runs, names from labels", () => {
     const s = shiftCandidates(context(base()));
@@ -116,10 +116,10 @@ describe("story types", () => {
 describe("NEWS matching", () => {
   const m = newsMatcher([{ domain: "linear.app", name: null }, { domain: "stripe.com", name: null }, { domain: "figma.com", name: null }], ["headline:serif"]);
   const w = (id: number, title: string, url = "https://news.example/x") => ({ id, title, url, source: "Example", source_kind: "hn", published_at: NOW, excerpt: null });
-  it("names a tracked brand by domain or name, word boundary, case-insensitive", () => {
-    const { candidates, dropped } = newsCandidates(m, [w(1, "STRIPE ships a new checkout"), w(2, "Stripeless payments explained"), w(3, "Why linear gradients are back"), w(4, "linear.app raises a round"), w(5, "The return of serif headlines")]);
-    expect(candidates.map(c => c.id)).toEqual(["news:1", "news:4", "news:5"]); expect(dropped).toBe(2);
-    expect(candidates[0]!.domains).toEqual(["stripe.com"]); expect(candidates[2]!.signalKeys).toEqual(["headline:serif"]);
+  it("names a tracked brand by name in the title (word boundary, case-insensitive) or a headline signal, and needs a design subject", () => {
+    const { candidates, dropped, drops } = newsCandidates(m, [w(1, "STRIPE ships a new checkout interface"), w(2, "Stripeless payments explained"), w(3, "Why linear gradients are back"), w(4, "linear.app gets a new logo"), w(5, "The return of serif headlines on every website"), w(6, "Stripe raises a round")]);
+    expect(candidates.map(c => c.id)).toEqual(["news:1", "news:5"]); expect(dropped).toBe(4); expect(drops).toEqual({ bluesky: 0, no_name: 3, no_subject: 1 });
+    expect(candidates[0]!.domains).toEqual(["stripe.com"]); expect(candidates[1]!.signalKeys).toEqual(["headline:serif"]);
   });
   it("rejects a random architecture headline and a publication naming itself", () => {
     const own = newsMatcher([{ domain: "designboom.com", name: null }], []);

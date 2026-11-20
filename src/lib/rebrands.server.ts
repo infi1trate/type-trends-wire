@@ -3,6 +3,7 @@ import { supabaseAnon } from "./mcp/supabase";
 import { buildRebrands, filterRebrands, rebrandCounts, MEASURED_EVENT_TYPES, MAX_REBRAND_LIMIT, type Rebrand, type EventIn, type SideIn, type ForecastIn, type WireIn } from "./rebrands";
 import { readerRunId } from "./real-runs";
 import { memo } from "./memo";
+import { PROMO_COLS, promoTexts } from "./promo";
 type Db = ReturnType<typeof supabaseAnon>;
 async function all<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>) {
   const out: T[] = [];
@@ -24,14 +25,14 @@ async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | n
   for (let i = 0; i < ids.length; i += 200) {
     const chunk = ids.slice(i, i + 200);
     const [s, tg] = await Promise.all([
-      db.from("library_snapshots").select("id,captured_at,h1:signals->type->rendered->h1->>family,body:signals->type->rendered->body->>family,theme:signals->color->>theme,bg:signals->color->>page_bg,accent:signals->color->>accent,palette:signals->color->palette,hero_media:signals->layout->>hero_media,archive_url:signals->archive->>wayback_url").in("id", chunk),
+      db.from("library_snapshots").select(`id,captured_at,h1:signals->type->rendered->h1->>family,body:signals->type->rendered->body->>family,theme:signals->color->>theme,bg:signals->color->>page_bg,accent:signals->color->>accent,palette:signals->color->palette,hero_media:signals->layout->>hero_media,archive_url:signals->archive->>wayback_url,${PROMO_COLS}`).in("id", chunk),
       db.from("library_tags").select("snapshot_id,tags").in("snapshot_id", chunk),
     ]);
     if (s.error || tg.error) throw s.error ?? tg.error;
     const tags = new Map((tg.data ?? []).map(t => [t.snapshot_id, t.tags as Record<string, unknown> | null]));
     for (const r of (s.data ?? []) as unknown as Record<string, unknown>[]) {
       const t = tags.get(r["id"] as number), ok = t && !t["blocked_reason"] && !t["low_confidence"] && (typeof t["confidence"] !== "number" || t["confidence"] >= 0.4);
-      snaps.push({ id: r["id"] as number, captured_at: str(r["captured_at"]), h1: str(r["h1"]), body: str(r["body"]), theme: str(r["theme"]), bg: str(r["bg"]), accent: str(r["accent"]), palette: Array.isArray(r["palette"]) ? (r["palette"] as unknown[]).map(x => (typeof x === "string" ? x : x && typeof x === "object" ? (x as { hex?: unknown }).hex : null)).filter((x): x is string => typeof x === "string") : [], hero_media: str(r["hero_media"]), archive_url: str(r["archive_url"]),
+      snaps.push({ id: r["id"] as number, captured_at: str(r["captured_at"]), h1: str(r["h1"]), body: str(r["body"]), theme: str(r["theme"]), bg: str(r["bg"]), accent: str(r["accent"]), palette: Array.isArray(r["palette"]) ? (r["palette"] as unknown[]).map(x => (typeof x === "string" ? x : x && typeof x === "object" ? (x as { hex?: unknown }).hex : null)).filter((x): x is string => typeof x === "string") : [], hero_media: str(r["hero_media"]), archive_url: str(r["archive_url"]), promo: promoTexts(r),
         tags: ok ? { hero_layout: str(t!["hero_layout"]), aesthetic: Array.isArray(t!["aesthetic"]) ? (t!["aesthetic"] as string[]) : [], tone: Array.isArray(t!["tone"]) ? (t!["tone"] as string[]) : [] } : null });
     }
   }

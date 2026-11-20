@@ -2,6 +2,7 @@
 // Adapters turn what already exists (TODAY lines, stage changes, wire alerts, library events, rebrands, wire news, launches) into Stories with stable ids.
 import { alertDisplayTitle, basis, canonical, label, sectorName, stageName, untick, type Basis } from "./labels";
 import { eventSentence, EVENT_KIND, rebrandSentence, type EventRow, type RebrandRow } from "./agency/changes";
+import { identityLabel, isRebrand } from "./rebrand-rule";
 import { brandPath, signalPath, terminalHref } from "./ia";
 import { soWhat } from "./digest/copy";
 import { sectorFirst } from "./sector-lens";
@@ -49,7 +50,7 @@ export function fromEvent(e: EventRow): Story {
 }
 /** A confirmed rebrand. */
 export function fromRebrand(r: RebrandRow): Story {
-  return { id: `rebrand:${r.domain}:${r.confirmed_at}`, type: "rebrand", kicker: `Rebrand · ${sectorName(r.sector)}`, headline: rebrandSentence(r), deck: clip(untick(r.read)), at: r.confirmed_at, sector: r.sector,
+  return { id: `rebrand:${r.domain}:${r.confirmed_at}`, type: isRebrand(r) ? "rebrand" : "move", kicker: `${identityLabel(r)} · ${sectorName(r.sector)}`, headline: rebrandSentence(r), deck: clip(untick(r.read)), at: r.confirmed_at, sector: r.sector,
     signalKeys: [], domains: [r.domain], evidence: brandPath(r.domain), basis: "measured" };
 }
 /** A design news item from the wire (RSS, Hacker News, Bluesky). */

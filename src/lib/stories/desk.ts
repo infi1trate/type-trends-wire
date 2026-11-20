@@ -9,7 +9,12 @@ export const DESK_RATE_PER_MIN = 30;
 export const PIN_MAX_DAYS = 7;
 const id = z.string().min(3).max(200), note = z.string().max(500).optional();
 const noDollar = (s: string) => !s.includes("$");
+/** Staff pages whose content loads only through this endpoint, after the editor key is accepted. */
+export const STAFF_PAGES = ["status", "launch", "welcome"] as const;
+export type StaffPage = (typeof STAFF_PAGES)[number];
 export const deskBody = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("check") }).strict(),
+  z.object({ action: z.literal("staff"), page: z.enum(STAFF_PAGES) }).strict(),
   z.object({ action: z.literal("queue"), day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict(),
   z.object({ action: z.literal("pin"), id, until: z.string().datetime({ offset: true }), note }).strict(),
   z.object({ action: z.literal("kill"), id, reason: z.string().min(3).max(300), note }).strict(),

@@ -75,3 +75,7 @@
 - Read pages print through `ReadShell` (`PrintMark`/`PrintFrame`) and one `@media print` block; receipts pages opt into numbered link footnotes with `data-receipts`; `print.test.tsx` asserts the rules per page type.
 - `/status/launch` is pure `launch/launch.ts` over anonymous reads in `launch.server.ts`; it describes switches from code and never writes or flips anything.
 - After a client-side page change focus moves to the page h1 (`route-focus.ts`, mounted in `__root`); search or hash changes keep focus.
+- Reader-facing story rules stay pure and single-sourced: rebrand dimensions in `rebrand-rule.ts`, sale/seasonal wording in `promo.ts`, news subject terms in `stories/types.ts`, reader-safe AI lines and DID stripping in `stories/reader.ts`; `rules.ts` builds /what-we-show from them so the page cannot drift from the engine.
+- Retroactive rule changes run through `retire.ts` verdicts + `scripts/retire-stories.ts` as appended kill/correct edits only; a correct may relabel a story down to `move` (overlay), and the older template pass skips relabelled stories so re-runs stay idempotent.
+- Staff pages (/desk, /status, /status/launch, /welcome, /kit) render behind `StaffGate` with the editor key held only in tab memory (`staff-key.ts`); their data comes from `/api/public/desk` after crawler-secret auth, never from a route loader, so the server never renders staff data.
+

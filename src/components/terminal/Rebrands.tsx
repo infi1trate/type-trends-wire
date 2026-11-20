@@ -53,6 +53,8 @@ function Entry({ r }: { r: Rebrand }) {
       <span className={`label border px-1 ${r.source === "live" ? "border-ink text-ink" : "border-rule text-compare-muted"}`}>{r.source === "live" ? "LIVE" : "ARCHIVE"}</span>
       <span className="label num text-compare-muted">{r.source === "archive" ? "CAPTURE" : "CONFIRMED"} {day(r.confirmed_at)}</span>
       <span className="label text-compare-muted">{r.reasons.map(x => x.toUpperCase()).join(" · ")}</span>
+      <span className={`label border px-1 ${r.label === "Rebrand" ? "border-ink text-ink" : "border-rule text-compare-muted"}`}>{r.label.toUpperCase()}</span>
+      {r.seasonal && <span className="label border border-rule px-1 text-compare-muted">SEASONAL</span>}
     </header>
     <table className="mt-2 w-full table-fixed text-body">
       <caption className="sr-only">Before and after for {r.domain}</caption>
@@ -88,7 +90,7 @@ export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s
   const [pending, go] = useTransition();
   const reset = () => setLimit(PAGE);
   return <section aria-label="Rebrand desk" aria-busy={pending} className={`flex min-h-0 flex-1 flex-col ${pending ? "opacity-60" : ""}`}>
-    <PanelHeader g="p-rebrands" title="F9 REBRAND DESK" meta={<span className="num">{d.counts.total}<span className="max-sm:hidden"> REBRANDS</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
+    <PanelHeader g="p-rebrands" title="F9 REBRAND DESK" meta={<span className="num">{d.counts.rebrands}<span className="max-sm:hidden"> REBRANDS</span> · {d.counts.total - d.counts.rebrands}<span className="max-sm:hidden"> IDENTITY CHANGES</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
     <div className="flex flex-wrap items-center gap-2 border-b border-rule p-3">
       <Seg label="Source" options={SOURCES} value={source} onChange={v => go(() => { setSource(v); reset(); })} />
       <Seg label="Year" options={["ALL", ...d.years.map(String)] as string[]} value={year} onChange={v => go(() => { setYear(v); reset(); })} />

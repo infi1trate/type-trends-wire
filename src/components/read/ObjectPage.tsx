@@ -4,10 +4,11 @@
 import type { ReactNode } from "react";
 import { BLOCK_TITLE, OBJECT_BLOCKS, type Block, type ObjectType } from "@/lib/ia";
 
+/** A block set to null is left out (a story with nothing honest to say under So what); the order never changes. */
 export type ObjectBlocks = Record<Block, ReactNode>;
 export function ObjectPage({ kind, id, blocks, quiet = false }: { kind: ObjectType; id: string; blocks: ObjectBlocks; quiet?: boolean }) {
   return <article aria-labelledby={`${id}-title`} data-object={kind} data-composition={quiet ? "quiet" : "steady"}>
-    {OBJECT_BLOCKS.map((b, i) => b === "headline"
+    {OBJECT_BLOCKS.filter(b => b === "headline" || blocks[b] !== null).map((b, i) => b === "headline"
       ? (quiet ? <div key={b} data-block={b}>{blocks[b]}</div> : <header key={b} data-block={b} className="ed-wrap pt-8 md:pt-12">{blocks[b]}</header>)
       : quiet ? <section key={b} data-block={b} aria-labelledby={`${id}-${b}`} className="ed-wrap d-air">
         <div className="d-quiet">

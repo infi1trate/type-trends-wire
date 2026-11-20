@@ -9,7 +9,7 @@ export const iso = (t: number) => new Date(t).toISOString();
 export const st = (id: string, o: Partial<StoryRecord & { number: number | null }> = {}): StoryRecord & { number: number | null } => ({
   id, type: "move", status: "published", state: "published", reason: "", score: 60, components: {}, why_ran: "", kicker: "Move", headline: `Headline ${id}`, deck: `Deck ${id}`, facts: [],
   why_line: null, why_model: null, why_at: null, sector: "fintech", signal_keys: [], domains: [], evidence: [], source_ids: [], basis: "measured",
-  happened_at: iso(NOW - H), created_at: iso(NOW - H), stored: { status: "published", headline: id, deck: null, why_line: null, facts: [] },
+  happened_at: iso(NOW - H), created_at: iso(NOW - H), stored: { status: "published", type: "move", kicker: "Move", headline: id, deck: null, why_line: null, facts: [] },
   pinnedUntil: null, correctedAt: null, killReason: null, edits: [], number: null, ...o,
 });
 export const sig = (key: string, o: Partial<Signal> = {}): Signal => ({ key, name: key, dimension: "LAYOUT", basis: "measured", tier: "headline", stage: "Rising", share: 0.2, momentum: 0.5, direction: "Rising", momentum_index: 50, ...o } as unknown as Signal);

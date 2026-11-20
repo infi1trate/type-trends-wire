@@ -2,6 +2,8 @@
 import { colorTicker } from "./taste/color";
 import { inSentence, label, stageName } from "./labels";
 import { siteTraits } from "./forecast-signals";
+import { seasonalChange } from "./promo";
+import { identityLabel } from "./rebrand-rule";
 
 export const REBRAND_SINCE = "2021-01-01T00:00:00Z";
 export const REDESIGN_MIN_FIELDS = 3;
@@ -14,14 +16,15 @@ export const MEASURED_EVENT_TYPES = ["type_change", "palette_shift", "theme_flip
 const AI_KEYS = new Set(["aesthetic", "tone", "imagery", "components", "hero_layout", "color_mood", "ai_positioning"]);
 
 export type EventIn = { id: number; domain: string; source: string; type: string; before: unknown; after: unknown; effective_at: string; detected_at: string; snapshot_id: number | null; prev_snapshot_id: number | null };
-export type SideIn = { id: number; captured_at: string | null; h1: string | null; body: string | null; theme: string | null; bg: string | null; accent: string | null; palette: string[]; hero_media: string | null; archive_url: string | null; tags: { hero_layout: string | null; aesthetic: string[]; tone: string[] } | null };
-export type Side = Omit<SideIn, "id"> & { snapshot_id: number | null; h1_google: boolean; body_google: boolean };
+export type SideIn = { id: number; captured_at: string | null; /** Headline, sub-headline and button texts for the seasonal check (promo.ts). */ promo?: string[]; h1: string | null; body: string | null; theme: string | null; bg: string | null; accent: string | null; palette: string[]; hero_media: string | null; archive_url: string | null; tags: { hero_layout: string | null; aesthetic: string[]; tone: string[] } | null };
+export type Side = Omit<SideIn, "id" | "promo"> & { snapshot_id: number | null; h1_google: boolean; body_google: boolean };
 export type ForecastIn = { dimension: string; value: string; scope: string; stage: string | null; status: string; current_share: number | null; momentum: number | null };
 export type WireIn = { id: number; title: string | null; excerpt: string | null; url: string; source: string | null; source_kind: string | null; published_at: string };
 export type TraitStage = { trait: string; label: string; scope: string; stage: string | null; share: number | null; momentum: number | null };
 export type Rebrand = {
   id: string; domain: string; sector: string; name: string | null; source: "live" | "archive"; confirmed_at: string; effective_at: string; detected_at: string;
-  reasons: RebrandReason[]; fields: string[]; event_ids: number[]; before: Side; after: Side; read: string; new_traits: TraitStage[];
+  reasons: RebrandReason[]; fields: string[]; event_ids: number[];
+  /** Seasonal promotion on the after capture (never a rebrand); label is "Rebrand" only when the rebrand rule holds (rebrand-rule.ts). */ seasonal: boolean; label: "Rebrand" | "Identity change"; before: Side; after: Side; read: string; new_traits: TraitStage[];
   links: { library: string; archive: string | null; archive_before: string | null }; wire: { title: string; url: string; source: string | null; published_at: string } | null;
 };
 
@@ -105,15 +108,16 @@ export function buildRebrands(input: { events: EventIn[]; sites: { domain: strin
     // First seen = event effective_at; confirmed = the confirming capture (the event's snapshot), falling back to first seen.
     const effective = g.events.map(e => e.effective_at).sort().at(-1)!, after0 = snaps.get(e0.snapshot_id ?? -1), confirmed = after0?.captured_at && after0.captured_at >= effective ? after0.captured_at : effective, before = toSide(snaps.get(e0.prev_snapshot_id ?? -1), input.google), after = toSide(snaps.get(e0.snapshot_id ?? -1), input.google);
     const source = e0.source === "wayback" ? "archive" : "live", { read, new_traits } = readLine(before, after, site.sector, fc);
-    out.push({ id: `${source}-${e0.snapshot_id}`, domain: e0.domain, sector: site.sector, name: site.name, source, confirmed_at: confirmed, effective_at: effective, detected_at: g.events.map(e => e.detected_at).sort().at(-1)!, reasons: g.reasons, fields: g.fields, event_ids: g.events.map(e => e.id), before, after, read, new_traits,
+    const seasonal = seasonalChange(snaps.get(e0.snapshot_id ?? -1)?.promo, snaps.get(e0.prev_snapshot_id ?? -1)?.promo);
+    out.push({ id: `${source}-${e0.snapshot_id}`, domain: e0.domain, sector: site.sector, name: site.name, source, confirmed_at: confirmed, effective_at: effective, detected_at: g.events.map(e => e.detected_at).sort().at(-1)!, reasons: g.reasons, fields: g.fields, event_ids: g.events.map(e => e.id), seasonal, label: identityLabel({ reasons: g.reasons, seasonal }), before, after, read, new_traits,
       links: { library: `/library/${e0.domain}`, archive: source === "archive" ? after.archive_url : null, archive_before: source === "archive" ? before.archive_url : null }, wire: wireMatch(e0.domain, site.name, confirmed, input.wire) });
   }
   return out.filter(r => r.confirmed_at >= REBRAND_SINCE).sort((a, b) => b.confirmed_at.localeCompare(a.confirmed_at) || a.domain.localeCompare(b.domain));
 }
 export const quarterOf = (iso: string) => { const d = new Date(iso); return `${d.getUTCFullYear()}Q${Math.floor(d.getUTCMonth() / 3) + 1}`; };
-export function rebrandCounts(rows: Pick<Rebrand, "confirmed_at" | "source">[], now = new Date()) {
+export function rebrandCounts(rows: Pick<Rebrand, "confirmed_at" | "source" | "label">[], now = new Date()) {
   const q = quarterOf(now.toISOString());
-  return { total: rows.length, live: rows.filter(r => r.source === "live").length, archive: rows.filter(r => r.source === "archive").length, this_quarter: rows.filter(r => quarterOf(r.confirmed_at) === q).length, quarter: q };
+  return { total: rows.length, rebrands: rows.filter(r => r.label === "Rebrand").length, live: rows.filter(r => r.source === "live").length, archive: rows.filter(r => r.source === "archive").length, this_quarter: rows.filter(r => quarterOf(r.confirmed_at) === q).length, quarter: q };
 }
 export function filterRebrands<T extends Pick<Rebrand, "sector" | "source" | "confirmed_at">>(rows: T[], f: { sector?: string | undefined; source?: "live" | "archive" | undefined; year?: number | undefined; since?: string | undefined }) {
   return rows.filter(r => (!f.sector || f.sector === "all" || r.sector === f.sector) && (!f.source || r.source === f.source) && (!f.year || r.confirmed_at.startsWith(String(f.year))) && (!f.since || r.confirmed_at >= f.since));

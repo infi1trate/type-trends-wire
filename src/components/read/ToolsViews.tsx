@@ -11,6 +11,7 @@ import { MCP_TOOL_COUNT, SITE_URL } from "@/lib/site";
 import { DigestShell, pr } from "@/components/digest/Editorial";
 import { AppLink } from "@/components/terminal/AppLink";
 import { ReadFooter } from "./Bits";
+import { useStaffKey } from "@/lib/staff-key";
 
 const TOOLS: { title: string; line: string; href: string; cta: string }[] = [
   { title: "Competitive audit", line: "Compare two to six sites side by side: type, color, layout, vibe, versus the market and the open territory nobody uses yet.", href: "/audit/new", cta: "Start an audit" },
@@ -21,6 +22,8 @@ const TOOLS: { title: string; line: string; href: string; cta: string }[] = [
   { title: "Agent access (MCP)", line: `Connect an AI agent to ${SITE_URL}/api/public/mcp: ${MCP_TOOL_COUNT} read-only tools with the same numbers and receipts. Owner-issued keys raise the rate limit.`, href: "/terminal#mcp", cta: "How to connect" },
 ];
 export function ToolsView() {
+  // Staff links (status, the landing draft, the kit, the desk) show only once the editor key is accepted in this tab.
+  const staff = !!useStaffKey();
   return <DigestShell label="Tools" section="tools">
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Tools · act on what you see</p>
@@ -34,7 +37,7 @@ export function ToolsView() {
     <section aria-labelledby="tools-console" className="ed-wrap mt-16">
       <h2 id="tools-console" className="ed-kicker ed-rule pt-3">In context, in the terminal</h2>
       <p className="ed-small mt-2 max-w-[72ch]">Type and palette recommendations, differentiation and critiques run in the terminal console. Brand pages offer “Differentiate from this brand” and “Recommend type for its sector”; signal pages offer “Who uses this well”. Each opens Terminal mode with the command filled in.</p>
-      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink><Link to="/status" className="ed-tap">System status</Link><Link to="/welcome" className="ed-tap">Private landing page (draft)</Link><Link to="/brand" className="ed-tap">The brand</Link><Link to="/kit" className="ed-tap">Design kit</Link><Link to="/desk" className="ed-tap">Editor's desk</Link></p>
+      <p className="ed-data mt-3 flex flex-wrap gap-x-6"><AppLink href="/terminal?panel=console" className="ed-tap">Console commands ⇄</AppLink>{staff && <Link to="/status" className="ed-tap">System status</Link>}{staff && <Link to="/welcome" className="ed-tap">Private landing page (draft)</Link>}<Link to="/brand" className="ed-tap">The brand</Link>{staff && <Link to="/kit" className="ed-tap">Design kit</Link>}{staff && <Link to="/desk" className="ed-tap">Editor's desk</Link>}</p>
     </section>
     <ReadFooter terminal="/terminal?panel=watch" />
   </DigestShell>;

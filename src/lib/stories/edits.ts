@@ -11,16 +11,19 @@ export type StoredStory = {
 };
 export type State = "published" | "held" | "killed";
 export type Shown<S extends StoredStory = StoredStory> = S & {
-  state: State; stored: { status: S["status"]; headline: string; deck: string | null; why_line: string | null; facts: unknown };
+  state: State; stored: { status: S["status"]; type: string; kicker: string; headline: string; deck: string | null; why_line: string | null; facts: unknown };
   pinnedUntil: string | null; correctedAt: string | null; killReason: string | null; edits: EditRow[];
 };
 const str = (v: unknown) => (typeof v === "string" ? v : null);
+/** Types a correct edit may re-label a story to (only ever downward: a rebrand that no longer qualifies becomes a move). */
+const RELABEL_TYPES = new Set(["move"]);
 
 /** Apply edits in order. Kill hides; restore undoes a kill (or runs a held story anyway); correct replaces text (headline, deck, why line, or the
  * facts list when a maintenance pass rewords them); pin holds the lead until its time. */
 export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: number): Shown<S> {
   const mine = edits.filter(e => e.story_id === s.id).sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
   let state: State = s.status, headline = s.headline, deck = s.deck, why = s.why_line, facts: unknown = s.facts, pinnedUntil: string | null = null, correctedAt: string | null = null, killReason: string | null = null;
+  let type = s.type, kicker = s.kicker;
   for (const e of mine) {
     if (e.action === "kill") { state = "killed"; killReason = str(e.payload["reason"]); pinnedUntil = null; }
     else if (e.action === "restore") { state = "published"; killReason = null; }
@@ -28,12 +31,14 @@ export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: n
     else if (e.action === "correct") {
       const h = str(e.payload["headline"]), d = str(e.payload["deck"]), w = e.payload["why_line"];
       if (h) headline = h; if (d !== null) deck = d; if (typeof w === "string") why = w || null;
+      // A maintenance pass may re-label a stored story (a "rebrand" that the rebrand rule no longer earns reads as a move).
+      const t = str(e.payload["type"]), k = str(e.payload["kicker"]); if (t && RELABEL_TYPES.has(t)) type = t; if (k) kicker = k;
       const f = e.payload["facts"]; if (Array.isArray(f) && f.every(x => !!x && typeof x === "object" && typeof (x as { text?: unknown }).text === "string")) facts = f;
       correctedAt = e.at;
     }
   }
   if (pinnedUntil && (Date.parse(pinnedUntil) <= now || state !== "published")) pinnedUntil = null;
-  return { ...s, headline, deck, why_line: why, facts, state, pinnedUntil, correctedAt, killReason, edits: mine, stored: { status: s.status, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
+  return { ...s, type, kicker, headline, deck, why_line: why, facts, state, pinnedUntil, correctedAt, killReason, edits: mine, stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
 }
 export const overlay = <S extends StoredStory>(stories: S[], edits: EditRow[], now: number) => {
   const by = new Map<string, EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);

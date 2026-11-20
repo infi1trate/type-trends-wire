@@ -1,9 +1,10 @@
 // Readable sentences for library change events, shared by watch pages, the watch feed and audits. Pure; names come from labels.ts.
 import { colorName, label } from "../labels";
 import { colorTicker } from "../taste/color";
+import { isRebrand, identitySentence } from "../rebrand-rule";
 
-export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
-export type RebrandRow = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; effective_at?: string | null };
+export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string; snapshot_id?: number | null; prev_snapshot_id?: number | null; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
+export type RebrandRow = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; effective_at?: string | null; /** The after capture carries a sale or seasonal promotion the before capture did not (promo.ts). */ seasonal?: boolean | null };
 
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -60,4 +61,5 @@ export const EVENT_KIND: Record<string, string> = { type_change: "Type", palette
 export const eventDetail = (e: Pick<EventRow, "type" | "page_type" | "viewport">) => [EVENT_KIND[e.type] ?? words(e.type), e.page_type ? `${e.page_type} page` : null, e.viewport].filter(Boolean).join(" · ");
 
 export const REBRAND_WORDS: Record<string, string> = { font: "font", accent: "accent", palette: "palette", theme: "theme", redesign: "redesign" };
-export const rebrandSentence = (r: Pick<RebrandRow, "domain" | "reasons">) => `${r.domain} confirmed a rebrand (${r.reasons.map(x => REBRAND_WORDS[x] ?? x).join(", ") || "identity change"})`;
+/** "x confirmed a rebrand (font, palette, theme)" only when the rebrand rule holds (rebrand-rule.ts); otherwise the plain "x changed its palette". */
+export const rebrandSentence = (r: Pick<RebrandRow, "domain" | "reasons" | "seasonal">) => (isRebrand(r) ? `${r.domain} confirmed a rebrand (${r.reasons.map(x => REBRAND_WORDS[x] ?? x).join(", ") || "identity change"})` : identitySentence(r.domain, r.reasons));

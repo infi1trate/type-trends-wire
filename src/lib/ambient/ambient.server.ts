@@ -26,7 +26,7 @@ async function build(sector: string): Promise<AmbientInput> {
     : spark && spark.points.length >= 2 ? { title: `${spark.name}, quarter by quarter`, name: spark.name, note: "Share of tracked homepages, well-covered quarters, all sectors.", points: spark.points.map((y, i) => ({ x: spark.quarters?.[i] ?? `Q${i + 1}`, y })) } : null;
   return {
     now: m.now, today: m.today, state: m.state, sector: m.sector, ticker: m.ticker, freshness: m.freshness,
-    lead: l ? { ...story(l.story), label: l.label, why: l.why?.text ?? null } : null,
+    lead: l ? { ...story(l.story), label: l.label, why: l.story.line ?? null } : null,
     stories: m.column.items.map(story), chart, move, collection, figure, data,
   };
 }

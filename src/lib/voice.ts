@@ -179,6 +179,8 @@ export const VOICE = {
   "read.storyView.1": { kind: "empty", where: "Read · StoryView", text: "No facts were stored with this story.", next: [] },
   "read.storyView.2": { kind: "empty", where: "Read · StoryView", text: "No earlier story on this signal or brand.", next: [] },
   "read.toolsViews.2": { kind: "failed", where: "Read · ToolsViews", text: "Job health couldn't be read right now.", next: [RETRY] },
+  "staff.loading": loading("Staff pages after the editor key", "Opening with the editor key…"),
+  "staff.checking": loading("Staff pages, the editor key field", "Checking the key…"),
   "read.toolsViews.3": { kind: "loading", where: "Read · ToolsViews", text: "Checking which forecast runs count…", next: [] },
   "read.toolsViews.4": { kind: "failed", where: "Read · ToolsViews", text: "Section crop coverage couldn't be read right now.", next: [RETRY] },
   "read.toolsViews.5": { kind: "loading", where: "Read · ToolsViews", text: "Checking section crops…", next: [] },

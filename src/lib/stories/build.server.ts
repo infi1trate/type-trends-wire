@@ -35,7 +35,7 @@ export type BuildDeps = {
   assignNumbers?: () => Promise<number>;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number };
-export type BuildResult = { ok: true; skipped?: "dev"; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; numbered?: number; plan?: Planned[] };
+export type BuildResult = { ok: true; skipped?: "dev"; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[] };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -50,7 +50,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const clock = o.now ?? Date.now, start = clock(), budget = o.budgetMs ?? BUILD_BUDGET_MS, days = o.days ?? BUILD_DAYS;
   const input = await deps.load({ days, allRuns: !!o.allRuns, realRunIds: o.realRunIds ?? [] });
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
-  const { candidates, ctx, newsDropped, newsKept } = allCandidates(input);
+  const { candidates, ctx, newsDropped, newsKept, newsDrops } = allCandidates(input);
   const allShare = (k: string) => ctx.row(ctx.cur, canonical(k))?.current_share ?? null;
   const tracked = new Set(input.sites.map(s => s.domain));
   const plan = planStories(candidates, existing, { tierOf: k => ctx.tiers.get(canonical(k)) ?? null, rankOf: d => ctx.rank.get(d) ?? null, tracked: d => tracked.has(d), covered: ctx.covered, shareOf: allShare });
@@ -79,7 +79,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const linesLater = later.length && deps.insertLines ? await deps.insertLines(later) : 0;
   // Numbers come after the insert so a story is numbered once it is published; a failure here never fails the build (the next build retries).
   const numbered = deps.assignNumbers ? await deps.assignNumbers().catch(() => 0) : 0;
-  return { ok: true, numbered, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, plan };
+  return { ok: true, numbered, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
 }
 
 // ---- Real I/O ---------------------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await pages<SignalRow>((f, t) => db.from("forecasts").select(COLS).eq("run_id", r.id).order("scope").order("dimension").order("value").range(f, t) as never, 1000)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
   const latest = chosen.at(-1)?.id ?? null;
   const [events, alerts, wire, launches, sites, now_, archive, setters, rebrands] = await Promise.all([
-    pages<EventRow>((f, t) => db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary").eq("source", "live").eq("viewport", "desktop").gte("detected_at", since).order("id").range(f, t) as never),
+    pages<EventRow>((f, t) => db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").gte("detected_at", since).order("id").range(f, t) as never),
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt,ref").eq("source_kind", "alert").gte("published_at", since).order("id").limit(500),
     pages<BuildInput["wire"][number]>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", since).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").eq("source_kind", "producthunt").gte("published_at", since).order("id").limit(200),
@@ -113,6 +113,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     import("../rebrands.server").then(m => m.rebrandRows()),
   ]);
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
+  const texts = await (await import("../promo.server")).snapshotTexts(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id]));
   const h = new Map(now_.map(r => [r.domain, r]));
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
   return {
@@ -122,8 +123,10 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     sites: sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; }),
     archive: archive.map(r => ({ domain: r.domain, sector: r.sector, quarter: r.quarter, traits: [...new Set(forecastSiteTraits(r))], measured: archiveMeasured(r) })),
     trendsetters: (setters.data ?? []) as { domain: string; rank: number }[],
+    texts: Object.fromEntries(texts),
   };
 }
+
 
 type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 export function dbDeps(admin: Admin, withWhy = true): BuildDeps {

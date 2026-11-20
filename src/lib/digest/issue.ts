@@ -1,5 +1,6 @@
 // The Digest: one issue assembled deterministically from stored rows for its week. Pure (no I/O, no AI);
 // every trait name, dimension and stage word comes from labels.ts, and stored text is only unticked at render time.
+import { isRebrand } from "../rebrand-rule";
 import { deLegacy, sitePath } from "../brand";
 import { alertDisplayTitle, basis, briefDisplay, explainerPath, label, scopeText, stageName, untick, type Basis, type Dimension, type StageName } from "../labels";
 import { colorTicker } from "../taste/color";
@@ -17,7 +18,7 @@ export type FRow = StageRow & { scope: string; status?: string; next_wave_score?
 export type AlertRow = { title: string; ref: string | null; url: string; tags: string[] | null; published_at: string };
 export type FontMove = { family: string; category: string; change: number; rank: number };
 export type SiteEvent = { domain: string; sector: string | null; before: Record<string, unknown> | null; after: Record<string, unknown> | null; detected_at: string };
-export type RebrandLite = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; before: { h1: string | null; accent: string | null }; after: { h1: string | null; accent: string | null } };
+export type RebrandLite = { domain: string; sector: string; name: string | null; confirmed_at: string; read: string; reasons: string[]; seasonal?: boolean | null; before: { h1: string | null; accent: string | null }; after: { h1: string | null; accent: string | null } };
 export type IssueRows = {
   week: string;
   brief: StoredBrief | null;
@@ -65,7 +66,8 @@ export type Issue = {
   specimens: { rising: Specimen[]; fading: Specimen[]; seen: Specimen[]; since: string | null; date: string | null } | null;
   palette: ColorMove[] | null;
   wild: WildSite[] | null;
-  rebrands: (RebrandLite & { href: string; read: string })[] | null;
+  /** Confirmed identity changes; `rebrand` is true only when the rebrand rule holds (rebrand-rule.ts), the rest list under "Identity changes". */
+  rebrands: (RebrandLite & { href: string; read: string; rebrand: boolean })[] | null;
   numbers: { label: string; value: string; note: string }[];
   footer: { methodology: string; glossary: string; rss: string; terminal: string; contact: string | null };
   /** Section ids in reading order, only those with real data. */
@@ -178,7 +180,7 @@ export function issueModel(r: IssueRows): Issue | null {
     }
   }
 
-  const rebrands = r.rebrands.slice(0, 4).map(x => ({ ...x, read: untick(x.read), href: `/library/${x.domain}` }));
+  const rebrands = r.rebrands.slice(0, 4).map(x => ({ ...x, read: untick(x.read), href: `/library/${x.domain}`, rebrand: isRebrand(x) }));
   const numbers = [
     r.numbers.library_sites != null ? { label: "Library sites", value: String(r.numbers.library_sites), note: "tracked page by page, twice before a change counts" } : null,
     r.numbers.crawl ? { label: "Sites crawled", value: String(r.numbers.crawl.sites), note: `latest crawl finished ${longDate(r.numbers.crawl.finished_at)}` } : null,

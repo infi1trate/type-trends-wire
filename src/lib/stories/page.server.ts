@@ -1,6 +1,6 @@
 // Story page + queue loaders (anonymous SELECT-only). No AI per view.
 import { storyById, storyIndex, deskIndex } from "./read.server";
-import { queueModel, soWhatOf, storiesAbout, storyPage, isKind } from "./view";
+import { queueModel, storiesAbout, storyPage, isKind } from "./view";
 
 export async function loadStory(id: string) {
   const s = await storyById(id); if (!s) return null;
@@ -9,7 +9,7 @@ export async function loadStory(id: string) {
   const byKey = new Map(signals.map(x => [x.key, x])), key = s.signal_keys[0];
   const type = isKind(s.type) ? s.type : "news";
   const earlier = storiesAbout(all, { signals: s.signal_keys, domain: s.domains.length === 1 ? s.domains[0] : undefined, exclude: s.id, limit: 6 }).filter(x => x.at <= s.happened_at || s.type === "white_space");
-  const page = storyPage(s, { earlier, soWhat: soWhatOf({ type, signalKeys: s.signal_keys, stage: key ? byKey.get(key)?.stage ?? null : null }), patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
+  const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
   const { pickThumb } = await import("../thumbs");
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
   const crops = await evidenceOf(s, type);
@@ -41,4 +41,22 @@ export async function evidenceOf(s: { type: string; domains: string[]; source_id
 }
 export async function loadQueue(day: string | null, fresh: boolean) {
   return queueModel(await (fresh ? deskIndex() : storyIndex()), day, Date.now());
+}
+
+/** The desk's outside-news line: what the last seven days of rss, Hacker News and Bluesky items would do under the news rule
+ *  (anonymous reads; the same pure `newsCandidates` the build uses). Fails soft: the desk shows the queue without it. */
+export async function newsWindow(days = 7): Promise<{ kept: number; dropped: number; drops: import("./candidates").NewsDrops } | null> {
+  try {
+    const [{ supabaseAnon }, { newsMatcher, newsCandidates }, { latestSignals }, { decodeEntities }] = await Promise.all([import("../mcp/supabase"), import("./candidates"), import("../signals.server"), import("../entities")]);
+    const db = supabaseAnon(), since = new Date(Date.now() - days * 864e5).toISOString();
+    const [wire, sites, { signals }] = await Promise.all([
+      db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", since).order("id").range(0, 999),
+      db.from("library_sites").select("domain,name,active").order("domain").range(0, 999),
+      latestSignals("all"),
+    ]);
+    if (wire.error || sites.error) return null;
+    const m = newsMatcher((sites.data ?? []).filter(x => x.active), signals.filter(x => x.tier === "headline").map(x => x.key));
+    const r = newsCandidates(m, (wire.data ?? []).map(w => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null })));
+    return { kept: r.candidates.length, dropped: r.dropped, drops: r.drops };
+  } catch { return null; }
 }

@@ -19,22 +19,33 @@ const story = (o: Partial<StoredStory>): StoredStory => ({ id: "move:1", type: "
 const edit = (id: number, story_id: string, action: EditRow["action"], payload: Record<string, unknown> = {}, at = "2026-11-16T01:00:00Z"): EditRow => ({ id, story_id, action, payload, note: null, at });
 
 describe("story page", () => {
-  it("renders headline → evidence → so what → related, with before/after and why-this-ran", async () => {
+  it("renders headline → evidence → related with before/after; no template so-what, score or job on the reader page", async () => {
     const [s] = overlay([story({})], [], NOW);
-    const page = { ...storyPage(s!, { earlier: [], soWhat: "One brand's change is a data point.", patterns: [] }), thumb: null, series: null };
+    const page = { ...storyPage(s!, { earlier: [], patterns: [] }), thumb: null, series: null };
     expect(page.blocks).toEqual(OBJECT_BLOCKS); expect(STORY_BLOCKS).toEqual(OBJECT_BLOCKS);
     const root = createRootRoute({ component: () => createElement(StoryView, { s: page }) });
     const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/stories/move%3A1"] }) });
     await router.load();
     const html = renderToString(createElement(RouterProvider, { router } as never));
-    expect([...html.matchAll(/data-block="([a-z-]+)"/g)].map(m => m[1])).toEqual(["headline", "evidence", "so-what", "related"]);
-    expect(html).toContain("Before → after"); expect(html).toContain("Why this ran"); expect(html).not.toContain("$");
+    expect([...html.matchAll(/data-block="([a-z-]+)"/g)].map(m => m[1])).toEqual(["headline", "evidence", "related"]);
+    expect(html).toContain("Before → after"); expect(html).not.toContain("$");
+    for (const t of ["Why this ran", "threshold", "Deterministic so-what", "Written from the facts above", "Prove who is doing it", "Act on the opening", "Spot what is changing"]) expect(html).not.toContain(t);
   });
-  it("uses the stored AI line with its chip, or the deterministic so-what", () => {
-    const [ai] = overlay([story({ why_line: "Worth watching.", why_model: "m", why_at: "2026-11-15T11:00:00Z" })], [], NOW);
-    expect(storyPage(ai!, { earlier: [], soWhat: "fallback", patterns: [] }).soWhat).toMatchObject({ text: "Worth watching.", basis: "ai" });
+  it("keeps an AI line only when it says something about the story; generic advice and audits never reach the reader", () => {
+    const [ai] = overlay([story({ why_line: "The accent now matches the rest of the sector.", why_model: "m", why_at: "2026-11-15T11:00:00Z" })], [], NOW);
+    expect(storyPage(ai!, { earlier: [], patterns: [] }).soWhat).toEqual({ text: "The accent now matches the rest of the sector.", basis: "ai" });
+    for (const line of ["Audit your own hero section to see if video fits.", "Competitors should evaluate whether the shift helps.", "Cash.app's new palette requires a direct visual comparison.", "Review the chat interface on vercel.com."]) {
+      const [x] = overlay([story({ why_line: line, why_model: "m", why_at: "2026-11-15T11:00:00Z" })], [], NOW);
+      expect(storyPage(x!, { earlier: [], patterns: [] }).soWhat, line).toBeNull();
+    }
     const [plain] = overlay([story({})], [], NOW);
-    expect(storyPage(plain!, { earlier: [], soWhat: "fallback", patterns: [] }).soWhat).toMatchObject({ text: "fallback", basis: "measured" });
+    expect(storyPage(plain!, { earlier: [], patterns: [] }).soWhat).toBeNull();
+  });
+  it("never shows a Bluesky DID as a byline on the reader page", () => {
+    const [n] = overlay([story({ id: "news:9", type: "news", kicker: "News · Bluesky @did:plc:7wezy25y7gq5vzfmcdwunnuc", facts: [{ text: "Source: Bluesky @did:plc:7wezy25y7gq5vzfmcdwunnuc, 12 Nov", href: "https://bsky.app/x" }], evidence: [{ label: "Read at Bluesky @did:plc:7wezy25y7gq5vzfmcdwunnuc", href: "https://bsky.app/x" }] })], [], NOW);
+    const p = storyPage(n!, { earlier: [], patterns: [] });
+    expect(JSON.stringify(p)).not.toMatch(/did:plc/);
+    expect(p.kicker).toBe("News · Bluesky");
   });
   it("is gated (not an open path) and registered in ia.ts; backtick goes to Terminal › Live › Today focused", async () => {
     expect(isOpenPath("/stories/move:1")).toBe(false); expect(isOpenPath("/desk")).toBe(false);

@@ -10,10 +10,12 @@ import { rowKey, tiersFrom, type SignalRow } from "../signals";
 import { SECTOR_COVERAGE_MIN } from "../sector-lens";
 import type { Tier } from "../tiers";
 import { comparisonPair } from "../run-gap";
+import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../promo";
+import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
 import {
   AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
   REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
-  WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, countWord, type Candidate, type Fact,
+  WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
 } from "./types";
 
 export type RunRows = { id: number; at: string; rows: SignalRow[] };
@@ -40,6 +42,8 @@ export type BuildInput = {
   alerts: WireIn[]; wire: WireIn[]; launches: WireIn[];
   sites: SiteNow[]; archive: ArchiveRow[];
   trendsetters: { domain: string; rank: number }[];
+  /** Headline, sub-headline and button texts per library snapshot id, for the seasonal check (promo.ts). */
+  texts?: Record<number, string[]>;
 };
 
 const day = 864e5;
@@ -166,6 +170,7 @@ export const rebrandDeck = (r: Pick<RebrandRow, "reasons" | "confirmed_at">) => 
 export function rebrandCandidate(r: RebrandRow, moves: { c: Candidate; e: EventRow }[]): Candidate {
   const at = Date.parse(r.confirmed_at), reasons = r.reasons.map(x => REBRAND_WORDS[x] ?? x);
   const members = moves.filter(m => m.e.domain === r.domain && Date.parse(m.e.detected_at) >= at - REBRAND_FOLD_BEFORE_DAYS * day && Date.parse(m.e.detected_at) <= at + REBRAND_FOLD_AFTER_DAYS * day).map(m => m.c);
+  if (!isRebrand(r)) return identityMove(r, members);
   const brand = brandPath(r.domain);
   return { id: `rebrand:${r.domain}:${r.confirmed_at.slice(0, 10)}`, type: "rebrand", kicker: `Rebrand · ${sectorName(r.sector)}`,
     headline: `${r.domain} rebranded: new ${listOf(reasons, 4) || "identity"}`, deck: rebrandDeck(r),
@@ -173,6 +178,29 @@ export function rebrandCandidate(r: RebrandRow, moves: { c: Candidate; e: EventR
       ...members.map(m => ({ text: m.headline, href: brand, basis: m.basis, kind: "member" as const }))],
     sector: r.sector, signalKeys: [], domains: [r.domain], evidence: [{ label: "Brand page", href: brand }, { label: "Rebrand desk", href: "/brands?tab=moves" }],
     sourceIds: [`rebrand:${r.domain}:${r.confirmed_at}`, ...members.map(m => `story:${m.id}`)], basis: "measured", happenedAt: r.confirmed_at, magnitude: Math.max(1, r.reasons.length), members: members.map(m => m.id) };
+}
+
+/**
+ * A rebrand-desk change that does not earn "rebrand" (fewer than three dimensions, or a seasonal capture): an ordinary move with plain wording.
+ * One member move lends its own headline ("x changed its headline font: A → B"); otherwise "x changed its font and palette". Scored and capped as a move.
+ */
+export function identityMove(r: RebrandRow, all: Candidate[]): Candidate {
+  // One line per distinct change: two captures of "changed its headline" read once.
+  const members = all.filter((m, i) => all.findIndex(x => x.headline === m.headline) === i);
+  const brand = brandPath(r.domain), one = members.length === 1 ? members[0]! : null, dims = Math.max(1, rebrandDimensions(r.reasons).length);
+  // "x.com changed its palette" → "palette"; any other member sentence keeps its verb ("switched to a light theme (was dark)").
+  const strip = (h: string) => (h.startsWith(`${r.domain} `) ? h.slice(r.domain.length + 1) : h);
+  const changed = [...new Set(members.map(m => strip(m.headline)).filter(h => h.startsWith("changed its ")).map(h => h.slice(12)))];
+  const others = [...new Set(members.map(m => strip(m.headline)).filter(h => !h.startsWith("changed its ")))];
+  const said = [...(changed.length ? [`changed its ${listOf(changed, 6)}`] : []), ...others].join("; ");
+  const date = { text: `Confirmed on a second capture, ${shortDate(r.confirmed_at)}`, href: `/library/${encodeURIComponent(r.domain)}`, basis: "measured" as const, kind: "date" as const };
+  return { id: `rebrand:${r.domain}:${r.confirmed_at.slice(0, 10)}`, type: "move", kicker: one ? one.kicker : `Move · Identity${r.sector ? ` · ${sectorName(r.sector)}` : ""}`,
+    headline: one ? one.headline : `${r.domain} changed its ${changedWhat(r.reasons)}`,
+    deck: one ? one.deck : `${said ? `${said[0]!.toUpperCase()}${said.slice(1)}. ` : ""}Confirmed ${shortDate(r.confirmed_at)}.`,
+    facts: one ? one.facts : [{ text: `Changed: ${changedWhat(r.reasons)}`, href: brand, basis: "measured" }, ...members.map(m => ({ text: m.headline, href: brand, basis: m.basis, kind: "member" as const })), date],
+    sector: r.sector, signalKeys: [], domains: [r.domain], evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `/library/${encodeURIComponent(r.domain)}` }],
+    sourceIds: [`rebrand:${r.domain}:${r.confirmed_at}`, ...members.map(m => `story:${m.id}`)], basis: one ? one.basis : "measured", happenedAt: r.confirmed_at, magnitude: dims, members: members.map(m => m.id),
+    ...(r.seasonal ? { holdReason: SEASONAL_REASON } : {}) };
 }
 
 // SHIFT --------------------------------------------------------------------------------------------
@@ -387,32 +415,49 @@ export function roundupCandidates(ctx: Ctx, moves: { c: Candidate; e: EventRow }
 }
 
 // NEWS + LAUNCH ------------------------------------------------------------------------------------
-export type NewsMatcher = { brands: { domain: string; re: RegExp[] }[]; signals: { key: string; name: string; re: RegExp }[] };
-/** Tracked brands match by domain, or by brand name (word boundary, case-insensitive) unless the name is an ordinary word; headline signals match by label. */
+export type NewsMatcher = { brands: { domain: string; domainRe: RegExp; names: RegExp[] }[]; signals: { key: string; name: string; re: RegExp }[] };
+const bound = (s: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(s)}(?![\\p{L}\\p{N}])`, "iu");
+/** Tracked brands match by brand name (word boundary, case-insensitive) unless the name is an ordinary word; the domain regex is kept for publication checks only. Headline signals match by label. */
 export function newsMatcher(sites: { domain: string; name: string | null }[], headline: Iterable<string>): NewsMatcher {
-  const bound = (s: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(s)}(?![\\p{L}\\p{N}])`, "iu");
   return {
     brands: sites.map(s => {
       const names = new Set([s.name, s.domain.split(".")[0]].filter((x): x is string => !!x && x.length >= NEWS_NAME_MIN && !NEWS_NAME_STOPWORDS.has(x.toLowerCase())));
-      return { domain: s.domain, re: [new RegExp(`(?<![\\p{L}\\p{N}.-])${escape(s.domain)}(?![\\p{L}\\p{N}-])`, "iu"), ...[...names].map(bound)] };
+      return { domain: s.domain, domainRe: new RegExp(`(?<![\\p{L}\\p{N}.-])${escape(s.domain)}(?![\\p{L}\\p{N}-])`, "iu"), names: [...names].map(bound) };
     }),
     signals: [...headline].map(key => ({ key, name: label(key).name })).filter(x => x.name.length >= NEWS_SIGNAL_MIN).map(x => ({ ...x, re: bound(x.name) })),
   };
 }
-export function newsMatches(m: NewsMatcher, text: string) {
-  return { domains: m.brands.filter(b => b.re.some(r => r.test(text))).map(b => b.domain).sort(), signals: m.signals.filter(s => s.re.test(text)).map(s => s.key).sort() };
+/** Links, @handles and bare hosts ("webflow.sysdig.com", "instagram.com") are not names: they are removed before a title is matched. */
+export const titleWithoutHosts = (t: string) => t.replace(/https?:\/\/\S+/giu, " ").replace(/(?<![\p{L}\p{N}])@[\p{L}\p{N}_.-]+/gu, " ").replace(/(?<![\p{L}\p{N}@])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.[a-z]{2,24}(?![\p{L}\p{N}])/giu, " ");
+/** Brands and signals named in a title (by name, never by domain). */
+export function newsMatches(m: NewsMatcher, title: string) {
+  const t = titleWithoutHosts(title);
+  return { domains: m.brands.filter(b => b.names.some(r => r.test(t))).map(b => b.domain).sort(), signals: m.signals.filter(s => s.re.test(t)).map(s => s.key).sort() };
 }
+const SUBJECT_RES = NEWS_SUBJECT_TERMS.map(t => new RegExp(`(?<![\\p{L}\\p{N}])${escape(t).replace(/ /g, "\\s+")}(?![\\p{L}\\p{N}])`, "iu"));
+/** The first design subject term in a text, or null. */
+export const newsSubject = (text: string) => { const i = SUBJECT_RES.findIndex(r => r.test(text)); return i < 0 ? null : NEWS_SUBJECT_TERMS[i]!; };
 /** RSS sign-off lines ("The post … appeared first on X.") name the publisher, not the story. */
 export const NEWS_BOILERPLATE = /\s*The post .*? appeared first on .*$/is;
 const hostOf = (u: string) => { try { return new URL(u).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } };
-export function newsCandidates(m: NewsMatcher, wire: WireIn[]): { candidates: Candidate[]; dropped: number } {
-  const out: Candidate[] = []; let dropped = 0;
+export type NewsDrops = Record<NewsDropReason, number>;
+/** Why one outside item would not run, or null when it becomes a candidate (with the brands and signals its title names). */
+export function newsVerdict(m: NewsMatcher, w: Pick<WireIn, "title" | "url" | "source" | "source_kind" | "excerpt">): { drop: NewsDropReason } | { drop: null; domains: string[]; signals: string[]; excerpt: string | null; title: string } {
+  if (w.source_kind === "bluesky") return { drop: "bluesky" };
+  const title = untick(w.title), excerpt = w.source_kind === "rss" && w.excerpt ? untick(w.excerpt).replace(NEWS_BOILERPLATE, "").trim() || null : null;
+  const host = hostOf(w.url), found = newsMatches(m, title);
+  // A publication naming itself is not news about that brand (designboom's feed always says "designboom").
+  const domains = found.domains.filter(d => !(host === d || host.endsWith(`.${d}`) || w.source.toLowerCase().replace(/\s+/g, "") === d.split(".")[0]));
+  if (!domains.length && !found.signals.length) return { drop: "no_name" };
+  if (!newsSubject(`${title}\n${excerpt ?? ""}`)) return { drop: "no_subject" };
+  return { drop: null, domains, signals: found.signals, excerpt, title };
+}
+export function newsCandidates(m: NewsMatcher, wire: WireIn[]): { candidates: Candidate[]; dropped: number; drops: NewsDrops } {
+  const out: Candidate[] = [], drops: NewsDrops = { bluesky: 0, no_name: 0, no_subject: 0 };
   for (const w of wire) {
-    const title = untick(w.title), excerpt = w.source_kind === "rss" && w.excerpt ? untick(w.excerpt).replace(NEWS_BOILERPLATE, "").trim() || null : null;
-    const host = hostOf(w.url), found = newsMatches(m, `${title}\n${excerpt ?? ""}`);
-    // A publication naming itself is not news about that brand (designboom's feed always says "designboom").
-    const hit = { domains: found.domains.filter(d => !(host === d || host.endsWith(`.${d}`) || w.source.toLowerCase().replace(/\s+/g, "") === d.split(".")[0])), signals: found.signals };
-    if (!hit.domains.length && !hit.signals.length) { dropped++; continue; }
+    const v = newsVerdict(m, w);
+    if (v.drop) { drops[v.drop]++; continue; }
+    const hit = { domains: v.domains, signals: v.signals }, title = v.title, excerpt = v.excerpt;
     const names = [...hit.domains, ...hit.signals.map(k => label(k).name)];
     out.push({ id: `news:${w.id}`, type: "news", kicker: `News · ${w.source}`, headline: clip(title, 160), deck: excerpt ? clip(excerpt, 180) : `Names ${listOf(names, 4)}.`,
       facts: [{ text: `Source: ${w.source}, ${shortDate(w.published_at)}`, href: w.url, basis: null, kind: "source" },
@@ -421,7 +466,7 @@ export function newsCandidates(m: NewsMatcher, wire: WireIn[]): { candidates: Ca
       sector: null, signalKeys: hit.signals, domains: hit.domains, evidence: [{ label: `Read at ${w.source}`, href: w.url }], sourceIds: [`wire:${w.id}`], basis: null,
       happenedAt: w.published_at, magnitude: hit.domains.length + hit.signals.length });
   }
-  return { candidates: out, dropped };
+  return { candidates: out, dropped: drops.bluesky + drops.no_name + drops.no_subject, drops };
 }
 export function launchCandidate(w: WireIn): Candidate {
   return { id: `launch:${w.id}`, type: "launch", kicker: "Launch · Product Hunt", headline: clip(untick(w.title), 160), deck: w.excerpt ? clip(untick(w.excerpt), 180) : null,
@@ -429,20 +474,29 @@ export function launchCandidate(w: WireIn): Candidate {
     evidence: [{ label: "Product Hunt", href: w.url }], sourceIds: [`wire:${w.id}`], basis: null, happenedAt: w.published_at, magnitude: 1 };
 }
 
-/** Every candidate for one build, plus how many outside news items were dropped for naming nothing we track. */
-export function allCandidates(input: BuildInput): { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number } {
+/** Every candidate for one build, plus how many outside news items were dropped and why. */
+export function allCandidates(input: BuildInput): { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops } {
   const ctx = context(input);
-  const moves = input.events.filter(isVisibleMove).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id).map(e => ({ c: moveCandidate(e), e }));
+  const texts = new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v]));
+  const seasonal = seasonalEventIds(input.events, texts);
+  const moves = input.events.filter(isVisibleMove).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id).map(e => {
+    const c = moveCandidate(e);
+    // Seasonal skins are held; a single brand's AI-only read never runs alone. Both stay on the tape and the brand page.
+    if (seasonal.has(e.id) && SEASONAL_HELD_EVENTS.has(e.type)) c.holdReason = SEASONAL_REASON;
+    else if (AI_EVENTS.has(e.type)) c.holdReason = ESTIMATE_ONLY_REASON;
+    return { c, e };
+  });
   const rebrands = input.rebrands.map(r => rebrandCandidate(r, moves));
   const inRebrand = new Set(rebrands.flatMap(r => r.members ?? []));
-  const free = moves.filter(m => !inRebrand.has(m.c.id));
-  const counters = counterMoveCandidates(ctx, free), inCounter = new Set(counters.flatMap(c => c.members ?? []));
-  const roundups = roundupCandidates(ctx, free.filter(m => !inCounter.has(m.c.id)));
+  // A seasonal change is never a counter-move and never counts toward a roundup.
+  const free = moves.filter(m => !inRebrand.has(m.c.id) && !seasonal.has(m.e.id));
+  const counters = counterMoveCandidates(ctx, free).map(c => ({ ...c, holdReason: COUNTER_HELD_REASON }));
+  const roundups = roundupCandidates(ctx, free);
   const news = newsCandidates(newsMatcher(input.sites, ctx.headline), input.wire);
   const candidates = [
     ...moves.map(m => m.c), ...rebrands, ...shiftCandidates(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive),
     ...crossoverCandidates(ctx), ...counters, ...whiteSpaceCandidates(ctx), ...roundups, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => ({ ...c, headline: noDollar(c.headline), deck: c.deck == null ? null : noDollar(c.deck), facts: c.facts.map(f => ({ ...f, text: noDollar(f.text) })) }));
-  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length };
+  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops };
 }
 export const soWhatFor = (c: Pick<Candidate, "type" | "signalKeys" | "stage">) => STORY_TYPE_DEFS[c.type].soWhat;

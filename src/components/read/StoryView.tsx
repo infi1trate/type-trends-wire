@@ -21,7 +21,6 @@ import { numberLabel } from "@/lib/stories/numbers";
 import { FRAME_LABEL, compareKind } from "@/lib/stories/frames";
 
 export type StoryPageData = StoryPageModel & { thumb: Thumb | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null };
-const JOB = { spot: "Spot what is changing", prove: "Prove who is doing it", act: "Act on the opening" } as const;
 const day = (iso: string) => iso.slice(0, 10);
 
 /** Longer headlines drop one step so a palette list can't fill the screen. */
@@ -71,7 +70,7 @@ export function StoryView({ s }: { s: StoryPageData }) {
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={coverObject(s)}
           kicker={<><span>{s.kicker}</span>{s.basis && <> <BasisWord b={s.basis} /></>}</>}
           left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Corrected {day(s.correctedAt)}</span>}</>}
-          right={<>{s.sectorName && <span className="block">{s.sectorName}</span>}<span className="block">{s.typeName}</span><span className="block ed-caption">{JOB[s.job]}</span>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
+          right={<>{s.sectorName && <span className="block">{s.sectorName}</span>}<span className="block">{s.typeName}</span>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
       </>,
       evidence: <>
@@ -96,18 +95,11 @@ export function StoryView({ s }: { s: StoryPageData }) {
           <ul className="flex flex-wrap gap-x-6 gap-y-1">{s.brands.map(b => <li key={b.domain}><Link to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap ed-code">{b.domain}</Link></li>)}</ul>
         </BlockPart>}
       </>,
-      "so-what": <>
+      // Reader pages carry no machinery: only an AI line that says something about the story (reader.ts) gets the block.
+      "so-what": s.soWhat ? <>
         <p className="ed-pull max-w-[44ch]">{s.soWhat.text}</p>
-        <p className="ed-data mt-3 flex flex-wrap items-center gap-2"><BasisWord b={s.soWhat.basis} /><span className="ed-muted">{s.soWhat.basis === "ai" ? `Written from the facts above by ${s.soWhat.model ?? "the AI model"}${s.soWhat.at ? ` on ${day(s.soWhat.at)}` : ""}, checked against them.` : "Deterministic so-what from the measured data."}</span></p>
-        <details className="mt-6 max-w-[60rem]">
-          <summary className="ed-tap ed-data cursor-pointer">Why this ran · score {s.score} of 100 (threshold {s.threshold})</summary>
-          <table className="ed-data mt-3 w-full border-collapse text-left">
-            <caption className="ed-caption mb-2 text-left">{s.whyRan}</caption>
-            <thead><tr><th scope="col" className="py-1 pr-4">Component</th><th scope="col" className="py-1 pr-4 text-right">Points</th><th scope="col" className="py-1">Why</th></tr></thead>
-            <tbody>{s.components.map(c => <tr key={c.id} className="ed-hair"><th scope="row" className="py-1 pr-4 font-normal">{c.label}</th><td className="num py-1 pr-4 text-right">{c.value}/25</td><td className="py-1">{c.why}</td></tr>)}</tbody>
-          </table>
-        </details>
-      </>,
+        <p className="ed-data mt-3 flex flex-wrap items-center gap-2"><BasisWord b={s.soWhat.basis} /></p>
+      </> : null,
       related: <>
         {(s.signals.length > 0 || s.patterns.length > 0) && <BlockPart title="Signals and patterns">
           <Ledger small label="Signals and patterns in this story" rows={[...s.signals.map(x => ({ key: `s:${x.key}`, href: x.href, title: x.name, facts: [x.dimension], tags: ["Signal"] })), ...s.patterns.map(p => ({ key: `p:${p.key}`, href: p.href, title: `${p.name} examples`, tags: ["Pattern"] }))]} />

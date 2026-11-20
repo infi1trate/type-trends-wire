@@ -19,6 +19,7 @@ import { Ledger } from "@/components/brand/Ledger";
 import { BeforeAfter } from "./Evidence";
 import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
+import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
 import { LeadFigureSlot } from "./Covers";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLive";
@@ -49,10 +50,10 @@ function Lead({ m, now }: { m: FrontModel; now: number }) {
       <div className={l.evidence ? "lg:col-span-7" : "lg:col-span-10"}>
         <p className="ed-kicker flex flex-wrap items-center gap-x-3 gap-y-1">{l.story.number != null && <span className="plate-num">{numberLabel(l.story.number)}</span>}<span>{l.label}</span><span>{l.story.typeName}{l.story.sectorName ? ` · ${l.story.sectorName}` : ""}</span></p>
         <h2 id="front-lead" className="ed-h1 mt-4 break-words"><Link to="/stories/$id" params={{ id: l.story.id }} className="no-underline hover:underline">{l.story.headline}</Link></h2>
-        {l.why && <p className="ed-standfirst mt-5">{l.why.text}</p>}
+        {l.story.line && <p className="ed-standfirst mt-5">{l.story.line}</p>}
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
           <Raised href={`/stories/${encodeURIComponent(l.story.id)}`}>Receipts →</Raised>
-          {(l.story.basis ?? l.why?.basis) && <BasisWord b={(l.story.basis ?? l.why!.basis)!} />}
+          {l.story.basis && <BasisWord b={l.story.basis} />}
           <span className="ed-data"><time dateTime={l.story.at}>{storyTime(l.story.at)}</time> · {relTime(l.story.at, now)}{l.story.corrected && <> · Corrected {l.story.corrected.slice(0, 10)}</>}</span>
         </div>
       </div>
@@ -113,7 +114,7 @@ function DateState({ m }: { m: FrontModel }) {
 }
 
 export function FrontView({ m }: { m: FrontModel }) {
-  const now = useNow(m.now, 30_000);
+  const now = useNow(m.now, 30_000), staff = !!useStaffKey();
   const [moving, setMoving] = useState(m.moving);
   const onUpdates = useCallback((u: FrontUpdates) => { if (u.moving) setMoving(u.moving); }, []);
   const empty = m.format === "all" ? voiced("read.frontView.2") : `No ${FORMAT_LABEL[m.format]} stories this week.`;
@@ -170,7 +171,7 @@ export function FrontView({ m }: { m: FrontModel }) {
         <Ledger className="mt-3" rows={m.dataStories.map(d => ({ key: d.slug, href: d.href, number: d.number, title: d.question }))} />
         <p className="ed-data mt-3"><Receipt href="/data" className="ed-tap">All data stories →</Receipt></p>
       </RuleBox></section>}
-      <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
+      <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.filter(f => staff || !STAFF_HREFS.has(f.href)).map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     </div>
     </FiltersScope>
     <ReadFooter terminal="/terminal" />

@@ -82,7 +82,7 @@ export async function issueRows(week: string | null): Promise<IssueRows | null> 
   ]);
   const crawlSites = crawl?.stats && typeof crawl.stats === "object" ? Object.values(crawl.stats as Record<string, { ok?: number }>).reduce((s, v) => s + (typeof v?.ok === "number" ? v.ok : 0), 0) : 0;
   const rebrands: RebrandLite[] = rebrandAll.rows.filter(x => x.source === "live" && x.confirmed_at >= range.startIso && x.confirmed_at < range.endIso)
-    .map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, before: { h1: x.before.h1, accent: x.before.accent }, after: { h1: x.after.h1, accent: x.after.accent } }));
+    .map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, seasonal: x.seasonal, before: { h1: x.before.h1, accent: x.before.accent }, after: { h1: x.after.h1, accent: x.after.accent } }));
   // The week in stories: published stories of the issue week as they stood when it ended (later edits never rewrite an old issue).
   const stories = b.week >= STORIES_FIRST_WEEK ? await weekStories(range.startIso, range.endIso).catch(() => null) : null;
   return {

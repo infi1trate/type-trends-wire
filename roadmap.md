@@ -297,3 +297,15 @@
 
 - [ ] Re-measure JS bytes, LCP, CLS and TBT on the live site after Brandon publishes (`scripts/perf/measure.py`) — blocked on publish
 - [ ] At launch: add `/share/` and `/data/<slug>.png` to OPEN_PATHS so link previews draw — owner decision
+
+# Phase E0 — stop the noise (don't publish)
+- [x] A: rebrand needs 3 of 4 dimensions (type, colour, theme, layout); else a move; labels everywhere; rules.ts
+- [x] B: promoSignal + seasonal changes held; "Seasonal" label on tape and brand moves; rules.ts
+- [x] C: news needs a name in the title + a subject term; Bluesky never; NEWS_DAILY_CAP 3; desk drop counts; rules.ts
+- [x] D: estimate-only single moves and counter-moves held; DAILY_CAP 8; rules.ts
+- [x] E: Read side: no template so-what, no score line, no job label; lead deck = story deck; DID byline guard
+- [x] F: retire.ts + script over last 30 days; run on live; counts
+- [x] G: staff pages behind the editor key; /welcome and /kit 404 without it; links hidden
+- [x] Tests, full suite, report
+- [ ] Owner decision: promo→promo captures (e.g. "Gift Guide" → "Black Friday Sale") are not seasonal under the stated rule and still run as moves
+- [ ] Later phase: the weekly counter-move roundup (counter-moves are held until it exists)

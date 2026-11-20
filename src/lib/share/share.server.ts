@@ -4,18 +4,19 @@ import { pct } from "../digest/copy";
 import { dayText } from "../data-stories/text";
 import type { ShareCard, ShareKind } from "./scene";
 import { sharePath } from "./scene";
+import { noDid } from "../stories/reader";
 
 export async function shareCard(kind: ShareKind, id: string): Promise<ShareCard | null> {
   switch (kind) {
     case "front": {
       const { loadFront } = await import("../front/front.server");
       const m = await loadFront("all", "all"), l = m.lead;
-      return { kicker: `The live front page · ${dayText(m.now)}`, title: l ? l.story.headline : "The live newsroom for how brands look and sound on the web", deck: l?.why?.text ?? null, path: "" };
+      return { kicker: `The live front page · ${dayText(m.now)}`, title: l ? l.story.headline : "The live newsroom for how brands look and sound on the web", deck: l?.story.line ?? null, path: "" };
     }
     case "story": {
       const [{ storyIndex }, { streamOf }] = await Promise.all([import("../stories/read.server"), import("../stories/view")]);
       const s = streamOf(await storyIndex()).find(x => x.id === id);
-      return s ? { kicker: `${s.kicker || "Story"}${s.sector && !(s.kicker || "").includes(sectorName(s.sector)) ? ` · ${sectorName(s.sector)}` : ""} · ${dayText(s.happened_at)}`, title: s.headline, deck: s.deck, path: `/stories/${s.id}` } : null;
+      return s ? { kicker: `${noDid(s.kicker) || "Story"}${s.sector && !(s.kicker || "").includes(sectorName(s.sector)) ? ` · ${sectorName(s.sector)}` : ""} · ${dayText(s.happened_at)}`, title: s.headline, deck: s.deck, path: `/stories/${s.id}` } : null;
     }
     case "brand": {
       const { loadBrand } = await import("../read.server");

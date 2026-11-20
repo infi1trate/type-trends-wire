@@ -165,7 +165,7 @@ describe("What makes a story", () => {
   it("is generated from the type definitions and constants", () => {
     expect(storyTypeList()).toHaveLength(11);
     const text = storyRules().map(r => r.text).join(" ");
-    expect(text).toContain(`${MIN_RUN_GAP_DAYS} days older`); expect(text).toContain("24 stories run per UTC day, 6 of them news"); expect(text).toContain("8 brands and 4 quarters");
+    expect(text).toContain(`${MIN_RUN_GAP_DAYS} days older`); expect(text).toContain("8 stories run per UTC day, 3 of them news"); expect(text).toContain("8 brands and 4 quarters");
     expect(text).not.toMatch(/\$/);
   });
 });

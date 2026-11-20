@@ -4,10 +4,11 @@ import { basis as basisOf, label, sectorName, type Basis } from "../labels";
 import { brandPath, patternPath, signalPath } from "../ia";
 import { STORIES_PER_PAGE, type Story } from "../stories";
 import { sectorFirst } from "../sector-lens";
-import { COMPONENT_LABEL, LEAD_WINDOW_HOURS, PUBLISH_MIN, lensScore, type ComponentId, type Components } from "./score";
+import { COMPONENT_LABEL, LEAD_WINDOW_HOURS, lensScore, type ComponentId, type Components } from "./score";
 import { STORY_KINDS, STORY_TYPE_DEFS, type EvidenceLink, type Fact, type StoryKind } from "./types";
 import { foldedIds, type Shown, type StoredStory } from "./edits";
 import { soWhat } from "../digest/copy";
+import { noDid, readerWhy } from "./reader";
 
 /** The deterministic so-what: the signal's own line for signal stories, the type's line otherwise. */
 export const soWhatOf = (p: { type: StoryKind; signalKeys: string[]; stage?: string | null | undefined }) => {
@@ -33,7 +34,7 @@ const inFilter = (t: string, f: TypeFilter) => { const ts = TYPE_FILTERS[f].type
 
 const asBasis = (b: string | null): Basis | null => (b === "measured" || b === "ai" ? b : null);
 export function toStory(s: StoryRecord): Story {
-  return { id: s.id, type: isKind(s.type) ? s.type : "news", kicker: s.kicker, headline: s.headline, ...(s.deck ? { deck: s.deck } : {}), at: s.happened_at, sector: s.sector,
+  return { id: s.id, type: isKind(s.type) ? s.type : "news", kicker: noDid(s.kicker), headline: s.headline, ...(s.deck ? { deck: s.deck } : {}), at: s.happened_at, sector: s.sector,
     signalKeys: s.signal_keys, domains: s.domains, evidence: storyPath(s.id), basis: asBasis(s.basis), score: s.score, corrected: s.correctedAt, number: s.state === "published" ? s.number ?? null : null,
     held: s.state === "held" ? s.reason : s.state === "killed" ? `killed${s.killReason ? `: ${s.killReason}` : ""}` : null };
 }
@@ -89,19 +90,22 @@ const asComponents = (v: unknown): { id: ComponentId; label: string; value: numb
   const o = (v && typeof v === "object" ? v : {}) as Partial<Components>;
   return (Object.keys(COMPONENT_LABEL) as ComponentId[]).map(id => ({ id, label: COMPONENT_LABEL[id], value: typeof o[id]?.value === "number" ? o[id]!.value : 0, why: typeof o[id]?.why === "string" ? o[id]!.why : "" }));
 };
-export function storyPage(s: StoryRecord, related: { earlier: Story[]; soWhat: string; patterns: string[] }) {
+/** The story page (Read side): facts and receipts only. The score, the threshold, the job and the deterministic so-what stay on
+ *  the desk and in the terminal; an AI line shows only when it says something about the story (`readerWhy`), never generic advice. */
+export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[] }) {
   const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts);
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
+  const why = readerWhy(s.why_line);
   return {
-    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, job: def.job, kicker: deLegacy(s.kicker), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
+    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, kicker: noDid(deLegacy(s.kicker)), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
-    facts: facts.filter(f => f.kind !== "before" && f.kind !== "after").map(f => ({ ...f, text: deLegacy(f.text) })), beforeAfter: before && after ? { before, after } : null,
-    evidence: asLinks(s.evidence).map(e => ({ ...e, label: deLegacy(e.label) })),
+    facts: facts.filter(f => f.kind !== "before" && f.kind !== "after").map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
+    // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
+    evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : noDid(deLegacy(e.label)) })),
     brands: s.domains.map(d => ({ domain: d, href: brandPath(d) })),
     signals: s.signal_keys.map(k => ({ key: k, name: label(k).name, dimension: label(k).dimension, basis: basisOf(k), href: signalPath(k) })),
     patterns: related.patterns.map(k => ({ key: k, name: label(k).name, href: patternPath(k) })),
-    soWhat: s.why_line ? { text: deLegacy(s.why_line), basis: "ai" as const, model: s.why_model, at: s.why_at } : { text: related.soWhat, basis: "measured" as const, model: null, at: null },
-    score: s.score, threshold: PUBLISH_MIN, components: asComponents(s.components), whyRan: s.why_ran,
+    soWhat: why ? { text: deLegacy(why), basis: "ai" as const } : null,
     earlier: related.earlier, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note })),
     blocks: STORY_BLOCKS,
   };
@@ -116,7 +120,7 @@ export function queueModel(all: StoryRecord[], day: string | null, now: number) 
   const today = new Date(now).toISOString().slice(0, 10), since = new Date(now - QUEUE_DAYS * 864e5).toISOString().slice(0, 10);
   const days = [...new Set(all.map(s => dayOf(s.happened_at)))].filter(d => d >= since && d <= today).sort().reverse();
   const pick = day ?? null, rows = all.filter(s => (pick ? dayOf(s.happened_at) === pick : dayOf(s.happened_at) >= since)).sort((a, b) => b.happened_at.localeCompare(a.happened_at) || b.score - a.score);
-  const item = (s: StoryRecord) => ({ ...toStory(s), state: s.state, reason: s.reason, whyRan: s.why_ran, components: asComponents(s.components), whyLine: s.why_line, pinnedUntil: s.pinnedUntil, killReason: s.killReason, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note, payload: e.payload as Record<string, string> })) });
+  const item = (s: StoryRecord) => ({ ...toStory(s), kicker: s.kicker, state: s.state, reason: s.reason, whyRan: s.why_ran, components: asComponents(s.components), whyLine: s.why_line, pinnedUntil: s.pinnedUntil, killReason: s.killReason, edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note, payload: e.payload as Record<string, string> })) });
   // Counts read the overlay: a killed story no longer counts as ran.
   const count = (d: string, st: StoryRecord["state"]) => all.filter(s => s.state === st && (st !== "published" || s.type !== "launch") && dayOf(s.happened_at) === d).length;
   return {

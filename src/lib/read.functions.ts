@@ -24,7 +24,8 @@ export const getFront = createServerFn({ method: "GET" }).inputValidator(z.objec
 });
 export const getStoryQueue = createServerFn({ method: "GET" }).inputValidator(z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), fresh: z.boolean().default(false) })).handler(async ({ data }) => {
   const { loadQueue } = await import("./stories/page.server");
-  return loadQueue(data.day ?? null, data.fresh);
+  // The terminal's Today queue: always the cached index. The desk's fresh queue loads only through /api/public/desk with the editor key.
+  return loadQueue(data.day ?? null, false);
 });
 export const getRunComparison = createServerFn({ method: "GET" }).handler(async () => {
   const { runComparison } = await import("./read.server");
@@ -87,10 +88,7 @@ export const getEditions = createServerFn({ method: "GET" }).handler(async () =>
   const { loadEditions } = await import("./editions/editions.server");
   return loadEditions(null);
 });
-export const getWelcome = createServerFn({ method: "GET" }).handler(async () => {
-  const { loadWelcome } = await import("./editions/welcome.server");
-  return loadWelcome();
-});
+// /welcome data loads only from /api/public/desk (action "staff") after the editor key; there is no public function for it.
 /** /kit: live examples for the component kit (stored data only, no AI). */
 export const getKit = createServerFn({ method: "GET" }).handler(async () => {
   const { loadKit } = await import("./kit.server");

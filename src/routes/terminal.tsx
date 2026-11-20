@@ -31,6 +31,7 @@ import { keyView, resolveKey, resolveView, sectionById, sectionOf, stepTab, type
 import { resolveSector } from "@/lib/sector-lens";
 import { useModeToggle, useSectorLens } from "@/components/read/lens";
 import { BRAND_NAME } from "@/lib/brand";
+import { useStaffKey } from "@/lib/staff-key";
 
 const TITLE = `Terminal — ${BRAND_NAME}`;
 const DESC = `The dense, keyboard-first view of ${BRAND_NAME}: six sections (Live, Signals, Brands, Patterns, Digest, Tools) with every number's receipts.`;
@@ -60,7 +61,7 @@ const Wait = ({ children }: { children: React.ReactNode }) => <Suspense fallback
 function Terminal() {
   const search = Route.useSearch(), navigate = Route.useNavigate(), router = useRouter();
   const view = resolveView(search.panel);
-  const [sector, setSector] = useSectorLens(), mode = useModeToggle();
+  const [sector, setSector] = useSectorLens(), mode = useModeToggle(), staff = !!useStaffKey();
   const setPanel = useCallback((p: ViewId) => { void navigate({ search: prev => ({ ...prev, panel: p, trait: undefined, story: undefined }) }); }, [navigate]);
   const [typeTab, setTypeTab] = useState("GOOGLE FONTS");
   const [overlay, setOverlayRaw] = useState<null | "glossary" | "method" | "mcp" | "taste">(null);
@@ -158,7 +159,7 @@ function Terminal() {
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · <span className="normal-case">{BRAND_NAME}</span> CRAWLER · DESIGN RSS · HACKER NEWS</span>
         <div className="flex shrink-0 flex-wrap items-center">
           <HealthLine />
-          <Link to="/status" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">STATUS</Link>
+          {staff && <Link to="/status" className="label inline-flex h-6 items-center px-2 text-ink hover:underline max-md:h-11">STATUS</Link>}
           <Button variant="link" data-tour="console" aria-label="Open taste console" onClick={() => openConsole()} className="label h-6 px-2 text-ink max-md:h-11">/</Button>
           <Button variant="link" onClick={() => setOverlay("glossary")} className="label h-6 px-2 text-ink max-md:h-11">GLOSSARY</Button>
           <Button variant="link" onClick={() => setOverlay("mcp")} className="label h-6 px-2 text-ink max-md:h-11">MCP</Button>

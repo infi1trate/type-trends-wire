@@ -14,8 +14,8 @@ export const COMPONENT_MAX = 25;
 export const PUBLISH_MIN = 45;
 /** Same brand (or same signal) and same type within 7 days: only the higher score runs. */
 export const DEDUPE_DAYS = 7;
-/** At most 24 published stories per UTC day, at most 6 of them outside news. */
-export const DAILY_CAP = 24, NEWS_DAILY_CAP = 6;
+/** At most 8 published stories per UTC day, at most 3 of them outside news. */
+export const DAILY_CAP = 8, NEWS_DAILY_CAP = 3;
 /** Under a sector lens, that sector's stories get this many points in ordering only (the stored score never changes). */
 export const LENS_BOOST = 15;
 /** Lead story window: the best of the last 48 hours. */
@@ -117,6 +117,8 @@ export function planStories(candidates: Candidate[], existing: Existing[], ctx: 
   });
   const hold = (p: Planned, reason: string) => { if (p.status === "published") { p.status = "held"; p.reason = reason; } };
   const live = () => plan.filter(p => p.status === "published");
+  // 0) Rule holds decided before scoring (seasonal skins, estimate-only moves, counter-moves waiting for their roundup).
+  for (const p of plan) if (p.holdReason) hold(p, p.holdReason);
   const byScore = (a: Planned, b: Planned) => b.score - a.score || b.happenedAt.localeCompare(a.happenedAt) || a.id.localeCompare(b.id);
 
   // Launches never rank: they only appear in New on the scene.

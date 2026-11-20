@@ -1,5 +1,4 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getLaunch } from "./launch/launch.functions";
 import { getWatchView, getWatchOptions, getAudit } from "./agency.functions";
 import { parseAuditSites } from "./agency/audit";
 import type { WatchRange } from "./agency/watch-feed";
@@ -17,7 +16,7 @@ import { getSignalSnapshot } from "./signals.functions";
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getWelcome, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
 import type { GallerySearch } from "./gallery";
@@ -324,7 +323,6 @@ export type RebrandFilters = { sector?: string; source?: "live" | "archive"; yea
 export const rebrandsQuery = (f: RebrandFilters) => queryOptions({ queryKey: ["rebrands", f.sector ?? "all", f.source ?? "all", f.year ?? 0, f.limit], staleTime: 10 * 60_000, queryFn: () => getRebrands({ data: { ...(f.sector && f.sector !== "all" ? { sector: f.sector } : {}), ...(f.source ? { source: f.source } : {}), ...(f.year ? { year: f.year } : {}), offset: 0, limit: f.limit } }) });
 export const vibeQuery = () => queryOptions({ queryKey: ["vibe-map"], staleTime: 10 * 60_000, queryFn: () => getVibeMap() });
 export const chartCardQuery = (week: string | null) => queryOptions({ queryKey: ["chart-card", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getChartCard({ data: { week } }) });
-export const launchQuery = () => queryOptions({ queryKey: ["launch"], staleTime: 60_000, queryFn: () => getLaunch() });
 export const healthQuery = () => queryOptions({ queryKey: ["health"], staleTime: 60_000, refetchInterval: 120_000, queryFn: () => getHealth() });
 
 /** TODAY inputs: the latest real forecast run and its week-over-week partner (scope all; none when closer than MIN_RUN_GAP_DAYS), recent alerts, wire freshness, latest live library change and crawl. */
@@ -405,7 +403,6 @@ export const morningQuery = (day: string | null) => queryOptions({ queryKey: ["m
 export const sectorReportQuery = (sector: string) => queryOptions({ queryKey: ["sector-report", sector], staleTime: 5 * 60_000, queryFn: () => getSectorReport({ data: { sector } }) });
 export const sectorIndexQuery = () => queryOptions({ queryKey: ["sector-index"], staleTime: 5 * 60_000, queryFn: () => getSectorIndex() });
 export const editionsQuery = () => queryOptions({ queryKey: ["editions"], staleTime: 60_000, queryFn: () => getEditions() });
-export const welcomeQuery = () => queryOptions({ queryKey: ["welcome"], staleTime: 60_000, queryFn: () => getWelcome() });
 export const liveQuery = (sector: string, page: number, type: LiveTypeFilter = "all") => queryOptions({ queryKey: ["live", sector, page, type], staleTime: 60_000, queryFn: () => getLive({ data: { sector, page, type } }) });
 export const storyQuery = (id: string) => queryOptions({ queryKey: ["story", id], staleTime: 60_000, queryFn: () => getStory({ data: { id } }) });
 /** Today's queue (published, held, killed) for the desk and Terminal › Live › Today; `fresh` skips the server's short cache. */

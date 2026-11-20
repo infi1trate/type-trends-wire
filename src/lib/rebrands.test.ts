@@ -56,7 +56,7 @@ describe("rebrand detection", () => {
     expect(wireMatch("notion.so", null, "2026-11-12T00:00:00Z", [w(3, "2026-11-13T00:00:00Z", "the notion of a brand")])).toBeNull();
   });
   it("counts and filters", () => {
-    const rows = [{ sector: "ai", source: "live" as const, confirmed_at: "2026-11-01T00:00:00Z" }, { sector: "fintech", source: "archive" as const, confirmed_at: "2023-04-01T00:00:00Z" }];
+    const rows = [{ sector: "ai", source: "live" as const, confirmed_at: "2026-11-01T00:00:00Z", label: "Rebrand" as const }, { sector: "fintech", source: "archive" as const, confirmed_at: "2023-04-01T00:00:00Z", label: "Identity change" as const }];
     expect(rebrandCounts(rows, new Date("2026-11-14T00:00:00Z"))).toMatchObject({ total: 2, live: 1, archive: 1, this_quarter: 1 });
     expect(filterRebrands(rows, { source: "archive" })).toHaveLength(1);
     expect(filterRebrands(rows, { year: 2026 })).toHaveLength(1);

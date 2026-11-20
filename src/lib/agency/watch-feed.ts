@@ -4,6 +4,7 @@ import { alertDisplayTitle, explainerPath, label, scopeText, stageName, type Dim
 import { xmlEscape } from "../digest/rss";
 import { pickThumb, type Thumb, type ThumbRow } from "../thumbs";
 import { eventDetail, eventSentence, rebrandSentence, type EventRow, type RebrandRow } from "./changes";
+import { isRebrand } from "../rebrand-rule";
 import { feedPath, viewPath, type WatchPublic } from "./watch";
 import { rssImage } from "../feed-image";
 import { BRAND_NAME } from "../brand";
@@ -40,7 +41,7 @@ export function watchItems(r: WatchRows, sinceIso: string): WatchItem[] {
   for (const e of r.events) if (sites.has(e.domain) && e.detected_at > sinceIso)
     items.push({ guid: `event-${e.id}`, kind: "site", at: e.detected_at, title: eventSentence(e), detail: eventDetail(e), href: `/library/${e.domain}`, domain: e.domain });
   for (const b of r.rebrands) if (sites.has(b.domain) && b.confirmed_at > sinceIso)
-    items.push({ guid: `rebrand-${b.domain}-${b.confirmed_at}`, kind: "rebrand", at: b.confirmed_at, title: rebrandSentence(b), detail: b.read, href: "/terminal?panel=rebrands", domain: b.domain });
+    items.push({ guid: `rebrand-${b.domain}-${b.confirmed_at}`, kind: isRebrand(b) ? "rebrand" : "site", at: b.confirmed_at, title: rebrandSentence(b), detail: b.read, href: "/terminal?panel=rebrands", domain: b.domain });
 
   // Traits: those named on the list plus those its sites show. Sites' traits are read across all sectors; named traits also in the list's sectors.
   const shownBy = new Map<string, string[]>();

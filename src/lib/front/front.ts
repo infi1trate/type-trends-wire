@@ -2,6 +2,7 @@
 // The page renders this model and nothing else; /front.json serves its changeable parts. Every item shows when it happened: nothing is
 // restamped to look new (an item's `at` is always its stored time).
 import { isKind, soWhatOf, storyPath, streamOf, type StoryRecord } from "../stories/view";
+import { noDid } from "../stories/reader";
 import { lensScore } from "../stories/score";
 import { STORY_TYPE_DEFS } from "../stories/types";
 import { label, sectorName, type StageName } from "../labels";
@@ -37,7 +38,7 @@ type Numbered = StoryRecord & { number?: number | null };
 const oneLine = (s: string | null | undefined, n = 180) => { if (!s) return null; const t = s.trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
 export function toFront(s: Numbered): FrontStory {
   const type = isKind(s.type) ? s.type : "news";
-  return { id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: STORY_TYPE_DEFS[type].kicker, kicker: s.kicker, headline: s.headline, line: oneLine(s.deck),
+  return { id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: STORY_TYPE_DEFS[type].kicker, kicker: noDid(s.kicker), headline: s.headline, line: oneLine(s.deck),
     basis: s.basis === "measured" || s.basis === "ai" ? s.basis : null, at: s.happened_at, href: storyPath(s.id), format: storyFormat(type), sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
     score: s.score, corrected: s.correctedAt };
 }
