@@ -1132,8 +1132,8 @@
       },
       {
         "name": "data_stories",
-        "title": "Data stories",
-        "description": "slug data stories: one question about how brands look on the web, answered step by step from stored captures. Without slug: the numbered list with status. With slug: the question, every step as text with its figures and receipts, and what the numbers are based on.",
+        "title": "Studies",
+        "description": "slug studies: each one argument about how brands look on the web, with its evidence from stored captures, in a standing series. Without slug: the numbered list (Study No. N) with series and status. With slug: the written headline, deck, opening and scenes, every step as text with its figures and receipts, the limits and what the numbers are based on.",
         "annotations": {
           "readOnlyHint": true,
           "openWorldHint": false
@@ -1143,7 +1143,7 @@
           "type": "object",
           "properties": {
             "slug": {
-              "description": "A data story slug from the list, e.g. who-went-big-first.",
+              "description": "A study slug from the list, e.g. who-went-big-first.",
               "type": "string",
               "minLength": 3,
               "maxLength": 80,
