@@ -38,8 +38,9 @@ const clip = (s: string, n = 180) => (s.length > n ? `${s.slice(0, n - 1)}…` :
 async function build(sector: string, format: FormatFilter, withEditions = true): Promise<FrontModel> {
   const now = Date.now();
   const [read, { loadFreshness }, { loadEditions }, { siteTraitIndex }] = await Promise.all([import("../read.server"), import("../freshness.server"), import("../editions/editions.server"), import("../read.server")]);
-  const [all, { snap, tiers, signals }, moves, fresh, editions, series, index] = await Promise.all([
+  const [all, { snap, tiers, signals }, moves, fresh, editions, series, index, studies] = await Promise.all([
     storyIndex(), latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), withEditions ? loadEditions(null).catch(() => null) : Promise.resolve(null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
+    import("../data-stories/page.server").then(m => m.storedStudyShelf()).catch(() => null),
   ]);
   const headlineKeys = new Set([...tiers.values()].filter(t => t.tier === "headline").map(t => t.key));
   const byKey = new Map(signals.map(s => [s.key, s]));
@@ -63,7 +64,7 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
       sectors: editions ? { at: editions.run?.at ?? null, count: editions.sectors.length } : null,
     },
     archiveMoves, patternKeys: new Set(signals.filter(isPatternSignal).map(s => s.key)), brandNames: new Map(index.map(s => [s.domain, s.name])),
-    dataStories: dataShelf(),
+    dataStories: studies ?? dataShelf(),
     collections: liveCollections().map(c => ({ slug: c.slug, number: c.number, title: c.title, href: collectionPath(c.slug) })),
   };
   let model = frontModel(input);

@@ -38,10 +38,11 @@ export function bigTypeFigures(i: DataInput): BigTypeFigures {
   const a = adoptionOf(i);
   return { entries: a.entries.length, censored: a.censored.length, adopters: a.fig.adopters.length, never: a.never.length, quarters: a.fig.quarters.length };
 }
-export function adoptionOf(i: DataInput) {
-  const key = BIG_TYPE.key;
-  return adoption({ signal: { key, name: label(key).name }, sites: activeSites(i, null), rows: rowsIn(i, null), usable: usableQuarters(i, null), share: [], title: "", note: "" });
+export function adoptionOf(i: DataInput, key: string = BIG_TYPE.key, name = label(key).name) {
+  return adoption({ signal: { key, name }, sites: activeSites(i, null), rows: rowsIn(i, null), usable: usableQuarters(i, null), share: [], title: "", note: "" });
 }
+/** E4 · the study 2 check run on another signal: how many adopters have an established first quarter (needs BIG_TYPE.minEntries). */
+export const adoptionEntries = (i: DataInput, key: string, name: string) => adoptionOf(i, key, name).entries.length;
 export const bigTypeVerdict = (f: Pick<BigTypeFigures, "entries">) => verdict([
   { id: "entries", label: "Adopters whose first-seen quarter is established under the coverage rule", value: f.entries, need: BIG_TYPE.minEntries },
 ], x => `Only ${x.value} adopters have an established first-seen quarter (needs ${x.need}).`);
@@ -69,6 +70,16 @@ export const sectorMindsVerdict = (f: Pick<SectorMindsFigures, "sectors">) => ve
   { id: "sectors", label: `Sectors with ${SECTOR_MINDS.minEvents} or more dated events`, value: f.sectors, need: SECTOR_MINDS.minSectors },
 ], x => `Only ${x.value} sectors have ${SECTOR_MINDS.minEvents}+ dated events (needs ${x.need}).`);
 
+/** E4 · what a study that is not live is waiting for, from its check's figures: have, need, and one plain sentence. */
+export type Wait = { have: number; need: number; text: string; /** One new well-covered quarter per calendar quarter closes the gap. */ perQuarter: boolean };
+export function waitOf(id: CheckId, i: DataInput): Wait {
+  switch (id) {
+    case "software": { const f = softwareFigures(i); return { have: f.moved, need: SOFTWARE.minMoved, text: `Has ${f.moved} composite signals that moved ${SOFTWARE.movePts * 100} points, needs ${SOFTWARE.minMoved}.`, perQuarter: false }; }
+    case "big-type": { const f = bigTypeFigures(i); return { have: f.entries, need: BIG_TYPE.minEntries, text: `Has ${f.entries} dated adopters, needs ${BIG_TYPE.minEntries}.`, perQuarter: false }; }
+    case "fintech-colour": { const f = fintechFigures(i); return { have: f.quarters, need: FINTECH_COLOUR.minQuarters, text: `Has ${f.quarters} well-covered quarters of fintech palettes, needs ${FINTECH_COLOUR.minQuarters}.`, perQuarter: true }; }
+    case "sector-minds": { const f = sectorMindsFigures(i); return { have: f.sectors, need: SECTOR_MINDS.minSectors, text: `Has ${f.sectors} sectors with ${SECTOR_MINDS.minEvents} dated changes, needs ${SECTOR_MINDS.minSectors}.`, perQuarter: false }; }
+  }
+}
 export const CHECKS = {
   software: (i: DataInput) => softwareVerdict(softwareFigures(i)),
   "big-type": (i: DataInput) => bigTypeVerdict(bigTypeFigures(i)),

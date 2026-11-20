@@ -14,7 +14,7 @@ export const KIT_SECTIONS = [
   { id: "kit-charts", title: "Charts" },
   { id: "kit-space", title: "Spacing and whitespace" },
   { id: "kit-motion", title: "Motion" },
-  { id: "kit-data", title: "Data story templates" },
+  { id: "kit-data", title: "Study templates" },
 ] as const;
 /** The brand's eight containers (components/brand/Containers.tsx), shown in this order. */
 export const CONTAINERS = ["sheet", "rulebox", "card", "slab", "plate", "raised", "sticker", "photo"] as const;

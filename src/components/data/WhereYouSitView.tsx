@@ -16,10 +16,10 @@ export function WhereYouSitView({ brands, result, step, onStep }: { brands: Bran
   const nav = useNavigate(), [q, setQ] = useState(""), [miss, setMiss] = useState<string | null>(null);
   const hits = useMemo(() => pickBrands(brands, q, 12), [brands, q]);
   const choose = (d: string) => { setMiss(null); void nav({ to: "/data/where-you-sit", search: { brand: d, step: 1 }, resetScroll: false }); };
-  const head = { number: WHERE_YOU_SIT.number, question: result.kind === "story" ? result.story.question : WHERE_YOU_SIT.question, deck: WHERE_YOU_SIT.deck, template: templateName(WHERE_YOU_SIT), dataThrough: result.kind === "story" ? result.story.dataThrough : null };
-  return <DigestShell label="Data stories" section="signals">
+  const head = { number: 0, question: result.kind === "story" ? result.story.question : WHERE_YOU_SIT.question, deck: WHERE_YOU_SIT.deck, template: templateName(WHERE_YOU_SIT), dataThrough: result.kind === "story" ? result.story.dataThrough : null };
+  return <DigestShell label="Studies" section="signals">
     <article className="pb-8">
-      <StoryHead s={head} />
+      <StoryHead s={head} label="Tool" kicker={<Link to="/data" className="ed-tap no-underline">All studies</Link>} />
       <form className="ed-wrap no-print mt-6" role="search" onSubmit={e => { e.preventDefault(); const exact = pickBrands(brands, q, 1)[0]; if (exact && (exact.domain === q.trim().toLowerCase() || exact.name.toLowerCase() === q.trim().toLowerCase() || hits.length === 1)) choose(exact.domain); else setMiss(q.trim()); }}>
         <label htmlFor="sit-q" className="ed-kicker block">Pick one of the {brands.length} tracked brands</label>
         <input id="sit-q" className="tk-input tk-t-data mt-2 w-full max-w-[40ch]" value={q} onChange={e => { setQ(e.target.value); setMiss(null); }} placeholder="Search by name or domain" autoComplete="off" aria-describedby="sit-hint" />

@@ -9,7 +9,7 @@ import { LENS_SECTORS } from "../sector-lens";
 /** Scene ids in their default order. */
 export const SCENE_IDS = ["cover", "ledger", "trail", "pair", "wall", "figure", "data"] as const;
 export type SceneId = (typeof SCENE_IDS)[number];
-export const SCENE_NAME: Record<SceneId, string> = { cover: "The lead story", ledger: "The newest stories", trail: "The chart of the day", pair: "A recent move", wall: "A collection", figure: "The day's figure", data: "A data story" };
+export const SCENE_NAME: Record<SceneId, string> = { cover: "The lead story", ledger: "The newest stories", trail: "The chart of the day", pair: "A recent move", wall: "A collection", figure: "The day's figure", data: "A study" };
 /** Seconds each scene stays: 24 by default, 10 to 120 from ?dwell=. */
 export const DWELL = { default: 24, min: 10, max: 120 } as const;
 export const LEDGER_SIZE = 5, WALL_SIZE = 12;
@@ -25,7 +25,7 @@ export type AmbientInput = {
   move: { domain: string; name: string; text: string; at: string; pair: BeforeAfterFig } | null;
   collection: { slug: string; number: number; title: string; tiles: GalleryTile[] } | null;
   figure: { value: string; name: string; caption: string; key: string } | null;
-  data: { slug: string; number: number; question: string; key: { n: string; label: string }; step: Step; figure: Figure } | null;
+  data: { slug: string; number: number; question: string; headline?: string; key: { n: string; label: string }; step: Step; figure: Figure } | null;
 };
 export type Scene =
   | { id: "cover"; lead: NonNullable<AmbientInput["lead"]> }

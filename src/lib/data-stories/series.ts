@@ -11,7 +11,9 @@ export type HistRow = SiteRow & { captured_at: string | null; source: string | n
 /** Per snapshot: whether a skeleton was stored (it can be redrawn) and its palette (hex + share of the first screen). */
 export type SnapMeta = { id: number; skeleton: boolean; palette: { hex: string; share: number }[] };
 /** A measured, dated change on a homepage (library_events), and a confirmed rebrand (Rebrand desk). */
-export type EventRow = { id: number; domain: string; type: string; source: string; at: string; snapshot_id: number | null };
+export type EventRow = { id: number; domain: string; type: string; source: string; at: string; snapshot_id: number | null;
+  /** E4 · a confirmed live change: the last capture with the old value and the first with the new one (integrity.ts `seen`). */
+  seen?: { before: string; after: string } };
 export type RebrandRow = { id: string; domain: string; at: string; source: string };
 /** Every stored home/desktop capture (when and where from), so change rates can be read per compared capture. */
 export type CaptureStamp = { domain: string; at: string; source: string };

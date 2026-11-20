@@ -30,13 +30,13 @@ export const COLLECTIONS: readonly Collection[] = [
   { slug: "fintech-heroes-this-quarter", number: 1, title: "Fintech heroes, this quarter", deck: "The first screen of every fintech brand captured this quarter, newest first.",
     filter: F({ sectors: ["fintech"], period: "latest" }), pairs: { label: "Sector report: Fintech", href: "/sectors/fintech" }, status: "live", reason: null, recorded: 30 },
   { slug: "who-went-big", number: 2, title: "Who went big", deck: "Every capture showing big type: oversized headlines set in a heavy display face.",
-    filter: F({ pattern: BIG_TYPE }), pairs: { label: "Data story 2: Who went big first?", href: "/data/who-went-big-first", dataStory: "who-went-big-first" }, status: "live", reason: null, recorded: 269 },
+    filter: F({ pattern: BIG_TYPE }), pairs: { label: "Study No. 2: Who went big first?", href: "/data/who-went-big-first", dataStory: "who-went-big-first" }, status: "live", reason: null, recorded: 269 },
   { slug: "dark-pages-in-dev-tools", number: 3, title: "Dark pages in dev tools", deck: "Developer-tool homepages captured in dark mode.",
     filter: F({ sectors: ["dev-tools"], pattern: "theme:dark" }), pairs: { label: "Signal: Dark mode", href: `/signals/${encodeURIComponent("theme:dark")}` }, status: "live", reason: null, recorded: 54 },
   { slug: "changed-this-month", number: 4, title: "Changed this month", deck: `First screens either side of every change recorded in the last ${CHANGED_DAYS} days.`,
     filter: F({ changed: CHANGED_DAYS }), pairs: { label: "Brands: recent moves", href: "/brands?tab=moves" }, status: "live", reason: null, recorded: 144 },
   { slug: "software-homepage-2021-to-now", number: 5, title: "The software homepage, 2021 to now", deck: "Dev-tool and enterprise software homepages, one capture a quarter since 2021.",
-    filter: F({ sectors: ["dev-tools", "enterprise-saas"], since: "2021Q1" }), pairs: { label: "Data story 1: What happened to the software homepage in five years?", href: "/data/software-homepage-five-years", dataStory: "software-homepage-five-years" }, status: "live", reason: null, recorded: 280 },
+    filter: F({ sectors: ["dev-tools", "enterprise-saas"], since: "2021Q1" }), pairs: { label: "Study No. 1: What happened to the software homepage in five years?", href: "/data/software-homepage-five-years", dataStory: "software-homepage-five-years" }, status: "live", reason: null, recorded: 280 },
 ];
 export const collectionOf = (slug: string) => COLLECTIONS.find(c => c.slug === slug) ?? null;
 export const collectionPath = (slug: string) => `/collections/${slug}`;

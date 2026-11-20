@@ -256,7 +256,8 @@ export type FrontInput = {
   /** Live collections (registry status); the Collections box on the Explore shelf is absent when there are none. */
   collections?: CollectionShelfItem[];
 };
-export type DataShelfItem = { slug: string; number: number; question: string; href: string };
+/** A Studies row (E4): "No. N" and the written headline (the question when no stored home exists yet). */
+export type DataShelfItem = { slug: string; number: number; question: string; href: string; headline?: string };
 export type CollectionShelfItem = { slug: string; number: number; title: string; href: string };
 export function frontModel(i: FrontInput) {
   const stream = streamOf(i.stories) as Numbered[], ranked = stream.filter(s => s.type !== "launch");
@@ -286,7 +287,7 @@ export function frontModel(i: FrontInput) {
   // E3: without a week-over-week comparison, Moving now is not drawn at all; it returns with the first comparison.
   const movingShown = surfaceShows(i.format, "moving-now") && !!i.moving.pair;
   const strip = surfaceShows(i.format, "your-sector") ? sectorStrip(i.sector, i.lens, stream) : null;
-  const dataStories = surfaceShows(i.format, "data-stories") ? (i.dataStories ?? []) : [];
+  const dataStories = surfaceShows(i.format, "data-stories") ? (i.dataStories ?? []).slice(0, 3) : [];
   const collections = shows(i.format, "explore") ? (i.collections ?? []) : [];
   return {
     now: new Date(i.now).toISOString(), today: utcDay(i.now), sector: i.sector, format: i.format, state,

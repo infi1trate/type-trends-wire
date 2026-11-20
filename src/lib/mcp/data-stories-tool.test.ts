@@ -3,10 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { fxInput } from "@/lib/data-stories/fixtures";
 import { bigTypeStory } from "@/lib/data-stories/stories";
 import { indexRows } from "@/lib/data-stories/build";
+import { chooseText, factsHash, factsSheet } from "@/lib/data-stories/writer";
 
-const story = bigTypeStory(fxInput(), new Map(), { slug: "who-went-big-first", number: 2, question: "Who went big first?", deck: "D", template: "Adoption timeline", collection: { label: "Signal: Big type", href: "/signals/combo%3Abig_type" }, related: [] });
+const model = bigTypeStory(fxInput(), new Map(), { slug: "who-went-big-first", number: 2, question: "Who went big first?", deck: "D", template: "Adoption timeline", collection: { label: "Signal: Big type", href: "/signals/combo%3Abig_type" }, related: [], series: "first-movers", seriesTitle: "Who moved first" });
+const story = { ...model, text: chooseText([], factsHash(factsSheet(model)), model), hash: factsHash(factsSheet(model)), v: 4 as const };
 vi.mock("@/lib/data-stories/page.server", () => ({
-  loadDataIndex: async () => ({ rows: indexRows(null, "2026-11-16T00:00:00Z") }),
+  loadDataIndex: async () => ({ rows: indexRows(null, "2026-11-16T00:00:00Z"), home: { lead: null, series: [], shelf: [], tool: { question: "", line: "", href: "" } }, v: 4 }),
   loadDataStory: async (slug: string) => (slug === "who-went-big-first" ? { kind: "live", story } : slug === "where-did-fintechs-colour-go" ? { kind: "draft", number: 3, question: "Where did fintech's colour go?", deck: "", template: "", reason: "Only 5 quarters." } : { kind: "missing" }),
 }));
 import { handleMcp } from "./server.server";
@@ -16,7 +18,8 @@ const call = async (args: unknown) => (await (await handleMcp(req(args))).json()
 describe("MCP data_stories", () => {
   it("lists every story with status and absolute urls", async () => {
     const out = JSON.parse((await call({})).content[0].text);
-    expect(out.stories.map((s: { number: number }) => s.number)).toEqual([1, 2, 3, 4, 5]);
+    expect(out.stories.map((s: { number: number }) => s.number)).toEqual([1, 2, 3, 4]);
+    expect(out.stories[1].label).toBe("Study No. 2");
     expect(out.stories[1]).toMatchObject({ slug: "who-went-big-first", status: "live", url: "https://slug.global/data/who-went-big-first" });
     expect(out.stories[2]).toMatchObject({ status: "draft", url: null });
   });
@@ -27,6 +30,7 @@ describe("MCP data_stories", () => {
     expect(out.steps[0].figures[0].receipt).toMatch(/^https:\/\/slug\.global\//);
     expect(out.urls).toMatchObject({ image: "https://slug.global/data/who-went-big-first.png", embed: "https://slug.global/data/embed/who-went-big-first?step=1" });
     expect(out.basis.rule).toMatch(/well-covered/);
+    expect(out).toMatchObject({ label: "Study No. 2", series: "Who moved first", headline: story.text.headline, text: { source: "fallback" } });
   });
   it("drafts carry their reason; unknown slugs are an error", async () => {
     expect(JSON.parse((await call({ slug: "where-did-fintechs-colour-go" })).content[0].text)).toMatchObject({ status: "draft", draft_reason: "Only 5 quarters." });

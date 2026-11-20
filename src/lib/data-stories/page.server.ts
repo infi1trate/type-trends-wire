@@ -1,36 +1,77 @@
-// Server side of data stories: builds each model from cached stored data and caches the result. No writes, no AI.
+// Server side of studies: builds each model from cached stored data, lays the stored written text over it (E4) and caches the result.
+// No writes, no AI per view: the written text is read from study_texts (checked versions only, anonymous).
 import { dataInput, capturesFor, capturesOf } from "./data.server";
-import { BUILDERS, buildStory, buildWhereYouSit, indexRows, isTracked, normDomain, liveNow } from "./build";
-import { entryOf, templateName } from "./registry";
-import type { StoryModel } from "./types";
+import { BUILDERS, buildStory, buildWhereYouSit, indexRows, isTracked, normDomain, liveNow, statusOf } from "./build";
+import { DATA_STORIES, entryOf, seriesOf, studyLabel, templateName } from "./registry";
+import { BIG_TYPE, adoptionEntries, waitOf } from "./checks";
+import { chooseText, factsHash, factsSheet, fallbackText, type StudyRow } from "./writer";
+import { candidateRows, changedAt, draftRow, frontStudies, studiesHome, type HomeStudy, type StudiesHome } from "./shelf";
+import { coverTrail } from "./cover";
+import type { StoryModel, StudyPage } from "./types";
 import { memoBy } from "../memo";
 import { storedBy } from "../records/store.server";
 import { pageKey } from "../records/records";
+import { supabaseAnon } from "../mcp/supabase";
 
 const TTL = 10 * 60_000;
 const built = memoBy(TTL, (job: { k: string; f: () => Promise<StoryModel | null> }) => job.f(), { key: j => j.k, max: 80 });
 const memo = (k: string, f: () => Promise<StoryModel | null>) => built({ k, f });
 const through = (i: Awaited<ReturnType<typeof dataInput>>) => i.captures.reduce<string | null>((m, c) => (!m || c.at > m ? c.at : m), null);
 
-/** /data and its stories read precomputed models (records.ts "data-index", "data-story"); these compute them live. */
-export async function computeDataIndex() {
-  const i = await dataInput().catch(() => null);
-  return { rows: indexRows(i, i ? through(i) : null) };
+/** Checked written versions of these studies (public read; failures read as none, so the page shows its template text). */
+async function studyRows(slugs: string[]): Promise<StudyRow[]> {
+  if (!slugs.length) return [];
+  const { data, error } = await supabaseAnon().from("study_texts").select("slug,facts_hash,headline,deck,opening,scenes,use_text,model,checked_at,created_at").or(slugs.filter(s => /^[a-z0-9-]+$/.test(s)).map(s => `slug.eq.${s}`).join(",")).not("checked_at", "is", null).order("created_at", { ascending: false }).limit(200);
+  if (error) return [];
+  return (data ?? []) as StudyRow[];
 }
-export type DataStoryPage = { kind: "live"; story: StoryModel } | { kind: "draft"; number: number; question: string; deck: string; template: string; reason: string | null } | { kind: "missing" };
+const modelOf = async (slug: string, i: Awaited<ReturnType<typeof dataInput>>) => memo(`s:${slug}`, async () => { const b = BUILDERS[slug]; if (!b) return null; return buildStory(slug, i, await capturesFor(b.domains(i))); });
+/** A study page: the model, the text it shows and its sheet's fingerprint. */
+export function studyPage(s: StoryModel, rows: readonly StudyRow[]): StudyPage {
+  const hash = factsHash(factsSheet(s));
+  return { ...s, text: chooseText(rows, hash, s), hash, v: 4 };
+}
+
+/** /data reads a precomputed Studies home (records.ts "data-index"); this computes it. `rows` is the plain numbered list (MCP). */
+export type DataIndex = { rows: ReturnType<typeof indexRows>; home: StudiesHome; v: 4 };
+export async function computeDataIndex(): Promise<DataIndex> {
+  const i = await dataInput().catch(() => null), now = Date.now();
+  const rows = indexRows(i, i ? through(i) : null);
+  const live = i ? liveNow(i) : [];
+  const [models, texts] = await Promise.all([Promise.all(live.map(e => modelOf(e.slug, i!).catch(() => null))), studyRows(live.map(e => e.slug))]);
+  const studies: HomeStudy[] = live.flatMap((e, k) => {
+    const m = models[k]; if (!m) return [];
+    const p = studyPage(m, texts);
+    return [{ slug: e.slug, number: e.number, label: studyLabel(e.number), series: e.series, seriesTitle: seriesOf(e.series)?.title ?? "", headline: p.text.headline, deck: p.text.deck, question: e.question, dataThrough: m.dataThrough, href: `/data/${e.slug}`, key: m.key, cover: coverTrail(m), changedAt: changedAt(texts, e.slug, p.hash, now) }];
+  });
+  const drafts = DATA_STORIES.filter(e => !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
+  const cands = i ? i.headline.filter(h => h.key !== BIG_TYPE.key).map(h => ({ key: h.key, name: h.name, entries: adoptionEntries(i, h.key, h.name) })) : [];
+  return { rows, home: studiesHome(studies, [...drafts, ...candidateRows(cands, BIG_TYPE.minEntries)]), v: 4 };
+}
+export type DataStoryPage = { kind: "live"; story: StudyPage } | { kind: "draft"; number: number; question: string; deck: string; template: string; reason: string | null; series?: string } | { kind: "missing" };
 export async function computeDataStory(slug: string): Promise<DataStoryPage> {
   const e = entryOf(slug);
   if (!e) return { kind: "missing" };
   const i = await dataInput();
-  const story = await memo(`s:${slug}`, async () => { const b = BUILDERS[slug]; if (!b) return null; return buildStory(slug, i, await capturesFor(b.domains(i))); });
-  if (story) return { kind: "live", story };
-  const { statusOf } = await import("./build");
-  return { kind: "draft", number: e.number, question: e.question, deck: e.deck, template: templateName(e), reason: statusOf(e, i).reason };
+  const story = await modelOf(slug, i);
+  if (story) return { kind: "live", story: studyPage(story, await studyRows([slug])) };
+  return { kind: "draft", number: e.number, question: e.question, deck: e.deck, template: templateName(e), reason: statusOf(e, i).reason, series: seriesOf(e.series)?.title ?? "" };
 }
 const dataIndexRecord = storedBy((_: null) => pageKey("data-index"), () => computeDataIndex());
 const dataStoryRecord = storedBy((slug: string) => pageKey("data-story", slug), computeDataStory);
-export const loadDataIndex = () => dataIndexRecord(null);
-export const loadDataStory = (slug: string): Promise<DataStoryPage> => (entryOf(slug) ? dataStoryRecord(slug) : Promise.resolve({ kind: "missing" }));
+// A record written before E4 (no `v`) is a list without a home or a model without scenes: compute live instead (still correct).
+const isIndex = (x: unknown): x is DataIndex => !!x && typeof x === "object" && (x as { v?: unknown }).v === 4 && "home" in (x as object);
+const isPage = (x: DataStoryPage) => x.kind !== "live" || (x.story as Partial<StudyPage>).v === 4;
+export const loadDataIndex = async (): Promise<DataIndex> => { const r = await dataIndexRecord(null); return isIndex(r) ? r : computeDataIndex(); };
+export const loadDataStory = async (slug: string): Promise<DataStoryPage> => { if (!entryOf(slug)) return { kind: "missing" }; const r = await dataStoryRecord(slug); return isPage(r) ? r : computeDataStory(slug); };
+/** The front page's Studies rows (written headlines, lead first, at most three), from the stored home. */
+export async function loadStudyShelf() { return frontStudies((await loadDataIndex()).home); }
+/** The front page's Studies rows from the stored home only (never computes; null when no current record): the front page adds no slow read. */
+export async function storedStudyShelf() {
+  const { readRecord } = await import("../records/store.server");
+  const r = await readRecord<unknown>(pageKey("data-index")).catch(() => null);
+  return r && isIndex(r.body) ? frontStudies(r.body.home) : null;
+}
 /** Every tracked brand for the picker (the only brands a reader can choose). */
 export async function loadTrackedBrands() {
   const i = await dataInput();
@@ -44,8 +85,23 @@ export async function loadWhereYouSit(raw: string): Promise<{ kind: "story"; sto
   const story = await memo(`w:${domain}`, async () => buildWhereYouSit(i, domain, await capturesOf(domain)));
   return story ? { kind: "story", story } : { kind: "untracked", domain };
 }
-/** Live stories for the front page shelf (empty when none). */
-export async function loadDataShelf() {
-  const i = await dataInput().catch(() => null);
-  return i ? liveNow(i).map(e => ({ slug: e.slug, number: e.number, question: e.question, href: `/data/${e.slug}` })) : [];
+
+/** E4 · what the study writer is owed: each live study's sheet, fingerprint and template text, and the brand names the check knows. */
+export async function studyJobs() {
+  const [i, { seededNames }] = await Promise.all([dataInput(), import("../brand-names")]);
+  const live = liveNow(i), models = await Promise.all(live.map(e => modelOf(e.slug, i)));
+  const jobs = live.flatMap((e, k) => { const m = models[k]; if (!m) return []; const sheet = factsSheet(m), f = fallbackText(m);
+    return [{ slug: e.slug, number: e.number, sheet, hash: factsHash(sheet), fallback: { headline: f.headline, deck: f.deck, opening: f.opening, scenes: f.scenes, use: "" } }]; });
+  return { jobs, known: { names: [...new Set([...seededNames(), ...i.sites.map(s => s.name).filter((n): n is string => !!n)])] } };
+}
+
+/** E4 · a study's "02 Related": published stories of the last 60 days that share its signal (or its sectors), newest first; then the
+ *  other live studies in its series. Streamed after the page (stories are never inside a record). */
+export async function loadStudyRelated(slug: string) {
+  const e = entryOf(slug);
+  if (!e) return { stories: [], more: [], inWorks: false };
+  const [{ storyIndex }, { studyStories }, idx] = await Promise.all([import("../stories/read.server"), import("./related"), loadDataIndex()]);
+  const all = await storyIndex().catch(() => []);
+  const more = idx.home.series.find(x => x.id === e.series)?.studies.filter(x => x.slug !== slug).map(x => ({ label: `${x.label}: ${x.headline}`, href: x.href })) ?? [];
+  return { stories: studyStories(all, { signal: e.params.signal ?? null, sectors: e.params.sectors, now: Date.now() }), more, inWorks: !more.length };
 }

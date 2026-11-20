@@ -1,4 +1,4 @@
-// One step of a data story as a self-contained HTML page (no scripts, no cookies): theme tokens, the small CSS subset the figures use,
+// One step of a study as a self-contained HTML page (no scripts, no cookies): theme tokens, the small CSS subset the figures use,
 // the figure markup and the caption. Pure.
 import { SITE_URL } from "../site";
 import { BRAND_NAME } from "../brand";
@@ -31,9 +31,9 @@ export function utilityCss() {
   return base + resp + TK;
 }
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-export function embedHtml(o: { story: { slug: string; number: number; question: string; steps: StoryModel["steps"] }; step: number; caption: string; figure: string; themeCss: string }) {
+export function embedHtml(o: { story: { slug: string; number: number; question: string; steps: StoryModel["steps"]; headline?: string }; step: number; caption: string; figure: string; themeCss: string }) {
   const s = o.story, href = `${SITE_URL}/data/${s.slug}?step=${o.step + 1}`;
-  return `<!doctype html><html lang="en" data-mode="vibes"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(`Data story ${s.number}: ${s.question}`)}</title>
+  return `<!doctype html><html lang="en" data-mode="vibes"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(`Study No. ${s.number}: ${s.headline ?? s.question}`)}</title>
 <link rel="stylesheet" href="${esc(activeTheme.shared.fonts.base)}"><link rel="stylesheet" href="${esc(activeTheme.shared.fonts.editorial)}"><style>${o.themeCss}${utilityCss()}body{margin:0;padding:16px;background:var(--tk-surface-page);color:var(--tk-text-primary);font-family:var(--tk-type-data-family)}h1{margin:4px 0 12px}p{margin:0}ul,ol{list-style:none;margin:0;padding:0}figure{margin:0}h3{margin:0}.cap{margin-top:12px;max-width:60ch}</style></head>
-<body><p class="tk-t-kicker">${esc(`${BRAND_NAME} · Data story ${s.number} · ${counter(o.step, s.steps.length)}`)}</p><h1 class="tk-t-h3"><a href="${esc(href)}" target="_top">${esc(s.question)}</a></h1>${o.figure}<p class="cap tk-t-body">${esc(o.caption)}</p><p class="tk-t-caption tk-c-muted" style="margin-top:8px"><a href="${esc(href)}" target="_top">Step through the whole story →</a></p></body></html>`;
+<body><p class="tk-t-kicker">${esc(`${BRAND_NAME} · Study No. ${s.number} · ${counter(o.step, s.steps.length)}`)}</p><h1 class="tk-t-h3"><a href="${esc(href)}" target="_top">${esc(s.headline ?? s.question)}</a></h1>${o.figure}<p class="cap tk-t-body">${esc(o.caption)}</p><p class="tk-t-caption tk-c-muted" style="margin-top:8px"><a href="${esc(href)}" target="_top">Read the whole study →</a></p></body></html>`;
 }

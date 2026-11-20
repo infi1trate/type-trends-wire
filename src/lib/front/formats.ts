@@ -10,7 +10,7 @@ export const FORMAT_NOTE: Record<Format, string> = {
   live: "Moves, rebrands, counter-moves and news, as they are detected.",
   updating: "Pages that redraw: Moving now, signals, the chart of the day, the Morning Line and sector reports.",
   explore: "Brand and pattern pages to browse.",
-  read: "Roundups, white-space pieces, Digest issues and data stories.",
+  read: "Roundups, white-space pieces, Digest issues and studies.",
 };
 
 /** Every story type, exactly one format. Signal stories (shift, breakout, first seen, crossover) report a page that redraws, so they are Updating. */

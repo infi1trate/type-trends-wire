@@ -8,7 +8,7 @@ import { BRAND_NAME } from "@/lib/brand";
 import { AmbientBoard, AmbientWaiting } from "@/components/ambient/AmbientBoard";
 
 const TITLE = `Studio board — ${BRAND_NAME}`;
-const DESC = "A hands-off board for a studio wall: the lead story, the newest stories, the chart of the day, a recent move, a collection, the day's figure and a data story, one scene at a time.";
+const DESC = "A hands-off board for a studio wall: the lead story, the newest stories, the chart of the day, a recent move, a collection, the day's figure and a study, one scene at a time.";
 type Search = { dwell?: string; sector?: string; scenes?: string };
 export const Route = createFileRoute("/ambient/")({
   staticData: { mode: "dark" },

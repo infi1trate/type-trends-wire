@@ -9,7 +9,7 @@ import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
 
 const TITLE = `Where does your brand sit? · ${BRAND_NAME}`;
-const DESC = "Pick a tracked brand and get its own short data story: where it sits in its sector, its homepage through time, and the signals that set it apart.";
+const DESC = "A tool: pick a tracked brand and see where it sits in its sector, its homepage through time, and the signals that set it apart.";
 export const Route = createFileRoute("/data/where-you-sit")({
   validateSearch: (s: Record<string, unknown>): { brand?: string | undefined; step?: number | undefined } => {
     const n = typeof s["step"] === "number" ? s["step"] : typeof s["step"] === "string" ? Number.parseInt(s["step"], 10) : NaN;

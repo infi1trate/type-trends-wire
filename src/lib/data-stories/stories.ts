@@ -1,7 +1,9 @@
-// The data stories themselves: one pure builder per registry entry, over `DataInput` plus the captures of the brands it puts on stage.
-// Every sentence is a template filled from numbers in the model; every number and name carries its receipt.
+// The studies themselves (data stories in code): one pure builder per registry entry, over `DataInput` plus the captures of the brands
+// it puts on stage. Every caption is a template filled from numbers in the model; every number and name carries its receipt. E4: each
+// builder also groups its steps into scenes, states what the data cannot show (limits) and supplies a template headline.
 import type { Caption, Figure, Link, Seg, Step, StoryModel, View } from "./types";
-import { cap, list, num, ref, pctText, qText, dayText, signalHref, brandHref, sectorHref, HISTORY_HREF, RULE_HREF } from "./text";
+import { cap, list, num, ref, pctText, qText, dayText, quarterOf, signalHref, brandHref, sectorHref, HISTORY_HREF, RULE_HREF } from "./text";
+import { resolveScenes, oneScenePerStep, type SceneDef } from "./scenes";
 import { activeSites, compositeSeries, nameOf, rowsIn, ruleText, sectorOfSite, shareSeries, usableQuarters, quarterCoverage, traitsOf, knows, byQuarter, type DataInput } from "./series";
 import { multiplesFig, firstLast } from "./templates/multiples";
 import { adoption, doubledAt } from "./templates/adoption";
@@ -14,7 +16,9 @@ import { SECTORS } from "../library";
 import { qIndex } from "../forecast";
 
 export type Captures = Map<string, CaptureRaw[]>;
-export type Meta = { slug: string; number: number; question: string; deck: string; template: string; collection: Link; related: Link[] };
+export type Meta = { slug: string; number: number; question: string; deck: string; template: string; collection: Link; related: Link[]; series?: string; seriesTitle?: string };
+/** E4 · what a builder adds beside its steps: the scenes, the limits and the template headline. */
+type Extras = { scenes?: SceneDef[]; limits?: string[]; fallback?: string };
 
 // Segments ------------------------------------------------------------------------------------------
 const pct = (v: number, href: string) => num(pctText(v), v, href);
@@ -56,15 +60,26 @@ export function softwareStory(i: DataInput, caps: Captures, m: Meta): StoryModel
     steps.push(step(`${id}-all`, cap`${k === 0 ? "The longest stored history: " : "Next longest: "}${b(t.domain)}, ${cnt(fig.frames.length, brandHref(t.domain))} captures from ${dayN(f0.at, HISTORY_HREF)} to ${dayN(fN.at, brandHref(t.domain))}, redrawn from their stored layouts.`, { figure: id, highlight: [], focus: f0.id }));
     const mk = fig.marks.find(x => x.after) ?? null;
     steps.push(mk
-      ? step(`${id}-change`, cap`${cnt(fig.marks.length, brandHref(t.domain))} measured changes are marked; the first, a ${typeWord(mk.type).toLowerCase()}, is dated ${dayN(mk.at, brandHref(t.domain))}.`, { figure: id, highlight: [mk.id], focus: mk.after })
+      ? step(`${id}-change`, [...cap`${cnt(fig.marks.length, brandHref(t.domain))} measured changes are marked; the first, a ${typeWord(mk.type).toLowerCase()}, `, ...whenSeen(i, Number(mk.id), mk.at, brandHref(t.domain)), "."], { figure: id, highlight: [mk.id], focus: mk.after })
       : step(`${id}-change`, cap`No measured change is marked between its captures.`, { figure: id, highlight: [], focus: fN.id }));
   });
   const top = [...moves].sort((a, c) => c.fl.last.y - a.fl.last.y)[0];
   if (top) steps.push(step("now", cap`Where it landed: ${ref(top.p.label, top.p.href)} is now on ${pct(top.fl.last.y, top.p.href)} of software homepages, the most common of the twelve.`, { figure: "multiples", highlight: [top.p.id] }));
-  const r0 = risers[0];
+  const r0 = risers[0], pts = r0 ? Math.abs(r0.fl.change * 100).toFixed(0) : "";
   return model(m, i, figures, steps, { brands, captures: capturesIn(i, scope), period: first && last ? `${qText(first)} to ${qText(last)}` : "—", rule: ruleText(scope),
     lines: ["AI-estimated composites count only AI-tagged captures in their denominators.", "Strips redraw stored layout boxes in each capture's own colours; no screenshots are stored."] },
-    r0 ? { n: `${r0.fl.change >= 0 ? "+" : "−"}${Math.abs(r0.fl.change * 100).toFixed(0)} pts`, label: `${r0.p.label} on software homepages` } : { n: String(sf.moved), label: "composite signals moved" });
+    r0 ? { n: `${r0.fl.change >= 0 ? "+" : "−"}${pts} pts`, label: `${r0.p.label} on software homepages` } : { n: String(sf.moved), label: "composite signals moved" },
+    {
+      scenes: [
+        { id: "field", lead: "Two sectors, twelve signals", steps: ["intro"] },
+        { id: "rose", lead: "What rose", steps: ["rise-1", "rise-2", "rise-3"] },
+        { id: "landed", lead: "What fell, and where it landed", steps: ["fall", "still", "moved", "now"] },
+        { id: "first-brand", lead: "The longest stored history", steps: ["strip-1-all", "strip-1-change"] },
+        { id: "second-brand", lead: "The next longest", steps: ["strip-2-all", "strip-2-change"] },
+      ],
+      limits: [ARCHIVE_LIMIT, "AI-estimated signals count only the captures our AI has read, so their shares rest on fewer homepages."],
+      fallback: r0 ? `${r0.p.label} ${r0.fl.change >= 0 ? "gained" : "lost"} ${pts} points on software homepages` : `${sf.moved} composite signals moved on software homepages`,
+    });
 }
 
 // B. WHO WENT BIG FIRST? ------------------------------------------------------------------------------------------
@@ -80,16 +95,34 @@ export function bigTypeStory(i: DataInput, _caps: Captures, m: Meta): StoryModel
   const d = doubledAt(share);
   if (d && first) steps.push(step("doubled", cap`Its share first doubled in ${qN(d.q)}: ${pct(d.share, href)}, against ${pct(first.share, href)} at the start.`, { figure: "adoption", highlight: a.entries.filter(x => byQuarter(x.first, d.q) <= 0).map(x => x.domain), focus: d.q }));
   else if (first && last) steps.push(step("doubled", cap`It has not doubled: ${pct(first.share, href)} in ${qN(first.q)}, ${pct(last.share, href)} in ${qN(last.q)}, up ${num(`${(last.share / Math.max(first.share, 1e-9)).toFixed(1)} times`, last.share / Math.max(first.share, 1e-9), href)}.`, { figure: "adoption", highlight: [], focus: last.q }));
-  const waves = qs.map(q => ({ q, n: a.entries.filter(x => x.first === q) })).filter(w => w.n.length).sort((x, y) => y.n.length - x.n.length || byQuarter(x.q, y.q));
+  // E4: the latest column mixes every change since the archive's last sample with the live crawl, so it is not compared with single
+  // quarters: the step names the largest group among the comparable quarters, and says so without a superlative.
+  const latest = qs.at(-1) ?? null, comparable = qs.length > 1 ? qs.slice(0, -1) : qs;
+  const waves = comparable.map(q => ({ q, n: a.entries.filter(x => x.first === q) })).filter(w => w.n.length).sort((x, y) => y.n.length - x.n.length || byQuarter(x.q, y.q));
   const big = waves[0];
-  if (big) steps.push(step("wave", [...cap`The biggest wave: ${cnt(big.n.length, href)} brands showed it for the first time in ${qN(big.q)}, among them `, ...list(big.n.slice(0, 2).map(x => b(x.domain))), "."], { figure: "adoption", highlight: big.n.map(x => x.domain), focus: big.q }));
+  if (big) steps.push(step("wave", [...cap`In ${qN(big.q)}, ${cnt(big.n.length, href)} brands showed it for the first time, among them `, ...list(big.n.slice(0, 2).map(x => b(x.domain))), "."], { figure: "adoption", highlight: big.n.map(x => x.domain), focus: big.q }));
   if (a.dropped.length) steps.push(step("dropped", [...cap`${cnt(a.dropped.length, href)} adopters have since dropped it, among them `, ...list(a.dropped.slice(0, 2).map(x => b(x.domain))), "."], { figure: "adoption", highlight: a.dropped.map(x => x.domain), focus: last?.q ?? null }));
   const bySector = SECTORS.map(s => ({ s: s as string, p: shareSeries(i, [s], key).at(-1) })).filter((x): x is { s: string; p: NonNullable<typeof x.p> } => !!x.p).sort((x, y) => x.p.share - y.p.share || x.s.localeCompare(y.s));
   const hold = bySector[0], lead = bySector.at(-1);
   if (hold && lead) steps.push(step("never", cap`${cnt(a.never.length, href)} brands have never shown it in a well-covered capture. ${sec(hold.s)} holds out most, at ${pct(hold.p.share, `${href}?sector=${hold.s}`)} now; ${sec(lead.s)} leads at ${pct(lead.p.share, `${href}?sector=${lead.s}`)}.`, { figure: "adoption", highlight: a.never, focus: last?.q ?? null }));
+  const name = label(key).name, prev = qs.length > 1 ? qs.at(-2)! : null;
   return model(m, i, { adoption: a.fig }, steps, { brands: activeSites(i, null).length, captures: capturesIn(i, null), period: first && last ? `${qText(first.q)} to ${qText(last.q)}` : "—", rule: ruleText(null),
     lines: [`A first sighting is dated only when the brand has an earlier well-covered capture without it; ${a.censored.length} brands already had it and ${a.unknown} have no well-covered capture.`] },
-    { n: String(a.entries.length), label: `adopters of ${label(key).name} with a known first quarter` });
+    last ? { n: pctText(last.share), label: `of tracked homepages set ${name} in ${qText(last.q)}` } : { n: String(a.entries.length), label: `adopters of ${name} with a known first quarter` },
+    {
+      scenes: [
+        { id: "share", lead: "The share line", steps: ["now"] },
+        { id: "dated", lead: "Who the archive can date", steps: ["already", "first-three"] },
+        { id: "spread", lead: "How it spread", steps: ["doubled", "wave"] },
+        { id: "left", lead: "The ones who left", steps: ["dropped"] },
+        { id: "never", lead: "Who never took it up", steps: ["never"] },
+      ],
+      limits: [
+        `Archive captures are about a year apart, so a brand is dated to the first capture that shows ${name}, and brands already showing it in their first capture have no known start.`,
+        ...(latest && prev ? [`The ${qText(latest)} column holds every first sighting since ${qText(prev)}, when the archive last sampled most brands, together with the live crawl, so it is not comparable with a single earlier quarter.`] : []),
+      ],
+      fallback: last ? `${name} is on ${pctText(last.share)} of tracked homepages` : `${a.entries.length} brands took up ${name}`,
+    });
 }
 
 // D. WHICH SECTOR CHANGES ITS MIND MOST? ------------------------------------------------------------------------------
@@ -126,7 +159,7 @@ export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryMo
   const figures: Record<string, Figure> = { multiples: multiplesFig({ title: "Measured homepage changes by sector and year", note: "Bars: measured changes (type, palette, theme, layout, navigation, stack, redesign). Ticks: confirmed rebrands. Same axis in every panel.", unit: "count", chart: "bars", panels, xs: years }) };
   const steps: Step[] = [];
   const total = i.events.length, firstAt = [...i.events].sort((x, y) => x.at.localeCompare(y.at))[0]?.at;
-  if (firstAt) steps.push(step("intro", cap`${cnt(total, "/terminal?panel=library")} measured changes on ${cnt(i.sites.filter(s => s.active).length, "/brands")} homepages since ${dayN(firstAt, HISTORY_HREF)}, and ${cnt(i.rebrands.length, "/terminal?panel=rebrands")} confirmed rebrands.`, { figure: "multiples", highlight: [] }));
+  if (firstAt) steps.push(step("intro", cap`${cnt(total, "/terminal?panel=library")} measured changes on ${cnt(i.sites.filter(s => s.active).length, "/brands")} homepages, the earliest first seen in ${qN(quarterOf(firstAt))}, and ${cnt(i.rebrands.length, "/terminal?panel=rebrands")} confirmed rebrands.`, { figure: "multiples", highlight: [] }));
   const ranked = [...rates].filter(r => r.pairs).sort((x, y) => y.rate - x.rate || x.s.localeCompare(y.s));
   const lead = ranked[0], lag = ranked.at(-1);
   const rateN = (e: number, p: number, s: string) => num(per100(e, p).toFixed(1), per100(e, p), sectorHref(s));
@@ -155,7 +188,20 @@ export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryMo
   return model(m, i, figures, steps, { brands: i.sites.filter(s => s.active).length, captures: i.captures.length, period: firstAt ? `${dayText(firstAt)} to ${dayText(lastDate(i) ?? firstAt)}` : "—",
     rule: "Changes are measured events on desktop homepages, confirmed across two captures; rates divide archive changes by compared archive capture pairs in each sector.",
     lines: [`Reversal compares ${MINDS.early.join("–")} with ${MINDS.late.join("–")}, for sectors with at least ${MINDS.minPairs} compared captures in each window.`] },
-    { n: lr, label: lead ? `changes per hundred captures in ${sectorName(lead.s)}` : "changes per hundred captures" });
+    { n: lr, label: lead ? `changes per hundred captures in ${sectorName(lead.s)}` : "changes per hundred captures" },
+    {
+      scenes: [
+        { id: "all", lead: "Every change, sector by sector", steps: ["intro", "caveat"] },
+        { id: "ends", lead: "The busiest and the steadiest", steps: ["leader", "lagger"] },
+        { id: "pace", lead: "A change of pace", steps: ["reversed"] },
+        { id: "brand", lead: "One brand, then and now", steps: ["brand-before", "brand-after"] },
+      ],
+      limits: [
+        "Archive changes are dated to the first Wayback capture that shows them, so a sector the archive visited more often looks busier; the rate per compared capture corrects for that.",
+        "A live-crawl change counts only once two captures on each side agree, and changes on rotating first screens and studios' featured work are left out.",
+      ],
+      fallback: lead ? `${sectorName(lead.s)} logs ${lr} changes per hundred archive captures` : `${total} measured homepage changes, sector by sector`,
+    });
 }
 
 // WHERE YOU SIT (the reader as input) -----------------------------------------------------------------------------------
@@ -212,14 +258,24 @@ export function whereYouSit(i: DataInput, domain: string, cs: CaptureRaw[], m: M
   const qs = quarterCoverage(i, [site.sector]);
   return model(m, i, figures, steps, { brands: activeSites(i, [site.sector]).length, captures: cs.length, period: qs.length ? `${qText(qs[0]!.q)} to ${qText(qs.at(-1)!.q)}` : "—", rule: "The field uses each brand's current live capture; sector shares count the other tracked brands in the sector whose capture can answer (AI signals: AI-tagged captures only).",
     lines: [`Axes: ${FIELD_AXES.x.label} (${FIELD_AXES.x.measure}) and ${FIELD_AXES.y.label} (${FIELD_AXES.y.measure})`] },
-    me ? { n: `${Math.round(me.x)}px`, label: `${n} headline size` } : { n: "—", label: n }, { ...m, question: `Where does ${n} sit?` });
+    me ? { n: `${Math.round(me.x)}px`, label: `${n} headline size` } : { n: "—", label: n }, { fallback: `Where does ${n} sit?` }, { ...m, question: `Where does ${n} sit?` });
 }
 /** "a (x%) and b (y%)" over grouped segments. */
 function joinPairs(groups: Seg[][]): Seg[] {
   return groups.flatMap((g, k) => (k === 0 ? g : k === groups.length - 1 ? [" and ", ...g] : [", ", ...g]));
 }
 
-function model(m: Meta, i: DataInput, figures: Record<string, Figure>, steps: Step[], basis: StoryModel["basis"], key: StoryModel["key"], over?: Partial<Meta>): StoryModel {
+function model(m: Meta, i: DataInput, figures: Record<string, Figure>, steps: Step[], basis: StoryModel["basis"], key: StoryModel["key"], x: Extras = {}, over?: Partial<Meta>): StoryModel {
   const mm = { ...m, ...over };
-  return { slug: mm.slug, number: mm.number, question: mm.question, deck: mm.deck, template: mm.template, dataThrough: lastDate(i), figures, steps, basis, collection: mm.collection, related: mm.related, key };
+  return { slug: mm.slug, number: mm.number, question: mm.question, deck: mm.deck, template: mm.template, dataThrough: lastDate(i), figures, steps, basis, collection: mm.collection, related: mm.related, key,
+    series: mm.series ?? "", seriesTitle: mm.seriesTitle ?? "", scenes: x.scenes ? resolveScenes(x.scenes, steps) : oneScenePerStep(steps), limits: (x.limits ?? []).slice(0, 3), fallbackHeadline: x.fallback ?? mm.question };
+}
+/** E4 · the limit every archive-dated study carries. */
+export const ARCHIVE_LIMIT = "Archive captures are about a year apart, so a change is dated to the first capture that shows it.";
+/** E4 · when a change happened, in the archive's words: a live change confirmed by its captures reads "between <last old> and <first new>";
+ *  any other (an archive change) reads "first seen in <quarter>", never a day the archive happened to visit. */
+function whenSeen(i: DataInput, id: number, at: string, href: string): Seg[] {
+  const e = i.events.find(x => x.id === id);
+  if (e?.source === "live" && e.seen) return cap`happened between ${dayN(e.seen.before, HISTORY_HREF)} and ${dayN(e.seen.after, href)}`;
+  return cap`was first seen in ${qN(quarterOf(at))}`;
 }

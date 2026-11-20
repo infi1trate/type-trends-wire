@@ -146,7 +146,7 @@ export function KitView() {
     <Section id="kit-motion" title={KIT_SECTIONS[8].title} note={`The live tick pulses every ${activeTheme.shared.motion.tick} and a changing value flashes the accent. With reduced motion on, the dot holds still and values change without the flash.`}>
       <ModePanels>{() => <div className="flex flex-wrap items-center gap-6"><LiveChip /><TickValue /><span className="tk-t-caption tk-c-muted">fast {activeTheme.shared.motion.fast} · base {activeTheme.shared.motion.base} · slow {activeTheme.shared.motion.slow}</span></div>}</ModePanels>
     </Section>
-    <Section id="kit-data" title={KIT_SECTIONS[9].title} note="The six data story views on fixture data: adoption timeline, before and after, small multiples, brand field, palette drift and the strip. Captures are redrawn from stored layout boxes until crops exist.">
+    <Section id="kit-data" title={KIT_SECTIONS[9].title} note="The six study views on fixture data: adoption timeline, before and after, small multiples, brand field, palette drift and the strip. Captures are redrawn from stored layout boxes until crops exist.">
       <DataKitExamples />
     </Section>
     <ReadFooter terminal="/terminal?panel=watch" />

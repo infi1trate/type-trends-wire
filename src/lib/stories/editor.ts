@@ -15,7 +15,7 @@ import { REVERSED_REASON, reversalIds } from "../reversal";
 import { changeAt, changeFrom, changeWhen, rangeWords, tapeDate, tapeLine, tapeWhat, undated } from "../tape";
 import { censusCandidates } from "../census";
 import { codeCall, headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
-import { carouselEventIds, isShowcaseSector, withoutRotation } from "../carousel";
+import { carouselEventIds, isShowcaseSector, withoutRotations } from "../carousel";
 import { splitChecked, type Condition } from "../integrity";
 import {
   breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, inline, isVisibleMove, launchCandidate, moveCandidate,
@@ -307,7 +307,7 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   const calls: Record<number, { call: string; reason: string }> = { ...(input.calls ?? {}) };
   for (const e of input.events) if (e.type === "message_pivot") { const c = codeCall(headlineOf(e.before), headlineOf(e.after), { carousel: rotating.has(e.id) }); if (c) calls[e.id] = { call: c.call, reason: c.reason }; }
   const tape = Object.fromEntries(input.events.map(e => [e.id, tapeLine(e, { seasonal: seasonal.has(e.id), reversed: reversed.has(e.id), carousel: rotating.has(e.id) }, names.get(e.domain))]));
-  const judged = input.events.flatMap(e => { if (!rotating.has(e.id)) return [e]; const k = withoutRotation(e); return k ? [k] : []; });
+  const judged = withoutRotations(input.events, rotating);
   // E2d · the studio rule (carousel.ts): on studio homepages palette, accent and hero media follow the featured client work, so for those
   // fields a studio is treated as an editorial homepage is (no single-brand story, no palette or imagery move in a roundup); its own type,
   // headline and layout are judged as before, and roundups that gather studios' layout moves are unaffected.

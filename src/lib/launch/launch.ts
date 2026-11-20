@@ -28,7 +28,7 @@ export function switches(s: { gateEnabled: boolean; openPaths: readonly { why: s
       exposes: "Adding /share/ and /data/<slug>.png would let link previews draw the brand, collection, Morning Line, sector report, front page, story and data-story cards; while they stay gated a shared link previews without a picture." },
     { id: "landing", name: "LANDING_PUBLIC", on: s.landing, now: `${onOff(s.landing)}: /welcome is gated like every other page.`, exposes: "Turning it on would open /welcome, the landing page, without the password." },
     { id: "brand", name: "BRAND_PUBLIC", on: s.brand, now: `${onOff(s.brand)}: /brand, its pages and its files are gated.`, exposes: "Turning it on would open the brand book (/brand, /brand/<page>) and its downloadable files." },
-    { id: "data_stories", name: "DATA_STORIES_PUBLIC", on: s.dataStories, now: `${onOff(s.dataStories)}: /data, every data story, their share images and embeds are gated.`, exposes: "Turning it on would open the data stories, including the one still marked draft unless it is taken out first." },
+    { id: "data_stories", name: "DATA_STORIES_PUBLIC", on: s.dataStories, now: `${onOff(s.dataStories)}: /data, every study, their share images and embeds are gated.`, exposes: "Turning it on would open the studies, including the one still marked draft unless it is taken out first." },
   ];
 }
 

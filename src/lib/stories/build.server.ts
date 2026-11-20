@@ -390,7 +390,7 @@ let lastRun = 0;
 export async function afterJob(job: string, jobStartedAt: number, extra: Pick<BuildOptions, "realRunIds"> = {}): Promise<void> {
   try {
     const now = Date.now(), left = JOB_LIMIT_MS - (now - jobStartedAt) - 10_000;
-    if (left < 5000 || now - lastRun < MIN_INTERVAL_MS) return;
+    if (left < 5000 || now - lastRun < MIN_INTERVAL_MS) return void await studies(job, jobStartedAt);
     lastRun = now;
     const budgetMs = Math.min(BUILD_BUDGET_MS, left), writeDeadline = jobStartedAt + JOB_LIMIT_MS - 8000;
     const r = await Promise.race([buildStories({ ...extra, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
@@ -398,6 +398,11 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     else console.warn("story build timed out", job);
     // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
     if (r) await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + JOB_LIMIT_MS - 5000);
+    await studies(job, jobStartedAt);
   } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); }
+}
+/** E4 · after the stories (their twelve calls come first), the study writer takes what time is left, when a call still fits. Never throws. */
+async function studies(job: string, jobStartedAt: number) {
+  await (await import("../data-stories/writer.server")).runStudyWriter(job, jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
 }
 export const storyLabel = (k: string) => label(k).name;

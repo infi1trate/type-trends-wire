@@ -193,9 +193,9 @@ function FrontLower({ r }: { r: Pick<FrontRest, "editions" | "dataStories" | "se
       <Ledger className="mt-3" small rows={r.editions.map(e => ({ key: e.id, href: e.href, title: e.title, time: e.date }))} />
     </RuleBox></section>}
     {r.sections.dataStories && <section aria-labelledby="front-data" data-shelf="data-stories"><RuleBox>
-      <Kicker id="front-data">Data stories</Kicker>
-      <Ledger className="mt-3" rows={r.dataStories.map(d => ({ key: d.slug, href: d.href, number: d.number, title: d.question }))} />
-      <p className="ed-data mt-3"><Receipt href="/data" className="ed-tap">All data stories →</Receipt></p>
+      <Kicker id="front-data">Studies</Kicker>
+      <Ledger className="mt-3" rows={r.dataStories.map(d => ({ key: d.slug, href: d.href, number: `No. ${d.number}`, title: d.headline ?? d.question }))} />
+      <p className="ed-data mt-3"><Receipt href="/data" className="ed-tap">All studies →</Receipt></p>
     </RuleBox></section>}
   </>;
 }

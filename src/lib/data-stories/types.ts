@@ -1,5 +1,6 @@
-// DATA STORIES — shared shapes. A story is a question answered by a picture you step through; every step is a caption of one or two
-// sentences plus a view state for the picture. All of it is plain JSON (SSR-serializable) built by pure code from stored data.
+// STUDIES (data stories in code) — shared shapes. A study is one argument with its evidence: a question, a picture whose states are grouped
+// into three to five scenes, and the steps (one caption each, the template text) the scenes are made of. All of it is plain JSON
+// (SSR-serializable) built by pure code from stored data; the written text (E4) is stored apart and laid over at read time.
 
 /** A number in a caption: what is shown, the raw value and its receipt. Captions never carry a digit outside one of these. */
 export type Num = { n: string; v: number; href: string };
@@ -19,6 +20,8 @@ export type View = {
   side?: "before" | "after" | "split";
 };
 export type Step = { id: string; caption: Caption; view: View };
+/** E4 · one scene of a study: a short lead-in (template; the writer may replace it), the steps it covers, the figure state it shows (its last step's). */
+export type Scene = { id: string; lead: string; steps: string[]; view: View };
 
 // FIGURES ------------------------------------------------------------------------------------------
 export type Point = { x: string; y: number };
@@ -65,4 +68,23 @@ export type StoryModel = {
   figures: Record<string, Figure>; steps: Step[]; basis: Basis; collection: Link; related: Link[];
   /** The one figure a share image and the index lead with. */
   key: { n: string; label: string };
+  /** E4 · the series it belongs to (registry SERIES id and title; empty for the tool). */
+  series: string; seriesTitle: string;
+  /** E4 · the steps grouped into scenes, in reading order (every step in exactly one scene). */
+  scenes: Scene[];
+  /** E4 · what the data cannot show: one to three plain sentences the builder supplies (never the model). */
+  limits: string[];
+  /** E4 · the template headline (a finding built from the key figure) shown when no written text has passed the check. */
+  fallbackHeadline: string;
 };
+/** E4 · the words a study page shows: the written text that passed the check, else the template built from the steps. */
+export type StudyScene = { lead: string; body: string };
+export type StudyText = {
+  headline: string; deck: string; opening: string; scenes: StudyScene[]; use: string | null;
+  /** "model" (the writer), "text-model" (the fallback text model) or "fallback" (the template, no model call). */
+  source: "model" | "text-model" | "fallback"; model: string;
+  /** When the shown version was written; `stale`: written from an earlier facts sheet ("Text from <date>"). */
+  at: string | null; stale: boolean;
+};
+/** A study page: the model, its written text, and the facts sheet's fingerprint. `v` marks the E4 record shape. */
+export type StudyPage = StoryModel & { text: StudyText; hash: string; v: 4 };

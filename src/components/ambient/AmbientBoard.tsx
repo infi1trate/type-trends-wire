@@ -92,7 +92,7 @@ function SceneView({ s }: { s: Scene }) {
       <Wall tiles={s.collection.tiles.map(t => ({ ...t, size: "sm" as const }))} label={s.collection.title} eager={12} /></section>;
     case "figure": return <section className="amb-split" aria-labelledby="amb-s"><div className="amb-split-pic"><SoftObject text={s.figure.value} seed={s.figure.key} label={s.figure.caption} /></div>
       <div className="amb-split-text"><p className="amb-kicker">The Morning Line · the day's figure</p><h2 id="amb-s" className="amb-title">{s.figure.name}</h2><p className="amb-body">{s.figure.caption}</p></div></section>;
-    case "data": return <section className="amb-data" aria-labelledby="amb-s"><p className="amb-kicker">Data story {s.data.number}</p><h2 id="amb-s" className="amb-title">{s.data.question}</h2>
+    case "data": return <section className="amb-data" aria-labelledby="amb-s"><p className="amb-kicker">Study No. {s.data.number}</p><h2 id="amb-s" className="amb-title">{s.data.headline ?? s.data.question}</h2>
       <p className="amb-body">{s.data.step.caption.map((c, k) => <span key={k}>{typeof c === "string" ? c : "n" in c ? <strong>{c.n}</strong> : c.r}</span>)}</p>
       <div className="amb-data-fig"><FigureView fig={s.data.figure} view={s.data.step.view} /></div></section>;
   }

@@ -1914,6 +1914,60 @@ export type Database = {
           },
         ]
       }
+      study_texts: {
+        Row: {
+          attempts: number
+          checked_at: string | null
+          cost: number
+          created_at: string
+          deck: string
+          facts_hash: string
+          failures: string[]
+          headline: string
+          id: number
+          log: Json
+          model: string
+          opening: string
+          scenes: Json
+          slug: string
+          use_text: string | null
+        }
+        Insert: {
+          attempts?: number
+          checked_at?: string | null
+          cost?: number
+          created_at?: string
+          deck: string
+          facts_hash: string
+          failures?: string[]
+          headline: string
+          id?: never
+          log?: Json
+          model: string
+          opening: string
+          scenes?: Json
+          slug: string
+          use_text?: string | null
+        }
+        Update: {
+          attempts?: number
+          checked_at?: string | null
+          cost?: number
+          created_at?: string
+          deck?: string
+          facts_hash?: string
+          failures?: string[]
+          headline?: string
+          id?: never
+          log?: Json
+          model?: string
+          opening?: string
+          scenes?: Json
+          slug?: string
+          use_text?: string | null
+        }
+        Relationships: []
+      }
       thumb_optouts: {
         Row: {
           created_at: string

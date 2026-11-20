@@ -152,13 +152,13 @@ const DAY_MONTH = new RegExp(`\\b(\\d{1,2})((?:(?:,\\s*|\\s+and\\s+|\\s*[–-]\\
 const MONTH_DAY = new RegExp(`\\b${MONTH_WORD}\\s+(\\d{1,2})\\b(?!,?\\s*\\d{3})`, "g");
 const HEX = /#[0-9a-f]{3,8}\b/gi;
 const NUMBER = /(?<![\p{L}\p{N}.])\d{1,3}(?:,\d{3})+(?:\.\d+)?|(?<![\p{L}\p{N}.,])\d+(?:\.\d+)?/gu;
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const norm = (s: string) => s.replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
-const words = (s: string) => s.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w));
+export const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export const norm = (s: string) => s.replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
+export const words = (s: string) => s.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w));
 export const quotesOf = (text: string) => [...text.matchAll(QUOTE)].map(m => (m[1] ?? m[2] ?? "").trim()).filter(Boolean);
 export const unquoted = (text: string) => text.replace(QUOTE, " ");
 const allStrings = (v: unknown): string[] => (typeof v === "string" ? [v] : Array.isArray(v) ? v.flatMap(allStrings) : v && typeof v === "object" ? Object.values(v).flatMap(allStrings) : []);
-const numbersIn = (s: string) => [...s.replace(HEX, " ").matchAll(NUMBER)].map(m => Number(m[0].replace(/,/g, ""))).filter(Number.isFinite);
+export const numbersIn = (s: string) => [...s.replace(HEX, " ").matchAll(NUMBER)].map(m => Number(m[0].replace(/,/g, ""))).filter(Number.isFinite);
 const monthIndex = (w: string) => MONTHS.indexOf(w.slice(0, 3).toLowerCase());
 /** (day, month) pairs written in a text ("11 and 14 November", "Nov 20"). */
 export function datesIn(text: string): { day: number; month: number }[] {
@@ -167,7 +167,7 @@ export function datesIn(text: string): { day: number; month: number }[] {
   for (const m of text.matchAll(MONTH_DAY)) out.push({ day: Number(m[2]), month: monthIndex(m[1]!) });
   return out;
 }
-const stripDates = (text: string) => text.replace(DAY_MONTH, " ").replace(MONTH_DAY, " ");
+export const stripDates = (text: string) => text.replace(DAY_MONTH, " ").replace(MONTH_DAY, " ");
 const factDates = (f: WriterFacts) => {
   const out = new Set<string>();
   for (const s of allStrings(f)) {
@@ -186,7 +186,7 @@ export const ADVICE = ["audit your", "consider", "you should", "make sure", "it'
 export const STOCK_ENDINGS = ["worth watching", "a data point, not a trend", "belongs in briefs and templates"];
 export const TREND_SPEAK = ["effectively dead", "the end of", "the rise of", "game-changing"];
 export const METHOD_WORDS = ["score", "scores", "scored", "threshold", "thresholds", "run", "runs", "run number", "deterministic"];
-const has = (text: string, phrase: string) => new RegExp(`(?<![\\p{L}\\p{N}])${esc(phrase)}(?![\\p{L}\\p{N}])`, "iu").test(text);
+export const has = (text: string, phrase: string) => new RegExp(`(?<![\\p{L}\\p{N}])${esc(phrase)}(?![\\p{L}\\p{N}])`, "iu").test(text);
 /** "Rebrand" used as a claim: allowed only when the facts show one; a negated or counting use ("None of it is a rebrand", "the rebrand count") is not a claim. */
 function rebrandClaim(text: string): boolean {
   for (const m of text.matchAll(/\brebrand(?:ed|s|ing)?\b/gi)) {
@@ -195,6 +195,31 @@ function rebrandClaim(text: string): boolean {
     if (!negated && !/^\s+count/i.test(after)) return true;
   }
   return false;
+}
+
+/** Banned words and phrases, method words, arrows and hex codes in a text (outside quotes); the story and study checks share it. */
+export function bannedFailures(free: string): string[] {
+  const fail: string[] = [];
+  for (const p of [...ADVICE, ...STOCK_ENDINGS, ...TREND_SPEAK]) if (has(free, p)) fail.push(`banned phrase: ${p}`);
+  for (const p of [...SUPERLATIVES, ...BANNED_PHRASES]) if (has(free, p)) fail.push(`banned word: ${p}`);
+  for (const p of METHOD_WORDS) if (has(free, p)) fail.push(`method word: ${p}`);
+  if (/→|->/.test(free)) fail.push("our own labels as prose (an arrow)");
+  if (HEX.test(free)) fail.push("a hex code in the text"); HEX.lastIndex = 0;
+  return fail;
+}
+/** Tracked brand names written in `free` that are not among `mine` (an ordinary-word name at a sentence start is a word, not the brand). */
+export function unknownBrands(free: string, mine: readonly string[], known: Known): string[] {
+  const out: string[] = [];
+  let rest = free; for (const m of [...mine].sort((a, b) => b.length - a.length)) rest = rest.replace(new RegExp(`(?<![\\p{L}\\p{N}])${esc(m)}(?![\\p{L}\\p{N}])`, "gu"), " ");
+  for (const name of known.names) {
+    if (name.length < 3 || mine.includes(name)) continue;
+    for (const m of rest.matchAll(new RegExp(`(?<![\\p{L}\\p{N}])${esc(name)}(?![\\p{L}\\p{N}])`, "gu"))) {
+      const start = /(^|[.!?]\s+|\n)$/.test(rest.slice(0, m.index!));
+      if (start && NEWS_NAME_STOPWORDS.has(name.toLowerCase())) continue;
+      out.push(name); break;
+    }
+  }
+  return out;
 }
 
 // SHARES AND THEIR BASES (E2c) ------------------------------------------------------------------------------------------------------
@@ -253,27 +278,14 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
   // Brands: only the story's brands, by name; never a bare tracked domain.
   if (parts.some(p => hasBareDomain(p))) fail.push("a bare tracked domain");
   const mine = f.brands.map(b => b.name);
-  let rest = free; for (const m of [...mine].sort((a, b) => b.length - a.length)) rest = rest.replace(new RegExp(`(?<![\\p{L}\\p{N}])${esc(m)}(?![\\p{L}\\p{N}])`, "gu"), " ");
-  for (const name of known.names) {
-    if (name.length < 3 || mine.includes(name)) continue;
-    for (const m of rest.matchAll(new RegExp(`(?<![\\p{L}\\p{N}])${esc(name)}(?![\\p{L}\\p{N}])`, "gu"))) {
-      // An ordinary-word name ("Notion", "Wise") at the start of a sentence is a word, not the brand.
-      const start = /(^|[.!?]\s+|\n)$/.test(rest.slice(0, m.index!));
-      if (start && NEWS_NAME_STOPWORDS.has(name.toLowerCase())) continue;
-      fail.push(`brand not in the story: ${name}`); break;
-    }
-  }
+  fail.push(...unknownBrands(free, mine, known).map(n => `brand not in the story: ${n}`));
   // E2g: a census names at most `max_brands` brands; the rest are counted.
   if (f.max_brands != null) {
     const named = mine.filter(m => new RegExp(`(?<![\\p{L}\\p{N}])${esc(m)}(?![\\p{L}\\p{N}])`, "u").test(free));
     if (named.length > f.max_brands) fail.push(`names ${named.length} brands (at most ${f.max_brands})`);
   }
   // Banned words and phrases (outside quoted homepage copy).
-  for (const p of [...ADVICE, ...STOCK_ENDINGS, ...TREND_SPEAK]) if (has(free, p)) fail.push(`banned phrase: ${p}`);
-  for (const p of [...SUPERLATIVES, ...BANNED_PHRASES]) if (has(free, p)) fail.push(`banned word: ${p}`);
-  for (const p of METHOD_WORDS) if (has(free, p)) fail.push(`method word: ${p}`);
-  if (/→|->/.test(free)) fail.push("our own labels as prose (an arrow)");
-  if (HEX.test(free)) fail.push("a hex code in the text"); HEX.lastIndex = 0;
+  fail.push(...bannedFailures(free));
   if (!f.rebrand && rebrandClaim(free)) fail.push("“rebrand” without type, colour and layout changing together");
   // Our read is never stated as measured.
   if (hasOurRead(f) && t.how_we_know != null && !/\bour read\b|\bAI estimate\b|\bestimated by AI\b|\bAI read\b/i.test(t.how_we_know)) fail.push("how_we_know does not say which facts are our read");
@@ -310,7 +322,14 @@ export type WriteOutcome = { text: WrittenText; model: string; checked: boolean;
  */
 export async function writeWithFallback(f: WriterFacts, template: WrittenText, known: Known,
   call: (model: string, failures: string[]) => Promise<{ raw: unknown; cost: number } | null>, canCall: (model: string) => boolean): Promise<WriteOutcome> {
-  const plan = [AI_MODELS.writer, AI_MODELS.writer, AI_MODELS.text];
+  const r = await tryModels(WRITER_PLAN, call, parseWritten, t => checkText(t, f, known, { requireBody: true }), canCall);
+  return r.text ? { ...r, text: r.text, checked: true } : { ...r, text: template, model: "template", checked: false };
+}
+/** The writer, the writer again with its failures listed, then the text model (story and study writers alike). */
+export const WRITER_PLAN = [AI_MODELS.writer, AI_MODELS.writer, AI_MODELS.text] as const;
+/** Try each model of `plan` the limits allow until one answer parses and passes `check`; the failures of one try go to the next. */
+export async function tryModels<T>(plan: readonly string[], call: (model: string, failures: string[]) => Promise<{ raw: unknown; cost: number } | null>,
+  parse: (raw: unknown) => T | null, check: (t: T) => string[], canCall: (model: string) => boolean): Promise<{ text: T | null; model: string; attempts: number; cost: number; failures: string[]; log: Attempt[] }> {
   let failures: string[] = [], cost = 0, attempts = 0;
   const log: Attempt[] = [];
   for (const model of plan) {
@@ -318,12 +337,12 @@ export async function writeWithFallback(f: WriterFacts, template: WrittenText, k
     attempts++;
     const r = await call(model, failures).catch(() => null);
     cost += r?.cost ?? 0;
-    const t = r ? parseWritten(r.raw) : null;
-    failures = t ? checkText(t, f, known, { requireBody: true }) : ["no usable answer"];
+    const t = r ? parse(r.raw) : null;
+    failures = t ? check(t) : ["no usable answer"];
     log.push({ model, failures });
-    if (t && !failures.length) return { text: t, model, checked: true, attempts, cost, failures: [], log };
+    if (t && !failures.length) return { text: t, model, attempts, cost, failures: [], log };
   }
-  return { text: template, model: "template", checked: false, attempts, cost, failures, log };
+  return { text: null, model: "template", attempts, cost, failures, log };
 }
 
 /** E3b · the order the writer takes owed stories in when its calls reset: the front page's lead first, then the census pieces, then the

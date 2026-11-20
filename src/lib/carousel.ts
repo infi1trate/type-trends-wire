@@ -63,6 +63,22 @@ export function carouselEventIds(events: readonly Ev[], snaps: ReadonlySet<numbe
  */
 export const withoutRotation = <E extends Ev>(e: E): E | null => strip(e, CAROUSEL);
 
+/** Every change with its carousel rotation taken out (`rotating`: carouselEventIds): the story engine's judged set, and the studies' (E4). */
+export const withoutRotations = <E extends Ev>(events: readonly E[], rotating: ReadonlySet<number>): E[] =>
+  events.flatMap(e => { if (!rotating.has(e.id)) return [e]; const k = withoutRotation(e); return k ? [k] : []; });
+/**
+ * E4 · the studio rule as a field strip, for counts of changes (the studies): on a showcase homepage the palette, accent and hero media
+ * follow the featured work, so those fields are taken out of a change (and the imagery read dropped); its type, headline and layout stay.
+ * Null when nothing is left. The story engine applies the same rule through its candidate counts (editor.ts `counts`/`changeOf`).
+ */
+export const withoutShowcase = <E extends Ev>(e: E): E | null => {
+  if (e.type === "imagery_shift") return null;
+  if (!FIELD_TYPES.has(e.type)) return e;
+  const keep = (v: unknown) => Object.fromEntries(Object.entries(o(v)).filter(([k]) => !SLIDE_FIELDS.has(k)));
+  const before = keep(e.before), after = keep(e.after);
+  return Object.keys({ ...before, ...after }).length ? { ...e, before, after } : null;
+};
+
 /**
  * E2f · the flag belongs to the page. The crawler began sending `hero_carousel` on 20 Nov, so older captures have no key: a capture with
  * no key takes the value of the nearest later capture of the same brand, page and viewport that has it; a capture with the key keeps its

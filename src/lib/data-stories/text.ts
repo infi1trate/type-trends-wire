@@ -35,6 +35,10 @@ export function pairStamps(before: string, after: string): [string, string] {
   return [`${b}, ${hm(before, sec)}`, `${a}, ${hm(after, sec)}`];
 }
 export const yearOf = (q: string) => Number(q.slice(0, 4));
+/** The quarter an ISO date falls in ("2022Q1"), UTC. */
+export const quarterOf = (iso: string) => { const d = new Date(iso); return `${d.getUTCFullYear()}Q${Math.floor(d.getUTCMonth() / 3) + 1}`; };
+/** `q` moved by `n` quarters ("2026Q4" + 3 = "2027Q3"). */
+export const addQuarters = (q: string, n: number) => { const m = /^(\d{4})Q([1-4])$/.exec(q); if (!m) return q; const k = Number(m[1]) * 4 + Number(m[2]) - 1 + n; return `${Math.floor(k / 4)}Q${(k % 4) + 1}`; };
 
 // Receipts ------------------------------------------------------------------------------------------
 export const signalHref = (key: string) => `/signals/${encodeURIComponent(key)}`;

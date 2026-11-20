@@ -60,7 +60,7 @@ async function figureOf(): Promise<AmbientInput["figure"]> {
   const v = row?.current_share != null ? pct(row.current_share, 0) : null;
   return v ? { value: v, name: label(key).name, key, caption: `${label(key).name}: ${v} of tracked homepages, all sectors, in the latest forecast.` } : null;
 }
-/** One live data story (rotating by day): its key figure and the step that states it (else the last step). */
+/** One live study (rotating by day): its key figure and the step that states it (else the last step). */
 async function dataOf(day: string): Promise<AmbientInput["data"]> {
   const e = pick(dataShelf(), day);
   if (!e) return null;
@@ -69,7 +69,7 @@ async function dataOf(day: string): Promise<AmbientInput["data"]> {
   if (p.kind !== "live") return null;
   const st = p.story, says = (x: (typeof st.steps)[number]) => x.caption.some(c => typeof c === "object" && "n" in c && c.n === st.key.n);
   const stepOf = st.steps.find(says) ?? st.steps.at(-1), figure = stepOf ? st.figures[stepOf.view.figure] : undefined;
-  return stepOf && figure ? { slug: st.slug, number: st.number, question: st.question, key: st.key, step: stepOf, figure } : null;
+  return stepOf && figure ? { slug: st.slug, number: st.number, question: st.question, headline: st.text.headline, key: st.key, step: stepOf, figure } : null;
 }
 export const AMBIENT_TTL_MS = 30_000;
 const boards = memoBy(AMBIENT_TTL_MS, (sector: string) => build(sector), { key: s => s, max: 20 });

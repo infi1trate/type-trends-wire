@@ -455,11 +455,13 @@ export const ambientQuery = (sector: string) => queryOptions({ queryKey: ["ambie
 /** `/`: the front page model for one sector lens and format filter. */
 export const frontQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front", sector, format], staleTime: 30_000, queryFn: () => getFront({ data: { sector, format } }) });
 
-// DATA STORIES (Phase 19a): models built on the server from stored data; the pages render them and nothing else.
-import { getDataIndex, getDataStory, getTrackedBrands, getWhereYouSit } from "./data-stories.functions";
+// STUDIES (data stories in code, Phase 19a, E4): models built on the server from stored data; the pages render them and nothing else.
+import { getDataIndex, getDataStory, getTrackedBrands, getWhereYouSit, getStudyRelated } from "./data-stories.functions";
 export const dataIndexQuery = () => queryOptions({ queryKey: ["data-index"], staleTime: 5 * 60_000, queryFn: () => getDataIndex() });
 export const dataStoryQuery = (slug: string) => queryOptions({ queryKey: ["data-story", slug], staleTime: 5 * 60_000, queryFn: () => getDataStory({ data: { slug } }) });
 export const trackedBrandsQuery = () => queryOptions({ queryKey: ["tracked-brands"], staleTime: 10 * 60_000, queryFn: () => getTrackedBrands() });
+/** E4 · a study's "02 Related" block (streamed after the page). */
+export const studyRelatedQuery = (slug: string) => queryOptions({ queryKey: ["study-related", slug], staleTime: 5 * 60_000, queryFn: () => getStudyRelated({ data: { slug } }) });
 export const whereYouSitQuery = (brand: string) => queryOptions({ queryKey: ["where-you-sit", brand], staleTime: 5 * 60_000, queryFn: () => getWhereYouSit({ data: { brand } }) });
 
 /** The brand kit's files (gated /brand/downloads). */

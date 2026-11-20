@@ -428,6 +428,13 @@
       "when": 1795194211887,
       "tag": "0060_census_counts",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795213410077,
+      "tag": "0061_study_texts",
+      "breakpoints": true
     }
   ]
 }

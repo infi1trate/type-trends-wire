@@ -270,7 +270,7 @@ export function BrandContainers() {
       <div className="space-y-2 border-[1.5px] border-ed-ink p-2" data-container-map="" aria-label="The front page's containers, top to bottom">
         {[["slab", "Slab: the chrome (the mark on its pink slab, six sections, the live dot, Read / Terminal)"], ["slab", "Slab: the ticker"], ["sheet", "Sheet: the date and the state, pinned left and right"], ["plate", "Plate: the lead (the one per screen), with a Raised “Receipts” button"], ["rulebox", "Rule box: Moving now"]].map(([k, t], i) => <MapBox key={i} kind={k as never} text={t!} />)}
         <div className="grid grid-cols-3 gap-2"><div className="col-span-2 space-y-2"><MapBox kind="sheet" text="Ledger: the live column, under its time headings; new stories wait behind a Sticker" tall /></div><div className="space-y-2"><MapBox kind="card" text="Card: chart of the day" /><MapBox kind="rulebox" text="Rule box: your sector" /></div></div>
-        {[["rulebox", "Rule box: editions"], ["rulebox", "Rule box: data stories"], ["slab", "Slab: the footer"]].map(([k, t], i) => <MapBox key={`b${i}`} kind={k as never} text={t!} />)}
+        {[["rulebox", "Rule box: editions"], ["rulebox", "Rule box: studies"], ["slab", "Slab: the footer"]].map(([k, t], i) => <MapBox key={`b${i}`} kind={k as never} text={t!} />)}
       </div>
     </Screen>
     <Screen id="k-rules" label="Rules" title="Five container rules"><Rules rules={CONTAINER_LAWS} /></Screen>

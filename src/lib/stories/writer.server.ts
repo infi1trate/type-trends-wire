@@ -55,44 +55,55 @@ export async function writeStories(jobs: WriteJob[], io: WriterIO, known: Known,
 
 type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 const dayStart = () => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); return d.toISOString(); };
-/** Writer calls made today: the writer model under the writer's ledger purpose (health shows it). */
+/** Writer calls made today: the writer model under the writer's ledger purpose (health shows it; it includes the study writer's calls). */
 export async function writerUsedToday(db: Pick<Admin, "from">): Promise<number> {
   const { count, error } = await db.from("ai_usage").select("id", { count: "exact", head: true }).eq("kind", WRITER_KIND).eq("model", AI_MODELS.writer).is("snapshot_id", null).neq("state", "rejected").gte("created_at", dayStart());
   if (error) throw new Error("writer_usage_failed");
   return count ?? 0;
 }
+export type GatewayRequest = { model: string; system: string; user: string; schema: Record<string, unknown>; schemaName: string; tool: { type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } };
+  /** Writer-model output cap; the text model is capped at `textMaxTokens` (default 1500). */ maxTokens: number; textMaxTokens?: number };
+/**
+ * One budget-guarded call on the configured provider (the story writer's and the study writer's): reserve under the writer's ledger
+ * purpose, call once (the writer model with a strict JSON schema, the text model with one forced tool call), settle; unknown outcomes are
+ * charged in full and never replayed. Null when the call was not made.
+ */
+export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: AbortSignal): Promise<{ raw: unknown; cost: number } | null> {
+  const { aiClient, markProvider, ProviderError } = await import("../ai-provider.server");
+  const { estimateCost } = await import("../ai-budget");
+  const ai = aiClient(), provider = ai.provider, m = req.model as typeof AI_MODELS.writer | typeof AI_MODELS.text;
+  if (!providerRuns(provider, m)) return null;
+  const writer = m === AI_MODELS.writer, estimate = estimateCost({ provider, model: m, input_tokens: 6000, output_tokens: writer ? 2500 : 1200 });
+  const res = await admin.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: WRITER_KIND, p_model: m, p_estimate: estimate });
+  const r = res.data as { ok?: boolean; id?: number } | null;
+  if (res.error || !r?.ok || typeof r.id !== "number") return null;
+  const uid = r.id;
+  if (!await markProvider(admin, uid, provider)) { await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: "usage_write_failed", p_state: "rejected" }); return null; }
+  const messages = [{ role: "system" as const, content: req.system }, { role: "user" as const, content: req.user }];
+  try {
+    const resp = await ai.complete(writer
+      ? { model: m, max_tokens: req.maxTokens, signal, messages, response_format: { type: "json_schema", json_schema: { name: req.schemaName, strict: true, schema: req.schema } } }
+      : { model: m, max_tokens: req.textMaxTokens ?? 1500, temperature: 0.3, signal, messages, tools: [req.tool], tool_choice: { type: "function", function: { name: req.tool.function.name } } });
+    const u = resp.usage, cost = estimateCost({ provider, model: m, input_tokens: u.prompt_tokens, output_tokens: u.completion_tokens });
+    const raw = resp.tool_call_args ?? resp.text ?? null;
+    await admin.rpc("ai_settle", { p_id: uid, p_input: u.prompt_tokens, p_output: u.completion_tokens, p_cost: cost, p_ok: raw != null, p_error: raw != null ? null as unknown as string : "no_text", p_state: "done" });
+    return { raw, cost };
+  } catch (e) {
+    if (e instanceof ProviderError && e.usage) { const cost = estimateCost({ provider, model: m, input_tokens: e.usage.prompt_tokens, output_tokens: e.usage.completion_tokens }); await admin.rpc("ai_settle", { p_id: uid, p_input: e.usage.prompt_tokens, p_output: e.usage.completion_tokens, p_cost: cost, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "done" }); return { raw: null, cost }; }
+    if (e instanceof ProviderError && e.outcome === "not_started") { await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "rejected" }); return null; }
+    await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: estimate, p_ok: false, p_error: "writer_unknown_outcome", p_state: "unknown" });
+    return { raw: null, cost: estimate };
+  }
+}
+/** Whether the configured provider can run this model (the writers run only on the Lovable gateway). */
+export const providerCanRun = (model: string) => { try { const sel = (process.env["AI_PROVIDER"] ?? "").trim().toLowerCase() || "lovable"; return providerRuns(sel === "google" ? "google" : "lovable", model as never); } catch { return false; } };
 /** The real I/O: reserve under the ledger, call once, settle; unknown outcomes are charged in full and never replayed. */
 export function writerIO(admin: Admin): WriterIO {
   return {
-    used: () => writerUsedToday(admin),
-    runs: model => { try { const sel = (process.env["AI_PROVIDER"] ?? "").trim().toLowerCase() || "lovable"; return providerRuns(sel === "google" ? "google" : "lovable", model as never); } catch { return false; } },
-    call: async (model, facts, failures, signal) => {
-      const { aiClient, markProvider, ProviderError } = await import("../ai-provider.server");
-      const { estimateCost } = await import("../ai-budget");
-      const ai = aiClient(), provider = ai.provider, m = model as typeof AI_MODELS.writer | typeof AI_MODELS.text;
-      if (!providerRuns(provider, m)) return null;
-      const writer = m === AI_MODELS.writer, estimate = estimateCost({ provider, model: m, input_tokens: 6000, output_tokens: writer ? 2500 : 1200 });
-      const res = await admin.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: WRITER_KIND, p_model: m, p_estimate: estimate });
-      const r = res.data as { ok?: boolean; id?: number } | null;
-      if (res.error || !r?.ok || typeof r.id !== "number") return null;
-      const uid = r.id;
-      if (!await markProvider(admin, uid, provider)) { await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: "usage_write_failed", p_state: "rejected" }); return null; }
-      const messages = [{ role: "system" as const, content: WRITER_SYSTEM }, { role: "user" as const, content: writerUser(facts, failures) }];
-      try {
-        const resp = await ai.complete(writer
-          ? { model: m, max_tokens: WRITER_MAX_TOKENS, signal, messages, response_format: { type: "json_schema", json_schema: { name: "story_text", strict: true, schema: WRITER_SCHEMA as unknown as Record<string, unknown> } } }
-          : { model: m, max_tokens: 1500, temperature: 0.3, signal, messages, tools: [WRITER_TOOL], tool_choice: { type: "function", function: { name: WRITER_TOOL.function.name } } });
-        const u = resp.usage, cost = estimateCost({ provider, model: m, input_tokens: u.prompt_tokens, output_tokens: u.completion_tokens });
-        const raw = resp.tool_call_args ?? resp.text ?? null;
-        await admin.rpc("ai_settle", { p_id: uid, p_input: u.prompt_tokens, p_output: u.completion_tokens, p_cost: cost, p_ok: raw != null, p_error: raw != null ? null as unknown as string : "no_text", p_state: "done" });
-        return { raw, cost };
-      } catch (e) {
-        if (e instanceof ProviderError && e.usage) { const cost = estimateCost({ provider, model: m, input_tokens: e.usage.prompt_tokens, output_tokens: e.usage.completion_tokens }); await admin.rpc("ai_settle", { p_id: uid, p_input: e.usage.prompt_tokens, p_output: e.usage.completion_tokens, p_cost: cost, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "done" }); return { raw: null, cost }; }
-        if (e instanceof ProviderError && e.outcome === "not_started") { await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "rejected" }); return null; }
-        await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: estimate, p_ok: false, p_error: "writer_unknown_outcome", p_state: "unknown" });
-        return { raw: null, cost: estimate };
-      }
-    },
+    // E4: study calls share the ledger purpose and model, so the study writer's own writer calls today are taken out of the story count.
+    used: async () => { const [all, studies] = await Promise.all([writerUsedToday(admin), import("../data-stories/writer.server").then(m => m.studyWriterCallsToday(admin)).catch(() => 0)]); return Math.max(0, all - studies); },
+    runs: providerCanRun,
+    call: (model, facts, failures, signal) => gatewayCall(admin, { model, system: WRITER_SYSTEM, user: writerUser(facts, failures), schema: WRITER_SCHEMA as unknown as Record<string, unknown>, schemaName: "story_text", tool: WRITER_TOOL, maxTokens: WRITER_MAX_TOKENS }, signal),
     versions: async ids => {
       const out = new Map<string, number>();
       for (let i = 0; i < ids.length; i += 200) {

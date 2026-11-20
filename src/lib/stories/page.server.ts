@@ -85,12 +85,14 @@ export async function loadStoryRelated(id: string) {
   const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
   return { earlier: page.earlier, patterns: page.patterns, next: nextStory(all, s.id), study: await studyFor(s.signal_keys) };
 }
-/** "Part of the study": a live data story covering one of the story's signals, only while data stories are public. */
+/** "Part of the study": a live study covering one of the story's signals, with its written headline, only while studies are public. */
 export async function studyFor(keys: string[]): Promise<{ href: string; title: string } | null> {
-  const [{ DATA_STORIES_PUBLIC }, { liveEntries }] = await Promise.all([import("../site"), import("../data-stories/registry")]);
+  const [{ DATA_STORIES_PUBLIC }, { liveEntries, studyLabel }] = await Promise.all([import("../site"), import("../data-stories/registry")]);
   if (!DATA_STORIES_PUBLIC) return null;
   const e = liveEntries().find(x => x.params.signal && keys.includes(x.params.signal));
-  return e ? { href: `/data/${e.slug}`, title: e.question } : null;
+  if (!e) return null;
+  const p = await import("../data-stories/page.server").then(m => m.loadDataStory(e.slug)).catch(() => null);
+  return { href: `/data/${e.slug}`, title: `${studyLabel(e.number)}: ${p?.kind === "live" ? p.story.text.headline : e.question}` };
 }
 
 /** No crops either side of the change: the stored captures either side of it, redrawn from their skeletons (anonymous reads). */

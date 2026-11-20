@@ -1,5 +1,5 @@
 """P1 · first byte and last deferred section for the Read pages, from outside, against any origin.
-Usage: python3 scripts/perf/ttfb.py <origin> [out.json] [--story <id>] [--browser]
+Usage: python3 scripts/perf/ttfb.py <origin> [out.json] [--story <id>] [--browser] [--only key,key]
 E3b: the default user agent ("slug-perf/p1") reads as a crawler, and crawlers are sent the whole page at once (first byte = last
 section). --browser sends a browser user agent instead, so "first" is the shell's first byte as a visitor gets it.
 For each page: the first request ("first": cold when nobody has drawn the page in the last five minutes) and an immediate repeat
@@ -18,6 +18,7 @@ PAGES = {
     "signals": "/signals",
     "signal": "/signals/aesthetic%3Abrutalist",
     "digest": "/digest/2026-W46",
+    "data-index": "/data",
     "data-story": "/data/who-went-big-first",
     "sector": "/sectors/fintech",
     "brand-netlify": "/brands/netlify.com",
@@ -48,6 +49,8 @@ def main():
     pages = dict(PAGES)
     if "--story" in args: pages["story"] = "/stories/" + quote(args[args.index("--story") + 1], safe="")
     ua = UA["browser"] if "--browser" in args else UA["crawler"]
+    # E4: --only a,b keeps just those page keys (e.g. --only data-index,data-story).
+    if "--only" in args: keep = set(args[args.index("--only") + 1].split(",")); pages = {k: v for k, v in pages.items() if k in keep}
     rows = []
     for key, path in pages.items():
         a = fetch(origin, path, ua); b = fetch(origin, path, ua)

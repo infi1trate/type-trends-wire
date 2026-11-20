@@ -7,12 +7,15 @@ export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?:
   const [steps, setSteps] = useState<TourStep[] | null>(null), [i, setI] = useState(0);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null), [mobile, setMobile] = useState(false);
   const box = useRef<HTMLDivElement>(null), next = useRef<HTMLButtonElement>(null);
+  // E4 · where every scroll container stood before the tour first scrolled it, so ending the tour by any route (Esc, Skip, Done) puts the
+  // panel back where the visitor left it (at its top on a first visit) instead of a few pixels down, under the ticker.
+  const origin = useRef(new Map<Element, number>());
   useEffect(() => {
     let tries = 0, raf = 0;
     const look = () => { const s = availableSteps(sel => !!document.querySelector(sel), stepsFor(mode)); if (s.length >= 4 || tries++ > 160) setSteps(s); else raf = window.setTimeout(look, 50); };
     look(); return () => clearTimeout(raf);
   }, [mode]);
-  const finish = useCallback(() => { modeTour(mode).finish(); onDone(); }, [onDone, mode]);
+  const finish = useCallback(() => { restoreScroll(origin.current); modeTour(mode).finish(); onDone(); }, [onDone, mode]);
   const step = steps?.[i];
   const advance = useCallback(() => { if (!steps) return; if (i + 1 >= steps.length) finish(); else setI(i + 1); }, [i, steps, finish]);
   useEffect(() => { if (steps && steps.length === 0) finish(); }, [steps, finish]);
@@ -22,6 +25,7 @@ export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?:
     if (!el) { advance(); return; }
     el.classList.add("tour-target");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    rememberScroll(el, origin.current);
     el.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
     const place = () => {
       const m = window.innerWidth < 768; setMobile(m);
@@ -55,4 +59,15 @@ export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?:
       </div>
     </div>
   );
+}
+
+/** Record the scroll position of each scrollable ancestor of `el` (and the page) the first time the tour is about to scroll it. */
+export function rememberScroll(el: Element, seen: Map<Element, number>) {
+  for (let p = el.parentElement; p; p = p.parentElement) if (p.scrollHeight > p.clientHeight && !seen.has(p)) seen.set(p, p.scrollTop);
+  const root = document.scrollingElement; if (root && !seen.has(root)) seen.set(root, root.scrollTop);
+}
+/** Put every recorded container back where it stood, without animation. */
+export function restoreScroll(seen: Map<Element, number>) {
+  for (const [p, top] of seen) { if (p.isConnected) p.scrollTop = top; }
+  seen.clear();
 }

@@ -1,4 +1,5 @@
-// Loads what data stories draw from: anonymous SELECT-only reads of public tables and views, cached. No writes, no AI.
+// Loads what studies draw from: anonymous SELECT-only reads of public tables and views, cached. No writes, no AI. E4: measured changes
+// go through the story engine's truth rules (truth.ts: carousel, studio, integrity) before any study counts them.
 import { supabaseAnon } from "../mcp/supabase";
 import type { CaptureRaw } from "./templates/frames";
 import type { DataInput, EventRow, HistRow, SiteInfo, SnapMeta } from "./series";
@@ -6,6 +7,7 @@ import { MEASURED_EVENT_TYPES } from "../rebrands";
 import type { CropRow } from "../crops";
 import { memo, memoBy } from "../memo";
 import { historyRows } from "../history.server";
+import { truthEvents, type RawEvent } from "./truth";
 
 type Db = ReturnType<typeof supabaseAnon>;
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 1000) {
@@ -31,7 +33,7 @@ async function load(): Promise<DataInput> {
   const [sites, history, events, runId, crops, signals, stamps] = await Promise.all([
     pages<SiteInfo>((f, t) => db.from("library_sites").select("domain,name,sector,active").order("domain").range(f, t) as never),
     historyRows<HistRow>(db, HIST),
-    pages<{ id: number; domain: string; type: string; source: string; effective_at: string | null; detected_at: string | null; snapshot_id: number | null }>((f, t) => db.from("library_events").select("id,domain,type,source,effective_at,detected_at,snapshot_id").eq("page_type", "home").eq("viewport", "desktop").in("type", [...MEASURED_EVENT_TYPES]).order("id").range(f, t) as never),
+    pages<{ id: number; domain: string; type: string; source: string; effective_at: string | null; detected_at: string | null; snapshot_id: number | null; prev_snapshot_id: number | null; before: unknown; after: unknown }>((f, t) => db.from("library_events").select("id,domain,type,source,effective_at,detected_at,snapshot_id,prev_snapshot_id,before,after").eq("page_type", "home").eq("viewport", "desktop").in("type", [...MEASURED_EVENT_TYPES]).order("id").range(f, t) as never),
     readerRunId(db).catch(() => null),
     import("../read.server").then(m => m.allCrops()).catch(() => [] as CropRow[]),
     import("../signals.server").then(m => m.latestSignals("all")).catch(() => null),
@@ -41,9 +43,21 @@ async function load(): Promise<DataInput> {
     snapMeta(db, [...new Set(history.map(r => r.snapshot_id).filter((x): x is number => x != null))]),
     import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: x.id, domain: x.domain, at: x.confirmed_at, source: x.source }))).catch(() => []),
   ]);
-  const ev: EventRow[] = events.flatMap(e => { const at = e.effective_at ?? e.detected_at; return at ? [{ id: e.id, domain: e.domain, type: e.type, source: e.source, at, snapshot_id: e.snapshot_id }] : []; });
+  const raw = events.flatMap(e => { const at = e.effective_at ?? e.detected_at; return at ? [{ id: e.id, domain: e.domain, type: e.type, source: e.source, at, snapshot_id: e.snapshot_id, prev_snapshot_id: e.prev_snapshot_id, before: e.before, after: e.after }] : []; });
+  const ev: EventRow[] = await truthful(db, raw, sites);
   return { now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,
     headline: (signals?.signals ?? []).filter(s => s.tier === "headline").map(s => ({ key: s.key, name: s.name })) };
+}
+/** E4 · the changes a study may count (truth.ts), with the carousel flags and integrity verdicts read anonymously. */
+async function truthful(db: Db, raw: RawEvent[], sites: SiteInfo[]): Promise<EventRow[]> {
+  const [{ carouselSnapshots }, { latestChecks }] = await Promise.all([import("../carousel.server"), import("../integrity.server")]);
+  const [carousel, checks] = await Promise.all([
+    carouselSnapshots(db, raw.flatMap(e => [e.snapshot_id, e.prev_snapshot_id])).catch(() => new Set<number>()),
+    latestChecks(db, raw.filter(e => e.source === "live").map(e => e.id)).catch(() => null),
+  ]);
+  const sector = new Map(sites.map(s => [s.domain, s.sector]));
+  return truthEvents(raw, { carousel, checks, sectorOf: d => sector.get(d) ?? null })
+    .map(e => ({ id: e.id, domain: e.domain, type: e.type, source: e.source, at: e.at, snapshot_id: e.snapshot_id, ...(e.seen ? { seen: e.seen } : {}) }));
 }
 const TTL = 10 * 60_000;
 const input = memo(TTL, load);

@@ -4,7 +4,7 @@ import { line as voiced } from "@/lib/voice";
 // The slug restyle: 3 px ink axes, dashed newsprint gridlines, direct labels in Big Shoulders, stage colours from the tokens,
 // points as gumballs (a radial gradient from the token's light to dark with a hard ink offset), lines as a paper-and-ink double
 // stroke with the colour on top. Accessible names, table fallbacks and keyboard focus are unchanged.
-import { useId, type ReactNode } from "react";
+import { createContext, useContext, useId, type ReactNode } from "react";
 import { useGrow } from "@/components/brand/Motion";
 import { arcPath, arcs, extent, linear, point, ticks } from "@/lib/charts/scale";
 import { Receipt } from "@/components/read/StoryCard";
@@ -13,6 +13,8 @@ import { GUMBALLS, type GumballName } from "@/lib/theme/contract";
 export type Cell = string | number;
 export type FrameProps = { /** Heading level of the title: 3 under a section heading (default), 2 when the chart sits directly under the page h1. */ level?: 2 | 3; title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
 type Frame = FrameProps & { isEmpty: boolean; table: { columns: string[]; rows: Cell[][] }; children: (ids: { title: string; note: string }) => ReactNode };
+/** E4 · inside this provider a chart's title and note stay for screen readers only (a study scene repeating the figure above it). */
+export const ChartTitleQuiet = createContext(false);
 export const STAGE_FILL = (stage: string | null | undefined) => (stage ? `var(--tk-stage-${stage.toLowerCase()})` : "var(--tk-stage-unstaged)");
 /** Which gumball a stage's point uses: Emerging pink, Rising green, Peaking red, Fading ink, Steady and unstaged newsprint. */
 const STAGE_BALL: Record<string, GumballName> = { emerging: "pink", rising: "green", peaking: "red", fading: "ink", steady: "newsprint" };
@@ -30,10 +32,10 @@ export function Gumball({ id, ball, cx, cy, r }: { id: string; ball: GumballName
 const ballId = (raw: string) => `gb${raw.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
 export function ChartFrame({ level = 3, title, note, source, receipt, empty = voiced("chart.empty"), isEmpty, table, children }: Frame) {
-  const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` }, H = level === 2 ? "h2" : "h3";
+  const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` }, H = level === 2 ? "h2" : "h3", quiet = useContext(ChartTitleQuiet);
   return <figure className="tk-chart min-w-0" aria-labelledby={ids.title} data-chart="">
-    <H id={ids.title} className="tk-t-h3">{title}</H>
-    <p id={ids.note} className="tk-t-small tk-c-secondary mt-1">{note}</p>
+    <H id={ids.title} className={quiet ? "sr-only" : "tk-t-h3"}>{title}</H>
+    <p id={ids.note} className={quiet ? "sr-only" : "tk-t-small tk-c-secondary mt-1"}>{note}</p>
     {isEmpty ? <p className="tk-t-data tk-chart-empty mt-3" role="status" data-chart-empty="">{empty}</p> : <>
       <div className="mt-3">{children(ids)}</div>
       <div className="sr-only"><table data-chart-table="">
