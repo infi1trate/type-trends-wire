@@ -94,13 +94,19 @@ function Picture({ s }: { s: StoryPageData }) {
   return null;
 }
 
-export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNode }) {
+/** E3b · the story page's frame (bar, status line, footer), drawn from the story's head before its body is read. */
+export function StoryFrame({ id, headline, children }: { id: string; headline: string; children: ReactNode }) {
+  return <DigestShell label={headline} section="live">
+    {children}
+    <ReadFooter terminal={`/terminal?panel=today&story=${encodeURIComponent(id)}`} />
+  </DigestShell>;
+}
+export function StoryView({ s, related, bare = false }: { s: StoryPageData; related?: ReactNode; bare?: boolean }) {
   const notRun = s.state === "held" ? `This story did not run on the front page: ${s.heldReason}.` : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
   const seed = s.number ?? s.id, kind = kindOf(s);
   // The cover carries kicker, headline and deck; its object is the signal's trail only when the story has no picture of a page.
   const cover = kind === "none" && !s.crops?.grid?.length && !s.thumb ? coverObject(s) : null;
-  return <DigestShell label={s.headline} section="live">
-    <FiltersScope>
+  const body = <FiltersScope>
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={cover} italicDeck
@@ -128,16 +134,14 @@ export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNod
       "so-what": null,
       related: related ?? <StoryRelated s={s} />,
     }} />
-    </FiltersScope>
-    <ReadFooter terminal={`/terminal?panel=today&story=${encodeURIComponent(s.id)}`} />
-  </DigestShell>;
+    </FiltersScope>;
+  return bare ? body : <StoryFrame id={s.id} headline={s.headline}>{body}</StoryFrame>;
 }
 
 /** E2d · a retired story keeps its page: number and date, the headline it ran under, "Retired" with the editor's note, the brand page and
  *  the tape lines it was built from. No body, no picture, no "Next". */
-export function RetiredStoryView({ s, tape, note }: { s: Pick<StoryPageData, "id" | "number" | "at" | "headline" | "kicker" | "brands">; tape: { id: number; text: string; href: string; confirmed?: boolean }[]; note: string | null }) {
-  return <DigestShell label={s.headline} section="live">
-    <article className="ed-wrap py-10 md:py-16" data-story-retired="">
+export function RetiredStoryView({ s, tape, note, bare = false }: { s: Pick<StoryPageData, "id" | "number" | "at" | "headline" | "kicker" | "brands">; tape: { id: number; text: string; href: string; confirmed?: boolean }[]; note: string | null; bare?: boolean }) {
+  const body = <article className="ed-wrap py-10 md:py-16" data-story-retired="">
       <p className="ed-data flex flex-wrap gap-x-4 gap-y-1">
         {s.number != null && <span>{numberLabel(s.number)}</span>}
         <time dateTime={s.at} className="whitespace-nowrap">{storyTime(s.at)}</time>
@@ -149,9 +153,8 @@ export function RetiredStoryView({ s, tape, note }: { s: Pick<StoryPageData, "id
       {tape.length > 0 && <BlockPart title="The changes it was built from" kicker={tape.every(t => t.confirmed !== false) ? "They stay on the tape." : "A change marked Seen once, Alternating or Not compared is not on the tape; the rest stay there."}>
         <ul className="ledger" data-retired-tape="">{tape.map(t => <li key={t.id} className="ledger-row px-2 py-3"><span className="ed-small break-words"><Receipt href={t.href} {...pr(t.href)}>{t.text}</Receipt></span></li>)}</ul>
       </BlockPart>}
-    </article>
-    <ReadFooter terminal={`/terminal?panel=today&story=${encodeURIComponent(s.id)}`} />
-  </DigestShell>;
+    </article>;
+  return bare ? body : <StoryFrame id={s.id} headline={s.headline}>{body}</StoryFrame>;
 }
 
 export type StoryWayOn = { next?: Story | null; study?: { href: string; title: string } | null };

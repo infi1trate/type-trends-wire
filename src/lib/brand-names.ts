@@ -27,6 +27,8 @@ export const seedModule = (rows: SeedRow[]) =>
 
 const SEED = new Map(BRAND_SEED.map(([d, n, k]) => [d, { name: n, kind: k as SiteKind }]));
 export const seededDomains = () => [...SEED.keys()];
+/** A seeded brand's name, or null when the domain is not in the seed (E3b: a brand page's head and frame need no read). */
+export const seededName = (domain: string): string | null => SEED.get(domain.trim().toLowerCase())?.name ?? null;
 /** Every seeded display name (the writer's check refuses a tracked brand the story is not about). */
 export const seededNames = () => [...new Set([...SEED.values()].map(v => v.name))];
 const bare = (d: string) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");

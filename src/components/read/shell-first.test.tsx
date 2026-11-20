@@ -18,26 +18,27 @@ type Loader = (a: Record<string, unknown>) => unknown;
 const loaderOf = (r: unknown) => (r as { options: { loader: Loader } }).options.loader;
 
 describe("split Read loaders never await deferred reads", { timeout: 30_000 }, () => {
-  it("brand page awaits only the identity card", async () => {
+  it("E3b · a tracked brand's page awaits nothing: the seeded name gives head and frame, the card streams", async () => {
     const { Route } = await import("@/routes/brands.$domain");
     const c = client(() => ({ name: "GoPro", sectorName: "Consumer", soWhat: "x" }));
-    await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "gopro.com" } })));
-    expect(c.awaited).toEqual(["brand-card"]);
-    expect(c.started.sort()).toEqual(["brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories"]);
+    const r = await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "netlify.com" } })));
+    expect(c.awaited).toEqual([]);
+    expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories"]);
+    expect(r).toEqual({ name: "Netlify" });
   });
-  it("story page awaits the story and streams earlier stories", async () => {
+  it("E3b · story page awaits only its head and streams the body and earlier stories", async () => {
     const { Route } = await import("@/routes/stories.$id");
-    const c = client(() => ({ headline: "h", deck: null, kicker: "k", state: "published" }));
+    const c = client(() => ({ headline: "h", deck: null, kicker: "k", ran: true }));
     await within(Promise.resolve(loaderOf(Route)({ context: c, params: { id: "story-1" } })));
-    expect(c.awaited).toEqual(["story-lead"]);
-    expect(c.started).toEqual(["story-related"]);
+    expect(c.awaited).toEqual(["story-head"]);
+    expect(c.started).toEqual(["story-lead", "story-related"]);
   });
-  it("front page awaits the lead and live column only", async () => {
+  it("E3b · front page awaits nothing: the lead and live column stream too", async () => {
     const { Route } = await import("@/routes/index");
     const c = client(() => ({}));
     await within(Promise.resolve(loaderOf(Route)({ context: c, deps: { sector: "all", format: "all" } })));
-    expect(c.awaited).toEqual(["front-top"]);
-    expect(c.started).toEqual(["front-rest", "front-also", "front-tape"]);
+    expect(c.awaited).toEqual([]);
+    expect(c.started).toEqual(["front-top", "front-rest", "front-also", "front-tape"]);
   });
   it("signal, pattern and sector pages await their head only", async () => {
     const sig = client(() => ({ key: "aesthetic:brutalist", name: "Brutalist" }));

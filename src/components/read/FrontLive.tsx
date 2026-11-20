@@ -1,6 +1,6 @@
 // The front page's live parts: the date, the ticker (an ink slab), and the live column (a Ledger) that polls /front.json without
 // jumping the page; new stories wait behind one Sticker.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useHydrated } from "@tanstack/react-router";
 import type { FrontStory, FrontUpdates, TickerItem } from "@/lib/front/front";
 import { groupColumn, relTime } from "@/lib/front/front";
@@ -65,9 +65,12 @@ export function LiveItem({ s, now, drop = false }: { s: FrontStory; now: number;
     tags: [s.typeName, ...(s.sectorName ? [s.sectorName] : [])], time: <time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now)}</time>, drop }} />;
 }
 
-type ColumnProps = { initial: FrontStory[]; serverNow: string; sector: string; format: string; quiet: boolean; onUpdates?: (u: FrontUpdates) => void; empty: string };
+/** E3b · the column's own heading: the count sits beside it ("Earlier this week · 6"), and a single group with the same title adds no
+ *  second heading. `note` sits under the heading (the quiet line). */
+export type ColumnHeading = { id: string; title: string; note?: ReactNode };
+type ColumnProps = { initial: FrontStory[]; serverNow: string; sector: string; format: string; quiet: boolean; onUpdates?: (u: FrontUpdates) => void; empty: string; heading?: ColumnHeading };
 /** The live column: grouped under time headings, polled about every minute, new stories wait behind one quiet control. */
-export function LiveColumn({ initial, serverNow, sector, format, quiet, onUpdates, empty }: ColumnProps) {
+export function LiveColumn({ initial, serverNow, sector, format, quiet, onUpdates, empty, heading }: ColumnProps) {
   const now = useNow(serverNow, 30_000);
   const [shown, setShown] = useState(initial), [pending, setPending] = useState<FrontStory[]>([]), [said, setSaid] = useState(0), [spoken, setSpoken] = useState("");
   const [focusId, setFocusId] = useState<string | null>(null), [lastVisit, setLastVisit] = useState<string | null>(null);
@@ -100,11 +103,15 @@ export function LiveColumn({ initial, serverNow, sector, format, quiet, onUpdate
   // Only the newest inserted story drops in (one thing moves at a time); the rest are simply there.
   const insert = () => { const r = insertPending(shown, pending); setShown(r.items); setPending([]); setSaid(0); setFocusId(r.focusId); setDropId(r.focusId); };
   const marker = since && <li className="front-marker ed-data px-3 py-2" key="since" data-since="">Since your last visit, {relTime(lastVisit!, now)}: {since.count} {since.count === 1 ? "story" : "stories"}</li>;
+  // One group under a heading of the same name: the heading carries the count and the group adds no heading of its own.
+  const single = !!heading && groups.length === 1 && groups[0]!.title === heading.title;
   return <div>
+    {heading && <h2 id={heading.id} className="ed-h2">{heading.title}{flat.length > 0 && <span className="ed-muted"> · {flat.length}</span>}</h2>}
+    {heading?.note}
     <p className="sr-only" aria-live="polite">{spoken}</p>
     {pending.length > 0 && <div className="mt-4"><Sticker onClick={insert} data-pop="">{newStoriesText(pending.length)} · show {pending.length === 1 ? "it" : "them"}</Sticker></div>}
-    {groups.length ? groups.map(g => <section key={g.id} aria-labelledby={`fg-${g.id}`} className="mt-6">
-      <h3 id={`fg-${g.id}`} className="ed-kicker">{g.title} <span className="ed-muted">· {g.items.length}</span></h3>
+    {groups.length ? groups.map(g => <section key={g.id} aria-labelledby={single ? heading!.id : `fg-${g.id}`} className="mt-6">
+      {!single && <h3 id={`fg-${g.id}`} className="ed-kicker">{g.title} <span className="ed-muted">· {g.items.length}</span></h3>}
       <ul className="ledger mt-2" data-ledger="">{g.items.map(s => [since?.beforeId === s.id ? marker : null, <LiveItem key={s.id} s={s} now={now} drop={s.id === dropId} />])}</ul>
     </section>) : <p className="ed-small mt-4">{empty}</p>}
     {since && since.beforeId === null && flat.length > 0 && <ul className="mt-2">{marker}</ul>}

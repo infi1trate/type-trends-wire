@@ -13,6 +13,10 @@ export const SHARED = {
   rebrands: { maxAge: 3 * HOUR, every: 15 * MIN },
   "moving-runs": { maxAge: 6 * HOUR, every: 30 * MIN },
   "quarter-series": { maxAge: 6 * HOUR, every: 30 * MIN },
+  /** E3b · the front page's tape block and its Also today card pictures (no story text: kills and new stories never wait on them).
+   *  Written by the story build right after it runs; the sweeper rewrites them when older than `every`. */
+  "front-tape": { maxAge: 2 * HOUR, every: 15 * MIN },
+  "front-cards": { maxAge: 2 * HOUR, every: 15 * MIN },
 } as const;
 export type SharedKey = keyof typeof SHARED;
 /** Per-brand records (one row per tracked domain) and their ages. Cards are also rewritten whenever a new capture of the brand lands. */

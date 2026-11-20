@@ -43,15 +43,32 @@ const corners = (v: unknown) => (v === "pill" ? "pill" : v === "0" || v === 0 ? 
 const colours = (v: unknown) => [...new Set((Array.isArray(v) ? v : []).slice(0, 2).map(hexName))].join(" and ") || "none";
 const tags = (dim: string, v: unknown) => (Array.isArray(v) ? v : typeof v === "string" ? [v] : []).filter((x): x is string => typeof x === "string").map(x => label(`${dim}:${x}`).name.toLowerCase()).join(", ") || "none";
 
+/** E3b · a colour change whose old and new colour have the same plain name says nothing in words. How a line treats such a part:
+ *  "keep" (stories and their stored facts, unchanged), "drop" (the Read side's tape: the front page and the brand page leave it out),
+ *  "hex" (the terminal: both plain names with their hex values). */
+export type SameColours = "keep" | "drop" | "hex";
+export type TapeOpts = { sameColours?: SameColours };
+const hexes = (v: unknown) => (Array.isArray(v) ? v : [v]).slice(0, 2).filter((x): x is string => typeof x === "string").map(x => x.toUpperCase()).join(", ");
+/** One colour part: "accent, Vivid indigo to Electric violet"; null when dropped. */
+function colourPart(what: string, before: unknown, after: unknown, name: (v: unknown) => string, mode: SameColours): string | null {
+  const nb = name(before), na = name(after);
+  if (nb !== na || mode === "keep") return `${what}, ${nb} to ${na}`;
+  if (mode === "drop") return null;
+  return `${what}, ${nb} (${hexes(before) || "none"}) to ${na} (${hexes(after) || "none"})`;
+}
 /** What changed, from and to, in plain words ("hero, video to still"; "headline font, Futura PT to Akkurat LL"). */
-export function tapeWhat(e: Pick<EventRow, "type" | "before" | "after" | "page_type" | "summary">): string {
-  const b = o(e.before), a = o(e.after);
+export function tapeWhat(e: Pick<EventRow, "type" | "before" | "after" | "page_type" | "summary">, opts: TapeOpts = {}): string {
+  const b = o(e.before), a = o(e.after), mode = opts.sameColours ?? "keep";
   const parts: string[] = [];
   switch (e.type) {
-    case "palette_shift":
-      if ("accent" in a || "accent" in b) parts.push(`accent, ${hexName(b["accent"])} to ${hexName(a["accent"])}`);
-      if ("palette" in a || "palette" in b) parts.push(`palette, ${colours(b["palette"])} to ${colours(a["palette"])}`);
+    case "palette_shift": {
+      const accent = "accent" in a || "accent" in b ? colourPart("accent", b["accent"], a["accent"], hexName, mode) : null;
+      const palette = "palette" in a || "palette" in b ? colourPart("palette", b["palette"], a["palette"], colours, mode) : null;
+      for (const x of [accent, palette]) if (x) parts.push(x);
+      // Every colour part dropped: nothing left to say on the Read side (readTapeShows).
+      if (!parts.length && mode === "drop") return "";
       break;
+    }
     case "type_change":
       if ("h1" in a || "h1" in b) parts.push(`headline font, ${str(b["h1"]) ?? "none"} to ${str(a["h1"]) ?? "none"}`);
       if ("body" in a || "body" in b) parts.push(`body font, ${str(b["body"]) ?? "none"} to ${str(a["body"]) ?? "none"}`);
@@ -88,9 +105,15 @@ export type TapeLabels = { seasonal?: boolean; reversed?: boolean; carousel?: bo
 /** The labels a tape line carries. */
 export const tapeLabels = (l: TapeLabels) => [...(l.seasonal ? [SEASONAL_LABEL] : []), ...(l.carousel ? [CAROUSEL_LABEL] : []), ...(l.reversed ? [REVERSED_LABEL] : [])];
 /** One tape line: "Rivian · hero, video to still · 11 Nov" (plus " · Seasonal" / " · Carousel" / " · Reversed"). */
-export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen">, l: TapeLabels = {}, name?: string | null): string {
-  return [brandName(e.domain, name), tapeWhat(e), changeWhen(e), ...tapeLabels(l)].join(" · ");
+export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen">, l: TapeLabels = {}, name?: string | null, opts: TapeOpts = {}): string {
+  return [brandName(e.domain, name), tapeWhat(e, opts), changeWhen(e), ...tapeLabels(l)].join(" · ");
 }
+/** E3b · whether a change has a line on the Read side's tape: not when it is a colour change whose old and new colours share a plain name. */
+export const readTapeShows = (e: Pick<EventRow, "type" | "before" | "after" | "page_type" | "summary">) => tapeWhat(e, { sameColours: "drop" }) !== "";
+/** The Read side's tape options (front page, brand page). */
+export const READ_TAPE: TapeOpts = { sameColours: "drop" };
+/** The terminal's tape options: both names with their hex values. */
+export const TERMINAL_TAPE: TapeOpts = { sameColours: "hex" };
 
 // ONE LINE PER CHANGE (E2b) ----------------------------------------------------------------------------------------------------------
 type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen"> & { viewport?: string | null };
@@ -101,8 +124,8 @@ const pageName = (p: string | null | undefined) => `${p && p !== "home" ? p : "h
  */
 /** E3: a tape line's parts, for lists that set them apart (the front page's tape): brand name, what changed, when, its marks. */
 export type TapeParts = { name: string; what: string; when: string; marks: string[] };
-export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => TapeLabels = () => ({}), name?: (domain: string) => string | null | undefined): (E & { tape: string; also: number[]; pages: string[]; parts: TapeParts })[] {
-  const key = (e: E) => `${e.domain}|${e.detected_at.slice(0, 10)}|${tapeWhat({ ...e, page_type: "home" })}`;
+export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => TapeLabels = () => ({}), name?: (domain: string) => string | null | undefined, opts: TapeOpts = {}): (E & { tape: string; also: number[]; pages: string[]; parts: TapeParts })[] {
+  const key = (e: E) => `${e.domain}|${e.detected_at.slice(0, 10)}|${tapeWhat({ ...e, page_type: "home" }, opts)}`;
   const groups = new Map<string, E[]>();
   for (const e of events) groups.set(key(e), [...(groups.get(key(e)) ?? []), e]);
   const out: (E & { tape: string; also: number[]; pages: string[]; parts: TapeParts })[] = [];
@@ -113,8 +136,8 @@ export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => Tap
     const pages = [...new Set(g.map(x => pageName(x.page_type)))].sort((a, b) => (a === "home page" ? -1 : b === "home page" ? 1 : a.localeCompare(b)));
     const l = g.reduce<TapeLabels>((acc, x) => { const y = labels(x); return { seasonal: !!(acc.seasonal || y.seasonal), reversed: !!(acc.reversed || y.reversed), carousel: !!(acc.carousel || y.carousel) }; }, {});
     const base = pages.length > 1 ? { ...first, page_type: "home" } : first;
-    const line = tapeLine(base, l, name?.(e.domain));
-    const parts: TapeParts = { name: brandName(base.domain, name?.(e.domain)), what: `${tapeWhat(base)}${pages.length > 1 ? ` · ${pages.join(", ")}` : ""}`, when: changeWhen(base), marks: tapeLabels(l) };
+    const line = tapeLine(base, l, name?.(e.domain), opts);
+    const parts: TapeParts = { name: brandName(base.domain, name?.(e.domain)), what: `${tapeWhat(base, opts)}${pages.length > 1 ? ` · ${pages.join(", ")}` : ""}`, when: changeWhen(base), marks: tapeLabels(l) };
     out.push({ ...e, tape: pages.length > 1 ? `${line} · ${pages.join(", ")}` : line, also: g.filter(x => x.id !== e.id).map(x => x.id), pages, parts });
   }
   return out;

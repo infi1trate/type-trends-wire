@@ -1,7 +1,7 @@
 // The front page's tape (E3): the last 14 days of live changes from the public change feed, their stored integrity checks, then the
-// marks (Seasonal, Carousel, Reversed) for the eight lines shown only. Anonymous SELECT-only; memoised briefly; deferred on the page
-// (never part of the critical read).
-import { memo } from "../memo";
+// marks (Seasonal, Carousel, Reversed) for the eight lines shown only. Anonymous SELECT-only. E3b: stored as the `front-tape` record
+// by the build that computes the checks; deferred on the page (never in front of the first byte).
+import { stored } from "../records/store.server";
 import { supabaseAnon } from "../mcp/supabase";
 import { confirmedTape, frontTape, FRONT_TAPE_DAYS, FRONT_TAPE_MAX, type FrontTape, type TapeEvent } from "./tape-block";
 
@@ -29,4 +29,7 @@ async function load(): Promise<FrontTape> {
   const reversed = reversalIds(events.map(e => ({ id: e.id, domain: e.domain, page_type: e.page_type ?? null, viewport: e.viewport ?? null, detected_at: e.detected_at, before: e.before, after: e.after })));
   return frontTape(events, checks, { now, labels: e => ({ seasonal: seasonal.has(e.id), carousel: carousel.has(e.id), reversed: reversed.has(e.id) }), icons: iconsFor(pics, first.map(r => r.domain)) });
 }
-export const loadFrontTape = memo(60_000, load);
+/** E3b: pages read the stored `front-tape` record (written by the story build right after it runs, and by the records sweeper);
+ *  only when the record is missing or too old does a visit compute it live. */
+export const frontTapeRecord = stored("front-tape", load, { ttl: 60_000 });
+export const loadFrontTape = () => frontTapeRecord();

@@ -325,3 +325,10 @@ export async function writeWithFallback(f: WriterFacts, template: WrittenText, k
   }
   return { text: template, model: "template", checked: false, attempts, cost, failures, log };
 }
+
+/** E3b · the order the writer takes owed stories in when its calls reset: the front page's lead first, then the census pieces, then the
+ *  rest by rank (the front page's rank; ties: newest, then id). `rank` falls back to the stored score. */
+export function writePriority<T extends { id: string; score: number; happened_at: string }>(owed: readonly T[], o: { leadId: string | null; rank?: ReadonlyMap<string, number> }): T[] {
+  const tier = (s: T) => (s.id === o.leadId ? 0 : s.id.startsWith("census:") ? 1 : 2), r = (s: T) => o.rank?.get(s.id) ?? s.score;
+  return [...owed].sort((a, b) => tier(a) - tier(b) || r(b) - r(a) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id));
+}

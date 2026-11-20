@@ -16,7 +16,7 @@ import { getSignalSnapshot } from "./signals.functions";
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
-import { getBrandCard, getBrandMoves, getBrandSections, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
+import { getBrandCard, getBrandMoves, getBrandSections, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getStoryHead, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
 import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
@@ -407,6 +407,7 @@ export const editionsQuery = () => queryOptions({ queryKey: ["editions"], staleT
 export const liveQuery = (sector: string, page: number, type: LiveTypeFilter = "all") => queryOptions({ queryKey: ["live", sector, page, type], staleTime: 60_000, queryFn: () => getLive({ data: { sector, page, type } }) });
 // P1 · shell first: each Read page's critical read (title, head, 404) and its deferred parts are separate queries, so the loader
 // awaits only the first and streams the rest into <Later> slots.
+export const storyHeadQuery = (id: string) => queryOptions({ queryKey: ["story-head", id], staleTime: 60_000, queryFn: () => getStoryHead({ data: { id } }) });
 export const storyLeadQuery = (id: string) => queryOptions({ queryKey: ["story-lead", id], staleTime: 60_000, queryFn: () => getStoryLead({ data: { id } }) });
 export const storyRelatedQuery = (id: string) => queryOptions({ queryKey: ["story-related", id], staleTime: 60_000, queryFn: () => getStoryRelated({ data: { id } }) });
 export const frontTopQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front-top", sector, format], staleTime: 60_000, queryFn: () => getFrontTop({ data: { sector, format } }) });

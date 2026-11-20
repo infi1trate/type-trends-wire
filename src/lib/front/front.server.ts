@@ -20,6 +20,7 @@ import { streamOf } from "../stories/view";
 import { collectionPath, liveCollections } from "../collections/registry";
 import { NO_PICS, coverOf, iconsFor } from "../pictures";
 import { picturesSafe } from "../pictures.server";
+import { candidateList, pickAlsoPictures, type CardCandidates } from "./also-pictures";
 
 /** Quarter series (with quarter labels) for every library-wide row of the reader run: chart of the day and the lead's sparkline. */
 export const quarterSeries = stored("quarter-series", async (): Promise<QuarterSeries[]> => {
@@ -98,22 +99,36 @@ export async function loadFrontRest(rawSector: unknown, rawFormat: unknown): Pro
   const m = await loadFront(rawSector, rawFormat);
   return { chart: m.chart, launches: m.launches, strip: m.strip, collections: m.collections, editions: m.editions, dataStories: m.dataStories, archive: m.archive, sections: m.sections, format: m.format, sector: m.sector, now: m.now, state: m.state };
 }
-// E3 · Also today's pictures, deferred: each card's first-screen crop (the hero section): a single-brand story's own (its kept or
-// nearest crop), a gathered story's or a census's first member's, else the brand's latest hero crop. A card without one has none.
+// E3 · Also today's pictures, deferred. E3b: the candidates come from the stored `front-cards` record, which the story build writes
+// right after it runs (and the records sweeper keeps fresh); a story newer than the record is computed for itself alone. The pure
+// picker (also-pictures.ts) keeps two cards from showing the same picture.
 export type AlsoPictures = Record<string, import("../crops").Crop | null>;
+type Story = Awaited<ReturnType<typeof storyIndex>>[number];
+/** The card candidates of one story: its own first-screen crop or its members' crops in order, then each brand's latest hero crop. */
+async function candidatesOf(s: Story, pics: Awaited<ReturnType<typeof picturesSafe>>): Promise<import("../crops").Crop[]> {
+  const [{ evidenceOf }, { heroCrop }] = await Promise.all([import("../stories/page.server"), import("../crops")]);
+  const ev = ["move", "counter_move", "rebrand", "roundup"].includes(s.type) ? await evidenceOf(s, s.type).catch(() => null) : null;
+  const own = ev?.grid ? ev.grid.map(g => g.crop) : ev?.section === "hero" ? [ev.compare?.after ?? ev.after ?? null] : [];
+  return candidateList([...own, ...s.domains.map(d => { const h = pics.get(d)?.hero; return h ? heroCrop(d, h) : null; })]);
+}
+/** Stories the front page can show as cards: published in the last two days. */
+const CARD_WINDOW_MS = 2 * 864e5;
+export async function computeFrontCards(ids?: readonly string[]): Promise<CardCandidates> {
+  const [all, pics] = await Promise.all([storyIndex(), picturesSafe()]);
+  const want = ids ? new Set(ids) : null, now = Date.now();
+  const these = streamOf(all).filter(s => (want ? want.has(s.id) : Date.parse(s.happened_at) > now - CARD_WINDOW_MS));
+  const out: CardCandidates = {};
+  await Promise.all(these.map(async s => { out[s.id] = await candidatesOf(s, pics).catch(() => []); }));
+  return out;
+}
+export const frontCards = stored("front-cards", () => computeFrontCards(), { ttl: 60_000 });
 const alsos = memoBy(FRONT_TTL_MS, async (k: { sector: string; format: FormatFilter }): Promise<AlsoPictures> => {
   const m = fronts.peek(k) ?? await tops(k);
   if (!m.also.length) return {};
-  const [all, pics, { evidenceOf }, { heroCrop }] = await Promise.all([storyIndex(), picturesSafe(), import("../stories/page.server"), import("../crops")]);
-  const out: AlsoPictures = {};
-  await Promise.all(m.also.map(async a => {
-    const s = all.find(x => x.id === a.id); if (!s) { out[a.id] = null; return; }
-    const ev = ["move", "counter_move", "rebrand", "roundup"].includes(s.type) ? await evidenceOf(s, s.type).catch(() => null) : null;
-    const own = ev?.grid ? ev.grid.find(g => g.crop)?.crop ?? null : ev?.section === "hero" ? ev.compare?.after ?? ev.after ?? null : null;
-    const d = s.domains.find(x => pics.get(x)?.hero), hero = d ? pics.get(d)!.hero! : null;
-    out[a.id] = own ?? (d && hero ? heroCrop(d, hero) : null);
-  }));
-  return out;
+  const rec = await frontCards().catch(() => ({} as CardCandidates));
+  const missing = m.also.filter(a => !(a.id in rec)).map(a => a.id);
+  const cands = missing.length ? { ...rec, ...await computeFrontCards(missing).catch(() => ({} as CardCandidates)) } : rec;
+  return pickAlsoPictures(m.also.map(a => ({ id: a.id, gathered: !a.domain })), cands);
 }, { key: k => `${k.sector}|${k.format}`, max: 100 });
 export const loadFrontAlso = (rawSector: unknown, rawFormat: unknown) => alsos({ sector: resolveSector(rawSector), format: resolveFormat(rawFormat) });
 export const loadFrontUpdates = async (sector: unknown, format: unknown) => updatesOf(await loadFront(sector, format));

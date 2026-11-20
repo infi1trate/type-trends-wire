@@ -1,5 +1,6 @@
 // Story page + queue loaders (anonymous SELECT-only). No AI per view.
 import { storyById, storyIndex, deskIndex } from "./read.server";
+import { memoBy } from "../memo";
 import { queueModel, storiesAbout, storyPage, isKind, type StoryRecord } from "./view";
 
 export async function loadStory(id: string) {
@@ -18,8 +19,16 @@ export async function loadStory(id: string) {
 
 /** P1 · shell first, critical: the story with its cover evidence (crops, redrawn frames, the signal's trail and the latest capture),
  * from the story's own rows and indexed per-brand reads; the quarter trail comes from the precomputed series record. No story index. */
+/** One story by id, shared by the head and the lead for half a minute so a page reads it once. */
+const storyOnce = memoBy(30_000, (id: string) => storyById(id), { key: id => id, max: 200 });
+/** E3b · the story page's head: headline, deck, kicker and whether it ran (title, description, noindex). The only read a story page
+ *  waits for: the story's own row with its edits and checked text, each found by its id; the body streams after. */
+export async function loadStoryHead(id: string): Promise<{ headline: string; deck: string | null; kicker: string; ran: boolean } | null> {
+  const s = await storyOnce(id);
+  return s ? { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published" } : null;
+}
 export async function loadStoryLead(id: string) {
-  const s = await storyById(id); if (!s) return null;
+  const s = await storyOnce(id); if (!s) return null;
   if (s.state === "killed") return retiredLead(s);
   const type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0], d = s.domains[0];
   const [{ quarterSeries }, { wellCovered }, { pickThumb }, { supabaseAnon }] = await Promise.all([import("../front/front.server"), import("../kit"), import("../thumbs"), import("../mcp/supabase")]);

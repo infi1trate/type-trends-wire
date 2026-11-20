@@ -1,9 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { storyLeadQuery, storyRelatedQuery } from "@/lib/data";
+import { storyHeadQuery, storyLeadQuery, storyRelatedQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
-import { StoryView, StoryRelated, RetiredStoryView, type StoryPageData } from "@/components/read/StoryView";
+import { StoryFrame, StoryView, StoryRelated, RetiredStoryView, type StoryPageData } from "@/components/read/StoryView";
 import { Later, ROW } from "@/components/read/Later";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
@@ -12,11 +12,14 @@ import { withShare, shareImageFor } from "@/lib/share/meta";
 export const Route = createFileRoute("/stories/$id")({
   loader: async ({ context, params }) => {
     if (params.id.length < 3 || params.id.length > 200) throw notFound();
-    // P1: the story and its cover evidence are awaited; earlier stories (the story index) start now and stream in.
+    // E3b: only the story's head (its own row by id: headline, deck, whether it ran) is awaited, because the answer's status, title and
+    // do-not-index header must be known before the first byte. The body with its pictures and evidence, and earlier stories, start
+    // now and stream into their slots.
+    void context.queryClient.prefetchQuery(storyLeadQuery(params.id));
     void context.queryClient.prefetchQuery(storyRelatedQuery(params.id));
-    const s = await context.queryClient.ensureQueryData(storyLeadQuery(params.id));
+    const s = await context.queryClient.ensureQueryData(storyHeadQuery(params.id));
     if (!s) throw notFound();
-    return { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published" };
+    return s;
   },
   head: ({ params, loaderData }) => {
     if (!loaderData) return { meta: [{ title: `Story unavailable — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] };
@@ -30,10 +33,16 @@ export const Route = createFileRoute("/stories/$id")({
   errorComponent: () => <DigestNotFound v="story.failed" />,
 });
 function StoryPage() {
-  const { id } = Route.useParams();
+  const { id } = Route.useParams(), head = Route.useLoaderData();
+  return <StoryFrame id={id} headline={head.headline}>
+    <Later id="story-lead-later" shapes={[{ kind: "block", height: 28 }, { kind: "text", lines: 3 }, { kind: "text", lines: 2 }, { kind: "picture", ratio: 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 4, height: ROW.ledger }]}><Lead id={id} /></Later>
+  </StoryFrame>;
+}
+function Lead({ id }: { id: string }) {
   const { data } = useSuspenseQuery(storyLeadQuery(id));
-  if (data?.retired) return <RetiredStoryView s={data} tape={data.retired.tape} note={data.retired.note} />;
-  return data ? <div data-receipts="" className="contents"><StoryView s={data} related={<Later id="story-related-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><Related s={data} /></Later>} /></div> : null;
+  if (!data) return <DigestNotFound v="story.notFound" bare />;
+  if (data.retired) return <RetiredStoryView s={data} tape={data.retired.tape} note={data.retired.note} bare />;
+  return <div data-receipts="" className="contents"><StoryView s={data} bare related={<Later id="story-related-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><Related s={data} /></Later>} /></div>;
 }
 function Related({ s }: { s: StoryPageData }) {
   const { data } = useSuspenseQuery(storyRelatedQuery(s.id));

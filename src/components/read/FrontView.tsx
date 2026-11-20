@@ -11,7 +11,7 @@ import type { Crop } from "@/lib/crops";
 import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape } from "@/lib/front/tape-block";
 import { MarkedName } from "./BrandMark";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { frontAlsoQuery, frontRestQuery, frontTapeQuery } from "@/lib/data";
+import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
 import { Later, ROW } from "./Later";
 import { FORMAT_LABEL, FORMAT_NOTE, FORMATS, frontSearch, type FormatFilter } from "@/lib/front/formats";
 import { numberLabel } from "@/lib/stories/numbers";
@@ -32,6 +32,8 @@ import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLiv
 import { leadFigure, relTime } from "@/lib/front/front";
 
 const FILTERS: FormatFilter[] = ["all", ...FORMATS];
+/** The ruled list's heading; its time group of the same name adds no second heading (E3b). */
+export const EARLIER_TITLE = "Earlier this week";
 const share = (v: number) => pct(v, 1) ?? "—";
 const signed = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`;
 const Kicker = ({ id, children }: { id: string; children: ReactNode }) => <h2 id={id} className="ed-kicker">{children}</h2>;
@@ -208,22 +210,43 @@ const useRest = (m: FrontTop) => useSuspenseQuery(frontRestQuery(m.sector, m.for
 function RestArchive({ m }: { m: FrontTop }) { return <FrontArchive r={useRest(m)} />; }
 function RestAside({ m }: { m: FrontTop }) { return <FrontAside m={m} r={useRest(m)} />; }
 function RestLower({ m }: { m: FrontTop }) { return <FrontLower r={useRest(m)} />; }
-export function FrontPageView({ m }: { m: FrontTop }) {
-  return <FrontLayout m={m} slots={{
+/** The deferred slots of one top model: archive, side column, lower lists, Also today's pictures and the tape. */
+function laterSlots(m: FrontTop): Slots {
+  return {
     archive: m.sections.archive ? <Later id="front-archive-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><RestArchive m={m} /></Later> : null,
     aside: <Later id="front-aside-later" shapes={[{ kind: "block", height: 380 }, { kind: "rows", n: 4, height: ROW.compact }]}><RestAside m={m} /></Later>,
     lower: m.sections.editions || m.sections.dataStories ? <Later id="front-lower-later" shapes={[{ kind: "rows", n: 4, height: ROW.compact }]}><RestLower m={m} /></Later> : null,
     also: m.sections.also ? <Later id="front-also-later" shapes={[{ kind: "block", height: 28 }, { kind: "block", height: 420 }]}><AlsoLater m={m} /></Later> : null,
     tape: <Later id="front-tape-later" shapes={[{ kind: "block", height: 64 }, { kind: "rows", n: 8, height: ROW.compact }, { kind: "text", lines: 2 }]}><TapeLater /></Later>,
-  }} />;
+  };
+}
+/** E3b · shell first: the page frame (bar, status line, footer) goes out before any read; the ticker, lead and live column stream into
+ *  one sized slot from the top read, and each lower module into its own. */
+export function FrontPageView({ sector, format }: { sector: string; format: string }) {
+  return <FrontFrame sector={sector}>
+    <Later id="front-top-later" shapes={[{ kind: "block", height: 36 }, { kind: "block", height: 48 }, { kind: "block", height: 560 }, { kind: "block", height: 420 }, { kind: "rows", n: 6, height: ROW.ledger }]}><TopLater sector={sector} format={format} /></Later>
+  </FrontFrame>;
+}
+function TopLater({ sector, format }: { sector: string; format: string }) {
+  const { data: m } = useSuspenseQuery(frontTopQuery(sector, format));
+  return <FrontBody m={m} slots={laterSlots(m)} />;
 }
 
+function FrontFrame({ sector, children }: { sector: string; children: ReactNode }) {
+  return <DigestShell label="Today" section="live" lens tour edition={null} note={sector !== "all" ? `${sectorName(sector)} stories first in each group` : null}>
+    {children}
+    <ReadFooter terminal="/terminal" />
+  </DigestShell>;
+}
 function FrontLayout({ m, slots }: { m: FrontTop; slots: Slots }) {
+  return <FrontFrame sector={m.sector}><FrontBody m={m} slots={slots} /></FrontFrame>;
+}
+function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
   const now = useNow(m.now, 30_000), staff = !!useStaffKey();
   const [moving, setMoving] = useState(m.moving);
   const onUpdates = useCallback((u: FrontUpdates) => { setMoving(u.moving); }, []);
   const empty = m.format === "all" ? voiced("read.frontView.2") : `No ${FORMAT_LABEL[m.format]} stories this week.`;
-  return <DigestShell label="Today" section="live" lens tour edition={null} note={m.sector !== "all" ? `${sectorName(m.sector)} stories first in each group` : null}>
+  return <>
     <FrontTicker items={m.ticker} />
     <FiltersScope>
     <div className="ed-wrap d-stack front-stack mt-4">
@@ -234,11 +257,10 @@ function FrontLayout({ m, slots }: { m: FrontTop; slots: Slots }) {
       {(m.format === "all" || m.format === "live") && slots.tape}
       <div className="grid grid-cols-1 gap-y-10 lg:grid-cols-12 lg:gap-x-10">
         <section aria-labelledby="front-live" className="lg:col-span-8" data-tour="r-live">
-          <h2 id="front-live" className="ed-h2">{m.format === "explore" ? "Explore" : "Earlier this week"}</h2>
-          {m.state === "quiet" && m.format !== "explore" && <p className="ed-caption mt-1" role="note">Quiet: no new story in the last 24 hours. Below is the rest of this week{m.sections.archive ? ", then the same week from the archive" : ""}, each with the date it happened.</p>}
           {m.format === "explore"
-            ? <Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" />
-            : <LiveColumn initial={m.column.items} serverNow={m.now} sector={m.sector} format={m.format} quiet={m.column.quiet} onUpdates={onUpdates} empty={empty} />}
+            ? <><h2 id="front-live" className="ed-h2">Explore</h2><Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" /></>
+            : <LiveColumn initial={m.column.items} serverNow={m.now} sector={m.sector} format={m.format} quiet={m.column.quiet} onUpdates={onUpdates} empty={empty}
+                heading={{ id: "front-live", title: EARLIER_TITLE, note: m.state === "quiet" ? <p className="ed-caption mt-1" role="note">Quiet: no new story in the last 24 hours. Below is the rest of this week{m.sections.archive ? ", then the same week from the archive" : ""}, each with the date it happened.</p> : null }} />}
           {m.format === "explore" && !m.sections.explore && <p className="ed-small mt-3">{voiced("read.frontView.4")}</p>}
           {slots.archive}
           <p className="ed-data mt-6"><Link to="/morning" className="ed-tap">Older stories, day by day, in the Morning Line →</Link></p>
@@ -252,6 +274,5 @@ function FrontLayout({ m, slots }: { m: FrontTop; slots: Slots }) {
       <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.filter(f => staff || !STAFF_HREFS.has(f.href)).map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     </div>
     </FiltersScope>
-    <ReadFooter terminal="/terminal" />
-  </DigestShell>;
+  </>;
 }

@@ -1,5 +1,4 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
 import { legacyTerminalSearch } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
@@ -25,13 +24,13 @@ export const Route = createFileRoute("/")({
     if (legacy) throw redirect({ to: "/terminal", search: legacy, statusCode: 301 });
   },
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),
-  // P1: only the lead and live column are awaited; the side column, lower lists, Also today's pictures and the tape (E3) start now and
-  // stream into their slots.
+  // E3b · nothing is awaited: the frame goes out first and every read (the lead and live column, the side column and lower lists,
+  // Also today's pictures, the tape) starts now and streams into its sized slot.
   loader: ({ context, deps }) => {
+    void context.queryClient.prefetchQuery(frontTopQuery(deps.sector, deps.format));
     void context.queryClient.prefetchQuery(frontRestQuery(deps.sector, deps.format));
     void context.queryClient.prefetchQuery(frontAlsoQuery(deps.sector, deps.format));
     void context.queryClient.prefetchQuery(frontTapeQuery());
-    return context.queryClient.ensureQueryData(frontTopQuery(deps.sector, deps.format)).then(() => undefined);
   },
   head: () => ({
     meta: withShare(shareImageFor("front", "today"), [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: SITE_URL }, { name: "twitter:card", content: "summary_large_image" }]),
@@ -43,6 +42,5 @@ export const Route = createFileRoute("/")({
 });
 function Front() {
   const { sector, format } = Route.useSearch();
-  const { data } = useSuspenseQuery(frontTopQuery(resolveSector(sector), resolveFormat(format)));
-  return <FrontPageView m={data} />;
+  return <FrontPageView sector={resolveSector(sector)} format={resolveFormat(format)} />;
 }

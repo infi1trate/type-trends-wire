@@ -150,7 +150,7 @@ export function censusCandidate(o: {
   const moved = o.earlier ? `, ${n >= o.earlier.count ? "up" : "down"} from ${o.earlier.count} on ${tapeDate(`${o.earlier.day}T12:00:00Z`)}` : "";
   const headline = word ? `${numberWord(n)} tracked homepages have ‘${word}’ in the headline` : `${numberWord(n)} tracked homepages are in sale mode`;
   const forms = (entry?.forms ?? []).map(f => `‘${f}’`), or = forms.length <= 1 ? forms.join("") : `${forms.slice(0, -1).join(", ")} or ${forms.at(-1)}`;
-  const verb = entry ? `use ${or} in the headline` : "show a sale in both of our latest captures";
+  const verb = entry ? `use ${or} in the headline` : "show a sale in two captures at least six hours apart";
   const deck = `${n} of ${o.base} ${what} ${verb}${moved}: ${listAnd([...named, ...(rest ? [`${numberWord(rest).toLowerCase()} more`] : [])])}.`;
   const bySector = new Map<string, number>(); for (const m of members) { const s = o.sites.get(m.domain)?.sector ?? ""; bySector.set(s, (bySector.get(s) ?? 0) + 1); }
   const sectors = [...bySector].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([s, k]) => `${s ? sectorName(s) : "Other"} ${k}`);

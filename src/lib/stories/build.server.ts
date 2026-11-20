@@ -320,10 +320,14 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const { foldedIds } = await import("./edits"), folded = foldedIds(shown);
   // Owed: no version since the last correction, the newest one never reached the writer (made while the writer was out of calls), or (E2c)
   // the newest checked version puts a share beside a base it was not counted on (today's check would refuse it).
-  const { shareBaseFailures, textOf } = await import("./writer");
+  const { shareBaseFailures, textOf, writePriority } = await import("./writer");
   const owed = shown.filter(s => { if (folded.has(s.id)) return false; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)) || (l.checked && shareBaseFailures(textOf(l)).length > 0); });
-  const order = new Map(fresh.map((id, i) => [id, i]));
-  return owed.sort((a, b) => (order.get(a.id) ?? 1e9) - (order.get(b.id) ?? 1e9) || b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit)
+  // E3b: the front page's lead first, then the census pieces, then the rest by the front page's rank. `fresh` (this build's stories)
+  // are already among the owed ones and take their place by rank.
+  void fresh;
+  const [{ pickLead }, { rankScores }] = await Promise.all([import("../front/front"), import("./score")]);
+  const stream = shown.filter(s => !folded.has(s.id)), leadId = pickLead(stream, "all", Date.now())?.story.id ?? null;
+  return writePriority(owed, { leadId, rank: rankScores(stream) }).slice(0, limit)
     .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker }));
 }
 
@@ -392,6 +396,8 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     const r = await Promise.race([buildStories({ ...extra, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
     if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
     else console.warn("story build timed out", job);
+    // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
+    if (r) await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + JOB_LIMIT_MS - 5000);
   } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); }
 }
 export const storyLabel = (k: string) => label(k).name;

@@ -127,9 +127,8 @@ function SimilarList({ similar }: { similar: SimilarResult }) {
 }
 /** The parts that may arrive after the card; BrandView passes them ready, BrandPageView passes deferred slots. */
 type Parts = { moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
-function BrandBody({ b, parts }: { b: CardIn; parts: Parts }) {
-  return <DigestShell label={`${b.name} brand`} section="brands" lens={false}>
-    <ObjectPage kind="brand" id="ed-brand" blocks={{
+function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?: boolean }) {
+  const page = <ObjectPage kind="brand" id="ed-brand" blocks={{
       headline: <>
         <IdentityCard b={b} />
         <div className="no-print mt-6 flex flex-wrap gap-4" data-brand-actions="">
@@ -167,8 +166,15 @@ function BrandBody({ b, parts }: { b: CardIn; parts: Parts }) {
           </p>
         </BlockPart>
       </>,
-    }} />
-    <ReadFooter terminal={b.actions.terminal} />
+    }} />;
+  if (bare) return page;
+  return <BrandFrame name={b.name} domain={b.domain}>{page}</BrandFrame>;
+}
+/** E3b · the brand page's frame (bar, status line, footer), drawn from the brand's seeded name before any read. */
+export function BrandFrame({ name, domain, children }: { name: string; domain: string; children: ReactNode }) {
+  return <DigestShell label={`${name} brand`} section="brands" lens={false}>
+    {children}
+    <ReadFooter terminal={`/library/${domain}`} />
   </DigestShell>;
 }
 const similarLine = (line: string) => <p className="ed-caption -mt-2 mb-3 max-w-[72ch]" data-similar-line="">{line}</p>;
@@ -186,9 +192,9 @@ function SectionsPart({ b, open }: { b: BrandCard; open: CropSection | null }) {
 function SectorPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSectorQuery(b.domain)); return <Sector b={{ domain: b.domain, sectorName: b.sectorName, ...data }} />; }
 function SimilarPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSimilarQuery(b.domain)); return <>{similarLine(data.line)}<SimilarList similar={data} /></>; }
 function StoriesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandStoriesQuery(b.domain)); return <RelatedStories stories={data} empty={voiced("read.brandView.6")} />; }
-export function BrandPageView({ card, section = null }: { card: CardIn; section?: string | null }) {
+export function BrandPageView({ card, section = null, bare = false }: { card: CardIn; section?: string | null; bare?: boolean }) {
   const open = isCropSection(section) ? section : null;
-  return <BrandBody b={card} parts={{
+  return <BrandBody b={card} bare={bare} parts={{
     moves: <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }, { kind: "picture", ratio: 2 * 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={card} /></Later>,
     sections: <Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }, { kind: "text", lines: 1 }]}><SectionsPart b={card} open={open} /></Later>,
     sector: <Later shapes={[{ kind: "picture", ratio: 4 / 3, maxWidth: 768 }, { kind: "rows", n: 4, height: ROW.compact }]}><SectorPart b={card} /></Later>,
