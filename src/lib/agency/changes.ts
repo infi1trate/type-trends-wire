@@ -3,6 +3,7 @@ import { colorName, label } from "../labels";
 import { colorTicker } from "../taste/color";
 import { isRebrand, identitySentence } from "../rebrand-rule";
 import { brandName } from "../brand-names";
+import { oneHeadline } from "../headline-text";
 
 export type EventRow = { id: number; domain: string; type: string; before: unknown; after: unknown; detected_at: string;
   /** E2g · when the change happened, from its integrity check: last capture with the old value, first with the new one. */ seen?: { before: string; after: string } | null; snapshot_id?: number | null; prev_snapshot_id?: number | null; effective_at?: string | null; source?: string | null; page_type?: string | null; viewport?: string | null; sector?: string | null; summary?: string | null };
@@ -10,6 +11,7 @@ export type RebrandRow = { domain: string; sector: string; name: string | null; 
 
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+const hl = (v: unknown) => { const t = s(v); return t ? oneHeadline(t) : null; };
 const HEX = /^#[\da-f]{6}$/i;
 /** "#1C4673" → "Muted dark blue"; unknown input stays as given. */
 export const hexName = (hex: unknown) => (typeof hex === "string" && HEX.test(hex) ? colorName(colorTicker(hex)) ?? hex.toUpperCase() : String(hex ?? "none"));
@@ -37,7 +39,7 @@ export function eventSentence(e: Pick<EventRow, "domain" | "type" | "before" | "
       const keys = Object.keys({ ...b, ...a });
       return `${d} changed its layout: ${keys.slice(0, 3).map(k => `${FIELD[k] ?? words(k)} ${words(b[k])} → ${words(a[k])}`).join("; ") || "layout changed"}`;
     }
-    case "message_pivot": return `${d} changed its headline: ${quote(s(b["headline"]) ?? "none")} → ${quote(s(a["headline"]) ?? "none")}`;
+    case "message_pivot": return `${d} changed its headline: ${quote(hl(b["headline"]) ?? "none")} → ${quote(hl(a["headline"]) ?? "none")}`;
     case "pricing_change": {
       const before = (Array.isArray(b["prices"]) ? b["prices"] : []).map(String), after = (Array.isArray(a["prices"]) ? a["prices"] : []).map(String);
       const added = after.filter(p => !before.includes(p)), removed = before.filter(p => !after.includes(p));

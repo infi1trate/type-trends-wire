@@ -5,6 +5,7 @@ import { line as voiced } from "@/lib/voice";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { StoryPageModel } from "@/lib/stories/view";
+import { CENSUS_NEW_MARK } from "@/lib/stories/view";
 import type { Thumb } from "@/lib/thumbs";
 import type { Frame } from "@/lib/data-stories/types";
 import { storyTime } from "@/lib/stories";
@@ -115,7 +116,7 @@ export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNod
         {s.census && <BlockPart title="The lines" kicker={s.census.sectors ? `By sector: ${s.census.sectors}.` : undefined}>
           <ul className="ledger" data-story-lines="">{s.census.lines.map((l, i) => <li key={i} className="ledger-row flex flex-col gap-1 px-2 py-3 md:flex-row md:items-baseline md:gap-4">
             {l.href ? <Link to="/brands/$domain" params={{ domain: decodeURIComponent(l.href.replace(/^\/brands\//, "")) }} className="ed-tap ed-kicker inline-flex min-h-11 shrink-0 items-center md:w-40">{l.name}</Link> : <span className="ed-kicker shrink-0 md:w-40">{l.name}</span>}
-            <span className="ed-small min-w-0 break-words">{l.line}</span>
+            <span className="ed-small min-w-0 break-words">{l.line}{l.isNew && <span className="ed-kicker ml-2 whitespace-nowrap" data-census-new="">{CENSUS_NEW_MARK}</span>}</span>
           </li>)}</ul>
         </BlockPart>}
         {(!s.census || s.facts.length > 0) && <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : "The numbers"} kicker="Each line links to its receipt.">

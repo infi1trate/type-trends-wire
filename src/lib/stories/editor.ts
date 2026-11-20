@@ -12,7 +12,7 @@ import { normalizeFont } from "../library-diff";
 import { promoWording, seasonalEventIds } from "../promo";
 import { isRebrand, REBRAND_LABEL } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
-import { changeAt, changeFrom, changeWhen, tapeDate, tapeLine, tapeWhat } from "../tape";
+import { changeAt, changeFrom, changeWhen, rangeWords, tapeDate, tapeLine, tapeWhat, undated } from "../tape";
 import { censusCandidates } from "../census";
 import { codeCall, headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
 import { carouselEventIds, isShowcaseSector, withoutRotation } from "../carousel";
@@ -186,7 +186,7 @@ export function seasonalStory(input: Pick<BuildInput, "now">, events: EventRow[]
   const per = domains.map(d => members.filter(m => m.e.domain === d));
   return {
     id: `seasonal:${week}`, type: "roundup", kicker: "Roundup · Seasonal", headline: `${countWord(domains.length)} brands switched their homepages to seasonal promotions`,
-    deck: `${listOf(domains.map(d => brandName(d, names.get(d))), 6)}, between ${tapeDate(first)} and ${tapeDate(last)}.`,
+    deck: `${listOf(domains.map(d => brandName(d, names.get(d))), 6)}, ${rangeWords(first, last)}.`,
     facts: per.map(ms => ({ text: tapeLine(ms.at(-1)!.e, { seasonal: true }, names.get(ms[0]!.e.domain)), href: brandPath(ms[0]!.e.domain), basis: "measured" as const, kind: "member" as const })),
     sector: null, signalKeys: [], domains, evidence: domains.slice(0, 4).map(d => ({ label: brandName(d, names.get(d)), href: brandPath(d) })),
     sourceIds: members.map(m => `event:${m.e.id}`), basis: "measured", happenedAt: last, magnitude: domains.length,
@@ -218,7 +218,7 @@ export function againstTheGrain(ctx: Ctx, counters: Candidate[], reversedIds: Se
   const froms = picked.flatMap(c => { const es = evOf(c); return es.length ? es.map(changeFrom) : [c.happenedAt]; }).sort(), tos = picked.flatMap(c => { const es = evOf(c); return es.length ? es.map(changeAt) : [c.happenedAt]; }).sort();
   return {
     id: `against:${week}`, type: "roundup", kicker: "Roundup · Against the grain", headline: `${countWord(domains.length)} brands moved against the grain`,
-    deck: `${named.map(d => brandName(d)).join(", ")}${rest ? `; ${countWord(rest).toLowerCase()} more moved against the grain too` : ""}, between ${tapeDate(froms[0]!)} and ${tapeDate(tos.at(-1)!)}.`,
+    deck: `${named.map(d => brandName(d)).join(", ")}${rest ? `; ${countWord(rest).toLowerCase()} more moved against the grain too` : ""}, ${rangeWords(froms[0]!, tos.at(-1)!)}.`,
     facts: picked.flatMap(c => [{ text: c.headline, href: brandPath(c.domains[0]!), basis: c.basis, kind: "member" as const }, ...c.facts.filter(f => f.kind === "stage"),
       ...(backing.get(c.domains[0]!) ?? []).slice(0, 2).map(e => ({ text: `Measured: ${tapeLine(e)}`, href: brandPath(e.domain), basis: "measured" as const, kind: "source" as const }))]),
     sector: null, signalKeys: [...new Set(picked.flatMap(c => c.signalKeys))].slice(0, 6), domains, evidence: named.slice(0, 4).map(d => ({ label: brandName(d), href: brandPath(d) })),
@@ -241,7 +241,7 @@ export function roundups(ctx: Ctx, moves: Move[], against: Move[] = []): Candida
     const other = against.filter(m => traitDelta(m.e).dropped.includes(key) && Date.parse(m.e.detected_at) >= lo - DAY && Date.parse(m.e.detected_at) <= hi + DAY && (!sector || m.e.sector === sector));
     const sorted = [...members].sort((a, b) => a.e.detected_at.localeCompare(b.e.detected_at));
     out.push({ id: `roundup:${sector ?? "all"}:${key}:${times[0]!.slice(0, 10)}`, type: "roundup", kicker: `Roundup · ${l.dimension}${sector ? ` · ${sectorName(sector)}` : ""}`,
-      headline: `${countWord(domains.length)} ${s}brands moved to ${inline(l.name)}`, deck: `${listOf(domains.map(d => brandName(d)), 4)}, between ${tapeDate(from)} and ${tapeDate(to)}.`,
+      headline: `${countWord(domains.length)} ${s}brands moved to ${inline(l.name)}`, deck: `${listOf(domains.map(d => brandName(d)), 4)}, ${rangeWords(from, to)}.`,
       facts: [...sorted.map(m => ({ text: tapeLine(m.e), href: brandPath(m.e.domain), basis: m.c.basis, kind: "member" as const })),
         ...(other.length ? [{ text: `Going the other way: ${listOf([...new Set(other.map(m => tapeLine(m.e)))], 3)}`, href: patternPath(key), basis: "measured" as const, kind: "count" as const }] : [])],
       sector, signalKeys: [key], domains, evidence: [{ label: "Signal page", href: signalPath(key) }, { label: "Pattern", href: patternPath(key) }],
@@ -351,7 +351,9 @@ export function allCandidates(raw: BuildInput): AllCandidates {
 // PART 3 · ONE BRAND, ONE STORY: fold a later change into the story that already ran ----------------------------------------------
 export type ShownStory = { id: string; type: string; state: string; happened_at: string; domains: string[]; headline: string; deck: string | null; facts: unknown; source_ids: string[] };
 export type Fold = { story_id: string; candidate: string; payload: { headline: string; deck: string; facts: Fact[] }; note: string; added: string[] };
-const factTexts = (v: unknown) => new Set((Array.isArray(v) ? v : []).map(f => (f && typeof f === "object" ? String((f as Fact).text ?? "") : "")));
+// E2h · a told change is the same change whatever its date reads ("· 20 Nov" by confirmation, "· between 11 and 14 Nov" by its captures):
+// matching on the dated text let a build on older code fold the same changes back in, and its deck won over the dated correction.
+const factTexts = (v: unknown) => new Set((Array.isArray(v) ? v : []).map(f => (f && typeof f === "object" ? undated(String((f as Fact).text ?? "")) : "")));
 /** The published single-brand story a brand story belongs to: its own id, else the same brand's story from inside the window. */
 export function foldTarget(c: Candidate, existing: ShownStory[]): ShownStory | null {
   if (c.domains.length !== 1 || !c.id.startsWith("brand:")) return null;
@@ -368,10 +370,10 @@ export function brandFolds(candidates: Candidate[], existing: ShownStory[], now:
   for (const c of candidates) {
     const t = foldTarget(c, existing); if (!t) continue;
     if (t.id !== c.id) told.set(c.id, t.id);
-    const have = factTexts(t.facts), add = c.facts.filter(f => f.kind === "member" && !have.has(f.text));
+    const have = factTexts(t.facts), add = c.facts.filter(f => f.kind === "member" && !have.has(undated(f.text)));
     if (!add.length) continue;
     const keep = (Array.isArray(t.facts) ? t.facts : []).filter((f): f is Fact => !!f && typeof f === "object" && typeof (f as Fact).text === "string");
-    const facts = [...keep.filter(f => f.kind !== "date" && f.kind !== "share"), ...add, ...c.facts.filter(f => (f.kind === "share" || f.kind === "date" || f.kind === "source") && !have.has(f.text))];
+    const facts = [...keep.filter(f => f.kind !== "date" && f.kind !== "share"), ...add, ...c.facts.filter(f => (f.kind === "share" || f.kind === "date" || f.kind === "source") && !have.has(undated(f.text)))];
     folds.push({ story_id: t.id, candidate: c.id, payload: { headline: c.headline, deck: c.deck ?? t.deck ?? "", facts }, added: add.map(f => f.text),
       note: `Updated ${tapeDate(now)}: added ${listOf([...new Set(add.map(f => f.text.split(" · ")[0]!.split(",")[0]!.trim().toLowerCase()))], 4)} (one brand, one story).` });
   }

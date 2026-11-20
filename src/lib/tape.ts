@@ -7,6 +7,7 @@ import { label } from "./labels";
 import { SEASONAL_LABEL } from "./promo";
 import { REVERSED_LABEL } from "./reversal";
 import { CAROUSEL_LABEL } from "./carousel";
+import { oneHeadline } from "./headline-text";
 
 const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const tapeDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };
@@ -20,12 +21,19 @@ export function betweenDates(before: string, after: string): string {
 /** When a change happened, never when it was confirmed: between the last capture with the old value and the first with the new one
  *  (its integrity check), else, for a change without dated captures (archive, or a verdict stored before E2g), the day it was recorded. */
 export const changeWhen = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => (e.seen ? betweenDates(e.seen.before, e.seen.after) : tapeDate(e.detected_at));
+/** A deck's range: "between 11 and 14 Nov", or "on 14 Nov" when both captures are the same day (E2h). */
+export const rangeWords = (from: string, to: string) => { const w = betweenDates(from, to); return w.startsWith("between ") ? w : `on ${w}`; };
+const MON_RE = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)";
+const DATE_PART = new RegExp(`^(?:between \\d{1,2}(?: ${MON_RE})? and \\d{1,2} ${MON_RE}|\\d{1,2} ${MON_RE})$`);
+/** A change line without its date part (E2h): the same change dated by its captures or by its confirmation is the same line. */
+export const undated = (text: string) => text.split(" · ").filter(p => !DATE_PART.test(p.trim())).join(" · ");
 /** The day a change's new value was first captured (the end of its window), for sorting and ranges. */
 export const changeAt = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => e.seen?.after ?? e.detected_at;
 /** The day the old value was last captured (the start of its window). */
 export const changeFrom = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => e.seen?.before ?? e.detected_at;
 const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+const line = (v: unknown) => { const t = str(v); return t ? oneHeadline(t) : null; };
 const quote = (t: string | null, n = 70) => (t ? `“${t.length > n ? `${t.slice(0, n - 1)}…` : t}”` : "none");
 /** Hero media in plain words: an image hero is a still. */
 const HERO: Record<string, string> = { image: "still", video: "video", webgl: "3D", none: "none", canvas: "3D" };
@@ -49,7 +57,7 @@ export function tapeWhat(e: Pick<EventRow, "type" | "before" | "after" | "page_t
       if ("body" in a || "body" in b) parts.push(`body font, ${str(b["body"]) ?? "none"} to ${str(a["body"]) ?? "none"}`);
       break;
     case "theme_flip": parts.push(`theme, ${str(b["theme"]) ?? "none"} to ${str(a["theme"]) ?? "none"}`); break;
-    case "message_pivot": parts.push(`headline, ${quote(str(b["headline"]))} to ${quote(str(a["headline"]))}`); break;
+    case "message_pivot": parts.push(`headline, ${quote(line(b["headline"]))} to ${quote(line(a["headline"]))}`); break;
     case "layout_change": case "redesign":
       for (const k of Object.keys({ ...b, ...a })) {
         if (k === "hero_media") parts.push(`hero, ${hero(b[k])} to ${hero(a[k])}`);

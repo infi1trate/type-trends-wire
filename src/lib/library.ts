@@ -1,3 +1,4 @@
+import { oneHeadline } from "./headline-text";
 export const SECTORS = ["ai", "dev-tools", "fintech", "consumer-apps", "commerce-dtc", "media", "studios", "hardware", "health", "enterprise-saas"] as const;
 export const EVENT_TYPES = ["type_change", "palette_shift", "theme_flip", "layout_change", "redesign", "message_pivot", "pricing_change", "new_surface", "stack_change", "nav_change", "imagery_shift", "aesthetic_shift"] as const;
 export const obj = (v: unknown): Record<string, unknown> => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
@@ -26,7 +27,7 @@ export function fingerprint(signals: unknown) {
     page_height_vh: num(get("layout", "page_height_vh") ?? get("composition", "page_height_vh")),
     css_features: Array.isArray(features) ? features.filter((v): v is string => typeof v === "string") : [],
     stack: Object.entries(obj(get("tech"))).filter(([, v]) => v === true).map(([k]) => k),
-    h1: str(get("lexicon", "h1")), ctas: Array.isArray(ctas) ? ctas.map(show) : [],
+    h1: ((h: string | null) => (h ? oneHeadline(h) : h))(str(get("lexicon", "h1"))), ctas: Array.isArray(ctas) ? ctas.map(show) : [],
   };
 }
 export function sectorMetrics(signals: unknown[]) {

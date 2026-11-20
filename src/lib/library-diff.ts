@@ -4,6 +4,7 @@ export type Comparable = Record<string, unknown>;
 export type Pending = Record<string, { from: unknown; to: unknown; first_seen_snapshot_id: number | null; first_seen_at: string }>;
 export type Baseline = { signals: Comparable; snapshot_id: number | null; confirmed_at: string };
 export type DiffContext = { page_type: string; viewport: string; source?: string; sector?: string; prev_content_hash?: string | null | undefined; content_hash?: string | null | undefined; new_surface?: boolean; first_captured_at?: string | null | undefined; captured_at?: string | undefined; snapshot_id?: number | null };
+import { oneHeadline } from "./headline-text";
 const record = (value: unknown): Comparable => value && typeof value === "object" && !Array.isArray(value) ? value as Comparable : {};
 const at = (value: unknown, ...path: string[]): unknown => path.reduce((v, key) => record(v)[key], value);
 const text = (value: unknown) => typeof value === "string" ? value : null;
@@ -53,7 +54,8 @@ export function extractFields(signals: Comparable, context: DiffContext): Compar
     if (v != null) fields[key] = v;
   }
   if (Array.isArray(signals['nav'])) fields['nav'] = strings(signals['nav'].filter(n => at(n, "depth") === 0).map(n => text(at(n, "label"))?.trim().toLowerCase()).filter(Boolean));
-  const h1 = text(at(signals, "lexicon", "h1"));
+  // E2h: a headline rendered twice in one element ("X X") is the headline once, so the doubled and single forms are one value.
+  const h1raw = text(at(signals, "lexicon", "h1")), h1 = h1raw ? oneHeadline(h1raw) : null;
   if (context.page_type === "home" && context.sector !== "media" && h1 && !blockedHeadline.test(h1)) fields['headline'] = h1;
   if (context.page_type === "pricing" && Array.isArray(signals['prices'])) fields['prices'] = strings(signals['prices']);
   if (context.page_type === "home" && at(signals,'ai_tags','low_confidence')!==true && !at(signals,'ai_tags','blocked_reason') && (number(at(signals,'ai_tags','confidence'))??1)>=0.4) for (const key of ["imagery", "aesthetic"]) {
@@ -68,6 +70,7 @@ export function equalField(field: string, a: unknown, b: unknown): boolean {
   if (field === "accent") return (deltaE76(String(a), String(b)) ?? 0) <= 25;
   if (field === "palette") { const old = validColors(a), next = validColors(b); return next.filter(c => old.every(p => (deltaE76(c, p) ?? 0) > 15)).length < 3; }
   if (field === "nav") return jaccard(strings(a), strings(b)) >= 0.6;
+  if (field === "headline") { a = typeof a === "string" ? oneHeadline(a) : a; b = typeof b === "string" ? oneHeadline(b) : b; }
   if (field === "headline") return blockedHeadline.test(String(a)) || blockedHeadline.test(String(b)) || jaccard(words(String(a)), words(String(b))) >= 0.3;
   if (field === "prices") return JSON.stringify(strings(a)) === JSON.stringify(strings(b));
   if (field === "imagery" || field === "aesthetic") return jaccard(strings(a), strings(b)) >= 0.5;

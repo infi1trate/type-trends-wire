@@ -1,7 +1,8 @@
 // THE CENSUS (E2g) — a count of what tracked homepages say right now, not of what changed. Pure: same captures in, same counts out.
 //
-// THE BASE. A brand counts when its two newest live desktop home captures are at least six hours apart, both inside the last eight days,
-// both read the headline from the page's h1, and both show the same headline (library-diff's own headline equality). Every count is
+// THE BASE. A brand counts when its newest live desktop home capture and the most recent earlier capture at least six hours older (E2h:
+// steadier than "the two newest", which depended on how often the crawler ran that day) are both inside the last eight days, both read
+// the headline from the page's h1, and both show the same headline (library-diff's own headline equality). Every count is
 // reported with that base ("14 of 162 tracked homepages whose headline we can read").
 // CENSUS A · WORDS IN HEADLINES. A short watch-list (key, matcher, display word): a member is a brand in the base whose newest headline
 // matches. Members are listed with their headline quoted exactly, counted by sector, and those whose confirmed change added the word in
@@ -13,6 +14,7 @@
 // story), with at least eight members. After its first run it runs again only when the count has moved by two or more, and then says the
 // earlier count ("up from 18 on 20 Nov"). Stored as a roundup row (the stored type list is a fixed check) told apart by its `census:` id.
 import { equalField, isBlockedHeadline } from "./library-diff";
+import { oneHeadline } from "./headline-text";
 import { promoSignal } from "./promo";
 import { brandName } from "./brand-names";
 import { sectorName } from "./labels";
@@ -29,7 +31,11 @@ export type CensusCapture = { id: number; domain: string; at: string; source: st
 export type CensusPair = { domain: string; newest: CensusCapture; older: CensusCapture };
 /** One stored count (census_counts): what a census story ran on. */
 export type CensusRow = { census_key: string; day: string; count: number; base: number; members: { domain: string; name: string; line: string }[]; story_id: string };
-export type CensusInput = { captures: CensusCapture[]; history: Pick<CensusRow, "census_key" | "day" | "count" | "base">[] };
+/** `recount` (E2h, maintenance only): count every census as a correction of the one that ran, ignoring the cadence and the earlier count. */
+export type CensusInput = { captures: CensusCapture[]; history: Pick<CensusRow, "census_key" | "day" | "count" | "base">[]; recount?: boolean };
+/** A recount appended to census_counts keys its row `<story id>#recount:<ISO time>` (one count row per story id); this is the story it counts for. */
+export const censusStoryOf = (rowStoryId: string) => rowStoryId.split("#")[0]!;
+export const recountRowId = (storyId: string, at: string) => `${storyId}#recount:${at}`;
 export type WatchEntry = { key: string; word: string; forms: string[]; matcher: RegExp };
 /** The watch-list of words in headlines. Edit here only; a matcher is whole words, any case, never global. */
 export const WATCH_LIST: readonly WatchEntry[] = [
@@ -37,29 +43,32 @@ export const WATCH_LIST: readonly WatchEntry[] = [
 ];
 export const SALE_KEY = "sale";
 export const CENSUS_HOW = { words: "Read from each homepage's headline in our two most recent captures.", sale: "Read from each homepage's headline and buttons in our two most recent captures." } as const;
-export const CENSUS_RULE = `A census counts what tracked homepages say now, not what changed. A brand counts when its two newest captures are at least ${CENSUS_SPAN_HOURS} hours apart, both inside the last ${CENSUS_DAYS} days, both read the headline from the page's h1, and both show the same headline; every count is given with that base. Words in headlines counts the homepages whose headline uses a watched word (agents, agent or agentic). Sale mode counts the homepages whose headline, or the same button, reads as a promotion in both captures. A census runs once a week outside the daily five with at least ${CENSUS_MIN} homepages, and again only when its count has moved by ${CENSUS_MOVE_MIN} or more, saying the earlier count. It never leads on a day with a measured story about one brand.`;
+export const CENSUS_RULE = `A census counts what tracked homepages say now, not what changed. A brand counts when its newest capture and the most recent capture at least ${CENSUS_SPAN_HOURS} hours older are both inside the last ${CENSUS_DAYS} days, both read the headline from the page's h1, and both show the same headline; every count is given with that base. Words in headlines counts the homepages whose headline uses a watched word (agents, agent or agentic). Sale mode counts the homepages whose headline, or the same button, reads as a promotion in both captures. A census runs once a week outside the daily five with at least ${CENSUS_MIN} homepages, and again only when its count has moved by ${CENSUS_MOVE_MIN} or more, saying the earlier count. It never leads on a day with a measured story about one brand.`;
 
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.replace(/\s+/g, " ").trim() : null);
+/** A captured headline, read once (E2h: "X X" stored by a page that renders its h1 twice is "X"). */
+const h1Text = (v: unknown) => { const t = str(v); return t ? oneHeadline(t) : null; };
 const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 export const isCensusId = (id: string) => id.startsWith("census:");
 export const censusKeyOf = (id: string) => (isCensusId(id) ? id.split(":")[1] ?? null : null);
 
 // THE BASE ---------------------------------------------------------------------------------------------------------------------------
-/** Each brand's two newest captures, when both are inside the last eight days and at least six hours apart. */
+/** Each brand's newest capture and the most recent earlier capture at least six hours older, both inside the last eight days. */
 export function censusPairs(captures: readonly CensusCapture[], now: string): Map<string, CensusPair> {
   const t = Date.parse(now), by = new Map<string, CensusCapture[]>();
   for (const c of captures) { const at = Date.parse(c.at); if (at <= t && at >= t - CENSUS_DAYS * DAY) by.set(c.domain, [...(by.get(c.domain) ?? []), c]); }
   const out = new Map<string, CensusPair>();
   for (const [d, xs] of by) {
-    const [newest, older] = [...xs].sort((a, b) => b.at.localeCompare(a.at) || b.id - a.id);
-    if (!newest || !older || (Date.parse(newest.at) - Date.parse(older.at)) / H < CENSUS_SPAN_HOURS) continue;
+    const [newest, ...rest] = [...xs].sort((a, b) => b.at.localeCompare(a.at) || b.id - a.id);
+    const older = newest ? rest.find(c => (Date.parse(newest.at) - Date.parse(c.at)) / H >= CENSUS_SPAN_HOURS) : undefined;
+    if (!newest || !older) continue;
     out.set(d, { domain: d, newest, older });
   }
   return out;
 }
 /** Both captures read the headline from the page's h1 and show the same headline (library-diff equality; never a banner or error page). */
 export function readableHeadline(p: CensusPair): string | null {
-  const a = str(p.newest.h1), b = str(p.older.h1);
+  const a = h1Text(p.newest.h1), b = h1Text(p.older.h1);
   if (p.newest.source !== "h1" || p.older.source !== "h1" || !a || !b || isBlockedHeadline(a) || isBlockedHeadline(b)) return null;
   return equalField("headline", b, a) ? a : null;
 }
@@ -72,7 +81,7 @@ export function headlineBase(pairs: ReadonlyMap<string, CensusPair>): Map<string
 export type Member = { domain: string; line: string; via: "headline" | "button" };
 export const wordMembers = (entry: WatchEntry, base: ReadonlyMap<string, string>): Member[] =>
   [...base].filter(([, h]) => entry.matcher.test(h)).map(([domain, line]) => ({ domain, line, via: "headline" as const }));
-const headlineOf = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? str((v as Record<string, unknown>)["headline"]) : null);
+const headlineOf = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? h1Text((v as Record<string, unknown>)["headline"]) : null);
 /** Members whose confirmed headline change added the word in the last 14 days (the latest such change per brand). */
 export function addedWord(entry: WatchEntry, members: readonly Member[], events: readonly EventRow[], now: string, rotating: ReadonlySet<number> = new Set()): EventRow[] {
   const t = Date.parse(now), mine = new Set(members.map(m => m.domain)), out = new Map<string, EventRow>();
@@ -99,7 +108,7 @@ export function saleCensus(pairs: ReadonlyMap<string, CensusPair>): { base: numb
     const h = readableHeadline(p), hasButtons = buttons(p.newest).length > 0 && buttons(p.older).length > 0;
     if (!h && !hasButtons) continue;
     base++;
-    if (h && promoSignal(h) && promoSignal(str(p.older.h1))) { members.push({ domain: d, line: h, via: "headline" }); continue; }
+    if (h && promoSignal(h) && promoSignal(h1Text(p.older.h1))) { members.push({ domain: d, line: h, via: "headline" }); continue; }
     const btn = saleButton(p); if (btn) members.push({ domain: d, line: btn, via: "button" });
   }
   return { base, members };
@@ -152,7 +161,7 @@ export function censusCandidate(o: {
     ...(o.earlier ? [{ text: `Earlier count: ${o.earlier.count} on ${tapeDate(`${o.earlier.day}T12:00:00Z`)}`, href: null, basis: "measured" as const, kind: "count" as const }] : []),
     ...members.map(m => ({ text: `${name(m.domain)} · “${m.line}”${m.via === "button" ? " (button)" : ""}`, href: brandPath(m.domain), basis: "measured" as const, kind: "line" as const })),
     ...added.map(e => ({ text: tapeLine(e, {}, o.sites.get(e.domain)?.name ?? null), href: brandPath(e.domain), basis: "measured" as const, kind: "member" as const })),
-    { text: `Counted on ${tapeDate(o.now)} from each brand's two most recent captures`, href: lib, basis: "measured", kind: "date" },
+    { text: `Counted on ${tapeDate(o.now)} from each brand's newest capture and its latest capture at least ${CENSUS_SPAN_HOURS} hours older`, href: lib, basis: "measured", kind: "date" },
   ];
   return {
     id: `census:${o.key}:${isoWeek(new Date(o.now))}`, type: "roundup", kicker: `Census · ${o.title}`, headline, deck, facts, sector: null, signalKeys: [],
@@ -162,15 +171,16 @@ export function censusCandidate(o: {
   };
 }
 
+const RECOUNT = { run: true, earlier: null, reason: "recount" } as const;
 /** Every census due now, from the captures and the stored counts. `events` are confirmed live changes (with their capture dates). */
 export function censusCandidates(input: { now: string; census?: CensusInput | null; events: readonly EventRow[]; rotating?: ReadonlySet<number> }, sites: ReadonlyMap<string, CensusSite>, rank: ReadonlyMap<string, number>): Candidate[] {
   if (!input.census) return [];
   const pairs = new Map([...censusPairs(input.census.captures, input.now)].filter(([d]) => sites.has(d))), base = headlineBase(pairs), out: Candidate[] = [];
   for (const entry of WATCH_LIST) {
-    const members = wordMembers(entry, base), due = censusDue(members.length, input.census.history, entry.key, input.now);
+    const members = wordMembers(entry, base), due = input.census.recount ? RECOUNT : censusDue(members.length, input.census.history, entry.key, input.now);
     if (due.run) out.push(censusCandidate({ key: entry.key, title: "Headlines", now: input.now, base: base.size, members, earlier: due.earlier, added: addedWord(entry, members, input.events, input.now, input.rotating), sites, rank }));
   }
-  const sale = saleCensus(pairs), due = censusDue(sale.members.length, input.census.history, SALE_KEY, input.now);
+  const sale = saleCensus(pairs), due = input.census.recount ? RECOUNT : censusDue(sale.members.length, input.census.history, SALE_KEY, input.now);
   if (due.run) out.push(censusCandidate({ key: SALE_KEY, title: "Sale mode", now: input.now, base: sale.base, members: sale.members, earlier: due.earlier, sites, rank }));
   return out;
 }

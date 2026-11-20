@@ -9,6 +9,7 @@ import { STORY_TYPE_DEFS, AI_EVENTS, type Fact, type StoryKind } from "./types";
 import type { WriterChange, WriterFacts, WriterNumber, WrittenText } from "./writer";
 import { howWeKnow, quotesOf } from "./writer";
 import { CENSUS_HOW, CENSUS_NAMED_MAX, SALE_KEY, censusKeyOf } from "../census";
+import { oneHeadline, oneHeadlineOf } from "../headline-text";
 
 export type FactStory = { id: string; type: string; headline: string; deck: string | null; facts: unknown; sector: string | null; signal_keys: string[]; domains: string[]; source_ids: string[]; basis: string | null; happened_at: string; kicker: string };
 export type FactSource = {
@@ -72,7 +73,7 @@ export function changesOf(e: EventRow, brand: string): WriterChange[] {
       if ("body" in a || "body" in b) out.push(c("body font", str(b["body"]), str(a["body"])));
       break;
     case "theme_flip": out.push(c("theme", str(b["theme"]), str(a["theme"]))); break;
-    case "message_pivot": out.push(c("headline", str(b["headline"]), str(a["headline"]))); break;
+    case "message_pivot": out.push(c("headline", oneHeadline(str(b["headline"])), oneHeadline(str(a["headline"])))); break;
     case "layout_change": case "redesign":
       for (const k of Object.keys({ ...b, ...a })) {
         if (k === "hero_media") out.push(c("hero", HERO[String(b[k] ?? "none")] ?? String(b[k]), HERO[String(a[k] ?? "none")] ?? String(a[k])));
@@ -96,7 +97,7 @@ export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts
   const events = eventIdsOf(s).map(id => src.events.get(id)).filter((e): e is EventRow => !!e).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
   // Bounded so a gathered story's block stays small; measured lines first.
   const changes = events.flatMap(e => changesOf(e, brandName(e.domain, src.names.get(e.domain)))).sort((a, b) => (a.basis === b.basis ? 0 : a.basis === "measured" ? -1 : 1)).slice(0, MAX_CHANGES).sort((a, b) => a.date.localeCompare(b.date));
-  const copy = [...new Set(events.flatMap(e => [...(e.type === "message_pivot" ? [o(e.before)["headline"], o(e.after)["headline"]] : []), ...(src.texts.get(e.snapshot_id ?? -1) ?? []), ...(src.texts.get(e.prev_snapshot_id ?? -1) ?? [])]).filter((x): x is string => typeof x === "string" && !!x.trim()))];
+  const copy = [...new Set(events.flatMap(e => [...(e.type === "message_pivot" ? [oneHeadlineOf(o(e.before)["headline"]), oneHeadlineOf(o(e.after)["headline"])] : []), ...(src.texts.get(e.snapshot_id ?? -1) ?? []), ...(src.texts.get(e.prev_snapshot_id ?? -1) ?? [])]).filter((x): x is string => typeof x === "string" && !!x.trim()))];
   const call = events.map(e => src.calls[e.id]).find(Boolean) ?? null;
   // The confirmation date is machinery (Data view): the writer dates changes by their captures only (E2g).
   const lines = stored.filter(f => !(f.kind === "member" && changes.length) && f.kind !== "date" && !/^Headline call:/.test(f.text)).map(f => ({ text: f.text.replace(/\s*\((?:forecast )?run \d+\)/gi, ""), basis: f.basis === "ai" || f.basis === "measured" ? f.basis : null }));

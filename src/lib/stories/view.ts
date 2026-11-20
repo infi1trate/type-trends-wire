@@ -102,9 +102,14 @@ export const readFacts = (facts: Fact[]) => {
   // "Changed: accent" only summarises the change lines; with the lines themselves present it is noise.
   return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "line" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
 };
-/** E2g · a census's "The lines": every member, brand name then its quoted line, linking to the brand page, in rank order (as stored). */
-export function censusLines(facts: Fact[]): { name: string; line: string; href: string | null }[] {
-  return facts.filter(f => f.kind === "line").map(f => { const i = f.text.indexOf(" · "); return i > 0 ? { name: f.text.slice(0, i), line: f.text.slice(i + 3), href: f.href } : { name: f.text, line: "", href: f.href }; });
+/** Mark on a census line whose brand's confirmed change added the word in the last 14 days (E2h). */
+export const CENSUS_NEW_MARK = "New this fortnight";
+/** E2g · a census's "The lines": every member, brand name then its quoted line, linking to the brand page. E2h: the newly added members
+ *  (those with a change line, linked to the same brand page) come first and are marked new; then the rest, each group in rank order. */
+export function censusLines(facts: Fact[]): { name: string; line: string; href: string | null; isNew: boolean }[] {
+  const added = new Set(facts.filter(f => f.kind === "member" && f.href).map(f => f.href));
+  const lines = facts.filter(f => f.kind === "line").map(f => { const i = f.text.indexOf(" · "), isNew = !!f.href && added.has(f.href); return i > 0 ? { name: f.text.slice(0, i), line: f.text.slice(i + 3), href: f.href, isNew } : { name: f.text, line: "", href: f.href, isNew }; });
+  return [...lines.filter(l => l.isNew), ...lines.filter(l => !l.isNew)];
 }
 /** Data-view lines (the desk and terminal): headline call, confirmations and other source lines. */
 export const dataFacts = (facts: Fact[]) => facts.filter(f => f.kind === "source" || f.kind === "date");
