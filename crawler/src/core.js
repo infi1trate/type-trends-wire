@@ -18,17 +18,31 @@ export const VIEWPORTS = {
 export const ADULT_TEXT = /\b(porn\w*|xxx|sex(y|ual)? ?(video|cam|chat|movie|story|stories)|nude|naked|nsfw|hentai|escorts?|milf|onlyfans|cam ?girls?|erotic\w*|adult (video|content|site)|jav\b|fetish|hookup)\b|色情|成人|アダルト|야동/i;
 export const GAMBLING_TEXT = /\b(casino|online slots|slot machines?|sportsbook|betting|bet now|lottery|jackpot|satta|matka|togel|judi)\b|博彩|彩票|娱乐城|bóng đá|xổ số/i;
 
+/** A short, safe label for a batch in logs: its kind, how many items, its size, and the domains in it. */
+export function describeBatch(body, bytes) {
+  const items = body?.snapshots ?? body?.captures ?? body?.sites ?? body?.points ?? [];
+  const domains = [...new Set((Array.isArray(items) ? items : []).map((x) => x?.domain).filter(Boolean))];
+  return `${body?.kind ?? "batch"}, ${Array.isArray(items) ? items.length : 0} items, ${Math.round(bytes / 1024)} KB${domains.length ? `, ${domains.slice(0, 30).join(" ")}` : ""}`;
+}
+
 export function makePoster({ endpoint, secret, dry, runId }) {
   return async function post(body) {
     if (dry) { mkdirSync("out", { recursive: true }); appendFileSync(`out/${runId}.jsonl`, JSON.stringify(body) + "\n"); return {}; }
+    // What failed is printed per attempt (status, time taken, the server's own short message; never the secret or the payload),
+    // so a failing run says why. `describe` lets a caller name the batch (kind, size, domains).
+    const payload = JSON.stringify(body), what = describeBatch(body, payload.length);
+    let last = "";
     for (let attempt = 1; attempt <= 4; attempt++) {
-      const r = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body: JSON.stringify(body) }).catch((e) => ({ ok: false, status: 0, text: async () => String(e) }));
+      const t0 = Date.now();
+      const r = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body: payload }).catch((e) => ({ ok: false, status: 0, text: async () => String(e?.cause?.code ?? e?.message ?? e) }));
       if (r.ok) return r.json().catch(() => ({}));
-      const msg = await r.text();
-      if (r.status >= 400 && r.status < 500 && r.status !== 429) throw new Error(`ingest rejected (${r.status}): ${msg.slice(0, 300)}`);
+      const msg = (await r.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 300);
+      if (r.status >= 400 && r.status < 500 && r.status !== 429) throw new Error(`ingest rejected (${r.status}): ${msg}`);
+      last = `status ${r.status} after ${Date.now() - t0} ms: ${msg}`;
+      console.log(`ingest attempt ${attempt} failed (${what}): ${last}`);
       await new Promise((s) => setTimeout(s, attempt * 3000));
     }
-    throw new Error("ingest failed after 4 attempts");
+    throw new Error(`ingest failed after 4 attempts (${what}): ${last}`);
   };
 }
 
