@@ -49,13 +49,13 @@ export async function storyById(id: string): Promise<StoryRecord | null> {
   if (s.error) throw s.error; if (e.error) throw e.error; if (l.error) throw l.error; if (n.error) throw n.error;
   return s.data ? withTexts(withNumbers(overlay(withLines([s.data as unknown as StoredStory], (l.data ?? []) as LineRow[]), (e.data ?? []) as unknown as EditRow[], Date.now()), (n.data ?? []) as NumberRow[]), w.error ? [] : (w.data ?? []) as unknown as TextRow[])[0]! : null;
 }
-/** /stories/no/<n>: the story id a number points at, only while that story is published. */
+/** /stories/no/<n>: the story id a number points at while that story is published, or retired (E2d: a retired story keeps its page). */
 export async function storyIdByNumber(n: number): Promise<string | null> {
   const { data, error } = await supabaseAnon().from("story_numbers").select("story_id,number").eq("number", n).maybeSingle();
   if (error) throw error;
   if (!data) return null;
   const s = await storyById(data.story_id);
-  return s && s.state === "published" ? s.id : null;
+  return s && (s.state === "published" || s.state === "killed") ? s.id : null;
 }
 /** The desk reads fresh, not through the TTL cache. */
 export async function deskIndex(): Promise<StoryRecord[]> { index.clear(); return storyIndex(); }

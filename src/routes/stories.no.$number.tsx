@@ -3,7 +3,7 @@ import { getStoryByNumber } from "@/lib/read.functions";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
 
-// /stories/no/<n>: a story's permanent number redirects to its permanent URL. Killed stories keep their number, but it leads nowhere.
+// /stories/no/<n>: a story's permanent number redirects to its permanent URL. A retired story keeps its number and its page (E2d).
 export const Route = createFileRoute("/stories/no/$number")({
   loader: async ({ params }) => {
     const n = Number(params.number);

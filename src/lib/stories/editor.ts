@@ -14,7 +14,7 @@ import { isRebrand, REBRAND_LABEL } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import { tapeDate, tapeLine, tapeWhat } from "../tape";
 import { codeCall, headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
-import { carouselEventIds, withoutRotation } from "../carousel";
+import { carouselEventIds, isShowcaseSector, withoutRotation } from "../carousel";
 import {
   breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, inline, isVisibleMove, launchCandidate, moveCandidate,
   newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops,
@@ -64,16 +64,17 @@ const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" &
 const isHome = (e: Pick<EventRow, "page_type">) => !e.page_type || e.page_type === "home";
 /**
  * What one confirmed homepage change counts as toward a story on this kind of site. Merchandised and editorial homepages keep only typeface
- * and headline alignment (their palette, hero and headline follow promotions or the day's lead story).
+ * and headline alignment (their palette, hero and headline follow promotions or the day's lead story). On a showcase homepage (a studio,
+ * E2d) palette, accent and hero follow the featured client work and are treated the same way; its fonts, headline and alignment count.
  */
-export function changeOf(e: EventRow, kind: SiteKind, call: HeadlineCallClass | null): Change {
+export function changeOf(e: EventRow, kind: SiteKind, call: HeadlineCallClass | null, o2: { showcase?: boolean } = {}): Change {
   const b = o(e.before), a = o(e.after), dims = new Set<Dim>(), reasons = new Set<string>(), things: string[] = [];
   let typeface = false, position = false;
-  const standard = kind === "standard";
+  const standard = kind === "standard", ownColour = standard && !o2.showcase;
   if (e.type === "type_change") {
     if (("h1" in a || "h1" in b) && isTypefaceChange(b["h1"], a["h1"])) { typeface = true; dims.add("type"); reasons.add("font"); things.push("headline typeface"); }
     if (standard && ("body" in a || "body" in b) && isTypefaceChange(b["body"], a["body"])) { dims.add("type"); reasons.add("font"); things.push("body font"); }
-  } else if (standard && e.type === "palette_shift") {
+  } else if (ownColour && e.type === "palette_shift") {
     dims.add("colour");
     if ("accent" in a || "accent" in b) { reasons.add("accent"); things.push("accent"); }
     if ("palette" in a || "palette" in b) { reasons.add("palette"); things.push("palette"); }
@@ -82,7 +83,7 @@ export function changeOf(e: EventRow, kind: SiteKind, call: HeadlineCallClass | 
     reasons.add("theme"); things.push("theme");
   }
   else if (e.type === "layout_change") {
-    if (standard && ("hero_media" in a || "hero_media" in b)) { dims.add("layout"); reasons.add("redesign"); things.push("hero"); }
+    if (ownColour && ("hero_media" in a || "hero_media" in b)) { dims.add("layout"); reasons.add("redesign"); things.push("hero"); }
     if ("h1_align" in a || "h1_align" in b) { dims.add("layout"); reasons.add("redesign"); things.push("headline alignment"); }
   } else if (standard && e.type === "message_pivot" && call === "position") { position = true; dims.add("headline"); things.push("headline"); }
   return { e, kind, dims: [...dims], typeface, position, rebrandReasons: [...reasons], things };
@@ -290,10 +291,15 @@ export function allCandidates(input: BuildInput): AllCandidates {
   for (const e of input.events) if (e.type === "message_pivot") { const c = codeCall(headlineOf(e.before), headlineOf(e.after), { carousel: rotating.has(e.id) }); if (c) calls[e.id] = { call: c.call, reason: c.reason }; }
   const tape = Object.fromEntries(input.events.map(e => [e.id, tapeLine(e, { seasonal: seasonal.has(e.id), reversed: reversed.has(e.id), carousel: rotating.has(e.id) }, names.get(e.domain))]));
   const judged = input.events.flatMap(e => { if (!rotating.has(e.id)) return [e]; const k = withoutRotation(e); return k ? [k] : []; });
+  // E2d · the studio rule (carousel.ts): on studio homepages palette, accent and hero media follow the featured client work, so for those
+  // fields a studio is treated as an editorial homepage is (no single-brand story, no palette or imagery move in a roundup); its own type,
+  // headline and layout are judged as before, and roundups that gather studios' layout moves are unaffected.
+  const sectorOf = new Map(input.sites.map(s => [s.domain, s.sector ?? null]));
+  const showcase = (e: EventRow) => isShowcaseSector(sectorOf.get(e.domain) ?? e.sector);
   const visible = judged.filter(e => isVisibleMove(e) && isHome(e)).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
   // Story-eligible: measured, not seasonal, not reversed. Everything else stays a tape line.
   const eligible = visible.filter(e => !seasonal.has(e.id) && !reversed.has(e.id) && !AI_EVENTS.has(e.type));
-  const changes = eligible.map(e => changeOf(e, kind(e.domain), (calls[e.id]?.call as HeadlineCallClass | undefined) ?? null));
+  const changes = eligible.map(e => changeOf(e, kind(e.domain), (calls[e.id]?.call as HeadlineCallClass | undefined) ?? null, { showcase: showcase(e) }));
   const groups = brandGroups(changes), brand = groups.filter(g => g.qualifiedAt).map(g => brandStory(ctx, g, calls, names.get(g.domain)));
   // A headline change the call could not settle is held for the desk with the reason (standard sites; never a story on its own).
   const unclear: Candidate[] = eligible.filter(e => e.type === "message_pivot" && kind(e.domain) === "standard" && calls[e.id]?.call === "unclear").map(e => ({
@@ -301,7 +307,8 @@ export function allCandidates(input: BuildInput): AllCandidates {
     holdReason: UNCLEAR_HOLD(calls[e.id]!.reason) }));
   // Counter-moves (held singly) and roundups count measured and AI-read moves alike, never seasonal ones; roundups never count reversed ones.
   // On merchandised and editorial homepages only typeface and layout moves count; a headline copy change counts only when it is a position.
-  const counts = (e: EventRow) => (kind(e.domain) === "standard" ? (e.type !== "message_pivot" || calls[e.id]?.call === "position") : e.type === "type_change" || e.type === "layout_change");
+  // On studio homepages palette and imagery moves follow the featured work and do not count (as on editorial homepages).
+  const counts = (e: EventRow) => (kind(e.domain) === "standard" ? !(showcase(e) && (e.type === "palette_shift" || e.type === "imagery_shift")) && (e.type !== "message_pivot" || calls[e.id]?.call === "position") : e.type === "type_change" || e.type === "layout_change");
   const asMove = (e: EventRow): Move => { const c = moveCandidate(e); if (AI_EVENTS.has(e.type)) c.holdReason = ESTIMATE_ONLY_REASON; return { c, e }; };
   const free: Move[] = visible.filter(e => !seasonal.has(e.id) && counts(e)).map(asMove);
   // Counter-moves are held singly on every kind of site (a media homepage dropping a rising signal is still against the grain).

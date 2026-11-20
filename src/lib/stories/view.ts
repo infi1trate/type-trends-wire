@@ -111,7 +111,7 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
   const sector = s.sector ? sectorName(s.sector) : null;
   return {
-    id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: def.kicker, kicker: type === "news" ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
+    id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: def.kicker, kicker: type === "news" ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
     body: (s.written?.body ?? []).map(p => deLegacy(p)), howWeKnow: noDid(s.written?.howWeKnow ?? howWeKnowOf(s)),
     facts: readFacts(facts).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,

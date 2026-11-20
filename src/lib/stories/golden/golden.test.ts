@@ -185,7 +185,10 @@ describe("E2b Part 0 · 20 Nov", () => {
     ];
     const r = replanEdits(stored, p20.map(p => ({ id: p.id, status: p.status, reason: p.reason })), "2026-11-20");
     expect(r.restores.map(x => x.id)).toEqual(["brand:netlify.com:2026-11-20"]);
-    expect(r.kills).toEqual(expect.arrayContaining([{ id: "roundup:all:aesthetic:minimal:2026-11-13", note: E2B_REPLAN.cap }, { id: "roundup:dev-tools:aesthetic:editorial:2026-11-14", note: E2B_REPLAN.cap }]));
+    expect(r.kills).toEqual(expect.arrayContaining([{ id: "roundup:all:aesthetic:minimal:2026-11-13", note: E2B_REPLAN.cap }]));
+    // E2d: Wolff Olins' palette and hero follow its featured work (studio rule), so its story leaves the day and the dev-tools editorial
+    // roundup fits inside the five again; a re-plan would no longer retire it (nothing is restored automatically).
+    expect(r.kills.some(k => k.id === "roundup:dev-tools:aesthetic:editorial:2026-11-14")).toBe(false);
     // E2c: the approved against-the-grain reading is back, so today's plan produces that piece again and a re-plan would no longer retire it.
     expect(r.kills.some(k => k.id === "against:2026-W47")).toBe(false);
     expect(r.kills.some(k => k.id === "brand:sofi.com:2026-11-20")).toBe(false);

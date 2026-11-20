@@ -1,6 +1,6 @@
 // Story page + queue loaders (anonymous SELECT-only). No AI per view.
 import { storyById, storyIndex, deskIndex } from "./read.server";
-import { queueModel, storiesAbout, storyPage, isKind } from "./view";
+import { queueModel, storiesAbout, storyPage, isKind, type StoryRecord } from "./view";
 
 export async function loadStory(id: string) {
   const s = await storyById(id); if (!s) return null;
@@ -20,6 +20,7 @@ export async function loadStory(id: string) {
  * from the story's own rows and indexed per-brand reads; the quarter trail comes from the precomputed series record. No story index. */
 export async function loadStoryLead(id: string) {
   const s = await storyById(id); if (!s) return null;
+  if (s.state === "killed") return retiredLead(s);
   const type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0], d = s.domains[0];
   const [{ quarterSeries }, { wellCovered }, { pickThumb }, { supabaseAnon }] = await Promise.all([import("../front/front.server"), import("../kit"), import("../thumbs"), import("../mcp/supabase")]);
   const wantThumb = (type === "move" || type === "rebrand" || type === "counter_move") && !!d;
@@ -34,7 +35,33 @@ export async function loadStoryLead(id: string) {
   const [{ picsFor }, { revealOf }] = await Promise.all([import("../pictures.server"), import("../pictures")]);
   const pics = d ? await picsFor(d) : null, reveal = d ? revealOf(d, pics?.hero) : null;
   const drawn = crops.compare || crops.after ? null : frames ? { before: { ...frames.before, reveal }, after: { ...frames.after, reveal } } : null;
-  return { ...page, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+  return { ...page, retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+}
+/** E2d · what a retired story's page shows: the editor's note and the tape lines it was built from (each linking to the library record). */
+export type Retired = { note: string | null; tape: { id: number; text: string; href: string }[] };
+/** Event ids a story was built from (`event:<id>`, and a folded move's `story:move:<id>`), at most 40. */
+export const sourceEventIds = (sourceIds: string[]) => [...new Set(sourceIds.flatMap(x => { const m = /^(?:event|story:move):(\d+)$/.exec(x); return m ? [Number(m[1])] : []; }))].slice(0, 40);
+/** A retired story keeps its page: its number, date, the headline it ran under, "Retired" with the note, the brand and its tape lines.
+ *  No body, no picture, no way on (anonymous reads; a failed tape read shows the brand link alone). */
+async function retiredLead(s: StoryRecord) {
+  const page = storyPage(s, { earlier: [], patterns: [] }), ids = sourceEventIds(s.source_ids);
+  // The number stays hidden everywhere else (withNumbers shows it only while published); its own page shows it, read directly.
+  const { supabaseAnon } = await import("../mcp/supabase");
+  const [tape, number] = await Promise.all([
+    ids.length ? tapeOf(ids).catch(() => []) : Promise.resolve([]),
+    supabaseAnon().from("story_numbers").select("number").eq("story_id", s.id).maybeSingle().then(r => (r.data?.number as number | undefined) ?? null, () => null),
+  ]);
+  const retired: Retired = { note: s.killReason, tape };
+  return { ...page, number, body: [], facts: [], beforeAfter: null, retired, icon: null, thumb: null, frames: null, series: null };
+}
+async function tapeOf(ids: number[]) {
+  const [{ supabaseAnon }, { tapeLine }, { carouselIds }] = await Promise.all([import("../mcp/supabase"), import("../tape"), import("../carousel.server")]);
+  const db = supabaseAnon();
+  const { data, error } = await db.from("library_events").select("id,domain,type,before,after,detected_at,page_type,summary,snapshot_id,prev_snapshot_id").in("id", ids);
+  if (error) throw error;
+  const rows = (data ?? []).flatMap(e => (e.detected_at ? [{ ...e, detected_at: e.detected_at }] : [])).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
+  const carousel = new Set(await carouselIds(db, rows));
+  return rows.map(e => ({ id: e.id, text: tapeLine(e, { carousel: carousel.has(e.id) }), href: `/library/${encodeURIComponent(e.domain)}` }));
 }
 /** P1, deferred: earlier stories on the same signal or brand, the patterns among its signals, and the way on (Next, the study). */
 export async function loadStoryRelated(id: string) {
