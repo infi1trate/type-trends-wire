@@ -96,6 +96,13 @@ export function extractInPage() {
 
   // Visible headline text: aria-label wins; otherwise skip glyph copies parked outside clipping boxes
   // (per-letter "roll" animations duplicate every character, so innerText reads "MMiissttrraall").
+  // A headline rendered twice in the same element (one copy per breakpoint, both in the DOM) is one headline.
+  const undouble = (s) => {
+    const w = (s || "").split(" ");
+    if (w.length < 4 || w.length % 2) return s;
+    const h = w.length / 2;
+    return w.slice(0, h).join(" ") === w.slice(h).join(" ") ? w.slice(0, h).join(" ") : s;
+  };
   const headlineText = (el) => {
     if (!el) return null;
     const aria = (el.getAttribute("aria-label") || "").trim();
@@ -120,8 +127,8 @@ export function extractInPage() {
       if (prev && (r.top > prev.top + prev.height * 0.5 || r.left > prev.right + 4)) out += " ";
       out += txt; prev = r;
     }
-    out = clean(out, 300);
-    return out.length >= 3 ? out : clean(el.innerText, 300);
+    out = undouble(clean(out, 300));
+    return out.length >= 3 ? out : undouble(clean(el.innerText, 300));
   };
 
   // ---- composition ----

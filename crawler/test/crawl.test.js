@@ -78,6 +78,7 @@ test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   assert.equal(light.layout.h1_align, "left");
   assert.equal(light.layout.hero_carousel, true); // the headline sits inside a carousel: one slide of several
   assert.equal(by["localhost:4804"].layout.hero_carousel, true); // a "05/12" slide counter in the fold
+  assert.equal(by["localhost:4804"].lexicon.h1, "Work for ambitious brands"); // the h1 holds the line twice (one copy per breakpoint): read once
   const noh1 = by["localhost:4805"];
   assert.equal(noh1.layout.headline_source, "largest_text"); // no h1 on the page
   assert.equal(noh1.lexicon.h1, "Phones designed to be used as little as possible"); // not the 48px consent button, not the 34px nav link
