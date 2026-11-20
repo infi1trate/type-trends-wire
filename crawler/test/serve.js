@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { readFileSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
-const types = { ".html": "text/html; charset=utf-8", ".ttf": "font/ttf", ".txt": "text/plain" };
+const types = { ".html": "text/html; charset=utf-8", ".ttf": "font/ttf", ".txt": "text/plain", ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon" };
 export function serve(dir, port) {
   return new Promise((res) => {
     const s = createServer((req, r) => {

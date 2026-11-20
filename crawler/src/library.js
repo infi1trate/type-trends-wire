@@ -25,6 +25,7 @@ import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash, pickCa
 import sharp from "sharp";
 import { encodeThumb, captureBody, makeThumbSender } from "./thumbs.js";
 import { captureCrops, makeCropSender } from "./crops.js";
+import { captureBrandAssets } from "./assets.js";
 
 const MODE = process.env.LIBRARY_MODE ?? "full";
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 6);
@@ -48,6 +49,8 @@ const FROM_YEAR = Number(process.env.FROM_YEAR ?? 2021);
 const THUMBS = process.env.THUMBS !== "0" && MODE === "full";
 let thumbs = null; // sender, set in main
 const CROPS = process.env.CROPS !== "0" && MODE === "full";
+// ASSETS=0 disables the brand icon and social card (sent as crop sections "icon" and "card"); they need crops on.
+const ASSETS = process.env.ASSETS !== "0" && CROPS;
 let crops = null; // sender, set in main
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -124,6 +127,7 @@ async function snapshot(page, { domain, page_type, viewport, url, archive = null
     if (thumbs && !archive && page_type === "home") await captureThumb(page, domain, viewport).catch(() => {});
     // captureImages has already walked the page (lazy images loaded) when it ran; otherwise captureCrops walks it.
     if (crops && !archive && page_type === "home" && viewport === "desktop") await captureCrops(page, domain, crops, { walked: !!images });
+    if (crops && ASSETS && !archive && page_type === "home" && viewport === "desktop") await captureBrandAssets(page, domain, crops);
     return {
       links: x.links, images,
       record: {

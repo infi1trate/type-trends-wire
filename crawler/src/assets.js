@@ -1,0 +1,108 @@
+// Brand assets: the site's own icon and its own social card, as the homepage's <head> declares them. Sent through the
+// crop pipeline as two extra sections ("icon", "card"), so storage, versions, opt-outs and removal follow the crop policy:
+// small, credited, linked to the site, removable on request. Nothing is fetched that the homepage does not point to itself.
+import sharp from "sharp";
+import { lookup } from "node:dns/promises";
+import { CROP_LIMITS, cropBody, cropHash, encodeCrop } from "./crops.js";
+import { checkUrl, privateAddress } from "./requests.js";
+
+export const ASSET_SECTIONS = ["icon", "card"];
+export const ASSET_LIMITS = { iconMax: 256, iconMin: 48, fetchBytes: 3_000_000, timeoutMs: 15_000, tries: 3 };
+const ALLOW_PRIVATE = process.env.ALLOW_HTTP === "1";
+
+/**
+ * Runs in the page. Returns { icons: [{ href, rel, size, type }], cards: [href] } from <head>: icon links and the
+ * Open Graph / Twitter card image. URLs are absolute.
+ */
+export function findBrandAssets() {
+  const abs = (u) => { try { return new URL(u, document.baseURI).href; } catch { return null; } };
+  const sizeOf = (l) => {
+    const s = (l.getAttribute("sizes") || "").toLowerCase();
+    if (s === "any") return 512;
+    const m = /(\d+)\s*x\s*(\d+)/.exec(s);
+    return m ? Math.min(Number(m[1]), Number(m[2])) : 0;
+  };
+  const icons = [];
+  for (const l of document.querySelectorAll("head link[rel][href]")) {
+    const rel = (l.getAttribute("rel") || "").toLowerCase().split(/\s+/);
+    const kind = rel.includes("apple-touch-icon") || rel.includes("apple-touch-icon-precomposed") ? "apple" : rel.includes("icon") ? "icon" : null;
+    const href = abs(l.getAttribute("href"));
+    if (kind && href) icons.push({ href, rel: kind, size: sizeOf(l), type: (l.getAttribute("type") || "").toLowerCase() });
+  }
+  const cards = [];
+  for (const sel of ['meta[property="og:image:secure_url"]', 'meta[property="og:image"]', 'meta[name="og:image"]', 'meta[name="twitter:image"]', 'meta[name="twitter:image:src"]']) {
+    for (const m of document.querySelectorAll(sel)) { const href = abs(m.getAttribute("content") || ""); if (href && !cards.includes(href)) cards.push(href); }
+  }
+  return { icons, cards, origin: location.origin };
+}
+
+const isIco = (i) => i.type.includes("x-icon") || i.type.includes("vnd.microsoft.icon") || /\.ico(\?|#|$)/i.test(i.href);
+/**
+ * Icon candidates, best first: the largest declared raster or SVG icon at or above the minimum, a touch icon counted as
+ * 180 px when it declares no size, then the conventional /apple-touch-icon.png. ICO files are skipped (not decodable here).
+ */
+export function iconOrder(icons, origin) {
+  const scored = (icons ?? []).filter((i) => i?.href && !isIco(i)).map((i) => ({ href: i.href, score: (i.type.includes("svg") || /\.svg(\?|#|$)/i.test(i.href) ? 512 : i.size || (i.rel === "apple" ? 180 : 32)) + (i.rel === "apple" ? 1 : 0) }));
+  const out = [...new Set(scored.filter((i) => i.score >= ASSET_LIMITS.iconMin).sort((a, b) => b.score - a.score).map((i) => i.href))];
+  if (origin) { const conv = `${origin}/apple-touch-icon.png`; if (!out.includes(conv)) out.push(conv); }
+  return out;
+}
+
+/** Icon bytes (PNG, JPEG, WebP, GIF, SVG) → square-ish WebP within 256 px and the crop byte limit, or null when too small or unreadable. */
+export async function encodeIcon(bytes) {
+  try {
+    const { data, info } = await sharp(bytes, { density: 384, animated: false }).rotate()
+      .resize({ width: ASSET_LIMITS.iconMax, height: ASSET_LIMITS.iconMax, fit: "inside", withoutEnlargement: true })
+      .webp({ quality: 92, alphaQuality: 100 }).toBuffer({ resolveWithObject: true });
+    if (Math.min(info.width, info.height) < ASSET_LIMITS.iconMin || data.length > CROP_LIMITS.storedBytes) return null;
+    return { webp: data, width: info.width, height: info.height };
+  } catch { return null; }
+}
+
+/** http(s) URL on a public host (shape and DNS), or null. Local fixture hosts pass only when ALLOW_HTTP=1. */
+export async function publicAssetUrl(raw) {
+  let u;
+  try { u = checkUrl(raw, { allowPrivate: ALLOW_PRIVATE }); } catch { return null; }
+  if (ALLOW_PRIVATE) return u;
+  if (u.protocol !== "https:") return null;
+  try {
+    const addrs = await lookup(u.hostname.replace(/^\[|\]$/g, ""), { all: true, verbatim: true });
+    return addrs.length > 0 && !addrs.some((a) => privateAddress(a.address)) ? u : null;
+  } catch { return null; }
+}
+
+/** Image bytes from a URL the homepage declared, through the page's own browser context; null unless a 200 image within the size limit. */
+export async function fetchAsset(page, raw) {
+  const u = await publicAssetUrl(raw);
+  if (!u) return null;
+  const r = await page.request.get(u.href, { timeout: ASSET_LIMITS.timeoutMs, maxRedirects: 3, failOnStatusCode: false }).catch(() => null);
+  if (!r || r.status() !== 200) return null;
+  const type = (r.headers()["content-type"] || "").toLowerCase();
+  if (!type.startsWith("image/") || type.includes("x-icon") || type.includes("vnd.microsoft.icon")) return null;
+  const body = await r.body().catch(() => null);
+  return body && body.length > 0 && body.length <= ASSET_LIMITS.fetchBytes ? body : null;
+}
+
+/**
+ * Captures the brand's icon and social card from an open homepage and queues them on the crop sender as sections
+ * "icon" and "card". Returns the sections captured. Never throws.
+ */
+export async function captureBrandAssets(page, domain, sender, { now = () => new Date().toISOString() } = {}) {
+  const done = [];
+  try {
+    const found = await page.evaluate(findBrandAssets);
+    const plan = [["icon", iconOrder(found.icons, found.origin), encodeIcon], ["card", found.cards ?? [], encodeCrop]];
+    for (const [section, urls, encode] of plan) {
+      for (const url of urls.slice(0, ASSET_LIMITS.tries)) {
+        const bytes = await fetchAsset(page, url);
+        if (!bytes) continue;
+        const enc = await encode(bytes).catch(() => null);
+        if (!enc) continue;
+        sender.add(cropBody(domain, section, now(), enc, await cropHash(enc.webp, section)));
+        done.push(section);
+        break;
+      }
+    }
+  } catch { /* a page without usable assets just has none this run */ }
+  return done;
+}
