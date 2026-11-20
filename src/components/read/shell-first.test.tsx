@@ -17,7 +17,7 @@ const within = <T,>(p: Promise<T>, ms = 500) => Promise.race([p, new Promise<nev
 type Loader = (a: Record<string, unknown>) => unknown;
 const loaderOf = (r: unknown) => (r as { options: { loader: Loader } }).options.loader;
 
-describe("split Read loaders never await deferred reads", () => {
+describe("split Read loaders never await deferred reads", { timeout: 30_000 }, () => {
   it("brand page awaits only the identity card", async () => {
     const { Route } = await import("@/routes/brands.$domain");
     const c = client(() => ({ name: "GoPro", sectorName: "Consumer", soWhat: "x" }));

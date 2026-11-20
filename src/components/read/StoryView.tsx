@@ -20,8 +20,13 @@ import { StoryCover, frameObject, type CoverObject } from "./Covers";
 import type { StoryEvidence } from "@/lib/stories/evidence";
 import { numberLabel } from "@/lib/stories/numbers";
 import { FRAME_LABEL, compareKind } from "@/lib/stories/frames";
+import { NO_CAPTURE_LINE } from "@/lib/crops";
+import type { Pic } from "@/lib/pictures";
+import { BrandMark } from "./BrandMark";
 
-export type StoryPageData = StoryPageModel & { thumb: Thumb | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null };
+const kindOf = (s: StoryPageData) => compareKind({ crops: !!s.crops?.compare, crop: !!s.crops?.after, frames: !!s.frames, text: !!s.beforeAfter });
+
+export type StoryPageData = StoryPageModel & { thumb: Thumb | null; icon?: Pic | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null };
 const day = (iso: string) => iso.slice(0, 10);
 
 /** Longer headlines drop one step so a palette list can't fill the screen. */
@@ -30,8 +35,9 @@ const LONG_HEADLINE = 48;
 /** The cover's one object, in the same order as the evidence: crops, the redrawn layout, the typographic pair, else the trail. */
 export function coverObject(s: StoryPageData): CoverObject {
   const note = s.facts.find(f => /\d/.test(f.text) && f.text.length <= 48)?.text ?? `Captured ${day(s.at)}`;
-  const kind = compareKind({ crops: !!s.crops?.compare, frames: !!s.frames, text: !!s.beforeAfter });
+  const kind = kindOf(s);
   if (kind === "crops") return { kind: "crop", crop: s.crops!.compare!.after, note };
+  if (kind === "crop") return { kind: "crop", crop: s.crops!.after!, note };
   if (kind === "frames") return frameObject(s.frames!.after, note);
   if (kind === "text") return { kind: "text", before: s.beforeAfter!.before, after: s.beforeAfter!.after, note };
   if (s.series && s.series.points.length >= 2) return { kind: "trail", name: s.series.name, points: s.series.points.map((y, i) => ({ x: `Quarter ${i + 1}`, y })) };
@@ -39,17 +45,20 @@ export function coverObject(s: StoryPageData): CoverObject {
 }
 
 function Compare({ s }: { s: StoryPageData }) {
-  const kind = compareKind({ crops: !!s.crops?.compare, frames: !!s.frames, text: !!s.beforeAfter });
+  const kind = kindOf(s);
   if (kind === "crops") return <BlockPart title={`Before → after · ${s.crops!.sectionName}`} kicker={s.beforeAfter ? `Before: ${s.beforeAfter.before}. After: ${s.beforeAfter.after}. Two stored captures of this section, either side of the change.` : "Two stored captures of this section, either side of the change."}>
     <BeforeAfter before={s.crops!.compare!.before} after={s.crops!.compare!.after} />
   </BlockPart>;
-  if (kind === "frames") return <BlockPart title="Before → after" kicker={`${FRAME_LABEL}: the two captures either side of the change, drawn from their stored boxes in their own colours. No screenshot is stored.`}>
+  if (kind === "crop") return <BlockPart title={`After · ${s.crops!.sectionName}`} kicker={s.beforeAfter ? `Before: ${s.beforeAfter.before}. After: ${s.beforeAfter.after}.` : undefined}>
+    <div className="max-w-[640px]" data-story-after=""><CropFigure crop={s.crops!.after!} label={`After · ${day(s.crops!.after!.captured_at)}`} sizes="(min-width: 768px) 640px, 100vw" /></div>
+  </BlockPart>;
+  if (kind === "frames") return <BlockPart title="Before → after" kicker={FRAME_LABEL}>
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2" data-story-frames="">{(["before", "after"] as const).map(k => <figure key={k} className="min-w-0">
       <p className="ed-kicker mb-2">{k === "before" ? "Before" : "After"} · {day(s.frames![k].at)}{s.beforeAfter ? ` · ${s.beforeAfter[k]}` : ""}</p>
       <CaptureFrame fr={s.frames![k]} label={`${s.brands[0]?.domain ?? "The brand"}, ${k}, ${day(s.frames![k].at)}`} />
       <figcaption className="ed-caption mt-1">{FRAME_LABEL} · {s.frames![k].source === "live" ? "live crawl" : "Wayback archive"}</figcaption>
     </figure>)}</div>
-    {s.crops?.note && <p className="ed-caption mt-3">{s.crops.note}</p>}
+    <p className="ed-caption mt-3" data-no-capture="">{NO_CAPTURE_LINE}</p>
   </BlockPart>;
   if (kind === "text") return <BlockPart title="Before → after" kicker="Two captures agree on the change; no stored layout to redraw, so the change is set in type.">
     <div className="ed-grid">
@@ -63,13 +72,13 @@ function Compare({ s }: { s: StoryPageData }) {
 
 export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNode }) {
   const notRun = s.state === "held" ? `This story did not run on the front page: ${s.heldReason}.` : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
-  const seed = s.number ?? s.id, kind = compareKind({ crops: !!s.crops?.compare, frames: !!s.frames, text: !!s.beforeAfter });
+  const seed = s.number ?? s.id, kind = kindOf(s);
   return <DigestShell label={s.headline} section="live">
     <FiltersScope>
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={coverObject(s)}
-          kicker={<><span>{s.kicker}</span>{s.basis && <> <BasisWord b={s.basis} /></>}</>}
+          kicker={<>{s.icon && <BrandMark icon={s.icon} size={24} eager className="mr-2" />}<span>{s.kicker}</span>{s.basis && <> <BasisWord b={s.basis} /></>}</>}
           left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Corrected {day(s.correctedAt)}</span>}</>}
           right={<>{s.sectorName && <span className="block">{s.sectorName}</span>}<span className="block">{s.typeName}</span>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}

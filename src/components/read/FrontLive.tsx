@@ -14,6 +14,7 @@ import { TickerTrack } from "@/components/kit/TickerTrack";
 import { LedgerItem, StoryNo } from "@/components/brand/Ledger";
 import { Sticker } from "@/components/brand/Containers";
 import { BasisWord } from "@/components/digest/Editorial";
+import { BrandMark } from "./BrandMark";
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const hhmm = (d: Date) => `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
@@ -61,7 +62,7 @@ export function FrontTicker({ items }: { items: TickerItem[] }) {
 /** One live-column item: a Ledger row with the story's number, its type and sector as tags, one line, the basis mark and a relative time. */
 export function LiveItem({ s, now, drop = false }: { s: FrontStory; now: number; drop?: boolean }) {
   const num = s.number != null ? <StoryNo n={s.number} /> : <span data-story-number="">·</span>;
-  return <LedgerItem r={{ key: s.id, id: `fs-${s.id}`, href: s.href, number: num, title: <>{s.headline}{s.basis && <> <BasisWord b={s.basis} /></>}</>, line: s.line,
+  return <LedgerItem r={{ key: s.id, id: `fs-${s.id}`, href: s.href, number: num, title: <>{s.icon && <BrandMark icon={s.icon} size={20} className="mr-2" />}{s.headline}{s.basis && <> <BasisWord b={s.basis} /></>}</>, line: s.line,
     tags: [s.typeName, ...(s.sectorName ? [s.sectorName] : [])], time: <time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now)}</time>, drop }} />;
 }
 

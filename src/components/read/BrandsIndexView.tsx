@@ -14,6 +14,8 @@ import { RuleBox } from "@/components/brand/Containers";
 import { StoryCard } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { ScrollRow } from "./ScrollRow";
+import { MarkedName } from "./BrandMark";
+import { reserveIconSpace, type Pic } from "@/lib/pictures";
 
 /** Rows in the first response; "Show all" draws the rest from data already on the page (a link with ?all=1 without scripts). */
 export const BRANDS_FIRST = 60;
@@ -22,6 +24,8 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
   const [more, setMore] = useState(false);
   const navigate = useNavigate();
   const idx = useMemo(() => brandsIndex(data.sites, v), [data, v]);
+  const icons: Record<string, Pic> = (data as { icons?: Record<string, Pic> }).icons ?? {};
+  const reserve = reserveIconSpace(idx.rows.filter(r => icons[r.domain]).length, idx.rows.length);
   const moves = data.moves.filter(m => v.sector === "all" || m.sector === v.sector);
   const go = (next: BrandsView, replace = false) => navigate({ to: "/brands", search: brandsSearch(next), replace, resetScroll: false });
   return <DigestShell label="Brands" section="brands" lens>
@@ -48,7 +52,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       </RuleBox>
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}</p>
       {idx.empty ? <p className="ed-body mt-4 max-w-[60ch]">{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p>
-        : <><Ledger className="mt-3" label="Tracked brands" rows={(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map(s => ({ key: s.domain, href: `/brands/${encodeURIComponent(s.domain)}`, title: s.name ?? s.domain,
+        : <><Ledger className="mt-3" label="Tracked brands" rows={(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map(s => ({ key: s.domain, href: `/brands/${encodeURIComponent(s.domain)}`, title: <MarkedName icon={icons[s.domain]} reserve={reserve}>{s.name ?? s.domain}</MarkedName>,
           line: <><span className="ed-code">{s.domain}</span>{s.lastMove ? ` · ${s.lastMove}` : ""}</>, facts: [sectorName(s.sector), s.lastChange ? `Changed ${storyTime(s.lastChange)}` : voiced("read.brandsIndexView.1"), `${s.moves} ${s.moves === 1 ? "move" : "moves"}`] }))} />
           {!all && !more && idx.rows.length > BRANDS_FIRST && <p className="ed-data mt-4"><Link to="/brands" search={{ ...brandsSearch(v), all: "1" }} resetScroll={false} className="c-raised ed-kicker no-underline" data-container="raised" data-show-all=""
             onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-ledger] .ledger-link")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}

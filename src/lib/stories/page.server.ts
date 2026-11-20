@@ -30,7 +30,11 @@ export async function loadStoryLead(id: string) {
     framesOf(s, type).catch(() => null),
   ]);
   const page = storyPage(s, { earlier: [], patterns: [] });
-  return { ...page, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: crops.compare ? null : frames, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+  // I1: a single-brand story carries the brand's icon on its subject line, and its drawn captures can reveal the real hero crop.
+  const [{ picsFor }, { revealOf }] = await Promise.all([import("../pictures.server"), import("../pictures")]);
+  const pics = d ? await picsFor(d) : null, reveal = d ? revealOf(d, pics?.hero) : null;
+  const drawn = crops.compare || crops.after ? null : frames ? { before: { ...frames.before, reveal }, after: { ...frames.after, reveal } } : null;
+  return { ...page, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
 }
 /** P1, deferred: earlier stories on the same signal or brand, and the patterns among its signals. */
 export async function loadStoryRelated(id: string) {

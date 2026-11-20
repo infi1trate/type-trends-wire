@@ -10,6 +10,9 @@ export const CROP_SECTIONS = ["hero", "nav", "pricing", "cta", "footer"] as cons
 export type CropSection = (typeof CROP_SECTIONS)[number];
 export const isCropSection = (s: unknown): s is CropSection => typeof s === "string" && (CROP_SECTIONS as readonly string[]).includes(s);
 export const sectionName = (s: CropSection) => CROP_SECTION_NAME[s];
+/** I1: brand assets travel in the same payload as section crops (`section: "icon" | "card"`), stored in their own table. */
+export const ASSET_SECTIONS = ["icon", "card"] as const;
+export const CAPTURE_SECTIONS = [...CROP_SECTIONS, ...ASSET_SECTIONS] as const;
 
 export const CROP_LIMITS = {
   requestBytes: 4 * 1024 * 1024, // whole POST body
@@ -22,10 +25,10 @@ export const CROP_LIMITS = {
 
 // base64 longer than twice the stored limit is stopped by the schema; anything between is decoded and refused as over_150kb.
 const B64_MAX = Math.ceil((CROP_LIMITS.imageBytes * 2) / 3) * 4 + 4;
-const SECTION_LIST = CROP_SECTIONS.join(", ");
+const SECTION_LIST = CAPTURE_SECTIONS.join(", ");
 export const cropCapture = z.object({
   domain: z.string().max(253).transform(s => s.trim().toLowerCase()).pipe(z.string().regex(DOMAIN_RE, "not a domain name")),
-  section: z.enum(CROP_SECTIONS, { error: iss => `unknown section "${String(iss.input).slice(0, 40)}" (expected ${SECTION_LIST})` }),
+  section: z.enum(CAPTURE_SECTIONS, { error: iss => `unknown section "${String(iss.input).slice(0, 40)}" (expected ${SECTION_LIST})` }),
   viewport: z.literal("desktop", { error: 'viewport must be "desktop"' }),
   captured_at: z.string().datetime({ offset: true, error: "captured_at must be an ISO date-time" }),
   width: z.number().int().min(1).max(CROP_LIMITS.maxWidth, `width must be at most ${CROP_LIMITS.maxWidth}`),
@@ -124,6 +127,13 @@ export function beforeAfterAt<T extends CropRow>(versions: T[], pivot: string): 
   return before && after && before.hash !== after.hash ? { before, after } : null;
 }
 
+/** I1: the "after" side alone: the earliest version captured at or after `pivot` − slack (the crop that shows the change). */
+export function afterAt<T extends CropRow>(versions: T[], pivot: string): T | null {
+  const cut = Date.parse(pivot) - CROP_PIVOT_SLACK_HOURS * 3600e3;
+  if (!Number.isFinite(cut)) return null;
+  return [...versions].sort(newestFirst).reverse().find(v => Date.parse(v.captured_at) >= cut) ?? null;
+}
+
 /** A section crop illustrates what we measured only if it was still on the page within this many days of that measurement. */
 export const CROP_MATCH_DAYS = 14;
 /** The latest crop of a section that was still current around `measuredAt` (last seen no more than CROP_MATCH_DAYS before it). */
@@ -150,15 +160,18 @@ export const isIllustrated = (withCaptures: number) => withCaptures >= ILLUSTRAT
 /** "Bento grids · 34 examples · 21 with captures" */
 export const patternCountLine = (name: string, examples: number, withCaptures: number) => `${name} · ${examples} ${examples === 1 ? "example" : "examples"} · ${withCaptures} with ${withCaptures === 1 ? "a capture" : "captures"}`;
 export const NO_CAPTURE_TEXT = "No capture of this section yet";
+/** I1: the one quiet line under a drawing that stands in for a missing capture. */
+export const NO_CAPTURE_LINE = `${NO_CAPTURE_TEXT}.`;
 
 /** /what-we-show "Images of other sites": the policy, generated from the limits above. */
 export function imagePolicy(): { id: string; title: string; text: string }[] {
   const names = CROP_SECTIONS.map(s => CROP_SECTION_NAME[s].toLowerCase());
   return [
     { id: "what", title: "What we keep", text: `Small crops of each tracked brand's public desktop homepage: ${names.slice(0, -1).join(", ")} and ${names.at(-1)}. WebP, at most ${CROP_LIMITS.maxWidth}×${CROP_LIMITS.maxHeight} and ${CROP_LIMITS.imageBytes / 1024} KB each. Never full-page captures.` },
+    { id: "assets", title: "The brand's own pictures", text: `Two pictures each brand publishes itself: its site icon (the small picture browsers show beside its name), kept between 48 and 256 pixels on each side, and the social share image it gives link previews. Both are re-saved as WebP of at most ${CROP_LIMITS.imageBytes / 1024} KB, ${CROP_LIMITS.keep} versions at most, with the same credit, live-site link and removal as the crops.` },
     { id: "history", title: "How history works", text: `A new version is stored only when a section looks different from its last stored version; otherwise we only note that it was seen again. At most ${CROP_LIMITS.keep} versions per section are kept; the oldest is deleted when a newer one arrives.` },
-    { id: "credit", title: "Credit and access", text: "Every image shows the brand's domain and capture date and links to the live site. Images are shown only to readers inside the site's password gate, never to search engines or link previews." },
+    { id: "credit", title: "Credit and access", text: "Every image shows the brand's domain and capture date and links to the live site. Every image is served with a do-not-index header, so search engines are asked not to list it, and none is used as this site's link-preview picture." },
     { id: "crawler", title: "How pages are read", text: `Our crawler announces itself as ${BOT_NAME} and as ${LEGACY_UA_TOKEN} (the name it used first). robots.txt rules for either name are honoured: disallow either one and it stops reading those pages.` },
-    { id: "removal", title: "Removal", text: `Owners can ask for removal${CONTACT_EMAIL ? ` at ${CONTACT_EMAIL}` : " by writing to the editor, Brandon Forant (brandon.wtf)"}. Once a site opts out, every stored crop and thumbnail of it is deleted, new captures are refused, and the site is shown by name only.` },
+    { id: "removal", title: "Removal", text: `Owners can ask for removal${CONTACT_EMAIL ? ` at ${CONTACT_EMAIL}` : " by writing to the editor, Brandon Forant (brandon.wtf)"}. Once a site opts out, every stored crop, site icon, social share image and thumbnail of it is deleted, new captures are refused, and the site is shown by name only.` },
   ];
 }

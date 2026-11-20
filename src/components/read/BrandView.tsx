@@ -23,7 +23,9 @@ import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { Card, Raised } from "@/components/brand/Containers";
 import { FigureView } from "@/components/data/Figures";
-import { BeforeAfter, CropFallback, CropFigure } from "./Evidence";
+import { BeforeAfter, CoverFigure, CropFallback, CropFigure } from "./Evidence";
+import { BrandMark, MarkedName } from "./BrandMark";
+import type { Cover, Pic } from "@/lib/pictures";
 import { CROP_SECTION_NAME } from "@/lib/labels";
 import { isCropSection, type CropSection } from "@/lib/crops";
 
@@ -64,12 +66,15 @@ function FaceValue({ f }: { f: Face | null }) {
   </span>;
 }
 
-function IdentityCard({ b }: { b: BrandCard }) {
+/** The card as drawn: I1 adds the brand's own icon and cover (absent on older callers, which draw as before). */
+type CardIn = BrandCard & { icon?: Pic | null; cover?: Cover | null };
+function IdentityCard({ b }: { b: CardIn }) {
   const i = b.identity;
   return <Card as="section" aria-labelledby="ed-brand-title" className="p-5 md:p-8" data-identity-card="">
     <p className="ed-kicker">Brand · {b.sectorName}</p>
-    <h1 id="ed-brand-title" className="ed-h1 mt-3 break-words">{b.name}</h1>
-    <p className="mt-2"><a href={`https://${b.domain}`} target="_blank" rel="noopener" className="ed-code ed-tap" {...pr(`https://${b.domain}`)}>{b.domain}</a> <span className="ed-caption">· last captured {b.captured ? storyTime(b.captured) : "not yet"}</span></p>
+    <h1 id="ed-brand-title" className={`ed-h1 mt-3 break-words ${b.icon ? "flex items-center gap-3" : ""}`.trim()}>{b.icon && <BrandMark icon={b.icon} size={32} eager />}<span className="min-w-0">{b.name}</span></h1>
+    <p className="mt-2 max-sm:min-h-[2lh]"><a href={`https://${b.domain}`} target="_blank" rel="noopener" className="ed-code ed-tap" {...pr(`https://${b.domain}`)}>{b.domain}</a> <span className="ed-caption">· last captured {b.captured ? storyTime(b.captured) : "not yet"}</span></p>
+    {b.cover && <div className="mt-5"><CoverFigure c={b.cover} /></div>}
     <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       <dl className="min-w-0 space-y-4"><Fact k="Headline type" receipt={i.receipt}><FaceValue f={i.h1} /></Fact><Fact k="Body type" receipt={i.receipt}><FaceValue f={i.body} /></Fact></dl>
       <dl className="min-w-0"><div><dt className="ed-kicker">Palette · share of the first screen</dt>
@@ -117,11 +122,12 @@ function Sector({ b }: { b: Pick<BrandPage, "domain" | "sectorName" | "field" | 
 
 const SIMILAR_TITLE = "Similar brands";
 function SimilarList({ similar }: { similar: SimilarResult }) {
-  return similar.items.length > 0 ? <Ledger label="Similar brands" rows={similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: x.name, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} /> : null;
+  const icons = (similar as SimilarResult & { icons?: Record<string, Pic> }).icons ?? {};
+  return similar.items.length > 0 ? <Ledger label="Similar brands" rows={similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: <MarkedName icon={icons[x.domain]}>{x.name}</MarkedName>, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} /> : null;
 }
 /** The parts that may arrive after the card; BrandView passes them ready, BrandPageView passes deferred slots. */
 type Parts = { moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
-function BrandBody({ b, parts }: { b: BrandCard; parts: Parts }) {
+function BrandBody({ b, parts }: { b: CardIn; parts: Parts }) {
   return <DigestShell label={`${b.name} brand`} section="brands" lens={false}>
     <ObjectPage kind="brand" id="ed-brand" blocks={{
       headline: <>
@@ -180,7 +186,7 @@ function SectionsPart({ b, open }: { b: BrandCard; open: CropSection | null }) {
 function SectorPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSectorQuery(b.domain)); return <Sector b={{ domain: b.domain, sectorName: b.sectorName, ...data }} />; }
 function SimilarPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSimilarQuery(b.domain)); return <>{similarLine(data.line)}<SimilarList similar={data} /></>; }
 function StoriesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandStoriesQuery(b.domain)); return <RelatedStories stories={data} empty={voiced("read.brandView.6")} />; }
-export function BrandPageView({ card, section = null }: { card: BrandCard; section?: string | null }) {
+export function BrandPageView({ card, section = null }: { card: CardIn; section?: string | null }) {
   const open = isCropSection(section) ? section : null;
   return <BrandBody b={card} parts={{
     moves: <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }, { kind: "picture", ratio: 2 * 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={card} /></Later>,

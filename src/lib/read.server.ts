@@ -147,7 +147,11 @@ const moveCounts = memo(TTL, async () => {
 });
 
 /** /brands: the directory plus recent moves across every brand (precomputed record "brands-index"; computeBrands is the live load). */
-export const loadBrands = () => brandsRecord(null);
+export async function loadBrands() {
+  const [rec, { picturesSafe }, { iconsFor }] = await Promise.all([brandsRecord(null), import("./pictures.server"), import("./pictures")]);
+  // I1: each row's site icon from the pictures index (never stored in the record, so a new icon shows within minutes).
+  return { ...rec, icons: iconsFor(await picturesSafe(), rec.sites.map(s => s.domain)) };
+}
 export async function computeBrands() {
   const db = supabaseAnon();
   const [sites, { stories }, counts] = await Promise.all([

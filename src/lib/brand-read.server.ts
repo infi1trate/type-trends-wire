@@ -9,6 +9,8 @@ import type { FieldFig } from "./data-stories/types";
 import type { Story } from "./stories";
 import { brandKey } from "./records/records";
 import { storedBy } from "./records/store.server";
+import { coverOf, iconsFor, type Cover, type Pic } from "./pictures";
+import { picsFor, picturesSafe } from "./pictures.server";
 
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
 const EVENT_COLS = "id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id";
@@ -49,11 +51,14 @@ const brandSimilar = storedBy((d: string) => brandKey("brand-similar", d), compu
 const brandSector = storedBy((d: string) => brandKey("brand-sector", d), computeBrandSector);
 const brandCard = storedBy((d: string) => brandKey("brand-card", d), computeBrandCard, 60_000);
 
+/** The card as the page draws it: the stored card plus the brand's own icon and its cover (I1), read fresh beside the record. */
+export type BrandCardView = BrandCard & { icon: Pic | null; cover: Cover | null };
 /** Critical: the card, or null when the domain is not an active library brand (the route answers 404). Existence is read fresh. */
-export async function loadBrandCard(domain: string): Promise<BrandCard | null> {
-  const site = await siteOf(domain);
+export async function loadBrandCard(domain: string): Promise<BrandCardView | null> {
+  const [site, pics] = await Promise.all([siteOf(domain), picsFor(domain)]);
   if (!site?.active) return null;
-  return brandCard(domain);
+  const card = await brandCard(domain);
+  return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics) } : null;
 }
 /** Deferred: every move with its before/after. */
 export async function loadBrandMoves(domain: string): Promise<{ timeline: BrandPage["timeline"] }> {
@@ -71,7 +76,11 @@ export async function loadBrandSections(domain: string) {
   return brandSections(await cropsFor([domain]), domain);
 }
 export const loadBrandSector = (domain: string): Promise<BrandSector> => brandSector(domain);
-export const loadBrandSimilar = (domain: string): Promise<SimilarResult> => brandSimilar(domain);
+/** Similar brands, with each one's icon (I1) from the pictures index (read beside the record, never stored in it). */
+export async function loadBrandSimilar(domain: string): Promise<SimilarResult & { icons: Record<string, Pic> }> {
+  const [similar, index] = await Promise.all([brandSimilar(domain), picturesSafe()]);
+  return { ...similar, icons: iconsFor(index, similar.items.map(x => x.domain)) };
+}
 /** Deferred: stories about this brand (indexed on the story's domains). */
 export async function loadBrandStories(domain: string): Promise<Story[]> {
   const [{ storiesForDomain }, { storiesAbout }] = await Promise.all([import("./stories/read.server"), import("./stories/view")]);

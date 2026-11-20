@@ -8,6 +8,7 @@ import { basis, label, sectorName, stageName, type Basis, type Dimension, type S
 import { OBJECT_BLOCKS, brandPath, consoleHref, signalPath, type Block } from "./ia";
 import type { Tier } from "./tiers";
 import type { Thumb } from "./thumbs";
+import { heroRevealFor } from "./pictures";
 import { CROP_SECTIONS, beforeAfterAt, latestSections, toCrop, versionsOf, type Crop, type CropRow, type CropSection } from "./crops";
 import { changeSection } from "./evidence-map";
 import type { SimilarResult } from "./similar";
@@ -117,7 +118,8 @@ export function brandTimeline(r: MovesRows): Move[] {
     if (!fig.before.boxes.length || !fig.after.boxes.length) return { pair: null, pairShared: false };
     usedPairs.add(k); pairs++;
     // Side by side in the column, each cut to the first screen, so a move's pair stays about one screen tall.
-    return { pair: { ...fig, before: firstScreen(fig.before), after: firstScreen(fig.after) }, pairShared: false };
+    // I1: each drawing can reveal the brand's real hero crop (the one current at its capture), requested only on intent.
+    return { pair: { ...fig, before: { ...firstScreen(fig.before), reveal: heroRevealFor(crops, d, fig.before.at) }, after: { ...firstScreen(fig.after), reveal: heroRevealFor(crops, d, fig.after.at) } }, pairShared: false };
   };
   const seasonalSet = new Set(r.seasonal), reversedSet = reversalIds(r.events.filter(e => e.domain === d).map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null })));
   const raw: (Omit<Move, "pair" | "pairShared" | "folded"> & { pivot: string })[] = [

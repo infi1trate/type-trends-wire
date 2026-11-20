@@ -46,6 +46,8 @@ export type Box = [BoxKind, number, number, number, number];
 export type Frame = {
   id: string; at: string; source: "live" | "wayback"; w: number; h: number; bg: string | null; ink: string | null; accent: string | null; tones: string[];
   boxes: Box[]; crop: { src: string; width: number; height: number; alt: string } | null; archiveUrl: string | null;
+  /** I1: the brand's real hero crop, shown over the drawing on intent (never fetched ahead of it). */
+  reveal?: import("../pictures").Reveal | null;
 };
 export type Diff = { field: string; before: string; after: string };
 export type BeforeAfterFig = { kind: "before-after"; title: string; note: string; domain: string; name: string; href: string; before: Frame; after: Frame; diffs: Diff[] };

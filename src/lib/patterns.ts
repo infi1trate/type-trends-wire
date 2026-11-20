@@ -42,9 +42,12 @@ export function patternModel(key: string, sites: PatternSite[], signals: Signal[
   const counts = new Map<string, number>(); for (const e of all) counts.set(e.sector, (counts.get(e.sector) ?? 0) + 1);
   const scoped = examplesOf(sites, key, sector).sort((a, b) => (b.captured ?? "").localeCompare(a.captured ?? "") || a.domain.localeCompare(b.domain));
   const section = patternSection(key), cropOf = new Map(scoped.map(e => [e.domain, exampleCrop(crops, e, section)]));
+  // I1: real pictures first. Without a current crop of the pattern's section, an example shows the brand's current hero crop
+  // (captioned as the hero); the typographic card stays the fallback, example by example. Counts stay section-only.
+  const shownOf = new Map(scoped.map(e => [e.domain, cropOf.get(e.domain) ?? (section !== "hero" ? exampleCrop(crops, e, "hero") : null)]));
   // Brands with a capture first, then latest measurement; only brands that currently show the pattern are ever listed.
-  const ordered = [...scoped].sort((a, b) => Number(!!cropOf.get(b.domain)) - Number(!!cropOf.get(a.domain)) || (b.captured ?? "").localeCompare(a.captured ?? "") || a.domain.localeCompare(b.domain));
-  const examples = ordered.slice(0, PATTERN_EXAMPLES_MAX).map(e => { const c = cropOf.get(e.domain); return { domain: e.domain, name: e.name, sector: e.sector, sectorName: sectorName(e.sector), captured: e.captured, crop: c ? toCrop(c) : null, href: brandPath(e.domain) }; });
+  const ordered = [...scoped].sort((a, b) => Number(!!cropOf.get(b.domain)) - Number(!!cropOf.get(a.domain)) || Number(!!shownOf.get(b.domain)) - Number(!!shownOf.get(a.domain)) || (b.captured ?? "").localeCompare(a.captured ?? "") || a.domain.localeCompare(b.domain));
+  const examples = ordered.slice(0, PATTERN_EXAMPLES_MAX).map(e => { const c = shownOf.get(e.domain); return { domain: e.domain, name: e.name, sector: e.sector, sectorName: sectorName(e.sector), captured: e.captured, crop: c ? toCrop(c) : null, href: brandPath(e.domain) }; });
   const withCaptures = [...cropOf.values()].filter(Boolean).length;
   const l = label(key);
   const related = patternIndex(sites, signals).filter(p => p.key !== key && (p.dimension === l.dimension || isComposite(p.key) === isComposite(key))).slice(0, 6).map(p => ({ key: p.key, name: p.name, examples: p.examples, href: p.href }));

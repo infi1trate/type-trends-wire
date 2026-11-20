@@ -18,6 +18,8 @@ import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, ty
 import { resolveFormat, type FormatFilter } from "./formats";
 import { streamOf } from "../stories/view";
 import { collectionPath, liveCollections } from "../collections/registry";
+import { NO_PICS, coverOf, iconsFor } from "../pictures";
+import { picturesSafe } from "../pictures.server";
 
 /** Quarter series (with quarter labels) for every library-wide row of the reader run: chart of the day and the lead's sparkline. */
 export const quarterSeries = stored("quarter-series", async (): Promise<QuarterSeries[]> => {
@@ -46,7 +48,10 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
   const quiet = pageState(streamOf(all).filter(s => s.type !== "launch").map(s => s.happened_at), now) === "quiet";
   const archiveMoves: ArchiveMove[] = quiet ? await import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: `rebrand:${x.id}`, at: x.confirmed_at, headline: rebrandSentence(x), line: x.read ? clip(untick(x.read)) : null, href: `/brands/${encodeURIComponent(x.domain)}`, source: x.source }))).catch(() => []) : [];
   const digestWeek = editions?.digest?.week ?? null, digestNo = digestWeek ? issueNumber(digestWeek) : null;
+  // I1: stored site icons for single-brand rows (the pictures index; an empty map when it can't be read).
+  const pics = await picturesSafe();
   const input: FrontInput = {
+    icons: iconsFor(pics, all.flatMap(s => (s.domains.length === 1 ? [s.domains[0]!] : []))),
     now, sector, format, stories: all, signals, lens, stages: new Map(signals.map(s => [s.key, s.stage])),
     moving: { items: read.movingItems(moves, headlineKeys, byKey), pair: moves.pair, next: moves.next },
     freshness: fresh?.line ?? null, leadEvidence: null, series: points, seriesQuarters: quarters,
@@ -61,11 +66,17 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
     collections: liveCollections().map(c => ({ slug: c.slug, number: c.number, title: c.title, href: collectionPath(c.slug) })),
   };
   let model = frontModel(input);
-  // The lead's evidence slot: before/after crops when two captures straddle the change; otherwise the model falls back to the sparkline or nothing.
+  // The lead's evidence slot (I1: real pictures first): before/after crops when two captures straddle the change, else one "after"
+  // crop of the changed section, else a single-brand story's own social card; otherwise the sparkline or nothing, as before.
   const lead = model.lead ? all.find(s => s.id === model.lead!.story.id) : null;
-  if (lead && ["move", "counter_move", "rebrand"].includes(lead.type)) {
-    const ev = await import("../stories/page.server").then(m => m.evidenceOf(lead, lead.type)).catch(() => null);
-    if (ev?.compare) model = frontModel({ ...input, leadEvidence: { id: lead.id, crops: { section: ev.sectionName ?? "", before: ev.compare.before, after: ev.compare.after } } });
+  if (lead) {
+    const one = lead.domains.length === 1 ? lead.domains[0]! : null;
+    const ev = ["move", "counter_move", "rebrand"].includes(lead.type) ? await import("../stories/page.server").then(m => m.evidenceOf(lead, lead.type)).catch(() => null) : null;
+    const cover = one ? coverOf(one, pics.get(one) ?? NO_PICS) : null;
+    const leadEvidence = ev?.compare ? { id: lead.id, crops: { section: ev.sectionName ?? "", before: ev.compare.before, after: ev.compare.after } }
+      : ev?.after ? { id: lead.id, crops: null, crop: { section: ev.sectionName ?? "", crop: ev.after } }
+      : cover?.kind === "card" ? { id: lead.id, crops: null, cover } : null;
+    if (leadEvidence) model = frontModel({ ...input, leadEvidence });
   }
   return model;
 }

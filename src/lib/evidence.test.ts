@@ -128,7 +128,14 @@ describe("story evidence", () => {
     const e = storyEvidence({ type: "move", domains: ["vercel.com"] }, [{ kind: "event", type: "nav_change" }], "2026-10-01T00:00:00Z", crops);
     expect([e.section, e.compare?.before.hash, e.compare?.after.hash]).toEqual(["nav", "aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"]);
     const none = storyEvidence({ type: "move", domains: ["vercel.com"] }, [{ kind: "event", type: "pricing_change" }], "2026-10-01T00:00:00Z", crops);
-    expect(none.compare).toBeNull(); expect(none.note).toContain("pricing");
+    expect(none.compare).toBeNull(); expect(none.after).toBeNull(); expect(none.note).toBe("No capture of this section yet.");
+  });
+  it("I1: a crop only after the change is shown alone, credited; no note", () => {
+    const e = storyEvidence({ type: "move", domains: ["vercel.com"] }, [{ kind: "event", type: "nav_change" }], "2026-09-10T00:00:00Z", crops);
+    expect(e.compare).toBeNull();
+    expect(e.after?.hash).toBe("aaaaaaaaaaaaaaaa");
+    expect(e.after?.caption).toContain("vercel.com");
+    expect(e.note).toBeNull();
   });
   it("ROUNDUP shows member brands' current hero crops, cards where missing", () => {
     const e = storyEvidence({ type: "roundup", domains: ["linear.app", "vercel.com"] }, [], "2026-10-01T00:00:00Z", crops);

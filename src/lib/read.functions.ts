@@ -91,8 +91,10 @@ export const getMorning = createServerFn({ method: "GET" }).inputValidator(z.obj
   return loadMorning(data.day);
 });
 export const getSectorReport = createServerFn({ method: "GET" }).inputValidator(z.object({ sector: z.string().min(2).max(40) })).handler(async ({ data }) => {
-  const { loadSectorReport } = await import("./editions/editions.server");
-  return loadSectorReport(data.sector);
+  const [{ loadSectorReport }, { picturesSafe }, { iconsFor }] = await Promise.all([import("./editions/editions.server"), import("./pictures.server"), import("./pictures")]);
+  const [r, pics] = await Promise.all([loadSectorReport(data.sector), picturesSafe()]);
+  // I1: the leaders' site icons (read beside the report, never stored in it).
+  return r ? { ...r, icons: iconsFor(pics, r.leaders.map(l => l.domain)) } : r;
 });
 export const getSectorIndex = createServerFn({ method: "GET" }).handler(async () => {
   const { loadSectorIndex } = await import("./editions/editions.server");

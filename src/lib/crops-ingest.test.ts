@@ -1,12 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { deleteCropsFor, handleCropIngest, serveCrop, type CropStore, type StoredCrop } from "./crops-ingest.server";
+import { deleteCropsFor, deleteImagesFor, handleCropIngest, serveCrop, type CropStore, type StoredAsset, type StoredCrop } from "./crops-ingest.server";
+import { handleThumbOptout, type ThumbStore } from "./thumbs-ingest.server";
 import { CROP_LIMITS } from "./crops";
 import { b64, png, webp } from "./__fixtures__/webp";
 
 const SECRET = "test-only-secret";
 function memory(opts: { tracked?: string[]; optouts?: string[] } = {}) {
-  const objects = new Map<string, Uint8Array>(), rows: StoredCrop[] = [], optouts = new Set(opts.optouts ?? []), tracked = new Set(opts.tracked ?? ["vercel.com", "linear.app"]);
+  const objects = new Map<string, Uint8Array>(), rows: StoredCrop[] = [], assets: StoredAsset[] = [], optouts = new Set(opts.optouts ?? []), tracked = new Set(opts.tracked ?? ["vercel.com", "linear.app"]);
   let id = 0;
   const store: CropStore = {
     async authenticate(r) { return r.headers.get("x-crawl-secret") === SECRET; },
@@ -21,8 +22,14 @@ function memory(opts: { tracked?: string[]; optouts?: string[] } = {}) {
     async domainRows(domain) { return rows.filter(r => r.domain === domain); },
     async visibleRow(path) { const r = rows.find(x => x.path === path); return r && !optouts.has(r.domain) ? { domain: r.domain } : null; },
     async download(path) { return objects.get(path) ?? null; },
+    async assetVersions(domain, kind) { return assets.filter(r => r.domain === domain && r.kind === kind).sort((a, b) => b.captured_at.localeCompare(a.captured_at)); },
+    async touchAsset(i, at) { const r = assets.find(x => x.id === i)!; r.last_seen_at = at; },
+    async insertAsset(row) { if (optouts.has(row.domain)) return "opted_out"; if (assets.some(r => r.path === row.path)) return "exists"; assets.push({ ...row, id: ++id }); return "ok"; },
+    async deleteAssetRows(ids) { for (const i of ids) assets.splice(assets.findIndex(r => r.id === i), 1); },
+    async domainAssets(domain) { return assets.filter(r => r.domain === domain); },
+    async visibleAsset(path) { const r = assets.find(x => x.path === path); return r && !optouts.has(r.domain) ? { domain: r.domain } : null; },
   };
-  return { store, objects, rows, optouts };
+  return { store, objects, rows, assets, optouts };
 }
 const hash = (n: number) => n.toString(16).padStart(16, "0");
 const cap = (o: Record<string, unknown> = {}) => ({ domain: "vercel.com", section: "hero", viewport: "desktop", captured_at: "2026-11-15T06:00:00Z", width: 1280, height: 800, hash: hash(1), webp_base64: b64(webp(1280, 800)), ...o });
@@ -46,7 +53,7 @@ describe("POST /api/public/ingest-crops", () => {
     const bad = await handleCropIngest(post("{nope"), m.store);
     expect([bad.status, await bad.json()]).toEqual([400, { error: "Body is not valid JSON" }]);
     const sec = await send(m, [cap({ section: "logo" })]);
-    expect(sec.status).toBe(400); expect(sec.body.error).toBe('captures.0.section: unknown section "logo" (expected hero, nav, pricing, cta, footer)');
+    expect(sec.status).toBe(400); expect(sec.body.error).toBe('captures.0.section: unknown section "logo" (expected hero, nav, pricing, cta, footer, icon, card)');
     expect((await send(m, [])).status).toBe(400);
     expect((await send(m, Array.from({ length: 13 }, (_, i) => cap({ hash: hash(i + 1) })))).status).toBe(400);
     expect((await send(m, [cap({ width: 1281 })])).status).toBe(400);
@@ -117,5 +124,71 @@ describe("GET /crops/<path>", () => {
     expect((await serveCrop("vercel.com/logo/2026-11-15-00000000.webp", m.store)).status).toBe(404);
     expect((await serveCrop("../secret/hero/2026-11-15-00000000.webp", m.store)).status).toBe(404);
     expect((await serveCrop("linear.app/hero/2026-11-15-00000000.webp", m.store)).status).toBe(404);
+  });
+});
+
+describe("I1 · brand assets (site icon, social card) in the crop payload", () => {
+  const icon = (o: Record<string, unknown> = {}) => cap({ section: "icon", width: 180, height: 180, hash: hash(901), webp_base64: b64(webp(180, 180)), ...o });
+  const card = (o: Record<string, unknown> = {}) => cap({ section: "card", width: 1200, height: 630, hash: hash(902), webp_base64: b64(webp(1200, 630)), ...o });
+  it("a mixed batch stores the hero crop in crops and the icon and card in brand assets", async () => {
+    const m = memory(), r = await send(m, [cap(), icon(), card()]);
+    expect(r.body).toEqual({ stored: 3, unchanged: 0, refused: [] });
+    expect(m.rows.map(x => x.section)).toEqual(["hero"]);
+    expect(m.assets.map(x => [x.kind, x.path, x.width, x.height])).toEqual([
+      ["icon", "assets/vercel.com/icon/2026-11-15-00000000.webp", 180, 180],
+      ["card", "assets/vercel.com/card/2026-11-15-00000000.webp", 1200, 630],
+    ]);
+    expect(m.objects.size).toBe(3);
+  });
+  it("refuses an icon of 40 px and one of 300 px, each on its own", async () => {
+    const m = memory(), r = await send(m, [icon({ width: 40, height: 40, webp_base64: b64(webp(40, 40)) }), icon({ width: 300, height: 300, hash: hash(903), webp_base64: b64(webp(300, 300)) }), card()]);
+    expect(r.body.stored).toBe(1);
+    expect(r.body.refused).toEqual([{ domain: "vercel.com", section: "icon", reason: "icon_too_small" }, { domain: "vercel.com", section: "icon", reason: "icon_too_large" }]);
+    expect(m.assets.map(x => x.kind)).toEqual(["card"]);
+  });
+  it("refuses an opted-out brand's icon and the same crop refusals (not WebP, size mismatch)", async () => {
+    const m = memory({ optouts: ["linear.app"] });
+    const r = await send(m, [icon({ domain: "linear.app" }), icon({ webp_base64: b64(png()) }), card({ width: 1100 })]);
+    expect(r.body.refused.map((x: { reason: string }) => x.reason)).toEqual(["opted_out", "not_webp", "dimension_mismatch"]);
+    expect(m.assets).toHaveLength(0); expect(m.objects.size).toBe(0);
+  });
+  it("the same hash twice only moves last_seen_at", async () => {
+    const m = memory();
+    await send(m, [icon()]);
+    const r = await send(m, [icon({ captured_at: "2026-11-22T06:00:00Z" })]);
+    expect(r.body).toEqual({ stored: 0, unchanged: 1, refused: [] });
+    expect(m.assets).toHaveLength(1);
+    expect(m.assets[0]).toMatchObject({ first_seen_at: "2026-11-15T06:00:00Z", last_seen_at: "2026-11-22T06:00:00Z" });
+  });
+  it("keeps the newest 12 versions per brand and kind", async () => {
+    const m = memory();
+    for (let i = 1; i <= 13; i++) await send(m, [icon({ hash: hash(1000 + i), captured_at: `2026-${String(Math.min(i, 11)).padStart(2, "0")}-${String(i).padStart(2, "0")}T06:00:00Z` })]);
+    expect(m.assets).toHaveLength(12);
+    expect(m.assets.some(x => x.hash === hash(1001))).toBe(false);
+  });
+  it("serves an asset through /crops/assets/… and answers 404 once hidden or opted out", async () => {
+    const m = memory(); await send(m, [icon()]);
+    const path = "assets/vercel.com/icon/2026-11-15-00000000.webp";
+    const ok = await serveCrop(path, m.store);
+    expect([ok.status, ok.headers.get("content-type"), ok.headers.get("cache-control")]).toEqual([200, "image/webp", "private, max-age=604800, immutable"]);
+    expect((await serveCrop("assets/vercel.com/logo/2026-11-15-00000000.webp", m.store)).status).toBe(404);
+    m.optouts.add("vercel.com");
+    expect((await serveCrop(path, m.store)).status).toBe(404);
+  });
+  it("opt-out removes a brand's crops and assets together, and a removed asset's path answers 404", async () => {
+    const m = memory();
+    await send(m, [cap(), icon(), card(), cap({ domain: "linear.app" })]);
+    const thumbs: ThumbStore = {
+      async authenticate(r) { return r.headers.get("x-crawl-secret") === SECRET; }, async activeDomains() { return new Set(); }, async optedOut() { return new Set(); },
+      async upload() {}, async upsertRow() { return "ok"; }, async rows() { return []; }, async removeObjects() {}, async deleteRows() {},
+      async addOptout(d) { m.optouts.add(d); }, async removeOptout(d) { m.optouts.delete(d); },
+    };
+    const res = await handleThumbOptout(new Request("http://localhost/api/public/thumb-optout", { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": SECRET }, body: JSON.stringify({ domain: "vercel.com" }) }), thumbs, m.store);
+    expect(await res.json()).toMatchObject({ ok: true, crops_deleted: 1, assets_deleted: 2 });
+    expect(m.assets).toHaveLength(0);
+    expect([...m.objects.keys()]).toEqual(["linear.app/hero/2026-11-15-00000000.webp"]);
+    m.optouts.delete("vercel.com");
+    expect((await serveCrop("assets/vercel.com/icon/2026-11-15-00000000.webp", m.store)).status).toBe(404);
+    expect(await deleteImagesFor("vercel.com", m.store)).toEqual({ crops: 0, assets: 0 });
   });
 });

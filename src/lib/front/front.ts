@@ -10,6 +10,7 @@ import { SECTORS } from "../library";
 import type { LensResult } from "../sector-lens";
 import type { Signal } from "../signals";
 import type { Crop } from "../crops";
+import type { Cover, Pic } from "../pictures";
 import { isoWeek, longDate } from "../digest/week";
 import { NO_COMPARISON_TEXT } from "../run-gap";
 import { storyFormat, shows, surfaceShows, type Format, type FormatFilter } from "./formats";
@@ -33,14 +34,18 @@ export function pageState(times: string[], now: number): PageState {
 export type FrontStory = {
   id: string; number: number | null; type: string; typeName: string; kicker: string; headline: string; line: string | null;
   basis: "measured" | "ai" | null; at: string; href: string; format: Format; sector: string | null; sectorName: string | null; score: number; corrected: string | null;
+  /** I1: a single-brand story's brand and its stored site icon (null for roundups, signals and stories without an icon). */
+  domain?: string | null; icon?: Pic | null;
 };
 type Numbered = StoryRecord & { number?: number | null };
 const oneLine = (s: string | null | undefined, n = 180) => { if (!s) return null; const t = s.trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
-export function toFront(s: Numbered): FrontStory {
-  const type = isKind(s.type) ? s.type : "news";
+export function toFront(s: Numbered): FrontStory { return frontWith(s); }
+/** I1: the same row with its brand's stored icon (single-brand stories only). */
+export function frontWith(s: Numbered, icons?: Record<string, Pic>): FrontStory {
+  const type = isKind(s.type) ? s.type : "news", one = s.domains?.length === 1 ? s.domains[0]! : null;
   return { id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: STORY_TYPE_DEFS[type].kicker, kicker: noDid(s.kicker), headline: s.headline, line: oneLine(s.deck),
     basis: s.basis === "measured" || s.basis === "ai" ? s.basis : null, at: s.happened_at, href: storyPath(s.id), format: storyFormat(type), sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
-    score: s.score, corrected: s.correctedAt };
+    score: s.score, corrected: s.correctedAt, domain: one, icon: one ? icons?.[one] ?? null : null };
 }
 /** "just now", "12 min ago", "3 h ago", "2 days ago". Never in the future: a clock ahead of the server reads as just now. */
 export function relTime(iso: string, now: number): string {
@@ -78,6 +83,10 @@ export function pickLead(ranked: StoryRecord[], sector: string, now: number): { 
 }
 export type LeadEvidence =
   | { kind: "crops"; section: string; before: Crop; after: Crop }
+  /** I1: one credited crop of the changed section (only the "after" side exists). */
+  | { kind: "crop"; section: string; crop: Crop }
+  /** I1: a single-brand story's social card, published by the brand itself. */
+  | { kind: "card"; cover: Cover }
   | { kind: "spark"; key: string; name: string; points: number[]; quarters?: string[] | undefined };
 
 // LIVE COLUMN --------------------------------------------------------------------------------------
@@ -196,7 +205,9 @@ export type FrontInput = {
   stories: Numbered[];
   signals: Signal[]; lens: LensResult | null; stages: Map<string, StageName | null>;
   moving: MovingIn; freshness: { text: string; late: boolean } | null;
-  leadEvidence: { id: string; crops: { section: string; before: Crop; after: Crop } | null } | null; series: Record<string, number[]>;
+  leadEvidence: { id: string; crops: { section: string; before: Crop; after: Crop } | null; crop?: { section: string; crop: Crop } | null; cover?: Cover | null } | null; series: Record<string, number[]>;
+  /** I1: stored site icons by domain (single-brand rows draw theirs). */
+  icons?: Record<string, Pic>;
   /** Quarter labels for each series point (the lead's figure dates its number), when the loader has them. */
   seriesQuarters?: Record<string, string[]>;
   chart: Omit<ChartInput, "day" | "stories">;
@@ -217,16 +228,17 @@ export function frontModel(i: FrontInput) {
   if (picked) {
     const s = picked.story as Numbered, type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0];
     const whyText = s.why_line ?? soWhatOf({ type, signalKeys: s.signal_keys, stage: key ? i.stages.get(key) ?? null : null });
-    const crops = i.leadEvidence?.id === s.id ? i.leadEvidence.crops : null, pts = key ? i.series[key] ?? [] : [];
-    lead = { story: toFront(s), label: state === "quiet" && picked.label === "Today" ? "This week" : picked.label, why: whyText ? { text: whyText, basis: s.why_line ? "ai" : "measured" } : null,
-      evidence: crops ? { kind: "crops", ...crops } : key && pts.length >= 1 ? { kind: "spark", key, name: label(key).name, points: pts, ...(i.seriesQuarters?.[key]?.length === pts.length ? { quarters: i.seriesQuarters[key] } : {}) } : null };
+    const mine = i.leadEvidence?.id === s.id ? i.leadEvidence : null, crops = mine?.crops ?? null, pts = key ? i.series[key] ?? [] : [];
+    // A real picture wins (pair, then one crop, then the brand's own card); otherwise the slot stays as it was.
+    lead = { story: frontWith(s, i.icons), label: state === "quiet" && picked.label === "Today" ? "This week" : picked.label, why: whyText ? { text: whyText, basis: s.why_line ? "ai" : "measured" } : null,
+      evidence: crops ? { kind: "crops", ...crops } : mine?.crop ? { kind: "crop", ...mine.crop } : mine?.cover ? { kind: "card", cover: mine.cover } : key && pts.length >= 1 ? { kind: "spark", key, name: label(key).name, points: pts, ...(i.seriesQuarters?.[key]?.length === pts.length ? { quarters: i.seriesQuarters[key] } : {}) } : null };
   }
-  const items = inFormat.filter(s => s.id !== picked?.story.id && groupOf(s.happened_at, i.now) !== null).slice(0, COLUMN_MAX).map(toFront);
+  const items = inFormat.filter(s => s.id !== picked?.story.id && groupOf(s.happened_at, i.now) !== null).slice(0, COLUMN_MAX).map(x => frontWith(x, i.icons));
   const quiet = state === "quiet";
   const archive = quiet && shows(i.format, "live") ? archiveFill(ranked, i.archiveMoves, i.now) : [];
   const dayStart = Date.parse(`${utcDay(i.now)}T00:00:00Z`);
   const chart = surfaceShows(i.format, "chart-of-the-day") ? chartOfDay({ ...i.chart, day: utcDay(i.now), stories: ranked.filter(s => Date.parse(s.happened_at) < dayStart && Date.parse(s.happened_at) >= dayStart - COLUMN_DAYS * DAY).map(s => ({ type: s.type })) }) : null;
-  const launches = surfaceShows(i.format, "new-on-the-scene") ? stream.filter(s => s.type === "launch").slice(0, 6).map(toFront) : [];
+  const launches = surfaceShows(i.format, "new-on-the-scene") ? stream.filter(s => s.type === "launch").slice(0, 6).map(x => frontWith(x, i.icons)) : [];
   const explore = shows(i.format, "explore") ? exploreOf(stream, i.now, i.patternKeys, i.brandNames) : [];
   const editions = editionLines(i.editions, i.format);
   const movingShown = surfaceShows(i.format, "moving-now");

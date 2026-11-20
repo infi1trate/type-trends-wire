@@ -7,6 +7,7 @@ import { pctText, qText, dayText, pairStamps } from "@/lib/data-stories/text";
 import { linear, ticks } from "@/lib/charts/scale";
 import { ChartFrame } from "@/components/charts/Charts";
 import { Receipt } from "@/components/read/StoryCard";
+import { RevealBox } from "@/components/read/Reveal";
 
 const INK_ = "var(--tk-text-primary)";
 // Highlighting (README "Colour"): pink belongs to the lead plate only, so a highlighted mark stays ink with the yellow highlighter
@@ -133,7 +134,9 @@ function Drift({ f, v }: { f: DriftFig; v: View }) {
 
 // CAPTURES ------------------------------------------------------------------------------------------
 /** One capture redrawn: boxes from the stored skeleton, in the capture's own background, ink and accent. Upgrades to the crop when present. */
-export function CaptureFrame({ fr, label, slim = false, className = "" }: { fr: Frame; label: string; slim?: boolean; className?: string }) {
+/** I1: a drawing with a stored hero crop reveals it on intent (RevealBox); `reveal={false}` where the frame sits inside a link or a kiosk. */
+export function CaptureFrame({ fr, label, slim = false, className = "", reveal = true }: { fr: Frame; label: string; slim?: boolean; className?: string; reveal?: boolean }) {
+  if (reveal && fr.reveal && !fr.crop && !slim) return <RevealBox reveal={fr.reveal} label={`${label}: redrawn from the stored layout`}><CaptureFrame fr={fr} label={label} className={className} reveal={false} /></RevealBox>;
   if (fr.crop && !slim) return <img src={fr.crop.src} width={fr.crop.width} height={fr.crop.height} alt={fr.crop.alt} className={`block h-auto w-full border ${className}`} style={{ borderColor: RULE }} loading="lazy" decoding="async" data-frame="crop" />;
   const bg = fr.bg ?? PAGE, ink = fr.ink ?? INK, acc = fr.accent ?? ink, tone = fr.tones.find(t => t !== fr.bg && t !== fr.ink) ?? ink;
   const boxes = slim ? fr.boxes.filter(b => b[0] === "h" || b[0] === "m" || b[0] === "c") : fr.boxes;

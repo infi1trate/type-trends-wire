@@ -69,8 +69,8 @@ function Ticker({ m }: { m: AmbientInput }) {
 function PairFrames({ f }: { f: BeforeAfterFig }) {
   const [b, a] = pairStamps(f.before.at, f.after.at);
   return <div className="amb-pair-grid" data-board-pair="">
-    <figure><CaptureFrame fr={f.before} label={`${f.name}, ${b}`} /><figcaption className="amb-kicker" data-stamp="before">Before · {b}</figcaption></figure>
-    <figure><CaptureFrame fr={f.after} label={`${f.name}, ${a}`} /><figcaption className="amb-kicker" data-stamp="after">After · {a}</figcaption></figure>
+    <figure><CaptureFrame fr={f.before} label={`${f.name}, ${b}`} reveal={false} /><figcaption className="amb-kicker" data-stamp="before">Before · {b}</figcaption></figure>
+    <figure><CaptureFrame fr={f.after} label={`${f.name}, ${a}`} reveal={false} /><figcaption className="amb-kicker" data-stamp="after">After · {a}</figcaption></figure>
   </div>;
 }
 

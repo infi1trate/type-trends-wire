@@ -19,7 +19,7 @@ import { BasisWord, DigestShell, Dim, StageWord } from "@/components/digest/Edit
 import { BarChart, DonutChart, LineChart, ScatterChart } from "@/components/charts/Charts";
 import { Card, Plate, Raised, RuleBox } from "@/components/brand/Containers";
 import { Ledger } from "@/components/brand/Ledger";
-import { BeforeAfter } from "./Evidence";
+import { BeforeAfter, CoverFigure, CropFigure } from "./Evidence";
 import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
@@ -61,6 +61,8 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
         </div>
       </div>
       {l.evidence?.kind === "crops" && <figure className="lg:col-span-5" data-evidence=""><BeforeAfter before={l.evidence.before} after={l.evidence.after} /><figcaption className="ed-caption mt-2">Before → after · {l.evidence.section}</figcaption></figure>}
+      {l.evidence?.kind === "crop" && <div className="lg:col-span-5" data-evidence="crop"><CropFigure crop={l.evidence.crop} label={`After · ${l.evidence.section}`} priority sizes="(min-width: 1024px) 40vw, 100vw" /></div>}
+      {l.evidence?.kind === "card" && <div className="lg:col-span-5" data-evidence="card"><CoverFigure c={l.evidence.cover} /></div>}
       {fig && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
     </div>
   </Plate></section>;

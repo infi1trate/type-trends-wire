@@ -2,6 +2,7 @@
 // story and pattern pages. Every image carries its credit (section, domain, capture date), a live-site link and "Report this image".
 import { useState } from "react";
 import { NO_CAPTURE_TEXT, type Crop } from "@/lib/crops";
+import { coverBox, longDay as longDayOf, type Cover } from "@/lib/pictures";
 import { pr } from "@/components/digest/Editorial";
 
 const day = (iso: string) => iso.slice(0, 10);
@@ -50,4 +51,20 @@ export function BeforeAfter({ before, after, sizes = "(min-width: 768px) 50vw, 1
       <div className={show === "after" ? "" : "max-md:hidden"}><CropFigure crop={after} label={`After · ${day(after.captured_at)}`} sizes={sizes} /></div>
     </div>
   </div>;
+}
+
+/** The brand page cover (I1): the brand's latest social card, else its latest hero crop. The first-screen picture (eager, high
+ * priority); its box is reserved from the stored size, never upscaled, and capped in height. Credited, linked, reportable. */
+export const COVER_CAP_REM = 16;
+export function CoverFigure({ c }: { c: Cover }) {
+  return <figure className="min-w-0" data-brand-cover={c.kind}>
+    <a href={c.live} target="_blank" rel="noopener" aria-label={`Open ${c.domain} (live site)`} className="brand-cover" style={coverBox(c.width, c.height, COVER_CAP_REM)} {...pr(c.live)}>
+      <img src={c.src} width={c.width} height={c.height} alt={c.alt} loading="eager" fetchPriority="high" decoding="async" />
+    </a>
+    <figcaption className="ed-caption mt-1 flex flex-wrap gap-x-1 max-sm:min-h-[3lh]">
+      <span>{c.what} · captured <time dateTime={c.at}>{longDayOf(c.at)}</time> ·</span>
+      <a href={c.live} target="_blank" rel="noopener" className="ed-tap" {...pr(c.live)}>Live site</a><span aria-hidden="true">·</span>
+      <a href={c.report} className="ed-tap">Report this image</a>
+    </figcaption>
+  </figure>;
 }

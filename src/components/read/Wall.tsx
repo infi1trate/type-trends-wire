@@ -6,17 +6,22 @@ import { useRef, useState, type KeyboardEvent } from "react";
 import type { GalleryTile } from "@/lib/gallery";
 import { CaptureFrame } from "@/components/data/Figures";
 import { Deferred } from "./Deferred";
+import { RevealLayer, useReveal } from "./Reveal";
+import { REVEAL_HINT } from "@/lib/pictures";
 import { FRAME_LABEL } from "@/lib/stories/frames";
 import { countLine, GALLERY_PAGE } from "@/lib/gallery";
 
 /** Tiles drawn in the first response; the rest draw as they come near the screen (each holds its frame's space until then). */
 export const WALL_EAGER = 8;
 function Tile({ t, eager }: { t: GalleryTile; eager: boolean }) {
-  return <a href={t.href} className="wall-tile" aria-label={t.label} data-tile={t.id}>
-    <span aria-hidden="true" className="block">
+  // I1: a drawn tile of a brand with a stored hero crop shows the real crop on intent (first tap or Enter shows, the next follows).
+  const reveal = !t.crop && t.frame?.reveal ? t.frame.reveal : null, r = useReveal(reveal, { link: true });
+  return <a href={t.href} className="wall-tile" aria-label={reveal ? `${t.label}. ${REVEAL_HINT}, Enter again to open: ${reveal.credit}` : t.label} data-tile={t.id} data-reveal={reveal ? "" : undefined} {...r.handlers}>
+    <span aria-hidden="true" className="relative block">
       {t.crop ? <img src={t.crop.src} width={t.crop.width} height={t.crop.height} alt="" loading="lazy" className="wall-ink border" style={{ borderColor: "var(--tk-rule-hairline)" }} data-frame="crop" />
-        : t.frame ? <Deferred eager={eager} style={{ aspectRatio: `${t.frame.w} / ${t.frame.h}`, border: "1px solid var(--tk-rule-hairline)" }}><CaptureFrame fr={t.frame} label={t.label} /></Deferred>
+        : t.frame ? <Deferred eager={eager} style={{ aspectRatio: `${t.frame.w} / ${t.frame.h}`, border: "1px solid var(--tk-rule-hairline)" }}><CaptureFrame fr={t.frame} label={t.label} reveal={false} /></Deferred>
         : <span className="ed-caption block border p-3" style={{ borderColor: "var(--tk-rule-hairline)" }}>{voiced("read.wall.1")}</span>}
+      {reveal && <RevealLayer reveal={reveal} shown={r.shown} requested={r.requested} reduced={r.reduced} />}
     </span>
     <span className="wall-cap" aria-hidden="true"><span>{t.domain}</span><span>{t.day}</span>{t.note && <span>{t.note}</span>}</span>
   </a>;

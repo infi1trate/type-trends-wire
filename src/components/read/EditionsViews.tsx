@@ -1,4 +1,6 @@
 import { line as voiced } from "@/lib/voice";
+import { MarkedName } from "./BrandMark";
+import type { Pic } from "@/lib/pictures";
 // EDITIONS in Read mode: the Morning Line (daily), sector reports (quarterly), the /editions index and the private /welcome page.
 // Current editorial type system and chrome; every number links to its receipts. No AI per view.
 import type { ReactNode } from "react";
@@ -172,7 +174,7 @@ export function SectorReportView({ r }: { r: SectorReport }) {
       <Block n={num("white-space")} id="sr-white" title="White space" kicker="Signals rising elsewhere that this sector's brands have not picked up (stories from the last 90 days)."><StoryList items={r.whiteSpace} empty={voiced("read.editionsViews.8")} /></Block>
       <Block n={num("counter-moves")} id="sr-counter" title="Counter-moves" kicker="Brands here moving against a signal's direction (last 90 days)."><StoryList items={r.counterMoves} empty={voiced("read.editionsViews.9")} /></Block>
       <Block n={num("leaders")} id="sr-leaders" title="Who leads it" kicker="Trendsetter rank in the forecast run, with each brand's latest published move.">
-        {r.leaders.length ? <Ledger label="Who leads it" rows={r.leaders.map(l => ({ key: l.domain, href: `/brands/${encodeURIComponent(l.domain)}`, number: `#${l.rank}`, title: l.name ?? l.domain, line: l.latest ? `Latest move: ${l.latest.headline} · ${storyTime(l.latest.at)}` : voiced("read.editionsViews.10"), facts: [l.domain] }))} /> : <p className="ed-small">{voiced("read.editionsViews.11")}</p>}
+        {r.leaders.length ? <Ledger label="Who leads it" rows={r.leaders.map(l => ({ key: l.domain, href: `/brands/${encodeURIComponent(l.domain)}`, number: `#${l.rank}`, title: <MarkedName icon={(r as { icons?: Record<string, Pic> }).icons?.[l.domain]}>{l.name ?? l.domain}</MarkedName>, line: l.latest ? `Latest move: ${l.latest.headline} · ${storyTime(l.latest.at)}` : voiced("read.editionsViews.10"), facts: [l.domain] }))} /> : <p className="ed-small">{voiced("read.editionsViews.11")}</p>}
       </Block>
       <Block n={num("patterns")} id="sr-patterns" title="Patterns in this sector" kicker="Example brands here that show each pattern; section crops where a current one exists.">
         {r.patterns.length ? <div className="grid grid-cols-1 gap-10">{r.patterns.map(p => <div key={p.key}>

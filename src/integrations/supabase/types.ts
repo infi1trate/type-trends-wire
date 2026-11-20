@@ -98,6 +98,54 @@ export type Database = {
           },
         ]
       }
+      brand_assets: {
+        Row: {
+          bytes: number
+          captured_at: string
+          created_at: string
+          domain: string
+          first_seen_at: string
+          hash: string
+          height: number
+          id: number
+          kind: string
+          last_seen_at: string
+          path: string
+          run_id: string | null
+          width: number
+        }
+        Insert: {
+          bytes: number
+          captured_at: string
+          created_at?: string
+          domain: string
+          first_seen_at: string
+          hash: string
+          height: number
+          id?: never
+          kind: string
+          last_seen_at: string
+          path: string
+          run_id?: string | null
+          width: number
+        }
+        Update: {
+          bytes?: number
+          captured_at?: string
+          created_at?: string
+          domain?: string
+          first_seen_at?: string
+          hash?: string
+          height?: number
+          id?: never
+          kind?: string
+          last_seen_at?: string
+          path?: string
+          run_id?: string | null
+          width?: number
+        }
+        Relationships: []
+      }
       chart_cards: {
         Row: {
           created_at: string
@@ -1921,6 +1969,17 @@ export type Database = {
           pricing_calls: number | null
           product_calls: number | null
           vision_calls: number | null
+        }
+        Relationships: []
+      }
+      brand_pictures: {
+        Row: {
+          captured_at: string | null
+          domain: string | null
+          height: number | null
+          kind: string | null
+          path: string | null
+          width: number | null
         }
         Relationships: []
       }

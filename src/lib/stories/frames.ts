@@ -6,10 +6,10 @@ import { toFrame, type CaptureRaw } from "../data-stories/templates/frames";
 import type { CropRow } from "../crops";
 
 export const FRAME_LABEL = "Redrawn from the stored layout";
-export type CompareKind = "crops" | "frames" | "text" | "none";
-/** The fallback order, first that exists wins. */
-export function compareKind(o: { crops: boolean; frames: boolean; text: boolean }): CompareKind {
-  return o.crops ? "crops" : o.frames ? "frames" : o.text ? "text" : "none";
+export type CompareKind = "crops" | "crop" | "frames" | "text" | "none";
+/** The fallback order, first that exists wins: a real pair, one real "after" crop (I1), the redrawn pair, the typographic pair. */
+export function compareKind(o: { crops: boolean; crop?: boolean; frames: boolean; text: boolean }): CompareKind {
+  return o.crops ? "crops" : o.crop ? "crop" : o.frames ? "frames" : o.text ? "text" : "none";
 }
 /** A change is often stamped seconds after the capture that showed it: the newest capture this close before the pivot counts as "after". */
 export const AFTER_SLACK_MS = 2 * 864e5;

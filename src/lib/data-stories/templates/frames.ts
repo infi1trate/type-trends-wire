@@ -4,6 +4,7 @@ import type { BeforeAfterFig, Box, BoxKind, Diff, Frame, StripFig, StripMark } f
 import { obj, num, str, hex, radiusBucket } from "../../library";
 import { toCrop, utcDay, type CropRow } from "../../crops";
 import { brandHref, dayText } from "../text";
+import { heroRevealFor } from "../../pictures";
 
 /** The part of the page a frame redraws (page pixels) and how many boxes it keeps, so a strip of a dozen captures stays light. */
 export const FOLD = { w: 1440, h: 1800 } as const;
@@ -39,7 +40,7 @@ export function toFrame(domain: string, c: CaptureRaw, crops: CropRow[]): Frame 
   const bg = hex(color["page_bg"]) ?? palette[0]?.hex ?? null;
   const ink = bg ? [...palette.map(p => p.hex), "#000000", "#FFFFFF"].sort((a, b) => contrast(b, bg) - contrast(a, bg))[0]! : null;
   const accent = hex(color["accent"]) ?? palette.find(p => p.hex !== bg && p.hex !== ink)?.hex ?? null;
-  return { id: String(c.id), at: c.captured_at, source: c.source === "live" ? "live" : "wayback", w, h, bg, ink, accent, tones: palette.slice(0, 5).map(p => p.hex), boxes: boxesOf(c.skeleton, w), crop: cropFor(crops, domain, c.captured_at), archiveUrl: c.archive_url };
+  return { id: String(c.id), at: c.captured_at, source: c.source === "live" ? "live" : "wayback", w, h, bg, ink, accent, tones: palette.slice(0, 5).map(p => p.hex), boxes: boxesOf(c.skeleton, w), crop: cropFor(crops, domain, c.captured_at), archiveUrl: c.archive_url, reveal: heroRevealFor(crops, domain, c.captured_at) };
 }
 /** Every archive capture in time order plus the latest live one: the strip's frames. */
 export function stripCaptures(cs: CaptureRaw[]): CaptureRaw[] {

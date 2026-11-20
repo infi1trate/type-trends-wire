@@ -130,27 +130,32 @@ export async function traitRows(rawKey: string): Promise<TraitRows | null> {
   const key = canonical(rawKey), i = key.indexOf(":");
   if (i <= 0) return null;
   const dimension = key.slice(0, i), value = key.slice(i + 1);
-  const db = supabaseAnon(), runId = await readerRunId(db);
-  const rows = must(await db.from("forecasts").select(TCOLS).eq("run_id", runId).eq("dimension", dimension).eq("value", value).order("scope"));
-  if (!rows?.length) return null;
-  const [peers, sites, card] = await Promise.all([
-    pages<{ dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }>((f, t) => db.from("forecasts").select("dimension,value,stage,current_share,momentum").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(f, t) as never),
+  const db = supabaseAnon();
+  // I1 · Part 0: three round trips instead of seven in a row. First everything that needs only the key (the shared stored inputs
+  // name the reader run), then the run's rows, then the lead sites' thumbnails.
+  const [{ latestSignals }, { siteTraitIndex }, { storyIndex }, { storiesAbout }] = await Promise.all([import("../signals.server"), import("../read.server"), import("../stories/read.server"), import("../stories/view")]);
+  const noSignals = { snap: { run_id: null as number | null }, tiers: new Map(), signals: [] as Awaited<ReturnType<typeof latestSignals>>["signals"] };
+  const [sig, sites, calls, index, stories] = await Promise.all([
+    latestSignals("all").catch(() => noSignals),
     pages<{ domain: string; sector: string; name: string | null }>((f, t) => db.from("library_sites").select("domain,sector,name").order("domain").range(f, t) as never),
+    db.from("forecast_calls").select("*").eq("trait", key).order("made_at", { ascending: false }).order("id", { ascending: false }).limit(24).then(must),
+    siteTraitIndex().catch(() => []),
+    storyIndex().then(all => storiesAbout(all, { signal: key, limit: 5 })).catch(() => []),
+  ]);
+  const runId = sig.snap.run_id ?? await readerRunId(db);
+  const [rows, peers, card] = await Promise.all([
+    db.from("forecasts").select(TCOLS).eq("run_id", runId).eq("dimension", dimension).eq("value", value).order("scope").then(must),
+    pages<{ dimension: string; value: string; stage: string | null; current_share: number | null; momentum: number | null }>((f, t) => db.from("forecasts").select("dimension,value,stage,current_share,momentum").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(f, t) as never),
     db.from("forecast_runs").select("data_through:model_card->>data_through").eq("id", runId).maybeSingle().then(must),
   ]);
+  if (!rows?.length) return null;
   const domains = [...new Set(rows.flatMap(r => (((r as { lead_sites?: { domain: string }[] | null }).lead_sites) ?? []).map(s => s.domain)))].slice(0, 40);
-  const [thumbs, calls] = await Promise.all([
-    domains.length ? db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).then(must) : Promise.resolve([]),
-    db.from("forecast_calls").select("*").eq("trait", key).order("made_at", { ascending: false }).order("id", { ascending: false }).limit(24).then(must),
-  ]);
+  const thumbs = domains.length ? await db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).then(must) : [];
   // Tier, Momentum, Confidence and evidence from the latest stored run (same pure code as the terminal).
-  const { latestSignals } = await import("../signals.server");
-  const { tiers, signals } = await latestSignals("all").catch(() => ({ tiers: new Map(), signals: [] as Awaited<ReturnType<typeof latestSignals>>["signals"] }));
+  const { tiers, signals } = sig;
   const byKey = new Map(signals.map(s => [s.key, s]));
   const evidence = evidenceKeys(key).map(k => { const l = label(k), x = byKey.get(k); return { key: k, name: l.name, dimension: l.dimension, basis: basis(k), tier: tierFor(tiers, k), stage: x?.stage ?? null, share: x?.share ?? null, href: explainerPath(k) }; });
   // Brands showing it now and recent stories naming it (shared Read-mode caches; never fail the page).
-  const { siteTraitIndex } = await import("../read.server"), { storyIndex } = await import("../stories/read.server"), { storiesAbout } = await import("../stories/view");
-  const [index, stories] = await Promise.all([siteTraitIndex().catch(() => []), storyIndex().then(all => storiesAbout(all, { signal: key, limit: 5 })).catch(() => [])]);
   const showing = index.filter(s => s.traits.includes(key)).sort((a, b) => (b.captured ?? "").localeCompare(a.captured ?? "") || a.domain.localeCompare(b.domain)).map(s => ({ domain: s.domain, name: s.name, sector: s.sector }));
   return { key, showing, stories, signal: byKey.get(key) ?? null, tier: tiers.get(key) ?? null, evidence, headline: tiers.size ? [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key) : null, rows: rows as unknown as TraitRows["rows"], peers, sites, thumbs: (thumbs ?? []) as ThumbRow[], data_through: (card as { data_through: string | null } | null)?.data_through ?? null, calls: (calls ?? []) as unknown as StoredCall[] };
 }

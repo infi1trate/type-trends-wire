@@ -684,6 +684,24 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   @media (prefers-reduced-motion: reduce) { .wall-cap { transition: none; } }
   .wall-tile img, .wall-tile svg { display: block; width: 100%; height: auto; }
 
+  /* I1 · the page behind a wireframe: the real hero crop laid over the drawing, same box, cover fit, top aligned; credit on it. */
+  .reveal-box, .wall-tile[data-reveal] { position: relative; display: block; }
+  .reveal-box { cursor: pointer; outline-offset: 2px; }
+  .reveal-box:focus-visible { outline: var(--tk-focus-width, 3px) solid var(--tk-focus-ring); }
+  .reveal-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .reveal-layer > .reveal-img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: top; }
+  .reveal-credit { position: absolute; left: 0; right: 0; bottom: 0; padding: var(--tk-space-1) var(--tk-space-2); background: var(--tk-slab-bg); color: var(--tk-slab-fg);
+    font-family: var(--tk-type-kicker-family); font-weight: 700; font-size: var(--tk-type-kicker-size); line-height: 1.2; letter-spacing: .02em; }
+  @media print { .reveal-layer { display: none; } }
+
+  /* I1 · BrandMark: the brand's own icon on a neutral tile, as published (no filter, no recolouring, square). */
+  .brand-mark { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; overflow: hidden; background: var(--tk-surface-card); box-shadow: inset 0 0 0 1px var(--tk-rule-hairline); }
+  .brand-mark > img { display: block; width: 100%; height: 100%; object-fit: contain; filter: none; }
+
+  /* I1 · the brand page cover: the stored ratio, never upscaled, height capped so the moves list stays on a laptop's first screen. */
+  .brand-cover { display: block; max-width: 100%; }
+  .brand-cover img { display: block; width: 100%; height: 100%; object-fit: contain; filter: none; border: var(--tk-border-hairline) solid var(--tk-rule-hairline); background: var(--tk-surface-card); }
+
   /* Data-story figures fill their column at every width (text inside scales with the figure, never below its set size). */
   [data-stepper-picture] .tk-svg { max-width: none; }
   [data-stepper-picture] [data-figure="strip"] .strip-current { max-width: none; }
