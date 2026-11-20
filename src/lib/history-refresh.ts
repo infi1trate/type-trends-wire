@@ -1,8 +1,9 @@
 // The library history series: five materialized views refreshed one per call (library_history_refresh_view) by
 // history-refresh.server.ts. Pure so the name guard, timings and health note are testable and match the database list.
 
-/** The only views the refresh step may touch, in refresh order (the database function refuses any other name). */
-export const HISTORY_VIEWS = ["library_history_share_mat", "library_signal_series_mat", "library_css_series_mat", "library_font_series_mat", "library_tag_series_mat"] as const;
+/** The only views the refresh step may touch, in refresh order (the database function refuses any other name). The large share
+ *  view goes last, so if it ever fails through the API the four small views are already fresh. */
+export const HISTORY_VIEWS = ["library_signal_series_mat", "library_css_series_mat", "library_font_series_mat", "library_tag_series_mat", "library_history_share_mat"] as const;
 export type HistoryView = (typeof HISTORY_VIEWS)[number];
 export const isHistoryView = (name: unknown): name is HistoryView => typeof name === "string" && (HISTORY_VIEWS as readonly string[]).includes(name);
 
