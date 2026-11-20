@@ -12,7 +12,7 @@ export function FigureTable({ fig }: { fig: Figure }) {
     case "multiples": {
       const f = (y: number) => (fig.unit === "share" ? pctText(y) : String(y));
       return <Wrap caption={fig.title}><thead><tr><th scope="col" className={th} style={rule}>{fig.chart === "bars" ? "Sector" : "Signal"}</th>{fig.xs.map(x => <th key={x} scope="col" className={th} style={rule}>{q(x)}</th>)}</tr></thead>
-        <tbody>{fig.panels.map(p => <tr key={p.id}><th scope="row" className={td} style={rule}>{p.label}</th>{fig.xs.map(x => { const pt = p.points.find(v => v.x === x); return <td key={x} className={td} style={rule}>{pt ? f(pt.y) : "–"}</td>; })}</tr>)}</tbody></Wrap>;
+        <tbody>{fig.panels.map(p => <tr key={p.id}><th scope="row" className={td} style={rule}>{p.note ? `${p.label} (${p.note.toLowerCase()})` : p.label}</th>{fig.xs.map(x => { const pt = p.points.find(v => v.x === x); return <td key={x} className={td} style={rule}>{pt ? f(pt.y) : "–"}</td>; })}</tr>)}</tbody></Wrap>;
     }
     case "adoption":
       return <>

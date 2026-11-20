@@ -127,6 +127,25 @@ export function bigTypeStory(i: DataInput, _caps: Captures, m: Meta): StoryModel
 
 // D. WHICH SECTOR CHANGES ITS MIND MOST? ------------------------------------------------------------------------------
 export const MINDS = { early: ["2021", "2022"] as const, late: ["2023", "2024"] as const, minPairs: 10 } as const;
+/** E4b · sectors shown in study D's panels but never ranked or compared: studios' homepages are showcases, and the studio rule leaves out
+ *  their palette, accent, hero and imagery changes, so their count is low by construction. The one place this rule lives. */
+export const UNRANKED_SECTORS: readonly string[] = ["studios"];
+export const isRanked = (s: string) => !UNRANKED_SECTORS.includes(s);
+export const UNRANKED_LIMIT = "Studios are shown but not ranked: their homepages are showcases, so palette, accent, hero and imagery changes there are not counted as a change of mind.";
+export const UNRANKED_NOTE = "Not ranked";
+const COUNT_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const countWord = (n: number) => COUNT_WORDS[n] ?? String(n);
+/** Ranked sectors with compared archive captures, busiest first (ties by id). */
+export function rankedRates(i: DataInput): Rate[] {
+  return sectorRates(i).filter(r => r.pairs && isRanked(r.s)).sort((x, y) => y.rate - x.rate || x.s.localeCompare(y.s));
+}
+/** The reversal pick: among ranked sectors with enough captures in both windows, one that moved against most, else the largest change of pace. */
+export function mindsReversal(rates: readonly Rate[]) {
+  const both = rates.filter(r => isRanked(r.s) && r.early.p >= MINDS.minPairs && r.late.p >= MINDS.minPairs).map(r => ({ r, d: per100(r.late.e, r.late.p) - per100(r.early.e, r.early.p) }));
+  const down = both.filter(x => x.d < 0).length, all = down * 2 > both.length ? -1 : 1, opposite = both.filter(x => Math.sign(x.d) !== all && x.d !== 0);
+  const rev = [...(opposite.length ? opposite : both)].sort((x, y) => Math.abs(y.d) - Math.abs(x.d) || x.r.s.localeCompare(y.r.s))[0];
+  return rev ? { ...rev, reversed: opposite.length > 0, all } : null;
+}
 /** Rates read the archive only (Wayback captures and the changes measured between them), so a week of frequent live crawls cannot dilute them. */
 type Rate = { s: string; events: number; pairs: number; rate: number; early: { e: number; p: number }; late: { e: number; p: number } };
 export function sectorRates(i: DataInput): Rate[] {
@@ -143,7 +162,7 @@ export function sectorRates(i: DataInput): Rate[] {
 const per100 = (e: number, p: number) => (p ? (100 * e) / p : 0);
 /** The leading sector's brand with the most measured changes and at least two stored captures: the before / after of story D. */
 export function mindsBrand(i: DataInput): string | null {
-  const lead = [...sectorRates(i)].filter(r => r.pairs).sort((x, y) => y.rate - x.rate || x.s.localeCompare(y.s))[0];
+  const lead = rankedRates(i)[0];
   if (!lead) return null;
   const caps = new Map<string, number>(), ev = new Map<string, number>();
   for (const c of i.captures) caps.set(c.domain, (caps.get(c.domain) ?? 0) + 1);
@@ -153,23 +172,22 @@ export function mindsBrand(i: DataInput): string | null {
 export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryModel {
   const rates = sectorRates(i), secOf = sectorOfSite(i), b = brandRef(i);
   const years = [...new Set(i.events.map(e => e.at.slice(0, 4)))].sort();
-  const panels = rates.map(r => ({ id: r.s, label: sectorName(r.s), href: sectorHref(r.s),
+  const panels = rates.map(r => ({ id: r.s, label: sectorName(r.s), href: sectorHref(r.s), ...(isRanked(r.s) ? {} : { note: UNRANKED_NOTE }),
     points: years.map(y => ({ x: y, y: i.events.filter(e => secOf(e.domain) === r.s && e.at.startsWith(y)).length })),
     marks: years.map(y => ({ x: y, y: i.rebrands.filter(x => secOf(x.domain) === r.s && x.at.startsWith(y)).length })) }));
   const figures: Record<string, Figure> = { multiples: multiplesFig({ title: "Measured homepage changes by sector and year", note: "Bars: measured changes (type, palette, theme, layout, navigation, stack, redesign). Ticks: confirmed rebrands. Same axis in every panel.", unit: "count", chart: "bars", panels, xs: years }) };
   const steps: Step[] = [];
   const total = i.events.length, firstAt = [...i.events].sort((x, y) => x.at.localeCompare(y.at))[0]?.at;
   if (firstAt) steps.push(step("intro", cap`${cnt(total, "/terminal?panel=library")} measured changes on ${cnt(i.sites.filter(s => s.active).length, "/brands")} homepages, the earliest first seen in ${qN(quarterOf(firstAt))}, and ${cnt(i.rebrands.length, "/terminal?panel=rebrands")} confirmed rebrands.`, { figure: "multiples", highlight: [] }));
-  const ranked = [...rates].filter(r => r.pairs).sort((x, y) => y.rate - x.rate || x.s.localeCompare(y.s));
+  // E4b · rankings and comparisons cover ranked sectors only (UNRANKED_SECTORS); studios keep their panel, marked Not ranked.
+  const ranked = rankedRates(i), among = `Of the ${countWord(ranked.length)} ranked sectors, `;
   const lead = ranked[0], lag = ranked.at(-1);
   const rateN = (e: number, p: number, s: string) => num(per100(e, p).toFixed(1), per100(e, p), sectorHref(s));
-  if (lead) steps.push(step("leader", cap`${sec(lead.s)} changes its mind most: ${rateN(lead.events, lead.pairs, lead.s)} measured changes per hundred compared archive captures.`, { figure: "multiples", highlight: [lead.s] }));
-  if (lag && lag !== lead) steps.push(step("lagger", cap`${sec(lag.s)} changes least: ${rateN(lag.events, lag.pairs, lag.s)} per hundred.`, { figure: "multiples", highlight: [lag.s] }));
-  const both = rates.filter(r => r.early.p >= MINDS.minPairs && r.late.p >= MINDS.minPairs).map(r => ({ r, d: per100(r.late.e, r.late.p) - per100(r.early.e, r.early.p) }));
-  const down = both.filter(x => x.d < 0).length, all = down * 2 > both.length ? -1 : 1, opposite = both.filter(x => Math.sign(x.d) !== all && x.d !== 0);
-  const rev = (opposite.length ? opposite : both).sort((x, y) => Math.abs(y.d) - Math.abs(x.d) || x.r.s.localeCompare(y.r.s))[0];
+  if (lead) steps.push(step("leader", [among, ...cap`${sec(lead.s)} changes its mind most: ${rateN(lead.events, lead.pairs, lead.s)} measured changes per hundred compared archive captures.`], { figure: "multiples", highlight: [lead.s] }));
+  if (lag && lag !== lead) steps.push(step("lagger", [...cap`${sec(lag.s)} changes least: ${rateN(lag.events, lag.pairs, lag.s)} per hundred.`], { figure: "multiples", highlight: [lag.s] }));
+  const rev = mindsReversal(rates);
   const w = (ys: readonly string[]) => num(`${ys[0]}–${ys.at(-1)}`, Number(ys[0]), HISTORY_HREF);
-  if (rev) steps.push(step("reversed", [...cap`${sec(rev.r.s)} ${opposite.length ? "reversed" : "changed pace most"}: ${rateN(rev.r.early.e, rev.r.early.p, rev.r.s)} changes per hundred captures in ${w(MINDS.early)}, ${rateN(rev.r.late.e, rev.r.late.p, rev.r.s)} in ${w(MINDS.late)}`, opposite.length ? (all < 0 ? ", while most sectors slowed." : ", while most sectors sped up.") : "."], { figure: "multiples", highlight: [rev.r.s] }));
+  if (rev) steps.push(step("reversed", [...cap`${sec(rev.r.s)} ${rev.reversed ? "reversed" : "changed pace most"}: ${rateN(rev.r.early.e, rev.r.early.p, rev.r.s)} changes per hundred captures in ${w(MINDS.early)}, ${rateN(rev.r.late.e, rev.r.late.p, rev.r.s)} in ${w(MINDS.late)}`, rev.reversed ? (rev.all < 0 ? ", while most ranked sectors slowed." : ", while most ranked sectors sped up.") : " among the ranked sectors."], { figure: "multiples", highlight: [rev.r.s] }));
   if (lead) {
     const count = (d: string) => i.events.filter(e => e.domain === d).length;
     const d = mindsBrand(i);
@@ -187,7 +205,7 @@ export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryMo
   const lr = lead ? `${per100(lead.events, lead.pairs).toFixed(1)}` : "—";
   return model(m, i, figures, steps, { brands: i.sites.filter(s => s.active).length, captures: i.captures.length, period: firstAt ? `${dayText(firstAt)} to ${dayText(lastDate(i) ?? firstAt)}` : "—",
     rule: "Changes are measured events on desktop homepages, confirmed across two captures; rates divide archive changes by compared archive capture pairs in each sector.",
-    lines: [`Reversal compares ${MINDS.early.join("–")} with ${MINDS.late.join("–")}, for sectors with at least ${MINDS.minPairs} compared captures in each window.`] },
+    lines: [`Reversal compares ${MINDS.early.join("–")} with ${MINDS.late.join("–")}, for ranked sectors with at least ${MINDS.minPairs} compared captures in each window.`] },
     { n: lr, label: lead ? `changes per hundred captures in ${sectorName(lead.s)}` : "changes per hundred captures" },
     {
       scenes: [
@@ -199,6 +217,7 @@ export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryMo
       limits: [
         "Archive changes are dated to the first Wayback capture that shows them, so a sector the archive visited more often looks busier; the rate per compared capture corrects for that.",
         "A live-crawl change counts only once two captures on each side agree, and changes on rotating first screens and studios' featured work are left out.",
+        UNRANKED_LIMIT,
       ],
       fallback: lead ? `${sectorName(lead.s)} logs ${lr} changes per hundred archive captures` : `${total} measured homepage changes, sector by sector`,
     });

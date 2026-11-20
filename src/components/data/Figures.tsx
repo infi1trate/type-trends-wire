@@ -39,11 +39,12 @@ function Multiples({ f, v }: { f: MultiplesFig; v: View }) {
   const sx = (x: string) => (f.xs.length < 2 ? W / 2 : m.l + (f.xs.indexOf(x) / (f.xs.length - 1)) * (W - m.l - m.r));
   const bw = Math.max(2, (W - m.l - m.r) / Math.max(1, f.xs.length) - 3);
   const bx = (x: string) => m.l + f.xs.indexOf(x) * ((W - m.l - m.r) / Math.max(1, f.xs.length));
-  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} isEmpty={!f.panels.length} table={{ columns: ["Panel", ...f.xs.map(x => (/Q/.test(x) ? qText(x) : x))], rows: f.panels.map(p => [p.label, ...f.xs.map(x => { const pt = p.points.find(q => q.x === x); return pt ? fmt(pt.y) : "—"; })]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={SOURCE} isEmpty={!f.panels.length} table={{ columns: ["Panel", ...f.xs.map(x => (/Q/.test(x) ? qText(x) : x))], rows: f.panels.map(p => [p.note ? `${p.label} (${p.note.toLowerCase()})` : p.label, ...f.xs.map(x => { const pt = p.points.find(q => q.x === x); return pt ? fmt(pt.y) : "—"; })]) }}>
     {() => <ul className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 xl:grid-cols-4" data-figure="multiples">
       {f.panels.map(p => { const hot = on.has(p.id), dim = any && !hot; const a = p.points[0], z = p.points.at(-1);
         return <li key={p.id} className={`${fade} min-w-0 ${dim ? "opacity-40" : ""}`} data-panel={p.id} data-hot={hot ? "" : undefined}>
           <p className="tk-t-data flex justify-between gap-2"><Receipt href={p.href} className="tk-tap min-h-0 truncate underline-offset-2 hover:underline" style={hot ? hlText : undefined}>{p.label}</Receipt>{f.unit === "share" && z && <span className="tk-c-secondary">{fmt(z.y)}</span>}</p>
+          {p.note && <p className="tk-t-caption tk-c-muted" data-panel-note="">{p.note}</p>}
           <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" aria-hidden="true">
             <line x1={m.l} x2={W - m.r} y1={H - m.b} y2={H - m.b} className="tk-svg-axis" />
             {f.chart === "line" ? <>

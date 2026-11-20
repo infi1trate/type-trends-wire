@@ -25,7 +25,7 @@ export type Scene = { id: string; lead: string; steps: string[]; view: View };
 
 // FIGURES ------------------------------------------------------------------------------------------
 export type Point = { x: string; y: number };
-export type MultiplesPanel = { id: string; label: string; href: string; points: Point[]; /** Optional second series drawn as ticks (e.g. rebrands). */ marks?: Point[] };
+export type MultiplesPanel = { id: string; label: string; href: string; points: Point[]; /** Optional second series drawn as ticks (e.g. rebrands). */ marks?: Point[]; /** E4b · a quiet line under the label ("Not ranked"). */ note?: string };
 export type MultiplesFig = { kind: "multiples"; title: string; note: string; unit: "share" | "count"; chart: "line" | "bars"; xs: string[]; yMax: number; panels: MultiplesPanel[] };
 
 export type Adopter = { domain: string; name: string; sector: string; first: string; firstAt: string; censored: boolean; dropped: boolean; href: string };
