@@ -29,8 +29,8 @@ test("seed filters", () => {
 });
 
 test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
-  const servers = await Promise.all([serve("test/fixtures/dark", 4801), serve("test/fixtures/light", 4802), serve("test/fixtures/blocked", 4803), serve("test/fixtures/counter", 4804)]);
-  writeFileSync("/tmp/seeds.json", JSON.stringify({ mainstream: ["localhost:4801", "localhost:4803", "localhost:4999"], vanguard: ["localhost:4802", "localhost:4804"], curated: [{ domain: "localhost:4803", galleries: ["landbook", "arena"] }] }));
+  const servers = await Promise.all([serve("test/fixtures/dark", 4801), serve("test/fixtures/light", 4802), serve("test/fixtures/blocked", 4803), serve("test/fixtures/counter", 4804), serve("test/fixtures/noh1", 4805)]);
+  writeFileSync("/tmp/seeds.json", JSON.stringify({ mainstream: ["localhost:4801", "localhost:4803", "localhost:4999"], vanguard: ["localhost:4802", "localhost:4804", "localhost:4805"], curated: [{ domain: "localhost:4803", galleries: ["landbook", "arena"] }] }));
   rmSync("out", { recursive: true, force: true });
   try {
     await run("node", ["src/crawl.js"], { env: { ...process.env, DRY_RUN: "1", ALLOW_HTTP: "1", RUN_ID: "test", SEEDS_FILE: "/tmp/seeds.json", PER_INDEX: "5", CONCURRENCY: "2" } });
@@ -78,6 +78,9 @@ test("end-to-end dry run on fixture sites", { timeout: 120000 }, async () => {
   assert.equal(light.layout.h1_align, "left");
   assert.equal(light.layout.hero_carousel, true); // the headline sits inside a carousel: one slide of several
   assert.equal(by["localhost:4804"].layout.hero_carousel, true); // a "05/12" slide counter in the fold
+  const noh1 = by["localhost:4805"];
+  assert.equal(noh1.layout.headline_source, "largest_text"); // no h1 on the page
+  assert.equal(noh1.lexicon.h1, "Phones designed to be used as little as possible"); // not the 48px consent button, not the 34px nav link
   assert.ok(light.color.palette.some((p) => p.hex.startsWith("#2E5E4") || p.hex.startsWith("#2F5E4") || p.hex.startsWith("#2E5D4")), JSON.stringify(light.color.palette));
   console.log(JSON.stringify(dark, null, 1).slice(0, 3000));
 });

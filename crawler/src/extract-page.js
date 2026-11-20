@@ -38,10 +38,13 @@ export function extractInPage() {
   let headline_source = h1 ? "h1" : null;
   if (!h1) {
     let best = null, bestSize = 0;
-    for (const e of document.querySelectorAll("body h2, body h3, body p, body div, body span, body a")) {
-      if (e.children.length > 2 || !visible(e) || !inFold(e) || inOverlay(e)) continue;
+    // Controls and navigation are not headlines: a consent button ("acknowledged") or a top-bar link once stood in for one.
+    const CONTROL = "a, button, [role=button], [role=link], [role=tab], [role=menuitem], nav, [role=navigation], label, input, select, summary";
+    const DISMISS = /^(accept(ed)?( all)?|acknowledged?|agree(d)?|i agree|got it|ok(ay)?|dismiss|close|allow( all)?|decline|reject( all)?|skip|continue|no,? thanks)\b[.! ]*$/i;
+    for (const e of document.querySelectorAll("body h2, body h3, body p, body div, body span")) {
+      if (e.children.length > 2 || !visible(e) || !inFold(e) || inOverlay(e) || e.closest(CONTROL)) continue;
       const t = (e.innerText || "").trim();
-      if (t.length < 3 || t.length > 140) continue;
+      if (t.length < 3 || t.length > 140 || DISMISS.test(t)) continue;
       const sz = px(cs(e).fontSize);
       if (sz > bestSize) { best = e; bestSize = sz; }
     }
