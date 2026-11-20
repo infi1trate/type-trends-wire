@@ -69,8 +69,11 @@ const listOf = (xs: string[], n = 3) => (xs.length <= 1 ? xs.join("") : xs.lengt
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 const where = (sector: string | null) => (!sector || sector === "all" ? "across all sectors" : `in ${inline(sectorName(sector))}`);
 const signed = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}`;
-/** Stories never carry a "$": prices quoted from a brand's copy read as "USD 20", anything else drops the sign. */
-export const noDollar = (s: string) => s.replace(/\$\s?(?=\d)/g, "USD ").replace(/\$/g, "");
+/** Our own words never carry a "$": a price reads as "USD 20", anything else drops the sign. E3: a quotation is exact, so text inside
+ *  quotation marks (“…”, ‘…’, "…") is the captured text unchanged and keeps its "$". */
+const QUOTED = /“[^”]*”|‘[^’]*’|"[^"]*"/g;
+const ownDollar = (s: string) => s.replace(/\$\s?(?=\d)/g, "USD ").replace(/\$/g, "");
+export const noDollar = (s: string) => { let out = "", at = 0; for (const m of s.matchAll(QUOTED)) { out += ownDollar(s.slice(at, m.index)) + m[0]; at = m.index + m[0].length; } return out + ownDollar(s.slice(at)); };
 /** "A, B, B" → "A, B": palette sentences can repeat a colour name for near-identical swatches. */
 export const dedupeList = (s: string) => s.replace(/(?<=\b(?:to|:)\s)([^:;.]+)/g, list => [...new Set(list.split(", "))].join(", "));
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

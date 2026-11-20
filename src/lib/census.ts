@@ -7,7 +7,8 @@
 // CENSUS A · WORDS IN HEADLINES. A short watch-list (key, matcher, display word): a member is a brand in the base whose newest headline
 // matches. Members are listed with their headline quoted exactly, counted by sector, and those whose confirmed change added the word in
 // the last 14 days are named with the old line, the new line and the two capture dates.
-// CENSUS B · SALE MODE. A homepage is in sale mode when its h1 headline reads as a promotion (promo.ts) in both newest captures, or the
+// CENSUS B · SALE MODE. A homepage is in sale mode when its h1 headline carries sale wording (E3: promo.ts saleSignal, a discount, sale,
+// deal, an amount or percent off, Black Friday, Cyber Monday, save; seasonal words alone do not count) in both captures, or the
 // same button label does (the first three labels, as the promotion rule reads them). Same base, except a brand whose headline is not from
 // an h1 can still count through its buttons: its base is the homepages whose headline or buttons we can read in both captures.
 // WHEN IT RUNS. Once a week per census, as a weekly piece (outside the daily five, never the lead on a day with a measured single-brand
@@ -15,7 +16,7 @@
 // earlier count ("up from 18 on 20 Nov"). Stored as a roundup row (the stored type list is a fixed check) told apart by its `census:` id.
 import { equalField, isBlockedHeadline } from "./library-diff";
 import { oneHeadline } from "./headline-text";
-import { promoSignal } from "./promo";
+import { saleSignal } from "./promo";
 import { brandName } from "./brand-names";
 import { sectorName } from "./labels";
 import { brandPath } from "./ia";
@@ -42,8 +43,8 @@ export const WATCH_LIST: readonly WatchEntry[] = [
   { key: "agents", word: "agents", forms: ["agent", "agents", "agentic"], matcher: /(?<![\p{L}\p{N}])agent(?:s|ic)?(?![\p{L}\p{N}])/iu },
 ];
 export const SALE_KEY = "sale";
-export const CENSUS_HOW = { words: "Read from each homepage's headline in our two most recent captures.", sale: "Read from each homepage's headline and buttons in our two most recent captures." } as const;
-export const CENSUS_RULE = `A census counts what tracked homepages say now, not what changed. A brand counts when its newest capture and the most recent capture at least ${CENSUS_SPAN_HOURS} hours older are both inside the last ${CENSUS_DAYS} days, both read the headline from the page's h1, and both show the same headline; every count is given with that base. Words in headlines counts the homepages whose headline uses a watched word (agents, agent or agentic). Sale mode counts the homepages whose headline, or the same button, reads as a promotion in both captures. A census runs once a week outside the daily five with at least ${CENSUS_MIN} homepages, and again only when its count has moved by ${CENSUS_MOVE_MIN} or more, saying the earlier count. It never leads on a day with a measured story about one brand.`;
+export const CENSUS_HOW = { words: "Read from each homepage's headline in our newest capture and one at least six hours older.", sale: "Read from each homepage's headline and buttons in our newest capture and one at least six hours older." } as const;
+export const CENSUS_RULE = `A census counts what tracked homepages say now, not what changed. A brand counts when its newest capture and the most recent capture at least ${CENSUS_SPAN_HOURS} hours older are both inside the last ${CENSUS_DAYS} days, both read the headline from the page's h1, and both show the same headline; every count is given with that base. Words in headlines counts the homepages whose headline uses a watched word (agents, agent or agentic). Sale mode counts the homepages whose headline, or the same button, carries sale wording (a discount, sale, deal, an amount or percent off, Black Friday, Cyber Monday, save) in both captures; seasonal words alone do not count. A census runs once a week outside the daily five with at least ${CENSUS_MIN} homepages, and again only when its count has moved by ${CENSUS_MOVE_MIN} or more, saying the earlier count. It never leads on a day with a measured story about one brand.`;
 
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.replace(/\s+/g, " ").trim() : null);
 /** A captured headline, read once (E2h: "X X" stored by a page that renders its h1 twice is "X"). */
@@ -99,7 +100,7 @@ const buttons = (c: CensusCapture) => c.ctas.map(str).filter((x): x is string =>
 /** The same button label in both captures that reads as a promotion (the newest capture's wording), or null. */
 export function saleButton(p: CensusPair): string | null {
   const older = new Set(buttons(p.older).map(norm));
-  return buttons(p.newest).find(b => older.has(norm(b)) && promoSignal(b) !== null) ?? null;
+  return buttons(p.newest).find(b => older.has(norm(b)) && saleSignal(b) !== null) ?? null;
 }
 /** Sale mode: the base (headline readable in both, or buttons read in both) and the members (promotional h1 in both, else the same promotional button). */
 export function saleCensus(pairs: ReadonlyMap<string, CensusPair>): { base: number; members: Member[] } {
@@ -108,7 +109,7 @@ export function saleCensus(pairs: ReadonlyMap<string, CensusPair>): { base: numb
     const h = readableHeadline(p), hasButtons = buttons(p.newest).length > 0 && buttons(p.older).length > 0;
     if (!h && !hasButtons) continue;
     base++;
-    if (h && promoSignal(h) && promoSignal(h1Text(p.older.h1))) { members.push({ domain: d, line: h, via: "headline" }); continue; }
+    if (h && saleSignal(h) && saleSignal(h1Text(p.older.h1))) { members.push({ domain: d, line: h, via: "headline" }); continue; }
     const btn = saleButton(p); if (btn) members.push({ domain: d, line: btn, via: "button" });
   }
   return { base, members };

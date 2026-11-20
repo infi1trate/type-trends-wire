@@ -36,8 +36,17 @@ export type FrontStory = {
   basis: "measured" | "ai" | null; at: string; href: string; format: Format; sector: string | null; sectorName: string | null; score: number; corrected: string | null;
   /** I1: a single-brand story's brand and its stored site icon (null for roundups, signals and stories without an icon). */
   domain?: string | null; icon?: Pic | null;
+  /** E3: a census's count with its base ("16 of 162"), read from its first count line; null for every other story. */
+  count?: string | null;
 };
 type Numbered = StoryRecord & { number?: number | null };
+/** E3: "16 of 162" from a census's first count line ("16 of 162 tracked homepages whose headline we can read"). */
+export function censusCount(id: string, facts: unknown): string | null {
+  if (!id.startsWith("census:") || !Array.isArray(facts)) return null;
+  const f = (facts as { kind?: unknown; text?: unknown }[]).find(x => x.kind === "count" && typeof x.text === "string" && /^\d+ of \d+\b/.test(x.text));
+  const m = f ? /^(\d+) of (\d+)\b/.exec(String(f.text)) : null;
+  return m ? `${m[1]} of ${m[2]}` : null;
+}
 const oneLine = (s: string | null | undefined, n = 180) => { if (!s) return null; const t = s.trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
 export function toFront(s: Numbered): FrontStory { return frontWith(s); }
 /** I1: the same row with its brand's stored icon (single-brand stories only). */
@@ -45,7 +54,7 @@ export function frontWith(s: Numbered, icons?: Record<string, Pic>): FrontStory 
   const type = isKind(s.type) ? s.type : "news", one = s.domains?.length === 1 ? s.domains[0]! : null;
   return { id: s.id, number: s.state === "published" ? s.number ?? null : null, type, typeName: s.id.startsWith("census:") ? "Census" : STORY_TYPE_DEFS[type].kicker, kicker: noDid(s.kicker), headline: s.headline, line: oneLine(s.deck),
     basis: s.basis === "measured" || s.basis === "ai" ? s.basis : null, at: s.happened_at, href: storyPath(s.id), format: storyFormat(type), sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null,
-    score: s.score, corrected: s.correctedAt, domain: one, icon: one ? icons?.[one] ?? null : null };
+    score: s.score, corrected: s.correctedAt, domain: one, icon: one ? icons?.[one] ?? null : null, count: censusCount(s.id, s.facts) };
 }
 /** "just now", "12 min ago", "3 h ago", "2 days ago". Never in the future: a clock ahead of the server reads as just now. */
 export function relTime(iso: string, now: number): string {
@@ -183,7 +192,9 @@ export function editionLines(e: EditionsIn, filter: FormatFilter): EditionLine[]
   return out.filter(l => shows(filter, l.format));
 }
 export const EXPLORE_MAX = 8;
-export type ExploreItem = { kind: "brand" | "pattern"; key: string; name: string; href: string; at: string; via: string };
+/** E3: the side column's Explore shows at most this many rows, one per story. */
+export const EXPLORE_SIDE_MAX = 5;
+export type ExploreItem = { kind: "brand" | "pattern"; key: string; name: string; href: string; at: string; via: string; story?: string };
 /** Brand and pattern pages behind this week's stories, newest story first, each page once. */
 export function exploreOf(stream: Numbered[], now: number, patternKeys: Set<string>, names: Map<string, string | null>): ExploreItem[] {
   const out: ExploreItem[] = [], seen = new Set<string>();
@@ -193,6 +204,31 @@ export function exploreOf(stream: Numbered[], now: number, patternKeys: Set<stri
     for (const k of s.signal_keys) if (patternKeys.has(k) && !seen.has(`p:${k}`)) { seen.add(`p:${k}`); out.push({ kind: "pattern", key: k, name: label(k).name, href: `/patterns/${encodeURIComponent(k)}`, at: s.happened_at, via: s.headline }); }
   }
   return out.slice(0, EXPLORE_MAX);
+}
+/** E3 · the side column's Explore: at most five rows and at most one per story, newest story first, each page once. A story's row is a
+ *  brand, preferring one with a story of its own this week (a single-brand story about it), else its first brand, else one of its
+ *  pattern pages. */
+export function exploreSide(stream: Numbered[], now: number, patternKeys: Set<string>, names: Map<string, string | null>, max = EXPLORE_SIDE_MAX): ExploreItem[] {
+  const week = stream.filter(s => within(s.happened_at, now, COLUMN_DAYS * DAY) && s.type !== "launch");
+  const own = new Set(week.filter(s => s.domains.length === 1).map(s => s.domains[0]!));
+  const out: ExploreItem[] = [], seen = new Set<string>();
+  for (const s of week) {
+    if (out.length >= max) break;
+    const brands = s.domains.filter(d => !seen.has(`b:${d}`)), d = brands.find(x => own.has(x)) ?? brands[0];
+    if (d) { seen.add(`b:${d}`); out.push({ kind: "brand", key: d, name: names.get(d) ?? d, href: `/brands/${encodeURIComponent(d)}`, at: s.happened_at, via: s.headline, story: s.id }); continue; }
+    const k = s.signal_keys.find(x => patternKeys.has(x) && !seen.has(`p:${x}`));
+    if (k) { seen.add(`p:${k}`); out.push({ kind: "pattern", key: k, name: label(k).name, href: `/patterns/${encodeURIComponent(k)}`, at: s.happened_at, via: s.headline, story: s.id }); }
+  }
+  return out;
+}
+// ALSO TODAY (E3) ------------------------------------------------------------------------------------------------------------------
+/** The other stories of the day beside the lead, at most this many, as cards. */
+export const ALSO_MAX = 4;
+/** Today's stories (the column's Last hour and Today groups) other than the lead, in rank order (as the lead is chosen), at most four. */
+export function alsoToday(stories: Numbered[], leadId: string | null, sector: string, now: number, max = ALSO_MAX): Numbered[] {
+  const today = stories.filter(s => s.id !== leadId && s.type !== "launch" && (groupOf(s.happened_at, now) === "hour" || groupOf(s.happened_at, now) === "today"));
+  const rank = rankScores(stories), r = (x: Numbered) => ({ score: rank.get(x.id) ?? x.score, sector: x.sector });
+  return [...today].sort((a, b) => lensScore(r(b), sector) - lensScore(r(a), sector) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id)).slice(0, max);
 }
 export const FRONT_FOOTER = [
   { label: "What makes a story", href: "/what-we-show#ed-w-story" },
@@ -236,27 +272,31 @@ export function frontModel(i: FrontInput) {
     lead = { story: frontWith(s, i.icons), label: state === "quiet" && picked.label === "Today" ? "This week" : picked.label, why: whyText ? { text: whyText, basis: s.why_line ? "ai" : "measured" } : null,
       evidence: crops ? { kind: "crops", ...crops } : mine?.crop ? { kind: "crop", ...mine.crop } : mine?.cover ? { kind: "card", cover: mine.cover } : key && pts.length >= 1 ? { kind: "spark", key, name: label(key).name, points: pts, ...(i.seriesQuarters?.[key]?.length === pts.length ? { quarters: i.seriesQuarters[key] } : {}) } : null };
   }
-  const items = inFormat.filter(s => s.id !== picked?.story.id && groupOf(s.happened_at, i.now) !== null).slice(0, COLUMN_MAX).map(x => frontWith(x, i.icons));
+  // E3: today's other stories sit in Also today as cards; the ruled list below ("Earlier this week") keeps everything else.
+  const also = alsoToday(inFormat as Numbered[], picked?.story.id ?? null, i.sector, i.now).map(x => frontWith(x, i.icons)), above = new Set([picked?.story.id, ...also.map(a => a.id)]);
+  const items = inFormat.filter(s => !above.has(s.id) && groupOf(s.happened_at, i.now) !== null).slice(0, COLUMN_MAX).map(x => frontWith(x, i.icons));
   const quiet = state === "quiet";
   const archive = quiet && shows(i.format, "live") ? archiveFill(ranked, i.archiveMoves, i.now) : [];
   const dayStart = Date.parse(`${utcDay(i.now)}T00:00:00Z`);
   const chart = surfaceShows(i.format, "chart-of-the-day") ? chartOfDay({ ...i.chart, day: utcDay(i.now), stories: ranked.filter(s => Date.parse(s.happened_at) < dayStart && Date.parse(s.happened_at) >= dayStart - COLUMN_DAYS * DAY).map(s => ({ type: s.type })) }) : null;
   const launches = surfaceShows(i.format, "new-on-the-scene") ? stream.filter(s => s.type === "launch").slice(0, 6).map(x => frontWith(x, i.icons)) : [];
   const explore = shows(i.format, "explore") ? exploreOf(stream, i.now, i.patternKeys, i.brandNames) : [];
+  const exploreAside = shows(i.format, "explore") ? exploreSide(stream, i.now, i.patternKeys, i.brandNames) : [];
   const editions = editionLines(i.editions, i.format);
-  const movingShown = surfaceShows(i.format, "moving-now");
+  // E3: without a week-over-week comparison, Moving now is not drawn at all; it returns with the first comparison.
+  const movingShown = surfaceShows(i.format, "moving-now") && !!i.moving.pair;
   const strip = surfaceShows(i.format, "your-sector") ? sectorStrip(i.sector, i.lens, stream) : null;
   const dataStories = surfaceShows(i.format, "data-stories") ? (i.dataStories ?? []) : [];
   const collections = shows(i.format, "explore") ? (i.collections ?? []) : [];
   return {
     now: new Date(i.now).toISOString(), today: utcDay(i.now), sector: i.sector, format: i.format, state,
     ticker: tickerOf(i.signals), freshness: i.freshness,
-    lead,
+    lead, also,
     moving: movingShown ? { items: i.moving.items, line: movingLine(i.moving), comparison: i.moving.pair ? `Between forecast run ${i.moving.pair.earlier.id} and run ${i.moving.pair.latest.id}, ${i.moving.pair.days} days apart, across all sectors.` : null } : null,
     column: { items, quiet, groups: groupColumn(items, i.now, { sector: i.sector, quiet }) },
-    archive, chart, launches, strip, editions, explore, dataStories, collections, footer: FRONT_FOOTER,
+    archive, chart, launches, strip, editions, explore, exploreAside, dataStories, collections, footer: FRONT_FOOTER,
     /** Which sections render. Absent sections are left out of the page, never shown empty. */
-    sections: { lead: !!lead, moving: movingShown, chart: !!chart, launches: launches.length > 0, strip: !!strip, editions: editions.length > 0, explore: explore.length > 0, archive: archive.length > 0, dataStories: dataStories.length > 0, collections: collections.length > 0 },
+    sections: { lead: !!lead, also: also.length > 0, moving: movingShown, chart: !!chart, launches: launches.length > 0, strip: !!strip, editions: editions.length > 0, explore: explore.length > 0, exploreAside: exploreAside.length > 0, archive: archive.length > 0, dataStories: dataStories.length > 0, collections: collections.length > 0 },
   };
 }
 export type FrontModel = ReturnType<typeof frontModel>;

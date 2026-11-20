@@ -451,6 +451,11 @@
   .shell-switch { border: var(--tk-border-hairline) solid var(--tk-slab-fg); display: inline-flex; }
   .shell-switch a { display: inline-flex; align-items: center; min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-3); }
   .shell-switch a[aria-current="page"] { background: var(--tk-slab-fg); color: var(--tk-slab-bg); text-decoration: none; }
+  /* E3 · More: the button reads as current like a link; its list is the slab, ruled from the bar like the Menu sheet. */
+  .shell-nav button[data-current] { color: var(--tk-highlight-bg); text-decoration: underline; text-decoration-thickness: var(--tk-border-strong); text-underline-offset: 8px; }
+  .shell-nav button:hover { text-decoration: underline; text-decoration-thickness: var(--tk-border-hairline); text-underline-offset: 8px; }
+  .shell-more { border-top: var(--tk-border-hairline) solid var(--tk-slab-fg); }
+  .shell-more a[aria-current="page"] { color: var(--tk-highlight-bg); }
   .shell-select { background: var(--tk-slab-bg); color: var(--tk-slab-fg); border: var(--tk-border-hairline) solid var(--tk-slab-fg); min-height: var(--tk-layout-tap); padding: 0 var(--tk-space-2); font-family: var(--tk-type-kicker-family); font-weight: 700; font-size: var(--tk-type-kicker-size); letter-spacing: .04em; }
   .shell-fresh { font-family: var(--tk-type-caption-family); font-size: var(--tk-type-caption-size); line-height: var(--tk-type-caption-leading); color: var(--tk-text-muted); }
   .front-ticker.c-slab { border-bottom: 0; }

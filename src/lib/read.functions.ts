@@ -24,6 +24,9 @@ export const getFront = createServerFn({ method: "GET" }).inputValidator(z.objec
 });
 export const getFrontTop = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontTop(data.sector, data.format));
 export const getFrontRest = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontRest(data.sector, data.format));
+// E3 · the front page's two new deferred modules: Also today's pictures and the tape.
+export const getFrontAlso = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontAlso(data.sector, data.format));
+export const getFrontTape = createServerFn({ method: "GET" }).handler(async () => (await import("./front/tape.server")).loadFrontTape());
 export const getStoryLead = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryLead(data.id));
 export const getStoryRelated = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryRelated(data.id));
 export const getPatternHead = createServerFn({ method: "GET" }).inputValidator(z.object({ key: z.string().min(3).max(120), sector })).handler(async ({ data }) => (await import("./read.server")).loadPatternHead(data.key, data.sector));

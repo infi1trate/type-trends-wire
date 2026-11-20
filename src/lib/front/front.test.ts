@@ -147,11 +147,11 @@ describe("absent, not empty", () => {
     expect([m.sections.launches, m.launches.map(l => l.id)]).toEqual([true, ["l"]]);
     expect(m.column.items.some(i => i.id === "l")).toBe(false);
   });
-  it("no stories: no lead, no chart, no editions; the moving line says when the first comparison is due", () => {
+  it("no stories: no lead, no chart, no editions; without a comparison Moving now is not drawn (E3)", () => {
     const m = frontModel(input());
     expect([m.sections.lead, m.sections.chart, m.sections.editions, m.sections.explore, m.sections.archive]).toEqual([false, false, false, false, false]);
-    expect(m.moving?.line).toBe("No week-over-week comparison yet. The first one is expected with the weekly forecast on Sunday 22 Nov.");
-    expect(m.moving?.items).toEqual([]);
+    expect(m.moving).toBeNull();
+    expect(m.sections.moving).toBe(false);
   });
   it("killed stories are not shown and show no number", () => {
     const m = frontModel(input({ stories: [st("k", { state: "killed", number: 9, happened_at: iso(NOW - 2 * H) }), st("a", { number: 10, happened_at: iso(NOW - 3 * H) })] }));

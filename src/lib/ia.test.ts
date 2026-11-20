@@ -9,7 +9,7 @@ const routeKeys = walk(ROUTES).filter(p => /\.(tsx?)$/.test(p) && !p.endsWith("_
 
 describe("IA registry", () => {
   it("has exactly six sections with F1–F6", () => {
-    expect(SECTIONS.map(s => [s.label, s.key, s.read])).toEqual([["Live", "F1", "/"], ["Signals", "F2", "/signals"], ["Brands", "F3", "/brands"], ["Patterns", "F4", "/patterns"], ["Digest", "F5", "/digest"], ["Tools", "F6", "/tools"]]);
+    expect(SECTIONS.map(s => [s.label, s.key, s.read])).toEqual([["Today", "F1", "/"], ["Signals", "F2", "/signals"], ["Brands", "F3", "/brands"], ["Patterns", "F4", "/patterns"], ["Digest", "F5", "/digest"], ["Tools", "F6", "/tools"]]);
   });
   it("every route file is in SURFACES (no orphans)", () => {
     expect(routeKeys.length).toBeGreaterThan(40);

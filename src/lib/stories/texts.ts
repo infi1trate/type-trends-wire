@@ -23,6 +23,13 @@ export function withTexts<S extends Overlaid>(stories: S[], rows: TextRow[]): (S
   });
 }
 const MON: Record<string, string> = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
+/** The how-we-know line a story shows: a census always says how it is read (E3: the newest capture and one at least six hours older), even
+ *  over a written version stored with older wording; any other story, its written line, else the one built from its basis and dates. */
+export function storyHowWeKnow(s: { id?: string; type: string; basis: string | null; kicker: string; happened_at: string; facts: unknown; written?: Written | null }): string {
+  const census = s.id ? censusKeyOf(s.id) : null;
+  if (census) return census === SALE_KEY ? CENSUS_HOW.sale : CENSUS_HOW.words;
+  return s.written?.howWeKnow ?? howWeKnowOf(s);
+}
 /** The how-we-know line for a story without a written text: from its basis, its kicker (news) and the dates on its change lines. */
 export function howWeKnowOf(s: { id?: string; type: string; basis: string | null; kicker: string; happened_at: string; facts: unknown }): string {
   if (s.type === "news") return howWeKnow({ dates: [], ourRead: false, measured: false, news: s.kicker.split(" · ").slice(1).join(" · ") || "outside news" });

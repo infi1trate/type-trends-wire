@@ -1,14 +1,17 @@
 import { line as voiced } from "@/lib/voice";
-// `/` — the live front page. Renders the pure front model (src/lib/front/front.ts) and nothing else; the live column and Moving now
+// `/` — Today, the front page. Renders the pure front model (src/lib/front/front.ts) and nothing else; the live column and Moving now
 // refresh from /front.json without a reload. Composition A (brand/README.md, "Layout moves"), Steady density: a date and state line
 // pinned left and right; ONE pink Plate for the lead; Moving now as a rule box; the live column as a Ledger; chart of the day in a Card;
 // the sector strip, editions and data stories as rule boxes. Nothing else is filled with colour.
 import { useCallback, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { BRAND_NAME } from "@/lib/brand";
-import type { FrontModel, FrontRest, FrontTop, FrontUpdates } from "@/lib/front/front";
+import type { FrontModel, FrontRest, FrontStory, FrontTop, FrontUpdates } from "@/lib/front/front";
+import type { Crop } from "@/lib/crops";
+import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape } from "@/lib/front/tape-block";
+import { MarkedName } from "./BrandMark";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { frontRestQuery } from "@/lib/data";
+import { frontAlsoQuery, frontRestQuery, frontTapeQuery } from "@/lib/data";
 import { Later, ROW } from "./Later";
 import { FORMAT_LABEL, FORMAT_NOTE, FORMATS, frontSearch, type FormatFilter } from "@/lib/front/formats";
 import { numberLabel } from "@/lib/stories/numbers";
@@ -32,8 +35,6 @@ const FILTERS: FormatFilter[] = ["all", ...FORMATS];
 const share = (v: number) => pct(v, 1) ?? "—";
 const signed = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}`;
 const Kicker = ({ id, children }: { id: string; children: ReactNode }) => <h2 id={id} className="ed-kicker">{children}</h2>;
-const STATE_WORD = { busy: "Busy", steady: "Steady", quiet: "Quiet" } as const;
-const STATE_NOTE = { busy: "Three or more stories in the last six hours", steady: "A story in the last day", quiet: voiced("read.frontView.1") } as const;
 
 function FormatRow({ m }: { m: Pick<FrontModel, "sector" | "format"> }) {
   return <nav aria-label="Formats" className="no-print min-w-0 md:flex-1">
@@ -108,16 +109,49 @@ function Strip({ s, format, now }: { s: NonNullable<FrontModel["strip"]>; format
   </RuleBox></section>;
 }
 
-/** Date and state, pinned to the left and right edges; from 768 px the format filter shares the row between them (lib/shell.ts). */
-function DateState({ m }: { m: Pick<FrontModel, "sector" | "format" | "now" | "state"> }) {
+/** The date pinned left; from 768 px the format filter shares the row beside it (lib/shell.ts). E3: no page-state label (machinery). */
+function DateState({ m }: { m: Pick<FrontModel, "sector" | "format" | "now"> }) {
   return <div className="flex flex-wrap items-end justify-between gap-x-6 border-b-[3px] border-ed-ink md:flex-nowrap" data-front-dateline="">
     <div className="flex min-h-11 items-center"><FrontDate now={m.now} /></div>
     <div className="order-last w-full md:order-none md:w-auto md:min-w-0 md:flex-1"><FormatRow m={m} /></div>
-    <p className="ed-kicker flex min-h-11 items-center" title={STATE_NOTE[m.state]}><span className="sr-only">Page state: </span>{STATE_WORD[m.state]}<span className="ed-caption ml-2 normal-case tracking-normal max-xl:sr-only">{STATE_NOTE[m.state]}</span></p>
   </div>;
 }
 
-type Slots = { archive: ReactNode; aside: ReactNode; lower: ReactNode };
+// ALSO TODAY (E3): the day's other stories as a row of Cards (two by two at 768, one column below). A card has a picture only when the
+// story has a first-screen crop; a census shows its count large above the headline.
+function AlsoCard({ s, crop }: { s: FrontStory; crop: Crop | null }) {
+  return <li className="min-w-0"><Card as="article" className="flex h-full flex-col gap-3 p-4" aria-labelledby={`also-${s.id}`} data-also-card="">
+    <p className="ed-kicker flex flex-wrap items-center gap-x-3 gap-y-1">{s.number != null && <span>{numberLabel(s.number)}</span>}<span>{s.typeName}{s.sectorName ? ` · ${s.sectorName}` : ""}</span></p>
+    {s.count && <p className="ed-stat whitespace-nowrap" data-census-count="">{s.count}</p>}
+    <h3 id={`also-${s.id}`} className="ed-h3 break-words"><Link to="/stories/$id" params={{ id: s.id }} className="no-underline hover:underline">{s.headline}</Link></h3>
+    {s.line && <p className="ed-small">{s.line}</p>}
+    {crop && <div className="mt-auto pt-2" data-also-picture=""><CropFigure crop={crop} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw" /></div>}
+  </Card></li>;
+}
+export function AlsoCards({ items, pictures }: { items: FrontStory[]; pictures: Record<string, Crop | null> }) {
+  if (!items.length) return null;
+  return <section aria-labelledby="front-also" data-front-also="">
+    <Kicker id="front-also">Also today</Kicker>
+    <ul className="mt-3 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">{items.map(s => <AlsoCard key={s.id} s={s} crop={pictures[s.id] ?? null} />)}</ul>
+  </section>;
+}
+function AlsoLater({ m }: { m: FrontTop }) { const { data } = useSuspenseQuery(frontAlsoQuery(m.sector, m.format)); return <AlsoCards items={m.also} pictures={data} />; }
+
+// THE TAPE (E3): the eight newest confirmed changes as a ruled list, one line each, linking to the brand page; then the count line.
+export function TapeBlock({ t }: { t: FrontTape }) {
+  return <section aria-labelledby="front-tape" data-front-tape="">
+    <h2 id="front-tape" className="ed-h2">{FRONT_TAPE_TITLE}</h2>
+    <p className="ed-caption mt-1">{FRONT_TAPE_SUB}</p>
+    {t.lines.length > 0
+      ? <Ledger className="mt-3" small label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, title: <MarkedName icon={l.icon} size={20}>{l.name} · {l.what}</MarkedName>, tags: l.marks, time: l.when }))} />
+      : <p className="ed-small mt-3">No confirmed change in the last {t.days} days.</p>}
+    <p className="ed-data mt-3" data-tape-counts="">{confirmedText(t.confirmed, t.days)}; <a href={UNCONFIRMED_HREF} className="ed-tap">{unconfirmedText(t.unconfirmed)}</a> (seen once or alternating).</p>
+    <p className="ed-data mt-2"><a href={WHOLE_TAPE_HREF} className="ed-tap">The whole tape →</a></p>
+  </section>;
+}
+function TapeLater() { const { data } = useSuspenseQuery(frontTapeQuery()); return <TapeBlock t={data} />; }
+
+type Slots = { archive: ReactNode; aside: ReactNode; lower: ReactNode; also: ReactNode; tape: ReactNode };
 const exploreRow = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
 
 function FrontArchive({ r }: { r: Pick<FrontRest, "archive" | "sections"> }) {
@@ -137,10 +171,10 @@ function FrontAside({ m, r }: { m: FrontTop; r: FrontRest }) {
       <ul className="ledger mt-2">{r.launches.map(s => <LiveItem key={s.id} s={s} now={now} />)}</ul>
     </RuleBox></section>}
     {r.strip && <Strip s={r.strip} format={m.format} now={now} />}
-    {m.format === "all" && m.sections.explore && <section aria-labelledby="front-explore"><RuleBox>
+    {m.format === "all" && m.sections.exploreAside && <section aria-labelledby="front-explore"><RuleBox>
       <Kicker id="front-explore">Explore</Kicker>
-      <p className="ed-caption mt-1">Brand and pattern pages behind this week's stories.</p>
-      <Ledger className="mt-2" small rows={m.explore.map(exploreRow)} label="Brand and pattern pages" />
+      <p className="ed-caption mt-1">Brand and pattern pages behind this week's stories, one for each story.</p>
+      <Ledger className="mt-2" small rows={m.exploreAside.map(exploreRow)} label="Brand and pattern pages" />
     </RuleBox></section>}
     {r.sections.collections && <section aria-labelledby="front-collections" data-shelf="collections"><RuleBox>
       <Kicker id="front-collections">Collections</Kicker>
@@ -166,7 +200,7 @@ function FrontLower({ r }: { r: Pick<FrontRest, "editions" | "dataStories" | "se
 
 /** The whole front page from one full model (tests, /front.json consumers). */
 export function FrontView({ m }: { m: FrontModel }) {
-  return <FrontLayout m={m} slots={{ archive: <FrontArchive r={m} />, aside: <FrontAside m={m} r={m} />, lower: <FrontLower r={m} /> }} />;
+  return <FrontLayout m={m} slots={{ archive: <FrontArchive r={m} />, aside: <FrontAside m={m} r={m} />, lower: <FrontLower r={m} />, also: <AlsoCards items={m.also} pictures={{}} />, tape: null }} />;
 }
 // P1 · shell first: the lead, ticker and live column render from the critical read; the archive, side column and lower lists stream
 // into <Later> slots from the deferred read (same model, built once per lens on the server).
@@ -179,25 +213,28 @@ export function FrontPageView({ m }: { m: FrontTop }) {
     archive: m.sections.archive ? <Later id="front-archive-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><RestArchive m={m} /></Later> : null,
     aside: <Later id="front-aside-later" shapes={[{ kind: "block", height: 380 }, { kind: "rows", n: 4, height: ROW.compact }]}><RestAside m={m} /></Later>,
     lower: m.sections.editions || m.sections.dataStories ? <Later id="front-lower-later" shapes={[{ kind: "rows", n: 4, height: ROW.compact }]}><RestLower m={m} /></Later> : null,
+    also: m.sections.also ? <Later id="front-also-later" shapes={[{ kind: "block", height: 28 }, { kind: "block", height: 420 }]}><AlsoLater m={m} /></Later> : null,
+    tape: <Later id="front-tape-later" shapes={[{ kind: "block", height: 64 }, { kind: "rows", n: 8, height: ROW.compact }, { kind: "text", lines: 2 }]}><TapeLater /></Later>,
   }} />;
 }
 
 function FrontLayout({ m, slots }: { m: FrontTop; slots: Slots }) {
   const now = useNow(m.now, 30_000), staff = !!useStaffKey();
   const [moving, setMoving] = useState(m.moving);
-  const onUpdates = useCallback((u: FrontUpdates) => { if (u.moving) setMoving(u.moving); }, []);
+  const onUpdates = useCallback((u: FrontUpdates) => { setMoving(u.moving); }, []);
   const empty = m.format === "all" ? voiced("read.frontView.2") : `No ${FORMAT_LABEL[m.format]} stories this week.`;
-  return <DigestShell label="Live" section="live" lens tour edition={null} note={m.sector !== "all" ? `${sectorName(m.sector)} stories first in each group` : null}>
+  return <DigestShell label="Today" section="live" lens tour edition={null} note={m.sector !== "all" ? `${sectorName(m.sector)} stories first in each group` : null}>
     <FrontTicker items={m.ticker} />
     <FiltersScope>
     <div className="ed-wrap d-stack front-stack mt-4">
-      <h1 className="sr-only">{BRAND_NAME}: the live front page</h1>
+      <h1 className="sr-only">{BRAND_NAME}: Today, the front page</h1>
       <DateState m={m} />
       {m.lead ? <Lead m={m} now={now} /> : m.format === "all" && <p className="ed-standfirst">{voiced("read.frontView.3")}</p>}
-      {moving && <Moving moving={moving} />}
+      {slots.also}
+      {(m.format === "all" || m.format === "live") && slots.tape}
       <div className="grid grid-cols-1 gap-y-10 lg:grid-cols-12 lg:gap-x-10">
         <section aria-labelledby="front-live" className="lg:col-span-8" data-tour="r-live">
-          <h2 id="front-live" className="ed-h2">{m.format === "explore" ? "Explore" : "Live"}</h2>
+          <h2 id="front-live" className="ed-h2">{m.format === "explore" ? "Explore" : "Earlier this week"}</h2>
           {m.state === "quiet" && m.format !== "explore" && <p className="ed-caption mt-1" role="note">Quiet: no new story in the last 24 hours. Below is the rest of this week{m.sections.archive ? ", then the same week from the archive" : ""}, each with the date it happened.</p>}
           {m.format === "explore"
             ? <Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" />
@@ -206,10 +243,11 @@ function FrontLayout({ m, slots }: { m: FrontTop; slots: Slots }) {
           {slots.archive}
           <p className="ed-data mt-6"><Link to="/morning" className="ed-tap">Older stories, day by day, in the Morning Line →</Link></p>
         </section>
-        <aside className="space-y-10 lg:col-span-4" aria-label="Chart of the day, new on the scene and your sector">
+        <aside className="space-y-10 lg:col-span-4" aria-label="Chart of the day, your sector, explore and collections">
           {slots.aside}
         </aside>
       </div>
+      {moving && <Moving moving={moving} />}
       {slots.lower}
       <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.filter(f => staff || !STAFF_HREFS.has(f.href)).map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     </div>

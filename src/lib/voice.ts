@@ -8,7 +8,7 @@ export type StateKind = "empty" | "loading" | "failed" | "notFound" | "offline";
 export type Step = { label: string; href: string } | { label: string; retry: true } | { label: string; wait: true };
 export type Said = { kind: StateKind; where: string; title?: string; text: string; next: readonly Step[] };
 
-const FRONT: Step = { label: "Live front page", href: "/" };
+const FRONT: Step = { label: "Today, the front page", href: "/" };
 const RETRY: Step = { label: "Try again", retry: true };
 const WAIT = (label: string): Step => ({ label, wait: true });
 const go = (label: string, href: string): Step => ({ label, href });
@@ -74,7 +74,7 @@ export const VOICE = {
   "dataStory.notFound": missing("/data/<slug> with an unknown slug", "No such data story", "That data story doesn't exist. Every data story is on the data page.", go("Data stories", "/data")),
   "whereYouSit.failed": failed("/data/where-you-sit", "This page didn't load", "The stored data behind it", go("Data stories", "/data")),
   "digest.failed": failed("/digest and /digest/<week>", "This issue didn't load", "The issue's data", go("All issues", "/digest/archive")),
-  "digest.empty": missing("/digest before the first issue", "No issue yet", "The first issue is assembled from the Sunday forecast and brief. It appears after the next run.", go("Live front page", "/")),
+  "digest.empty": missing("/digest before the first issue", "No issue yet", "The first issue is assembled from the Sunday forecast and brief. It appears after the next run.", go("Today, the front page", "/")),
   "digest.notFound": missing("/digest/<week> with no issue", "No issue for this week",
     "{digest} has no issue for “{week}”. Issues are weekly from {first}, written as year-W-week (for example {first}).", go("Latest issue", "/digest"), go("All issues", "/digest/archive")),
   "digestArchive.failed": failed("/digest/archive", "The archive didn't load", "The list of issues", go("Latest issue", "/digest")),

@@ -41,7 +41,7 @@ export type ViewId = TabId | "composition";
 export const SUB_VIEWS: Record<"composition", TabId> = { composition: "layout" };
 
 export const SECTIONS: readonly Section[] = [
-  { id: "live", label: "Live", purpose: "What is changing right now: the story stream, newest first.", read: "/", terminal: "today", key: "F1" },
+  { id: "live", label: "Today", purpose: "The front page: today's stories, the tape of confirmed changes and the rest of the week.", read: "/", terminal: "today", key: "F1" },
   { id: "signals", label: "Signals", purpose: "The design signals worth a decision, ranked, each with its receipts.", read: "/signals", terminal: "overview", key: "F2" },
   { id: "brands", label: "Brands", purpose: "Who is doing it: tracked brands, their identity and every confirmed move.", read: "/brands", terminal: "library", key: "F3" },
   { id: "patterns", label: "Patterns", purpose: "Signals seen as examples: the brands that show each layout pattern.", read: "/patterns", terminal: "patterns", key: "F4" },
@@ -100,9 +100,9 @@ export type KeyTarget = { section: SectionId } | { view: ViewId } | { action: "g
 export type KeyDef = { key: string; target: KeyTarget; label: string; alias?: true };
 export const KEY_MAP: readonly KeyDef[] = [
   ...SECTIONS.map(s => ({ key: s.key, target: { section: s.id }, label: s.label })),
-  { key: "T", target: { view: "today" }, label: "Live · Today", alias: true },
+  { key: "T", target: { view: "today" }, label: "Today", alias: true },
   { key: "F7", target: { view: "vibe" }, label: "Signals · Vibe map", alias: true },
-  { key: "F8", target: { view: "wire" }, label: "Live · Wire", alias: true },
+  { key: "F8", target: { view: "wire" }, label: "Today · Wire", alias: true },
   { key: "F9", target: { view: "rebrands" }, label: "Brands · Moves", alias: true },
   { key: "F10", target: { view: "brief" }, label: "Signals · Forecast", alias: true },
   { key: "F11", target: { view: "library" }, label: "Brands · Directory", alias: true },
@@ -195,6 +195,36 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     case "tools": case "status": return t("watch");
     default: return t("today");
   }
+}
+// THE READ BAR (E3) — the Read shell's one bar, in order: Today, Signals, Brands, Patterns, Studies, Digest, then More, one menu holding
+// Tools, the glossary and the pages that explain the newsroom. Below 1024 px the same items, in the same order, sit in the Menu sheet.
+// Addresses never change: Today is `/`, Studies is the data stories index (/data). Sections (above) stay the terminal's six.
+export type BarId = "today" | "signals" | "brands" | "patterns" | "studies" | "digest";
+export const READ_BAR: readonly { id: BarId; label: string; href: string }[] = [
+  { id: "today", label: "Today", href: "/" },
+  { id: "signals", label: "Signals", href: "/signals" },
+  { id: "brands", label: "Brands", href: "/brands" },
+  { id: "patterns", label: "Patterns", href: "/patterns" },
+  { id: "studies", label: "Studies", href: "/data" },
+  { id: "digest", label: "Digest", href: "/digest" },
+];
+export const MORE_LABEL = "More";
+export type MoreId = "tools" | "glossary" | "story-rules" | "what-we-show" | "rss";
+/** The More menu. `href: null` opens the glossary overlay in place (the `?` key does the same). */
+export const MORE_MENU: readonly { id: MoreId; label: string; href: string | null }[] = [
+  { id: "tools", label: "Tools", href: "/tools" },
+  { id: "glossary", label: "Glossary", href: null },
+  { id: "story-rules", label: "What makes a story", href: "/what-we-show#ed-w-story" },
+  { id: "what-we-show", label: "What we show and why", href: "/what-we-show" },
+  { id: "rss", label: "RSS", href: "/morning/rss.xml" },
+];
+/** Which bar item a Read path lights up: a bar item, More (Tools and the explainer pages), or nothing. */
+export function readBarOf(pathname: string): BarId | "more" | null {
+  const s = pathname.split("/").filter(Boolean)[0];
+  if (s === "data") return "studies";
+  if (s === "what-we-show") return "more";
+  const sec = readSectionOf(pathname);
+  return sec === "live" ? "today" : sec === "tools" ? "more" : sec;
 }
 /** The Read section a path belongs to (for the active nav item). */
 export function readSectionOf(pathname: string): SectionId | null {

@@ -109,8 +109,14 @@ export function toCrop(r: CropRow): Crop {
   return { domain: r.domain, section, sectionName: name, captured_at: r.captured_at, last_seen_at: r.last_seen_at, hash: r.hash, src: cropSrc(r.path), width: r.width, height: r.height,
     alt: `${r.domain} ${name.toLowerCase()}, captured ${day}`, caption: `${name} · ${r.domain} · captured ${day}`, live: `https://${r.domain}`, report: reportHref(r.domain) };
 }
+/** E3: a brand's latest hero crop from the pictures index as a credited Crop (for cards that show a first screen). */
+export function heroCrop(domain: string, p: { src: string; width: number; height: number; at: string }): Crop {
+  const name = sectionName("hero"), day = utcDay(p.at);
+  return { domain, section: "hero", sectionName: name, captured_at: p.at, last_seen_at: p.at, hash: "", src: p.src, width: p.width, height: p.height,
+    alt: `${domain} ${name.toLowerCase()}, captured ${day}`, caption: `${name} · ${domain} · captured ${day}`, live: `https://${domain}`, report: reportHref(domain) };
+}
 
-/** Every stored version of one section, newest first. */
+/** Every stored version of one section, newest first.*/
 export const versionsOf = <T extends CropRow>(rows: T[], domain: string, section: CropSection, viewport = "desktop") => rows.filter(r => r.domain === domain && r.section === section && r.viewport === viewport).sort(newestFirst);
 /** Latest crop of each section that exists, in the fixed section order, with how many versions are stored. */
 export function latestSections(rows: CropRow[], domain: string): (Crop & { versions: number })[] {

@@ -29,7 +29,7 @@ export const TOUR_STEPS: TourStep[] = [
 ];
 /** Read tour: Live → a signal → a brand → the Terminal switch. */
 export const READ_TOUR_STEPS: TourStep[] = [
-  { id: "live", target: '[data-tour="r-live"]', caption: "Live is the front page: what changed, newest first. Every story links to its receipts." },
+  { id: "live", target: '[data-tour="r-live"]', caption: "Today is the front page: the day's stories, the tape of confirmed changes, then the rest of the week. Every story links to its receipts." },
   { id: "signal", target: '[data-tour="r-signal"]', caption: "A signal page shows what it is now, the evidence, the so-what and related brands." },
   { id: "brand", target: '[data-tour="r-brand"]', caption: "A brand page shows its identity, every confirmed move and how it sits against its sector." },
   { id: "terminal", target: '[data-tour="r-terminal"]', caption: "Terminal switches to the dense, keyboard-first view of the same thing. Press ` anywhere to switch back." },

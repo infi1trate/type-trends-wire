@@ -16,7 +16,7 @@ import { getSignalSnapshot } from "./signals.functions";
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
-import { getBrandCard, getBrandMoves, getBrandSections, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
+import { getBrandCard, getBrandMoves, getBrandSections, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
 import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
@@ -411,6 +411,8 @@ export const storyLeadQuery = (id: string) => queryOptions({ queryKey: ["story-l
 export const storyRelatedQuery = (id: string) => queryOptions({ queryKey: ["story-related", id], staleTime: 60_000, queryFn: () => getStoryRelated({ data: { id } }) });
 export const frontTopQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front-top", sector, format], staleTime: 60_000, queryFn: () => getFrontTop({ data: { sector, format } }) });
 export const frontRestQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front-rest", sector, format], staleTime: 60_000, queryFn: () => getFrontRest({ data: { sector, format } }) });
+export const frontAlsoQuery = (sector: string, format: string) => queryOptions({ queryKey: ["front-also", sector, format], staleTime: 60_000, queryFn: () => getFrontAlso({ data: { sector, format } }) });
+export const frontTapeQuery = () => queryOptions({ queryKey: ["front-tape"], staleTime: 60_000, queryFn: () => getFrontTape() });
 export const traitHeadQuery = (key: string) => queryOptions({ queryKey: ["trait-head", key], staleTime: 10 * 60_000, queryFn: () => getTraitHead({ data: { key } }) });
 export const patternHeadQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern-head", key, sector], staleTime: 10 * 60_000, queryFn: () => getPatternHead({ data: { key, sector } }) });
 export const sectorHeadQuery = (sector: string) => queryOptions({ queryKey: ["sector-head", sector], staleTime: 10 * 60_000, queryFn: () => getSectorHead({ data: { sector } }) });

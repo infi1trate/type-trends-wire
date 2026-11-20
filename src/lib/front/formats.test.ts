@@ -32,9 +32,9 @@ describe("formats", () => {
   it("format filter combines with the sector lens", () => {
     const stories = [st("m-f", { sector: "fintech", happened_at: iso(NOW - 2 * H) }), st("m-a", { sector: "ai", happened_at: iso(NOW - 3 * H) }), st("ws-f", { type: "white_space", sector: "fintech", happened_at: iso(NOW - 4 * H) }), st("lead", { score: 99, happened_at: iso(NOW - 5 * H), sector: "ai" })];
     const live = frontModel(input({ stories, format: "live", sector: "fintech" }));
-    const all = [live.lead!.story, ...live.column.items];
+    const all = [live.lead!.story, ...live.also, ...live.column.items];
     expect(all.every(s => s.format === "live")).toBe(true);
-    expect(live.column.groups[0]!.items[0]!.sector).toBe("fintech");
+    expect(live.also[0]!.sector).toBe("fintech");
     const read = frontModel(input({ stories, format: "read" }));
     expect([read.lead?.story.id, read.column.items.length, read.moving, read.chart, read.strip]).toEqual(["ws-f", 0, null, null, null]);
   });

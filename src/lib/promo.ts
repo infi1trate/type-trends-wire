@@ -53,3 +53,30 @@ export function promoWording(e: { after?: unknown }): string | null {
   return typeof a === "string" ? promoSignal(a) : null;
 }
 export const SEASONAL_MEMBER_RULE = "A brand joins the weekly seasonal story only when a confirmed change carries the sale wording itself: its new headline reads as a promotion. Any other confirmed change on a seasonal page stays a tape line marked Seasonal.";
+
+// SALE WORDING (E3) -------------------------------------------------------------------------------------------------------------------
+/** Sale mode counts a sale only: a discount, "sale", "deal(s)", a percent or an amount off, Black Friday, Cyber Monday or "save" with an
+ *  amount ("save $50", "save 20%", "save up to"). Seasonal words alone ("holiday", "gift", "season") are not a sale; the Seasonal tape mark
+ *  keeps the wider promoSignal. Edit here only. */
+export const SALE_TERMS = ["black friday", "cyber monday", "sale", "deal", "deals", "discount", "% off", "percent off", "<currency amount> off", "save <amount>"] as const;
+const CUR = "(?:[$€£¥]\\s?\\d[\\d,.]*k?|(?<![\\p{L}\\p{N}])(?:usd|eur|gbp)\\s?\\d[\\d,.]*k?)";
+const SALE_DEAL = "(?<!\\b(?:win|wins|winning|won|close|closes|closing|closed|land|landing|more|bigger|faster)\\s)deals?";
+const SALE_PATTERNS: [string, RegExp][] = [
+  ["black friday", /(?<![\p{L}\p{N}])black\s+friday(?![\p{L}\p{N}])/iu],
+  ["cyber monday", /(?<![\p{L}\p{N}])cyber\s+monday(?![\p{L}\p{N}])/iu],
+  ["sale", /(?<![\p{L}\p{N}])sale(?![\p{L}\p{N}])/iu],
+  ["deals", new RegExp(`${L}${SALE_DEAL}${R}`, "iu")],
+  ["discount", /(?<![\p{L}\p{N}])discount(?:s|ed)?(?![\p{L}\p{N}])/iu],
+  ["% off", /\d\s?%\s*off(?![\p{L}\p{N}])/iu],
+  ["percent off", /(?<![\p{L}\p{N}])percent\s+off(?![\p{L}\p{N}])/iu],
+  ["<currency amount> off", new RegExp(`${CUR}\\+?\\s+off(?![\\p{L}\\p{N}])`, "iu")],
+  ["save <amount>", new RegExp(`(?<![\\p{L}\\p{N}])save\\s+(?:up\\s+to\\s+)?(?:${CUR}|\\d+\\s?%)`, "iu")],
+  ["save <amount>", /(?<![\p{L}\p{N}])save\s+up\s+to(?![\p{L}\p{N}])/iu],
+];
+/** The sale term a text reads like (sale mode), or null. */
+export function saleSignal(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const t = text.replace(/\s+/g, " ");
+  for (const [term, re] of SALE_PATTERNS) if (re.test(t)) return term;
+  return null;
+}

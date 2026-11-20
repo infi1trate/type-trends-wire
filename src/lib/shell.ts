@@ -5,12 +5,13 @@
 /** Tailwind's breakpoints, in CSS px (md, lg, xl). */
 export const BREAK = { md: 768, lg: 1024, xl: 1280 } as const;
 export type Break = keyof typeof BREAK;
-export const BAR_ITEMS = ["sections", "switch", "glossary", "lock"] as const;
+// E3: the glossary sits in the More menu, which travels with the sections; nothing is left for the sheet from 1024 px up.
+export const BAR_ITEMS = ["sections", "switch", "lock"] as const;
 export type BarItem = (typeof BAR_ITEMS)[number];
 /** Each item sits in the bar from this breakpoint up, and in the Menu sheet below it. */
-export const INLINE_FROM: Record<BarItem, Break> = { switch: "md", sections: "lg", glossary: "xl", lock: "xl" };
+export const INLINE_FROM: Record<BarItem, Break> = { switch: "md", sections: "lg", lock: "lg" };
 /** The Menu button shows while anything is in the sheet. */
-export const MENU_UNTIL: Break = "xl";
+export const MENU_UNTIL: Break = "lg";
 
 export function barAt(width: number): { inline: BarItem[]; menu: BarItem[]; menuButton: boolean } {
   const inline = BAR_ITEMS.filter(i => width >= BREAK[INLINE_FROM[i]]), menu = BAR_ITEMS.filter(i => width < BREAK[INLINE_FROM[i]]);

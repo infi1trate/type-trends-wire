@@ -26,7 +26,7 @@ export const getLibrary = createServerFn({ method: "GET" }).handler(async () => 
   const split = await (await import("./integrity.server")).checkedEvents(supabaseAnon(), valid);
   const unconfirmed = split.unconfirmed.map(e => ({ id: e.id, domain: e.domain, detected_at: e.detected_at, label: e.label, line: tapeLine({ ...e, page_type: e.page_type ?? null, summary: e.summary ?? null }) }));
   const rowsOut = tapeRows(split.tape.map(e => ({ ...e, before: e.before, after: e.after, page_type: e.page_type ?? null, summary: e.summary ?? null })), e => ({ seasonal: seasonal.has(e.id), reversed: reversed.has(e.id), carousel: carousel.has(e.id) }));
-  return { rows, icons, events: rowsOut.map(({ also, pages: _p, ...e }) => ({ ...e, tape: e.tape, seasonal: [e.id, ...also].some(id => seasonal.has(id)), reversed: [e.id, ...also].some(id => reversed.has(id)) })), unconfirmed, sectors, ai: await aiTrends() };
+  return { rows, icons, events: rowsOut.map(({ also, pages: _p, parts: _parts, ...e }) => ({ ...e, tape: e.tape, seasonal: [e.id, ...also].some(id => seasonal.has(id)), reversed: [e.id, ...also].some(id => reversed.has(id)) })), unconfirmed, sectors, ai: await aiTrends() };
 });
 export const getLibrarySite = createServerFn({ method: "GET" }).inputValidator(z.object({ domain: z.string().min(3).max(253) })).handler(async ({ data }) => {
   const { librarySite } = await import("./library-store.server");

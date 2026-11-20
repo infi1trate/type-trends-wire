@@ -19,7 +19,7 @@ export const VANGUARD_RUN_PREFIX = "lib-vanguard-";
 
 /** The registry. Times are UTC and match the stored schedules; crawler jobs run on the repo's GitHub Actions. */
 export const JOBS: readonly JobDef[] = [
-  { id: "wire", name: "Wire check", feeds: "Live front page, wire and stories", rhythm: { kind: "every", ms: 15 * MIN, aligned: true }, runs_on: "scheduled" },
+  { id: "wire", name: "Wire check", feeds: "Today (the front page), wire and stories", rhythm: { kind: "every", ms: 15 * MIN, aligned: true }, runs_on: "scheduled" },
   { id: "library_ai", name: "AI reading of captured pages", feeds: "Pricing, message and product changes on brand pages", rhythm: { kind: "every", ms: 5 * MIN, aligned: true }, runs_on: "scheduled", note: "Only works when captures are waiting" },
   { id: "gfonts", name: "Google Fonts popularity", feeds: "Type signals", rhythm: { kind: "daily", h: 6, m: 17 }, runs_on: "scheduled" },
   { id: "producthunt", name: "Product Hunt launches", feeds: "Launch stories", rhythm: { kind: "daily", h: 8, m: 37 }, runs_on: "scheduled" },
@@ -33,7 +33,7 @@ export const JOBS: readonly JobDef[] = [
   { id: "wayback", name: "Wayback history", feeds: "Archive captures behind quarterly history", rhythm: { kind: "every", ms: 6 * HOUR }, runs_on: "crawler", note: "Runs while the archive backfill is active" },
   { id: "forecast", name: "Weekly forecast", feeds: "Signals, sector reports, the Digest", rhythm: { kind: "weekly", dow: 0, h: 9, m: 30 }, runs_on: "scheduled" },
   { id: "follow_ups", name: "Forecast follow-ups", feeds: "Weekly brief, chart of the week, ledger, taste tables, story build", rhythm: { kind: "after", of: "the next forecast", ms: 30 * MIN }, runs_on: "chained", note: "One step per five-minute call after the forecast is stored" },
-  { id: "stories", name: "Story build", feeds: "Live front page, Morning Line", rhythm: { kind: "after", of: "each wire, library and forecast job", ms: DAY }, runs_on: "chained", note: "Shown as the newest stored story; builds that find nothing new leave no trace" },
+  { id: "stories", name: "Story build", feeds: "Today (the front page), Morning Line", rhythm: { kind: "after", of: "each wire, library and forecast job", ms: DAY }, runs_on: "chained", note: "Shown as the newest stored story; builds that find nothing new leave no trace" },
   { id: "digest", name: "Weekly Digest brief", feeds: "The Digest", rhythm: { kind: "weekly", dow: 0, h: 9, m: 30 }, runs_on: "chained" },
 ];
 

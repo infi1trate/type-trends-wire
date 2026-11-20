@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { frontRestQuery, frontTopQuery } from "@/lib/data";
+import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
 import { legacyTerminalSearch } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
 import { resolveFormat, type Format } from "@/lib/front/formats";
@@ -12,7 +12,7 @@ import { BRAND_NAME, BRAND_LINE } from "@/lib/brand";
 import { withShare, shareImageFor } from "@/lib/share/meta";
 
 const TITLE = `${BRAND_NAME} — ${BRAND_LINE}`;
-const DESC = "What is changing in how brands look and sound on the web, as it is detected: the lead story, the live column, what is moving, the chart of the day and the editions, every number with receipts.";
+const DESC = `Today on ${BRAND_NAME}: what is changing in how brands look and sound on the web: the lead story, the day's other stories, the tape of every confirmed change, the chart of the day and the editions, every number with receipts.`;
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): { sector?: string | undefined; format?: Format | undefined } => ({
@@ -25,9 +25,12 @@ export const Route = createFileRoute("/")({
     if (legacy) throw redirect({ to: "/terminal", search: legacy, statusCode: 301 });
   },
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),
-  // P1: only the lead and live column are awaited; the side column and lower lists start now and stream into their slots.
+  // P1: only the lead and live column are awaited; the side column, lower lists, Also today's pictures and the tape (E3) start now and
+  // stream into their slots.
   loader: ({ context, deps }) => {
     void context.queryClient.prefetchQuery(frontRestQuery(deps.sector, deps.format));
+    void context.queryClient.prefetchQuery(frontAlsoQuery(deps.sector, deps.format));
+    void context.queryClient.prefetchQuery(frontTapeQuery());
     return context.queryClient.ensureQueryData(frontTopQuery(deps.sector, deps.format)).then(() => undefined);
   },
   head: () => ({

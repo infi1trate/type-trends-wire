@@ -10,7 +10,7 @@ import { STORY_KINDS, STORY_TYPE_DEFS, type EvidenceLink, type Fact, type StoryK
 import { foldedIds, type Shown, type StoredStory } from "./edits";
 import { soWhat } from "../digest/copy";
 import { noDid } from "./reader";
-import { howWeKnowOf, type Written } from "./texts";
+import { storyHowWeKnow, type Written } from "./texts";
 import { leadAllowed, rankScores } from "./score";
 
 /** The deterministic so-what: the signal's own line for signal stories, the type's line otherwise. */
@@ -122,7 +122,7 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
   return {
     id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: census ? "Census" : def.kicker, kicker: type === "news" || census ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
-    body: (s.written?.body ?? []).map(p => deLegacy(p)), howWeKnow: noDid(s.written?.howWeKnow ?? howWeKnowOf(s)),
+    body: (s.written?.body ?? []).map(p => deLegacy(p)), howWeKnow: noDid(storyHowWeKnow(s)),
     // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and
     // under "The lines".
     facts: (census ? facts.filter(f => f.kind === "member") : readFacts(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,

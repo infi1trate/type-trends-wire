@@ -80,10 +80,10 @@ describe("census B · sale mode", () => {
     const s = saleCensus(censusPairs([cap(1, "a.com", "2026-11-20T10:00:00Z", "Mattresses", { source: "largest_text", ctas: ["Shop sale", "Find a store"] }), cap(2, "a.com", "2026-11-19T10:00:00Z", "Pillows", { source: "largest_text", ctas: ["shop  sale"] })], NOW));
     expect(s).toEqual({ base: 1, members: [{ domain: "a.com", line: "Shop sale", via: "button" }] });
   });
-  it("on the captures No. 90 counted: 12 of 229 homepages whose headline or buttons we can read (E2h pair)", () => {
+  it("on the captures No. 90 counted: 11 of 229 homepages whose headline or buttons we can read (E2h pair; E3: On's seasonal line is not a sale)", () => {
     const s = saleCensus(new Map([...censusPairs(fx.captures as CensusCapture[], fx.now)].filter(([d]) => fx.sites.some(x => x.domain === d))));
     expect(s.base).toBe(229);
-    expect(s.members.map(m => m.domain).sort()).toEqual(["allbirds.com", "brooklinen.com", "casper.com", "drinkolipop.com", "equinox.com", "fromourplace.com", "gopro.com", "headspace.com", "iliabeauty.com", "on.com", "onepeloton.com", "parachutehome.com"]);
+    expect(s.members.map(m => m.domain).sort()).toEqual(["allbirds.com", "brooklinen.com", "casper.com", "drinkolipop.com", "equinox.com", "fromourplace.com", "gopro.com", "headspace.com", "iliabeauty.com", "onepeloton.com", "parachutehome.com"]);
   });
 });
 

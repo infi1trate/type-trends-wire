@@ -98,4 +98,22 @@ export async function loadFrontRest(rawSector: unknown, rawFormat: unknown): Pro
   const m = await loadFront(rawSector, rawFormat);
   return { chart: m.chart, launches: m.launches, strip: m.strip, collections: m.collections, editions: m.editions, dataStories: m.dataStories, archive: m.archive, sections: m.sections, format: m.format, sector: m.sector, now: m.now, state: m.state };
 }
+// E3 · Also today's pictures, deferred: each card's first-screen crop (the hero section): a single-brand story's own (its kept or
+// nearest crop), a gathered story's or a census's first member's, else the brand's latest hero crop. A card without one has none.
+export type AlsoPictures = Record<string, import("../crops").Crop | null>;
+const alsos = memoBy(FRONT_TTL_MS, async (k: { sector: string; format: FormatFilter }): Promise<AlsoPictures> => {
+  const m = fronts.peek(k) ?? await tops(k);
+  if (!m.also.length) return {};
+  const [all, pics, { evidenceOf }, { heroCrop }] = await Promise.all([storyIndex(), picturesSafe(), import("../stories/page.server"), import("../crops")]);
+  const out: AlsoPictures = {};
+  await Promise.all(m.also.map(async a => {
+    const s = all.find(x => x.id === a.id); if (!s) { out[a.id] = null; return; }
+    const ev = ["move", "counter_move", "rebrand", "roundup"].includes(s.type) ? await evidenceOf(s, s.type).catch(() => null) : null;
+    const own = ev?.grid ? ev.grid.find(g => g.crop)?.crop ?? null : ev?.section === "hero" ? ev.compare?.after ?? ev.after ?? null : null;
+    const d = s.domains.find(x => pics.get(x)?.hero), hero = d ? pics.get(d)!.hero! : null;
+    out[a.id] = own ?? (d && hero ? heroCrop(d, hero) : null);
+  }));
+  return out;
+}, { key: k => `${k.sector}|${k.format}`, max: 100 });
+export const loadFrontAlso = (rawSector: unknown, rawFormat: unknown) => alsos({ sector: resolveSector(rawSector), format: resolveFormat(rawFormat) });
 export const loadFrontUpdates = async (sector: unknown, format: unknown) => updatesOf(await loadFront(sector, format));

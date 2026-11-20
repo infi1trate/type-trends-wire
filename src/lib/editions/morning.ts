@@ -3,7 +3,7 @@
 // before max(cut, MORNING_BASELINE), edits and late why-lines from before that moment — so once D is over it never changes.
 import { overlay, type EditRow, type StoredStory } from "../stories/edits";
 import { withNumbers, type NumberRow } from "../stories/numbers";
-import { howWeKnowOf, withTexts, type TextRow } from "../stories/texts";
+import { storyHowWeKnow, withTexts, type TextRow } from "../stories/texts";
 import { storyPath, streamOf, type StoryRecord } from "../stories/view";
 import { sectorName } from "../labels";
 import { isoWeek, longDate } from "../digest/week";
@@ -66,7 +66,7 @@ export type MorningItem = { id: string; number: number | null; type: string; kic
 const item = (s: StoryRecord): MorningItem => ({
   id: s.id, number: s.number ?? null, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, at: s.happened_at, sector: s.sector, sectorName: s.sector ? sectorName(s.sector) : null, score: s.score,
   // E2b: stored why lines no longer show on the Read side; the item carries its how-we-know line instead.
-  why: { text: (s as StoryRecord).written?.howWeKnow ?? howWeKnowOf(s), basis: s.basis === "ai" ? "ai" : "measured" },
+  why: { text: storyHowWeKnow(s as StoryRecord), basis: s.basis === "ai" ? "ai" : "measured" },
   href: storyPath(s.id),
 });
 const byScore = (a: StoryRecord, b: StoryRecord) => b.score - a.score || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id);

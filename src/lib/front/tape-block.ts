@@ -1,0 +1,34 @@
+// THE TAPE ON THE FRONT PAGE (E3) — "Every confirmed change, newest first": the eight newest tape lines (one per brand, change and day, as
+// the terminal's tape), each with the brand's icon, name, what changed from and to, and its date or range; then one count line: how many
+// changes were confirmed in the last 14 days and how many are still unconfirmed (Seen once or Alternating). Pure: same changes and
+// checks in, same block out. A change with no check yet is neither; archive changes are never on it (every public tape is live-only).
+import { splitChecked, type Check } from "../integrity";
+import { tapeRows, type TapeLabels, type TapeParts } from "../tape";
+import type { Pic } from "../pictures";
+import type { EventRow } from "../agency/changes";
+
+export const FRONT_TAPE_MAX = 8, FRONT_TAPE_DAYS = 14;
+export const FRONT_TAPE_TITLE = "The tape", FRONT_TAPE_SUB = "Every confirmed change, newest first";
+/** Where the count line and "The whole tape" go: the terminal's library panel and its Seen once or alternating list. */
+export const WHOLE_TAPE_HREF = "/terminal?panel=library", UNCONFIRMED_HREF = "/terminal?panel=library#seen-once";
+export type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at"> & { viewport?: string | null; source?: string | null };
+export type FrontTapeLine = TapeParts & { id: number; domain: string; at: string; href: string; icon: Pic | null };
+export type FrontTape = { lines: FrontTapeLine[]; confirmed: number; unconfirmed: number; days: number };
+
+const DAY = 864e5;
+/** The confirmed tape rows (newest first) and the unconfirmed count, over the last 14 days of live changes. */
+export function confirmedTape<E extends TapeEvent>(events: readonly E[], checks: ReadonlyMap<number, Check>, now: number, labels: (e: E) => TapeLabels = () => ({}), name?: (d: string) => string | null | undefined) {
+  const live = events.filter(e => (e.source ?? "live") === "live" && Date.parse(e.detected_at) > now - FRONT_TAPE_DAYS * DAY && Date.parse(e.detected_at) <= now)
+    .sort((a, b) => b.detected_at.localeCompare(a.detected_at) || b.id - a.id);
+  const split = splitChecked(live, checks);
+  return { rows: tapeRows(split.tape, labels, name), unconfirmed: split.unconfirmed.length };
+}
+/** The block: the first eight rows as lines (labels already applied), the counts beside them. */
+export function frontTape<E extends TapeEvent>(events: readonly E[], checks: ReadonlyMap<number, Check>, o: { now: number; labels?: (e: E) => TapeLabels; icons?: Readonly<Record<string, Pic>>; name?: (d: string) => string | null | undefined }): FrontTape {
+  const { rows, unconfirmed } = confirmedTape(events, checks, o.now, o.labels, o.name);
+  const lines = rows.slice(0, FRONT_TAPE_MAX).map(r => ({ ...r.parts, id: r.id, domain: r.domain, at: r.detected_at, href: `/brands/${encodeURIComponent(r.domain)}`, icon: o.icons?.[r.domain] ?? null }));
+  return { lines, confirmed: rows.length, unconfirmed, days: FRONT_TAPE_DAYS };
+}
+/** "61 changes confirmed in the last 14 days" / "1 change …". */
+export const confirmedText = (n: number, days = FRONT_TAPE_DAYS) => `${n} ${n === 1 ? "change" : "changes"} confirmed in the last ${days} days`;
+export const unconfirmedText = (n: number) => `${n} still unconfirmed`;

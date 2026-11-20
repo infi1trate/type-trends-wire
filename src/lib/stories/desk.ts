@@ -8,7 +8,8 @@ export const DESK_RATE_PER_MIN = 30;
 /** A pin lasts at most 7 days. */
 export const PIN_MAX_DAYS = 7;
 const id = z.string().min(3).max(200), note = z.string().max(500).optional();
-const noDollar = (s: string) => !s.includes("$");
+// E3: our own words carry no "$"; a quotation (“…”, ‘…’, "…") is the captured text and may.
+const noDollar = (s: string) => !s.replace(/“[^”]*”|‘[^’]*’|"[^"]*"/g, "").includes("$");
 /** Staff pages whose content loads only through this endpoint, after the editor key is accepted. */
 export const STAFF_PAGES = ["status", "launch", "welcome"] as const;
 export type StaffPage = (typeof STAFF_PAGES)[number];
