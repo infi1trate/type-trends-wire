@@ -1092,14 +1092,20 @@ export type Database = {
         Row: {
           dirty: boolean
           id: number
+          refresh_started_at: string | null
+          refreshed_at: string | null
         }
         Insert: {
           dirty?: boolean
           id?: number
+          refresh_started_at?: string | null
+          refreshed_at?: string | null
         }
         Update: {
           dirty?: boolean
           id?: number
+          refresh_started_at?: string | null
+          refreshed_at?: string | null
         }
         Relationships: []
       }
@@ -3333,10 +3339,17 @@ export type Database = {
       library_archive_state: { Args: never; Returns: Json }
       library_archive_store: { Args: { p_snapshot: Json }; Returns: number }
       library_half_year: { Args: { t: string }; Returns: string }
+      library_history_facts: { Args: never; Returns: Json }
       library_history_family: {
         Args: { r: string; s: Json; source: string }
         Returns: string
       }
+      library_history_refresh_begin: {
+        Args: { p_min_age_seconds?: number }
+        Returns: Json
+      }
+      library_history_refresh_end: { Args: { p_ok: boolean }; Returns: Json }
+      library_history_refresh_view: { Args: { p_view: string }; Returns: Json }
       library_number: { Args: { j: Json }; Returns: number }
       library_quarter: { Args: { t: string }; Returns: string }
       library_replace_history: {

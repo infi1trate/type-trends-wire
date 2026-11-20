@@ -48,7 +48,7 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
     if (!stored) throw new Error("Library snapshot contention");
   }
   for(const domain of archiveDomains)events+=await replayArchive(domain);
-  const {error:refreshError}=await db.rpc("refresh_library_history");
-  if(refreshError)throw new Error("Library history refresh failed");
+  // No history refresh here: the insert trigger leaves library_history_control.dirty set and refreshLibraryHistory
+  // (history-refresh.server.ts) picks it up after the answer, so a stored batch always answers with its counts.
   return Response.json({ ok: true, inserted, events });
 }

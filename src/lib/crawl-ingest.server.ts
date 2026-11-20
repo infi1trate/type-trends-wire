@@ -1,5 +1,15 @@
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { CRAWL_BODY_LIMIT, crawlPayload } from "./crawl-payload";
+import { HISTORY_BACKGROUND_MS, HISTORY_JOB_MS } from "./history-refresh";
+import { CALL_BUDGET_MS } from "./jobs/steps";
+
+/** The history step before a job's records sweep: at most HISTORY_JOB_MS, never past the call budget. Never throws. */
+export async function refreshHistoryForJob(job: string, started: number): Promise<void> {
+  try {
+    const deadline = Math.min(started + CALL_BUDGET_MS - 5_000, Date.now() + HISTORY_JOB_MS);
+    await (await import("./history-refresh.server")).refreshLibraryHistory({ deadline, job });
+  } catch { /* best effort */ }
+}
 
 const forbidden = () => Response.json({ error: "forbidden" }, { status: 403 });
 
@@ -102,8 +112,18 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
         }
         if (mode === "inline") await Promise.race([refresh, pause(stored + BATCH_REFRESH_MS + 500 - Date.now())]);
         console.info("crawl batch card refresh", mode, domains.length);
+        // History series: only in the background after the answer (never inline on a batch); without waitUntil the wire poll's
+        // follow-up and the crawl finish pick it up within 15 minutes.
+        let history: "background" | "skipped" = "skipped";
+        if (typeof ctx.waitUntil === "function") {
+          const step = import("./history-refresh.server")
+            .then(m => m.refreshLibraryHistory({ deadline: Date.now() + HISTORY_BACKGROUND_MS, job: "library" }))
+            .catch(() => null);
+          try { ctx.waitUntil(step); history = "background"; } catch { /* left for the wire poll */ }
+        }
         const out = new Response(res.body, res);
         out.headers.set("x-records-refresh", mode);
+        out.headers.set("x-history-refresh", history);
         return out;
       }
       return res;
@@ -144,6 +164,7 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
     if (!data?.length) return Response.json({ error: "Unknown run" }, { status: 404 });
     await refreshAggregates();
     await (await import("./stories/build.server")).afterJob("crawl-finish", started);
+    await refreshHistoryForJob("crawl-finish", started);
     await (await import("./records/refresh.server")).refreshAfterJob("crawl-finish", started, { force: true });
     return Response.json({ ok: true, written: data.length });
   } catch (error) {

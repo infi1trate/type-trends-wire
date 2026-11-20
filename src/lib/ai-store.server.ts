@@ -16,7 +16,7 @@ export async function storeAiResult(snapshot: { id: number; domain: string; page
   if(snapshot.source==="wayback")state.events=[];
   const stored=await db.rpc("library_ai_store",{p_snapshot:snapshot.id,p_kind:kind,p_model:model,p_data:data,p_expected:current as Json,p_state:state as unknown as Json});
   if(stored.error) throw new Error("AI result write failed");
-  if(stored.data) {if(snapshot.source==="wayback")await replayArchive(snapshot.domain);const {error:refreshError}=await db.rpc("refresh_library_history");if(refreshError)throw new Error("Library history refresh failed");return;}
+  if(stored.data) {if(snapshot.source==="wayback")await replayArchive(snapshot.domain);return;} // history: the library_tags trigger marks it dirty; refreshLibraryHistory picks it up (never inline)
  }
  throw new Error("AI confirmation contention");
 }

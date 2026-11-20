@@ -6,6 +6,9 @@ const afterJob = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock("./stories/build.server", () => ({ afterJob }));
 const refreshAfterJob = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => null));
 vi.mock("./records/refresh.server", () => ({ refreshAfterJob }));
+const refreshLibraryHistory = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => ({ outcome: "clean" })));
+vi.mock("./history-refresh.server", () => ({ refreshLibraryHistory }));
+const inlineHistory = vi.hoisted(() => ({ calls: 0 }));
 vi.mock("./vanguard.server", () => ({ loadVanguard: async () => ["linear.app", "vercel.com"] }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   from() { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; },
@@ -16,7 +19,8 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
       const first = state.snapshots.filter(s => s['domain'] === row['domain']).map(s => String(s['captured_at'])).sort()[0] ?? null;
       return { sector: "ai", latest_captured_at: prev?.["captured_at"] ?? null, baseline: state.baselines.get([row["domain"],row["page_type"],row["viewport"],row["source"]].join(":")) ?? null, prev: prev ? { id: prev['id'], signals: prev['signals'], content_hash: prev['content_hash'] ?? null } : null, first_captured_at: first, new_surface: !!first && Date.parse(String(row['captured_at'])) - Date.parse(first) > 86400000 && !state.snapshots.some(s => s['domain'] === row['domain'] && s['page_type'] === row['page_type']) };
     };
-    if (name === "refresh_library_history") return {data:null,error:null};
+    // The old all-in-one refresh is never called on a batch any more; if it were, it fails like a timed-out refresh would.
+    if (name === "refresh_library_history") { inlineHistory.calls++; return {data:null,error:{message:"canceling statement due to statement timeout"}}; }
     if(name==="library_archive_store"){state.snapshots.push({...row,id:state.snapshots.length+1});return {data:1,error:null};}
     if(name==="library_archive_input")return {data:state.snapshots.filter(s=>s['domain']===args['p_domain']&&s['source']==="wayback").map(s=>({...s,sector:"ai"})),error:null};
     if(name==="library_archive_replace")return {data:true,error:null};
@@ -128,8 +132,32 @@ it("with waitUntil the answer goes out before the refresh, which runs in the bac
   expect(res.status).toBe(200);
   expect(res.headers.get("x-records-refresh")).toBe("background");
   expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
-  expect(kept).toHaveLength(1);
+  expect(kept).toHaveLength(2); // cards and history, both after the answer
   await vi.waitFor(() => expect(finish).toBeDefined());
   finish!(null);
   await kept[0];
+});
+
+// Fix · library intake: the history refresh never runs inside a batch's answer and can never fail a stored batch.
+it("a batch never runs the history refresh inline, and without waitUntil leaves it for the wire poll", async () => {
+  refreshLibraryHistory.mockClear(); inlineHistory.calls = 0;
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }));
+  expect(res.status).toBe(200);
+  expect(await res.json()).toMatchObject({ ok: true, inserted: 2 });
+  expect(res.headers.get("x-history-refresh")).toBe("skipped");
+  expect(inlineHistory.calls).toBe(0);
+  expect(refreshLibraryHistory).not.toHaveBeenCalled();
+});
+it.each([
+  ["fails", () => Promise.reject(new Error("canceling statement due to statement timeout"))],
+  ["times out", () => new Promise(() => {})],
+])("a batch whose history refresh %s still answers 200 with inserted and events", async (_label, impl) => {
+  refreshLibraryHistory.mockClear();
+  refreshLibraryHistory.mockImplementationOnce(impl as never);
+  const kept: Promise<unknown>[] = [];
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }), { waitUntil: p => { kept.push(p); } });
+  expect(res.status).toBe(200);
+  expect(res.headers.get("x-history-refresh")).toBe("background");
+  expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
+  await vi.waitFor(() => expect(refreshLibraryHistory).toHaveBeenCalledWith(expect.objectContaining({ job: "library", deadline: expect.any(Number) })));
 });

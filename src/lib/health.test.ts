@@ -66,3 +66,13 @@ describe("forecast failure note", () => {
   it("says no detail when an older failed run has no error text", () => expect(job({ ...fresh, forecast_runs: [{ status: "error", computed_at: ago(H) }] }, "forecast").note).toBe("last run failed: no detail recorded"));
   it("no failure note when the latest run is ok", () => expect(job(fresh, "forecast").note).toBeUndefined());
 });
+
+describe("library_check history note", () => {
+  it("keeps the note unchanged when the history series are fresh or unknown", () => {
+    expect(job(fresh, "library_check").note).toBe("newest live capture (daily check or Saturday full)");
+    expect(job({ ...fresh, library_history: { refreshed_at: ago(30 * 60_000) } }, "library_check").note).toBe("newest live capture (daily check or Saturday full)");
+  });
+  it("adds when the history series were last refreshed once that is over an hour ago", () => {
+    expect(job({ ...fresh, library_history: { refreshed_at: ago(2 * H) } }, "library_check").note).toBe("newest live capture (daily check or Saturday full); history series last refreshed 2h ago (2026-11-14 15:00 UTC)");
+  });
+});

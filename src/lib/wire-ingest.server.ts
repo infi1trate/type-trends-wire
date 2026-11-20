@@ -25,6 +25,8 @@ export async function handleIngestWire(request: Request): Promise<Response> {
       const { ingestWire } = await import("./ingest.server"), res = await ingestWire();
       if (res.ok) await (await import("./stories/build.server")).afterJob("wire", started);
       // The 15-minute wire call is the records sweeper (records/refresh.server.ts): whatever time the call has left rewrites due records.
+      // History series first (one view per call, best effort), then the records sweep with whatever time is left.
+      await (await import("./crawl-ingest.server")).refreshHistoryForJob("wire", started);
       await (await import("./records/refresh.server")).refreshAfterJob("wire", started);
       return res;
     }
