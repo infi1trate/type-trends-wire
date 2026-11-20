@@ -100,7 +100,11 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
   const home = <Link to="/" className="inline-flex min-h-11 shrink-0 items-center" aria-label={`${BRAND_NAME}, the front page`}><ArrivingMark height={32} /></Link>;
   const go = (e: React.MouseEvent) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); mode.go(); };
   const sections = (cls: string, list: string) => <nav aria-label="Sections" className={cls}><ul className={list}>{SECTIONS.map(s => <li key={s.id}><SectionLink s={s} active={active === s.id} onGo={() => setOpen(false)} /></li>)}</ul></nav>;
-  const modeSwitch = (cls: string) => <span role="group" aria-label="Mode" className={`shell-switch ${cls}`}><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></span>;
+  // A page with its own Data view at the same address (?view=data) marks Terminal as current while it is shown.
+  const dataView = loc.pathname === "/signals/leading" && loc.search["view"] === "data";
+  const modeSwitch = (cls: string) => <span role="group" aria-label="Mode" className={`shell-switch ${cls}`}>{dataView
+    ? <><a href={mode.href} onClick={go} title="Switch to the Read view (`)">Read</a><a href={`${loc.pathname}?view=data`} aria-current="page" data-tour="r-terminal">Terminal</a></>
+    : <><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></>}</span>;
   const glossary = (cls: string) => <button type="button" onClick={() => { setOpen(false); setOverlay("glossary"); }} className={`inline-flex min-h-11 cursor-pointer items-center ${cls}`} aria-label="Open the glossary (?)">Glossary</button>;
   const lock = (cls: string) => GATE_ENABLED ? <form method="post" action="/lock" className={`contents`}><button type="submit" className={`inline-flex min-h-11 cursor-pointer items-center ${cls}`}>Lock</button></form> : null;
   const line = lensLine({ sector, sectorName: sectorName(sector), filtered: lens || !!fixedSector, note });

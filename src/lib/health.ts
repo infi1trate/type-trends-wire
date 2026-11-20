@@ -34,6 +34,8 @@ export const healthFactsSchema = z.object({
   ai_pause: z.object({ paused: z.boolean().nullable().optional(), reason: z.string().nullable().optional(), paused_at: ts, probed_at: ts }).nullable().optional(),
   render_queue: z.object({ pending: num, oldest_pending_at: ts, last_done_at: ts }).nullable().optional(),
   bluesky_window_end: ts, taste_refreshed_at: ts,
+  // W2 · leading indicators: the newest outside_series run (time and point count), merged in by health.server.ts.
+  indicators: z.object({ last_run_at: ts, points: num }).nullable().optional(),
   brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),
   // Optional cron-introspection flags (job name → has callback timeout). Not available on managed Cloud.
   timeouts: z.array(z.object({ job: z.string(), has_timeout: z.boolean() })).nullable().optional().transform(v => v ?? []),
@@ -106,7 +108,19 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
       ? { job: "chart_card", last_ok_at: null, last_run_at: null, last_status: "never", expected_every: "7d", stale: true, consecutive_failures: 0, note: "no weekly brief yet" }
       : { job: "chart_card", last_ok_at: b.card_at, last_run_at: b.card_at ?? b.created_at, last_status: b.card_at ? "ok" : "missing", expected_every: "7d", stale: !b.card_at || olderThan(b.card_at, CHART_MAX_AGE_MS, t), consecutive_failures: 0, note: b.card_at ? `latest brief ${b.week}` : `no card for latest brief ${b.week}` });
   }
+  jobs.push(indicatorsJob(f.indicators ?? null, t));
   return { status: overallStatus(jobs), checked_at: now.toISOString(), jobs };
+}
+
+/** Leading indicators arrive once a day; nothing for more than this reads as late. */
+export const INDICATORS_MAX_AGE_MS = 36 * 3_600_000;
+export const INDICATORS_NOT_STARTED = "collection has not started; the first daily run has not arrived";
+/** The `indicators` job: before the first run it is not a failure; afterwards it is stale when nothing arrived for 36 hours. */
+export function indicatorsJob(i: { last_run_at: string | null; points: number } | null, now: number): JobHealth {
+  if (!i?.last_run_at) return { job: "indicators", last_ok_at: null, last_run_at: null, last_status: "not_started", expected_every: "1d", stale: false, consecutive_failures: 0, note: INDICATORS_NOT_STARTED };
+  const late = olderThan(i.last_run_at, INDICATORS_MAX_AGE_MS, now);
+  return { job: "indicators", last_ok_at: i.last_run_at, last_run_at: i.last_run_at, last_status: "ok", expected_every: "1d", stale: late, consecutive_failures: 0,
+    note: `${i.points} points in the last run${late ? `; nothing has arrived for ${age(i.last_run_at, now)} (more than 36 hours)` : ""}` };
 }
 
 /** Fallback when the facts cannot be read at all. */

@@ -1336,6 +1336,45 @@ export type Database = {
         }
         Relationships: []
       }
+      outside_series: {
+        Row: {
+          captured_at: string
+          key: string
+          label: string
+          metric: string
+          period_end: string
+          run_id: string
+          source: string
+          topic: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          captured_at: string
+          key: string
+          label: string
+          metric: string
+          period_end: string
+          run_id: string
+          source: string
+          topic: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          captured_at?: string
+          key?: string
+          label?: string
+          metric?: string
+          period_end?: string
+          run_id?: string
+          source?: string
+          topic?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       palette_examples: {
         Row: {
           data: Json
@@ -3154,6 +3193,19 @@ export type Database = {
         }
         Relationships: []
       }
+      outside_series_weekly: {
+        Row: {
+          captured_at: string | null
+          key: string | null
+          label: string | null
+          metric: string | null
+          period_end: string | null
+          source: string | null
+          topic: string | null
+          value: number | null
+        }
+        Relationships: []
+      }
       trendsetters_latest: {
         Row: {
           domain: string | null
@@ -3304,6 +3356,10 @@ export type Database = {
         Returns: undefined
       }
       normalize_currency: { Args: { c: string }; Returns: string }
+      outside_series_store: {
+        Args: { p_captured_at: string; p_points: Json; p_run_id: string }
+        Returns: Json
+      }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
       refresh_library_history: { Args: never; Returns: undefined }
       replace_taste_data: {

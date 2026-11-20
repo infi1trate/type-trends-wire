@@ -176,6 +176,8 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     return `${sectionById(sectionOf(view)).read}${qs({ sector })}`;
   }
   const t = (v: ViewId, trait?: string) => terminalHref(v, { trait, sector });
+  // W2: leading indicators keep one address; the switch moves between its Read view and its Data view.
+  if (seg[0] === "signals" && seg[1] === "leading" && seg.length === 2) return search["view"] === "data" ? "/signals/leading" : "/signals/leading?view=data";
   switch (seg[0]) {
     case undefined: return t("today");
     case "stories": return seg[1] ? terminalHref("today", { sector, story: seg[1] }) : t("today");
@@ -220,6 +222,7 @@ export const SURFACES: Record<string, Surface> = {
   "stories.no.$number": S("live", "read", "quiet", "A story's permanent number (No. 47) redirects to its story page; killed stories' numbers lead nowhere."),
   "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
   "signals.$key": S("signals", "read", "shown", "Signal object page (was the trait explainer)."),
+  "signals.leading": S("signals", "read", "shown", "Leading indicators: npm installs, GitHub stars and Google Fonts risers by topic; Data view at ?view=data (same address)."),
   "data.index": S("signals", "read", "shown", "Data stories: the numbered index (question, deck, template, last data date; drafts with their reason). Gated."),
   "data.$slug": S("signals", "read", "shown", "One data story: the picture you step through (?step=), captions with receipts, the same ending. Gated."),
   "data.where-you-sit": S("signals", "read", "shown", "The reader's own data story for one tracked brand (?brand=): field, strip, signals that set it apart. Gated."),
@@ -336,7 +339,7 @@ export const SURFACES: Record<string, Surface> = {
 export const DENSITIES = ["quiet", "steady", "loud"] as const;
 export type Density = (typeof DENSITIES)[number];
 export const DENSITY: Record<string, Density | "none"> = {
-  index: "steady", "signals.index": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
+  index: "steady", "signals.index": "steady", "signals.leading": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
   "sectors.index": "steady", "data.index": "steady", tools: "steady", "audit.index": "quiet", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
   ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",
   "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet",

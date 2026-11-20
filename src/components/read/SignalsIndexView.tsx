@@ -37,6 +37,7 @@ export function SignalsIndexView({ v }: { v: SignalsView }) {
       <p className="ed-kicker">Signals · {sectorName(idx.scope)} · {data.runId != null ? `forecast run ${data.runId}` : "no forecast run yet"}</p>
       <h1 className="ed-cover mt-3">What deserves your attention</h1>
       <p className="ed-standfirst mt-5 max-w-[62ch]">Every signal we measure, ranked within its tier{idx.scoped ? ` by ${sectorName(v.sector)}'s share, shown against all sectors` : ""}. Headline signals are visible to visitors, worth a brand decision, measured on enough sites and moving.</p>
+      <p className="ed-small mt-3" data-leading-link=""><Link to="/signals/leading" className="ed-tap font-semibold" {...pr("/signals/leading")}>What builders are installing, before brands show it →</Link></p>
     </header>
     <section aria-label="Sort and filter" className="ed-wrap mt-8">
       <RuleBox className="grid gap-3 p-4">

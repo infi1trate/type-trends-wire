@@ -9,9 +9,9 @@ export type Rhythm =
   | { kind: "daily"; h: number; m: number }
   | { kind: "weekly"; dow: number; h?: number; m?: number }
   | { kind: "after"; of: string; ms: number };
-export type JobId = "wire" | "library_ai" | "gfonts" | "producthunt" | "library_check" | "vanguard" | "library_full" | "crawl" | "crops" | "discourse" | "wayback" | "forecast" | "follow_ups" | "stories" | "digest";
+export type JobId = "wire" | "library_ai" | "gfonts" | "producthunt" | "library_check" | "vanguard" | "library_full" | "crawl" | "crops" | "discourse" | "wayback" | "forecast" | "follow_ups" | "stories" | "digest" | "indicators";
 /** `rhythm_text` overrides the generated words when the cadence needs more than one interval to describe. */
-export type JobDef = { id: JobId; name: string; feeds: string; rhythm: Rhythm; rhythm_text?: string; runs_on: "scheduled" | "crawler" | "chained"; note?: string };
+export type JobDef = { id: JobId; name: string; feeds: string; rhythm: Rhythm; rhythm_text?: string; runs_on: "scheduled" | "crawler" | "chained"; note?: string; late_after_ms?: number };
 /** Jobs whose lateness a reader notices directly: only these raise the warning in the Read shell. Crawler-side lateness shows on /status only. */
 export const READER_FACING: ReadonlySet<JobId> = new Set<JobId>(["wire", "stories", "forecast", "follow_ups", "digest"]);
 /** Crawler runs whose id starts with this prefix are the daily vanguard crawl (read from stored snapshots; nothing is written). */
@@ -27,6 +27,7 @@ export const JOBS: readonly JobDef[] = [
   { id: "vanguard", name: "Vanguard crawl", feeds: "Daily full look at the brands most likely to move (top trendsetters and recent movers)", rhythm: { kind: "every", ms: DAY }, rhythm_text: "Daily", runs_on: "crawler" },
   { id: "library_full", name: "Full library crawl", feeds: "Every brand page and the weekly forecast", rhythm: { kind: "weekly", dow: 6 }, runs_on: "crawler" },
   { id: "crawl", name: "Design-signal crawl", feeds: "Vanguard and curation inputs to the weekly forecast", rhythm: { kind: "weekly", dow: 6 }, runs_on: "crawler" },
+  { id: "indicators", name: "Leading indicators", feeds: "npm installs and GitHub stars on the Leading indicators page", rhythm: { kind: "every", ms: DAY }, runs_on: "crawler", late_after_ms: 36 * HOUR },
   { id: "crops", name: "Section crops", feeds: "Before/after images on brand, pattern and story pages", rhythm: { kind: "every", ms: DAY }, runs_on: "crawler" },
   { id: "discourse", name: "Discourse sample", feeds: "What people say about design (forecast input)", rhythm: { kind: "every", ms: 6 * HOUR }, runs_on: "crawler" },
   { id: "wayback", name: "Wayback history", feeds: "Archive captures behind quarterly history", rhythm: { kind: "every", ms: 6 * HOUR }, runs_on: "crawler", note: "Runs while the archive backfill is active" },
@@ -48,6 +49,8 @@ export type JobFact = {
   dormant?: string | null;
   /** The last attempt failed. */
   failing?: boolean;
+  /** A fact-specific line shown with the job (e.g. points in the last run). */
+  note?: string | null;
 };
 export type FreshState = "on_time" | "late" | "never" | "dormant";
 export type FreshRow = { id: JobId; name: string; feeds: string; rhythm: string; runs_on: JobDef["runs_on"]; last_ran: string | null; last_finished: string | null; next: string; state: FreshState; note: string | null };
@@ -92,7 +95,7 @@ export function nextExpected(r: Rhythm, lastRan: string | null, now: number): st
 /** One row per job, in registry order. A job is late when its last finish (or waiting work) is older than LATE_FACTOR × its interval. */
 export function freshness(facts: Partial<Record<JobId, JobFact>>, now: number, jobs: readonly JobDef[] = JOBS): FreshRow[] {
   return jobs.map(j => {
-    const f = facts[j.id] ?? { ran: null }, last = f.finished ?? f.ran, limit = LATE_FACTOR * intervalMs(j.rhythm);
+    const f = facts[j.id] ?? { ran: null }, last = f.finished ?? f.ran, limit = j.late_after_ms ?? LATE_FACTOR * intervalMs(j.rhythm);
     const waiting = ms(f.waiting_since);
     let state: FreshState;
     if (f.dormant) state = "dormant";
@@ -100,7 +103,7 @@ export function freshness(facts: Partial<Record<JobId, JobFact>>, now: number, j
     else if (f.idle) state = "on_time";
     else if (ms(last) === null) state = "never";
     else state = now - ms(last)! > limit ? "late" : "on_time";
-    const note = [f.dormant, f.failing && state !== "dormant" ? "Last attempt failed" : null, waiting !== null ? `Work waiting since ${ago(f.waiting_since ?? null, now)}` : f.idle ? "Idle: nothing waiting" : null, j.note].filter(Boolean).join(" · ") || null;
+    const note = [f.dormant, f.note, f.failing && state !== "dormant" ? "Last attempt failed" : null, waiting !== null ? `Work waiting since ${ago(f.waiting_since ?? null, now)}` : f.idle ? "Idle: nothing waiting" : null, j.note].filter(Boolean).join(" · ") || null;
     return { id: j.id, name: j.name, feeds: j.feeds, rhythm: j.rhythm_text ?? rhythmText(j.rhythm), runs_on: j.runs_on, last_ran: f.ran, last_finished: f.finished ?? null, next: nextExpected(j.rhythm, f.ran, now), state, note };
   });
 }

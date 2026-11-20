@@ -7,6 +7,7 @@ import { VANGUARD_RUN_PREFIX, freshness, freshnessLine, wireOnTime, type FreshRo
 import { progress, type StepRow } from "./jobs/steps";
 import { fetchRealRuns } from "./real-runs";
 import { memo } from "./memo";
+import { indicatorsHealthFacts } from "./indicators/read.server";
 
 export type FreshnessPayload = { now: string; rows: FreshRow[]; line: { text: string; late: boolean }; wire_on_time: boolean; follow_ups: ReturnType<typeof progress> };
 const fresh = memo(60_000, () => build());
@@ -15,7 +16,7 @@ export const loadFreshness = (): Promise<FreshnessPayload> => fresh();
 async function build(): Promise<FreshnessPayload> {
   const db = supabaseAnon(), now = Date.now();
   const lastOk = (job: string) => db.from("ingest_runs").select("started_at,finished_at").eq("job", job).order("started_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0] ?? null);
-  const [hf, wire, gfonts, ph, real, steps, story, crop, vanguard] = await Promise.all([
+  const [hf, wire, gfonts, ph, real, steps, story, crop, vanguard, ind] = await Promise.all([
     db.rpc("health_facts").then(r => (r.error ? null : healthFactsSchema.safeParse(r.data).data ?? null)),
     lastOk("ingest-wire"), lastOk("ingest-gfonts"), lastOk("ingest-producthunt"),
     fetchRealRuns(db).catch(() => []),
@@ -24,6 +25,7 @@ async function build(): Promise<FreshnessPayload> {
     db.from("site_crops").select("last_seen_at").order("last_seen_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0]?.last_seen_at ?? null),
     // Vanguard runs are recognised by their run id prefix on the public snapshot rows (read-only).
     db.from("library_snapshots").select("received_at").eq("source", "live").like("run_id", `${VANGUARD_RUN_PREFIX}%`).order("received_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0]?.received_at ?? null, () => null),
+    indicatorsHealthFacts().catch(() => null),
   ]);
   const ing = (key: string) => hf?.ingest[key] ?? {};
   const fact = (okRow: { started_at: string; finished_at: string | null } | null, key: string): JobFact => {
@@ -50,6 +52,8 @@ async function build(): Promise<FreshnessPayload> {
     follow_ups: lastSteps ? { ran: lastSteps.queued_at, finished: lastSteps.finished_at, waiting_since: open?.queued_at ?? null, failing: lastSteps.failed.length > 0 } : { ran: null },
     stories: { ran: story },
     digest: { ran: hf?.brief?.created_at ?? null },
+    // Before the first daily post the job is not late, just not started.
+    indicators: ind?.last_run_at ? { ran: ind.last_run_at, finished: ind.last_run_at, note: `${ind.points} points in the last run` } : { ran: null, dormant: "Collection has not started" },
   };
   const rows = freshness(facts, now);
   return { now: new Date(now).toISOString(), rows, line: freshnessLine(rows, now), wire_on_time: wireOnTime(rows), follow_ups: runs.slice(0, 3) };

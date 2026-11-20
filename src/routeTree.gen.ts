@@ -64,6 +64,7 @@ import { Route as SectorsSectorRouteImport } from './routes/sectors.$sector'
 import { Route as ShareSplatRouteImport } from './routes/share.$'
 import { Route as SignalsIndexRouteImport } from './routes/signals.index'
 import { Route as SignalsKeyRouteImport } from './routes/signals.$key'
+import { Route as SignalsLeadingRouteImport } from './routes/signals.leading'
 import { Route as StatusLaunchRouteImport } from './routes/status_.launch'
 import { Route as StoriesIdRouteImport } from './routes/stories.$id'
 import { Route as ThumbsSplatRouteImport } from './routes/thumbs.$'
@@ -82,6 +83,7 @@ import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/in
 import { Route as ApiPublicIngestCropsRouteImport } from './routes/api/public/ingest-crops'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestProducthuntRouteImport } from './routes/api/public/ingest-producthunt'
+import { Route as ApiPublicIngestSeriesRouteImport } from './routes/api/public/ingest-series'
 import { Route as ApiPublicIngestThumbsRouteImport } from './routes/api/public/ingest-thumbs'
 import { Route as ApiPublicIngestWireRouteImport } from './routes/api/public/ingest-wire'
 import { Route as ApiPublicLibraryAiWorkerRouteImport } from './routes/api/public/library-ai-worker'
@@ -380,6 +382,11 @@ const SignalsKeyRoute = SignalsKeyRouteImport.update({
   path: '/signals/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignalsLeadingRoute = SignalsLeadingRouteImport.update({
+  id: '/signals/leading',
+  path: '/signals/leading',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatusLaunchRoute = StatusLaunchRouteImport.update({
   id: '/status_/launch',
   path: '/status/launch',
@@ -472,6 +479,11 @@ const ApiPublicIngestProducthuntRoute =
     path: '/api/public/ingest-producthunt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicIngestSeriesRoute = ApiPublicIngestSeriesRouteImport.update({
+  id: '/api/public/ingest-series',
+  path: '/api/public/ingest-series',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestThumbsRoute = ApiPublicIngestThumbsRouteImport.update({
   id: '/api/public/ingest-thumbs',
   path: '/api/public/ingest-thumbs',
@@ -610,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/signals/leading': typeof SignalsLeadingRoute
   '/status/launch': typeof StatusLaunchRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -640,6 +653,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
+  '/api/public/ingest-series': typeof ApiPublicIngestSeriesRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
@@ -703,6 +717,7 @@ export interface FileRoutesByTo {
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/signals/leading': typeof SignalsLeadingRoute
   '/status/launch': typeof StatusLaunchRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -733,6 +748,7 @@ export interface FileRoutesByTo {
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
+  '/api/public/ingest-series': typeof ApiPublicIngestSeriesRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
@@ -797,6 +813,7 @@ export interface FileRoutesById {
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
+  '/signals/leading': typeof SignalsLeadingRoute
   '/status_/launch': typeof StatusLaunchRoute
   '/stories/$id': typeof StoriesIdRoute
   '/thumbs/$': typeof ThumbsSplatRoute
@@ -827,6 +844,7 @@ export interface FileRoutesById {
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
+  '/api/public/ingest-series': typeof ApiPublicIngestSeriesRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
   '/api/public/ingest-wire': typeof ApiPublicIngestWireRoute
   '/api/public/library-ai-worker': typeof ApiPublicLibraryAiWorkerRoute
@@ -892,6 +910,7 @@ export interface FileRouteTypes {
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
+    | '/signals/leading'
     | '/status/launch'
     | '/stories/$id'
     | '/thumbs/$'
@@ -922,6 +941,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
+    | '/api/public/ingest-series'
     | '/api/public/ingest-thumbs'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
@@ -985,6 +1005,7 @@ export interface FileRouteTypes {
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
+    | '/signals/leading'
     | '/status/launch'
     | '/stories/$id'
     | '/thumbs/$'
@@ -1015,6 +1036,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
+    | '/api/public/ingest-series'
     | '/api/public/ingest-thumbs'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
@@ -1078,6 +1100,7 @@ export interface FileRouteTypes {
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
+    | '/signals/leading'
     | '/status_/launch'
     | '/stories/$id'
     | '/thumbs/$'
@@ -1108,6 +1131,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-producthunt'
+    | '/api/public/ingest-series'
     | '/api/public/ingest-thumbs'
     | '/api/public/ingest-wire'
     | '/api/public/library-ai-worker'
@@ -1172,6 +1196,7 @@ export interface RootRouteChildren {
   SectorsSectorRoute: typeof SectorsSectorRoute
   ShareSplatRoute: typeof ShareSplatRoute
   SignalsKeyRoute: typeof SignalsKeyRoute
+  SignalsLeadingRoute: typeof SignalsLeadingRoute
   StatusLaunchRoute: typeof StatusLaunchRoute
   StoriesIdRoute: typeof StoriesIdRoute
   ThumbsSplatRoute: typeof ThumbsSplatRoute
@@ -1202,6 +1227,7 @@ export interface RootRouteChildren {
   ApiPublicIngestCropsRoute: typeof ApiPublicIngestCropsRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestProducthuntRoute: typeof ApiPublicIngestProducthuntRoute
+  ApiPublicIngestSeriesRoute: typeof ApiPublicIngestSeriesRoute
   ApiPublicIngestThumbsRoute: typeof ApiPublicIngestThumbsRoute
   ApiPublicIngestWireRoute: typeof ApiPublicIngestWireRoute
   ApiPublicLibraryAiWorkerRoute: typeof ApiPublicLibraryAiWorkerRoute
@@ -1609,6 +1635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignalsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signals/leading': {
+      id: '/signals/leading'
+      path: '/signals/leading'
+      fullPath: '/signals/leading'
+      preLoaderRoute: typeof SignalsLeadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/status_/launch': {
       id: '/status_/launch'
       path: '/status/launch'
@@ -1733,6 +1766,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ingest-producthunt'
       fullPath: '/api/public/ingest-producthunt'
       preLoaderRoute: typeof ApiPublicIngestProducthuntRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ingest-series': {
+      id: '/api/public/ingest-series'
+      path: '/api/public/ingest-series'
+      fullPath: '/api/public/ingest-series'
+      preLoaderRoute: typeof ApiPublicIngestSeriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/ingest-thumbs': {
@@ -1908,6 +1948,7 @@ const rootRouteChildren: RootRouteChildren = {
   SectorsSectorRoute: SectorsSectorRoute,
   ShareSplatRoute: ShareSplatRoute,
   SignalsKeyRoute: SignalsKeyRoute,
+  SignalsLeadingRoute: SignalsLeadingRoute,
   StatusLaunchRoute: StatusLaunchRoute,
   StoriesIdRoute: StoriesIdRoute,
   ThumbsSplatRoute: ThumbsSplatRoute,
@@ -1938,6 +1979,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIngestCropsRoute: ApiPublicIngestCropsRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestProducthuntRoute: ApiPublicIngestProducthuntRoute,
+  ApiPublicIngestSeriesRoute: ApiPublicIngestSeriesRoute,
   ApiPublicIngestThumbsRoute: ApiPublicIngestThumbsRoute,
   ApiPublicIngestWireRoute: ApiPublicIngestWireRoute,
   ApiPublicLibraryAiWorkerRoute: ApiPublicLibraryAiWorkerRoute,

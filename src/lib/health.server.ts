@@ -9,9 +9,11 @@ export async function healthPayload(): Promise<HealthPayload> {
   let value: HealthPayload;
   try {
     const db = supabaseAnon();
-    const [{ data, error }, pause] = await Promise.all([db.rpc("health_facts"), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null)]);
+    const [{ data, error }, pause, indicators] = await Promise.all([db.rpc("health_facts"), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null),
+      // W2: the newest leading-indicator run; unreadable reads as not started rather than failing health.
+      import("./indicators/read.server").then(m => m.indicatorsHealthFacts()).catch(() => null)]);
     // The pause reason and probe times only add to the library_ai note; when they can't be read the job reads as before.
-    value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}) } as never, new Date(now));
+    value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}) } as never, new Date(now));
   } catch { value = unavailableHealth(new Date(now)); }
   cache = { at: now, value };
   return value;

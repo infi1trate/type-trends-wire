@@ -6,6 +6,7 @@ import { Link } from "@tanstack/react-router";
 import type { TraitPage } from "@/lib/digest/trait";
 import { pct, pts } from "@/lib/digest/copy";
 import { sectorName } from "@/lib/labels";
+import { topicAnchor, topicName, topicOfSignal } from "@/lib/indicators/topics";
 import { BasisWord, DigestShell, DigestFooter, Dim, Figure, SiteCard, StageWord, pr } from "@/components/digest/Editorial";
 import { LedgerCall } from "@/components/digest/LedgerView";
 import { EmbedPanel } from "@/components/embed/EmbedPanel";
@@ -98,6 +99,13 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
       </>,
     }} />
     </FiltersScope>
+    <RelatedOutside k={p.key} />
     <DigestFooter footer={footer} />
   </DigestShell>;
+}
+/** W2: one line near the foot pointing to the leading-indicators table whose topic matches this signal (topics.ts). */
+export function RelatedOutside({ k }: { k: string }) {
+  const t = topicOfSignal(k);
+  if (!t) return null;
+  return <p className="ed-wrap ed-small mt-8" data-related-outside={t}>Related outside numbers: <Link to="/signals/leading" hash={topicAnchor(t)} className="ed-tap underline">Leading indicators, {t === "3d" ? "3D" : topicName(t).toLowerCase()}</Link></p>;
 }

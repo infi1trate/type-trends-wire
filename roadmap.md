@@ -1,12 +1,7 @@
-# Phase I1 · Real pictures
+# Phase W2 · Leading indicators
 
-- [x] 0.1 Page cache: in-memory per instance (host Cache API is a no-op)
-- [x] 0.2 Cache header: also sent as cdn-cache-control (host rewrite on page addresses; verify after publish)
-- [x] 0.3 Signal page reads in parallel (~0.4 s in preview)
-- [x] 0.4 Layout shift: placeholder shifts ≤ 0.04 with fonts held still; font-swap shifts remain in the sandbox
-- [x] 1 brand_assets table, ingest icon/card, serve, opt-out, what-we-show text
-- [x] 2 BrandMark on listed surfaces
-- [x] 3 Brand page cover
-- [x] 4 Wireframe reveal
-- [x] 5 Real crops first in big slots
+- [x] 1 outside_series table, /api/public/ingest-series, validation, upsert counts
+- [x] 1.3 indicators job on health and status (36 h late note, not started is not a failure)
+- [x] 2 /signals/leading Read view (topic tables, Google Fonts, method note) + Data view (?view=data, sort, CSV, points)
+- [x] 3 Signals index line + related-numbers line on matching signal pages
 - [x] Tests, build

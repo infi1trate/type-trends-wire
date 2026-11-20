@@ -461,3 +461,9 @@ export const whereYouSitQuery = (brand: string) => queryOptions({ queryKey: ["wh
 
 /** The brand kit's files (gated /brand/downloads). */
 export const kitFilesQuery = () => queryOptions({ queryKey: ["brand-kit-files"], staleTime: 60 * 60_000, queryFn: async () => { const { getKitFiles } = await import("./brand.functions"); return getKitFiles(); } });
+
+// W2 · leading indicators (/signals/leading): the head (when last read) is critical; the tables and font ranks stream in.
+import { getIndicatorsHead, getIndicators, getIndicatorPoints } from "./indicators.functions";
+export const indicatorsHeadQuery = () => queryOptions({ queryKey: ["indicators-head"], staleTime: 10 * 60_000, queryFn: () => getIndicatorsHead() });
+export const indicatorsQuery = () => queryOptions({ queryKey: ["indicators"], staleTime: 10 * 60_000, queryFn: () => getIndicators() });
+export const indicatorPointsQuery = (label: string) => queryOptions({ queryKey: ["indicator-points", label], staleTime: 10 * 60_000, queryFn: () => getIndicatorPoints({ data: { label } }) });
