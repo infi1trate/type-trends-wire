@@ -9,7 +9,8 @@
     "library": "node src/library.js",
     "wayback": "node src/wayback.js",
     "requests": "node src/requests.js",
-    "jetstream": "node src/jetstream.js"
+    "jetstream": "node src/jetstream.js",
+    "indicators": "node src/indicators.js"
   },
   "keywords": [],
   "author": "",
