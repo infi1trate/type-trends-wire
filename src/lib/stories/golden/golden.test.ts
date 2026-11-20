@@ -3,7 +3,7 @@
 // weakened: it sits in SKIPPED with its reason and runs as it.skip.
 import { describe, expect, it } from "vitest";
 import { hasBareDomain } from "../../brand-names";
-import { runGolden } from "./run";
+import { goldenChecks, runGolden } from "./run";
 import day20 from "./__fixtures__/day-2026-11-20.json";
 import type { BuildInput } from "../candidates";
 import { DAILY_CAP, isAiRoundup, isOurRead, isWeekly, leadAllowed, rankScores } from "../score";
@@ -30,27 +30,19 @@ export const SKIPPED: Record<string, string> = {
 };
 const may = (name: string) => (name in SKIPPED ? it.skip : it);
 
-describe("golden set · must run as stories (12)", () => {
-  it("1 · DocuSign: headline position with the accent change in the same story, and the AI figures", () => {
-    const s = one(single("docusign.com"));
-    expect(tells(s, 3387) && tells(s, 3386)).toBe(true);
-    expect(s.facts.some(f => f.kind === "share" && f.text.includes("29.2%") && f.text.includes("14.6%"))).toBe(true);
-  });
-  it("2 · HubSpot: headline to “The Customer Relationship Harness” (position)", () => expect(tells(one(single("hubspot.com")), 3383)).toBe(true));
-  it("3 · Dropbox: colour, hero, headline alignment and later headline copy are one story", () => {
-    const s = one(single("dropbox.com"));
-    expect([199, 200, 3405].every(id => tells(s, id))).toBe(true);
-  });
-  it("4 · Miro: headline typeface Roobert PRO to Apris", () => { const s = one(single("miro.com")); expect(tells(s, 1336)).toBe(true); expect(s.deck).toContain("Apris"); });
-  it("5 · The Light Phone: headline typeface and its alignment change in one story", () => { const s = one(single("thelightphone.com")); expect(tells(s, 3365) && tells(s, 3366)).toBe(true); });
-  it("6 · the seasonal story gathers Brooklinen, Lucid, Peloton and GoPro; none of them runs alone", () => {
+// E2e · the golden set changes with the facts. The approved wording and editorial calls stand (the twelve texts stay in the writer's
+// prompt as examples of wording), but the facts under six of the stories were one bad first capture, an alternating value or two
+// different page elements read as one headline. Those six are now "must not run" cases, each asserting the condition that fails.
+const check = (id: number) => goldenChecks[id];
+const failedOn = (id: number, field: string) => check(id)?.fields[field];
+describe("golden set · must run (7: five live, two skipped)", () => {
+  it("6 · the seasonal story gathers Peloton, GoPro and Brooklinen; none runs alone; Lucid's changes fail the check", () => {
     const s = one(published.filter(p => p.id.startsWith("seasonal:")));
-    expect(s.domains).toEqual(expect.arrayContaining(["brooklinen.com", "lucidmotors.com", "onepeloton.com", "gopro.com"]));
+    expect(s.domains).toEqual(expect.arrayContaining(["onepeloton.com", "gopro.com", "brooklinen.com"]));
+    expect(s.domains).not.toContain("lucidmotors.com");
+    expect(failedOn(3371, "headline")?.verdict).toBe("headline_element");
+    expect(failedOn(3373, "aesthetic")?.failed).toContain("two_before");
     for (const d of ["brooklinen.com", "lucidmotors.com", "onepeloton.com", "gopro.com"]) expect(single(d)).toHaveLength(0);
-  });
-  it("7 · roundup: Studio Dumbar, Affirm, Frog and Meta moved to a video hero", () => {
-    const s = one(published.filter(p => p.id.startsWith("roundup:") && p.signalKeys.includes("hero_media:video")));
-    expect(s.domains).toEqual(expect.arrayContaining(["studiodumbar.com", "affirm.com", "frog.co", "meta.com"]));
   });
   it("8 · white space: almost no dev tools homepage uses lifestyle photography", () =>
     expect(published.some(p => p.type === "white_space" && p.sector === "dev-tools" && p.signalKeys.includes("imagery:photography_lifestyle"))).toBe(true));
@@ -62,10 +54,50 @@ describe("golden set · must run as stories (12)", () => {
     expect(published.some(p => (p.type === "crossover" || p.type === "breakout") && p.sector === "studios" && p.signalKeys.includes("aesthetic:swiss_grid"))).toBe(true));
   it("11 · charts and data visuals breaking out in dev tools", () =>
     expect(published.some(p => p.type === "breakout" && p.sector === "dev-tools" && p.signalKeys.includes("imagery:data_viz"))).toBe(true));
-  it("12 · against the grain: one weekly roundup of the held counter-moves, Wired, Resend and Bun among them", () => {
+  it("12 · against the grain: one weekly roundup of held counter-moves that pass; Wired, Resend and Bun fail the check", () => {
     const s = one(published.filter(p => p.id.startsWith("against:")));
-    expect(s.domains).toEqual(expect.arrayContaining(["wired.com", "resend.com", "bun.sh"]));
+    expect(s.domains).toEqual(expect.arrayContaining(["netlify.com", "on.com", "sofi.com"]));
+    for (const d of ["wired.com", "resend.com", "bun.sh"]) expect(s.domains).not.toContain(d);
+    expect(failedOn(3419, "imagery")?.verdict).toBe("alternating"); // Wired
+    expect(failedOn(3412, "imagery")?.failed).toContain("two_before"); // Resend
+    expect(failedOn(3323, "aesthetic")?.failed).toContain("two_before"); // Bun
     expect(published.filter(p => p.type === "counter_move")).toHaveLength(0);
+  });
+  it("Netlify (20 Nov): two before, two after, one transition, headline read from the h1 on both sides — runs as its own story", () => {
+    for (const id of [4756, 4757, 4758, 4759]) { expect(check(id)?.verdict, String(id)).toBe("pass"); for (const f of Object.values(check(id)!.fields)) { expect(f.before).toBeGreaterThanOrEqual(2); expect(f.after).toBeGreaterThanOrEqual(2); expect(f.transitions).toBe(1); } }
+    expect(check(4759)!.fields["headline"]?.verdict).toBe("pass"); // a headline field passes only when both sides read an h1
+    const s = one(single("netlify.com"));
+    expect(tells(s, 4759) && tells(s, 4756)).toBe(true);
+  });
+});
+
+describe("golden set · must not run (6: the facts failed)", () => {
+  it("1 · DocuSign: the earlier headline was a different element in one capture; the accent was seen once before", () => {
+    expect(failedOn(3387, "headline")?.verdict).toBe("headline_element");
+    expect(failedOn(3386, "accent")).toMatchObject({ verdict: "seen_once", before: 1 });
+    expect(failedOn(3386, "accent")?.failed).toEqual(["two_before"]);
+    expect(single("docusign.com")).toHaveLength(0);
+  });
+  it("2 · HubSpot: the headline alternates (and the story was already retired as reversed)", () => {
+    expect(failedOn(3383, "headline")?.failed).toContain("one_transition");
+    expect(single("hubspot.com")).toHaveLength(0);
+  });
+  it("3 · Dropbox: colour, hero and alignment alternate between captures", () => {
+    for (const [id, f] of [[199, "palette"], [200, "hero_media"], [3405, "headline"]] as const) expect(failedOn(id, f)?.verdict, `${id} ${f}`).toBe("alternating");
+    expect(single("dropbox.com")).toHaveLength(0);
+  });
+  it("4 · Miro: the headline font alternates between Roobert PRO and Apris", () => {
+    expect(failedOn(1336, "h1")?.verdict).toBe("alternating");
+    expect(failedOn(1336, "h1")!.transitions).toBeGreaterThanOrEqual(2);
+    expect(single("miro.com")).toHaveLength(0);
+  });
+  it("5 · The Light Phone: no h1 on the page, so the headline font, alignment and text are not compared", () => {
+    for (const [id, f] of [[3365, "h1"], [3366, "h1_align"], [3367, "headline"]] as const) expect(failedOn(id, f)?.verdict, `${id} ${f}`).toBe("headline_element");
+    expect(single("thelightphone.com")).toHaveLength(0);
+  });
+  it("7 · the video-hero roundup: Studio Dumbar, Affirm, Frog and Meta were seen without video in only one capture", () => {
+    for (const id of [197, 3331, 3358, 3370]) expect(failedOn(id, "hero_media")?.failed, String(id)).toContain("two_before");
+    expect(published.some(p => p.id.startsWith("roundup:") && p.signalKeys.includes("hero_media:video"))).toBe(false);
   });
 });
 

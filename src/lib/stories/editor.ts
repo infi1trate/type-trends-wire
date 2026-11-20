@@ -15,6 +15,7 @@ import { REVERSED_REASON, reversalIds } from "../reversal";
 import { tapeDate, tapeLine, tapeWhat } from "../tape";
 import { codeCall, headlineOf, HEADLINE_CALL_NAME, UNCLEAR_HOLD, type HeadlineCallClass } from "./headline-call";
 import { carouselEventIds, isShowcaseSector, withoutRotation } from "../carousel";
+import { splitChecked, type Condition } from "../integrity";
 import {
   breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, inline, isVisibleMove, launchCandidate, moveCandidate,
   newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops,
@@ -271,13 +272,22 @@ export function shifts(ctx: Ctx): Candidate[] {
 }
 
 // EVERYTHING -----------------------------------------------------------------------------------------------------------------------
-export type AllCandidates = { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string> };
+export type AllCandidates = { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
+  /** E2e · changes that failed the integrity check (Data view only): event id, its label ("Seen once" / "Alternating") and the conditions. */
+  unconfirmed: { id: number; label: string; failed: Condition[] }[] };
+/** E2e · the input with only the passing part of each live change (integrity.ts); unchanged when it carries no checks. */
+export function confirmedInput(input: BuildInput): { input: BuildInput; unconfirmed: AllCandidates["unconfirmed"] } {
+  if (!input.checks) return { input, unconfirmed: [] };
+  const { tape, unconfirmed } = splitChecked(input.events, new Map(Object.entries(input.checks).map(([k, v]) => [Number(k), v])));
+  return { input: { ...input, events: tape }, unconfirmed: unconfirmed.map(u => ({ id: u.id, label: u.label, failed: u.failed })) };
+}
 /** Names in every reader-facing text of a candidate (headline, deck, kicker, facts, evidence labels); ids, domains and links stay. */
 export const named = (c: Candidate, names?: ReadonlyMap<string, string | null>): Candidate => ({
   ...c, kicker: nameText(c.kicker, names), headline: noDollar(nameText(c.headline, names)), deck: c.deck == null ? null : noDollar(nameText(c.deck, names)),
   facts: c.facts.map(f => ({ ...f, text: noDollar(nameText(f.text, names)) })), evidence: c.evidence.map(e => ({ ...e, label: nameText(e.label, names) })),
 });
-export function allCandidates(input: BuildInput): AllCandidates {
+export function allCandidates(raw: BuildInput): AllCandidates {
+  const { input, unconfirmed } = confirmedInput(raw);
   const ctx = context(input), names = new Map(input.sites.map(s => [s.domain, s.name]));
   const kindOf = new Map(input.sites.map(s => [s.domain, siteKind(s.domain, s.kind ?? null)]));
   const kind = (d: string) => kindOf.get(d) ?? siteKind(d);
@@ -324,7 +334,7 @@ export function allCandidates(input: BuildInput): AllCandidates {
     ...brand, ...unclear, ...shifts(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx),
     ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...(season ? [season] : []), ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => named(c, names));
-  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape };
+  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
 }
 
 // PART 3 · ONE BRAND, ONE STORY: fold a later change into the story that already ran ----------------------------------------------

@@ -128,7 +128,7 @@ export function StoryView({ s, related }: { s: StoryPageData; related?: ReactNod
 
 /** E2d · a retired story keeps its page: number and date, the headline it ran under, "Retired" with the editor's note, the brand page and
  *  the tape lines it was built from. No body, no picture, no "Next". */
-export function RetiredStoryView({ s, tape, note }: { s: Pick<StoryPageData, "id" | "number" | "at" | "headline" | "kicker" | "brands">; tape: { id: number; text: string; href: string }[]; note: string | null }) {
+export function RetiredStoryView({ s, tape, note }: { s: Pick<StoryPageData, "id" | "number" | "at" | "headline" | "kicker" | "brands">; tape: { id: number; text: string; href: string; confirmed?: boolean }[]; note: string | null }) {
   return <DigestShell label={s.headline} section="live">
     <article className="ed-wrap py-10 md:py-16" data-story-retired="">
       <p className="ed-data flex flex-wrap gap-x-4 gap-y-1">
@@ -139,7 +139,7 @@ export function RetiredStoryView({ s, tape, note }: { s: Pick<StoryPageData, "id
       <h1 className="ed-h1 mt-4 max-w-[24ch] break-words">{s.headline}</h1>
       <p className="ed-small mt-6 max-w-[62ch] border-l-2 border-ed-ink pl-3" role="note" data-retired-note=""><span className="ed-kicker mr-2">Retired</span>{note ? note.replace(/^Retired:\s*/, "").replace(/^./, c => c.toUpperCase()) : "Taken down by the editor."}</p>
       {s.brands.length > 0 && <p className="ed-data mt-10 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap inline-flex min-h-11 items-center">{b.name} →</Link>)}</p>}
-      {tape.length > 0 && <BlockPart title="The tape lines it was built from" kicker="They stay on the tape.">
+      {tape.length > 0 && <BlockPart title="The changes it was built from" kicker={tape.every(t => t.confirmed !== false) ? "They stay on the tape." : "A change marked Seen once, Alternating or Not compared is not on the tape; the rest stay there."}>
         <ul className="ledger" data-retired-tape="">{tape.map(t => <li key={t.id} className="ledger-row px-2 py-3"><span className="ed-small break-words"><Receipt href={t.href} {...pr(t.href)}>{t.text}</Receipt></span></li>)}</ul>
       </BlockPart>}
     </article>

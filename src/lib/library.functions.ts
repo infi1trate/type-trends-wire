@@ -20,10 +20,13 @@ export const getLibrary = createServerFn({ method: "GET" }).handler(async () => 
   const icons = iconsFor(await picturesSafe(), rows.map(r => r.domain).filter((d): d is string => !!d));
   // E2a: each change reads as its tape line (brand name, what changed, from and to, date); labels stay separate badges.
   // E2b: one line per brand, change and day (the same change on two viewports or pages is one line, ending with the pages).
-  const { tapeRows } = await import("./tape");
+  const { tapeRows, tapeLine } = await import("./tape");
   const valid = events.filter((e): e is typeof e & { id: number; domain: string; type: string; detected_at: string } => e.id != null && !!e.domain && !!e.type && !!e.detected_at);
-  const rowsOut = tapeRows(valid.map(e => ({ ...e, before: e.before, after: e.after, page_type: e.page_type ?? null, summary: e.summary ?? null })), e => ({ seasonal: seasonal.has(e.id), reversed: reversed.has(e.id), carousel: carousel.has(e.id) }));
-  return { rows, icons, events: rowsOut.map(({ also, pages: _p, ...e }) => ({ ...e, tape: e.tape, seasonal: [e.id, ...also].some(id => seasonal.has(id)), reversed: [e.id, ...also].some(id => reversed.has(id)) })), sectors, ai: await aiTrends() };
+  // E2e: the tape is the confirmed part of each change; what failed the integrity check is the Data view's own list (integrity.ts).
+  const split = await (await import("./integrity.server")).checkedEvents(supabaseAnon(), valid);
+  const unconfirmed = split.unconfirmed.map(e => ({ id: e.id, domain: e.domain, detected_at: e.detected_at, label: e.label, line: tapeLine({ ...e, page_type: e.page_type ?? null, summary: e.summary ?? null }) }));
+  const rowsOut = tapeRows(split.tape.map(e => ({ ...e, before: e.before, after: e.after, page_type: e.page_type ?? null, summary: e.summary ?? null })), e => ({ seasonal: seasonal.has(e.id), reversed: reversed.has(e.id), carousel: carousel.has(e.id) }));
+  return { rows, icons, events: rowsOut.map(({ also, pages: _p, ...e }) => ({ ...e, tape: e.tape, seasonal: [e.id, ...also].some(id => seasonal.has(id)), reversed: [e.id, ...also].some(id => reversed.has(id)) })), unconfirmed, sectors, ai: await aiTrends() };
 });
 export const getLibrarySite = createServerFn({ method: "GET" }).inputValidator(z.object({ domain: z.string().min(3).max(253) })).handler(async ({ data }) => {
   const { librarySite } = await import("./library-store.server");

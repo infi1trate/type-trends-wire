@@ -63,7 +63,7 @@ export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
     import("./rebrands.server").then(m => m.readerRebrands()),
   ]);
   return { stories: [
-    ...(await (async () => { const evs = (events ?? []) as EventRow[], { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
+    ...(await (async () => { const evs = (await (await import("./integrity.server")).checkedEvents(db, (events ?? []) as EventRow[])).tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
     ...rebrandAll.rows.filter(x => x.source === "live" && Date.parse(x.confirmed_at) >= now - 120 * day).map(x => fromRebrand(x as RebrandRow)),
   ] };
 });
@@ -111,7 +111,7 @@ export async function loadBrand(domain: string) {
   const site = must(await db.from("library_sites").select("domain,active").eq("domain", domain).maybeSingle());
   if (!site?.active) return null;
   const [{ auditRows }, { capturesOf, dataInput }, { sectorField, signalContrast }, { similarBrands }] = await Promise.all([import("./agency/audit.server"), import("./data-stories/data.server"), import("./data-stories/stories"), import("./similar")]);
-  const [audit, events, index, { tiers, signals }, all, crops, captures, input] = await Promise.all([
+  const [audit, rawEvents, index, { tiers, signals }, all, crops, captures, input] = await Promise.all([
     auditRows([domain], null),
     db.from("library_event_feed").select("id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80).then(must),
     siteTraitIndex(),
@@ -121,6 +121,8 @@ export async function loadBrand(domain: string) {
     capturesOf(domain).catch(() => []),
     dataInput().catch(() => null),
   ]);
+  // E2e: the brand's moves are its confirmed changes (integrity.ts; fails closed).
+  const events = (await (await import("./integrity.server")).checkedEvents(db, (rawEvents ?? []) as EventRow[])).tape;
   const own = index.find(s => s.domain === domain);
   const eligible = similarEligible(signals);
   const storyOf: [string, string][] = [...storyForSource(all)].filter(([src]) => src.startsWith("event:") || src.startsWith(`rebrand:${domain}:`)).map(([src, id]) => [src, storyPath(id)]);
@@ -136,7 +138,8 @@ export async function loadBrand(domain: string) {
 const moveCounts = memo(TTL, async () => {
   const db = supabaseAnon();
   const [events, rebrandAll] = await Promise.all([
-    pages<{ domain: string; detected_at: string }>((f, t) => db.from("library_event_feed").select("domain,detected_at").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("id").range(f, t) as never, 1000),
+    pages<{ id: number; type: string; domain: string; detected_at: string }>((f, t) => db.from("library_event_feed").select("id,type,domain,detected_at").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("id").range(f, t) as never, 1000)
+      .then(async evs => (await (await import("./integrity.server")).checkedEvents(db, evs)).tape),
     import("./rebrands.server").then(m => m.readerRebrands()).then(r => r.rows).catch(() => []),
   ]);
   const out = new Map<string, { n: number; last: string | null }>();

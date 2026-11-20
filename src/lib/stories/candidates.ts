@@ -1,6 +1,7 @@
 // Story candidates from what already exists: library events, rebrands, real forecast runs, alerts, wire items, launches,
 // the current library sample and its archive. Pure and deterministic: same rows in, same candidates (and ids) out.
 import { basis, canonical, label, sectorName, stageName, untick, type Basis } from "../labels";
+import type { Check } from "../integrity";
 import { eventSentence, EVENT_KIND, REBRAND_WORDS, type EventRow, type RebrandRow } from "../agency/changes";
 import { siteTraits, type SiteRow } from "../forecast-signals";
 import { brandPath, patternPath, signalPath } from "../ia";
@@ -37,6 +38,9 @@ export function archiveMeasured(r: Pick<SiteRow, "theme" | "h1_family" | "webfon
 }
 export type BuildInput = {
   now: string;
+  /** E2e · measurement-integrity verdicts per live change (integrity.ts). When present, only the passing part of each change is a tape
+   *  line or can feed a story; the rest is the Data view's unconfirmed list. Absent only in older rule tests. */
+  checks?: Record<number, Check>;
   events: EventRow[]; rebrands: RebrandRow[];
   /** Real (non-dev) forecast runs, oldest first. */
   runs: RunRows[];

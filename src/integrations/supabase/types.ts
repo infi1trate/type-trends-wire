@@ -146,6 +146,33 @@ export type Database = {
         }
         Relationships: []
       }
+      change_checks: {
+        Row: {
+          checked_at: string
+          event_id: number
+          fields: Json
+          id: number
+          pass_fields: string[]
+          verdict: string
+        }
+        Insert: {
+          checked_at?: string
+          event_id: number
+          fields?: Json
+          id?: never
+          pass_fields?: string[]
+          verdict: string
+        }
+        Update: {
+          checked_at?: string
+          event_id?: number
+          fields?: Json
+          id?: never
+          pass_fields?: string[]
+          verdict?: string
+        }
+        Relationships: []
+      }
       chart_cards: {
         Row: {
           created_at: string
@@ -2168,6 +2195,16 @@ export type Database = {
           kind: string | null
           path: string | null
           width: number | null
+        }
+        Relationships: []
+      }
+      change_checks_latest: {
+        Row: {
+          checked_at: string | null
+          event_id: number | null
+          fields: Json | null
+          pass_fields: string[] | null
+          verdict: string | null
         }
         Relationships: []
       }

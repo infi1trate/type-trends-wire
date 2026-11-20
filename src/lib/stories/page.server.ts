@@ -38,7 +38,7 @@ export async function loadStoryLead(id: string) {
   return { ...page, retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
 }
 /** E2d · what a retired story's page shows: the editor's note and the tape lines it was built from (each linking to the library record). */
-export type Retired = { note: string | null; tape: { id: number; text: string; href: string }[] };
+export type Retired = { note: string | null; tape: { id: number; text: string; href: string; confirmed: boolean }[] };
 /** Event ids a story was built from (`event:<id>`, and a folded move's `story:move:<id>`), at most 40. */
 export const sourceEventIds = (sourceIds: string[]) => [...new Set(sourceIds.flatMap(x => { const m = /^(?:event|story:move):(\d+)$/.exec(x); return m ? [Number(m[1])] : []; }))].slice(0, 40);
 /** A retired story keeps its page: its number, date, the headline it ran under, "Retired" with the note, the brand and its tape lines.
@@ -60,8 +60,11 @@ async function tapeOf(ids: number[]) {
   const { data, error } = await db.from("library_events").select("id,domain,type,before,after,detected_at,page_type,summary,snapshot_id,prev_snapshot_id").in("id", ids);
   if (error) throw error;
   const rows = (data ?? []).flatMap(e => (e.detected_at ? [{ ...e, detected_at: e.detected_at }] : [])).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
-  const carousel = new Set(await carouselIds(db, rows));
-  return rows.map(e => ({ id: e.id, text: tapeLine(e, { carousel: carousel.has(e.id) }), href: `/library/${encodeURIComponent(e.domain)}` }));
+  const [carousel, checks] = await Promise.all([carouselIds(db, rows).then(x => new Set(x)), import("../integrity.server").then(m => m.latestChecks(db, rows.map(e => e.id))).catch(() => new Map())]);
+  // E2e: a change that failed the integrity check is named as such (it is not on the tape).
+  const { VERDICT_LABEL } = await import("../integrity");
+  const mark = (id: number) => { const c = checks.get(id); if (!c) return "Not checked"; if (c.verdict === "pass") return null; return c.verdict === "headline_element" ? "Not compared: the headline was not read from the page's h1" : VERDICT_LABEL[c.verdict as "seen_once" | "alternating"]; };
+  return rows.map(e => { const m = mark(e.id); return { id: e.id, text: `${tapeLine(e, { carousel: carousel.has(e.id) })}${m ? ` · ${m}` : ""}`, href: `/library/${encodeURIComponent(e.domain)}`, confirmed: !m }; });
 }
 /** P1, deferred: earlier stories on the same signal or brand, the patterns among its signals, and the way on (Next, the study). */
 export async function loadStoryRelated(id: string) {

@@ -9,7 +9,8 @@ import { allCandidates, archiveMeasured, type BuildInput, type RunRows } from ".
 import { comparisonPair } from "../run-gap";
 import { fetchRealRuns } from "../real-runs";
 import { planStories, type Existing, type Planned } from "./score";
-import { brandFolds, type Fold, type ShownStory } from "./editor";
+import { brandFolds, confirmedInput, type Fold, type ShownStory } from "./editor";
+import type { Check } from "../integrity";
 import { siteKind } from "../brand-names";
 import { knownFrom, validateWhy, WHY_PER_BUILD, WHY_PER_DAY } from "./why";
 import { soWhatOf } from "./view";
@@ -56,12 +57,14 @@ export type BuildDeps = {
   bases?: (runId: number, keys: string[], scopes: string[]) => Promise<Map<string, ShareBase>>;
   /** E2c · keep the crops each published story cites (story_kept_crops); returns how many were kept. */
   keepCrops?: () => Promise<number>;
+  /** E2e · append the integrity verdicts that changed (change_checks, read by every tape surface); returns how many were written. */
+  recordChecks?: (checks: Record<number, Check>) => Promise<number>;
   /** Append a kill to every published single-brand story told only by these reversed events (retire.ts reversedStory); returns how many. */
   retireReversed?: (eventIds: number[], identityIds: string[]) => Promise<number>;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number;
   /** When the writer must stop starting calls (absolute ms); default the build's own budget. */ writeDeadline?: number; writerPerBuild?: number; writeLimit?: number };
-export type BuildResult = { ok: true; skipped?: "dev"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
+export type BuildResult = { ok: true; checks_recorded?: number; skipped?: "dev"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -74,7 +77,10 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const empty = { considered: 0, inserted: 0, published: 0, held: 0, why_lines: 0, timed_out: false, news_kept: 0, news_dropped: 0 };
   if (o.dev) return { ok: true, skipped: "dev", ...empty };
   const clock = o.now ?? Date.now, start = clock(), budget = o.budgetMs ?? BUILD_BUDGET_MS, days = o.days ?? BUILD_DAYS;
-  const loaded = await deps.load({ days, allRuns: !!o.allRuns, realRunIds: o.realRunIds ?? [] });
+  const raw = await deps.load({ days, allRuns: !!o.allRuns, realRunIds: o.realRunIds ?? [] });
+  // E2e: the verdicts are stored first (every tape surface reads them), then only the passing part of each change goes on (integrity.ts).
+  const checksRecorded = raw.checks && deps.recordChecks ? await deps.recordChecks(raw.checks).catch(() => 0) : 0;
+  const loaded = confirmedInput(raw).input;
   // Headline calls first (they decide which headline changes count), inside a third of the budget; failures leave the change uncounted.
   const kinds = new Map(loaded.sites.map(x => [x.domain, x.kind ?? null]));
   const rotating = carouselEventIds(loaded.events, new Set(loaded.carousel ?? []));
@@ -132,7 +138,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
-  return { ok: true, numbered, kept_crops: kept, ...(texts ? { texts } : {}), retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+  return { ok: true, checks_recorded: checksRecorded, numbered, kept_crops: kept, ...(texts ? { texts } : {}), retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
 }
 
 /** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */
@@ -187,6 +193,10 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
   const sectorOf = new Map(sites.map(x => [x.domain, x.sector]));
   const history = historyRows.filter(e => sectorOf.has(e.domain)).map(e => ({ ...e, sector: sectorOf.get(e.domain) ?? null })), events = history.filter(e => e.detected_at >= since);
+  // E2e: every live change of the window (both viewports, every page) judged against the stored live captures. A failure fails the
+  // build (fail closed: no change reaches a story unchecked).
+  const checkEvents = await pages<EventRow & { viewport: string | null }>((f, t) => db.from("library_events").select("id,domain,type,before,after,detected_at,source,page_type,viewport,snapshot_id,prev_snapshot_id").eq("source", "live").gte("detected_at", new Date(now - (o.days + REVERSAL_DAYS) * 864e5).toISOString()).order("id").range(f, t) as never);
+  const checks = await (await import("../integrity.server")).computeChecks(db, checkEvents);
   const [texts, calls, carousel] = await Promise.all([
     (await import("../promo.server")).snapshotTexts(db, events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id])),
     (await import("./headline-call.server")).storedCalls(db as never, events.filter(e => e.type === "message_pivot").map(e => e.id)).catch(() => ({})),
@@ -205,6 +215,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     texts: Object.fromEntries(texts),
     calls,
     carousel: [...carousel],
+    checks: Object.fromEntries(checks),
   };
 }
 
@@ -221,6 +232,7 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
       const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
       return rows.map(r => { const v = applyEdits(r, by.get(r.id) ?? [], Date.now()); return { id: r.id, type: v.type as Existing["type"], status: r.status, state: v.state, score: r.score, basis: r.basis, happened_at: r.happened_at, domains: r.domains, signal_keys: r.signal_keys, sector: r.sector, headline: v.headline, deck: v.deck, facts: v.facts, source_ids: r.source_ids }; });
     },
+    recordChecks: async checks => (await import("../integrity.server")).recordChecks(admin as never, new Map(Object.entries(checks).map(([k, v]) => [Number(k), v]))),
     calls: async (events, deadline, carousel) => (await import("./headline-call.server")).headlineCalls(admin, events.filter(e => e.type === "message_pivot" && (!e.page_type || e.page_type === "home")), { deadline, ...(carousel ? { carousel } : {}) }),
     appendFolds: async folds => {
       if (!folds.length) return 0;

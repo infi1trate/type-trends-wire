@@ -66,7 +66,9 @@ export async function librarySite(domain: string) {
 async function siteTimeline(domain:string) {
  const rows=[];
  for(let from=0;;from+=1000){const {data,error}=await supabaseAnon().from("library_events").select("*").eq("domain",domain).order("effective_at",{ascending:false}).order("id",{ascending:false}).range(from,from+999);if(error)throw error;rows.push(...(data??[]));if(!data||data.length<1000)break;}
- return rows;
+ // E2e: each live change carries its integrity verdict, so the record marks what is not on the tape (integrity.ts).
+ const checks=await (await import("./integrity.server")).latestChecks(supabaseAnon(),rows.filter(r=>r.source==="live").map(r=>r.id)).catch(()=>null);
+ return rows.map(r=>({...r,check:r.source!=="live"?null:checks?.get(r.id)?.verdict??"unchecked"}));
 }
 async function libraryPending(domain: string) {
   const rows = [];
