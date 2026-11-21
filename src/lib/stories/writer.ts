@@ -115,6 +115,7 @@ export const WRITER_SYSTEM = [
   "", "WHAT TO RETURN: headline (four to nine words, no colon, no parentheses), deck (one or two sentences), body (two to four short paragraphs, 60 to 140 words in all), how_we_know (one sentence).",
   "No \"why it matters\" line and no advice.",
   "A change happened between its \"since\" date (the last capture with the old value) and its \"date\" (the first capture with the new one): write \"between 11 and 14 November\" when they differ. Never date a change by when it was confirmed.",
+  "A news story reports what its item says: the headline, deck and body restate the item's own claim about the brand it names (the item title and excerpt in the facts), with quotations copied exactly from them. Never add a claim the item does not make and never name a brand it does not name.",
   "A census counts what homepages say now: give the count beside its base, quote members' lines exactly, and name at most max_brands brands.",
   "Use only the facts in the FACTS block. Every number you write must appear in the facts with the same value; every quotation must be copied exactly from the captured copy; name only the brands listed, by the names given; use only the dates given.",
   "When any fact has basis \"ai\", it is our read: say so in how_we_know (\"our read\", an AI estimate) and never present it as measured.",
@@ -188,7 +189,16 @@ const factNumbers = (f: WriterFacts) => {
 export const ADVICE = ["audit your", "consider", "you should", "make sure", "it's time to", "brands should"];
 export const STOCK_ENDINGS = ["worth watching", "a data point, not a trend", "belongs in briefs and templates"];
 export const TREND_SPEAK = ["effectively dead", "the end of", "the rise of", "game-changing"];
-export const METHOD_WORDS = ["score", "scores", "scored", "threshold", "thresholds", "run", "runs", "run number", "deterministic"];
+export const METHOD_WORDS = ["score", "scores", "scored", "threshold", "thresholds", "deterministic"];
+/** I3 · "run" is an ordinary word ("the record runs from 2021", "a long-running pattern"); only its method uses are banned. */
+export const METHOD_RUN_USES: readonly { name: string; re: RegExp }[] = [
+  { name: "forecast run", re: /(?<![\p{L}\p{N}])forecast runs?(?![\p{L}\p{N}])/iu },
+  { name: "run number", re: /(?<![\p{L}\p{N}])run numbers?(?![\p{L}\p{N}])/iu },
+  { name: "run <number>", re: /(?<![\p{L}\p{N}-])runs?\s+(?:no\.?\s*|#)?\d/iu },
+  { name: "this run", re: /(?<![\p{L}\p{N}])this run(?![\p{L}\p{N}-])/iu },
+  { name: "the latest run", re: /(?<![\p{L}\p{N}])the latest run(?![\p{L}\p{N}-])/iu },
+  { name: "per run", re: /(?<![\p{L}\p{N}])per run(?![\p{L}\p{N}-])/iu },
+];
 export const has = (text: string, phrase: string) => new RegExp(`(?<![\\p{L}\\p{N}])${esc(phrase)}(?![\\p{L}\\p{N}])`, "iu").test(text);
 /** "Rebrand" used as a claim: allowed only when the facts show one; a negated or counting use ("None of it is a rebrand", "the rebrand count") is not a claim. */
 function rebrandClaim(text: string): boolean {
@@ -206,6 +216,7 @@ export function bannedFailures(free: string): string[] {
   for (const p of [...ADVICE, ...STOCK_ENDINGS, ...TREND_SPEAK]) if (has(free, p)) fail.push(`banned phrase: ${p}`);
   for (const p of [...SUPERLATIVES, ...BANNED_PHRASES]) if (has(free, p)) fail.push(`banned word: ${p}`);
   for (const p of METHOD_WORDS) if (has(free, p)) fail.push(`method word: ${p}`);
+  for (const u of METHOD_RUN_USES) if (u.re.test(free)) fail.push(`method word: ${u.name}`);
   if (/→|->/.test(free)) fail.push("our own labels as prose (an arrow)");
   if (HEX.test(free)) fail.push("a hex code in the text"); HEX.lastIndex = 0;
   return fail;

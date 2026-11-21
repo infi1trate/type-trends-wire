@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { seededNames } from "../brand-names";
 import { AI_MODELS } from "../ai-models";
 import { APPROVED_EXAMPLES, APPROVED_STORIES, checkText, colourFailures, howWeKnow, parseWritten, writeWithFallback, WRITER_PER_DAY, type WriterChange, type WriterFacts, type WrittenText } from "./writer";
+import { bannedFailures } from "./writer";
 
 const known = { names: seededNames() };
 const ch = (brand: string, what: string, from: string, to: string, date: string, basis: "measured" | "ai" = "measured"): WriterChange => ({ brand, what, from, to, date, page: "home", basis });
@@ -59,6 +60,9 @@ describe("the check · each failure fails", () => {
   it("a brand the story is not about", () => expect(bad({ deck: "The homepage line is now “Everything you need to agree”, like Dropbox." })).toContain("brand not in the story: Dropbox"));
   it("a date not in the facts", () => expect(bad({ deck: "By 18 November the line read “Everything you need to agree”." })).toContain("date not in the facts: 18 nov"));
   it("a method word", () => expect(bad({ how_we_know: "Our read, an AI estimate, above the threshold." })).toContain("method word: threshold"));
+  // I3 · 0.3: "run" and "runs" are ordinary words; only the method uses fail.
+  it.each(["the record runs from 2021", "the story ran on Friday", "a long-running pattern"])("an ordinary run passes: %s", t => expect(bannedFailures(t).filter(f => f.startsWith("method word"))).toEqual([]));
+  it.each([["forecast run 13", "method word: forecast run"], ["In this run, fonts moved.", "method word: this run"], ["since run 12", "method word: run <number>"], ["the latest run shows it", "method word: the latest run"], ["two changes per run", "method word: per run"], ["the run number", "method word: run number"]])("a method use fails: %s", (t, f) => expect(bannedFailures(t)).toContain(f));
   it("a short body", () => expect(bad({ body: ["Too short.", "Still short."] })).toContain("body has 4 words (60 to 140)"));
 });
 

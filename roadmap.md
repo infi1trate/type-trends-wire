@@ -58,3 +58,12 @@
 - [x] 2.2 "Copy as CSV" on Data view + terminal tables
 - [x] 2.3 Pitches: table (additive), editor-only Pitch form, desk Pitched list with engine verdicts, builder evaluates open pitches
 - [x] Responsive 360–1920 both views, TTFB before/after, report
+
+# Phase I3 · Truth fixes + lead pictures
+- [ ] 0.1 Re-read vs change (mark events 14 d), tape/counts/candidates ignore, Data view line, re-check stories, tag-intake reuse, 40-call noise measurement
+- [ ] 0.2 News name matching, news facts sheet, no-story when nothing to say, retire No. 77, re-check news stories
+- [ ] 0.3 Method words narrowed + tests; study No. 4 writer call; facts_hash rebuild check
+- [ ] 0.4 Why 81/82/91 had no text; queue by front position; no empty sections; no lead without text
+- [ ] 0.5 Grid 0 columns; percentage-as-price; mark existing rows
+- [ ] 1 leadPicture pure fn, rules + fallbacks, crop gate (stored), slots (front lead, cards, story page, Data Pictures table), sizes/eager/lazy, captions/alt
+- [ ] Tests, responsive, weight/paint before/after, report

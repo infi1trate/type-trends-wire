@@ -67,7 +67,7 @@ describe("the Data view list and the tape", () => {
   });
   it("a live change with no verdict yet is on neither list; an archive change is not judged here", () => {
     const e = ev("on.com", 3348);
-    expect(splitChecked([e], new Map())).toEqual({ tape: [], unconfirmed: [] });
+    expect(splitChecked([e], new Map())).toEqual({ tape: [], unconfirmed: [], rereads: [] });
     expect(splitChecked([{ ...e, source: "wayback" }], new Map()).tape).toHaveLength(1);
   });
   it("a change seen once after moves to the tape when two later captures, six hours apart, confirm it", () => {

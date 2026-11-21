@@ -27,6 +27,7 @@ import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
 import { LeadFigureSlot } from "./Covers";
+import { LeadPicture } from "./LeadPicture";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLive";
 import { leadFigure, relTime } from "@/lib/front/front";
@@ -65,7 +66,8 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
       {l.evidence?.kind === "crops" && <figure className="lg:col-span-5" data-evidence=""><BeforeAfter before={l.evidence.before} after={l.evidence.after} /><figcaption className="ed-caption mt-2">Before → after · {l.evidence.section}</figcaption></figure>}
       {l.evidence?.kind === "crop" && <div className="lg:col-span-5" data-evidence="crop"><CropFigure crop={l.evidence.crop} label={`After · ${l.evidence.section}`} priority sizes="(min-width: 1024px) 40vw, 100vw" /></div>}
       {l.evidence?.kind === "card" && <div className="lg:col-span-5" data-evidence="card"><CoverFigure c={l.evidence.cover} /></div>}
-      {fig && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
+      {l.evidence?.kind === "plan" && <div className="min-w-0 lg:col-span-5" data-evidence="plan"><LeadPicture plan={l.evidence.plan} tileSizes="(min-width: 1024px) 18vw, 50vw" />{fig && <div className="mt-6 max-lg:hidden"><LeadFigureSlot f={fig} /></div>}</div>}
+      {fig && l.evidence?.kind !== "plan" && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
     </div>
   </Plate></section>;
 }

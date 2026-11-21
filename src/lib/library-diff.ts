@@ -24,6 +24,11 @@ export function normalizeFont(value: string): string {
   do { previous = key; key = key.replace(/(?:webfont|variable|display|text|web|vf|pro)$/, ""); } while (key !== previous);
   return key;
 }
+/** A monthly price we can stand behind: at least one cent, at most two decimals. Null (no price) is not a failure. */
+export function validMonthly(v: unknown): boolean {
+  if (v == null) return true;
+  return typeof v === "number" && Number.isFinite(v) && v >= 0.01 && Math.abs(Math.round(v * 100) - v * 100) < 1e-6;
+}
 const bucket = (value: unknown) => { const r = number(value); return r == null ? null : r === 0 ? "0" : r <= 8 ? "1–8" : r <= 24 ? "9–24" : "pill"; };
 function lab(hex: string): number[] | null {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return null;
@@ -51,6 +56,8 @@ export function extractFields(signals: Comparable, context: DiffContext): Compar
   const palette = validColors(at(signals, "color", "palette")); if (palette.length) fields['palette'] = palette;
   for (const key of ["hero_media", "h1_align", "grid_max_cols", "cta_radius_px"]) {
     const v = key === "cta_radius_px" ? bucket(at(signals, "layout", key)) : at(signals, "layout", key);
+    // I3 · 0.5: 0 grid columns means no CSS grid was detected (a detection gap), never a measured value.
+    if (key === "grid_max_cols" && v === 0) continue;
     if (v != null) fields[key] = v;
   }
   if (Array.isArray(signals['nav'])) fields['nav'] = strings(signals['nav'].filter(n => at(n, "depth") === 0).map(n => text(at(n, "label"))?.trim().toLowerCase()).filter(Boolean));
@@ -61,7 +68,8 @@ export function extractFields(signals: Comparable, context: DiffContext): Compar
   if (context.page_type === "home" && at(signals,'ai_tags','low_confidence')!==true && !at(signals,'ai_tags','blocked_reason') && (number(at(signals,'ai_tags','confidence'))??1)>=0.4) for (const key of ["imagery", "aesthetic"]) {
     const tags = at(signals, "ai_tags", key); if (Array.isArray(tags)) fields[key] = strings(tags);
   }
-  if (context.page_type === "pricing" && signals['ai_pricing']) fields['ai_pricing'] = signals['ai_pricing'];
+  // I3 · 0.5: a "monthly price" below one cent or with more than two decimals is a percentage fee or a parsing failure: no reading.
+  if (context.page_type === "pricing" && signals['ai_pricing'] && validMonthly(at(signals, "ai_pricing", "cheapest_paid_monthly"))) fields['ai_pricing'] = signals['ai_pricing'];
   for (const flag of frameworks) { const v = at(signals, "tech", flag); if (typeof v === "boolean") fields[`tech.${flag}`] = v; }
   return fields;
 }

@@ -51,6 +51,7 @@ export async function loadStoryData(id: string) {
     db.from("story_texts").select("version,headline,deck,body,how_we_know,model,created_at").eq("story_id", id).order("version").then(r => r.data ?? [], () => []),
   ]);
   const seen = await seenByEvent(ids).catch(() => new Map<number, { before: string; after: string }>());
+  const pictures = await storyPictures(s).catch(() => null);
   const stream = streamOf(all), rank = rankScores(stream), day = s.happened_at.slice(0, 10);
   const sameDay = stream.filter(x => x.happened_at.slice(0, 10) === day).sort((a, b) => (rank.get(b.id) ?? b.score) - (rank.get(a.id) ?? a.score) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id));
   const pos = sameDay.findIndex(x => x.id === id);
@@ -69,7 +70,16 @@ export async function loadStoryData(id: string) {
     texts: (texts as { version: number; headline: string; deck: string; body: string[]; how_we_know: string; model: string; created_at: string }[]).map(t => ({ ...t, shown: s.written?.version === t.version })),
     template: s.template ?? { headline: s.stored.headline, deck: s.stored.deck },
     edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note })),
+    pictures,
   };
+}
+/** I3 · the lead picture the Read view shows, as rows: which rule chose it and each picture's brand, section, capture and stored object. */
+async function storyPictures(s: NonNullable<Awaited<ReturnType<typeof storyById>>>) {
+  const [{ evidenceOf, colourEventsOf, leadOf }, { pictureRows, LEAD_RULES }, { isKind, storyPage: sp }] = await Promise.all([import("../stories/page.server"), import("../lead-picture"), import("../stories/view")]);
+  const type = isKind(s.type) ? s.type : "news", page = sp(s, { earlier: [], patterns: [] });
+  const [crops, colourEvents] = await Promise.all([evidenceOf(s, type), colourEventsOf(s).catch(() => [])]);
+  const plan = await leadOf(s, crops, { colourEvents, census: page.census?.lines ?? null, names: new Map(page.brands.map(b => [b.domain, b.name])) });
+  return { kind: plan.kind, rule: LEAD_RULES[plan.rule], caption: plan.caption, rows: pictureRows(plan).map((r, i) => ({ ...r, src: plan.items[i]!.src })) };
 }
 
 // RECEIPTS (U2) -------------------------------------------------------------------------------------------------------------------

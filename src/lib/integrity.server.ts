@@ -2,7 +2,8 @@
 // `recordChecks` appends a verdict row only when it differs from the newest one (insert-only `change_checks`, service role); readers use
 // `checkedEvents`, which fails closed: when verdicts can't be read, no live change reaches the tape.
 import type { supabaseAnon } from "./mcp/supabase";
-import { captureOf, checkEvent, splitChecked, type Capture, type Check, type Verdict } from "./integrity";
+import { applyMarks, captureOf, checkEvent, splitChecked, type Capture, type Check, type StoredVerdict } from "./integrity";
+import type { Mark } from "./reread";
 
 type Db = ReturnType<typeof supabaseAnon>;
 type Ev = { id: number; domain: string; type: string; before?: unknown; after?: unknown; detected_at: string; page_type?: string | null; viewport?: string | null; source?: string | null; snapshot_id?: number | null; prev_snapshot_id?: number | null };
@@ -58,9 +59,19 @@ export async function computeChecks(db: Db, events: Ev[]): Promise<Map<number, C
   const caps = await liveCaptures(db, [...new Set(live.map(e => e.domain))], new Set(live.filter(e => AI.has(e.type)).map(e => e.domain)), sectorOf);
   return new Map(live.map(e => [e.id, checkEvent(e, caps.get(key(e.domain, e.page_type, e.viewport)) ?? [])]));
 }
-export type CheckRow = { event_id: number; verdict: Verdict; pass_fields: string[]; fields: unknown };
-/** Newest verdict per change. */
-export async function latestChecks(db: Db, ids: number[]): Promise<Map<number, Check>> {
+export type CheckRow = { event_id: number; verdict: StoredVerdict; pass_fields: string[]; fields: unknown };
+type MarkRow = { event_id: number; field: string; kind: Mark["kind"]; reason: string };
+/** I3 · stored marks per change (library_event_marks). */
+export async function storedMarks(db: Db, ids: number[]): Promise<Map<number, Record<string, Mark>>> {
+  const out = new Map<number, Record<string, Mark>>(), want = [...new Set(ids)];
+  for (let i = 0; i < want.length; i += 200) {
+    const { data, error } = await db.from("library_event_marks").select("event_id,field,kind,reason").in("event_id", want.slice(i, i + 200));
+    if (error) throw error;
+    for (const r of (data ?? []) as MarkRow[]) out.set(r.event_id, { ...(out.get(r.event_id) ?? {}), [r.field]: { kind: r.kind, reason: r.reason } });
+  }
+  return out;
+}
+async function latestBase(db: Db, ids: number[]): Promise<Map<number, Check>> {
   const out = new Map<number, Check>(), want = [...new Set(ids)];
   for (let i = 0; i < want.length; i += 200) {
     const { data, error } = await db.from("change_checks_latest").select("event_id,verdict,pass_fields,fields").in("event_id", want.slice(i, i + 200));
@@ -69,16 +80,26 @@ export async function latestChecks(db: Db, ids: number[]): Promise<Map<number, C
   }
   return out;
 }
+/** Newest verdict per change, with its I3 marks applied (a re-read or failed measurement is never a change). */
+export async function latestChecks(db: Db, ids: number[]): Promise<Map<number, Check>> {
+  const [base, marks] = await Promise.all([latestBase(db, ids), storedMarks(db, ids)]);
+  return new Map([...base].map(([id, c]) => [id, applyMarks(c, marks.get(id) ?? {})]));
+}
+const baseOf = (c: Check): Check => c.base ?? c;
 const same = (a: Check, b: Check) => a.verdict === b.verdict && JSON.stringify([...a.pass].sort()) === JSON.stringify([...b.pass].sort()) && JSON.stringify(a.fields) === JSON.stringify(b.fields);
-/** Append a row for each change whose verdict differs from its newest stored one; returns how many were written. */
+/** Append a row for each change whose unmarked verdict differs from its newest stored one, and each new mark (insert-only, never
+ *  replaced); returns how many verdict rows were written. */
 export async function recordChecks(admin: Db, checks: ReadonlyMap<number, Check>): Promise<number> {
-  const have = await latestChecks(admin, [...checks.keys()]);
-  const rows: CheckRow[] = [...checks].filter(([id, c]) => { const h = have.get(id); return !h || !same(h, c); }).map(([id, c]) => ({ event_id: id, verdict: c.verdict, pass_fields: c.pass, fields: c.fields }));
+  const [have, marked] = await Promise.all([latestBase(admin, [...checks.keys()]), storedMarks(admin, [...checks.keys()])]);
+  const rows: CheckRow[] = [...checks].map(([id, c]) => [id, baseOf(c)] as const).filter(([id, c]) => { const h = have.get(id); return !h || !same(h, c); })
+    .map(([id, c]) => ({ event_id: id, verdict: c.verdict as StoredVerdict, pass_fields: c.pass, fields: c.fields }));
   for (let i = 0; i < rows.length; i += 200) { const { error } = await admin.from("change_checks").insert(rows.slice(i, i + 200) as never); if (error) throw new Error("change_checks_insert_failed"); }
+  const marks: MarkRow[] = [...checks].flatMap(([id, c]) => Object.entries(c.marks ?? {}).filter(([f]) => !marked.get(id)?.[f]).map(([field, m]) => ({ event_id: id, field, kind: m.kind, reason: m.reason })));
+  for (let i = 0; i < marks.length; i += 200) { const { error } = await admin.from("library_event_marks").upsert(marks.slice(i, i + 200) as never, { onConflict: "event_id,field", ignoreDuplicates: true }); if (error) throw new Error("event_marks_insert_failed"); }
   return rows.length;
 }
 /** The tape part and the Data view's unconfirmed list for changes read on a page. Fails closed (no live change) when verdicts can't be read. */
 export async function checkedEvents<E extends { id: number; type: string; before?: unknown; after?: unknown; source?: string | null }>(db: Db, events: E[]) {
   try { return splitChecked(events, await latestChecks(db, events.map(e => e.id))); }
-  catch { return { tape: events.filter(e => e.source && e.source !== "live"), unconfirmed: [] }; }
+  catch { return { tape: events.filter(e => e.source && e.source !== "live"), unconfirmed: [], rereads: [] }; }
 }

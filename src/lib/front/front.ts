@@ -10,6 +10,7 @@ import { SECTORS } from "../library";
 import type { LensResult } from "../sector-lens";
 import type { Signal } from "../signals";
 import type { Crop } from "../crops";
+import type { LeadPlan } from "../lead-picture";
 import type { Cover, Pic } from "../pictures";
 import { isoWeek, longDate } from "../digest/week";
 import { NO_COMPARISON_TEXT } from "../run-gap";
@@ -73,13 +74,20 @@ export const PATTERN_TYPES = new Set(["roundup", "breakout", "crossover", "white
 /** A pattern story from the last 72 hours leads first; only without one may a single-brand story lead, the best of the last 24 hours. */
 export const PATTERN_LEAD_HOURS = 72, SINGLE_LEAD_HOURS = 24;
 export type LeadLabel = "Today" | "This week" | "Latest story" | "Pinned by the editor";
+/** I3 · 0.4 · a story without checked written text cannot lead while a published story of the same UTC day has some. Stories read without
+ *  their texts (the writer's queue) carry no `written` field at all, so the rule never applies there. */
+export function textLeadAllowed(s: Pick<StoryRecord, "id" | "happened_at" | "written">, all: readonly Pick<StoryRecord, "id" | "happened_at" | "written">[]): boolean {
+  if (s.written || !("written" in s)) return true;
+  const day = s.happened_at.slice(0, 10);
+  return !all.some(x => x.id !== s.id && !!x.written && x.happened_at.slice(0, 10) === day);
+}
 export function pickLead(ranked: StoryRecord[], sector: string, now: number): { story: StoryRecord; label: LeadLabel } | null {
   const pinned = ranked.filter(s => s.pinnedUntil).sort((a, b) => (b.edits.at(-1)?.at ?? "").localeCompare(a.edits.at(-1)?.at ?? ""))[0];
   if (pinned) return { story: pinned, label: "Pinned by the editor" };
   // E2b: rank, not raw score: an AI-read roundup never ranks above a measured story of its day; it and the weekly pieces never lead on a day
   // that has a measured story.
   const rank = rankScores(ranked), r = (x: StoryRecord) => ({ score: rank.get(x.id) ?? x.score, sector: x.sector });
-  const best = (xs: StoryRecord[]) => [...xs].filter(x => leadAllowed(x, ranked)).sort((a, b) => lensScore(r(b), sector) - lensScore(r(a), sector) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id))[0];
+  const best = (xs: StoryRecord[]) => [...xs].filter(x => leadAllowed(x, ranked) && textLeadAllowed(x, ranked)).sort((a, b) => lensScore(r(b), sector) - lensScore(r(a), sector) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id))[0];
   const labelOf = (s: StoryRecord): LeadLabel => (within(s.happened_at, now, 24 * HOUR) ? "Today" : "This week");
   // Killed stories never reach here (ranked is the published stream).
   const pattern = best(ranked.filter(x => PATTERN_TYPES.has(x.type) && within(x.happened_at, now, PATTERN_LEAD_HOURS * HOUR)));
@@ -99,7 +107,9 @@ export type LeadEvidence =
   | { kind: "crop"; section: string; crop: Crop }
   /** I1: a single-brand story's social card, published by the brand itself. */
   | { kind: "card"; cover: Cover }
-  | { kind: "spark"; key: string; name: string; points: number[]; quarters?: string[] | undefined };
+  | { kind: "spark"; key: string; name: string; points: number[]; quarters?: string[] | undefined }
+  /** I3: the rule-chosen lead picture (lead-picture.ts); the signal's trail stays beside it from 1024 px when there is one. */
+  | { kind: "plan"; plan: LeadPlan; spark: { key: string; name: string; points: number[]; quarters?: string[] | undefined } | null };
 
 // LIVE COLUMN --------------------------------------------------------------------------------------
 export const TIME_GROUPS = [{ id: "hour", title: "Last hour" }, { id: "today", title: "Today" }, { id: "yesterday", title: "Yesterday" }, { id: "week", title: "Earlier this week" }] as const;
@@ -244,7 +254,7 @@ export type FrontInput = {
   stories: Numbered[];
   signals: Signal[]; lens: LensResult | null; stages: Map<string, StageName | null>;
   moving: MovingIn; freshness: { text: string; late: boolean } | null;
-  leadEvidence: { id: string; crops: { section: string; before: Crop; after: Crop } | null; crop?: { section: string; crop: Crop } | null; cover?: Cover | null } | null; series: Record<string, number[]>;
+  leadEvidence: { id: string; crops: { section: string; before: Crop; after: Crop } | null; crop?: { section: string; crop: Crop } | null; cover?: Cover | null; plan?: LeadPlan | null } | null; series: Record<string, number[]>;
   /** I1: stored site icons by domain (single-brand rows draw theirs). */
   icons?: Record<string, Pic>;
   /** Quarter labels for each series point (the lead's figure dates its number), when the loader has them. */
@@ -269,9 +279,10 @@ export function frontModel(i: FrontInput) {
     const s = picked.story as Numbered, type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0];
     const whyText = s.why_line ?? soWhatOf({ type, signalKeys: s.signal_keys, stage: key ? i.stages.get(key) ?? null : null });
     const mine = i.leadEvidence?.id === s.id ? i.leadEvidence : null, crops = mine?.crops ?? null, pts = key ? i.series[key] ?? [] : [];
+    const sparkOf = () => (key && pts.length >= 1 ? { key, name: label(key).name, points: pts, ...(i.seriesQuarters?.[key]?.length === pts.length ? { quarters: i.seriesQuarters[key] } : {}) } : null);
     // A real picture wins (pair, then one crop, then the brand's own card); otherwise the slot stays as it was.
     lead = { story: frontWith(s, i.icons), label: state === "quiet" && picked.label === "Today" ? "This week" : picked.label, why: whyText ? { text: whyText, basis: s.why_line ? "ai" : "measured" } : null,
-      evidence: crops ? { kind: "crops", ...crops } : mine?.crop ? { kind: "crop", ...mine.crop } : mine?.cover ? { kind: "card", cover: mine.cover } : key && pts.length >= 1 ? { kind: "spark", key, name: label(key).name, points: pts, ...(i.seriesQuarters?.[key]?.length === pts.length ? { quarters: i.seriesQuarters[key] } : {}) } : null };
+      evidence: mine?.plan && LEAD_PICTURE_KINDS.has(mine.plan.kind) ? { kind: "plan", plan: mine.plan, spark: sparkOf() } : crops ? { kind: "crops", ...crops } : mine?.crop ? { kind: "crop", ...mine.crop } : mine?.cover ? { kind: "card", cover: mine.cover } : sparkOf() ? { kind: "spark", ...sparkOf()! } : null };
   }
   // E3: today's other stories sit in Also today as cards; the ruled list below ("Earlier this week") keeps everything else.
   const also = alsoToday(inFormat as Numbered[], picked?.story.id ?? null, i.sector, i.now).map(x => frontWith(x, i.icons)), above = new Set([picked?.story.id, ...also.map(a => a.id)]);
@@ -311,7 +322,10 @@ export type FrontUpdates = ReturnType<typeof updatesOf>;
 export type LeadFigure = { value: string; unit: string; date: string | null; trail: { x: string; y: number }[] | null; caption: string; key: string; name: string };
 export const LEAD_COVERAGE = "Well-covered quarters only (15+ sites, 25% coverage), all sectors.";
 const qLabel = (q: string) => { const m = /^(\d{4})-?Q([1-4])$/.exec(q); return m ? `Q${m[2]} ${m[1]}` : q; };
-export function leadFigure(e: LeadEvidence | null): LeadFigure | null {
+/** I3 · plan kinds that fill the front lead's picture slot (a chart or no picture leaves the slot as it was). */
+export const LEAD_PICTURE_KINDS: ReadonlySet<string> = new Set(["pair", "single", "mosaic", "words", "swatches", "card"]);
+export function leadFigure(ev: LeadEvidence | null): LeadFigure | null {
+  const e = ev?.kind === "plan" ? (ev.spark ? { kind: "spark" as const, ...ev.spark } : null) : ev;
   if (!e || e.kind !== "spark" || !e.points.length) return null;
   const last = e.points[e.points.length - 1]!, q = e.quarters?.[e.quarters.length - 1] ?? null;
   const trail = e.points.length >= 2 ? e.points.map((y, i) => ({ x: e.quarters?.[i] ?? `p${i + 1}`, y })) : null;

@@ -16,7 +16,7 @@ import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../prom
 import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import {
-  AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
+  AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_ALIASES, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
   REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
   WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, WHITE_SPACE_NOT_APPLICABLE, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
 } from "./types";
@@ -422,24 +422,57 @@ export function whiteSpaceCandidates(ctx: Ctx): Candidate[] {
 }
 
 // NEWS + LAUNCH ------------------------------------------------------------------------------------
-export type NewsMatcher = { brands: { domain: string; domainRe: RegExp; names: RegExp[] }[]; signals: { key: string; name: string; re: RegExp }[] };
+export type NewsMatcher = { brands: { domain: string; domainRe: RegExp; names: RegExp[]; aliases: RegExp[] }[]; signals: { key: string; name: string; re: RegExp }[] };
 const bound = (s: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(s)}(?![\\p{L}\\p{N}])`, "iu");
-/** Tracked brands match by brand name (word boundary, case-insensitive) unless the name is an ordinary word; the domain regex is kept for publication checks only. Headline signals match by label. */
+const boundAll = (s: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(s)}(?![\\p{L}\\p{N}])`, "giu");
+/** I3 · 0.2 — tracked brands match by whole name, alias or domain. A name that is an ordinary word (NEWS_NAME_STOPWORDS) needs the domain
+ *  or an alias in the item; a name inside a longer capitalised name ("Mother Design") is a different name unless that name is an alias.
+ *  Headline signals match by label. */
 export function newsMatcher(sites: { domain: string; name: string | null }[], headline: Iterable<string>): NewsMatcher {
   return {
     brands: sites.map(s => {
       const names = new Set([s.name, s.domain.split(".")[0]].filter((x): x is string => !!x && x.length >= NEWS_NAME_MIN && !NEWS_NAME_STOPWORDS.has(x.toLowerCase())));
-      return { domain: s.domain, domainRe: new RegExp(`(?<![\\p{L}\\p{N}.-])${escape(s.domain)}(?![\\p{L}\\p{N}-])`, "iu"), names: [...names].map(bound) };
+      return { domain: s.domain, domainRe: new RegExp(`(?<![\\p{L}\\p{N}.-])${escape(s.domain)}(?![\\p{L}\\p{N}-])`, "iu"), names: [...names].map(boundAll), aliases: (NEWS_ALIASES[s.domain] ?? []).map(bound) };
     }),
     signals: [...headline].map(key => ({ key, name: label(key).name })).filter(x => x.name.length >= NEWS_SIGNAL_MIN).map(x => ({ ...x, re: bound(x.name) })),
   };
 }
 /** Links, @handles and bare hosts ("webflow.sysdig.com", "instagram.com") are not names: they are removed before a title is matched. */
 export const titleWithoutHosts = (t: string) => t.replace(/https?:\/\/\S+/giu, " ").replace(/(?<![\p{L}\p{N}])@[\p{L}\p{N}_.-]+/gu, " ").replace(/(?<![\p{L}\p{N}@])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.[a-z]{2,24}(?![\p{L}\p{N}])/giu, " ");
-/** Brands and signals named in a title (by name, never by domain). */
-export function newsMatches(m: NewsMatcher, title: string) {
-  const t = titleWithoutHosts(title);
-  return { domains: m.brands.filter(b => b.names.some(r => r.test(t))).map(b => b.domain).sort(), signals: m.signals.filter(s => s.re.test(t)).map(s => s.key).sort() };
+/** A title in title case says nothing about where names end (every word is capitalised). */
+export const titleCase = (t: string) => { const ws = t.split(/\s+/).filter(w => /^\p{L}{4,}/u.test(w)); return ws.length >= 3 && ws.filter(w => /^\p{Lu}/u.test(w)).length / ws.length >= 0.7; };
+const CAP_WORD = /^\s+(\p{Lu}[\p{L}\p{N}&'’-]*)/u, CAP_BEFORE = /[\p{L}\p{N},;)'’]\s+(\p{Lu}[\p{L}\p{N}&'’-]*)\s+$/u; // a capitalised word that does not open the sentence
+/** Each place a name stands in a text: alone, or as part of a longer capitalised name (with that name). */
+export function nameUses(re: RegExp, text: string): { longer: string | null }[] {
+  const out: { longer: string | null }[] = [];
+  for (const m of text.matchAll(new RegExp(re.source, "giu"))) {
+    const i = m.index ?? 0, end = i + m[0].length, next = CAP_WORD.exec(text.slice(end)), prevText = text.slice(0, i);
+    const prev = CAP_BEFORE.exec(prevText);
+    out.push({ longer: next ? `${m[0]} ${next[1]}` : prev ? `${prev[1]} ${m[0]}` : null });
+  }
+  return out;
+}
+/** Brands and signals an item names: names in the title (by name; hosts removed), aliases and domains in the title or excerpt. */
+export function newsMatches(m: NewsMatcher, title: string, excerpt: string | null = null) {
+  const t = titleWithoutHosts(title), ex = excerpt ? titleWithoutHosts(excerpt) : "", tc = titleCase(t), both = `${title}\n${excerpt ?? ""}`;
+  const named = (b: NewsMatcher["brands"][number]) => {
+    if (b.domainRe.test(both) || b.aliases.some(r => r.test(both))) return true;
+    return b.names.some(r => {
+      const inTitle = nameUses(r, t);
+      if (!inTitle.length) return false;
+      // Title case hides where a name ends: the excerpt decides when it names the brand; otherwise the title is taken at its word.
+      const uses = tc ? (nameUses(r, ex).length ? nameUses(r, ex) : inTitle.map(() => ({ longer: null }))) : inTitle;
+      return uses.some(u => u.longer == null);
+    });
+  };
+  return { domains: m.brands.filter(named).map(b => b.domain).sort(), signals: m.signals.filter(s => s.re.test(t)).map(s => s.key).sort() };
+}
+/** The longer capitalised name an item uses instead of the tracked brand's name ("Mother Design"), for the retirement note; else null. */
+export function longerNameOf(m: NewsMatcher, domain: string, title: string, excerpt: string | null, name?: string | null): string | null {
+  const b = m.brands.find(x => x.domain === domain); if (!b) return null;
+  const re = [...(name ? [bound(name)] : []), ...b.names, bound(domain.split(".")[0]!)];
+  for (const r of re) for (const text of [excerpt ? titleWithoutHosts(excerpt) : "", titleWithoutHosts(title)]) { const u = nameUses(r, text).find(x => x.longer); if (u) return u.longer; }
+  return null;
 }
 const SUBJECT_RES = NEWS_SUBJECT_TERMS.map(t => new RegExp(`(?<![\\p{L}\\p{N}])${escape(t).replace(/ /g, "\\s+")}(?![\\p{L}\\p{N}])`, "iu"));
 /** The first design subject term in a text, or null. */
@@ -452,12 +485,21 @@ export type NewsDrops = Record<NewsDropReason, number>;
 export function newsVerdict(m: NewsMatcher, w: Pick<WireIn, "title" | "url" | "source" | "source_kind" | "excerpt">): { drop: NewsDropReason } | { drop: null; domains: string[]; signals: string[]; excerpt: string | null; title: string } {
   if (w.source_kind === "bluesky") return { drop: "bluesky" };
   const title = untick(w.title), excerpt = w.source_kind === "rss" && w.excerpt ? untick(w.excerpt).replace(NEWS_BOILERPLATE, "").trim() || null : null;
-  const host = hostOf(w.url), found = newsMatches(m, title);
+  const host = hostOf(w.url), found = newsMatches(m, title, excerpt);
   // A publication naming itself is not news about that brand (designboom's feed always says "designboom").
   const domains = found.domains.filter(d => !(host === d || host.endsWith(`.${d}`) || w.source.toLowerCase().replace(/\s+/g, "") === d.split(".")[0]));
   if (!domains.length && !found.signals.length) return { drop: "no_name" };
   if (!newsSubject(`${title}\n${excerpt ?? ""}`)) return { drop: "no_subject" };
+  // I3 · 0.2: the item must say something about how a named brand looks, sounds or is built: a design term in the same sentence as it.
+  if (domains.length && !found.signals.length && !claimAbout(m, domains, title, excerpt)) return { drop: "no_subject" };
   return { drop: null, domains, signals: found.signals, excerpt, title };
+}
+const sentences = (t: string) => t.split(/(?<=[.!?])\s+|\n+/u).map(x => x.trim()).filter(Boolean);
+/** A brand named as the tool something was made in ("Figma designs", "Webflow templates") is not the subject of the sentence. */
+const AS_TOOL = /(\p{Lu}[\p{L}\p{N}.]*)\s+(?:designs?|files?|plugins?|templates?|prototypes?|mockups?|integrations?|api|sdk|accounts?|community|users?|workflows?|boards?)(?![\p{L}\p{N}])/gu;
+/** True when a sentence of the title or excerpt names one of these brands as its subject (not as a tool) and carries a design term. */
+export function claimAbout(m: NewsMatcher, domains: string[], title: string, excerpt: string | null): boolean {
+  return [title, ...sentences(excerpt ?? "")].some(sn => { const own = sn.replace(AS_TOOL, " "); return !!newsSubject(own) && newsMatches(m, own, own).domains.some(d => domains.includes(d)); });
 }
 export function newsCandidates(m: NewsMatcher, wire: WireIn[]): { candidates: Candidate[]; dropped: number; drops: NewsDrops } {
   const out: Candidate[] = [], drops: NewsDrops = { bluesky: 0, no_name: 0, no_subject: 0 };
@@ -468,6 +510,9 @@ export function newsCandidates(m: NewsMatcher, wire: WireIn[]): { candidates: Ca
     const names = [...hit.domains, ...hit.signals.map(k => label(k).name)];
     out.push({ id: `news:${w.id}`, type: "news", kicker: `News · ${w.source}`, headline: clip(title, 160), deck: excerpt ? clip(excerpt, 180) : `Names ${listOf(names, 4)}.`,
       facts: [{ text: `Source: ${w.source}, ${shortDate(w.published_at)}`, href: w.url, basis: null, kind: "source" },
+        // I3 · 0.2: the item itself (title and excerpt, verbatim) is what the writer reports; Read lists never show these lines.
+        { text: `Item title: “${title}”`, href: w.url, basis: null, kind: "line" as const },
+        ...(excerpt ? [{ text: `Item excerpt: “${clip(excerpt, 600)}”`, href: w.url, basis: null, kind: "line" as const }] : []),
         ...hit.domains.map(d => ({ text: `Names ${d}, a tracked brand`, href: brandPath(d), basis: null, kind: "brand" as const })),
         ...hit.signals.map(k => ({ text: `Mentions ${label(k).name}, a headline signal`, href: signalPath(k), basis: basis(k) }))],
       sector: null, signalKeys: hit.signals, domains: hit.domains, evidence: [{ label: `Read at ${w.source}`, href: w.url }], sourceIds: [`wire:${w.id}`], basis: null,

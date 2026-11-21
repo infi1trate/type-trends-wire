@@ -498,6 +498,20 @@
       "when": 1795245892254,
       "tag": "0070_u2c_history_job_budget",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1795269576082,
+      "tag": "0071_i3_library_event_marks",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1795271232115,
+      "tag": "0072_i3_crop_quality",
+      "breakpoints": true
     }
   ]
 }

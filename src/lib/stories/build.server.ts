@@ -65,13 +65,15 @@ export type BuildDeps = {
   recordCensus?: (rows: import("../census").CensusRow[]) => Promise<number>;
   /** Append a kill to every published single-brand story told only by these reversed events (retire.ts reversedStory); returns how many. */
   retireReversed?: (eventIds: number[], identityIds: string[]) => Promise<number>;
+  /** I3 · append a kill to every published story left without support once its changes are marked re-reads (retire.ts rereadRetire). */
+  retireRereads?: (shown: ExistingShown[]) => Promise<number>;
   /** U4 · answer the open pitches from this build's plan and the rules' refusals (appends pitch_verdicts; never changes the plan). */
   pitches?: (view: Omit<import("./pitch").EngineView, "numberOf">) => Promise<number>;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number;
   /** U4 · the desk asking now: a run that writes nothing, whose pitch answers say "would run" instead of "ran". */ pitchDry?: boolean;
   /** When the writer must stop starting calls (absolute ms); default the build's own budget. */ writeDeadline?: number; writerPerBuild?: number; writeLimit?: number };
-export type BuildResult = { ok: true; checks_recorded?: number; pitched?: number; skipped?: "dev"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
+export type BuildResult = { ok: true; checks_recorded?: number; retired_reread?: number; pitched?: number; skipped?: "dev"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
 
 export const toRow = (p: Planned, why: { line: string; model: string; at: string } | null): StoryRowOut => ({
   id: p.id, type: p.type, status: p.status, reason: p.reason, score: p.score, components: p.components, why_ran: p.whyRan, kicker: p.kicker, headline: p.headline, deck: p.deck,
@@ -138,6 +140,8 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   // A change back retires the story that already ran on the change it reverses (append-only kill edits; never fails the build).
   const retired = reversed.length && deps.retireReversed ? await deps.retireReversed(reversed, reversedIdentity).catch(() => 0) : 0;
   const folded = folds.length && deps.appendFolds ? await deps.appendFolds(folds).catch(() => 0) : 0;
+  // I3: a story whose changes turned out to be AI re-reads is re-checked on what still passes (append-only; never fails the build).
+  const reread = deps.retireRereads ? await deps.retireRereads(existing).catch(() => 0) : 0;
   // U4: pitches are answered from the plan just made (after numbering, so a pitch that ran gets its number); never fails the build.
   const pitched = deps.pitches ? await deps.pitches(pitchView(plan, existing, integrityOut, rotating, input, !!o.pitchDry)).catch(() => 0) : 0;
   // The writer comes last: every story above is already stored with its template text, so nothing waits on it and a failure changes nothing.
@@ -154,7 +158,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
-  return { ok: true, checks_recorded: checksRecorded, numbered, ...(deps.pitches ? { pitched } : {}), kept_crops: kept, ...(texts ? { texts } : {}), retired_reversed: retired, folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+  return { ok: true, checks_recorded: checksRecorded, numbered, ...(deps.pitches ? { pitched } : {}), kept_crops: kept, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
 }
 
 /** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */
@@ -292,6 +296,7 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
     },
     assignNumbers: () => assignStoryNumbers(admin, { sinceDays: NUMBER_LOOKBACK_DAYS }),
     retireReversed: (ids, identity) => retireReversedStories(admin, ids, identity),
+    retireRereads: async shown => (await (await import("./reread-retire.server")).retireRereadStories(admin, shown)).retired.length,
     bases: shareBases,
     keepCrops: async () => (await import("./kept-crops.server")).keepStoryCrops(admin),
     pitches: async view => (await import("./pitch.server")).answerPitches(admin, view, "build"),

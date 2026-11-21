@@ -62,6 +62,13 @@ function StoryDataBody({ id }: { id: string }) {
       <DataTable caption="Written versions (each passed the writer's check when stored) and the template" head={["Version", "Stored", "Model", "Headline", "Deck", "Shown"]}
         rows={[...s.texts.map(t => [`v${t.version}`, day(t.created_at), t.model, t.headline, t.deck, t.shown ? "YES" : "–"]), ["Template", "–", "code", s.template.headline, s.template.deck ?? "–", s.texts.some(t => t.shown) ? "–" : "YES"]]} />
     </Band>
+    <Band title={`PICTURES · ${s.pictures?.rows.length ?? 0}`}>
+      {s.pictures ? <>
+        <p className="label p-3 text-compare-muted">LEAD {s.pictures.kind.toUpperCase()} · {s.pictures.rule}{s.pictures.caption ? ` · ${s.pictures.caption}` : ""}</p>
+        {s.pictures.rows.length > 0 && <DataTable caption="The lead picture's pictures, each the brand's own published page" head={["Brand", "Section", "Captured", "Role", "Stored object", "Record"]}
+          rows={s.pictures.rows.map(r => [r.brand, r.section, r.captured, r.role ? r.role.toUpperCase() : "–", <a key="o" href={r.src} className="text-ink underline underline-offset-2">{r.asset}</a>, <Lnk key="r" href={brandDataPath(r.brand)}>RECEIPT →</Lnk>])} />}
+      </> : <P>The picture lookup failed; the Read view shows its fallback.</P>}
+    </Band>
     <Band title={`EDITOR'S LOG · ${s.edits.length}`}>
       {s.edits.length ? <DataTable caption="Edits applied to this story" head={["When", "Action", "Note"]} rows={s.edits.map(e => [day(e.at), e.action.toUpperCase(), e.note ?? "–"])} /> : <P>No edits: the story runs as built.</P>}
     </Band>

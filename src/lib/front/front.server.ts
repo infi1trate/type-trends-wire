@@ -73,10 +73,16 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
   const lead = model.lead ? all.find(s => s.id === model.lead!.story.id) : null;
   if (lead) {
     const one = lead.domains.length === 1 ? lead.domains[0]! : null;
-    const ev = ["move", "counter_move", "rebrand"].includes(lead.type) ? await import("../stories/page.server").then(m => m.evidenceOf(lead, lead.type)).catch(() => null) : null;
+    const ps = await import("../stories/page.server");
+    const ev = ["move", "counter_move", "rebrand", "roundup"].includes(lead.type) ? await ps.evidenceOf(lead, lead.type).catch(() => null) : null;
+    // I3: the lead picture by rule (lead-picture.ts); the older slot logic stays as the fallback when the lookup fails.
+    const { censusLines } = await import("../stories/view");
+    const plan = await ps.leadOf(lead, ev, { colourEvents: await ps.colourEventsOf(lead).catch(() => []), census: lead.id.startsWith("census:") ? censusLines(Array.isArray(lead.facts) ? lead.facts as never : []) : null, chart: false, names: input.brandNames }).catch(() => null);
+    const pair = ev && lead.type !== "roundup" ? ev : null;
     const cover = one ? coverOf(one, pics.get(one) ?? NO_PICS) : null;
-    const leadEvidence = ev?.compare ? { id: lead.id, crops: { section: ev.sectionName ?? "", before: ev.compare.before, after: ev.compare.after } }
-      : ev?.after ? { id: lead.id, crops: null, crop: { section: ev.sectionName ?? "", crop: ev.after } }
+    const leadEvidence = plan ? { id: lead.id, crops: null, plan }
+      : pair?.compare ? { id: lead.id, crops: { section: pair.sectionName ?? "", before: pair.compare.before, after: pair.compare.after } }
+      : pair?.after ? { id: lead.id, crops: null, crop: { section: pair.sectionName ?? "", crop: pair.after } }
       : cover?.kind === "card" ? { id: lead.id, crops: null, cover } : null;
     if (leadEvidence) model = frontModel({ ...input, leadEvidence });
   }
@@ -110,7 +116,9 @@ async function candidatesOf(s: Story, pics: Awaited<ReturnType<typeof picturesSa
   const [{ evidenceOf }, { heroCrop }] = await Promise.all([import("../stories/page.server"), import("../crops")]);
   const ev = ["move", "counter_move", "rebrand", "roundup"].includes(s.type) ? await evidenceOf(s, s.type).catch(() => null) : null;
   const own = ev?.grid ? ev.grid.map(g => g.crop) : ev?.section === "hero" ? [ev.compare?.after ?? ev.after ?? null] : [];
-  return candidateList([...own, ...s.domains.map(d => { const h = pics.get(d)?.hero; return h ? heroCrop(d, h) : null; })]);
+  // I3: a crop that fails the lead-quality rule (near-blank, flat, too small) is never a card's picture.
+  const ok = await import("../lead-picture.server").then(m => m.cropOkFn()).catch(() => () => true);
+  return candidateList([...own, ...s.domains.map(d => { const h = pics.get(d)?.hero; return h ? heroCrop(d, h) : null; })].filter(c => !c || ok(c)));
 }
 /** Stories the front page can show as cards: published in the last two days. */
 const CARD_WINDOW_MS = 2 * 864e5;

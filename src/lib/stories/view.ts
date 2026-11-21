@@ -104,6 +104,14 @@ export const readFacts = (facts: Fact[]) => {
   // "Changed: accent" only summarises the change lines; with the lines themselves present it is noise.
   return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "line" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
 };
+/** I3 · 0.4 · the body a story reads as before its text is written and checked: its change and number lines as sentences, in their
+ *  order, at most four to a paragraph and two paragraphs. Pure; nothing here is new wording. */
+export function templateBody(facts: readonly Pick<Fact, "text">[]): string[] {
+  const lines = facts.map(f => f.text.trim()).filter(Boolean).map(t => /[.!?”"]$/.test(t) ? t : `${t}.`).slice(0, 8);
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i += 4) out.push(lines.slice(i, i + 4).join(" "));
+  return out;
+}
 /** Mark on a census line whose brand's confirmed change added the word in the last 14 days (E2h). */
 export const CENSUS_NEW_MARK = "New this fortnight";
 /** E2g · a census's "The lines": every member, brand name then its quoted line, linking to the brand page. E2h: the newly added members
@@ -128,7 +136,8 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
   return {
     id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: census ? "Census" : def.kicker, kicker: type === "news" || census ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
     basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
-    body: (s.written?.body ?? []).map(p => deLegacy(p)), howWeKnow: noDid(storyHowWeKnow(s)),
+    // I3 · 0.4: without checked written text the page reads its facts as the body (never an empty section).
+    body: s.written?.body?.length ? s.written.body.map(p => deLegacy(p)) : templateBody(census ? [] : readFacts(facts).map(f => ({ text: noDid(deLegacy(f.text)) }))), howWeKnow: noDid(storyHowWeKnow(s)),
     // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and
     // under "The lines".
     facts: (census ? facts.filter(f => f.kind === "member") : readFacts(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,

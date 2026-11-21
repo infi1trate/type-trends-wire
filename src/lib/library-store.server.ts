@@ -77,7 +77,8 @@ async function siteTimeline(domain:string) {
  for(let from=0;;from+=1000){const {data,error}=await supabaseAnon().from("library_events").select("*").eq("domain",domain).order("effective_at",{ascending:false}).order("id",{ascending:false}).range(from,from+999);if(error)throw error;rows.push(...(data??[]));if(!data||data.length<1000)break;}
  // E2e: each live change carries its integrity verdict, so the record marks what is not on the tape (integrity.ts).
  const checks=await (await import("./integrity.server")).latestChecks(supabaseAnon(),rows.filter(r=>r.source==="live").map(r=>r.id)).catch(()=>null);
- return rows.map(r=>({...r,check:r.source!=="live"?null:checks?.get(r.id)?.verdict??"unchecked"}));
+ // I3: a re-read (AI labels changed, no measured look field did) or a failed measurement carries its reason; it is not a change.
+ return rows.map(r=>{const c=r.source!=="live"?null:checks?.get(r.id)??null;const marked=c&&(c.verdict==="reread"||c.verdict==="not_measured")?Object.values(c.marks??{})[0]?.reason??null:null;return {...r,check:r.source!=="live"?null:c?.verdict??"unchecked",mark_reason:marked};});
 }
 async function libraryPending(domain: string) {
   const rows = [];

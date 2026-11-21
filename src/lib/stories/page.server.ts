@@ -43,7 +43,8 @@ export async function loadStory(id: string) {
   const { pickThumb } = await import("../thumbs");
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
   const crops = await evidenceOf(s, type);
-  return { ...page, thumb, crops, frames: crops.compare ? null : await framesOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
+  const lead = await leadOf(s, crops, { census: page.census?.lines ?? null, names: new Map(page.brands.map(b => [b.domain, b.name])) }).catch(() => null);
+  return { ...page, lead, thumb, crops, frames: crops.compare ? null : await framesOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
 }
 
 /** P1 · shell first, critical: the story with its cover evidence (crops, redrawn frames, the signal's trail and the latest capture),
@@ -75,7 +76,19 @@ export async function loadStoryLead(id: string) {
   const [{ picsFor }, { revealOf }] = await Promise.all([import("../pictures.server"), import("../pictures")]);
   const pics = d ? await picsFor(d) : null, reveal = d ? revealOf(d, pics?.hero) : null;
   const drawn = crops.compare || crops.after ? null : frames ? { before: { ...frames.before, reveal }, after: { ...frames.after, reveal } } : null;
-  return { ...page, eventIds: sourceEventIds(s.source_ids), retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+  const lead = await leadOf(s, crops, { colourEvents, census: page.census?.lines ?? null, chart: series.length >= 2, names: new Map(page.brands.map(b => [b.domain, b.name])) }).catch(() => null);
+  return { ...page, lead, eventIds: sourceEventIds(s.source_ids), retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+}
+/** I3 · the story's lead picture, by rule (lead-picture.ts), from what the page already loaded plus the one cached picture lookup. */
+export async function leadOf(s: StoryRecord, crops: import("./evidence").StoryEvidence | null, o: { colourEvents?: import("./recolour").ColourEvent[]; census?: { name: string; line: string; href: string | null }[] | null; chart?: boolean; names?: ReadonlyMap<string, string | null> } = {}) {
+  const [{ leadPicture }, { leadPics }] = await Promise.all([import("../lead-picture"), import("../lead-picture.server")]);
+  const ids = sourceEventIds(s.source_ids), colour = o.colourEvents ?? [];
+  const hexes = (v: unknown) => { const r = (v && typeof v === "object" ? v : {}) as Record<string, unknown>; return [...(Array.isArray(r["palette"]) ? (r["palette"] as unknown[]) : []), r["accent"]].filter((x): x is string => typeof x === "string" && /^#[0-9a-f]{3,8}$/i.test(x)); };
+  const one = colour.length === 1 && colour[0]!.type === "palette_shift" ? colour[0]! : null;
+  const paletteOnly = !!one && ids.length === 1;
+  const dates = [...new Set(((Array.isArray(s.facts) ? s.facts : []) as { text: string }[]).flatMap(f => String(f.text ?? "").match(/\b\d{4}-\d{2}-\d{2}\b/g) ?? []))];
+  const pics = await leadPics(d => o.names?.get(d) ?? d);
+  return leadPicture({ kind: "story", story: { id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
 }
 /** E2d · what a retired story's page shows: the editor's note and the tape lines it was built from (each linking to the library record). */
 export type Retired = { note: string | null; tape: { id: number; text: string; href: string; confirmed: boolean }[] };

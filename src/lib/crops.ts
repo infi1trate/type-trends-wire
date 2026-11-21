@@ -100,14 +100,14 @@ export function cropEvictions<T extends CropRow>(rows: T[], keep: number = CROP_
 }
 
 // DISPLAY ----------------------------------------------------------------------------------------------
-export type Crop = { domain: string; section: CropSection; sectionName: string; captured_at: string; last_seen_at: string; hash: string; src: string; width: number; height: number; alt: string; caption: string; live: string; report: string };
+export type Crop = { domain: string; section: CropSection; sectionName: string; captured_at: string; last_seen_at: string; hash: string; src: string; width: number; height: number; alt: string; caption: string; live: string; report: string; /** I3: stored size, for the lead-quality rule. */ bytes?: number };
 export const cropSrc = (path: string) => `/crops/${path}`;
 /** "Report this image": the editor's address when set, else the removal policy (owners ask the editor, who runs the opt-out). */
 export const reportHref = (domain: string) => (CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Remove images of ${domain}`)}` : "/what-we-show#ed-w-images");
 export function toCrop(r: CropRow): Crop {
   const section = (isCropSection(r.section) ? r.section : "hero") as CropSection, name = sectionName(section), day = utcDay(r.captured_at);
   return { domain: r.domain, section, sectionName: name, captured_at: r.captured_at, last_seen_at: r.last_seen_at, hash: r.hash, src: cropSrc(r.path), width: r.width, height: r.height,
-    alt: `${r.domain} ${name.toLowerCase()}, captured ${day}`, caption: `${name} · ${r.domain} · captured ${day}`, live: `https://${r.domain}`, report: reportHref(r.domain) };
+    alt: `${r.domain} ${name.toLowerCase()}, captured ${day}`, caption: `${name} · ${r.domain} · captured ${day}`, live: `https://${r.domain}`, report: reportHref(r.domain), ...(typeof r.bytes === "number" ? { bytes: r.bytes } : {}) };
 }
 /** E3: a brand's latest hero crop from the pictures index as a credited Crop (for cards that show a first screen). */
 export function heroCrop(domain: string, p: { src: string; width: number; height: number; at: string }): Crop {

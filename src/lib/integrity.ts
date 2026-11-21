@@ -8,6 +8,7 @@
 // are not compared at all (no change, no tape line, no story). A change that fails shows only in the Data view, marked "Seen once" or
 // "Alternating", and moves to the tape when later captures confirm it. Pure: same captures in, same verdicts out.
 import { equalField, extractFields, normalizeFont, type Comparable, type DiffContext } from "./library-diff";
+import { eventMarks, type Mark, type MarkKind } from "./reread";
 
 export const BEFORE_MIN = 2, AFTER_MIN = 2, MIN_SPAN_HOURS = 6, TRANSITION_DAYS = 14;
 /** Fields read from the page's headline element: compared only when both captures read an h1. */
@@ -18,7 +19,10 @@ export const CONDITION_TEXT: Record<Condition, string> = {
   two_after: "the new value was not seen in two captures six hours apart",
   one_transition: "the value changed more than once in 14 days",
 };
-export type Verdict = "pass" | "seen_once" | "alternating" | "headline_element";
+/** The four stored integrity verdicts (change_checks), plus I3's two marks applied on read (library_event_marks): "reread" (an AI label
+ *  changed but no measured look field did) and "not_measured" (a detection or parsing failure). Neither is a change anywhere. */
+export type StoredVerdict = "pass" | "seen_once" | "alternating" | "headline_element";
+export type Verdict = StoredVerdict | MarkKind;
 export const VERDICT_LABEL: Record<"seen_once" | "alternating", string> = { seen_once: "Seen once", alternating: "Alternating" };
 export const INTEGRITY_RULE = `A change counts only when the earlier value was seen in two captures at least ${MIN_SPAN_HOURS} hours apart, the new value was seen in two captures at least ${MIN_SPAN_HOURS} hours apart, and the value changed once in ${TRANSITION_DAYS} days; more than once is alternation (a rotating slide, an experiment or a loading race). The headline's text, font, size and alignment are compared only when both captures read the page's h1. A change that fails stays out of the tape and the stories, listed in the Data view as "Seen once" or "Alternating" until later captures confirm it.`;
 
@@ -27,7 +31,8 @@ export type Capture = { id: number; at: string; fields: Comparable; source: stri
 /** E2g · `lastBefore` is the last capture that showed the old value and `firstAfter` the first that showed the new one (ISO): the change
  *  happened between them. Older stored verdicts have neither; their changes are dated by when they were confirmed until re-checked. */
 export type FieldCheck = { verdict: Verdict; failed: Condition[]; before: number; after: number; beforeHours: number; afterHours: number; transitions: number; lastBefore?: string; firstAfter?: string };
-export type Check = { verdict: Verdict; fields: Record<string, FieldCheck>; pass: string[] };
+export type Check = { verdict: Verdict; fields: Record<string, FieldCheck>; pass: string[];
+  /** I3 · the marked fields and why; `base` is the verdict before marks (what change_checks stores). */ marks?: Record<string, Mark>; base?: { verdict: StoredVerdict; fields: Record<string, FieldCheck>; pass: string[] } };
 /** When a change happened, from its captures: the last capture with the old value and the first with the new one (E2g). */
 export type Seen = { before: string; after: string };
 type Ev = { id: number; type: string; before?: unknown; after?: unknown; detected_at: string; snapshot_id?: number | null; prev_snapshot_id?: number | null };
@@ -98,8 +103,33 @@ export function checkEvent(e: Ev, captures: Capture[]): Check {
   const unjudged = [...new Set([...Object.keys(b), ...Object.keys(a)])].filter(k => !keys.includes(k));
   const pass = [...keys.filter(k => fields[k]!.verdict === "pass"), ...unjudged];
   const vs = Object.values(fields).map(f => f.verdict);
-  const verdict: Verdict = pass.length ? "pass" : vs.includes("alternating") ? "alternating" : vs.includes("seen_once") ? "seen_once" : "headline_element";
-  return { verdict, fields, pass };
+  const verdict: StoredVerdict = pass.length ? "pass" : vs.includes("alternating") ? "alternating" : vs.includes("seen_once") ? "seen_once" : "headline_element";
+  return applyMarks({ verdict, fields, pass }, eventMarks(e, captures, fields));
+}
+const NO_FIELD: FieldCheck = { verdict: "headline_element", failed: [], before: 0, after: 0, beforeHours: 0, afterHours: 0, transitions: 0 };
+/** I3 · a stored verdict with its marks applied: a marked field never passes and never lists as unconfirmed; a change whose every field
+ *  is marked is a "reread" (or "not_measured") and appears nowhere but the brand's Data view. No marks: the check is returned as is. */
+export function applyMarks(c: Check, marks: Readonly<Record<string, Mark>>): Check {
+  const base = c.base ?? { verdict: c.verdict as StoredVerdict, fields: c.fields, pass: c.pass };
+  const ks = Object.keys(marks);
+  if (!ks.length) return { verdict: base.verdict, fields: base.fields, pass: base.pass };
+  const fields: Record<string, FieldCheck> = { ...base.fields };
+  for (const k of ks) fields[k] = { ...(base.fields[k] ?? NO_FIELD), verdict: marks[k]!.kind };
+  const pass = base.pass.filter(k => !marks[k]);
+  const vs = Object.values(fields).map(f => f.verdict), all = Object.keys(fields).every(k => marks[k]);
+  const verdict: Verdict = pass.length ? "pass" : vs.includes("alternating") ? "alternating" : vs.includes("seen_once") ? "seen_once"
+    : all || vs.includes("reread") || vs.includes("not_measured") ? (vs.includes("reread") ? "reread" : "not_measured") : "headline_element";
+  return { verdict, fields, pass, marks: { ...marks }, base };
+}
+/** The re-read part of a change for the brand's Data view ("Re-read on <date>. No measured change."); null when nothing was re-read. */
+export function rereadPart<E extends { id: number; type: string; before?: unknown; after?: unknown }>(e: E, c: Check | undefined): (E & { reason: string; kind: MarkKind }) | null {
+  if (!c?.marks) return null;
+  const ks = Object.keys(c.marks);
+  if (!ks.length || c.pass.length) return null;
+  const keep = new Set(ks), strip = (v: unknown) => Object.fromEntries(Object.entries(o(v)).filter(([k]) => keep.has(k)));
+  const first = c.marks[ks[0]!]!;
+  const kind: MarkKind = ks.some(k => c.marks![k]!.kind === "reread") ? "reread" : "not_measured";
+  return { ...e, before: strip(e.before), after: strip(e.after), kind, reason: kind === first.kind ? first.reason : c.marks[ks.find(k => c.marks![k]!.kind === kind)!]!.reason };
 }
 
 /** When the passing part of a change happened: the earliest last-old capture and the latest first-new capture over its passing fields
@@ -128,14 +158,14 @@ export function unconfirmedPart<E extends { id: number; type: string; before?: u
   return { ...e, before: strip(e.before), after: strip(e.after), label: alt ? VERDICT_LABEL.alternating : VERDICT_LABEL.seen_once, failed: [...new Set(bad.flatMap(([, f]) => f.failed))] };
 }
 /** Split changes into the tape (what passed) and the Data view's unconfirmed list. A live change with no check yet is neither. */
-export function splitChecked<E extends { id: number; type: string; before?: unknown; after?: unknown; source?: string | null }>(events: E[], checks: ReadonlyMap<number, Check>): { tape: E[]; unconfirmed: (E & { label: string; failed: Condition[] })[] } {
-  const tape: E[] = [], unconfirmed: (E & { label: string; failed: Condition[] })[] = [];
+export function splitChecked<E extends { id: number; type: string; before?: unknown; after?: unknown; source?: string | null }>(events: E[], checks: ReadonlyMap<number, Check>): { tape: E[]; unconfirmed: (E & { label: string; failed: Condition[] })[]; rereads: (E & { reason: string; kind: MarkKind })[] } {
+  const tape: E[] = [], unconfirmed: (E & { label: string; failed: Condition[] })[] = [], rereads: (E & { reason: string; kind: MarkKind })[] = [];
   for (const e of events) {
     if (e.source && e.source !== "live") { tape.push(e); continue; }
-    const c = checks.get(e.id), p = confirmedPart(e, c), u = unconfirmedPart(e, c);
-    if (p) tape.push(p); if (u) unconfirmed.push(u);
+    const c = checks.get(e.id), p = confirmedPart(e, c), u = unconfirmedPart(e, c), r = rereadPart(e, c);
+    if (p) tape.push(p); if (u) unconfirmed.push(u); if (r) rereads.push(r);
   }
-  return { tape, unconfirmed };
+  return { tape, unconfirmed, rereads };
 }
 /** Which of the three conditions failed, in words, for a retirement note. */
 export const failedText = (failed: Condition[]) => [...new Set(failed)].map(f => CONDITION_TEXT[f]).join("; ");

@@ -4,7 +4,7 @@ import { sectorName } from "../labels";
 import { gapOk, MIN_RUN_GAP_DAYS } from "../run-gap";
 import { deepEnough, firstSeenEligible, identityMove, inline, moveCandidate, noDollar, whiteSpaceGap, whiteSpaceText } from "./candidates";
 import { runBase, type SampleRow } from "./sheet";
-import { AI_EVENTS, WHITE_SPACE_MAX_SHARE, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, FIRST_SEEN_MIN_BRANDS, ROUNDUP_MIN, type Candidate, type Fact, type NewsDropReason } from "./types";
+import { AI_EVENTS, countWord, WHITE_SPACE_MAX_SHARE, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, FIRST_SEEN_MIN_BRANDS, ROUNDUP_MIN, type Candidate, type Fact, type NewsDropReason } from "./types";
 import { SEASONAL_HELD_EVENTS } from "../promo";
 import { isRebrand } from "../rebrand-rule";
 import type { EventRow, RebrandRow } from "../agency/changes";
@@ -293,4 +293,39 @@ export function whiteSpaceRecheck(s: { sector: string | null; signal_keys: strin
   const next = [...t.counts, ...kept];
   if (t.deck === s.deck && t.headline === s.headline && JSON.stringify(next) === JSON.stringify(facts)) return { keep: true };
   return { correct: { headline: t.headline, deck: t.deck, facts: next }, note: U2B_WHITE_NOTE };
+}
+
+// PHASE I3 · A RE-READ IS NOT A CHANGE ---------------------------------------------------------------------------------------------
+// A published story whose changes are now marked re-reads (AI labels changed, no measured look field did) or failed measurements is
+// re-checked against what still passes: a single-brand story needs its own change, a roundup or against-the-grain piece needs
+// ROUNDUP_MIN brands with a passing change. Otherwise it is retired with a note that names what fell away. Pure.
+export type RereadVerdict = "pass" | "seen_once" | "alternating" | "headline_element" | "reread" | "not_measured" | null;
+export type RereadCtx = { verdict: (eventId: number) => RereadVerdict; domainOf: (eventId: number) => string | null; nameOf: (domain: string) => string };
+/** Every change a story rests on: its own event ids, its member moves and counter-moves (`story:counter:<event>:…`). */
+export function storyChangeIds(s: Pick<RetireStory, "id" | "source_ids">): number[] {
+  const out = new Set<number>();
+  for (const x of [s.id, ...s.source_ids]) { const m = /^(?:story:)?(?:event|move|counter|brand):(\d+)(?::|$)/.exec(x); if (m) out.add(Number(m[1])); }
+  return [...out];
+}
+const nameList = (xs: string[], max = 4) => { const u = [...new Set(xs)]; const shown = u.slice(0, max), more = u.length - shown.length; const all = more > 0 ? [...shown, `${countWord(more).toLowerCase()} more`] : shown; return all.length < 2 ? all.join("") : `${all.slice(0, -1).join(", ")} and ${all.at(-1)}`; };
+const MARKED = new Set<RereadVerdict>(["reread", "not_measured"]);
+/** The kill note when re-reads leave a story without its support; null when none of its changes is marked or enough still pass. */
+export function rereadRetire(s: Pick<RetireStory, "id" | "type" | "source_ids"> & { /** Brands the story shows now (a correction may have narrowed it); default every brand behind it. */ members?: string[] }, c: RereadCtx): string | null {
+  const shownMembers = s.members?.length ? new Set(s.members) : null;
+  const evs = storyChangeIds(s).filter(id => { const d = c.domainOf(id); return !shownMembers || (d != null && shownMembers.has(d)); });
+  if (!evs.length || !evs.some(id => MARKED.has(c.verdict(id)))) return null;
+  const byBrand = new Map<string, RereadVerdict[]>();
+  for (const id of evs) { const d = c.domainOf(id); if (d) byBrand.set(d, [...(byBrand.get(d) ?? []), c.verdict(id)]); }
+  const kept = [...byBrand].filter(([, v]) => v.includes("pass")).map(([d]) => d);
+  const reread = [...byBrand].filter(([, v]) => !v.includes("pass") && v.some(x => MARKED.has(x))).map(([d]) => c.nameOf(d));
+  const failed = [...byBrand].filter(([, v]) => !v.includes("pass") && !v.some(x => MARKED.has(x))).map(([d]) => c.nameOf(d));
+  const many = s.type === "roundup" || s.id.startsWith("against:");
+  if (!many) return kept.length ? null : "Retired: on a second look the change was an AI re-read of an unchanged page (no measured change)";
+  if (kept.length >= ROUNDUP_MIN) return null;
+  const w = (n: number) => countWord(n).toLowerCase();
+  const head = `Retired: on a second look ${w(kept.length)} of ${w(byBrand.size)} brands still ${kept.length === 1 ? "passes" : "pass"}`;
+  const rr = reread.length ? `; ${nameList(reread)} ${reread.length > 1 ? "were AI re-reads" : "was an AI re-read"} with no measured change` : "";
+  const ff = failed.length ? `; ${nameList(failed, 3)} no longer pass${failed.length > 1 ? "" : "es"} the two-capture check` : "";
+  const note = `${head}${rr}${ff}`;
+  return note.length <= 200 ? note : `${head}${rr}`.slice(0, 200);
 }

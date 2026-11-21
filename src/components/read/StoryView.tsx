@@ -27,10 +27,12 @@ import { FRAME_LABEL, compareKind } from "@/lib/stories/frames";
 import { NO_CAPTURE_LINE } from "@/lib/crops";
 import type { Pic } from "@/lib/pictures";
 import { BrandMark } from "./BrandMark";
+import { LeadPicture } from "./LeadPicture";
+import type { LeadPlan } from "@/lib/lead-picture";
 
 const kindOf = (s: StoryPageData) => compareKind({ crops: !!s.crops?.compare, crop: !!s.crops?.after, frames: !!s.frames, text: !!s.beforeAfter });
 
-export type StoryPageData = StoryPageModel & { thumb: Thumb | null; icon?: Pic | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null; eventIds?: number[] };
+export type StoryPageData = StoryPageModel & { thumb: Thumb | null; icon?: Pic | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null; eventIds?: number[]; lead?: LeadPlan | null };
 const day = (iso: string) => iso.slice(0, 10);
 
 /** Longer headlines drop one step so a palette list can't fill the screen. */
@@ -79,8 +81,19 @@ function Compare({ s }: { s: StoryPageData }) {
 /** 4 · The picture: real pictures before wireframes. Before and after first-screen crops side by side (stacked on narrow screens), each
  *  with its date; one crop when only one exists; up to four hero crops in a row for a gathered story. Credit, link and "Report this
  *  image" stay on every crop (CropFigure). */
+/** I3 · picture kinds of a lead plan that fill this slot (a chart lead stays in the cover's trail; none and marks leave the old chain). */
+const PICTURE_KINDS = new Set(["pair", "single", "mosaic", "words", "swatches", "card"]);
+const withoutCrops = (s: StoryPageData): StoryPageData => { const { crops: _c, ...rest } = s; return rest; };
+const pictureLead = (s: StoryPageData) => (s.lead && PICTURE_KINDS.has(s.lead.kind) ? s.lead : null);
 function Picture({ s }: { s: StoryPageData }) {
-  const kind = kindOf(s);
+  const kind = kindOf(s), lead = pictureLead(s);
+  if (lead) return <div className="ed-wrap mt-10 md:mt-14" data-story-picture={lead.kind}><LeadPicture plan={lead} /></div>;
+  if (s.lead) {
+    // The plan found no real picture that passes the lead-quality rule: a redrawn layout or the type pair may stand in, else the marks.
+    if (kind === "frames" || kind === "text") return <div className="ed-wrap mt-10 md:mt-14" data-story-picture="drawn"><Compare s={s} /></div>;
+    if (s.lead.kind === "marks" && s.brands.length > 1) return <div className="ed-wrap mt-10 md:mt-14" data-story-picture="marks"><LeadPicture plan={s.lead} /></div>;
+    return null;
+  }
   if (kind === "crops") return <figure className="ed-wrap mt-10 md:mt-14" data-story-picture="pair">
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <CropFigure crop={s.crops!.compare!.before} label={`Before · ${day(s.crops!.compare!.before.captured_at)}`} sizes="(min-width: 768px) 50vw, 100vw" priority />
@@ -109,7 +122,9 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
   const notRun = s.state === "held" ? `This story did not run on the front page: ${s.heldReason}.` : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
   const seed = s.number ?? s.id, kind = kindOf(s);
   // The cover carries kicker, headline and deck; its object is the signal's trail only when the story has no picture of a page.
-  const cover = kind === "none" && !s.crops?.grid?.length && !s.thumb ? coverObject(s) : null;
+  const cover = s.lead
+    ? (pictureLead(s) || kind === "frames" || kind === "text" ? null : coverObject(withoutCrops(s)))
+    : kind === "none" && !s.crops?.grid?.length && !s.thumb ? coverObject(s) : null;
   const body = <ReceiptContext.Provider value={{ story: { id: s.id, census: !!s.census, eventIds: s.eventIds ?? [] } }}><FiltersScope>
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>

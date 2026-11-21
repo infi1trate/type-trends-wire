@@ -61,7 +61,8 @@ export function changesOf(e: EventRow, brand: string): WriterChange[] {
       for (const k of Object.keys({ ...b, ...a })) {
         if (k === "hero_media") out.push(c("hero", HERO[String(b[k] ?? "none")] ?? String(b[k]), HERO[String(a[k] ?? "none")] ?? String(a[k])));
         else if (k === "h1_align") out.push(c("headline alignment", str(b[k]), str(a[k])));
-        else if (k === "grid_max_cols") out.push(c("grid columns", String(b[k] ?? 0), String(a[k] ?? 0)));
+        // I3 · 0.5: 0 means no column grid was detected, never "0 columns".
+        else if (k === "grid_max_cols") out.push(c("grid columns", !b[k] ? "no column grid detected" : String(b[k]), !a[k] ? "no column grid detected" : String(a[k])));
         else if (k === "cta_radius_px") out.push(c("button corners", str(b[k]), str(a[k])));
       }
       if (e.type === "redesign" && !out.length) out.push(c("homepage redesign", "before", "after"));
@@ -81,6 +82,11 @@ export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts
   // Bounded so a gathered story's block stays small; measured lines first.
   const changes = events.flatMap(e => changesOf(e, brandName(e.domain, src.names.get(e.domain)))).sort((a, b) => (a.basis === b.basis ? 0 : a.basis === "measured" ? -1 : 1)).slice(0, MAX_CHANGES).sort((a, b) => a.date.localeCompare(b.date));
   const copy = [...new Set(events.flatMap(e => [...(e.type === "message_pivot" ? [oneHeadlineOf(o(e.before)["headline"]), oneHeadlineOf(o(e.after)["headline"])] : []), ...(src.texts.get(e.snapshot_id ?? -1) ?? []), ...(src.texts.get(e.prev_snapshot_id ?? -1) ?? [])]).filter((x): x is string => typeof x === "string" && !!x.trim()))];
+  // I3 · 0.2: a news story reports its item: the item's title and excerpt (verbatim) are its copy, so any quotation must match them.
+  if (type === "news") {
+    const item = stored.filter(f => f.kind === "line" && /^Item (?:title|excerpt): “/.test(f.text)).map(f => f.text.replace(/^Item (?:title|excerpt): “/, "").replace(/”$/, ""));
+    for (const t of item.length ? item : [s.headline, s.deck ?? ""]) if (t.trim() && !copy.includes(t)) copy.push(t);
+  }
   const call = events.map(e => src.calls[e.id]).find(Boolean) ?? null;
   // The confirmation date is machinery (Data view): the writer dates changes by their captures only (E2g).
   // U2b: the run's numbers come first; a stored count or share for the same signal and scope is dropped, so the sheet has one count.

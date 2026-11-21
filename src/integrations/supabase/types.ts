@@ -414,6 +414,42 @@ export type Database = {
           },
         ]
       }
+      crop_quality: {
+        Row: {
+          bytes_per_px: number | null
+          computed_at: string
+          edge_mean: number | null
+          lead_ok: boolean
+          luma_std: number | null
+          method: string
+          path: string
+          reason: string | null
+          top_share: number | null
+        }
+        Insert: {
+          bytes_per_px?: number | null
+          computed_at?: string
+          edge_mean?: number | null
+          lead_ok: boolean
+          luma_std?: number | null
+          method: string
+          path: string
+          reason?: string | null
+          top_share?: number | null
+        }
+        Update: {
+          bytes_per_px?: number | null
+          computed_at?: string
+          edge_mean?: number | null
+          lead_ok?: boolean
+          luma_std?: number | null
+          method?: string
+          path?: string
+          reason?: string | null
+          top_share?: number | null
+        }
+        Relationships: []
+      }
       digest_texts: {
         Row: {
           argument: Json
@@ -1135,6 +1171,45 @@ export type Database = {
             columns: ["snapshot_id"]
             isOneToOne: false
             referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_event_marks: {
+        Row: {
+          event_id: number
+          field: string
+          kind: string
+          marked_at: string
+          reason: string
+        }
+        Insert: {
+          event_id: number
+          field: string
+          kind: string
+          marked_at?: string
+          reason: string
+        }
+        Update: {
+          event_id?: number
+          field?: string
+          kind?: string
+          marked_at?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_event_marks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "library_event_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_event_marks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "library_events"
             referencedColumns: ["id"]
           },
         ]
