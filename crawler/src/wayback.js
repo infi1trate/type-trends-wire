@@ -3,9 +3,11 @@
 // quarters exist and works through the rest, coarse-first, until its time budget runs out.
 // Env: CRAWL_ENDPOINT, CRAWL_SECRET, DRY_RUN=1, LIMIT (first N sites), PASS_MAX (1..3, default 3),
 //      WB_CONCURRENCY (default 3), TIME_BUDGET_MIN (default 320), LIBRARY_FILE, LIBRARY_TAG=0 to skip tagging,
-//      WB_ARCHIVE_BASE (tests: replaces https://web.archive.org), STATE_FILE (dry runs)
+//      WB_ARCHIVE_BASE (tests: replaces https://web.archive.org), STATE_FILE (dry runs),
+//      WB_RECYCLE (renders per browser before a fresh one, default 30)
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
+import os from "node:os";
 import sharp from "sharp";
 import { VIEWPORTS, UA, makePoster, analyzePage, evalSettled, hideOverlays, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
@@ -20,6 +22,7 @@ const PASS_MAX = Number(process.env.PASS_MAX ?? 3);
 const CONCURRENCY = Number(process.env.WB_CONCURRENCY ?? 3);
 const BUDGET_MS = Number(process.env.TIME_BUDGET_MIN ?? 320) * 60_000;
 const TAG = process.env.LIBRARY_TAG !== "0";
+const RECYCLE = Math.max(1, Number(process.env.WB_RECYCLE ?? 30));
 const BASE = process.env.WB_ARCHIVE_BASE; // tests only
 const RUN_ID = process.env.RUN_ID ?? `wb-${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 6)}`;
 const post = makePoster({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: RUN_ID });
@@ -139,7 +142,9 @@ async function main() {
   const cdx = new Map(); // domain -> Promise<timestamps|null>
   const cdxFor = (d) => { if (!cdx.has(d)) cdx.set(d, fetchCdx(d)); return cdx.get(d); };
   if (DRY) mkdirSync("out", { recursive: true });
-  const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
+  // One browser per worker, replaced every RECYCLE renders: archived pages are heavy, and a browser kept
+  // for hours took the hosted runner down mid-run (15–21 Nov), losing the run's log and unsent captures.
+  const launch = () => chromium.launch({ args: ["--disable-dev-shm-usage"] });
   const totals = { captured: 0, no_capture: 0, failed: 0, cdx_unknown: 0, tagged: 0, tag_failed: 0, stopped_for_time: false };
   const errors = {};
   let buffer = [], bufBytes = 0;
@@ -167,15 +172,24 @@ async function main() {
   };
   const emit = async (rec, imgs) => {
     const size = JSON.stringify(rec).length;
-    if (buffer.length && (bufBytes + size > 1_200_000 || buffer.length >= 10)) await flush();
+    if (buffer.length && (bufBytes + size > 1_200_000 || buffer.length >= 5)) await flush();
     buffer.push(rec); bufBytes += size; totals.captured++;
     if (imgs) pendingImages.set(rec, imgs);
   };
 
-  let next = 0;
+  let next = 0, lastLog = Date.now();
+  // A line every two minutes, so a run that dies still shows how far it got and what the machine had left.
+  const progress = (force = false) => {
+    if (!force && Date.now() - lastLog < 120_000) return;
+    lastLog = Date.now();
+    console.log(`progress ${next}/${queue.length} · captured ${totals.captured} · none ${totals.no_capture} · failed ${totals.failed} · ${Math.round((Date.now() - t0) / 60000)} min · rss ${Math.round(process.memoryUsage().rss / 1e6)} MB · free ${Math.round(os.freemem() / 1e6)} MB`);
+  };
   const worker = async () => {
+    let browser = await launch(), renders = 0;
+    try {
     while (next < queue.length) {
       if (Date.now() - t0 > BUDGET_MS) { totals.stopped_for_time = true; return; }
+      progress();
       const item = queue[next++];
       const stamps = await cdxFor(item.domain);
       if (stamps === null) { totals.cdx_unknown++; continue; }
@@ -185,6 +199,8 @@ async function main() {
       for (const ts of candidates) { // nearest mid-quarter first; alternates when the archive render is blank/broken
         // Throttling (429/503/refused) is about the Archive, not the capture: wait out the global back-off and retry it.
         for (let attempt = 1; attempt <= 3; attempt++) {
+          if (renders >= RECYCLE) { await browser.close().catch(() => {}); browser = await launch(); renders = 0; }
+          renders++;
           r = await renderCapture(browser, item, ts);
           if (!/^archive_(429|503|throttled)$/.test(r.error ?? "")) break;
         }
@@ -194,10 +210,11 @@ async function main() {
       if (r.error) { totals.failed++; errors[r.error] = (errors[r.error] ?? 0) + 1; continue; }
       await emit(r.record, r.images);
     }
+    } finally { await browser.close().catch(() => {}); }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   await flush();
-  await browser.close();
+  progress(true);
   const summary = { run_id: RUN_ID, queue: queue.length, ...totals, errors, minutes: Math.round((Date.now() - t0) / 60000) };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
   console.log("done", JSON.stringify(summary));

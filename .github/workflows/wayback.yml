@@ -1,7 +1,7 @@
 name: wayback-backfill
 on:
   schedule:
-    - cron: "17 */6 * * *"   # resumable: each run picks up the quarters still missing; idles once complete
+    - cron: "17 */3 * * *"   # resumable: each run picks up the quarters still missing; idles once complete
   workflow_dispatch:
     inputs:
       limit:
@@ -12,7 +12,7 @@ on:
         default: "3"
       budget_min:
         description: "Stop starting new captures after N minutes"
-        default: "320"
+        default: "50"
       dry_run:
         description: "1 = don't post, upload results as an artifact"
         default: "0"
@@ -23,7 +23,7 @@ defaults:
 jobs:
   wayback:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,7 +37,8 @@ jobs:
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
           LIMIT: ${{ inputs.limit || '0' }}
           PASS_MAX: ${{ inputs.pass_max || '3' }}
-          TIME_BUDGET_MIN: ${{ inputs.budget_min || '320' }}
+          # Short runs, more often: every run from 15 to 21 Nov that lasted past an hour lost its runner.
+          TIME_BUDGET_MIN: ${{ inputs.budget_min || '50' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           WB_CONCURRENCY: "3"
         run: npm run wayback
