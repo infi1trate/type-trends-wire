@@ -6,11 +6,11 @@ import { serve } from "./serve.js";
 import { CROP_LIMITS } from "../src/crops.js";
 // The fixture is served from localhost, which the asset fetcher only allows in test mode.
 process.env.ALLOW_HTTP = "1";
-const { ASSET_LIMITS, iconOrder, encodeIcon, findBrandAssets, captureBrandAssets, publicAssetUrl } = await import("../src/assets.js");
+const { ASSET_LIMITS, iconOrder, encodeIcon, icoLargest, findBrandAssets, captureBrandAssets, publicAssetUrl } = await import("../src/assets.js");
 
 const png = (w, h, c = "#336699") => sharp({ create: { width: w, height: h, channels: 3, background: c } }).png().toBuffer();
 
-test("iconOrder: largest usable icon first, touch icon counts as 180, ICO skipped, conventional path last", () => {
+test("iconOrder: largest usable icon first, touch icon counts as 180, then the conventional touch icon, ICO files last", () => {
   const icons = [
     { href: "https://a.com/favicon.ico", rel: "icon", size: 0, type: "image/x-icon" },
     { href: "https://a.com/i32.png", rel: "icon", size: 32, type: "image/png" },
@@ -18,9 +18,37 @@ test("iconOrder: largest usable icon first, touch icon counts as 180, ICO skippe
     { href: "https://a.com/i192.png", rel: "icon", size: 192, type: "image/png" },
     { href: "https://a.com/logo.svg", rel: "icon", size: 0, type: "image/svg+xml" },
   ];
-  assert.deepEqual(iconOrder(icons, "https://a.com"), ["https://a.com/logo.svg", "https://a.com/i192.png", "https://a.com/touch.png", "https://a.com/apple-touch-icon.png"]);
-  assert.deepEqual(iconOrder([], "https://a.com"), ["https://a.com/apple-touch-icon.png"]);
+  assert.deepEqual(iconOrder(icons, "https://a.com"), ["https://a.com/logo.svg", "https://a.com/i192.png", "https://a.com/touch.png", "https://a.com/apple-touch-icon.png", "https://a.com/favicon.ico"]);
+  assert.deepEqual(iconOrder([{ href: "https://a.com/x/site.ico", rel: "icon", size: 0, type: "" }], "https://a.com"), ["https://a.com/apple-touch-icon.png", "https://a.com/x/site.ico", "https://a.com/favicon.ico"]);
+  assert.deepEqual(iconOrder([], "https://a.com"), ["https://a.com/apple-touch-icon.png", "https://a.com/favicon.ico"]);
   assert.deepEqual(iconOrder(null, ""), []);
+});
+
+// An ICO container around the given entries: [{ w, bpp, data }].
+const ico = (entries) => {
+  const head = Buffer.alloc(6 + entries.length * 16); head.writeUInt16LE(1, 2); head.writeUInt16LE(entries.length, 4);
+  let off = head.length;
+  entries.forEach((e, i) => { const o = 6 + i * 16; head[o] = e.w >= 256 ? 0 : e.w; head[o + 1] = e.w >= 256 ? 0 : e.w; head.writeUInt16LE(1, o + 4); head.writeUInt16LE(e.bpp, o + 6); head.writeUInt32LE(e.data.length, o + 8); head.writeUInt32LE(off, o + 12); off += e.data.length; });
+  return Buffer.concat([head, ...entries.map((e) => e.data)]);
+};
+// A 32-bit bitmap entry: 40-byte header (height doubled), BGRA rows bottom-up, then a blank mask.
+const dib32 = (w, bgra) => {
+  const h = Buffer.alloc(40); h.writeUInt32LE(40, 0); h.writeInt32LE(w, 4); h.writeInt32LE(w * 2, 8); h.writeUInt16LE(1, 12); h.writeUInt16LE(32, 14);
+  const px = Buffer.alloc(w * w * 4); for (let i = 0; i < w * w; i++) px.set(bgra, i * 4);
+  return Buffer.concat([h, px, Buffer.alloc(Math.ceil(w / 32) * 4 * w)]);
+};
+test("ICO icons: the largest PNG or 32-bit bitmap inside is used; older bitmaps and too-small files are refused", async () => {
+  const withPng = await encodeIcon(ico([{ w: 16, bpp: 32, data: dib32(16, [0, 0, 255, 255]) }, { w: 256, bpp: 32, data: await png(256, 256) }]));
+  assert.ok(withPng); assert.equal(withPng.width, 256);
+  const bmp = await icoLargest(ico([{ w: 64, bpp: 32, data: dib32(64, [255, 0, 0, 255]) }]));
+  const { data, info } = await sharp(bmp).raw().toBuffer({ resolveWithObject: true });
+  assert.equal(info.width, 64); assert.equal(info.height, 64);
+  assert.deepEqual([...data.subarray(0, 4)], [0, 0, 255, 255]); // BGRA blue → RGBA blue
+  assert.ok(await encodeIcon(ico([{ w: 64, bpp: 32, data: dib32(64, [255, 0, 0, 255]) }])));
+  assert.equal(await encodeIcon(ico([{ w: 32, bpp: 32, data: dib32(32, [0, 0, 0, 255]) }])), null); // below the 48 px minimum
+  const old = Buffer.alloc(40 + 64); old.writeUInt32LE(40, 0); old.writeUInt16LE(8, 14);
+  assert.equal(await icoLargest(ico([{ w: 48, bpp: 8, data: old }])), null);
+  assert.equal(await icoLargest(Buffer.from("not an icon file at all, just text")), null);
 });
 
 test("encodeIcon: WebP within 256 px, never enlarged, too-small and unreadable refused", async () => {
