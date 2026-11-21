@@ -1,5 +1,5 @@
 import { line as voiced, say as sayState } from "@/lib/voice";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { MobileKeys, TabRow, Ticker, TopBar } from "@/components/terminal/Chrome";
 import { TypeIndex } from "@/components/terminal/TypeIndex";
@@ -27,7 +27,7 @@ import { WatchPanel } from "@/components/terminal/Watch";
 import { AuditTab, ConsoleTab, DigestTab, LedgerTab, MovesTab, PatternsTab } from "@/components/terminal/Sections";
 import { MorningTab, SectorsTab } from "@/components/terminal/Editions";
 import { parseAuditSites } from "@/lib/agency/audit";
-import { keyView, resolveKey, resolveView, sectionById, sectionOf, stepTab, type TerminalSearch, type ViewId } from "@/lib/ia";
+import { terminalObjectHref, keyView, resolveKey, resolveView, sectionById, sectionOf, stepTab, type TerminalSearch, type ViewId } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
 import { useModeToggle, useSectorLens } from "@/components/read/lens";
 import { BRAND_NAME } from "@/lib/brand";
@@ -40,6 +40,8 @@ const str = (v: unknown) => (typeof v === "string" ? v : undefined);
 export const Route = createFileRoute("/terminal")({
   staticData: { mode: "dark" },
   validateSearch: (s: Record<string, unknown>): TerminalSearch => ({ panel: str(s["panel"]) ?? "today", ...(str(s["sector"]) ? { sector: str(s["sector"])! } : {}), q: str(s["q"]) ?? "", sort: str(s["sort"]) ?? "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0, cmd: str(s["cmd"])?.slice(0, 4096), trait: str(s["trait"]), story: str(s["story"])?.slice(0, 200) }),
+  // U1: an object's terminal view (a story, a signal or a pattern) has moved to that object's one address, in its Data view.
+  beforeLoad: ({ location }) => { const href = terminalObjectHref(location.search as Record<string, unknown>); if (href) throw redirect({ href, statusCode: 301 }); },
   loaderDeps: ({ search }) => ({ panel: resolveView(search.panel), sector: resolveSector(search.sector) }),
   // Every panel filters by tier, so the signal snapshot loads with the page (SSR and client then render the same headline set).
   loader: ({ context, deps }) => {

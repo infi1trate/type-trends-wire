@@ -1,3 +1,4 @@
+import { ReceiptDrawer } from "@/components/receipts/ReceiptDrawer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -16,7 +17,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GATE_ENABLED } from "../lib/gate";
 import { activeCss, fontLinks } from "../lib/theme";
-import { modeOf } from "../lib/theme/route-mode";
+import { isDataMatch, modeOf } from "../lib/theme/route-mode";
 import { densityOf } from "../lib/ia";
 import { HEAD_SCRIPT } from "../lib/motion";
 import { Wordmark } from "@/components/brand/Wordmark";
@@ -100,7 +101,8 @@ function RootShell({ children }: { children: ReactNode }) {
   // The route sets the mode (light Read pages, dark terminal); the active theme's tokens are written once, here.
   const mode = useRouterState({ select: s => modeOf(s.matches) });
   // The page's density (Quiet, Steady, Loud) is recorded per route in ia.ts; the shell reads it here.
-  const density = useRouterState({ select: s => densityOf(s.matches[s.matches.length - 1]?.routeId ?? "/") });
+  // A Data view (U1) is terminal density: Loud.
+  const density = useRouterState({ select: s => { const last = s.matches[s.matches.length - 1]; return last && isDataMatch(last) ? "loud" : densityOf(last?.routeId ?? "/"); } });
   return (
     // The head script may add data-arrive / data-save-data to <html> before hydration; the markup itself never depends on them.
     <html lang="en" data-mode={mode} data-density={density} suppressHydrationWarning>
@@ -140,6 +142,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* U2 · the receipt drawer, over any Read page whose address carries ?receipt= (drawn after hydration only). */}
+      <ReceiptDrawer />
       <RouteFocus />
     </QueryClientProvider>
   );

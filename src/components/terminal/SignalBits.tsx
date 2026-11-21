@@ -1,3 +1,4 @@
+import { StoryLink } from "@/components/dataview/StoryLink";
 import { useCallback, useEffect, useState } from "react";
 import { BASIS_WORD, basis as basisOf, type Basis } from "@/lib/labels";
 import { TIERS, TIER_WORD, type Tier } from "@/lib/tiers";
@@ -40,6 +41,7 @@ export function SignalTable({ rows, onOpen, reasons = false, caption }: { rows: 
         <span className="label flex flex-wrap gap-x-3 text-g500"><StageBadge stage={s.stage} /><span>SHARE {pct(s.share)}</span><span>MOMENTUM <MomentumText s={s} /></span><span>CONFIDENCE <ConfidenceText s={s} /></span></span>
         {reasons && <span className="text-g500">{s.reasons.join(" ")}</span>}
       </button>
+      <StoryLink row={{ signal: s.key }} className="px-2" />
     </li>)}</ul>
     <table className="hidden w-full border-collapse text-body md:table">
       <caption className="sr-only">{caption}</caption>
@@ -50,6 +52,7 @@ export function SignalTable({ rows, onOpen, reasons = false, caption }: { rows: 
         <th scope="col" className={th}>MOMENTUM<Info g="momentum-index" /></th>
         <th scope="col" className={th}>CONFIDENCE<Info g="confidence" /></th>
         {reasons && <th scope="col" className={th}>WHY THIS TIER<Info g={`tier-${rows[0]?.tier ?? "headline"}`} /></th>}
+        <th scope="col" className={th}><span className="sr-only">Story</span></th>
       </tr></thead>
       <tbody>{rows.map(s => <tr key={s.key} tabIndex={0} onClick={() => onOpen(s.key)} onKeyDown={e => { if (e.key === "Enter") onOpen(s.key); }} className="h-8 cursor-pointer border-b border-rule align-middle hover:bg-g900 focus-visible:bg-g900">
         <td className="px-2"><span className="flex flex-wrap items-baseline gap-x-2"><span className="font-semibold text-ink">{s.name}</span><DimTag d={s.dimension} /><BasisChip basis={s.basis} /></span></td>
@@ -58,6 +61,7 @@ export function SignalTable({ rows, onOpen, reasons = false, caption }: { rows: 
         <td className="px-2"><MomentumText s={s} /></td>
         <td className="px-2"><ConfidenceText s={s} /></td>
         {reasons && <td className="px-2 text-g500">{s.reasons.slice(1).join(" ") || s.reasons[0]}</td>}
+        <td className="px-2 text-right" onClick={e => e.stopPropagation()}><StoryLink row={{ signal: s.key }} /></td>
       </tr>)}</tbody>
     </table>
   </>;

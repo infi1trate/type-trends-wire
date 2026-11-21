@@ -52,7 +52,7 @@ describe("issueModel", () => {
     expect(issue.cover.body[0]!.body).toBe("Subgrid layouts [LAYOUT] leads the layout desk.");
     expect(issue.cover.lead).toMatchObject({ key: "css:subgrid", name: label("css:subgrid").name, dimension: "LAYOUT", stage: "Rising", href: "/signals/css%3Asubgrid" });
     expect(issue.cover.why).toBe("For page structure and component choices: at 26% of tracked homepages and gaining 4.8 points a quarter, this signal is past the experiment stage and spreading, so it belongs in briefs and templates now.");
-    expect(issue.cover.body[1]!.citations).toEqual([{ text: "EVENT · dropbox.com · message_pivot", href: "/library/dropbox.com" }]);
+    expect(issue.cover.body[1]!.citations).toEqual([{ text: "EVENT · dropbox.com · message_pivot", href: "/brands/dropbox.com?view=data" }]);
   });
   it("uses stored standfirst and why-it-matters copy from the brief step when present", () => {
     const b = fixture(); b.brief = { ...b.brief!, standfirst: "Grids get smarter.", why_it_matters: "Layouts are where briefs start." };

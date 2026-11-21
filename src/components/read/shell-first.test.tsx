@@ -21,15 +21,15 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
   it("E3b · a tracked brand's page awaits nothing: the seeded name gives head and frame, the card streams", async () => {
     const { Route } = await import("@/routes/brands.$domain");
     const c = client(() => ({ name: "GoPro", sectorName: "Consumer", soWhat: "x" }));
-    const r = await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "netlify.com" } })));
+    const r = await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "netlify.com" }, deps: { data: false } })));
     expect(c.awaited).toEqual([]);
     expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories"]);
-    expect(r).toEqual({ name: "Netlify" });
+    expect(r).toEqual({ name: "Netlify", data: false });
   });
   it("E3b · story page awaits only its head and streams the body and earlier stories", async () => {
     const { Route } = await import("@/routes/stories.$id");
     const c = client(() => ({ headline: "h", deck: null, kicker: "k", ran: true }));
-    await within(Promise.resolve(loaderOf(Route)({ context: c, params: { id: "story-1" } })));
+    await within(Promise.resolve(loaderOf(Route)({ context: c, params: { id: "story-1" }, deps: { data: false } })));
     expect(c.awaited).toEqual(["story-head"]);
     expect(c.started).toEqual(["story-lead", "story-related"]);
   });
@@ -42,10 +42,10 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
   });
   it("signal, pattern and sector pages await their head only", async () => {
     const sig = client(() => ({ key: "aesthetic:brutalist", name: "Brutalist" }));
-    await within(Promise.resolve(loaderOf((await import("@/routes/signals.$key")).Route)({ context: sig, params: { key: "aesthetic:brutalist" } })));
+    await within(Promise.resolve(loaderOf((await import("@/routes/signals.$key")).Route)({ context: sig, params: { key: "aesthetic:brutalist" }, deps: { data: false } })));
     expect([sig.awaited, sig.started]).toEqual([["trait-head"], ["trait-page"]]);
     const pat = client(() => ({ name: "Brutalist", total: 3, dimension: "aesthetic" }));
-    await within(Promise.resolve(loaderOf((await import("@/routes/patterns.$key")).Route)({ context: pat, params: { key: "aesthetic:brutalist" }, deps: { sector: "all" } })));
+    await within(Promise.resolve(loaderOf((await import("@/routes/patterns.$key")).Route)({ context: pat, params: { key: "aesthetic:brutalist" }, deps: { sector: "all", data: false } })));
     expect([pat.awaited, pat.started]).toEqual([["pattern-head"], ["pattern"]]);
     const sec = client(() => ({ title: "t", basis: "b", name: "n" }));
     await within(Promise.resolve(loaderOf((await import("@/routes/sectors.$sector")).Route)({ context: sec, params: { sector: "fintech" } })));
@@ -62,8 +62,8 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
   });
   it("an unknown brand or story is a 404 from the critical read", async () => {
     const b = client(() => null);
-    await expect(Promise.resolve(loaderOf((await import("@/routes/brands.$domain")).Route)({ context: b, params: { domain: "nope.example" } }))).rejects.toMatchObject({ isNotFound: true });
+    await expect(Promise.resolve(loaderOf((await import("@/routes/brands.$domain")).Route)({ context: b, params: { domain: "nope.example" }, deps: { data: false } }))).rejects.toMatchObject({ isNotFound: true });
     const s = client(() => null);
-    await expect(Promise.resolve(loaderOf((await import("@/routes/stories.$id")).Route)({ context: s, params: { id: "no-such-story" } }))).rejects.toMatchObject({ isNotFound: true });
+    await expect(Promise.resolve(loaderOf((await import("@/routes/stories.$id")).Route)({ context: s, params: { id: "no-such-story" }, deps: { data: false } }))).rejects.toMatchObject({ isNotFound: true });
   });
 });

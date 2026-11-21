@@ -96,7 +96,7 @@ function Moves({ b }: { b: Pick<BrandPage, "timeline" | "name"> }) {
     const pics = t.compare ? <div className="max-w-[1064px]"><BeforeAfter before={t.compare.before} after={t.compare.after} /></div>
       : t.pair ? <div className="max-w-[1064px]" data-move-pair=""><FigureView fig={t.pair} view={{ figure: t.id, highlight: [], side: "after" }} live pair /></div> : null;
     return <li key={t.id} data-move={t.id}>
-      <Ledger rows={[{ key: t.id, href: t.href, title: <>{t.text}</>, tags: [t.rebrand ? "Confirmed rebrand" : t.kind, ...(t.seasonal ? [SEASONAL_LABEL] : []), ...(t.reversed ? [REVERSED_LABEL] : [])], facts: [<BasisWord key="b" b={t.basis} />, t.story ? "Story" : "Receipt"], time: <time dateTime={t.at}>{storyTime(t.at)}</time> }]} />
+      <Ledger rows={[{ key: t.id, href: t.href, receipt: !t.story && t.id.startsWith("event:") ? `change:${t.id.slice(6)}` : undefined, title: <>{t.text}</>, tags: [t.rebrand ? "Confirmed rebrand" : t.kind, ...(t.seasonal ? [SEASONAL_LABEL] : []), ...(t.reversed ? [REVERSED_LABEL] : [])], facts: [<BasisWord key="b" b={t.basis} />, t.story ? "Story" : "Receipt"], time: <time dateTime={t.at}>{storyTime(t.at)}</time> }]} />
       {pics ? t.id === open ? <div className="mt-4" data-pair-open="">{pics}</div>
         : <details className="move-pics mt-2" data-pair-closed=""><summary className="ed-tap ed-data inline-flex min-h-11 cursor-pointer items-center">Show the two captures</summary><div className="mt-3">{pics}</div></details>
         : t.pairShared ? <p className="ed-caption mt-2">Same two captures as the move above.</p> : null}
@@ -174,7 +174,7 @@ function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?:
 export function BrandFrame({ name, domain, children }: { name: string; domain: string; children: ReactNode }) {
   return <DigestShell label={`${name} brand`} section="brands" lens={false}>
     {children}
-    <ReadFooter terminal={`/library/${domain}`} />
+    <ReadFooter terminal={`/brands/${domain}?view=data`} />
   </DigestShell>;
 }
 const similarLine = (line: string) => <p className="ed-caption -mt-2 mb-3 max-w-[72ch]" data-similar-line="">{line}</p>;

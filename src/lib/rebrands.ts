@@ -110,7 +110,7 @@ export function buildRebrands(input: { events: EventIn[]; sites: { domain: strin
     const source = e0.source === "wayback" ? "archive" : "live", { read, new_traits } = readLine(before, after, site.sector, fc);
     const seasonal = seasonalChange(snaps.get(e0.snapshot_id ?? -1)?.promo, snaps.get(e0.prev_snapshot_id ?? -1)?.promo);
     out.push({ id: `${source}-${e0.snapshot_id}`, domain: e0.domain, sector: site.sector, name: site.name, source, confirmed_at: confirmed, effective_at: effective, detected_at: g.events.map(e => e.detected_at).sort().at(-1)!, reasons: g.reasons, fields: g.fields, event_ids: g.events.map(e => e.id), seasonal, label: identityLabel({ reasons: g.reasons, seasonal }), before, after, read, new_traits,
-      links: { library: `/library/${e0.domain}`, archive: source === "archive" ? after.archive_url : null, archive_before: source === "archive" ? before.archive_url : null }, wire: wireMatch(e0.domain, site.name, confirmed, input.wire) });
+      links: { library: `/brands/${e0.domain}?view=data`, archive: source === "archive" ? after.archive_url : null, archive_before: source === "archive" ? before.archive_url : null }, wire: wireMatch(e0.domain, site.name, confirmed, input.wire) });
   }
   return out.filter(r => r.confirmed_at >= REBRAND_SINCE).sort((a, b) => b.confirmed_at.localeCompare(a.confirmed_at) || a.domain.localeCompare(b.domain));
 }

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { MODES, THEMES, flatten, missingTokens, requiredTokens, activeCss, type Theme } from "./index";
 import { legacy } from "./legacy";
 import { blank } from "./blank";
-import { modeOf, DARK_ROUTE_FILES, DEFAULT_MODE } from "./route-mode";
+import { modeOf, DARK_ROUTE_FILES, DEFAULT_MODE, VIEW_ROUTE_FILES } from "./route-mode";
 
 describe("token contract", () => {
   it("every registered theme provides every token in every mode", () => {
@@ -45,6 +45,13 @@ describe("root mode per route", () => {
     expect(modeOf([{ staticData: {} }, { staticData: { mode: "dark" } }])).toBe("dark");
     expect(modeOf([{ staticData: { mode: "dark" } }, { staticData: { mode: "light" } }])).toBe("light");
     expect(modeOf([{}, { staticData: undefined }])).toBe("light");
+  });
+  it("an object route with a Data view is dark only while ?view=data is set (U1)", () => {
+    expect(modeOf([{}, { staticData: { views: true }, search: { view: "data" } }])).toBe("dark");
+    expect(modeOf([{}, { staticData: { views: true }, search: { sector: "fintech" } }])).toBe("light");
+    expect(modeOf([{}, { staticData: {}, search: { view: "data" } }])).toBe("light");
+    const files = readdirSync("src/routes").filter(f => f.endsWith(".tsx") && /staticData:\s*\{\s*views:\s*true/.test(readFileSync(join("src/routes", f), "utf8")));
+    expect(files.sort()).toEqual([...VIEW_ROUTE_FILES].sort());
   });
   it("exactly the terminal-density route files declare dark; Read pages (including /kit) stay light", () => {
     const files = readdirSync("src/routes").filter(f => f.endsWith(".tsx"));

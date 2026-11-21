@@ -102,7 +102,7 @@ export type MovesRows = { domain: string; name: string; events: EventRow[]; rebr
 /** The brand's moves, newest first: every live change and confirmed rebrand, back-and-forth runs folded, before/after where it exists. */
 export function brandTimeline(r: MovesRows): Move[] {
   const d = r.domain;
-  const stories = new Map(r.storyOf), link = (src: string) => { const h = stories.get(src); return h ? { href: h, story: true } : { href: `/library/${d}`, story: false }; };
+  const stories = new Map(r.storyOf), link = (src: string) => { const h = stories.get(src); return h ? { href: h, story: true } : { href: `/brands/${d}?view=data`, story: false }; };
   const crops = r.crops.filter(c => c.domain === d);
   // A timeline entry shows before/after only when two versions of its section sit on either side of the change (effective time).
   const compareAt = (section: CropSection | null, pivot: string) => { if (!section) return null; const p = beforeAfterAt(versionsOf(crops, d, section), pivot); return p ? { before: toCrop(p.before), after: toCrop(p.after) } : null; };
@@ -171,12 +171,12 @@ export function brandModel(r: BrandRows): BrandPage {
   const palette = (color?.palette ?? []).map(p => ({ hex: p.hex, name: p.name, share: p.share })).sort((x, y) => (y.share ?? -1) - (x.share ?? -1));
   return {
     domain: d, name: site?.site?.name ?? d, sector, sectorName: sectorName(sector), tracked: g.status === "tracked", captured: g.captured, lastMove: timeline[0] ? { text: timeline[0].text, at: timeline[0].at } : g.latest, thumb: g.thumb,
-    identity: { h1: face(h1), body: face(body), theme: color?.theme ?? null, accent: color?.accent ?? null, palette, tags, layout, receipt: `/library/${d}` },
+    identity: { h1: face(h1), body: face(body), theme: color?.theme ?? null, accent: color?.accent ?? null, palette, tags, layout, receipt: `/brands/${d}?view=data` },
     field: r.field ?? null, contrast: r.contrast ?? null, similar,
     timeline, sections: latestSections(crops, d), history, versus, soWhat: versus ? brandSoWhat(versus.ahead.length, versus.behind.length, where) : "Not enough measured data on this brand yet to compare it with its sector.",
     shows,
     actions: { watch: `/watch/new?add=${encodeURIComponent(d)}&name=${encodeURIComponent(`${site?.site?.name ?? d} watch`)}`, compare: `/audit/new?sites=${encodeURIComponent(d)}`, audit: peers.length ? `/audit?sites=${[d, ...peers].sort().join(",")}` : null,
-      differentiate: consoleHref(`diff https://${d}`), recommendType: sector ? consoleHref(`type ${sector} headline any`, sector) : null, terminal: `/library/${d}` },
+      differentiate: consoleHref(`diff https://${d}`), recommendType: sector ? consoleHref(`type ${sector} headline any`, sector) : null, terminal: `/brands/${d}?view=data` },
     blocks: OBJECT_BLOCKS,
   };
 }

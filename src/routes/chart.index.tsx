@@ -9,7 +9,7 @@ import { EmbedPanel } from "@/components/embed/EmbedPanel";
 import { BRAND_NAME } from "@/lib/brand";
 
 const TITLE = `Chart of the Week — ${BRAND_NAME}`;
-const DESC = "The weekly brief's one design trend to watch: quarterly library share, forecast band, stage and momentum.";
+const DESC = "The weekly brief's one design trend to watch: quarterly share of tracked brands, forecast band, stage and momentum.";
 export const Route = createFileRoute("/chart/")({
   staticData: { mode: "dark" },
   loader: ({ context }) => context.queryClient.ensureQueryData(chartCardQuery(null)),

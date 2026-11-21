@@ -12,7 +12,7 @@ import { SignalView } from "@/components/read/SignalView";
 describe("trait explainer", () => {
   it("known key: name, stage, definition, sectors, receipts, examples, related and terminal deep link", () => {
     const p = traitModel(traitFixture())!;
-    expect(p).toMatchObject({ key: "css:subgrid", name: "Subgrid layouts", dimension: "LAYOUT", stage: "Rising", dataThrough: "Q4 2026", terminal: "/terminal?panel=brief&trait=css%3Asubgrid" });
+    expect(p).toMatchObject({ key: "css:subgrid", name: "Subgrid layouts", dimension: "LAYOUT", stage: "Rising", dataThrough: "Q4 2026", terminal: "/signals/css%3Asubgrid?view=data" });
     expect(p.definition).toBe("Subgrid layouts tracks the share of homepages whose stylesheets use subgrid layouts. It is measured directly from each page's code and rendered styles.");
     expect(p.sectors).toEqual([{ sector: "dev-tools", share: 0.567, stage: "Peaking", lead: expect.closeTo(0.307, 3) }]);
     expect(p.receipts.map(r => r.term)).toEqual(["Sample", "Momentum", "Gap", "Curation", "Corroboration", "Discourse", "Next-wave score"]);

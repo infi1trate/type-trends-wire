@@ -1,3 +1,4 @@
+import { dataHref } from "@/lib/ia";
 import { line as voiced } from "@/lib/voice";
 // PATTERN object page: /patterns/<key> (the example grid). The /patterns gallery lives in GalleryView.
 import { Link } from "@tanstack/react-router";
@@ -59,6 +60,6 @@ export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
         {p.related.length > 0 && <BlockPart title="Related patterns"><Ledger small label="Related patterns" rows={p.related.map(r => ({ key: r.key, href: `/patterns/${encodeURIComponent(r.key)}`, title: r.name, facts: [`${r.examples} brands`] }))} /></BlockPart>}
       </>,
     }} />
-    <ReadFooter terminal={`/terminal?panel=patterns&trait=${encodeURIComponent(p.key)}`} />
+    <ReadFooter terminal={dataHref({ type: "pattern", id: p.key })} />
   </DigestShell>;
 }

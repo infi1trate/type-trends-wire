@@ -1,4 +1,5 @@
 // Watch page + per-watchlist RSS: one pure item builder over stored rows, so the page, the feed and MCP agree.
+import { canonicalHref } from "../ia";
 import { SITE_URL } from "../site";
 import { alertDisplayTitle, explainerPath, label, scopeText, stageName, type Dimension, type StageName } from "../labels";
 import { xmlEscape } from "../digest/rss";
@@ -39,7 +40,7 @@ export function watchItems(r: WatchRows, sinceIso: string): WatchItem[] {
   const w = r.watch, sites = new Set([...w.sites, ...w.pending_sites]);
   const items: WatchItem[] = [];
   for (const e of r.events) if (sites.has(e.domain) && e.detected_at > sinceIso)
-    items.push({ guid: `event-${e.id}`, kind: "site", at: e.detected_at, title: eventSentence(e), detail: eventDetail(e), href: `/library/${e.domain}`, domain: e.domain });
+    items.push({ guid: `event-${e.id}`, kind: "site", at: e.detected_at, title: eventSentence(e), detail: eventDetail(e), href: `/brands/${e.domain}?view=data`, domain: e.domain });
   for (const b of r.rebrands) if (sites.has(b.domain) && b.confirmed_at > sinceIso)
     items.push({ guid: `rebrand-${b.domain}-${b.confirmed_at}`, kind: isRebrand(b) ? "rebrand" : "site", at: b.confirmed_at, title: rebrandSentence(b), detail: b.read, href: "/terminal?panel=rebrands", domain: b.domain });
 
@@ -61,7 +62,7 @@ export function watchItems(r: WatchRows, sinceIso: string): WatchItem[] {
       if (!to || !from || to === from) continue;
       const l = label(key), by = shownBy.get(key);
       items.push({ guid: `stage-${cur.id}-${s.scope}-${key}`, kind: "stage", at: cur.computed_at, title: `${l.name} [${l.dimension}] moved from ${from} to ${to} in ${scopeText(s.scope)}${pctText(s.current_share)}`,
-        detail: named.has(key) ? "A signal on this watchlist" : `Shown by ${by!.slice(0, 4).join(", ")}${by!.length > 4 ? ` and ${by!.length - 4} more` : ""}`, href: `/terminal?panel=brief&trait=${encodeURIComponent(key)}&sector=${s.scope}`, trait: key });
+        detail: named.has(key) ? "A signal on this watchlist" : `Shown by ${by!.slice(0, 4).join(", ")}${by!.length > 4 ? ` and ${by!.length - 4} more` : ""}`, href: canonicalHref(`/terminal?panel=brief&trait=${encodeURIComponent(key)}&sector=${s.scope}`), trait: key });
     }
   }
   for (const a of r.alerts) if (a.ref && (named.has(a.ref) || shownBy.has(a.ref)) && a.published_at > sinceIso)

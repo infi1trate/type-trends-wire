@@ -822,3 +822,10 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 }
 @keyframes glisten { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .ph-b::after { animation: none; transform: none; background: none; } }
+
+/* U2 · the receipt drawer slides in (from below on phones, from the right from 1024 px); no slide with reduced motion. */
+@keyframes receipt-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes receipt-right { from { transform: translateX(100%); } to { transform: none; } }
+.receipt-panel { animation: receipt-up var(--tk-motion-base) ease-out; }
+@media (min-width: 1024px) { .receipt-panel { animation-name: receipt-right; } }
+@media (prefers-reduced-motion: reduce) { .receipt-panel { animation: none; } }

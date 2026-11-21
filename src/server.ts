@@ -5,6 +5,7 @@ import { renderErrorPage } from "./lib/error-page";
 import { gate, GATE_ENABLED } from "./lib/gate";
 import { createPageCache, servePage } from "./lib/page-cache";
 import { retryLater } from "./lib/unavailable";
+import { movedObjectHref } from "./lib/ia";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -71,6 +72,11 @@ export default {
       // Shared-password gate runs before any SSR so locked visitors get no page data or meta.
       const gated = await gate(request);
       if (gated) return gated;
+      // U1: old object addresses move to the object's one address (Data view) in a single permanent redirect, keeping every parameter.
+      if (request.method === "GET") {
+        const u = new URL(request.url), moved = movedObjectHref(u.pathname, Object.fromEntries(u.searchParams));
+        if (moved) return new Response(null, { status: 301, headers: { location: moved } });
+      }
       if (new URL(request.url).pathname === "/api/public/mcp") {
         const { handleMcp } = await import("./lib/mcp/server.server");
         return await handleMcp(request);

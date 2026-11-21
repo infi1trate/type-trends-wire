@@ -13,7 +13,7 @@ export function CrawlPanel({panel}:{panel:"color"|"layout"|"composition"|"lexico
   const [index,setIndex]=useState<IndexFilter>("ALL");
   return <section className="crawler flex min-h-0 flex-1 flex-col" aria-label={panel}>
     <PanelHeadlines panel={panel}/>
-    <PanelHeader g={`p-${panel}`} title={`${{color:"F3 COLOR",layout:"F4 LAYOUT",composition:"F5 COMPOSITION",lexicon:"F6 LEXICON"}[panel]} · EVIDENCE`} meta="SUPPORTING · WEEKLY CRAWL"/>
+    <PanelHeader g={`p-${panel}`} title={`${{color:"COLOR",layout:"LAYOUT",composition:"COMPOSITION",lexicon:"VOICE"}[panel]} · EVIDENCE`} meta="SUPPORTING · WEEKLY CRAWL"/>
     <CrawlControls index={index} onIndex={setIndex}/>
     <div className="min-h-0 flex-1 md:overflow-y-auto"><CrawlState>{data=>panel==="color"?<Color data={data} index={index}/>:panel==="layout"?<Layout data={data} index={index}/>:panel==="composition"?<Composition data={data} index={index}/>:<Lexicon data={data} index={index}/>}</CrawlState></div>
   </section>;

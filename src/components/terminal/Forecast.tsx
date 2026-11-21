@@ -130,7 +130,7 @@ export function ForecastPanel() {
       <LibraryBand g="p-trendsetters" title={`TRENDSETTERS · TOP 20 · ${sector === "all" ? "ALL SECTORS" : sector}`}>
         <ol className="divide-y divide-rule">{setters.map((s, i) => <li key={s.domain} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 p-2">
           <span className="label w-6 text-compare-muted tabular-nums">{i + 1}</span>
-          <Link to="/library/$domain" params={{ domain: s.domain ?? "" }} className="font-semibold text-ink underline-offset-2 hover:underline">{s.domain}</Link>
+          <Link to="/brands/$domain" params={{ domain: s.domain ?? "" }} search={{ view: "data" }} className="font-semibold text-ink underline-offset-2 hover:underline">{s.domain}</Link>
           <span className="label tabular-nums">{(s.score ?? 0).toFixed(2)}</span>
           <span className="label min-w-0 flex-1 break-words text-compare-muted">{s.traits_led.slice(0, 4).map(t => `${label(t.trait).name} +${t.lead}Q`).join(" · ")}</span>
         </li>)}</ol>
@@ -156,7 +156,7 @@ export function ForecastPanel() {
 }
 
 function ChartBand({ week }: { week: string | null }) { const { data } = useSuspenseQuery(chartCardQuery(week)); return <ChartOfWeek card={data} />; }
-function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) => void }) {
+export function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) => void }) {
   const shown = briefDisplay(brief);
   return <article className="p-3">
     <h3 className="text-hero font-semibold"><span className="label mr-2 text-signal">AI</span>{shown.headline}</h3>
@@ -164,7 +164,7 @@ function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) 
       <h4 className="label font-semibold">{s.title.toUpperCase()}</h4><p className="mt-1">{s.body}</p>
       <div className="mt-2 flex flex-wrap gap-1">{s.citations.map(c => { const ref = brief.refs?.[`${c.kind}:${c.id}`]; const text = deLegacy(c.text); const cls = "label inline-flex h-6 items-center border border-rule px-2 text-compare-muted hover:text-ink";
         if (c.kind === "forecast") return <button key={c.kind + c.id} type="button" className={cls} onClick={() => onTrait(c.id)}>{text}</button>;
-        if (c.kind === "event" && ref?.domain) return <Link key={c.kind + c.id} to="/library/$domain" params={{ domain: ref.domain }} className={cls}>{text}</Link>;
+        if (c.kind === "event" && ref?.domain) return <Link key={c.kind + c.id} to="/brands/$domain" params={{ domain: ref.domain }} search={{ view: "data" }} className={cls}>{text}</Link>;
         if (c.kind === "wire" && ref?.url) { const href = sitePath(ref.url), own = href.startsWith("/"); return <a key={c.kind + c.id} href={href} {...(own ? {} : { target: "_blank", rel: "noreferrer" })} className={cls}>{text}</a>; }
         if (c.kind === "spread") return <Link key={c.kind + c.id} to="/terminal" search={{ panel: "overview" }} className={cls}>{text}</Link>;
         return <span key={c.kind + c.id} className={cls}>{text}</span>; })}</div>
@@ -175,6 +175,11 @@ function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) 
 
 type DetailRow = { scope: string; status: string; model: string | null; evidence: unknown; backtest: unknown; components?: unknown } & Parameters<typeof projOf>[0];
 export function TraitDrawer({ dimension, value, onClose }: { dimension: string; value: string; onClose: () => void }) {
+  const tl = label(`${dimension}:${value}`);
+  return <Overlay title={`${tl.name} [${tl.dimension}]`} onClose={onClose}><TraitDetail dimension={dimension} value={value} /></Overlay>;
+}
+/** U1 · the signal drawer's content: the terminal drawer and a signal's Data view (`/signals/<key>?view=data`) render the same thing. */
+export function TraitDetail({ dimension, value, explainer = true }: { dimension: string; value: string; explainer?: boolean }) {
   const { data, isLoading } = useQuery(forecastDetailQuery(dimension, value));
   const rows = (data ?? []) as DetailRow[]; const main = rows.find(r => r.scope === "all");
   const ev = (main?.evidence ?? {}) as { quarters?: Pt[]; fitted?: { quarter: string; value: number }[]; sites?: { domain: string; lead: number; adopted: string }[]; usable?: number; crossed_20?: string | null };
@@ -185,7 +190,7 @@ export function TraitDrawer({ dimension, value, onClose }: { dimension: string; 
   const { data: sig } = useSuspenseQuery(signalsQuery());
   const signal = sig?.signals.find(x => x.key === k) ?? null, tier = sig?.tiers.get(k) ?? null;
   const [parts, setParts] = useState(false);
-  return <Overlay title={`${tl.name} [${tl.dimension}]`} onClose={onClose}>
+  return <>
     {isLoading || !main ? <p className="label">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p> : <div className="space-y-3">
       <p className="flex flex-wrap items-center gap-2"><BasisChip k={k} info />{tier && <TierChip tier={tier.tier} info />}<StageBadge stage={signal?.stage ?? null} /></p>
       {signal?.so_what && <p className="text-ink">{signal.so_what}</p>}
@@ -193,16 +198,16 @@ export function TraitDrawer({ dimension, value, onClose }: { dimension: string; 
       {signal && <p className="label break-words text-compare-muted">RECEIPT · {signal.confidence_reason} · NEXT-WAVE SCORE {signal.next_wave_score == null ? "not scored" : signal.next_wave_score.toFixed(2)} · MOMENTUM {signal.momentum == null ? "not measured" : `${signal.momentum > 0 ? "+" : ""}${signal.momentum.toFixed(2)} PTS/Q`}</p>}
       {tier && <ul className="label space-y-1 text-compare-muted" aria-label="Why this tier">{tier.reasons.map(r => <li key={r}>· {r}</li>)}</ul>}
       <Evidence k={k} signals={sig?.signals ?? []} />
-      <p className="label"><Link to="/signals/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>
+      {explainer && <p className="label"><Link to="/signals/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>}
       <p className="label text-compare-muted">{main.status === "ok" ? `MODEL ${main.model?.toUpperCase()} · ${ev.usable} USABLE QUARTERS` : `Not fitted yet: ${ev.usable ?? 0} of the 4 usable quarters a curve needs`}{ev.crossed_20 ? ` · CROSSED 20% ${ev.crossed_20}` : ""}</p>
       <Cone large quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>
       <p className="label">BACKTEST {bt.status === "ok" ? `MAE ${bt.mae_pts?.toFixed(1)} PTS · HIT ${pct(bt.hit_rate, 0)}` : "· not enough history before 2025Q2 to test this trait"}</p>
       <div><button type="button" aria-expanded={parts} onClick={() => setParts(p => !p)} className="label inline-flex min-h-11 items-center text-ink underline underline-offset-2 md:min-h-0">{parts ? "▾" : "▸"} SEVEN SCORE PARTS</button>{parts && <div className="mt-2"><Components comp={comp} /></div>}</div>
-      <div><h3 className="label flex items-center text-compare-muted">LED BY<Info g="p-led-by" /></h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/library/$domain" params={{ domain: s.domain }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="text-compare-muted">{voiced("terminal.forecast.10")}</li>}</ul></div>
+      <div><h3 className="label flex items-center text-compare-muted">LED BY<Info g="p-led-by" /></h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} search={{ view: "data" }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="text-compare-muted">{voiced("terminal.forecast.10")}</li>}</ul></div>
       <div className="overflow-x-auto"><table className="w-full text-left"><thead className="label text-compare-muted"><tr>{[{ h: "QUARTER", g: "quarter" }, { h: "SHARE", g: "share" }, { h: "N", g: "sample-n" }, { h: "COVERAGE", g: "coverage" }].map(({ h, g }) => <th key={h} scope="col" className="p-1 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead><tbody>{(ev.quarters ?? []).filter(p => p.n > 0).map(p => <tr key={p.q} className={`label tabular-nums ${p.n < 15 || p.c < .25 ? "text-compare-muted" : ""}`}><td className="p-1">{p.q}</td><td className="p-1">{pct(p.s)}</td><td className="p-1">{p.n}</td><td className="p-1">{(p.c * 100).toFixed(0)}%</td></tr>)}</tbody></table></div>
     </div>}
-  </Overlay>;
+  </>;
 }
 
 type DrawerComponents = { raw?: Record<string, number | null>; z?: Record<string, number | null>; present?: string[]; why?: string[];

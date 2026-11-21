@@ -1,3 +1,4 @@
+import { StoryLink } from "@/components/dataview/StoryLink";
 import { line as voiced } from "@/lib/voice";
 import { startTransition, useState, useTransition } from "react";
 import { Link } from "@tanstack/react-router";
@@ -40,7 +41,7 @@ function Row({ label, before, after, changed }: { label: string; before: React.R
 function Traits({ list }: { list: TraitStage[] }) {
   const shown = list.filter(t => t.stage).slice(0, 4);
   if (!shown.length) return null;
-  return <div className="label flex flex-wrap gap-x-3 gap-y-1 text-compare-muted"><span>NEW TRAITS</span>{shown.map(t => { const l = traitLabel(t.trait); return <span key={t.trait} className="inline-flex flex-wrap items-center gap-1"><span className="normal-case text-ink">{l.name}</span><DimTag d={l.dimension} /><StageBadge stage={t.stage} />{t.share != null && <span>{Math.round(t.share * 100)}% OF {t.scope === "all" ? "LIBRARY" : t.scope.toUpperCase()}</span>}</span>; })}</div>;
+  return <div className="label flex flex-wrap gap-x-3 gap-y-1 text-compare-muted"><span>NEW TRAITS</span>{shown.map(t => { const l = traitLabel(t.trait); return <span key={t.trait} className="inline-flex flex-wrap items-center gap-1"><span className="normal-case text-ink">{l.name}</span><DimTag d={l.dimension} /><StageBadge stage={t.stage} />{t.share != null && <span>{Math.round(t.share * 100)}% OF {t.scope === "all" ? "TRACKED BRANDS" : t.scope.toUpperCase()}</span>}</span>; })}</div>;
 }
 const NOT_TAGGED = <span className="text-compare-muted">NOT TAGGED</span>;
 const tagList = (s: Side, k: "aesthetic" | "tone") => (s.tags ? s.tags[k].map(words).join(" · ") || "NONE" : NOT_TAGGED);
@@ -48,13 +49,14 @@ function Entry({ r }: { r: Rebrand }) {
   const b = r.before, a = r.after, tagged = !!b.tags && !!a.tags;
   return <article className="border-b border-rule" aria-labelledby={`rb-${r.id}`}>
     <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 pt-3">
-      <h3 id={`rb-${r.id}`} className="text-hero font-semibold"><Link to="/library/$domain" params={{ domain: r.domain }} search={{ viewport: "desktop", page_type: "home", a: "", b: "" }} className="hover:underline">{r.domain}</Link></h3>
+      <h3 id={`rb-${r.id}`} className="text-hero font-semibold"><Link to="/brands/$domain" params={{ domain: r.domain }} search={{ view: "data" }} className="hover:underline">{r.domain}</Link></h3>
       <span className="label text-compare-muted">{r.sector.toUpperCase()}</span>
       <span className={`label border px-1 ${r.source === "live" ? "border-ink text-ink" : "border-rule text-compare-muted"}`}>{r.source === "live" ? "LIVE" : "ARCHIVE"}</span>
       <span className="label num text-compare-muted">{r.source === "archive" ? "CAPTURE" : "CONFIRMED"} {day(r.confirmed_at)}</span>
       <span className="label text-compare-muted">{r.reasons.map(x => x.toUpperCase()).join(" · ")}</span>
       <span className={`label border px-1 ${r.label === "Rebrand" ? "border-ink text-ink" : "border-rule text-compare-muted"}`}>{r.label.toUpperCase()}</span>
       {r.seasonal && <span className="label border border-rule px-1 text-compare-muted">SEASONAL</span>}
+      <StoryLink row={{ events: r.event_ids }} className="ml-auto" />
     </header>
     <table className="mt-2 w-full table-fixed text-body">
       <caption className="sr-only">Before and after for {r.domain}</caption>
@@ -72,7 +74,7 @@ function Entry({ r }: { r: Rebrand }) {
       <p className="text-body text-ink"><span className="label text-compare-muted">READ </span>{r.read}</p>
       <Traits list={r.new_traits} />
       <div className="label flex flex-wrap gap-x-4 gap-y-1">
-        <Link to="/library/$domain" params={{ domain: r.domain }} search={{ viewport: "desktop", page_type: "home", a: "", b: "" }} className="text-ink hover:underline">LIBRARY →</Link>
+        <Link to="/brands/$domain" params={{ domain: r.domain }} search={{ view: "data" }} className="text-ink hover:underline">BRAND DATA →</Link>
         {r.links.archive_before && <a href={r.links.archive_before} target="_blank" rel="noopener noreferrer" className="text-ink hover:underline">ARCHIVE BEFORE ↗</a>}
         {r.links.archive && <a href={r.links.archive} target="_blank" rel="noopener noreferrer" className="text-ink hover:underline">ARCHIVE AFTER ↗</a>}
         {r.wire && <a href={r.wire.url} target="_blank" rel="noopener noreferrer" className="text-ink hover:underline">COVERED BY {r.wire.source?.toUpperCase() ?? "WIRE"} · {day(r.wire.published_at)} ↗</a>}
@@ -89,8 +91,8 @@ export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s
   const { data: d } = useSuspenseQuery(rebrandsQuery(filters));
   const [pending, go] = useTransition();
   const reset = () => setLimit(PAGE);
-  return <section aria-label="Rebrand desk" aria-busy={pending} className={`flex min-h-0 flex-1 flex-col ${pending ? "opacity-60" : ""}`}>
-    <PanelHeader g="p-rebrands" title="F9 REBRAND DESK" meta={<span className="num">{d.counts.rebrands}<span className="max-sm:hidden"> REBRANDS</span> · {d.counts.total - d.counts.rebrands}<span className="max-sm:hidden"> IDENTITY CHANGES</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
+  return <section aria-label="Moves" aria-busy={pending} className={`flex min-h-0 flex-1 flex-col ${pending ? "opacity-60" : ""}`}>
+    <PanelHeader g="p-rebrands" title="F3 MOVES" meta={<span className="num">{d.counts.rebrands}<span className="max-sm:hidden"> REBRANDS</span> · {d.counts.total - d.counts.rebrands}<span className="max-sm:hidden"> IDENTITY CHANGES</span> SINCE 2021 · {d.counts.this_quarter} THIS Q<span className="max-sm:hidden">UARTER</span></span>} />
     <div className="flex flex-wrap items-center gap-2 border-b border-rule p-3">
       <Seg label="Source" options={SOURCES} value={source} onChange={v => go(() => { setSource(v); reset(); })} />
       <Seg label="Year" options={["ALL", ...d.years.map(String)] as string[]} value={year} onChange={v => go(() => { setYear(v); reset(); })} />
@@ -105,7 +107,7 @@ export function RebrandDesk({ sector, onSector }: { sector: string; onSector: (s
       {d.rows.length === 0 && <p className="p-3 text-compare-muted">{voiced("terminal.rebrands.3")}</p>}
       {d.rows.map(r => <Entry key={r.id} r={r} />)}
       {d.rows.length < d.filtered.total && <div className="p-3"><Button variant="outline" className="label" disabled={pending} onClick={() => startTransition(() => setLimit(l => Math.min(l + PAGE, 500)))}>{pending ? voiced("busy.rebrands") : `MORE · ${d.filtered.total - d.rows.length} LEFT`}</Button></div>}
-      <p className="label border-t border-rule p-3 text-compare-muted">SOURCE: CONFIRMED LIBRARY CHANGES (TWO CAPTURES, DESKTOP HOME) · LIVE CRAWLER + WAYBACK QUARTERLY ARCHIVE · DATA THROUGH {day(d.data_through)} · STAGES FROM THE LATEST FORECAST · LOGOS AND TEXT COLOR ARE NOT MEASURED</p>
+      <p className="label border-t border-rule p-3 text-compare-muted">SOURCE: CONFIRMED BRAND CHANGES (TWO CAPTURES, DESKTOP HOME) · LIVE CRAWLER + WAYBACK QUARTERLY ARCHIVE · DATA THROUGH {day(d.data_through)} · STAGES FROM THE LATEST FORECAST · LOGOS AND TEXT COLOR ARE NOT MEASURED</p>
     </div>
   </section>;
 }

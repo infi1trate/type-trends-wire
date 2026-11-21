@@ -12,7 +12,7 @@ const PREFIXES = ["/brands", "/patterns", "/signals", "/stories", "/digest", "/d
 const NEVER = ["/api/", "/_serverFn", "/desk", "/status", "/welcome", "/kit", "/terminal", "/library", "/ambient", "/audit", "/watch", "/embed", "/lock"] as const;
 /** The query parameters any Read page reads (each route's validateSearch). Others (utm_*, fbclid…) do not change the page, so they
  *  are left out of the cache key and every variant shares one copy. */
-export const READ_PARAMS = ["sector", "format", "all", "section", "q", "sort", "dir", "tab", "tier", "page", "step", "figures", "brand", "pattern", "period", "basis", "view"] as const;
+export const READ_PARAMS = ["sector", "format", "all", "section", "q", "sort", "dir", "tab", "tier", "page", "step", "figures", "brand", "pattern", "period", "basis", "view", "viewport", "page_type", "a", "b"] as const;
 
 export function isReadPath(pathname: string): boolean {
   if (NEVER.some(p => pathname.startsWith(p))) return false;

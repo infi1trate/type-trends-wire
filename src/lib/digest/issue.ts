@@ -91,7 +91,7 @@ export const figureOf = (c: CardModel | null): FigureData | null => (c ? { serie
 export function citationHref(c: { kind: string; id: string }, refs: StoredBrief["refs"]): string | null {
   const r = refs?.[`${c.kind}:${c.id}`];
   if (c.kind === "forecast") return explainerPath(c.id.split(":").slice(0, 2).join(":"));
-  if (c.kind === "event" && r?.domain) return `/library/${r.domain}`;
+  if (c.kind === "event" && r?.domain) return `/brands/${r.domain}?view=data`;
   if (c.kind === "wire" && r?.url) return sitePath(r.url);
   if (c.kind === "spread") return "/terminal?panel=spread";
   return null;
@@ -149,7 +149,7 @@ export function issueModel(r: IssueRows): Issue | null {
     const fam = e.after?.[role], was = e.before?.[role];
     if (typeof fam !== "string" || !fam.trim() || seenMap.has(fam.toLowerCase()) || seenMap.size >= 4) continue;
     const isG = google.has(fam.toLowerCase());
-    seenMap.set(fam.toLowerCase(), { family: fam, google: isG, role: role === "h1" ? "Headline face" : "Body face", line: `${e.domain} switched its ${role === "h1" ? "headlines" : "body text"}${typeof was === "string" && was ? ` from ${was}` : ""} to ${fam}.`, note: isG ? null : "Proprietary face, shown by name.", href: `/library/${e.domain}` });
+    seenMap.set(fam.toLowerCase(), { family: fam, google: isG, role: role === "h1" ? "Headline face" : "Body face", line: `${e.domain} switched its ${role === "h1" ? "headlines" : "body text"}${typeof was === "string" && was ? ` from ${was}` : ""} to ${fam}.`, note: isG ? null : "Proprietary face, shown by name.", href: `/brands/${e.domain}?view=data` });
   }
   const seen = [...seenMap.values()];
   const specimens = rising.length + fading.length + seen.length ? { rising, fading, seen, since: r.fonts?.since ?? null, date: r.fonts?.date ?? null } : null;
@@ -159,10 +159,10 @@ export function issueModel(r: IssueRows): Issue | null {
   for (const e of [...r.colorEvents].sort((a, b) => (Number("accent" in (b.after ?? {})) - Number("accent" in (a.after ?? {}))) || b.detected_at.localeCompare(a.detected_at))) {
     if (palette.length >= MAX_PALETTE) break;
     const bA = e.before?.["accent"], aA = e.after?.["accent"], bP = e.before?.["palette"], aP = e.after?.["palette"];
-    if (typeof bA === "string" && typeof aA === "string" && HEX.test(bA) && HEX.test(aA)) palette.push({ domain: e.domain, sector: e.sector, kind: "accent", before: [swatch(bA)], after: [swatch(aA)], at: e.detected_at, href: `/library/${e.domain}` });
+    if (typeof bA === "string" && typeof aA === "string" && HEX.test(bA) && HEX.test(aA)) palette.push({ domain: e.domain, sector: e.sector, kind: "accent", before: [swatch(bA)], after: [swatch(aA)], at: e.detected_at, href: `/brands/${e.domain}?view=data` });
     else if (Array.isArray(bP) && Array.isArray(aP)) {
       const b = bP.filter((x): x is string => typeof x === "string" && HEX.test(x)).slice(0, 5), a = aP.filter((x): x is string => typeof x === "string" && HEX.test(x)).slice(0, 5);
-      if (b.length && a.length && palette.filter(p => p.kind === "palette").length < 2) palette.push({ domain: e.domain, sector: e.sector, kind: "palette", before: b.map(swatch), after: a.map(swatch), at: e.detected_at, href: `/library/${e.domain}` });
+      if (b.length && a.length && palette.filter(p => p.kind === "palette").length < 2) palette.push({ domain: e.domain, sector: e.sector, kind: "palette", before: b.map(swatch), after: a.map(swatch), at: e.detected_at, href: `/brands/${e.domain}?view=data` });
     }
   }
 
@@ -176,11 +176,11 @@ export function issueModel(r: IssueRows): Issue | null {
       const w = wild.get(s.domain), name = label(t).name;
       if (w) { if (!w.traits.includes(name)) w.traits.push(name); continue; }
       if (wild.size >= MAX_WILD) continue;
-      wild.set(s.domain, { domain: s.domain, name: site.name, sector: site.sector, traits: [name], adopted: quarter(s.adopted ?? null), thumb: pickThumb(r.thumbs, s.domain, range.endIso), terminal: `/library/${s.domain}`, live: `https://${s.domain}` });
+      wild.set(s.domain, { domain: s.domain, name: site.name, sector: site.sector, traits: [name], adopted: quarter(s.adopted ?? null), thumb: pickThumb(r.thumbs, s.domain, range.endIso), terminal: `/brands/${s.domain}?view=data`, live: `https://${s.domain}` });
     }
   }
 
-  const rebrands = r.rebrands.slice(0, 4).map(x => ({ ...x, read: untick(x.read), href: `/library/${x.domain}`, rebrand: isRebrand(x) }));
+  const rebrands = r.rebrands.slice(0, 4).map(x => ({ ...x, read: untick(x.read), href: `/brands/${x.domain}?view=data`, rebrand: isRebrand(x) }));
   const numbers = [
     r.numbers.library_sites != null ? { label: "Library sites", value: String(r.numbers.library_sites), note: "tracked page by page, twice before a change counts" } : null,
     r.numbers.crawl ? { label: "Sites crawled", value: String(r.numbers.crawl.sites), note: `latest crawl finished ${longDate(r.numbers.crawl.finished_at)}` } : null,

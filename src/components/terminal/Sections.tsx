@@ -14,6 +14,7 @@ import { BasisChip } from "./SignalBits";
 import { LedgerOutput } from "./Ledger";
 import { RebrandDesk } from "./Rebrands";
 import { useSignalDrawer } from "./Signals";
+import { StoryLink } from "@/components/dataview/StoryLink";
 
 /** F4 PATTERNS: headline layout and composite signals with their example brands, dense. */
 export function PatternsTab({ sector }: { sector: string }) {
@@ -24,7 +25,7 @@ export function PatternsTab({ sector }: { sector: string }) {
     {data.patterns.length ? <ul className="divide-y divide-rule">{data.patterns.map(p => <li key={p.key} className="grid grid-cols-1 gap-1 p-3 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="min-w-0"><button type="button" onClick={() => drawer.open(p.key)} className="min-h-11 text-left text-ink hover:underline md:min-h-0">{p.name}</button> <DimTag d={p.dimension} /> <BasisChip basis={p.basis} />
         <p className="label mt-1 flex flex-wrap items-center gap-2 text-g500"><StageBadge stage={p.stage} /> MOMENTUM {p.momentum_index ?? "—"} · CONFIDENCE {p.confidence.toUpperCase()} · {p.examples} BRANDS</p></div>
-      <div className="label flex flex-wrap items-center gap-x-3 text-g500">{p.sample.map(d => <Link key={d} to="/library/$domain" params={{ domain: d }} className="min-h-11 break-all hover:text-ink md:min-h-0">{d}</Link>)}<Link to="/patterns/$key" params={{ key: p.key }} className="text-ink underline-offset-2 hover:underline">READ PAGE →</Link></div>
+      <div className="label flex flex-wrap items-center gap-x-3 text-g500">{p.sample.map(d => <Link key={d} to="/brands/$domain" params={{ domain: d }} search={{ view: "data" }} className="min-h-11 break-all hover:text-ink md:min-h-0">{d}</Link>)}<Link to="/patterns/$key" params={{ key: p.key }} className="text-ink underline-offset-2 hover:underline">READ PAGE →</Link><StoryLink row={{ signal: p.key }} /></div>
     </li>)}</ul> : <Empty why={voiced("terminal.sections.1")} />}
     {drawer.node}
   </section>;

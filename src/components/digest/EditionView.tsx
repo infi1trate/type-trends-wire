@@ -69,7 +69,7 @@ export function EditionView({ issue: e, latest = false }: { issue: Edition; late
 
         <section aria-labelledby="dg-numbers" className="mt-16 lg:mt-20" data-digest-numbers="">
           <SectionHead n={next()} title="The numbers" id="dg-numbers" />
-          <p className="ed-small max-w-[68ch]">{e.numbers.map((p, i) => <span key={p.href + i}>{i > 0 && " · "}<Receipt href={p.href} className="ed-tap" {...pr(p.href)}>{p.text}</Receipt></span>)}.</p>
+          <p className="ed-small max-w-[68ch]">{e.numbers.map((p, i) => <span key={p.href + i}>{i > 0 && " · "}<Receipt href={p.href} drawer className="ed-tap" {...pr(p.href)}>{p.text}</Receipt></span>)}.</p>
           {e.corrections && <p className="ed-small mt-4 max-w-[68ch] border-l-2 border-ed-ink pl-3" role="note" data-digest-corrections="">{e.corrections.text} <Link to="/what-we-show" hash="ed-w-story" className="ed-tap">What makes a story</Link></p>}
         </section>
 

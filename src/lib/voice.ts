@@ -56,7 +56,7 @@ export const VOICE = {
   "brands.failed": failed("/brands", "Brands didn't load", "The brand list"),
   "brand.failed": failed("/brands/<domain>", "This brand page didn't load", "The brand's record", go("Every brand", "/brands")),
   "brand.notFound": missing("/brands/<domain> for an untracked domain", "We don't track this brand",
-    "Only brands in the library get a brand page. You can still audit any public site against tracked ones.", go("Every tracked brand", "/brands"), go("Audit any site", "/audit/new")),
+    "Only tracked brands get a brand page. You can still audit any public site against tracked ones.", go("Every tracked brand", "/brands"), go("Audit any site", "/audit/new")),
   "patterns.failed": { kind: "failed", where: "/patterns (gallery)", title: "The gallery didn't load",
     text: "The stored captures took too long to read this time. Nothing is lost; the next try usually works.", next: [RETRY, go("All patterns", "/patterns"), go("Collections", "/collections")] },
   "patterns.notFound": missing("/patterns with an unknown view", "No such view", "That gallery view doesn't exist. Start from all patterns.", go("All patterns", "/patterns")),
@@ -100,8 +100,8 @@ export const VOICE = {
     "The link may be mistyped, or the watchlist was deleted. Watchlist links can't be recovered, so make a new one.", go("Make a new watchlist", "/watch/new")),
   "terminal.failed": { kind: "failed", where: "/terminal", title: "TERMINAL DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, FRONT] },
   "terminal.notFound": { kind: "notFound", where: "/terminal with an unknown path", title: "NO SUCH PANEL", text: "Press ? for the panel list.", next: [go("Terminal", "/terminal"), FRONT] },
-  "library.failed": { kind: "failed", where: "/library/<domain>", title: "LIBRARY DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, go("F11 Library", "/terminal?panel=library")] },
-  "library.notFound": { kind: "notFound", where: "/library/<domain> for an untracked domain", title: "404 · DOMAIN NOT IN LIBRARY", text: "Only tracked brands have a library record.", next: [go("F11 Library", "/terminal?panel=library")] },
+  "library.failed": { kind: "failed", where: "/brands/<domain>?view=data", title: "BRAND DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, go("F3 Brands", "/terminal?panel=library")] },
+  "library.notFound": { kind: "notFound", where: "/brands/<domain>?view=data for an untracked domain", title: "404 · NOT A TRACKED BRAND", text: "Only tracked brands have brand data.", next: [go("F3 Brands", "/terminal?panel=library")] },
   "chart.failed": { kind: "failed", where: "/chart and /chart/<week>", title: "CHART DATA DIDN'T ARRIVE", text: "Nothing is lost; reload in a minute.", next: [RETRY, go("Latest chart", "/chart")] },
   "chart.notFound": { kind: "notFound", where: "/chart/<week> with no card", title: "404 · NO CHART FOR THIS WEEK", text: "A card is drawn after each Sunday forecast.", next: [go("Latest chart", "/chart")] },
 
@@ -250,6 +250,16 @@ export const VOICE = {
   "terminal.wire.2": { kind: "empty", where: "Terminal · Wire panel", text: "Nothing on the wire matches these filters. Clear the filter or pick ALL to see every item.", next: [WAIT("Clear the filter or pick ALL to see every item")] },
   "terminal.empty": empty("Terminal panels with nothing collected", "Nothing collected here yet. Type data is collected daily and the wire every 15 minutes, so this fills in after the next run.", WAIT("Fills in after the next run")),
   "terminal.watch.cli": { kind: "empty", where: "Terminal · watch command line", text: "No editable watchlist on this device. Run watch new <name>, or open your edit link once and choose “Remember edit link on this device”.", next: [WAIT("Run watch new <name>, or open your edit link once")] },
+  // U1 + U2 · object Data views and the receipt drawer
+  "data.story.none": empty("Story Data view with no stored record", "No stored record for this story."),
+  "data.story.noEdits": empty("Story Data view · editor's log", "No edits: the story runs as built."),
+  "data.pattern.none": empty("Pattern Data view with no forecast rows", "No forecast rows for this pattern: it is tracked as a pattern only (its examples and share sit on the Read view)."),
+  "data.study.none": empty("Study Data view for an unknown study", "No such study."),
+  "data.study.check": loading("Study Data view · the check that keeps it live", "Loading the check…"),
+  "data.study.versions": loading("Study Data view · text versions", "Loading versions…"),
+  "data.week.none": empty("Week Data view with no stored brief", "No weekly brief was stored for this week."),
+  "receipt.loading": loading("Receipt drawer, while the receipt loads", "Loading the receipt…"),
+  "receipt.loadingRows": loading("Receipt drawer skeleton rows (screen-reader label)", "Loading"),
 } as const satisfies Record<string, Said>;
 
 export type VoiceId = keyof typeof VOICE;

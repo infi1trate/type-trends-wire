@@ -12,6 +12,7 @@ import { DigestShell } from "@/components/digest/Editorial";
 import { ReadFooter } from "@/components/read/Bits";
 import { Receipt } from "@/components/read/StoryCard";
 import { FigureView } from "./Figures";
+import { dataHref } from "@/lib/ia";
 import { Deferred } from "@/components/read/Deferred";
 import type { Figure } from "@/lib/data-stories/types";
 
@@ -30,7 +31,7 @@ import { ChartTitleQuiet } from "@/components/charts/Charts";
 import { line as voiced } from "@/lib/voice";
 
 export function CaptionText({ c }: { c: Caption }) {
-  return <>{c.map((s, k) => (typeof s === "string" ? <span key={k}>{s}</span> : <Receipt key={k} href={s.href} className="underline decoration-1 underline-offset-2" data-num={isNum(s) ? "" : undefined}>{isNum(s) ? s.n : s.r}</Receipt>))}</>;
+  return <>{c.map((s, k) => (typeof s === "string" ? <span key={k}>{s}</span> : <Receipt key={k} href={s.href} drawer className="underline decoration-1 underline-offset-2" data-num={isNum(s) ? "" : undefined}>{isNum(s) ? s.n : s.r}</Receipt>))}</>;
 }
 export function StoryHead({ s, kicker, trail, label = "Tool" }: { s: Pick<StoryModel, "number" | "question" | "deck" | "template" | "dataThrough">; kicker?: ReactNode; trail?: CoverTrail | null; label?: string }) {
   const text = <>
@@ -213,7 +214,9 @@ export function StudyEvidence({ s }: { s: StudyPage }) {
     {s.basis.lines.map(l => <p key={l} className="ed-small ed-muted mt-1 max-w-[68ch]">{l}</p>)}
     <p className="ed-small ed-muted mt-1 max-w-[68ch]" data-templates="">Built from: {s.template}.</p>
     {nums.length > 0 && <div className="mt-10"><h3 className="ed-kicker">The numbers</h3>
-      <ul className="ledger mt-3" data-study-numbers="">{nums.map(x => <li key={x.text} className="ledger-row px-2 py-3"><span className="ed-small"><Receipt href={x.href} className="ed-tap underline decoration-1 underline-offset-2">{x.text}</Receipt></span></li>)}</ul></div>}
+      <ul className="ledger mt-3" data-study-numbers="">{nums.map(x => <li key={x.text} className="ledger-row px-2 py-3"><span className="ed-small"><Receipt href={x.href} drawer className="ed-tap underline decoration-1 underline-offset-2">{x.text}</Receipt></span></li>)}</ul></div>}
+    <div className="mt-10"><h3 className="ed-kicker">Each figure's data</h3>
+      <ul className="ledger mt-3" data-study-figures="">{Object.entries(s.figures).map(([id, f]) => <li key={id} className="ledger-row px-2 py-3"><span className="ed-small"><Receipt href={`${dataHref({ type: "study", id: s.slug })}#fig-${id}`} receipt={`figure:${s.slug}:${id}`} className="ed-tap underline decoration-1 underline-offset-2">{f.title} →</Receipt></span></li>)}</ul></div>
     <FigureTables s={s} />
     <p className="ed-data mt-6">Browse the collection: <Receipt href={s.collection.href} className="ed-tap underline">{s.collection.label} →</Receipt></p>
   </>;

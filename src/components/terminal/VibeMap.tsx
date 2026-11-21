@@ -41,7 +41,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); move(1); }
     else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); move(-1); }
-    else if (e.key === "Enter" && focused) { e.preventDefault(); void navigate({ to: "/library/$domain", params: { domain: focused.domain }, search: { viewport: "desktop", page_type: "home", a: "", b: "" } }); }
+    else if (e.key === "Enter" && focused) { e.preventDefault(); void navigate({ to: "/brands/$domain", params: { domain: focused.domain }, search: { view: "data" } }); }
     else if (e.key === "Escape" && selected != null) { e.stopPropagation(); setSelected(null); setFocus(null); }
   };
   const [ax, ay] = data.axes;
@@ -70,7 +70,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
         </div>
         <div className="label mt-1 text-right text-compare-muted">X · {ax ? `← ${ax.negative.map(tagPhrase).join(" · ")}   ${ax.positive.map(tagPhrase).join(" · ")} →` : "—"}</div>
         <div id="vibe-readout" aria-live="polite" className="mt-2 min-h-[3lh] border border-rule p-2 text-body">
-          {focused ? <><Link to="/library/$domain" params={{ domain: focused.domain }} search={{ viewport: "desktop", page_type: "home", a: "", b: "" }} className="font-semibold text-ink hover:underline">{focused.domain}</Link> <span className="label text-compare-muted">{focused.sector.toUpperCase()} · {clusters.find(c => c.id === focused.cluster)?.name.toUpperCase()}</span><div className="text-g500">{tagText(focused.tags)}</div></> : <span className="text-compare-muted">HOVER, TAP OR ARROW TO A SITE.</span>}
+          {focused ? <><Link to="/brands/$domain" params={{ domain: focused.domain }} search={{ view: "data" }} className="font-semibold text-ink hover:underline">{focused.domain}</Link> <span className="label text-compare-muted">{focused.sector.toUpperCase()} · {clusters.find(c => c.id === focused.cluster)?.name.toUpperCase()}</span><div className="text-g500">{tagText(focused.tags)}</div></> : <span className="text-compare-muted">HOVER, TAP OR ARROW TO A SITE.</span>}
         </div>
       </div>
       <div className="min-w-0 md:overflow-y-auto">
@@ -90,7 +90,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
           <ul className="label mb-3 text-compare-muted">{(sel.top_tags ?? []).slice(0, 5).map(t => <li key={t.tag}><span className="text-ink">{(t.phrase ?? tagPhrase(t.tag)).toUpperCase()}</span> {pct(t.share)} · +{t.lift_pts.toFixed(0)} PTS VS MAP</li>)}</ul>
           {!!sel.drivers?.length && <><h4 className="label mb-1 text-compare-muted">FORECAST TRAITS DRIVING IT</h4><ul className="label mb-3 text-compare-muted">{sel.drivers.map(d => <li key={d.trait}><span className="normal-case text-ink">{traitLabel(d.trait).name}</span> <DimTag d={traitLabel(d.trait).dimension} /> <StageBadge stage={d.stage} />{d.momentum != null && ` · ${d.momentum >= 0 ? "+" : ""}${d.momentum.toFixed(2)} PTS/Q`}</li>)}</ul></>}
           <h4 className="label mb-1 text-compare-muted">SITES · {members.length}</h4>
-          <ul className="text-body">{members.map(p => <li key={p.domain} className="border-t border-rule py-1"><Link to="/library/$domain" params={{ domain: p.domain }} search={{ viewport: "desktop", page_type: "home", a: "", b: "" }} className={`hover:underline ${p.domain === focus ? "text-signal" : "text-ink"}`} onFocus={() => setFocus(p.domain)}>{p.domain}</Link> <span className="label text-compare-muted">{p.sector.toUpperCase()}</span><div className="label text-compare-muted">{tagText(p.tags)}</div></li>)}</ul>
+          <ul className="text-body">{members.map(p => <li key={p.domain} className="border-t border-rule py-1"><Link to="/brands/$domain" params={{ domain: p.domain }} search={{ view: "data" }} className={`hover:underline ${p.domain === focus ? "text-signal" : "text-ink"}`} onFocus={() => setFocus(p.domain)}>{p.domain}</Link> <span className="label text-compare-muted">{p.sector.toUpperCase()}</span><div className="label text-compare-muted">{tagText(p.tags)}</div></li>)}</ul>
         </div>}
         <p className="label p-3 text-compare-muted">{data.n} SITES WITH VALID AI TAGS · TAGS THROUGH {data.data_through?.slice(0, 10) ?? "UNDATED"} · PCA {ax ? pct(ax.explained) : "NOT COMPUTED"} + {ay ? pct(ay.explained) : "NOT COMPUTED"} OF VARIANCE · K={data.k} BY SILHOUETTE {data.silhouette?.toFixed(2)} · TAG-SPACE SIMILARITY, NOT VISUAL SIMILARITY · <button type="button" onClick={onMethod} className="text-ink underline">METHOD</button></p>
       </div>

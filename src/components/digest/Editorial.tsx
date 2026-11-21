@@ -1,4 +1,5 @@
 // Shared building blocks for the Digest and trait explainers: the brand's Read type (Big Shoulders + Newsreader), mono only for code-like values.
+import { canonicalHref } from "@/lib/ia";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SITE_URL, DIGEST_NAME } from "@/lib/site";
@@ -12,7 +13,7 @@ import { ScrollRow } from "@/components/read/ScrollRow";
 import { Wordmark } from "@/components/brand/Wordmark";
 
 /** Absolute URL printed after a link in the print stylesheet. */
-export const pr = (href: string) => ({ "data-print": href.startsWith("http") || href.startsWith("mailto:") ? href : `${SITE_URL}${href}` });
+export const pr = (href: string) => ({ "data-print": href.startsWith("http") || href.startsWith("mailto:") ? href : `${SITE_URL}${canonicalHref(href)}` });
 
 /** Digest, explainer and ledger pages sit inside the shared Read shell; Digest pages keep their own Archive / RSS sub-nav. */
 type EditionId = "morning" | "digest" | "sectors";

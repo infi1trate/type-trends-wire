@@ -128,7 +128,7 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
     facts: (census ? facts.filter(f => f.kind === "member") : readFacts(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
     census: census ? { lines: censusLines(facts), sectors: facts.find(f => f.kind === "count" && /^By sector: /.test(f.text))?.text.replace(/^By sector: /, "") ?? null } : null,
     // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
-    evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : noDid(deLegacy(e.label)) })),
+    evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : e.label === "Library record" ? "Brand data" : noDid(deLegacy(e.label)) })),
     brands: s.domains.map(d => ({ domain: d, name: brandName(d), href: brandPath(d) })),
     signals: s.signal_keys.map(k => ({ key: k, name: label(k).name, dimension: label(k).dimension, basis: basisOf(k), href: signalPath(k) })),
     patterns: related.patterns.map(k => ({ key: k, name: label(k).name, href: patternPath(k) })),

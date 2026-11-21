@@ -44,7 +44,7 @@ describe("story page", () => {
     const list = html.slice(html.indexOf("data-story-changes"));
     const items = [...list.slice(0, list.indexOf("</ul>")).matchAll(/<li[^>]*>(.*?)<\/li>/g)].map(m => m[1]!);
     expect(items).toHaveLength(2);
-    for (const [i, it] of items.entries()) expect(it).toContain(`href="/library/dropbox.com?event=${i + 1}"`);
+    for (const [i, it] of items.entries()) expect(it).toContain(`href="/brands/dropbox.com?event=${i + 1}&amp;view=data"`);
     expect(html).toContain("data-how-we-know");
   });
   it("E2b: a stored why line stays in the record but is never shown on the Read side", () => {
@@ -63,7 +63,7 @@ describe("story page", () => {
     const r = await gate(new Request("https://site.test/stories/move%3A1"), { hash: "x".repeat(64), allow: createRateLimiter(100, 60000) });
     expect(r?.status).toBe(401);
     expect(SURFACES["stories.$id"]?.section).toBe("live"); expect(SURFACES["desk"]?.status).toBe("quiet");
-    expect(toggleHref("/stories/move%3A1")).toBe("/terminal?panel=today&story=move%3A1");
+    expect(toggleHref("/stories/move%3A1")).toBe("/stories/move%3A1?view=data");
     expect(toggleHref("/terminal", { panel: "today", story: "move:1" })).toBe("/stories/move%3A1");
   });
 });

@@ -89,6 +89,6 @@ describe("E2d · a retired story keeps its page", () => {
   });
   it("a held story still has no number on its page", () => expect(storyPage({ ...rec, state: "held" } as StoryRecord, { earlier: [], patterns: [] }).number).toBeNull());
   it("the page is sent with a do-not-index header whenever the story did not run", () => {
-    expect(readFileSync("src/routes/stories.$id.tsx", "utf8")).toContain('headers: ({ loaderData }) => (loaderData && !loaderData.ran ? { "X-Robots-Tag": "noindex" } : undefined)');
+    expect(readFileSync("src/routes/stories.$id.tsx", "utf8")).toContain('headers: ({ loaderData }) => (loaderData && (loaderData.data || !loaderData.ran) ? DATA_VIEW_HEADERS : undefined)');
   });
 });

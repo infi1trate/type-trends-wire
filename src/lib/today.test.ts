@@ -29,10 +29,10 @@ describe("TODAY", () => {
     expect(t.date).toBe("2026-11-15");
     expect(t.lines).toHaveLength(5);
     expect(t.lines[0]!.text).toBe("Bento grids moved from Emerging to Rising across all sectors (30% of sites)");
-    expect(t.lines[1]).toMatchObject({ text: "Subgrid layouts moved from Rising to Peaking across all sectors (12% of sites)", href: "/terminal?panel=brief&trait=css%3Asubgrid", dimension: "LAYOUT", target: "trait" });
+    expect(t.lines[1]).toMatchObject({ text: "Subgrid layouts moved from Rising to Peaking across all sectors (12% of sites)", href: "/signals/css%3Asubgrid?view=data", dimension: "LAYOUT", target: "trait" });
     expect(t.lines[2]!.text).toBe("New alert: BREAKOUT · Subgrid layouts [LAYOUT] +4.8 pts/q · all sectors (1 of 2 from the 2026-11-15 forecast)");
     expect(t.lines[2]!.href).toBe("/?panel=brief&trait=css%3Asubgrid");
-    expect(t.lines[3]).toMatchObject({ href: "/library/lattice.com", target: "site" });
+    expect(t.lines[3]).toMatchObject({ href: "/brands/lattice.com?view=data", target: "site" });
     expect(t.changed).toBe(6);
     expect(t.note).toBeNull();
     expect(t.asOf).toBe("2026-11-15T17:50:00Z");

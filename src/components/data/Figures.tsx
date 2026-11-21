@@ -17,7 +17,7 @@ const hlText = { background: HL, color: INK_ } as const;
 const hlSvgText = { fill: INK_, stroke: HL, strokeWidth: 8, paintOrder: "stroke", strokeLinejoin: "round" } as const;
 const hlMark = { stroke: HL, strokeWidth: 6, paintOrder: "stroke" } as const;
 const INK = "var(--tk-text-primary)", MUTED = "var(--tk-text-muted)", RULE = "var(--tk-rule-hairline)", PAGE = "var(--tk-surface-page)";
-const SOURCE = "Stored library captures and archive history";
+const SOURCE = "Stored captures of tracked brands and archive history";
 const fade = "transition-opacity duration-300 motion-reduce:transition-none";
 
 /** `pair`: a before/after shown as two captures side by side (each at most 520 px), the slider wiping the before over the after. */
@@ -43,7 +43,7 @@ function Multiples({ f, v }: { f: MultiplesFig; v: View }) {
     {() => <ul className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 xl:grid-cols-4" data-figure="multiples">
       {f.panels.map(p => { const hot = on.has(p.id), dim = any && !hot; const a = p.points[0], z = p.points.at(-1);
         return <li key={p.id} className={`${fade} min-w-0 ${dim ? "opacity-40" : ""}`} data-panel={p.id} data-hot={hot ? "" : undefined}>
-          <p className="tk-t-data flex justify-between gap-2"><Receipt href={p.href} className="tk-tap min-h-0 truncate underline-offset-2 hover:underline" style={hot ? hlText : undefined}>{p.label}</Receipt>{f.unit === "share" && z && <span className="tk-c-secondary">{fmt(z.y)}</span>}</p>
+          <p className="tk-t-data flex justify-between gap-2"><Receipt href={p.href} drawer className="tk-tap min-h-0 truncate underline-offset-2 hover:underline" style={hot ? hlText : undefined}>{p.label}</Receipt>{f.unit === "share" && z && <span className="tk-c-secondary">{fmt(z.y)}</span>}</p>
           {p.note && <p className="tk-t-caption tk-c-muted" data-panel-note="">{p.note}</p>}
           <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" aria-hidden="true">
             <line x1={m.l} x2={W - m.r} y1={H - m.b} y2={H - m.b} className="tk-svg-axis" />

@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
-import { legacyTerminalSearch } from "@/lib/ia";
+import { legacyTerminalSearch, terminalObjectHref } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
 import { resolveFormat, type Format } from "@/lib/front/formats";
 import { fontLinks } from "@/lib/digest/meta";
@@ -21,6 +21,9 @@ export const Route = createFileRoute("/")({
   // `/` is always Read. Old terminal links (/?panel=…, ?trait=…, ?cmd=…) go to the same view at /terminal.
   beforeLoad: ({ location }) => {
     const legacy = legacyTerminalSearch(location.search as Record<string, unknown>);
+    // U1: an old link to an object's terminal view goes straight to that object's one address, in its Data view.
+    const obj = legacy ? terminalObjectHref(legacy as Record<string, unknown>) : null;
+    if (obj) throw redirect({ href: obj, statusCode: 301 });
     if (legacy) throw redirect({ to: "/terminal", search: legacy, statusCode: 301 });
   },
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),

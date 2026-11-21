@@ -136,12 +136,15 @@ const qs = (o: Record<string, string | number | boolean | undefined | null>) => 
   return p.length ? `?${p.join("&")}` : "";
 };
 const lensOf = (s: Record<string, unknown>) => (typeof s["sector"] === "string" && s["sector"] && s["sector"] !== "all" ? (s["sector"] as string) : undefined);
+/** A terminal view's address; an object view inside it (a story, signal or pattern) comes back as that object's one address in the Data view. */
 export const terminalHref = (view: ViewId, extra: { trait?: string | undefined; sector?: string | undefined; cmd?: string | undefined; story?: string | undefined } = {}) =>
-  `/terminal${qs({ panel: view, trait: extra.trait, sector: extra.sector && extra.sector !== "all" ? extra.sector : undefined, cmd: extra.cmd, story: extra.story })}`;
+  canonicalHref(`/terminal${qs({ panel: view, trait: extra.trait, sector: extra.sector && extra.sector !== "all" ? extra.sector : undefined, cmd: extra.cmd, story: extra.story })}`);
 /** A console command opened in Terminal mode, prefilled. */
 export const consoleHref = (cmd: string, sector?: string) => terminalHref("console", { cmd, sector });
 export const signalPath = (key: string) => `/signals/${enc(key)}`;
 export const brandPath = (domain: string) => `/brands/${enc(domain)}`;
+/** A brand's Data view (the dense record that used to live at /library/<domain>). */
+export const brandDataPath = (domain: string) => `/brands/${enc(domain)}?view=data`;
 export const patternPath = (key: string) => `/patterns/${enc(key)}`;
 export const storyHref = (id: string) => `/stories/${enc(id)}`;
 
@@ -157,14 +160,87 @@ export function legacyTerminalSearch(raw: Record<string, unknown>): TerminalSear
   if (typeof raw["page"] === "number") out.page = raw["page"]; else if (typeof raw["page"] === "string" && /^\d+$/.test(raw["page"])) out.page = Number(raw["page"]);
   return out;
 }
-/** Which mode a path belongs to. */
-export const modeOf = (pathname: string): Mode => (pathname === "/terminal" || pathname.startsWith("/terminal/") || pathname.startsWith("/library/") ? "terminal" : "read");
+// ONE ADDRESS PER THING (U1) — every object has one address, its Read address; `?view=data` on it is the object's Data view (the
+// terminal's dark shell). The switch flips the view and nothing else: path, sector lens and filters stay.
+export const VIEW_OBJECTS = ["story", "brand", "signal", "pattern", "study", "week"] as const;
+export type ViewObject = (typeof VIEW_OBJECTS)[number];
+export type ObjectRef = { type: ViewObject; id: string };
+const OBJECT_SEGMENT: Record<string, ViewObject> = { stories: "story", brands: "brand", signals: "signal", patterns: "pattern", data: "study", digest: "week" };
+const PATH_OF: Record<ViewObject, string> = { story: "stories", brand: "brands", signal: "signals", pattern: "patterns", study: "data", week: "digest" };
+/** Second segments that are pages of their own, not objects (a number redirect, indicators, a tool, the archive). */
+const NOT_OBJECT: Record<string, readonly string[]> = { stories: ["no"], signals: ["leading"], data: ["where-you-sit", "embed"], digest: ["archive"] };
+const decodeSeg = (x: string) => { try { return decodeURIComponent(x); } catch { return x; } };
+/** The object an address names, or null for section pages, files and feeds. */
+export function objectOf(pathname: string): ObjectRef | null {
+  const seg = pathname.split("/").filter(Boolean).map(decodeSeg);
+  if (seg.length !== 2) return null;
+  const [a, b] = seg as [string, string], type = OBJECT_SEGMENT[a];
+  if (!type || !b || NOT_OBJECT[a]?.includes(b) || /\.(png|svg|xml|json|csv)$/i.test(b)) return null;
+  if (type === "week" && !/^\d{4}-W\d{2}$/.test(b)) return null;
+  return { type, id: b };
+}
+export const objectPath = (o: ObjectRef) => `/${PATH_OF[o.type]}/${enc(o.id)}`;
+/** Search params only a Data view reads (the brand record's compare tool); they are dropped on the way back to Read. */
+export const DATA_ONLY_PARAMS = ["viewport", "page_type", "a", "b"] as const;
+/** Params that never carry across a view switch: the view itself and an open receipt drawer (Read only). */
+const SWITCH_DROPS = ["view", "receipt"];
+const keepParams = (search: Record<string, unknown>, drop: readonly string[]) => Object.fromEntries(Object.entries(search).filter(([k, v]) => !drop.includes(k) && (typeof v === "string" || typeof v === "number" || typeof v === "boolean")).map(([k, v]) => [k, v as string | number | boolean]));
+/** An object's Data view address, keeping the given params (sector and filters) and putting `view=data` last. */
+export const dataHref = (o: ObjectRef, search: Record<string, unknown> = {}) => `${objectPath(o)}${qs({ ...keepParams(search, SWITCH_DROPS), view: "data" })}`;
+/** An object's Read address, keeping the sector lens and filters, dropping Data-only params. */
+export const readHref = (o: ObjectRef, search: Record<string, unknown> = {}) => `${objectPath(o)}${qs(keepParams(search, [...SWITCH_DROPS, ...DATA_ONLY_PARAMS]))}`;
+/** Reader-facing names of the object types, one per type, used by both views (Part 4: one name per thing). */
+export const OBJECT_NAME: Record<ViewObject, string> = { story: "Story", brand: "Brand", signal: "Signal", pattern: "Pattern", study: "Study", week: "The Digest" };
+/** The section an object belongs to (F-keys and [ ] in its Data view work from there). */
+export const OBJECT_SECTION: Record<ViewObject, SectionId> = { story: "live", brand: "brands", signal: "signals", pattern: "patterns", study: "signals", week: "digest" };
+/** The two views' names, shown on the switch. */
+export const VIEW_NAME = { read: "Read", data: "Data" } as const;
+/** The switch's two words, the same on every page: on an object page "Terminal" is its Data view. */
+export const MODE_NAME: Record<Mode, string> = { read: "Read", terminal: "Terminal" };
+/** True when the address shows an object's Data view (or the indicators page's, which shares the model). */
+export const isDataView = (pathname: string, search: Record<string, unknown> = {}) => search["view"] === "data" && (!!objectOf(pathname) || pathname === "/signals/leading");
+/** Old terminal object views → the object's one address in its Data view, keeping every other parameter; null for section views. */
+export function terminalObjectHref(raw: Record<string, unknown>): string | null {
+  const s = (k: string) => (typeof raw[k] === "string" && raw[k] !== "" ? (raw[k] as string) : undefined);
+  const view = resolveView(s("panel") ?? "today"), story = s("story"), trait = s("trait");
+  const o: ObjectRef | null = view === "today" && story ? { type: "story", id: story } : view === "brief" && trait ? { type: "signal", id: trait } : view === "patterns" && trait ? { type: "pattern", id: trait } : null;
+  if (!o) return null;
+  // The terminal's own defaults (empty filter, default sort, first page) carry nothing.
+  const rest = Object.fromEntries(Object.entries(raw).filter(([k, v]) => !["panel", "story", "trait"].includes(k) && v !== "" && v !== undefined && !(k === "sort" && v === "domain") && !(k === "desc" && (v === false || v === "false")) && !(k === "page" && (v === 0 || v === "0")) && !(k === "sector" && v === "all")));
+  return dataHref(o, rest);
+}
+/** An in-app href in its one-address form: old `/library/<domain>` and terminal object links (stored in rows we never rewrite) become the
+ *  object's Data view, keeping every other parameter; anything else is returned unchanged. */
+export function canonicalHref(href: string): string {
+  if (!href.startsWith("/") || href.startsWith("//")) return href;
+  const u = new URL(href, "http://x"), seg = u.pathname.split("/").filter(Boolean).map(decodeSeg), search = Object.fromEntries(u.searchParams);
+  if (seg[0] === "library" && seg[1] && seg.length === 2) return `${dataHref({ type: "brand", id: seg[1] }, search)}${u.hash}`;
+  if (u.pathname === "/terminal") { const o = terminalObjectHref(search); if (o) return `${o}${u.hash}`; }
+  return href;
+}
+/** U1 · an old object address (`/library/<domain>`, a terminal or `/?panel=` object view) → its one address in the Data view, in one
+ *  permanent hop before any page renders (the request handler answers it); null for every other address. */
+export function movedObjectHref(pathname: string, search: Record<string, string>): string | null {
+  const seg = pathname.split("/").filter(Boolean);
+  if (seg[0] === "library" && seg[1] && seg.length === 2) { const q = new URLSearchParams(search).toString(); return canonicalHref(`${pathname}${q ? `?${q}` : ""}`); }
+  if (pathname === "/terminal" || (pathname === "/" && legacyTerminalSearch(search))) return terminalObjectHref(search);
+  return null;
+}
+/** Which mode an address belongs to: the terminal, the old library record, or an object's Data view. */
+export const modeOf = (pathname: string, search: Record<string, unknown> = {}): Mode => (pathname === "/terminal" || pathname.startsWith("/terminal/") || pathname.startsWith("/library/") || isDataView(pathname, search) ? "terminal" : "read");
 
 /** Backtick / mode switch: the same object or section in the other mode, keeping the sector lens. */
 export function toggleHref(pathname: string, search: Record<string, unknown> = {}): string {
-  const sector = lensOf(search), seg = pathname.split("/").filter(Boolean).map(x => { try { return decodeURIComponent(x); } catch { return x; } });
-  if (modeOf(pathname) === "terminal") {
+  const sector = lensOf(search), seg = pathname.split("/").filter(Boolean).map(decodeSeg);
+  // U1: on an object's address the other mode is the same address with `view=data` added or removed; nothing else changes.
+  const obj = objectOf(pathname);
+  if (obj) return search["view"] === "data" ? readHref(obj, search) : dataHref(obj, search);
+  // W2: leading indicators keep one address; the switch moves between its Read view and its Data view.
+  if (seg[0] === "signals" && seg[1] === "leading" && seg.length === 2) return search["view"] === "data" ? "/signals/leading" : "/signals/leading?view=data";
+  if (modeOf(pathname, search) === "terminal") {
     if (seg[0] === "library" && seg[1]) return `${brandPath(seg[1])}${qs({ sector })}`;
+    const objHref = terminalObjectHref(search);
+    if (objHref) { const u = new URL(objHref, "http://x"); return toggleHref(u.pathname, Object.fromEntries(u.searchParams)); }
     const view = resolveView(search["panel"]), trait = typeof search["trait"] === "string" && search["trait"] ? (search["trait"] as string) : undefined;
     if (view === "today" && typeof search["story"] === "string" && search["story"]) return storyHref(search["story"] as string);
     if (trait) return `${view === "patterns" ? patternPath(trait) : signalPath(trait)}${qs({ sector })}`;
@@ -176,16 +252,15 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     return `${sectionById(sectionOf(view)).read}${qs({ sector })}`;
   }
   const t = (v: ViewId, trait?: string) => terminalHref(v, { trait, sector });
-  // W2: leading indicators keep one address; the switch moves between its Read view and its Data view.
-  if (seg[0] === "signals" && seg[1] === "leading" && seg.length === 2) return search["view"] === "data" ? "/signals/leading" : "/signals/leading?view=data";
   switch (seg[0]) {
     case undefined: return t("today");
-    case "stories": return seg[1] ? terminalHref("today", { sector, story: seg[1] }) : t("today");
+    case "stories": return t("today");
     case "desk": return t("today");
-    case "signals": case "trait": return seg[1] ? t("brief", seg[1]) : t("overview");
+    case "signals": return t("overview");
+    case "trait": return seg[1] ? dataHref({ type: "signal", id: seg[1] }, { sector }) : t("overview");
     case "what-we-show": return t("overview");
-    case "brands": return seg[1] ? `/library/${enc(seg[1])}` : t(search["tab"] === "moves" ? "rebrands" : "library");
-    case "patterns": return seg[1] ? t("patterns", seg[1]) : t("patterns");
+    case "brands": return t(search["tab"] === "moves" ? "rebrands" : "library");
+    case "patterns": return t("patterns");
     case "digest": case "chart": case "editions": return t("digest");
     case "morning": return t("morning");
     case "sectors": return terminalHref("sectors", { sector: seg[1] ?? sector });

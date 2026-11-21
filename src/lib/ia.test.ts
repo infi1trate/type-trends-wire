@@ -74,10 +74,10 @@ describe("old terminal URLs → /terminal", () => {
 describe("mode toggle maps object ↔ object", () => {
   it("Read → Terminal", () => {
     expect(toggleHref("/")).toBe("/terminal?panel=today");
-    expect(toggleHref("/signals/css%3Asubgrid")).toBe("/terminal?panel=brief&trait=css%3Asubgrid");
-    expect(toggleHref("/brands/linear.app", { sector: "dev-tools" })).toBe("/library/linear.app");
+    expect(toggleHref("/signals/css%3Asubgrid")).toBe("/signals/css%3Asubgrid?view=data");
+    expect(toggleHref("/brands/linear.app", { sector: "dev-tools" })).toBe("/brands/linear.app?sector=dev-tools&view=data");
     expect(toggleHref("/brands", { tab: "moves" })).toBe("/terminal?panel=rebrands");
-    expect(toggleHref("/patterns/css%3Asubgrid")).toBe("/terminal?panel=patterns&trait=css%3Asubgrid");
+    expect(toggleHref("/patterns/css%3Asubgrid")).toBe("/patterns/css%3Asubgrid?view=data");
     expect(toggleHref("/signals", { sector: "fintech" })).toBe("/terminal?panel=overview&sector=fintech");
     expect(toggleHref("/tools")).toBe("/terminal?panel=watch");
   });

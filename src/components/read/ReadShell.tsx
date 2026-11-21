@@ -6,7 +6,7 @@
 import { PrintFrame, PrintMark } from "./PrintFrame";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { MORE_LABEL, MORE_MENU, READ_BAR, readBarOf, readSectionOf, type SectionId } from "@/lib/ia";
+import { MORE_LABEL, MORE_MENU, READ_BAR, isDataView, readBarOf, readSectionOf, type SectionId } from "@/lib/ia";
 import { LENS_SECTORS } from "@/lib/sector-lens";
 import { lensLine, type BarItem } from "@/lib/shell";
 import { sectorName } from "@/lib/labels";
@@ -147,7 +147,7 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
     <ul className="grid grid-cols-2 gap-x-6 sm:grid-cols-3" aria-labelledby="shell-sheet-more">{MORE_MENU.map(m => <li key={m.id}><MoreLink m={m} current={moreCurrent(m.id, loc.pathname)} onGo={() => setOpen(false)} onGlossary={openGlossary} /></li>)}</ul>
   </nav>;
   // A page with its own Data view at the same address (?view=data) marks Terminal as current while it is shown.
-  const dataView = loc.pathname === "/signals/leading" && loc.search["view"] === "data";
+  const dataView = (loc.pathname === "/signals/leading" && loc.search["view"] === "data") || isDataView(loc.pathname, loc.search);
   const modeSwitch = (cls: string) => <span role="group" aria-label="Mode" className={`shell-switch ${cls}`}>{dataView
     ? <><a href={mode.href} onClick={go} title="Switch to the Read view (`)">Read</a><a href={`${loc.pathname}?view=data`} aria-current="page" data-tour="r-terminal">Terminal</a></>
     : <><a href={loc.pathname} aria-current="page">Read</a><a href={mode.href} onClick={go} data-tour="r-terminal" title="Switch to Terminal mode (`)">Terminal</a></>}</span>;

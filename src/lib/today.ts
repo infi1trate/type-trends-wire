@@ -2,6 +2,7 @@
  * TODAY: 3–5 plain-English lines about what moved, built deterministically from public data (no AI per view). Pure.
  * Every line links to the panel, trait or site that proves it.
  */
+import { canonicalHref } from "./ia";
 import { gapOk, NO_COMPARISON_TEXT } from "./run-gap";
 import { alertDisplayTitle, basis, canonical, label, stageName, type Basis, type Dimension, type StageName } from "./labels";
 
@@ -47,11 +48,11 @@ export function buildToday(i: TodayInput): Today {
   const paired = !!i.runs.latest && !!i.runs.previous && gapOk(i.runs.latest.computed_at, i.runs.previous.computed_at);
   if (paired && i.runs.latest) for (const s of stageChanges(i.stages.latest, i.stages.previous).filter(s => isHead(s.trait)).slice(0, 2)) {
     const l = label(s.trait);
-    add(0, { id: `stage:${s.trait}`, text: `${l.name} moved from ${s.from} to ${s.to} across all sectors${s.share != null ? ` (${pct(s.share)} of sites)` : ""}`, href: `/terminal?panel=brief&trait=${encodeURIComponent(s.trait)}`, at: i.runs.latest.computed_at, dimension: l.dimension, basis: basis(s.trait), target: "trait" });
+    add(0, { id: `stage:${s.trait}`, text: `${l.name} moved from ${s.from} to ${s.to} across all sectors${s.share != null ? ` (${pct(s.share)} of sites)` : ""}`, href: canonicalHref(`/terminal?panel=brief&trait=${encodeURIComponent(s.trait)}`), at: i.runs.latest.computed_at, dimension: l.dimension, basis: basis(s.trait), target: "trait" });
   }
   const alerts = i.alerts.filter(a => !head || !a.ref || isHead(a.ref)), a = alerts[0];
   if (a) add(1, { id: `alert:${a.url}`, text: `New alert: ${alertDisplayTitle(a.title, a.ref)}${alerts.length > 1 ? ` (1 of ${alerts.length} from the ${day(a.published_at)} forecast)` : ""}`, href: a.url.replace(SITE, "") || "/terminal?panel=wire", at: a.published_at, ...(a.ref ? { target: "trait" as const, basis: basis(a.ref) } : {}) });
-  if (i.event) add(2, { id: `site:${i.event.domain}`, text: `${i.event.domain} changed: ${i.event.summary}${i.event.sector ? ` (${i.event.sector.replace(/-/g, " ")})` : ""}`, href: `/library/${encodeURIComponent(i.event.domain)}`, at: i.event.detected_at, target: "site" });
+  if (i.event) add(2, { id: `site:${i.event.domain}`, text: `${i.event.domain} changed: ${i.event.summary}${i.event.sector ? ` (${i.event.sector.replace(/-/g, " ")})` : ""}`, href: `/brands/${encodeURIComponent(i.event.domain)}?view=data`, at: i.event.detected_at, target: "site" });
   if (!head && i.type && i.type.delta7 > 0) add(3, { id: `type:${i.type.family}`, text: `${i.type.family} climbed ${i.type.delta7} places on Google Fonts this week, the biggest climb in the ${i.type.snapshot} snapshot`, href: "/terminal?panel=type", at: `${i.type.snapshot}T23:59:59Z`, dimension: "FONT" });
   if (i.wire.latest) add(4, { id: "wire", text: i.wire.count24h > 0 ? `${i.wire.count24h} new design ${i.wire.count24h === 1 ? "story" : "stories"} in the last 24 hours; the latest is “${i.wire.latest.title}” from ${i.wire.latest.source}` : `Latest design story: “${i.wire.latest.title}” from ${i.wire.latest.source}`, href: "/terminal?panel=wire", at: i.wire.latest.published_at });
   if (i.crawl) {

@@ -473,3 +473,11 @@ import { getIndicatorsHead, getIndicators, getIndicatorPoints } from "./indicato
 export const indicatorsHeadQuery = () => queryOptions({ queryKey: ["indicators-head"], staleTime: 10 * 60_000, queryFn: () => getIndicatorsHead() });
 export const indicatorsQuery = () => queryOptions({ queryKey: ["indicators"], staleTime: 10 * 60_000, queryFn: () => getIndicators() });
 export const indicatorPointsQuery = (label: string) => queryOptions({ queryKey: ["indicator-points", label], staleTime: 10 * 60_000, queryFn: () => getIndicatorPoints({ data: { label } }) });
+
+// U1 + U2 · Data views, the receipt drawer and "No. N →" on data rows (one batched read shared by every table).
+import { getStoryRows, getStoryData, getReceipt, getStudyData, getWeekData } from "./views.functions";
+export const storyRowsQuery = () => queryOptions({ queryKey: ["story-rows"], staleTime: 5 * 60_000, queryFn: () => getStoryRows() });
+export const storyDataQuery = (id: string) => queryOptions({ queryKey: ["story-data", id], staleTime: 60_000, queryFn: () => getStoryData({ data: { id } }) });
+export const receiptQuery = (r: string) => queryOptions({ queryKey: ["receipt", r], staleTime: 5 * 60_000, queryFn: () => getReceipt({ data: { r } }) });
+export const studyDataQuery = (slug: string) => queryOptions({ queryKey: ["study-data", slug], staleTime: 10 * 60_000, queryFn: () => getStudyData({ data: { slug } }) });
+export const weekDataQuery = (week: string) => queryOptions({ queryKey: ["week-data", week], staleTime: 10 * 60_000, queryFn: () => getWeekData({ data: { week } }) });

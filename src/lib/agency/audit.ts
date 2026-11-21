@@ -1,4 +1,5 @@
 // Competitive audit: one pure model over stored rows for 2–6 domains (no AI per view). Names from labels.ts; every section only with real data.
+import { canonicalHref } from "../ia";
 import { SECTORS, fingerprint, obj, radiusBucket, str, num } from "../library";
 import { basis, explainerPath, label, stageName, scopeText, type Basis, type Dimension, type StageName } from "../labels";
 import { siteTraits, type SiteRow } from "../forecast-signals";
@@ -101,14 +102,14 @@ export function auditModel(r: AuditRows): Audit {
   const fc = new Map(r.forecasts.map(f => [`${f.scope}|${f.dimension}:${f.value}`, f]));
   const ref = (trait: string, scope: string): TraitRef => {
     const f = fc.get(`${scope}|${trait}`), l = label(trait);
-    return { trait, name: l.name, dimension: l.dimension, basis: basis(trait), stage: stageName(f?.stage), share: f?.current_share ?? null, explainer: explainerPath(trait), receipt: `/terminal?panel=brief&trait=${encodeURIComponent(trait)}&sector=${scope}` };
+    return { trait, name: l.name, dimension: l.dimension, basis: basis(trait), stage: stageName(f?.stage), share: f?.current_share ?? null, explainer: explainerPath(trait), receipt: canonicalHref(`/terminal?panel=brief&trait=${encodeURIComponent(trait)}&sector=${scope}`) };
   };
 
   const eventsBy = (d: string) => r.events.filter(e => e.domain === d).sort((a, b) => b.detected_at.localeCompare(a.detected_at));
   const glance = sites.map(s => {
     const e = eventsBy(s.domain)[0], rb = r.rebrands.filter(x => x.domain === s.domain).sort((a, b) => b.confirmed_at.localeCompare(a.confirmed_at))[0];
     const latest = e && (!rb || e.detected_at >= rb.confirmed_at) ? { text: eventSentence(e), at: e.detected_at } : rb ? { text: rebrandSentence(rb), at: rb.confirmed_at } : null;
-    return { domain: s.domain, name: s.site?.name ?? null, sector: s.site?.sector ?? null, status: s.status, captured: s.captured_at, latest, thumb: s.status === "tracked" ? pickThumb(r.thumbs, s.domain) : null, terminal: s.status === "tracked" ? `/library/${s.domain}` : `/?cmd=${encodeURIComponent(`critique https://${s.domain}`)}` };
+    return { domain: s.domain, name: s.site?.name ?? null, sector: s.site?.sector ?? null, status: s.status, captured: s.captured_at, latest, thumb: s.status === "tracked" ? pickThumb(r.thumbs, s.domain) : null, terminal: s.status === "tracked" ? `/brands/${s.domain}?view=data` : `/?cmd=${encodeURIComponent(`critique https://${s.domain}`)}` };
   });
 
   // b. Type
@@ -161,7 +162,7 @@ export function auditModel(r: AuditRows): Audit {
   // g. Recent moves (last 90 days)
   const since = new Date(Date.parse(r.now) - MOVES_DAYS * 864e5).toISOString();
   const moveSites = sites.map(s => ({ domain: s.domain, items: [
-    ...eventsBy(s.domain).filter(e => e.detected_at >= since).map(e => ({ at: e.detected_at, text: eventSentence(e), href: `/library/${s.domain}` })),
+    ...eventsBy(s.domain).filter(e => e.detected_at >= since).map(e => ({ at: e.detected_at, text: eventSentence(e), href: `/brands/${s.domain}?view=data` })),
     ...r.rebrands.filter(x => x.domain === s.domain && x.confirmed_at >= since).map(x => ({ at: x.confirmed_at, text: `${rebrandSentence(x)}. ${x.read}`, href: "/terminal?panel=rebrands" })),
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 12) })).filter(m => m.items.length);
   const moves = moveSites.length ? { sites: moveSites } : null;

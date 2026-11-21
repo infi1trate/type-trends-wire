@@ -1,3 +1,4 @@
+import { dataHref } from "@/lib/ia";
 import { line as voiced } from "@/lib/voice";
 // STORY object page (/stories/<id>), Quiet density: a cover (an ink slab the full width, the headline in Display crossing ONE
 // tilted object, number and date pinned left, sector and type pinned right, the deck on its own ink backing), then the off-centre
@@ -12,6 +13,7 @@ import { storyTime } from "@/lib/stories";
 import { DigestShell, SiteCard, pr } from "@/components/digest/Editorial";
 import { Ledger, StoryNo } from "@/components/brand/Ledger";
 import { FiltersScope } from "@/components/brand/Illustration";
+import { ReceiptContext } from "@/components/receipts/open";
 import { CaptureFrame } from "@/components/data/Figures";
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { ReadFooter } from "./Bits";
@@ -28,13 +30,15 @@ import { BrandMark } from "./BrandMark";
 
 const kindOf = (s: StoryPageData) => compareKind({ crops: !!s.crops?.compare, crop: !!s.crops?.after, frames: !!s.frames, text: !!s.beforeAfter });
 
-export type StoryPageData = StoryPageModel & { thumb: Thumb | null; icon?: Pic | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null };
+export type StoryPageData = StoryPageModel & { thumb: Thumb | null; icon?: Pic | null; crops?: StoryEvidence; frames?: { before: Frame; after: Frame } | null; series: { key: string; name: string; points: number[] } | null; eventIds?: number[] };
 const day = (iso: string) => iso.slice(0, 10);
 
 /** Longer headlines drop one step so a palette list can't fill the screen. */
 const LONG_HEADLINE = 48;
 
 /** The cover's one object, in the same order as the evidence: crops, the redrawn layout, the typographic pair, else the trail. */
+/** U1 · a story's written body is set exactly as a study's opening paragraph and the Digest's argument (ed-body, 68ch). */
+const BODY_MEASURE = { maxWidth: "68ch" } as const;
 export function coverObject(s: StoryPageData): CoverObject {
   const note = s.facts.find(f => /\d/.test(f.text) && f.text.length <= 48)?.text ?? `Captured ${day(s.at)}`;
   const kind = kindOf(s);
@@ -98,7 +102,7 @@ function Picture({ s }: { s: StoryPageData }) {
 export function StoryFrame({ id, headline, children }: { id: string; headline: string; children: ReactNode }) {
   return <DigestShell label={headline} section="live">
     {children}
-    <ReadFooter terminal={`/terminal?panel=today&story=${encodeURIComponent(id)}`} />
+    <ReadFooter terminal={dataHref({ type: "story", id })} />
   </DigestShell>;
 }
 export function StoryView({ s, related, bare = false }: { s: StoryPageData; related?: ReactNode; bare?: boolean }) {
@@ -106,7 +110,7 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
   const seed = s.number ?? s.id, kind = kindOf(s);
   // The cover carries kicker, headline and deck; its object is the signal's trail only when the story has no picture of a page.
   const cover = kind === "none" && !s.crops?.grid?.length && !s.thumb ? coverObject(s) : null;
-  const body = <FiltersScope>
+  const body = <ReceiptContext.Provider value={{ story: { id: s.id, census: !!s.census, eventIds: s.eventIds ?? [] } }}><FiltersScope>
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={cover} italicDeck
@@ -117,7 +121,7 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
         <Picture s={s} />
       </>,
       evidence: <>
-        {s.body.length > 0 && <div className="ed-body my-10 space-y-5 md:my-14" data-story-body="">{s.body.map((p, i) => <p key={i} className="max-w-[62ch] text-[1.125rem] leading-relaxed">{p}</p>)}</div>}
+        {s.body.length > 0 && <div className="my-10 space-y-5 md:my-14" data-story-body="">{s.body.map((p, i) => <p key={i} className="ed-body" style={BODY_MEASURE}>{p}</p>)}</div>}
         <p className="ed-small max-w-[62ch]" data-how-we-know=""><span className="ed-kicker mr-2">How we know</span>{s.howWeKnow}</p>
         {s.census && <BlockPart title="The lines" kicker={s.census.sectors ? `By sector: ${s.census.sectors}.` : undefined}>
           <ul className="ledger" data-story-lines="">{s.census.lines.map((l, i) => <li key={i} className="ledger-row flex flex-col gap-1 px-2 py-3 md:flex-row md:items-baseline md:gap-4">
@@ -127,14 +131,14 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
         </BlockPart>}
         {(!s.census || s.facts.length > 0) && <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : "The numbers"} kicker="Each line links to its receipt.">
           {s.facts.length ? <ul className="ledger" data-story-changes="">{s.facts.map((f, i) => <li key={i} className="ledger-row px-2 py-3">
-            <span className="ed-small">{f.href ? <Receipt href={f.href} {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>
+            <span className="ed-small">{f.href ? <Receipt href={f.href} drawer {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>
           </li>)}</ul> : <p className="ed-small">{voiced("read.storyView.1")}</p>}
         </BlockPart>}
       </>,
       "so-what": null,
       related: related ?? <StoryRelated s={s} />,
     }} />
-    </FiltersScope>;
+    </FiltersScope></ReceiptContext.Provider>;
   return bare ? body : <StoryFrame id={s.id} headline={s.headline}>{body}</StoryFrame>;
 }
 
@@ -151,7 +155,7 @@ export function RetiredStoryView({ s, tape, note, bare = false }: { s: Pick<Stor
       <p className="ed-small mt-6 max-w-[62ch] border-l-2 border-ed-ink pl-3" role="note" data-retired-note=""><span className="ed-kicker mr-2">Retired</span>{note ? note.replace(/^Retired:\s*/, "").replace(/^./, c => c.toUpperCase()) : "Taken down by the editor."}</p>
       {s.brands.length > 0 && <p className="ed-data mt-10 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap inline-flex min-h-11 items-center">{b.name} →</Link>)}</p>}
       {tape.length > 0 && <BlockPart title="The changes it was built from" kicker={tape.every(t => t.confirmed !== false) ? "They stay on the tape." : "A change marked Seen once, Alternating or Not compared is not on the tape; the rest stay there."}>
-        <ul className="ledger" data-retired-tape="">{tape.map(t => <li key={t.id} className="ledger-row px-2 py-3"><span className="ed-small break-words"><Receipt href={t.href} {...pr(t.href)}>{t.text}</Receipt></span></li>)}</ul>
+        <ul className="ledger" data-retired-tape="">{tape.map(t => <li key={t.id} className="ledger-row px-2 py-3"><span className="ed-small break-words"><Receipt href={t.href} receipt={`change:${t.id}`} {...pr(t.href)}>{t.text}</Receipt></span></li>)}</ul>
       </BlockPart>}
     </article>;
   return bare ? body : <StoryFrame id={s.id} headline={s.headline}>{body}</StoryFrame>;

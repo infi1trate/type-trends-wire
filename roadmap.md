@@ -24,3 +24,11 @@
 - [x] 4 Terminal weekly brief: withdrawn line; brief generator input = published/integrity-passed only
 - [x] 5 RSS, share image, meta, Editions row, Read bar, next-issue line, no-story week = no issue
 - [x] Tests, responsive 360–1920, heights + TTFB before/after, report
+
+# Phase U1 + U2 · One address per thing, two views; receipts in place
+- [ ] 0 Story body set like a study opening (17/18 px, 68ch)
+- [ ] 1 `?view=data` on story, brand, signal, pattern, study, week; dark shell; redirects from old addresses; toggleHref/modeOf; noindex + canonical; name line + Read view link; keys
+- [ ] 2 Receipt drawer on Read pages (`?receipt=type:id`), pure receipt models, focus trap, Back/Esc, reduced motion
+- [ ] 3 `storyForRow` and "No. N →" on data rows (one batched read per table)
+- [ ] 4 One name per thing (ia.ts/labels.ts), one glossary, names test
+- [ ] Tests, responsive 360–1920, TTFB before/after, report

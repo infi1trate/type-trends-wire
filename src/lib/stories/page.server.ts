@@ -23,9 +23,9 @@ export async function loadStory(id: string) {
 const storyOnce = memoBy(30_000, (id: string) => storyById(id), { key: id => id, max: 200 });
 /** E3b · the story page's head: headline, deck, kicker and whether it ran (title, description, noindex). The only read a story page
  *  waits for: the story's own row with its edits and checked text, each found by its id; the body streams after. */
-export async function loadStoryHead(id: string): Promise<{ headline: string; deck: string | null; kicker: string; ran: boolean } | null> {
+export async function loadStoryHead(id: string): Promise<{ headline: string; deck: string | null; kicker: string; ran: boolean; number: number | null } | null> {
   const s = await storyOnce(id);
-  return s ? { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published" } : null;
+  return s ? { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published", number: s.state === "published" ? s.number ?? null : null } : null;
 }
 export async function loadStoryLead(id: string) {
   const s = await storyOnce(id); if (!s) return null;
@@ -44,7 +44,7 @@ export async function loadStoryLead(id: string) {
   const [{ picsFor }, { revealOf }] = await Promise.all([import("../pictures.server"), import("../pictures")]);
   const pics = d ? await picsFor(d) : null, reveal = d ? revealOf(d, pics?.hero) : null;
   const drawn = crops.compare || crops.after ? null : frames ? { before: { ...frames.before, reveal }, after: { ...frames.after, reveal } } : null;
-  return { ...page, retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
+  return { ...page, eventIds: sourceEventIds(s.source_ids), retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
 }
 /** E2d · what a retired story's page shows: the editor's note and the tape lines it was built from (each linking to the library record). */
 export type Retired = { note: string | null; tape: { id: number; text: string; href: string; confirmed: boolean }[] };
@@ -61,9 +61,9 @@ async function retiredLead(s: StoryRecord) {
     supabaseAnon().from("story_numbers").select("number").eq("story_id", s.id).maybeSingle().then(r => (r.data?.number as number | undefined) ?? null, () => null),
   ]);
   const retired: Retired = { note: s.killReason, tape };
-  return { ...page, number, body: [], facts: [], beforeAfter: null, retired, icon: null, thumb: null, frames: null, series: null };
+  return { ...page, eventIds: [] as number[], number, body: [], facts: [], beforeAfter: null, retired, icon: null, thumb: null, frames: null, series: null };
 }
-async function tapeOf(ids: number[]) {
+export async function tapeOf(ids: number[]) {
   const [{ supabaseAnon }, { tapeLine }, { carouselIds }] = await Promise.all([import("../mcp/supabase"), import("../tape"), import("../carousel.server")]);
   const db = supabaseAnon();
   const { data, error } = await db.from("library_events").select("id,domain,type,before,after,detected_at,page_type,summary,snapshot_id,prev_snapshot_id").in("id", ids);
@@ -73,7 +73,7 @@ async function tapeOf(ids: number[]) {
   // E2e: a change that failed the integrity check is named as such (it is not on the tape).
   const { VERDICT_LABEL } = await import("../integrity");
   const mark = (id: number) => { const c = checks.get(id); if (!c) return "Not checked"; if (c.verdict === "pass") return null; return c.verdict === "headline_element" ? "Not compared: the headline was not read from the page's h1" : VERDICT_LABEL[c.verdict as "seen_once" | "alternating"]; };
-  return rows.map(e => { const m = mark(e.id); return { id: e.id, text: `${tapeLine(e, { carousel: carousel.has(e.id) })}${m ? ` · ${m}` : ""}`, href: `/library/${encodeURIComponent(e.domain)}`, confirmed: !m }; });
+  return rows.map(e => { const m = mark(e.id); return { id: e.id, text: `${tapeLine(e, { carousel: carousel.has(e.id) })}${m ? ` · ${m}` : ""}`, href: `/brands/${encodeURIComponent(e.domain)}?view=data`, confirmed: !m }; });
 }
 /** P1, deferred: earlier stories on the same signal or brand, the patterns among its signals, and the way on (Next, the study). */
 export async function loadStoryRelated(id: string) {

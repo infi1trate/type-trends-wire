@@ -71,7 +71,7 @@ export function traitModel(t: TraitRows): TraitPage | null {
   if (num(all.next_wave_score) != null) receipts.push({ term: "Next-wave score", text: `${signed(all.next_wave_score!, 2)}. ${g("next-wave-score")?.measures ?? ""}`.trim(), anchor: "m-next-wave-components" });
   const lib = new Map(t.sites.map(s => [s.domain, s]));
   const examples = [...(all.lead_sites ?? [])].filter(s => lib.has(s.domain)).sort((a, b) => (b.lead ?? 0) - (a.lead ?? 0) || a.domain.localeCompare(b.domain)).slice(0, 8)
-    .map(s => ({ domain: s.domain, name: lib.get(s.domain)!.name, sector: lib.get(s.domain)!.sector, adopted: quarter(s.adopted), thumb: pickThumb(t.thumbs, s.domain), terminal: `/library/${s.domain}`, live: `https://${s.domain}` }));
+    .map(s => ({ domain: s.domain, name: lib.get(s.domain)!.name, sector: lib.get(s.domain)!.sector, adopted: quarter(s.adopted), thumb: pickThumb(t.thumbs, s.domain), terminal: `/brands/${s.domain}?view=data`, live: `https://${s.domain}` }));
   const head = t.headline ? new Set(t.headline) : null;
   const related = t.peers.filter(p => `${p.dimension}:${p.value}` !== key && label(`${p.dimension}:${p.value}`).dimension === l.dimension && (!head || head.has(`${p.dimension}:${p.value}`)))
     .sort((a, b) => (b.current_share ?? -1) - (a.current_share ?? -1) || a.value.localeCompare(b.value)).slice(0, 5)

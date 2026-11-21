@@ -1,0 +1,158 @@
+// U1 · the Data view of each object type (`?view=data` on its one address), inside DataShell. Dark and dense, built from the terminal's
+// own parts; tables load after the frame (Later skeletons). Every table, score and field the terminal showed for the object is here.
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
+import { LibraryBand, ChangeValues } from "@/components/terminal/LibraryShared";
+import { LibrarySite } from "@/components/terminal/LibrarySite";
+import { TraitDetail, BriefView } from "@/components/terminal/Forecast";
+import { BriefWithdrawn } from "@/components/terminal/BriefWithdrawn";
+import { StageBadge } from "@/components/terminal/Info";
+import { BasisChip } from "@/components/terminal/SignalBits";
+import { AppLink } from "@/components/terminal/AppLink";
+import { Later, ROW } from "@/components/read/Later";
+import { DataTable } from "./DataTable";
+import { DataNote } from "./DataShell";
+import { StoryLink } from "./StoryLink";
+import { factsSheet } from "@/lib/data-stories/writer";
+import { figureTables } from "@/lib/views/figure-tables";
+import { briefMovers } from "@/lib/views/week";
+import { brandDataPath, dataHref } from "@/lib/ia";
+import { label } from "@/lib/labels";
+import { show } from "@/lib/library";
+import type { Edition } from "@/lib/digest/edition";
+
+const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "–");
+const rowsShape = (n = 6) => [{ kind: "rows" as const, n, height: ROW.compact }];
+const Band = ({ title, children }: { title: string; children: ReactNode }) => <LibraryBand title={title}>{children}</LibraryBand>;
+const P = ({ children }: { children: ReactNode }) => <p className="p-3 text-compare-muted">{children}</p>;
+const Lnk = ({ href, children }: { href: string; children: ReactNode }) => <AppLink href={href} className="text-ink underline underline-offset-2">{children}</AppLink>;
+const split = (k: string) => { const i = k.indexOf(":"); return { dimension: k.slice(0, i), value: k.slice(i + 1) }; };
+
+// STORY --------------------------------------------------------------------------------------------------------------------------
+export function StoryData({ id }: { id: string }) {
+  return <Later id="story-data-later" shapes={rowsShape(8)}><StoryDataBody id={id} /></Later>;
+}
+function StoryDataBody({ id }: { id: string }) {
+  const { data: s } = useSuspenseQuery(storyDataQuery(id));
+  if (!s) return <DataNote>No stored record for this story.</DataNote>;
+  return <>
+    <Band title="SCORE AND RANK">
+      <dl className="grid grid-cols-2 sm:grid-cols-4">{([["STATE", s.state.toUpperCase()], ["SCORE", String(s.score)], ["RANK SCORE", s.rankScore == null ? "–" : String(Math.round(s.rankScore))], ["THAT DAY", s.dayRank ? `${s.dayRank.pos} of ${s.dayRank.of} · ${s.dayRank.day}` : "–"],
+        ["TYPE", s.type.toUpperCase()], ["BASIS", (s.basis ?? "–").toUpperCase()], ["HAPPENED", day(s.happenedAt)], ["BUILT", day(s.createdAt)]] as const).map(([k, v]) => <div key={k} className="min-w-0 border-b border-r border-rule p-3"><dt className="label text-compare-muted">{k}</dt><dd className="mt-1 break-words">{v}</dd></div>)}</dl>
+      <DataTable caption="Score parts" head={["Part", "Value", "Why"]} rows={s.components.map(c => [c.label, c.value == null ? "–" : String(c.value), c.why || "–"])} />
+      <div className="space-y-1 p-3"><p><span className="label text-compare-muted">WHY IT {s.state === "published" ? "RAN" : "WAS HELD"} · </span>{s.state === "published" ? s.whyRan : s.heldReason ?? s.reason}</p>
+        {s.killReason && <p><span className="label text-compare-muted">RETIRED · </span>{s.killReason}</p>}
+        {s.correctedAt && <p className="label text-compare-muted">CORRECTED {day(s.correctedAt)}</p>}</div>
+    </Band>
+    <Band title={`THE CHANGES BEHIND IT · ${s.changes.length}`}>
+      {s.changes.length ? <DataTable caption="Changes with raw fields" head={["Change", "Seen", "Brand", "Page", "Type", "Before", "After", "Confirmed", "Record"]}
+        rows={s.changes.map(c => [String(c.id), day(c.detected_at), c.domain, `${c.page_type}/${c.viewport}`, c.type, <ChangeValues key="b" value={c.before} />, <ChangeValues key="a" value={c.after} />, c.confirmed ? "YES" : c.line.split(" · ").slice(1).join(" · ") || "NO",
+          <Lnk key="r" href={`${brandDataPath(c.domain)}&page_type=${c.page_type}&viewport=${c.viewport}${c.snapshot_id ? `&a=${c.snapshot_id}` : ""}${c.prev_snapshot_id ? `&b=${c.prev_snapshot_id}` : ""}`}>COMPARE →</Lnk>])} />
+        : <P>This story is not built from brand changes{s.sourceIds.length ? `; its sources: ${s.sourceIds.join(", ")}` : ""}.</P>}
+    </Band>
+    <Band title="FACTS SHEET">
+      <DataTable caption="The facts the story states" head={["Fact", "Kind", "Basis", "Receipt"]} rows={s.facts.map(f => [f.text, f.kind ?? "–", (f.basis ?? "–").toUpperCase(), f.href ? <Lnk key="h" href={f.href}>OPEN →</Lnk> : "–"])} />
+      <p className="label p-3 text-compare-muted">BRANDS {s.domains.join(", ") || "–"} · SIGNALS {s.signals.map(k => label(k).name).join(", ") || "–"} · SECTOR {s.sector ?? "–"}</p>
+    </Band>
+    <Band title={`TEXT VERSIONS · ${s.texts.length}`}>
+      <DataTable caption="Written versions (each passed the writer's check when stored) and the template" head={["Version", "Stored", "Model", "Headline", "Deck", "Shown"]}
+        rows={[...s.texts.map(t => [`v${t.version}`, day(t.created_at), t.model, t.headline, t.deck, t.shown ? "YES" : "–"]), ["Template", "–", "code", s.template.headline, s.template.deck ?? "–", s.texts.some(t => t.shown) ? "–" : "YES"]]} />
+    </Band>
+    <Band title={`EDITOR'S LOG · ${s.edits.length}`}>
+      {s.edits.length ? <DataTable caption="Edits applied to this story" head={["When", "Action", "Note"]} rows={s.edits.map(e => [day(e.at), e.action.toUpperCase(), e.note ?? "–"])} /> : <P>No edits: the story runs as built.</P>}
+    </Band>
+  </>;
+}
+
+// BRAND --------------------------------------------------------------------------------------------------------------------------
+export function BrandData({ domain }: { domain: string }) {
+  return <Later id="brand-data-later" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
+}
+function BrandDataBody({ domain }: { domain: string }) {
+  const { data } = useSuspenseQuery(librarySiteQuery(domain));
+  return data ? <LibrarySite domain={domain} embedded /> : <DataNote>Not in the library: only tracked brands have a record.</DataNote>;
+}
+
+// SIGNAL -------------------------------------------------------------------------------------------------------------------------
+export function SignalData({ k }: { k: string }) {
+  const { dimension, value } = split(k);
+  return <Later id="signal-data-later" shapes={rowsShape(8)}><div className="p-3"><div className="mb-3 flex justify-end"><StoryLink row={{ signal: k }} /></div><Detail dimension={dimension} value={value} /></div></Later>;
+}
+/** The drawer content once its rows are in (suspends first, so the server and the browser draw the same thing). */
+function Detail({ dimension, value }: { dimension: string; value: string }) {
+  useSuspenseQuery(forecastDetailQuery(dimension, value)); useSuspenseQuery(signalsQuery());
+  return <TraitDetail dimension={dimension} value={value} explainer={false} />;
+}
+
+// PATTERN ------------------------------------------------------------------------------------------------------------------------
+export function PatternData({ k, sector }: { k: string; sector: string }) {
+  return <Later id="pattern-data-later" shapes={rowsShape(6)}><PatternDataBody k={k} sector={sector} /></Later>;
+}
+function PatternDataBody({ k, sector }: { k: string; sector: string }) {
+  const { data } = useSuspenseQuery(patternsQuery(sector)), { data: sig } = useSuspenseQuery(signalsQuery());
+  const p = data.patterns.find(x => x.key === k), tracked = sig?.signals.some(x => x.key === k);
+  return <>
+    <Band title="PATTERN">
+      {p ? <><DataTable caption="The terminal's pattern row" head={["Pattern", "Dimension", "Basis", "Stage", "Momentum", "Confidence", "Brands", "Story"]}
+        rows={[[p.name, p.dimension, <BasisChip key="b" basis={p.basis} />, <StageBadge key="s" stage={p.stage} />, String(p.momentum_index ?? "–"), p.confidence.toUpperCase(), String(p.examples), <StoryLink key="n" row={{ signal: k }} />]]} />
+        <DataTable caption="Example brands" head={["Brand", "Record"]} rows={p.sample.map(d => [d, <Lnk key="r" href={brandDataPath(d)}>DATA →</Lnk>])} /></>
+        : <DataNote>Not in the terminal's pattern list {sector !== "all" ? "for this sector" : "yet"}: it needs enough example brands. What we track for it is below.</DataNote>}
+    </Band>
+    {tracked ? <Band title="SIGNAL DETAIL"><div className="p-3"><Detail {...split(k)} /></div></Band>
+      : <DataNote>No forecast rows for this pattern: it is tracked as a pattern only (its examples and share sit on the Read view).</DataNote>}
+  </>;
+}
+
+// STUDY --------------------------------------------------------------------------------------------------------------------------
+export function StudyData({ slug }: { slug: string }) {
+  return <Later id="study-data-later" shapes={rowsShape(8)}><StudyDataBody slug={slug} /></Later>;
+}
+function StudyDataBody({ slug }: { slug: string }) {
+  const { data: d } = useSuspenseQuery(dataStoryQuery(slug)), { data: x } = useQuery(studyDataQuery(slug));
+  if (d.kind !== "live") return <DataNote>{d.kind === "draft" ? `This study is not live: ${d.reason ?? "its check does not pass yet"}.` : "No such study."}</DataNote>;
+  const s = d.story, sheet = factsSheet(s);
+  return <>
+    <Band title="FACTS SHEET">
+      <DataTable caption="The sheet the writer sees, scene by scene" head={["Scene", "Fact"]} rows={sheet.scenes.flatMap(sc => sc.facts.map(f => [sc.id, f]))} csv={{ name: `${slug}-facts`, rows: sheet.scenes.flatMap(sc => sc.facts.map(f => [sc.id, f])) }} />
+      <DataTable caption="Numbers the text may use" head={["Scene", "Number", "Value", "Receipt"]} rows={sheet.scenes.flatMap(sc => sc.numbers.map(n => [sc.id, n.text, String(n.value), <Lnk key="h" href={n.href}>OPEN →</Lnk>]))} csv={{ name: `${slug}-numbers`, rows: sheet.scenes.flatMap(sc => sc.numbers.map(n => [sc.id, n.text, String(n.value), n.href])) }} />
+      <p className="label p-3 text-compare-muted">FINGERPRINT {s.hash} · LIMITS {sheet.limits.join(" · ") || "–"}</p>
+    </Band>
+    <Band title="THE DATA BEHIND EACH FIGURE">
+      {Object.entries(s.figures).flatMap(([id, f]) => figureTables(f).map((t, i) => <DataTable key={`${id}-${i}`} id={i === 0 ? `fig-${id}` : undefined} caption={t.caption} head={t.head} rows={t.rows} csv={{ name: `${slug}-${id}${i ? `-${i + 1}` : ""}`, rows: t.rows }} />))}
+    </Band>
+    <Band title="THE CHECK THAT KEEPS IT LIVE">
+      {!x ? <P>Loading the check…</P> : !x.check ? <P>This study has no live check.</P> : <>
+        <p className="p-3">{x.check.pass == null ? x.check.reason : x.check.pass ? "Passes on current data." : `Fails on current data: ${x.check.reason}`}</p>
+        <DataTable caption={`Check ${x.check.id}`} head={["Figure", "Now", "Needs", "When set live"]} rows={x.check.figures.map(f => [f.label, String(f.value), String(f.need), String(x.check!.recorded[f.id] ?? "–")])} csv={{ name: `${slug}-check`, rows: x.check.figures.map(f => [f.label, String(f.value), String(f.need), String(x.check!.recorded[f.id] ?? "")]) }} />
+      </>}
+    </Band>
+    <Band title="TEXT VERSIONS">
+      {!x ? <P>Loading versions…</P> : <DataTable caption="Stored written versions, newest first" head={["Stored", "Fingerprint", "Model", "Checked", "Headline", "Current"]}
+        rows={[...x.versions.map(v => [day(v.created_at), v.facts_hash, v.model, v.checked_at ? "PASSED" : "FAILED", v.headline, v.facts_hash === s.hash && v.checked_at ? "YES" : "–"]), ...(s.text.source === "fallback" ? [["–", "–", "template", "–", s.text.headline, "YES (template)"]] : [])]} />}
+    </Band>
+  </>;
+}
+
+// WEEK ---------------------------------------------------------------------------------------------------------------------------
+export function WeekData({ issue }: { issue: Edition }) {
+  return <>
+    <Band title={`THE ISSUE · ${issue.rows.length} STORIES`}>
+      <DataTable caption="The stories this issue reports" head={["Story", "Subject", "Kind", "When", "Headline"]} rows={issue.rows.map(r => [r.number != null ? <Lnk key="n" href={r.href}>No. {r.number}</Lnk> : "–", r.subject, r.kind, r.when ?? "–", r.headline])} />
+      <p className="label p-3 text-compare-muted">COVER No. {issue.cover.number ?? "–"} · {issue.cover.why.toUpperCase()} · {issue.words} WORDS · TEXT {issue.text.source.toUpperCase()}</p>
+    </Band>
+    <Later id="week-data-later" shapes={rowsShape(6)}><WeekBrief week={issue.week} /></Later>
+  </>;
+}
+function WeekBrief({ week }: { week: string }) {
+  const { data } = useSuspenseQuery(weekDataQuery(week)), router = useRouter();
+  if (!data) return <Band title="THE STORED WEEKLY BRIEF"><DataNote>No weekly brief was stored for this week.</DataNote></Band>;
+  const movers = briefMovers(data.brief);
+  return <Band title={`THE STORED WEEKLY BRIEF · ${week}`}>
+    <BriefWithdrawn week={week} className="border-b border-rule p-3" />
+    <BriefView brief={data.brief} onTrait={id => void router.navigate({ href: dataHref({ type: "signal", id: id.replace(/:all$/, "") }) })} />
+    <DataTable caption="Every item the brief cites" head={["Section", "Kind", "What", "Open"]} rows={movers.map(m => [m.section, m.kind, m.what, m.href ? <Lnk key="o" href={m.href}>OPEN →</Lnk> : "–"])} csv={{ name: `brief-${week}`, rows: movers.map(m => [m.section, m.kind, m.what, m.href ?? ""]) }} />
+    <p className="label p-3 text-compare-muted">STORED {day(data.at)} · MODEL {show(data.model)}</p>
+  </Band>;
+}

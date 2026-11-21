@@ -62,7 +62,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
         {p.sectors.length > 0 && <BlockPart title="Where it leads" kicker="Sectors whose share is above the all-sector share.">
           <RuleBox><ul className="grid grid-cols-1 gap-6 md:grid-cols-3">{p.sectors.map(s => <li key={s.sector} className="min-w-0"><p className="ed-h3">{sectorName(s.sector)}</p><p className="ed-data mt-1 flex flex-wrap items-center gap-2">{pct(s.share, 1)} <span className="ed-muted">(+{(s.lead * 100).toFixed(1)} pts vs all)</span><StageWord stage={s.stage} /></p></li>)}</ul></RuleBox>
         </BlockPart>}
-        {p.examples.length > 0 && <BlockPart title="Example brands" kicker="Library brands that adopted it early, ranked by how many quarters they led.">
+        {p.examples.length > 0 && <BlockPart title="Example brands" kicker="Tracked brands that adopted it early, ranked by how many quarters they led.">
           <div className="grid grid-cols-1 gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-4">{p.examples.map(e => <SiteCard key={e.domain} domain={e.domain} name={e.name} sector={e.sector} thumb={e.thumb} lines={e.adopted ? [`adopted ${e.adopted}`] : []} />)}</div>
         </BlockPart>}
         {p.evidence.length > 0 && <BlockPart title={p.evidenceTitle === "Member signals" ? "Composite members" : "Part of these composites"} kicker={p.rule ? `${p.name} counts a homepage when it has: ${p.rule}.` : "Composite signals this one counts toward."}>

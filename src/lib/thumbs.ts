@@ -89,7 +89,7 @@ export const thumbAlt = (domain: string, capturedAt: string) => `${domain} homep
 export function toThumb(r: ThumbRow): Thumb {
   const vs = (Array.isArray(r.variants) ? (r.variants as ThumbVariant[]) : []).filter(v => v && typeof v.path === "string" && v.w > 0).sort((a, b) => a.w - b.w);
   return { domain: r.domain, captured_at: r.captured_at, viewport: r.viewport, src: thumbSrc(r.path), srcSet: [...vs.map(v => `${thumbSrc(v.path)} ${v.w}w`), `${thumbSrc(r.path)} ${r.width}w`].join(", "),
-    width: r.width, height: r.height, alt: thumbAlt(r.domain, r.captured_at), caption: thumbCaption(r.domain, r.captured_at), live: `https://${r.domain}`, terminal: `/library/${r.domain}` };
+    width: r.width, height: r.height, alt: thumbAlt(r.domain, r.captured_at), caption: thumbCaption(r.domain, r.captured_at), live: `https://${r.domain}`, terminal: `/brands/${r.domain}?view=data` };
 }
 /** Desktop capture nearest the reference date (prefer on/before it), else mobile; removed rows never show. */
 export function pickThumb(rows: ThumbRow[], domain: string, refIso?: string): Thumb | null {

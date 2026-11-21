@@ -19,6 +19,8 @@ export type LedgerRow = {
   id?: string;
   /** A plain link (a file download), not an in-app navigation. */
   plain?: boolean;
+  /** U2 · the receipt this row opens in place (`change:<id>`…); without one the row navigates. */
+  receipt?: string | undefined;
   /** A row that has just arrived (the live column): it drops in and settles once. */
   drop?: boolean;
 };
@@ -27,7 +29,7 @@ export const StoryNo = ({ n }: { n: number | string }) => <span data-story-numbe
 const NO = /^No\.\s?(\d+)$/;
 const numberOf = (n: ReactNode) => { if (typeof n !== "string") return n; const m = NO.exec(n); return m ? <StoryNo n={m[1]!} /> : n; };
 function LinkOf({ r, children }: { r: LedgerRow; children: ReactNode }) {
-  return r.plain ? <a href={r.href} className="ledger-link">{children}</a> : <Receipt href={r.href} className="ledger-link">{children}</Receipt>;
+  return r.plain ? <a href={r.href} className="ledger-link">{children}</a> : <Receipt href={r.href} receipt={r.receipt} className="ledger-link">{children}</Receipt>;
 }
 export function LedgerItem({ r, small }: { r: LedgerRow; small?: boolean }) {
   const [first, ...more] = r.facts ?? [];

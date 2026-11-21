@@ -14,7 +14,7 @@ describe("brand page model", () => {
     expect(b.identity.accent).toEqual({ hex: "#0070F3", name: "Vivid indigo" });
     expect(b.identity.tags.filter(t => t.basis === "ai").map(t => t.key)).toEqual(["aesthetic:minimal", "tone:technical"]);
     expect(b.identity.layout.map(l => l.id)).toEqual(["theme", "hero", "h1"]);
-    expect(b.identity.receipt).toBe("/library/vercel.com");
+    expect(b.identity.receipt).toBe("/brands/vercel.com?view=data");
   });
   it("moves are in date order, newest first, each with the captures either side", () => {
     const b = brandModel(rows({ captures: [cap(1, "2025-12-01"), cap(2, "2026-02-01"), cap(3, "2026-09-01"), cap(4, "2026-10-05")] }));

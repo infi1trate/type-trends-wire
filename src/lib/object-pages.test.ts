@@ -35,7 +35,7 @@ describe("object pages share one anatomy", () => {
     expect(b.blocks).toEqual(OBJECT_BLOCKS);
     expect(b.soWhat).toBe(brandSoWhat(b.versus?.ahead.length ?? 0, b.versus?.behind.length ?? 0));
     expect(b.timeline.map(t => t.at)).toEqual([...b.timeline.map(t => t.at)].sort().reverse());
-    expect(b.actions.terminal).toBe("/library/vercel.com");
+    expect(b.actions.terminal).toBe("/brands/vercel.com?view=data");
     expect(b.actions.differentiate).toContain("diff");
   });
   it("brand so-what reads in plain words", () => {

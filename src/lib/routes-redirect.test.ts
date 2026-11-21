@@ -12,7 +12,8 @@ describe("old URLs redirect", () => {
     expect(run(TraitRoute, { params: { key: "css:subgrid" }, location: { search: { sector: "fintech" } } })).toMatchObject({ to: "/signals/$key", params: { key: "css:subgrid" }, search: { sector: "fintech" }, statusCode: 301 });
   });
   it("/?panel=… → /terminal with the same view and params", () => {
-    expect(run(LiveRoute, { location: { search: { panel: "brief", trait: "css:subgrid", sector: "fintech", alert: "13-breakout" } } })).toMatchObject({ to: "/terminal", search: { panel: "brief", trait: "css:subgrid", sector: "fintech" }, statusCode: 301 });
+    // U1: an object view goes straight to the object's one address in its Data view (sector and other params kept).
+    expect(run(LiveRoute, { location: { search: { panel: "brief", trait: "css:subgrid", sector: "fintech", alert: "13-breakout" } } })).toMatchObject({ href: "/signals/css%3Asubgrid?sector=fintech&view=data", statusCode: 301 });
     expect(run(LiveRoute, { location: { search: { panel: "rebrands" } } })).toMatchObject({ to: "/terminal", search: { panel: "rebrands" } });
   });
   it("/ and /?sector= stay on Live", () => {

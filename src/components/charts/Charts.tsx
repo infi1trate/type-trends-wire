@@ -44,7 +44,7 @@ export function ChartFrame({ level = 3, title, note, source, receipt, empty = vo
         <tbody>{table.rows.map((r, i) => <tr key={i}>{r.map((c, j) => (j === 0 ? <th key={j} scope="row">{c}</th> : <td key={j}>{c}</td>))}</tr>)}</tbody>
       </table></div>
     </>}
-    <p className="tk-t-caption tk-c-muted mt-2">Source: {source}{receipt && <> · <Receipt href={receipt.href} className="tk-tap underline">{receipt.label}</Receipt></>}</p>
+    <p className="tk-t-caption tk-c-muted mt-2">Source: {source}{receipt && <> · <Receipt href={receipt.href} drawer className="tk-tap underline">{receipt.label}</Receipt></>}</p>
   </figure>;
 }
 
