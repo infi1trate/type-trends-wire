@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { chromium } from "playwright";
 import { serve } from "./serve.js";
 import { VIEWPORTS } from "../src/core.js";
-import { SECTIONS, CROP_LIMITS, findSectionBoxes, encodeCrop, cropHash, hashDistance, cropBody, clipsFrom, captureCrops, makeCropSender } from "../src/crops.js";
+import { SECTIONS, CROP_LIMITS, PAGE_SECTIONS, findSectionBoxes, encodeCrop, cropHash, hashDistance, cropBody, clipsFrom, captureCrops, capturePageTop, makeCropSender } from "../src/crops.js";
 
 // Page-like image: flat bands with a dark block whose position is the "layout".
 async function shot(width, height, { blockX = 0.1, tone = 0 } = {}) {
@@ -119,6 +119,15 @@ test("in the page: finds hero, nav, pricing, cta and footer bands, and nothing t
       assert.equal(m.format, "webp"); assert.equal(m.width, c.width); assert.equal(m.height, c.height); assert.ok(buf.length <= CROP_LIMITS.storedBytes);
     }
     assert.equal(new Set(sent.map((c) => c.hash)).size, SECTIONS.length);
+
+    // Another page of the brand: its first screen only, under its own section name (never the homepage's "pricing" block).
+    const tops = [];
+    assert.equal(await capturePageTop(page, "fixture.test", "pricing", { add: (c) => tops.push(c) }, { now: () => "2026-11-16T00:00:00.000Z" }), "page-pricing");
+    assert.equal(await capturePageTop(page, "fixture.test", "changelog", { add: (c) => tops.push(c) }), null);
+    assert.equal(await capturePageTop(page, "fixture.test", "home", { add: (c) => tops.push(c) }), null);
+    assert.equal(tops.length, 1); assert.equal(tops[0].section, "page-pricing"); assert.equal(tops[0].domain, "fixture.test");
+    assert.ok(tops[0].width <= 1280 && tops[0].height <= 1600 && tops[0].height >= 400);
+    assert.ok(!SECTIONS.some((x) => Object.values(PAGE_SECTIONS).includes(x)));
 
     await page.goto("http://localhost:4872/");
     const plain = await page.evaluate(findSectionBoxes);

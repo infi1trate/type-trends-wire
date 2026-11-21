@@ -175,6 +175,25 @@ export async function captureCrops(page, domain, sender, { now = () => new Date(
   return done;
 }
 
+/** The other pages a brand owns (W1): only their first screen is kept, as its own section. "pricing" alone is the pricing block of a homepage. */
+export const PAGE_SECTIONS = { product: "page-product", about: "page-about", pricing: "page-pricing" };
+
+/** Captures the first screen of an open product, about or pricing page and queues it. Returns the section name, or null. Never throws. */
+export async function capturePageTop(page, domain, pageType, sender, { now = () => new Date().toISOString() } = {}) {
+  const section = PAGE_SECTIONS[pageType];
+  if (!section) return null;
+  try {
+    await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
+    const { width, height } = page.viewportSize() ?? { width: 1440, height: 900 };
+    const shot = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width, height } }).catch(() => null);
+    if (!shot) return null;
+    const enc = await encodeCrop(shot);
+    if (!enc) return null;
+    sender.add(cropBody(domain, section, now(), enc, await cropHash(shot, section)));
+    return section;
+  } catch { return null; }
+}
+
 /** Buffers crops and posts them under the server's 12-capture / 4 MB limits. Never throws. */
 export function makeCropSender({ endpoint, secret, dry = false, runId, fetchImpl = fetch, log = console.log }) {
   let buf = [], bytes = 0;

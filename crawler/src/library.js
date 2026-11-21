@@ -24,7 +24,7 @@ import { extractLibraryExtras } from "./extract-library.js";
 import { parseLibrary, discoverPages, choosePages, htmlHash, contentHash, signalsHash, pickCaptures, parseSlice, inSlice, pickVanguard } from "./library-lib.js";
 import sharp from "sharp";
 import { encodeThumb, captureBody, makeThumbSender } from "./thumbs.js";
-import { captureCrops, makeCropSender } from "./crops.js";
+import { captureCrops, capturePageTop, makeCropSender } from "./crops.js";
 import { captureBrandAssets } from "./assets.js";
 
 const MODE = process.env.LIBRARY_MODE ?? "full";
@@ -51,6 +51,8 @@ let thumbs = null; // sender, set in main
 const CROPS = process.env.CROPS !== "0" && MODE === "full";
 // ASSETS=0 disables the brand icon and social card (sent as crop sections "icon" and "card"); they need crops on.
 const ASSETS = process.env.ASSETS !== "0" && CROPS;
+// W1: the first screen of product, about and pricing pages (sections page-product, page-about, page-pricing). LIBRARY_PAGE_TOPS=0 turns it off.
+const PAGE_TOPS = process.env.LIBRARY_PAGE_TOPS !== "0" && CROPS;
 let crops = null; // sender, set in main
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -128,6 +130,7 @@ async function snapshot(page, { domain, page_type, viewport, url, archive = null
     // captureImages has already walked the page (lazy images loaded) when it ran; otherwise captureCrops walks it.
     if (crops && !archive && page_type === "home" && viewport === "desktop") await captureCrops(page, domain, crops, { walked: !!images });
     if (crops && ASSETS && !archive && page_type === "home" && viewport === "desktop") await captureBrandAssets(page, domain, crops);
+    if (crops && PAGE_TOPS && !archive && page_type !== "home" && viewport === "desktop") await capturePageTop(page, domain, page_type, crops);
     return {
       links: x.links, images,
       record: {
