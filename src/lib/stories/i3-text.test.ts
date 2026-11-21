@@ -5,7 +5,7 @@ import { textLeadAllowed } from "../front/front";
 describe("I3 · 0.4 a story without checked text", () => {
   it("reads its facts as the body instead of an empty section", () => {
     expect(templateBody([{ text: "Together AI · accent, violet to sky blue · between 20 and 21 Nov" }, { text: "Corporate polish is Rising in AI." }]))
-      .toEqual(["Together AI · accent, violet to sky blue · between 20 and 21 Nov. Corporate polish is Rising in AI."]);
+      .toEqual(["Together AI · accent, violet to sky blue · between 20 and 21 Nov. Corporate polish is rising in AI."]);
     expect(templateBody(Array.from({ length: 6 }, (_, i) => ({ text: `Line ${i + 1}` })))).toEqual(["Line 1. Line 2. Line 3. Line 4.", "Line 5. Line 6."]);
     expect(templateBody([])).toEqual([]);
   });

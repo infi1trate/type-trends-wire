@@ -189,6 +189,18 @@ const factNumbers = (f: WriterFacts) => {
 export const ADVICE = ["audit your", "consider", "you should", "make sure", "it's time to", "brands should"];
 export const STOCK_ENDINGS = ["worth watching", "a data point, not a trend", "belongs in briefs and templates"];
 export const TREND_SPEAK = ["effectively dead", "the end of", "the rise of", "game-changing"];
+/** W1b · what a change "says" about intent is never on a facts sheet: the quiet-change story may say only that we found no mention. */
+export const INTENT_CLAIMS: readonly { name: string; re: RegExp }[] = [
+  { name: "secretly", re: /(?<![\p{L}\p{N}])secret(?:ly|ive|ively)?(?![\p{L}\p{N}])/iu },
+  { name: "quietly", re: /(?<![\p{L}\p{N}])quietly(?![\p{L}\p{N}])/iu },
+  { name: "silently", re: /(?<![\p{L}\p{N}])silently(?![\p{L}\p{N}])/iu },
+  { name: "stealth", re: /(?<![\p{L}\p{N}])stealth(?:ily|y)?(?![\p{L}\p{N}])/iu },
+  { name: "under the radar", re: /under the radar/iu },
+  { name: "without telling", re: /without (?:telling|announcing|saying|any announcement|an announcement|fanfare|a word)/iu },
+  { name: "nobody announced", re: /(?:no ?one|nobody|never|did not|didn't|has not|hasn't|have not|haven't)\s+(?:\w+\s+)?(?:announced?|told|said|mentioned)/iu },
+  { name: "unannounced", re: /(?<![\p{L}\p{N}])unannounced(?![\p{L}\p{N}])/iu },
+  { name: "behind the scenes", re: /behind the scenes/iu },
+];
 export const METHOD_WORDS = ["score", "scores", "scored", "threshold", "thresholds", "deterministic"];
 /** I3 · "run" is an ordinary word ("the record runs from 2021", "a long-running pattern"); only its method uses are banned. */
 export const METHOD_RUN_USES: readonly { name: string; re: RegExp }[] = [
@@ -217,6 +229,7 @@ export function bannedFailures(free: string): string[] {
   for (const p of [...SUPERLATIVES, ...BANNED_PHRASES]) if (has(free, p)) fail.push(`banned word: ${p}`);
   for (const p of METHOD_WORDS) if (has(free, p)) fail.push(`method word: ${p}`);
   for (const u of METHOD_RUN_USES) if (u.re.test(free)) fail.push(`method word: ${u.name}`);
+  for (const u of INTENT_CLAIMS) if (u.re.test(free)) fail.push(`claim about intent: ${u.name}`);
   if (/→|->/.test(free)) fail.push("our own labels as prose (an arrow)");
   if (HEX.test(free)) fail.push("a hex code in the text"); HEX.lastIndex = 0;
   return fail;
@@ -375,7 +388,8 @@ export async function tryModels<T>(plan: readonly string[], call: (model: string
 
 /** E3b · the order the writer takes owed stories in when its calls reset: the front page's lead first, then the census pieces, then the
  *  rest by rank (the front page's rank; ties: newest, then id). `rank` falls back to the stored score. */
-export function writePriority<T extends { id: string; score: number; happened_at: string }>(owed: readonly T[], o: { leadId: string | null; rank?: ReadonlyMap<string, number> }): T[] {
-  const tier = (s: T) => (s.id === o.leadId ? 0 : s.id.startsWith("census:") ? 1 : 2), r = (s: T) => o.rank?.get(s.id) ?? s.score;
+/** W1b: `corrected` = published stories whose checked written text a later correction hid; they are rewritten first, before the lead. */
+export function writePriority<T extends { id: string; score: number; happened_at: string }>(owed: readonly T[], o: { leadId: string | null; rank?: ReadonlyMap<string, number>; corrected?: ReadonlySet<string> }): T[] {
+  const tier = (s: T) => (o.corrected?.has(s.id) ? -1 : s.id === o.leadId ? 0 : s.id.startsWith("census:") ? 1 : 2), r = (s: T) => o.rank?.get(s.id) ?? s.score;
   return [...owed].sort((a, b) => tier(a) - tier(b) || r(b) - r(a) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id));
 }

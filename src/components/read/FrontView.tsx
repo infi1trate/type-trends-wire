@@ -8,7 +8,7 @@ import { Link } from "@tanstack/react-router";
 import { BRAND_NAME } from "@/lib/brand";
 import type { FrontModel, FrontRest, FrontStory, FrontTop, FrontUpdates } from "@/lib/front/front";
 import type { Crop } from "@/lib/crops";
-import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape } from "@/lib/front/tape-block";
+import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape, type TapePair } from "@/lib/front/tape-block";
 import { MarkedName } from "./BrandMark";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
@@ -153,13 +153,19 @@ export function AlsoCards({ items, pictures }: { items: FrontStory[]; pictures: 
 }
 function AlsoLater({ m }: { m: FrontTop }) { const { data } = useSuspenseQuery(frontAlsoQuery(m.sector, m.format)); return <AlsoCards items={m.also} pictures={data} />; }
 
+/** W1b · the old and new icon or card on a tape line: two small fixed boxes (no layout shift), lazy, the brand's own pictures. */
+function TapePairPics({ p }: { p: TapePair }) {
+  const box = p.kind === "icon" ? { w: 24, h: 24 } : { w: 42, h: 24 };
+  const img = (x: TapePair["before"], label: string) => <img src={x.src} alt={`${label}: ${p.alt}`} width={box.w} height={box.h} loading="lazy" decoding="async" className="tape-pair-img" style={{ width: box.w, height: box.h }} />;
+  return <span className="tape-pair" data-tape-pair="">{img(p.before, "Before")}<span aria-hidden="true">·</span>{img(p.after, "After")}</span>;
+}
 // THE TAPE (E3): the eight newest confirmed changes as a ruled list, one line each, linking to the brand page; then the count line.
 export function TapeBlock({ t }: { t: FrontTape }) {
   return <section aria-labelledby="front-tape" data-front-tape="">
     <h2 id="front-tape" className="ed-h2">{FRONT_TAPE_TITLE}</h2>
     <p className="ed-caption mt-1">{FRONT_TAPE_SUB}</p>
     {t.lines.length > 0
-      ? <Ledger className="mt-3" small label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, title: <MarkedName icon={l.icon} size={20}>{l.name} · {l.what}</MarkedName>, tags: l.marks, time: l.when }))} />
+      ? <Ledger className="mt-3" small label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, title: <MarkedName icon={l.icon} size={20}>{l.name} · {l.what}{l.pair && <TapePairPics p={l.pair} />}</MarkedName>, tags: l.marks, time: l.when }))} />
       : <p className="ed-small mt-3">No confirmed change in the last {t.days} days.</p>}
     <p className="ed-data mt-3" data-tape-counts="">{confirmedText(t.confirmed, t.days)}; <a href={UNCONFIRMED_HREF} className="ed-tap">{unconfirmedText(t.unconfirmed)}</a> (seen once or alternating).</p>
     <p className="ed-data mt-2"><a href={WHOLE_TAPE_HREF} className="ed-tap">The whole tape →</a></p>

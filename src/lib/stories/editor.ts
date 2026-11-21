@@ -2,6 +2,7 @@
 // Three tiers: every confirmed change is a tape line (tape.ts); a story must be a positioning change, an identity change, a headline
 // typeface change, a pattern (roundup, breakout, crossover, white space, shift, first seen), the weekly seasonal story or the weekly
 // against-the-grain roundup; outside news keeps its own rules. Changes to one brand inside seven days are one story.
+import { quietCandidates, type QuietVerdict } from "./quiet";
 import { basis, label, sectorName, stageName } from "../labels";
 import type { EventRow } from "../agency/changes";
 import { brandName, nameText, siteKind, type SiteKind } from "../brand-names";
@@ -279,7 +280,7 @@ export function shifts(ctx: Ctx): Candidate[] {
 }
 
 // EVERYTHING -----------------------------------------------------------------------------------------------------------------------
-export type AllCandidates = { candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
+export type AllCandidates = { /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
   /** E2e · changes that failed the integrity check (Data view only): event id, its label ("Seen once" / "Alternating") and the conditions. */
   unconfirmed: { id: number; label: string; failed: Condition[] }[] };
 /** E2e · the input with only the passing part of each live change (integrity.ts); unchanged when it carries no checks. */
@@ -339,13 +340,15 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   const checked14 = raw.checks ? splitChecked(raw.history ?? raw.events, new Map(Object.entries(raw.checks).map(([k, v]) => [Number(k), v]))).tape : (input.history ?? input.events);
   const census = censusCandidates({ now: input.now, census: input.census ?? null, events: checked14, rotating: carouselEventIds(checked14, carouselSnaps) },
     new Map(input.sites.map(s => [s.domain, { domain: s.domain, name: s.name, sector: s.sector }])), ctx.rank);
-  const news = newsCandidates(newsMatcher(input.sites, ctx.headline), input.wire);
+  const matcher = newsMatcher(input.sites, ctx.headline), news = newsCandidates(matcher, input.wire);
+  // W1b · quiet changes: confirmed icon/card changes and same-address identity changes on other surfaces that no outlet we read named.
+  const quiet = quietCandidates({ now: input.now, events: input.events.filter(e => !reversed.has(e.id)), quiet: input.quiet ?? null, matcher, sites: new Map(input.sites.map(s => [s.domain, { domain: s.domain, name: s.name, sector: s.sector, kind: kind(s.domain) }])) });
   const ws = whiteSpaceCandidates(ctx);
   const candidates = [
     ...brand, ...unclear, ...shifts(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx),
-    ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...census, ...input.launches.map(launchCandidate), ...news.candidates,
+    ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...census, ...quiet.candidates, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => named(c, names));
-  return { candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
+  return { quiet: quiet.verdicts, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
 }
 
 // PART 3 · ONE BRAND, ONE STORY: fold a later change into the story that already ran ----------------------------------------------

@@ -6,7 +6,7 @@ import { forecastSiteTraits, type SiteRow } from "../forecast-signals";
 import { canonical } from "../labels";
 import type { EventRow, RebrandRow } from "../agency/changes";
 import type { SignalRow } from "../signals";
-import { allCandidates, archiveMeasured, type BuildInput, type RunRows } from "./candidates";
+import { allCandidates, archiveMeasured, type BuildInput, type RunRows, type WireIn } from "./candidates";
 import { comparisonPair } from "../run-gap";
 import { fetchRealRuns } from "../real-runs";
 import { planStories, type Existing, type Planned } from "./score";
@@ -235,6 +235,8 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   ]);
   const h = new Map(now_.map(r => [r.domain, r]));
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
+  // W1b: the quiet change's inputs (a failure means no quiet candidates this build; everything else is unaffected).
+  const quiet = await quietInput(db, events, now, o.days).then(q => q && { ...q, wire: q.wire.map(dec) }).catch(() => null);
   return {
     now: new Date(now).toISOString(), events, history, runs,
     rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since && sectorOf.has(x.domain)) as unknown as RebrandRow[],
@@ -247,7 +249,20 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     carousel: [...carousel],
     checks: Object.fromEntries(checks),
     census,
+    quiet,
   };
+}
+/** W1b · confirmed icon and card changes of the window, the addresses of the captures non-home identity changes cite, and the wire from
+ *  14 days before the window to now (anonymous reads). */
+async function quietInput(db: ReturnType<typeof import("../mcp/supabase").supabaseAnon>, events: EventRow[], now: number, days: number): Promise<import("./quiet").QuietInput> {
+  const { QUIET_EVENT_TYPES, QUIET_PAGES, QUIET_WINDOW_DAYS } = await import("./quiet");
+  const ids = [...new Set(events.filter(e => QUIET_PAGES[e.page_type ?? ""] && QUIET_EVENT_TYPES[e.type]).flatMap(e => [e.snapshot_id, e.prev_snapshot_id]).filter((x): x is number => typeof x === "number"))];
+  const [assets, urls, wire] = await Promise.all([
+    import("../asset-changes.server").then(m => m.confirmedAssetChanges(days, now)),
+    ids.length ? db.from("library_snapshots").select("id,url").in("id", ids.slice(0, 500)).then(r => { if (r.error) throw r.error; return Object.fromEntries((r.data ?? []).map(x => [x.id as number, (x.url as string | null) ?? null])); }) : Promise.resolve({}),
+    pages<WireIn>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", new Date(now - (days + QUIET_WINDOW_DAYS) * 864e5).toISOString()).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
+  ]);
+  return { assets: assets.map(a => ({ domain: a.domain, kind: a.kind, from: { path: a.from.path, last_seen_at: a.from.last_seen_at }, to: { path: a.to.path, first_seen_at: a.to.first_seen_at }, between: a.between, confirmed_at: a.confirmed_at })), urls, wire };
 }
 
 
@@ -349,7 +364,9 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   void fresh;
   const [{ pickLead }, { rankScores }] = await Promise.all([import("../front/front"), import("./score")]);
   const stream = shown.filter(s => !folded.has(s.id)), leadId = pickLead(stream, "all", Date.now())?.story.id ?? null;
-  return writePriority(owed, { leadId, rank: rankScores(stream) }).slice(0, limit)
+  // W1b: a correction that hid checked written text puts the story first in the queue, as soon as calls are available.
+  const corrected = new Set(owed.filter(s => { const l = last.get(s.id); return !!l && l.checked && s.correctedAt != null && s.correctedAt > l.created_at; }).map(s => s.id));
+  return writePriority(owed, { leadId, rank: rankScores(stream), corrected }).slice(0, limit)
     .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker }));
 }
 

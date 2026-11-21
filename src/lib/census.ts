@@ -24,6 +24,7 @@ import { isoWeek } from "./digest/week";
 import { tapeDate, tapeLine } from "./tape";
 import type { EventRow } from "./agency/changes";
 import type { Candidate, Fact } from "./stories/types";
+import { productPair, productTypeCount, fieldText, type ProductPair, type SurfaceCapture } from "./surfaces";
 
 export const CENSUS_DAYS = 8, CENSUS_SPAN_HOURS = 6, CENSUS_MIN = 8, CENSUS_MOVE_MIN = 2, CENSUS_ADDED_DAYS = 14, CENSUS_NAMED_MAX = 6, CENSUS_PICTURES = 4, CENSUS_BUTTONS = 3;
 const H = 36e5, DAY = 864e5;
@@ -33,7 +34,7 @@ export type CensusPair = { domain: string; newest: CensusCapture; older: CensusC
 /** One stored count (census_counts): what a census story ran on. */
 export type CensusRow = { census_key: string; day: string; count: number; base: number; members: { domain: string; name: string; line: string }[]; story_id: string };
 /** `recount` (E2h, maintenance only): count every census as a correction of the one that ran, ignoring the cadence and the earlier count. */
-export type CensusInput = { captures: CensusCapture[]; history: Pick<CensusRow, "census_key" | "day" | "count" | "base">[]; recount?: boolean };
+export type CensusInput = { captures: CensusCapture[]; /** W1b: live desktop home and product captures (measured fields) for the product-page census. */ surfaces?: SurfaceCapture[]; history: Pick<CensusRow, "census_key" | "day" | "count" | "base">[]; recount?: boolean };
 /** A recount appended to census_counts keys its row `<story id>#recount:<ISO time>` (one count row per story id); this is the story it counts for. */
 export const censusStoryOf = (rowStoryId: string) => rowStoryId.split("#")[0]!;
 export const recountRowId = (storyId: string, at: string) => `${storyId}#recount:${at}`;
@@ -172,6 +173,41 @@ export function censusCandidate(o: {
   };
 }
 
+// CENSUS C · PRODUCT PAGE AGAINST HOMEPAGE (W1b) -------------------------------------------------------------------------------------
+// For each brand in a sector, the newest crawl that captured both its homepage and its product page (same run, never a gift-card page):
+// does the product page use the homepage's measured headline typeface? The base is the brands where both typefaces were measured; the
+// members are those where they differ. Same cadence as every census (eight members, weekly, moves of two).
+export const PRODUCT_CENSUS_SECTORS = ["commerce-dtc", "hardware"] as const;
+export const productCensusKey = (sector: string) => `product-type-${sector}`;
+const SECTOR_WORD: Record<string, string> = { "commerce-dtc": "commerce", hardware: "hardware" };
+export function productCensus(captures: readonly SurfaceCapture[], sites: ReadonlyMap<string, CensusSite>, sector: string, now: string): { base: number; differ: ProductPair[]; pairs: ProductPair[] } {
+  const t = Date.parse(now), by = new Map<string, SurfaceCapture[]>();
+  for (const c of captures) { const at = Date.parse(c.captured_at); if (sites.get(c.domain)?.sector === sector && at <= t && at >= t - CENSUS_DAYS * DAY) by.set(c.domain, [...(by.get(c.domain) ?? []), c]); }
+  const pairs = [...by.values()].map(xs => productPair(xs)).filter((p): p is ProductPair => !!p);
+  return { ...productTypeCount(pairs), pairs };
+}
+export function productCensusCandidate(o: { sector: string; now: string; base: number; differ: ProductPair[]; earlier: { count: number; day: string } | null; sites: ReadonlyMap<string, CensusSite>; rank: ReadonlyMap<string, number> }): Candidate {
+  const name = (d: string) => brandName(d, o.sites.get(d)?.name ?? null), word = SECTOR_WORD[o.sector] ?? sectorName(o.sector).toLowerCase(), key = productCensusKey(o.sector);
+  const members = [...o.differ].sort((a, b) => (o.rank.get(a.domain) ?? 999) - (o.rank.get(b.domain) ?? 999) || name(a.domain).localeCompare(name(b.domain)));
+  const n = members.length, day = o.now.slice(0, 10), named = members.slice(0, CENSUS_NAMED_MAX).map(m => name(m.domain)), rest = n - named.length;
+  const moved = o.earlier ? `, ${n >= o.earlier.count ? "up" : "down"} from ${o.earlier.count} on ${tapeDate(`${o.earlier.day}T12:00:00Z`)}` : "";
+  const line = (p: ProductPair) => `homepage ${fieldText(p.home, "h1")}, product page ${fieldText(p.product, "h1")}`;
+  const facts: Fact[] = [
+    { text: `On ${n} of ${o.base} ${word} homepages the product page uses a different headline typeface from the homepage`, href: "/brands", basis: "measured", kind: "count" },
+    ...(o.earlier ? [{ text: `Earlier count: ${o.earlier.count} on ${tapeDate(`${o.earlier.day}T12:00:00Z`)}`, href: null, basis: "measured" as const, kind: "count" as const }] : []),
+    ...members.map(m => ({ text: `${name(m.domain)} · ${line(m)}`, href: brandPath(m.domain), basis: "measured" as const, kind: "line" as const })),
+    { text: `Compared on ${tapeDate(o.now)}: each brand's homepage and product page from the same crawl, measured headline typeface only; brands where either typeface could not be measured are left out`, href: "/brands", basis: "measured", kind: "date" },
+  ];
+  return {
+    id: `census:${key}:${isoWeek(new Date(o.now))}`, type: "roundup", kicker: "Census · Product pages",
+    headline: `${numberWord(n)} ${word} product pages change the homepage's headline typeface`,
+    deck: `On ${n} of ${o.base} ${word} homepages the product page uses a different headline typeface from the homepage${moved}: ${listAnd([...named, ...(rest ? [`${numberWord(rest).toLowerCase()} more`] : [])])}.`,
+    facts, sector: null, signalKeys: [], domains: members.map(m => m.domain), evidence: members.slice(0, 4).map(m => ({ label: name(m.domain), href: brandPath(m.domain) })),
+    sourceIds: [`census:${key}:${day}`], basis: "measured", happenedAt: o.now, magnitude: n,
+    census: { census_key: key, day, count: n, base: o.base, members: members.map(m => ({ domain: m.domain, name: name(m.domain), line: line(m) })) },
+  };
+}
+
 const RECOUNT = { run: true, earlier: null, reason: "recount" } as const;
 /** Every census due now, from the captures and the stored counts. `events` are confirmed live changes (with their capture dates). */
 export function censusCandidates(input: { now: string; census?: CensusInput | null; events: readonly EventRow[]; rotating?: ReadonlySet<number> }, sites: ReadonlyMap<string, CensusSite>, rank: ReadonlyMap<string, number>): Candidate[] {
@@ -183,5 +219,10 @@ export function censusCandidates(input: { now: string; census?: CensusInput | nu
   }
   const sale = saleCensus(pairs), due = input.census.recount ? RECOUNT : censusDue(sale.members.length, input.census.history, SALE_KEY, input.now);
   if (due.run) out.push(censusCandidate({ key: SALE_KEY, title: "Sale mode", now: input.now, base: sale.base, members: sale.members, earlier: due.earlier, sites, rank }));
+  for (const sector of PRODUCT_CENSUS_SECTORS) {
+    if (!input.census.surfaces) break;
+    const c = productCensus(input.census.surfaces, sites, sector, input.now), key = productCensusKey(sector), d = input.census.recount ? RECOUNT : censusDue(c.differ.length, input.census.history, key, input.now);
+    if (d.run) out.push(productCensusCandidate({ sector, now: input.now, base: c.base, differ: c.differ, earlier: d.earlier, sites, rank }));
+  }
   return out;
 }

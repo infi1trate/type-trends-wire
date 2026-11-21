@@ -257,6 +257,7 @@
 /* I3 · lead pictures sit in fixed 3:2 boxes (top of the capture kept), drawn like ed-thumb. */
 .digest .lead-box { aspect-ratio: 3 / 2; overflow: hidden; border: var(--tk-border-strong) solid var(--sys-color-rule); background: var(--sys-color-page); }
 .digest .lead-box img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.digest [data-lead-item="icon"] .lead-box img { object-fit: scale-down; object-position: center; padding: var(--tk-space-4); }
 .digest .ed-typo { background: var(--sys-color-surface); border: var(--tk-border-strong) solid var(--sys-color-rule); aspect-ratio: 16 / 10; display: flex; flex-direction: column; justify-content: space-between; padding: var(--tk-space-3); }
 .digest .ed-figure svg.digest-figure { display: block; width: 100%; height: auto; }
 .digest svg.digest-figure text { font-family: var(--sys-text-kicker-family); font-weight: 700; white-space: pre; }
@@ -544,6 +545,18 @@
 
   /* The lead plate's evidence slot: the number, the trail at the slot's full height, the caption pinned to the bottom. */
   .lead-fig .ill-trail { height: 100%; }
+  /* W1b · an icon or card change on a tape line: old and new pictures in fixed boxes. */
+  .tape-pair { display: inline-flex; align-items: center; gap: var(--tk-space-1); margin-inline-start: var(--tk-space-2); vertical-align: middle; }
+  .tape-pair-img { object-fit: contain; border: var(--tk-border-hairline) solid var(--sys-color-rule); background: var(--sys-color-surface); }
+  /* W1b · the brand page's Surfaces block: fixed 3:2 boxes for first screens, square boxes for icons, 1.91:1 for social cards. */
+  .surface-box { position: relative; overflow: hidden; border: var(--tk-border-hairline) solid var(--sys-color-rule); }
+  .surface-box > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .surface-box[data-fit="contain"] > img { object-fit: scale-down; padding: var(--tk-space-2); }
+  .surface-wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tk-space-4) var(--tk-space-3); max-width: 60rem; }
+  .surface-wall > [data-surface-key="home"] { grid-column: 1 / -1; }
+  @media (min-width: 768px) { .surface-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } .surface-wall > [data-surface-key="home"] { grid-column: auto; } }
+  .surface-list { max-width: 60rem; border-top: var(--tk-border-hairline) solid var(--sys-color-rule); }
+  .surface-list > li { padding: var(--tk-space-2) 0; border-bottom: var(--tk-border-hairline) solid var(--sys-color-rule); }
   .lead-fig .ill-trail svg { height: 100%; }
 
   /* Covers: one object in the middle, tilted and bleeding off one edge, captions pinned left and right at mid-height. */

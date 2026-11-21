@@ -1,6 +1,6 @@
 // Read-time views over stored stories with the editor's overlay applied: cards, the Live stream, the story page. Pure.
 import { deLegacy } from "../brand";
-import { basis as basisOf, label, sectorName, type Basis } from "../labels";
+import { STAGES, basis as basisOf, label, sectorName, type Basis } from "../labels";
 import { brandPath, patternPath, signalPath } from "../ia";
 import { brandName } from "../brand-names";
 import { STORIES_PER_PAGE, type Story } from "../stories";
@@ -104,10 +104,22 @@ export const readFacts = (facts: Fact[]) => {
   // "Changed: accent" only summarises the change lines; with the lines themselves present it is noise.
   return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "line" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
 };
+const STAGE_RE = new RegExp(`(?<![.!?:]\\s|^)\\b(${STAGES.join("|")})\\b`, "g");
+/** W1b · a fact line in Read-side wording, for the facts-built body: no forecast run numbers ("(forecast run 13)", "in run 15") and stage
+ *  names as ordinary lower-case words inside a sentence ("is rising across all sectors"). Text inside quotation marks is left as captured. */
+export function readWording(text: string): string {
+  const shift = /^Stage (\w+) in forecast run \d+, (\w+) in run \d+\.?$/.exec(text);
+  let t = shift ? `It moved from ${shift[1]!.toLowerCase()} to ${shift[2]!.toLowerCase()}` : text;
+  t = t.replace(/\s*\((?:in |from )?(?:the )?(?:forecast )?runs? (?:no\.?\s*|#)?\d+\)/gi, "")
+    .replace(/,?\s*(?:in|by|from) (?:the )?(?:forecast )?runs? (?:no\.?\s*|#)?\d+/gi, "")
+    .replace(/\bforecast runs?\b/gi, "forecast");
+  // Stage words outside quotes and not opening a sentence read in lower case.
+  return t.split(/([“"‘][^”"’]*[”"’])/).map((part, i) => i % 2 ? part : part.replace(STAGE_RE, (w, _m, off: number) => off === 0 ? w : w.toLowerCase())).join("");
+}
 /** I3 · 0.4 · the body a story reads as before its text is written and checked: its change and number lines as sentences, in their
  *  order, at most four to a paragraph and two paragraphs. Pure; nothing here is new wording. */
 export function templateBody(facts: readonly Pick<Fact, "text">[]): string[] {
-  const lines = facts.map(f => f.text.trim()).filter(Boolean).map(t => /[.!?”"]$/.test(t) ? t : `${t}.`).slice(0, 8);
+  const lines = facts.map(f => readWording(f.text.trim())).filter(Boolean).map(t => /[.!?”"]$/.test(t) ? t : `${t}.`).slice(0, 8);
   const out: string[] = [];
   for (let i = 0; i < lines.length; i += 4) out.push(lines.slice(i, i + 4).join(" "));
   return out;

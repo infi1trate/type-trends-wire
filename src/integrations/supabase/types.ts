@@ -105,6 +105,30 @@ export type Database = {
           },
         ]
       }
+      asset_grids: {
+        Row: {
+          computed_at: string
+          grid: string
+          method: string
+          path: string
+          spread: number
+        }
+        Insert: {
+          computed_at?: string
+          grid: string
+          method: string
+          path: string
+          spread: number
+        }
+        Update: {
+          computed_at?: string
+          grid?: string
+          method?: string
+          path?: string
+          spread?: number
+        }
+        Relationships: []
+      }
       brand_assets: {
         Row: {
           bytes: number

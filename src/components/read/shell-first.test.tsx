@@ -23,7 +23,7 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
     const c = client(() => ({ name: "GoPro", sectorName: "Consumer", soWhat: "x" }));
     const r = await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "netlify.com" }, deps: { data: false } })));
     expect(c.awaited).toEqual([]);
-    expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories"]);
+    expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories", "brand-surfaces"]);
     expect(r).toEqual({ name: "Netlify", data: false });
   });
   it("E3b · story page awaits only its head and streams the body and earlier stories", async () => {

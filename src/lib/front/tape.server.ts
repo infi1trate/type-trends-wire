@@ -3,7 +3,7 @@
 // by the build that computes the checks; deferred on the page (never in front of the first byte).
 import { stored } from "../records/store.server";
 import { supabaseAnon } from "../mcp/supabase";
-import { confirmedTape, frontTape, FRONT_TAPE_DAYS, FRONT_TAPE_MAX, type FrontTape, type TapeEvent } from "./tape-block";
+import { confirmedTape, frontTape, withAssetLines, FRONT_TAPE_DAYS, FRONT_TAPE_MAX, type FrontTape, type TapeEvent } from "./tape-block";
 
 const COLS = "id,domain,type,before,after,detected_at,page_type,viewport,summary,source,snapshot_id,prev_snapshot_id";
 type Row = TapeEvent & { snapshot_id: number | null; prev_snapshot_id: number | null };
@@ -30,7 +30,14 @@ async function load(): Promise<FrontTape> {
     picturesSafe(),
   ]);
   const reversed = reversalIds(events.map(e => ({ id: e.id, domain: e.domain, page_type: e.page_type ?? null, viewport: e.viewport ?? null, detected_at: e.detected_at, before: e.before, after: e.after })));
-  return frontTape(events, checks, { now, labels: e => ({ seasonal: seasonal.has(e.id), carousel: carousel.has(e.id), reversed: reversed.has(e.id) }), icons: iconsFor(pics, first.map(r => r.domain)) });
+  const tape = frontTape(events, checks, { now, labels: e => ({ seasonal: seasonal.has(e.id), carousel: carousel.has(e.id), reversed: reversed.has(e.id) }), icons: iconsFor(pics, first.map(r => r.domain)) });
+  // W1b: confirmed icon and card changes (perceptual, two captures each side) as tape lines with their old and new pictures.
+  const assets = await (await import("../asset-changes.server")).confirmedAssetChanges(FRONT_TAPE_DAYS, now).catch(() => []);
+  const [{ assetChangeWhat, assetChangeWhen }, { brandName }, { cropSrc }] = await Promise.all([import("../asset-diff"), import("../brand-names"), import("../crops")]);
+  const lines = assets.filter(c => active.has(c.domain)).map(c => ({ name: brandName(c.domain, null), what: assetChangeWhat(c.kind), when: assetChangeWhen(c), marks: [], id: -c.to.id, domain: c.domain, at: c.confirmed_at ?? c.to.last_seen_at,
+    href: `/brands/${encodeURIComponent(c.domain)}`, icon: iconsFor(pics, [c.domain])[c.domain] ?? null,
+    pair: { kind: c.kind as "icon" | "card", before: { src: cropSrc(c.from.path), w: c.from.width, h: c.from.height }, after: { src: cropSrc(c.to.path), w: c.to.width, h: c.to.height }, alt: `${brandName(c.domain, null)}'s ${c.kind === "icon" ? "site icon" : "social share image"}, before and after` } }));
+  return withAssetLines(tape, lines);
 }
 /** E3b: pages read the stored `front-tape` record (written by the story build right after it runs, and by the records sweeper);
  *  only when the record is missing or too old does a visit compute it live. */

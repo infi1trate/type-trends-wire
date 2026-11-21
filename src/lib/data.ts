@@ -16,7 +16,7 @@ import { getSignalSnapshot } from "./signals.functions";
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
-import { getBrandCard, getBrandMoves, getBrandSections, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getStoryHead, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
+import { getBrandCard, getBrandMoves, getBrandSections, getBrandSurfaces, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getStoryHead, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
 import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
@@ -428,6 +428,8 @@ export const brandCardQuery = (domain: string) => queryOptions({ queryKey: ["bra
 // Brand page, deferred sections (a route loader may start these but must never await them; see DEFERRED_QUERIES).
 export const brandMovesQuery = (domain: string) => queryOptions({ queryKey: ["brand-moves", domain], staleTime: 10 * 60_000, queryFn: () => getBrandMoves({ data: { domain } }) });
 export const brandSectionsQuery = (domain: string) => queryOptions({ queryKey: ["brand-sections", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSections({ data: { domain } }) });
+/** W1b · the Surfaces block (home, product, about, pricing, icon, card) and the brand Data view's surface and icon/card tables. */
+export const brandSurfacesQuery = (domain: string) => queryOptions({ queryKey: ["brand-surfaces", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSurfaces({ data: { domain } }) });
 export const brandSectorQuery = (domain: string) => queryOptions({ queryKey: ["brand-sector", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSector({ data: { domain } }) });
 export const brandSimilarQuery = (domain: string) => queryOptions({ queryKey: ["brand-similar", domain], staleTime: 10 * 60_000, queryFn: () => getBrandSimilar({ data: { domain } }) });
 export const brandStoriesQuery = (domain: string) => queryOptions({ queryKey: ["brand-stories", domain], staleTime: 60_000, queryFn: () => getBrandStories({ data: { domain } }) });

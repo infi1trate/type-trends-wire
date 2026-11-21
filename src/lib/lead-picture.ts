@@ -27,6 +27,7 @@ export const LEAD_RULES = {
   breakout: "A breakout: up to four of the named sector brands' first screens.",
   whiteSpace: "A white space: up to four of the named brands outside the sector that use it.",
   news: "Outside news: the subject brand's own social card, else its hero crop.",
+  quiet: "A quiet change to a site icon or social card: the old and new versions side by side.",
   study: "A study leads with its chart.",
   digest: "The Digest keeps the cover its edition chose.",
   fallbackCrops: "No picture by type: the subject brands' latest first screens.",
@@ -69,6 +70,8 @@ export type LeadStoryIn = {
   census?: { name: string; line: string; href: string | null }[] | null;
   /** Dates the story cites (YYYY-MM-DD), for seasonal and sale pieces. */ dates?: string[];
   chart?: boolean;
+  /** W1b · a quiet icon or card change: the stored old and new versions. */
+  assetPair?: { kind: string; before: Pic & { path: string }; after: Pic & { path: string } } | null;
 };
 export type LeadPics = {
   okCrop: (c: Crop) => boolean;
@@ -140,6 +143,13 @@ export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
     const since = [...(s.dates ?? [])].sort()[0] ?? null, tiles = mosaicOf(s.domains, since ? `${since}T00:00:00Z` : null);
     if (tiles.length >= 2) return plan("mosaic", "seasonal", tiles, captionOf(tiles, p, "First screens from the cited dates"));
     return fallback(s, p);
+  }
+  if (id.startsWith("quiet:asset:") && s.assetPair) {
+    const d = s.domains[0] ?? "", what = s.assetPair.kind === "icon" ? "Site icon" : "Social card", report = reportOf(d);
+    const item = (x: Pic & { path: string }, role: "before" | "after"): LeadItem => ({ domain: d, section: what, date: day(x.at), src: x.src, srcSet: null, width: x.width, height: x.height,
+      asset: `${s.assetPair!.kind === "icon" ? "icon" : "card"}:${x.path}`, credit: `${what} · ${d} · ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, alt: `${role === "before" ? "Earlier" : "New"} ${what.toLowerCase()} of ${d}, ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, live: `https://${d}`, report, role });
+    const items = [item(s.assetPair.before, "before"), item(s.assetPair.after, "after")];
+    return plan("pair", "quiet", items, `${what} · before ${items[0]!.date}, after ${items[1]!.date}`);
   }
   if (s.type === "move" || s.type === "rebrand" || s.type === "counter_move") {
     const fields = s.fields ?? [];

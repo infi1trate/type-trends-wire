@@ -50,6 +50,7 @@ const domainInput = z.object({ domain: z.string().min(3).max(253) });
 export const getBrandCard = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandCard(data.domain.toLowerCase()));
 export const getBrandMoves = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandMoves(data.domain.toLowerCase()));
 export const getBrandSections = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSections(data.domain.toLowerCase()));
+export const getBrandSurfaces = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./surfaces.server")).loadBrandSurfaces(data.domain.toLowerCase()));
 export const getBrandSector = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSector(data.domain.toLowerCase()));
 export const getBrandSimilar = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSimilar(data.domain.toLowerCase()));
 export const getBrandStories = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandStories(data.domain.toLowerCase()));

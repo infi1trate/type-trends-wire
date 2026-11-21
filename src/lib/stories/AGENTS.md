@@ -1,1 +1,2 @@
 - Pitches are judged only from the build's own plan and rule refusals (`pitchView` → pure `pitch.ts`); a pitch never adds a candidate, changes a score or publishes, and `pitches`/`pitch_verdicts` are insert-only and service-role only behind the editor key.
+- Quiet changes are pure `quiet.ts` (stored as `move` rows told apart by a `quiet:` id, because the stored type list is a fixed check); outside-news absence uses the strict news matcher and is worded only as "no mention in the N outlets we read".

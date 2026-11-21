@@ -19,6 +19,7 @@ import { label as traitLabel, sectorName } from "@/lib/labels";
 import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/Editorial";
 import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
+import { SurfacesPart } from "./Surfaces";
 import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { Card, Raised } from "@/components/brand/Containers";
@@ -126,7 +127,7 @@ function SimilarList({ similar }: { similar: SimilarResult }) {
   return similar.items.length > 0 ? <Ledger label="Similar brands" rows={similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: <MarkedName icon={icons[x.domain]}>{x.name}</MarkedName>, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} /> : null;
 }
 /** The parts that may arrive after the card; BrandView passes them ready, BrandPageView passes deferred slots. */
-type Parts = { moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
+type Parts = { surfaces?: ReactNode; moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
 function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?: boolean }) {
   const page = <ObjectPage kind="brand" id="ed-brand" blocks={{
       headline: <>
@@ -136,6 +137,7 @@ function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?:
           <Raised href={b.actions.compare}>Audit a page against it</Raised>
         </div>
         {b.lastMove && <p className="ed-standfirst mt-8 max-w-[62ch]">{b.lastMove.text}<span className="ed-caption mt-1 block">{storyTime(b.lastMove.at)}</span></p>}
+        {parts.surfaces}
       </>,
       evidence: <>
         <BlockPart title="Moves" kicker="Every dated, measured change, newest first, with the two captures either side. Rebrands are confirmed by the rebrand desk.">
@@ -195,6 +197,7 @@ function StoriesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuer
 export function BrandPageView({ card, section = null, bare = false }: { card: CardIn; section?: string | null; bare?: boolean }) {
   const open = isCropSection(section) ? section : null;
   return <BrandBody b={card} bare={bare} parts={{
+    surfaces: <Later id="ed-surfaces" shapes={[]}><SurfacesPart domain={card.domain} /></Later>,
     moves: <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }, { kind: "picture", ratio: 2 * 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={card} /></Later>,
     sections: <Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }, { kind: "text", lines: 1 }]}><SectionsPart b={card} open={open} /></Later>,
     sector: <Later shapes={[{ kind: "picture", ratio: 4 / 3, maxWidth: 768 }, { kind: "rows", n: 4, height: ROW.compact }]}><SectorPart b={card} /></Later>,

@@ -12,7 +12,9 @@ export const FRONT_TAPE_TITLE = "The tape", FRONT_TAPE_SUB = "Every confirmed ch
 /** Where the count line and "The whole tape" go: the terminal's library panel and its Seen once or alternating list. */
 export const WHOLE_TAPE_HREF = "/terminal?panel=library", UNCONFIRMED_HREF = "/terminal?panel=library#seen-once";
 export type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at"> & { viewport?: string | null; source?: string | null };
-export type FrontTapeLine = TapeParts & { id: number; domain: string; at: string; href: string; icon: Pic | null };
+/** W1b · an icon or card change carries its old and new pictures as a pair (stored crops-bucket paths, served by /crops/). */
+export type TapePair = { kind: "icon" | "card"; before: { src: string; w: number; h: number }; after: { src: string; w: number; h: number }; alt: string };
+export type FrontTapeLine = TapeParts & { id: number; domain: string; at: string; href: string; icon: Pic | null; pair?: TapePair };
 export type FrontTape = { lines: FrontTapeLine[]; confirmed: number; unconfirmed: number; days: number };
 
 const DAY = 864e5;
@@ -29,6 +31,12 @@ export function frontTape<E extends TapeEvent>(events: readonly E[], checks: Rea
   const { rows, unconfirmed } = confirmedTape(events, checks, o.now, o.labels, o.name);
   const lines = rows.slice(0, FRONT_TAPE_MAX).map(r => ({ ...r.parts, id: r.id, domain: r.domain, at: r.detected_at, href: `/brands/${encodeURIComponent(r.domain)}`, icon: o.icons?.[r.domain] ?? null }));
   return { lines, confirmed: rows.length, unconfirmed, days: FRONT_TAPE_DAYS };
+}
+/** W1b · confirmed icon and card changes join the tape like any confirmed change: newest first among the lines, counted with them. */
+export function withAssetLines(t: FrontTape, extra: readonly FrontTapeLine[]): FrontTape {
+  if (!extra.length) return t;
+  const lines = [...t.lines, ...extra].sort((a, b) => b.at.localeCompare(a.at) || b.id - a.id).slice(0, FRONT_TAPE_MAX);
+  return { ...t, lines, confirmed: t.confirmed + extra.length };
 }
 /** "61 changes confirmed in the last 14 days" / "1 change …". */
 export const confirmedText = (n: number, days = FRONT_TAPE_DAYS) => `${n} ${n === 1 ? "change" : "changes"} confirmed in the last ${days} days`;

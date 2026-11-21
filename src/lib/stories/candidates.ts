@@ -58,6 +58,8 @@ export type BuildInput = {
   carousel?: number[];
   /** E2g · the census: the last eight days of live desktop home captures and the stored counts behind published census stories (census.ts). */
   census?: import("../census").CensusInput | null;
+  /** W1b · the quiet change: confirmed icon/card changes, the addresses of the captures non-home changes cite, and the wire from 14 days before the window (quiet.ts). */
+  quiet?: import("./quiet").QuietInput | null;
 };
 
 const day = 864e5;

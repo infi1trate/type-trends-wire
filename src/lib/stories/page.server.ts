@@ -88,7 +88,18 @@ export async function leadOf(s: StoryRecord, crops: import("./evidence").StoryEv
   const paletteOnly = !!one && ids.length === 1;
   const dates = [...new Set(((Array.isArray(s.facts) ? s.facts : []) as { text: string }[]).flatMap(f => String(f.text ?? "").match(/\b\d{4}-\d{2}-\d{2}\b/g) ?? []))];
   const pics = await leadPics(d => o.names?.get(d) ?? d);
-  return leadPicture({ kind: "story", story: { id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
+  const assetPair = s.id.startsWith("quiet:asset:") ? await quietPair(s.id, s.source_ids).catch(() => null) : null;
+  return leadPicture({ kind: "story", story: { assetPair, id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
+}
+/** W1b · a quiet icon or card story's old and new stored versions (`asset-from:` / `asset-to:` source ids; brand_assets hides opted-out brands). */
+async function quietPair(id: string, sourceIds: string[]) {
+  const from = sourceIds.find(x => x.startsWith("asset-from:"))?.slice(11), to = sourceIds.find(x => x.startsWith("asset-to:"))?.slice(9);
+  if (!from || !to) return null;
+  const [{ supabaseAnon }, { cropSrc }] = await Promise.all([import("../mcp/supabase"), import("../crops")]);
+  const { data } = await supabaseAnon().from("brand_assets").select("path,width,height,first_seen_at,last_seen_at").in("path", [from, to]);
+  const a = data?.find(r => r.path === from), b = data?.find(r => r.path === to);
+  if (!a || !b) return null;
+  return { kind: id.split(":")[3] ?? "icon", before: { path: a.path, src: cropSrc(a.path), width: a.width, height: a.height, at: a.last_seen_at }, after: { path: b.path, src: cropSrc(b.path), width: b.width, height: b.height, at: b.first_seen_at } };
 }
 /** E2d · what a retired story's page shows: the editor's note and the tape lines it was built from (each linking to the library record). */
 export type Retired = { note: string | null; tape: { id: number; text: string; href: string; confirmed: boolean }[] };

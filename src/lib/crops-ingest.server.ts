@@ -37,6 +37,8 @@ export type CropStore = {
   visibleAsset(path: string): Promise<{ domain: string } | null>;
   /** I3b · measure a newly stored section crop from its pixels into crop_quality (absent = left to the scheduled sweep). */
   measure?(crop: { path: string; width: number; height: number; bytes: number; domain: string }, data: Uint8Array): Promise<void>;
+  /** W1b · reduce a newly stored icon or card to its colour grid (asset_grids) for perceptual comparison (absent = left to the sweep). */
+  measureAsset?(path: string, data: Uint8Array): Promise<void>;
 };
 
 export type CropRefused = { domain: string; section: string; reason: CropRefusal | AssetRefusal };
@@ -73,6 +75,7 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
         if (r === "opted_out") { await db.removeObjects([path]); refuse("opted_out"); continue; }
         if (r === "exists") { unchanged++; continue; }
         stored++; touchedAssets.add(`${c.domain}|${kind}`);
+        if (db.measureAsset && Date.now() - started < CROP_MEASURE_MS) await db.measureAsset(path, bytes).catch(() => null);
         continue;
       }
       if (!isCropSection(c.section)) { refuse("bad_webp"); continue; }
@@ -195,5 +198,6 @@ async function adminCropStore(): Promise<CropStore> {
     async visibleAsset(path) { const r = await supabaseAnon().from("brand_assets").select("domain").eq("path", path).maybeSingle(); if (r.error) fail("Asset lookup failed"); return r.data ?? null; },
     async download(path) { const f = await db.storage.from(CROP_BUCKET).download(path); if (f.error || !f.data) return null; return new Uint8Array(await f.data.arrayBuffer()); },
     async measure(crop, data) { await (await import("./crop-measure.server")).measureCrop(db, crop, data); },
+    async measureAsset(path, data) { await (await import("./asset-changes.server")).measureAsset(db, path, data); },
   };
 }

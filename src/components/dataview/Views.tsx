@@ -4,7 +4,7 @@ import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
+import { brandSurfacesQuery, forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
 import { LibraryBand, ChangeValues } from "@/components/terminal/LibraryShared";
 import { LibrarySite } from "@/components/terminal/LibrarySite";
 import { TraitDetail, BriefView } from "@/components/terminal/Forecast";
@@ -23,6 +23,7 @@ import { briefMovers } from "@/lib/views/week";
 import { brandDataPath, dataHref } from "@/lib/ia";
 import { label } from "@/lib/labels";
 import { show } from "@/lib/library";
+import { assetVerdictText } from "@/lib/surfaces";
 import type { Edition } from "@/lib/digest/edition";
 
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "–");
@@ -80,8 +81,21 @@ export function BrandData({ domain }: { domain: string }) {
   return <Later id="brand-data-later" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
 }
 function BrandDataBody({ domain }: { domain: string }) {
-  const { data } = useSuspenseQuery(librarySiteQuery(domain));
-  return data ? <LibrarySite domain={domain} embedded /> : <DataNote>Not in the library: only tracked brands have a record.</DataNote>;
+  const { data } = useSuspenseQuery(librarySiteQuery(domain)), { data: s } = useSuspenseQuery(brandSurfacesQuery(domain));
+  if (!data) return <DataNote>Not in the library: only tracked brands have a record.</DataNote>;
+  return <>
+    <LibrarySite domain={domain} embedded />
+    {/* W1b · every surface side by side with the homepage, then every stored icon and card version with its verdict. */}
+    {s.rows.length > 0 && <Band title="SURFACES">
+      <DataTable caption="Latest live desktop capture of each page, measured fields side by side" head={["Surface", ...s.fieldNames, "Captured", "Address", "Matches home"]}
+        rows={s.rows.map(r => [r.page, ...s.fieldNames.map(f => r.fields[f] ?? "not measured"), r.at.slice(0, 10), r.url ? <Lnk key="u" href={r.url}>{r.url.replace(/^https?:\/\//, "")}</Lnk> : "–", r.match === "this is home" ? "–" : r.match])} />
+      {s.productLine && <p className="p-3 text-compare-muted">{s.productLine}</p>}
+    </Band>}
+    {s.history.length > 0 && <Band title="ICON AND CARD HISTORY">
+      <DataTable caption="Every stored version of the site icon and social card, oldest first" head={["Picture", "Version", "First seen", "Last seen", "Against the previous version", "Receipt"]}
+        rows={s.history.map(h => [h.kind, String(h.version), h.first.slice(0, 16).replace("T", " "), h.last.slice(0, 16).replace("T", " "), assetVerdictText(h.verdict), <Lnk key="r" href={h.src}>PICTURE →</Lnk>])} />
+    </Band>}
+  </>;
 }
 
 // SIGNAL -------------------------------------------------------------------------------------------------------------------------

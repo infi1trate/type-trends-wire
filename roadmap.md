@@ -31,7 +31,7 @@
 - [ ] 2 Receipt drawer on Read pages (`?receipt=type:id`), pure receipt models, focus trap, Back/Esc, reduced motion
 - [ ] 3 `storyForRow` and "No. N →" on data rows (one batched read per table)
 - [ ] 4 One name per thing (ia.ts/labels.ts), one glossary, names test
-- [ ] Tests, responsive 360–1920, TTFB before/after, report
+- [x] Tests, responsive 360–1920, TTFB before/after, report
 
 ## U2b · DB load first, follow-ups, story truth fixes
 - [x] A1 confirm no API caller of refresh_library_history()
@@ -75,3 +75,12 @@
 - [x] 4 Superlative check accepts ranked-list first/last claims + tests; Study No. 4 writer once
 - [x] 5 Crop quality measured at intake/sweep; time per measurement
 - [x] Tests, responsive 360–1920, report, commit
+
+# W1b · Every surface a brand owns
+- [x] 1 Icon/card change = measured change (perceptual diff, prev ≥2 captures, new ≥2 captures ≥6 h apart); tape pair; Data "Icon and card history"; verdicts for the 9 brands
+- [x] 2 Brand page "Surfaces" block (home/product/about/pricing first screens + icon + card); Data "Surfaces" table with Matches home; weights/heights before/after
+- [x] 3 Product vs home match (headline typeface + accent, same crawl); brand-page line; census candidate commerce/hardware; N/M + brands
+- [x] 4 `quiet` story type (icon/card or same-url non-home identity change, no wire mention ±14 d); wording ban; leadPicture pair; today's candidates
+- [x] 5 Corrected story with hidden text first in writer queue + test; facts-built body without run numbers, lower-case stages; show No. 45 body
+- [ ] 6 Study No. 4 writer once; outcome — waiting: today's study allowance (4/4) was used before this build; run `bun scripts/w1b-study4.ts` once after the 7 pm ET reset
+- [ ] Tests, responsive, report, commit

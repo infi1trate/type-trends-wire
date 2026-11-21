@@ -6,7 +6,7 @@ import { createElement } from "react";
 import { render } from "@testing-library/react";
 
 const never = () => new Promise<never>(() => {});
-vi.mock("@/lib/read.functions", async orig => { const w = () => new Promise<never>(() => {}); return { ...(await orig<object>()), getBrandMoves: w, getBrandSections: w, getBrandSector: w, getBrandSimilar: w, getBrandStories: w }; });
+vi.mock("@/lib/read.functions", async orig => { const w = () => new Promise<never>(() => {}); return { ...(await orig<object>()), getBrandMoves: w, getBrandSections: w, getBrandSector: w, getBrandSimilar: w, getBrandStories: w, getBrandSurfaces: w }; });
 
 import { Later, Placeholder, ROW } from "./Later";
 import { BrandPageView } from "./BrandView";
@@ -47,7 +47,7 @@ describe("brand page, first render", () => {
     expect(b.timeline.length).toBeGreaterThan(0);
     const { container } = await renderInRouter(() => createElement(BrandPageView, { card: cardOf(b) }), "/brands/vercel.com");
     expect(container.querySelector("h1")?.textContent).toContain(b.name);
-    expect(container.querySelectorAll("[data-later][aria-busy='true']").length).toBe(5);
+    expect(container.querySelectorAll("[data-later][aria-busy='true']").length).toBe(6);
     expect(container.querySelector("[data-pair-open]")).toBeNull();
     const moves = container.querySelector("#ed-moves")!;
     expect(moves.getAttribute("aria-busy")).toBe("true");

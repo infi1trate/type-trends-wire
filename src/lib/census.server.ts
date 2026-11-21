@@ -36,8 +36,9 @@ export async function censusHistory(db: Db): Promise<CensusInput["history"]> {
   return rows.filter(r => state.get(censusStoryOf(r.story_id)) === "published").map(r => ({ census_key: r.census_key, day: r.day, count: r.count, base: r.base }));
 }
 export async function censusInput(db: Db, now: number): Promise<CensusInput> {
-  const [captures, history] = await Promise.all([censusCaptures(db, now), censusHistory(db)]);
-  return { captures, history };
+  const [captures, history, surfaces] = await Promise.all([censusCaptures(db, now), censusHistory(db),
+    import("./surfaces.server").then(m => m.surfaceCaptures({ pages: ["home", "product"], days: CENSUS_DAYS, now })).catch(() => undefined)]);
+  return { captures, history, ...(surfaces ? { surfaces } : {}) };
 }
 /** Append the counts census stories run on (one row per story; a retry of the same story is ignored). */
 export async function recordCensus(admin: Db, rows: CensusRow[]): Promise<number> {

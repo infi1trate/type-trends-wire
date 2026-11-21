@@ -1,7 +1,7 @@
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { brandCardQuery, brandMovesQuery, brandSectionsQuery, brandSectorQuery, brandSimilarQuery, brandStoriesQuery } from "@/lib/data";
+import { brandCardQuery, brandMovesQuery, brandSectionsQuery, brandSurfacesQuery, brandSectorQuery, brandSimilarQuery, brandStoriesQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { BrandFrame, BrandPageView } from "@/components/read/BrandView";
@@ -27,14 +27,14 @@ export const Route = createFileRoute("/brands/$domain")({
     // U1: the Data view (the old /library record) has the same frame-first head; the record streams in after it.
     if (deps.data) {
       if (!name) { const b = await q.ensureQueryData(brandCardQuery(d)); if (!b) throw notFound(); }
-      void q.prefetchQuery(librarySiteQuery(d)); void q.prefetchQuery(siteCropsQuery(d));
+      void q.prefetchQuery(librarySiteQuery(d)); void q.prefetchQuery(siteCropsQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d));
       return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: true };
     }
     if (!name) {
       const b = await q.ensureQueryData(brandCardQuery(d));
       if (!b) throw notFound();
     } else void q.prefetchQuery(brandCardQuery(d));
-    void q.prefetchQuery(brandMovesQuery(d)); void q.prefetchQuery(brandSectionsQuery(d)); void q.prefetchQuery(brandSectorQuery(d));
+    void q.prefetchQuery(brandMovesQuery(d)); void q.prefetchQuery(brandSectionsQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d)); void q.prefetchQuery(brandSectorQuery(d));
     void q.prefetchQuery(brandSimilarQuery(d)); void q.prefetchQuery(brandStoriesQuery(d));
     return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: false };
   },
