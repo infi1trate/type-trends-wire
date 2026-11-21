@@ -1,7 +1,7 @@
 // POST /api/public/ingest-crops and GET /crops/<path>. Crawler-secret auth runs before the body is read; never logs payloads or bytes.
 // Storage and row writes go through an injectable store (tests use memory; nothing is written to the shared database or bucket).
 import { boundedText } from "./thumbs-ingest.server";
-import { CROP_LIMITS, checkCrop, cropEvictions, cropPath, cropPayload, decodeCrop, isCropSection, parseCropPath, planCrop, plainIssue, type CropRefusal, type CropRow, type CropSection } from "./crops";
+import { CROP_LIMITS, checkCrop, checkSurface, cropEvictions, cropPath, cropPayload, decodeCrop, isCropSection, isSurfaceSection, parseCropPath, parseSurfacePath, planCrop, plainIssue, surfacePath, type CropRefusal, type CropRow, type CropSection, type SurfaceSection } from "./crops";
 import { CROP_MEASURE_MS } from "./crop-measure.server";
 import { ASSET_LIMITS, assetPath, checkAsset, isAssetKind, parseAssetPath, type AssetKind, type AssetRefusal, type AssetRow } from "./brand-assets";
 
@@ -39,6 +39,14 @@ export type CropStore = {
   measure?(crop: { path: string; width: number; height: number; bytes: number; domain: string }, data: Uint8Array): Promise<void>;
   /** W1b · reduce a newly stored icon or card to its colour grid (asset_grids) for perceptual comparison (absent = left to the sweep). */
   measureAsset?(path: string, data: Uint8Array): Promise<void>;
+  // W1c · first screens of the brand's other pages (product, about, pricing): their own table (surface_crops), the same bucket and rules.
+  surfaceVersions(domain: string, section: SurfaceSection, viewport: string): Promise<StoredCrop[]>;
+  touchSurface(id: number, lastSeenAt: string): Promise<void>;
+  insertSurface(row: Omit<CropRow, "id">): Promise<"ok" | "exists" | "opted_out">;
+  deleteSurfaceRows(ids: number[]): Promise<void>;
+  domainSurfaces(domain: string): Promise<StoredCrop[]>;
+  /** The visible surface row at `path` (hidden when the domain opted out), for serving. */
+  visibleSurface(path: string): Promise<{ domain: string } | null>;
 };
 
 export type CropRefused = { domain: string; section: string; reason: CropRefusal | AssetRefusal };
@@ -56,7 +64,7 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
     if (!parsed.success) return json({ error: plainIssue(parsed.error.issues as never) }, 400);
     const { run_id, captures } = parsed.data, domains = [...new Set(captures.map(c => c.domain))];
     const [tracked, opted] = await Promise.all([db.trackedDomains(domains), db.optedOut(domains)]);
-    let stored = 0, unchanged = 0; const refused: CropRefused[] = [], touched = new Set<string>(), touchedAssets = new Set<string>();
+    let stored = 0, unchanged = 0; const refused: CropRefused[] = [], touched = new Set<string>(), touchedAssets = new Set<string>(), touchedSurfaces = new Set<string>();
     for (const c of captures) {
       const refuse = (reason: CropRefusal | AssetRefusal) => { refused.push({ domain: c.domain, section: c.section, reason }); };
       if (opted.has(c.domain)) { refuse("opted_out"); continue; }
@@ -76,6 +84,22 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
         if (r === "exists") { unchanged++; continue; }
         stored++; touchedAssets.add(`${c.domain}|${kind}`);
         if (db.measureAsset && Date.now() - started < CROP_MEASURE_MS) await db.measureAsset(path, bytes).catch(() => null);
+        continue;
+      }
+      // W1c: a page's first screen is a crop no taller than 800 px, stored in surface_crops and measured on arrival like any crop.
+      if (isSurfaceSection(c.section)) {
+        const section = c.section, check = checkSurface(bytes, c);
+        if (!check.ok) { refuse(check.reason); continue; }
+        const path = surfacePath(c.domain, section, c.captured_at, c.hash);
+        const plan = planCrop(await db.surfaceVersions(c.domain, section, c.viewport), { hash: c.hash, captured_at: c.captured_at, path });
+        if (plan.action === "unchanged") { await db.touchSurface(plan.row.id, plan.last_seen_at); unchanged++; continue; }
+        await db.upload(path, bytes);
+        const r = await db.insertSurface({ domain: c.domain, section, viewport: c.viewport, captured_at: c.captured_at, first_seen_at: c.captured_at, last_seen_at: c.captured_at,
+          path, width: check.width, height: check.height, bytes: check.bytes, hash: c.hash, run_id });
+        if (r === "opted_out") { await db.removeObjects([path]); refuse("opted_out"); continue; }
+        if (r === "exists") { unchanged++; continue; }
+        stored++; touchedSurfaces.add(`${c.domain}|${section}|${c.viewport}`);
+        if (db.measure && Date.now() - started < CROP_MEASURE_MS) await db.measure({ path, width: check.width, height: check.height, bytes: check.bytes, domain: c.domain }, bytes).catch(() => null);
         continue;
       }
       if (!isCropSection(c.section)) { refuse("bad_webp"); continue; }
@@ -112,6 +136,13 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
       if (!old.length) continue;
       await db.removeObjects(old.map(o => o.path)); await db.deleteAssetRows(old.map(o => o.id));
     }
+    // Surface first screens keep the same history rule: the newest 12 versions per brand + page.
+    for (const k of touchedSurfaces) {
+      const [domain, section, viewport] = k.split("|") as [string, SurfaceSection, string];
+      const old = cropEvictions(await db.surfaceVersions(domain, section, viewport), CROP_LIMITS.keep);
+      if (!old.length) continue;
+      await db.removeObjects(old.map(o => o.path)); await db.deleteSurfaceRows(old.map(o => o.id));
+    }
     return json({ stored, unchanged, refused });
   } catch (error) {
     console.error("Crop ingestion failed", error instanceof Error ? error.name : "UnknownError");
@@ -120,12 +151,13 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
 }
 
 /** Opt-out cleanup: deletes every stored crop and brand asset (objects, then rows) of a domain. Returns how many versions of each were removed. */
-export async function deleteImagesFor(domain: string, store?: CropStore): Promise<{ crops: number; assets: number }> {
+export async function deleteImagesFor(domain: string, store?: CropStore): Promise<{ crops: number; assets: number; surfaces: number }> {
   const db = store ?? (await adminCropStore());
-  const [rows, assets] = await Promise.all([db.domainRows(domain), db.domainAssets(domain)]);
+  const [rows, assets, surfaces] = await Promise.all([db.domainRows(domain), db.domainAssets(domain), db.domainSurfaces(domain)]);
   if (rows.length) { await db.removeObjects(rows.map(r => r.path)); await db.deleteRows(rows.map(r => r.id)); }
   if (assets.length) { await db.removeObjects(assets.map(r => r.path)); await db.deleteAssetRows(assets.map(r => r.id)); }
-  return { crops: rows.length, assets: assets.length };
+  if (surfaces.length) { await db.removeObjects(surfaces.map(r => r.path)); await db.deleteSurfaceRows(surfaces.map(r => r.id)); }
+  return { crops: rows.length, assets: assets.length, surfaces: surfaces.length };
 }
 /** Opt-out cleanup, crops count only (assets are deleted with them). */
 export const deleteCropsFor = async (domain: string, store?: CropStore): Promise<number> => (await deleteImagesFor(domain, store)).crops;
@@ -133,11 +165,11 @@ export const deleteCropsFor = async (domain: string, store?: CropStore): Promise
 /** GET /crops/<path>: serves a stored crop only while its row is visible and its domain has not opted out. */
 export async function serveCrop(path: string, store?: CropStore): Promise<Response> {
   const nf = () => new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "private, max-age=300" } });
-  const asset = parseAssetPath(path), ref = asset ?? parseCropPath(path);
+  const asset = parseAssetPath(path), surface = asset ? null : parseSurfacePath(path), ref = asset ?? surface ?? parseCropPath(path);
   if (!ref) return nf();
   try {
     const db = store ?? (await adminCropStore());
-    const [row, opted] = await Promise.all([asset ? db.visibleAsset(path) : db.visibleRow(path), db.optedOut([ref.domain])]);
+    const [row, opted] = await Promise.all([asset ? db.visibleAsset(path) : surface ? db.visibleSurface(path) : db.visibleRow(path), db.optedOut([ref.domain])]);
     if (!row || row.domain !== ref.domain || opted.has(ref.domain)) return nf();
     const bytes = await db.download(path);
     if (!bytes) return nf();
@@ -197,6 +229,19 @@ async function adminCropStore(): Promise<CropStore> {
     async domainAssets(domain) { const r = await db.from("brand_assets").select(ACOLS).eq("domain", domain).limit(1000); if (r.error) fail("Asset lookup failed"); return (r.data ?? []) as StoredAsset[]; },
     async visibleAsset(path) { const r = await supabaseAnon().from("brand_assets").select("domain").eq("path", path).maybeSingle(); if (r.error) fail("Asset lookup failed"); return r.data ?? null; },
     async download(path) { const f = await db.storage.from(CROP_BUCKET).download(path); if (f.error || !f.data) return null; return new Uint8Array(await f.data.arrayBuffer()); },
+    async surfaceVersions(domain, section, viewport) {
+      const r = await db.from("surface_crops").select(COLS).eq("domain", domain).eq("section", section).eq("viewport", viewport).order("captured_at", { ascending: false }).limit(100);
+      if (r.error) fail("Surface lookup failed"); return (r.data ?? []) as StoredCrop[];
+    },
+    async touchSurface(id, lastSeenAt) { const r = await db.from("surface_crops").update({ last_seen_at: lastSeenAt }).eq("id", id); if (r.error) fail("Surface touch failed"); },
+    async insertSurface(row) {
+      const r = await db.from("surface_crops").insert(row);
+      if (r.error) { if (r.error.code === "23514" && /opt-out/.test(r.error.message)) return "opted_out"; if (r.error.code === "23505") return "exists"; fail("Surface row write failed"); }
+      return "ok";
+    },
+    async deleteSurfaceRows(ids) { const r = await db.from("surface_crops").delete().in("id", ids); if (r.error) fail("Surface row delete failed"); },
+    async domainSurfaces(domain) { const r = await db.from("surface_crops").select(COLS).eq("domain", domain).limit(1000); if (r.error) fail("Surface lookup failed"); return (r.data ?? []) as StoredCrop[]; },
+    async visibleSurface(path) { const r = await supabaseAnon().from("surface_crops").select("domain").eq("path", path).maybeSingle(); if (r.error) fail("Surface lookup failed"); return r.data ?? null; },
     async measure(crop, data) { await (await import("./crop-measure.server")).measureCrop(db, crop, data); },
     async measureAsset(path, data) { await (await import("./asset-changes.server")).measureAsset(db, path, data); },
   };

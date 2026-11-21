@@ -24,17 +24,8 @@ export function stripHtml(s: unknown, max = 280): string | null {
   const t = decodeEntities(String(s).replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
   return t.length > max ? t.slice(0, max - 1) + "…" : t || null;
 }
-export const FEEDS = [
-  { name: "It's Nice That", url: "https://feeds2.feedburner.com/itsnicethat/SlXC" },
-  { name: "Dezeen", url: "https://www.dezeen.com/feed/" },
-  { name: "Design Milk", url: "http://feeds.feedburner.com/design-milk" },
-  { name: "Codrops", url: "http://feeds2.feedburner.com/tympanus" },
-  { name: "Smashing Magazine", url: "https://www.smashingmagazine.com/feed/" },
-  { name: "Nielsen Norman Group", url: "https://www.nngroup.com/feed/rss/" },
-  { name: "UX Collective", url: "https://uxdesign.cc/feed" },
-  { name: "Colossal", url: "http://www.thisiscolossal.com/feed/" },
-  { name: "designboom", url: "https://www.designboom.com/feed/" },
-];
+// W1c · the feed list lives in wire-sources.ts so the story engine can count outlets without the XML parser.
+export { FEEDS } from "./wire-sources";
 export const HN_QUERIES = ["typeface", "font", "typography", "design system", "figma", "rebrand", "logo", "color palette", "web design", "ui design"];
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", textNodeName: "#text" });
 const arr = <T,>(x: T | T[] | undefined): T[] => (x === undefined ? [] : Array.isArray(x) ? x : [x]);

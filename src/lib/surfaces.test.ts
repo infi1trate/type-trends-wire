@@ -32,3 +32,15 @@ describe("W1b · surfaces against the homepage", () => {
     expect(productLine(p, day)).toBe("The product page uses the homepage's headline typeface and a different accent colour (both captured in the same crawl on 2026-11-21).");
   });
 });
+
+import { matchLine, type SurfaceListRow } from "./surfaces";
+describe("W1c · the one line above the Surfaces list", () => {
+  const row = (key: string, match: SurfaceListRow["match"]) => ({ key, match }) as SurfaceListRow;
+  it("counts the other pages that match the homepage, in plain words", () => {
+    expect(matchLine([row("home", "this is home"), row("product", "yes"), row("about", "no")])).toBe("1 of the 2 other pages we read matches the homepage.");
+    expect(matchLine([row("home", "this is home"), row("product", "yes"), row("about", "yes")])).toBe("Both other pages we read match the homepage.");
+    expect(matchLine([row("home", "this is home"), row("product", "no"), row("about", "not comparable")])).toBe("None of the 2 other pages we read matches the homepage; 1 could not be compared.");
+    expect(matchLine([row("home", "this is home"), row("pricing", "no")])).toBe("The one other page we read does not match the homepage.");
+    expect(matchLine([row("home", "this is home")])).toBeNull();
+  });
+});

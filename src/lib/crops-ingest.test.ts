@@ -7,7 +7,7 @@ import { b64, png, webp } from "./__fixtures__/webp";
 
 const SECRET = "test-only-secret";
 function memory(opts: { tracked?: string[]; optouts?: string[] } = {}) {
-  const objects = new Map<string, Uint8Array>(), rows: StoredCrop[] = [], assets: StoredAsset[] = [], optouts = new Set(opts.optouts ?? []), tracked = new Set(opts.tracked ?? ["vercel.com", "linear.app"]);
+  const objects = new Map<string, Uint8Array>(), rows: StoredCrop[] = [], assets: StoredAsset[] = [], surfaces: StoredCrop[] = [], optouts = new Set(opts.optouts ?? []), tracked = new Set(opts.tracked ?? ["vercel.com", "linear.app"]);
   let id = 0;
   const store: CropStore = {
     async authenticate(r) { return r.headers.get("x-crawl-secret") === SECRET; },
@@ -28,8 +28,14 @@ function memory(opts: { tracked?: string[]; optouts?: string[] } = {}) {
     async deleteAssetRows(ids) { for (const i of ids) assets.splice(assets.findIndex(r => r.id === i), 1); },
     async domainAssets(domain) { return assets.filter(r => r.domain === domain); },
     async visibleAsset(path) { const r = assets.find(x => x.path === path); return r && !optouts.has(r.domain) ? { domain: r.domain } : null; },
+    async surfaceVersions(domain, section, viewport) { return surfaces.filter(r => r.domain === domain && r.section === section && r.viewport === viewport).sort((a, b) => b.captured_at.localeCompare(a.captured_at)); },
+    async touchSurface(i, at) { const r = surfaces.find(x => x.id === i)!; r.last_seen_at = at; },
+    async insertSurface(row) { if (optouts.has(row.domain)) return "opted_out"; if (surfaces.some(r => r.path === row.path)) return "exists"; surfaces.push({ ...row, id: ++id }); return "ok"; },
+    async deleteSurfaceRows(ids) { for (const i of ids) surfaces.splice(surfaces.findIndex(r => r.id === i), 1); },
+    async domainSurfaces(domain) { return surfaces.filter(r => r.domain === domain); },
+    async visibleSurface(path) { const r = surfaces.find(x => x.path === path); return r && !optouts.has(r.domain) ? { domain: r.domain } : null; },
   };
-  return { store, objects, rows, assets, optouts };
+  return { store, objects, rows, assets, surfaces, optouts };
 }
 const hash = (n: number) => n.toString(16).padStart(16, "0");
 const cap = (o: Record<string, unknown> = {}) => ({ domain: "vercel.com", section: "hero", viewport: "desktop", captured_at: "2026-11-15T06:00:00Z", width: 1280, height: 800, hash: hash(1), webp_base64: b64(webp(1280, 800)), ...o });
@@ -53,7 +59,7 @@ describe("POST /api/public/ingest-crops", () => {
     const bad = await handleCropIngest(post("{nope"), m.store);
     expect([bad.status, await bad.json()]).toEqual([400, { error: "Body is not valid JSON" }]);
     const sec = await send(m, [cap({ section: "logo" })]);
-    expect(sec.status).toBe(400); expect(sec.body.error).toBe('captures.0.section: unknown section "logo" (expected hero, nav, pricing, cta, footer, icon, card)');
+    expect(sec.status).toBe(400); expect(sec.body.error).toBe('captures.0.section: unknown section "logo" (expected hero, nav, pricing, cta, footer, icon, card, product, about, pricing_page)');
     expect((await send(m, [])).status).toBe(400);
     expect((await send(m, Array.from({ length: 13 }, (_, i) => cap({ hash: hash(i + 1) })))).status).toBe(400);
     expect((await send(m, [cap({ width: 1281 })])).status).toBe(400);
@@ -215,6 +221,45 @@ describe("I1 · brand assets (site icon, social card) in the crop payload", () =
     expect([...m.objects.keys()]).toEqual(["linear.app/hero/2026-11-15-00000000.webp"]);
     m.optouts.delete("vercel.com");
     expect((await serveCrop("assets/vercel.com/icon/2026-11-15-00000000.webp", m.store)).status).toBe(404);
-    expect(await deleteImagesFor("vercel.com", m.store)).toEqual({ crops: 0, assets: 0 });
+    expect(await deleteImagesFor("vercel.com", m.store)).toEqual({ crops: 0, assets: 0, surfaces: 0 });
+  });
+});
+
+describe("W1c · first screens of the product, about and pricing pages", () => {
+  const page = (section: string, o: Record<string, unknown> = {}) => cap({ section, hash: hash(700), ...o });
+  it("stores each in its own folder and table, never with the homepage sections, and measures it on arrival", async () => {
+    const m = memory(), seen: string[] = [];
+    m.store.measure = async c => { seen.push(c.path); };
+    const r = await send(m, [page("product"), page("about"), page("pricing_page"), cap({ section: "pricing" })]);
+    expect(r.body).toEqual({ stored: 4, unchanged: 0, refused: [] });
+    expect(m.surfaces.map(x => [x.section, x.path])).toEqual([["product", "vercel.com/product/2026-11-15-00000000.webp"], ["about", "vercel.com/about/2026-11-15-00000000.webp"], ["pricing_page", "vercel.com/pricing_page/2026-11-15-00000000.webp"]]);
+    expect(m.rows.map(x => x.section)).toEqual(["pricing"]);
+    expect(seen).toEqual(["vercel.com/product/2026-11-15-00000000.webp", "vercel.com/about/2026-11-15-00000000.webp", "vercel.com/pricing_page/2026-11-15-00000000.webp", "vercel.com/pricing/2026-11-15-00000000.webp"]);
+  });
+  it("a first screen is WebP, at most 1280 × 800 and 150 KB, with the size it declares", async () => {
+    const m = memory();
+    const r = await send(m, [page("product", { height: 801, webp_base64: b64(webp(1280, 801)) }), page("about", { webp_base64: b64(webp(1280, 800, { bytes: 150 * 1024 + 1 })) }), page("pricing_page", { webp_base64: b64(png()) }), page("product", { width: 1200 })]);
+    expect(r.body.refused.map((x: { section: string; reason: string }) => `${x.section}:${x.reason}`)).toEqual(["product:too_large_dimensions", "about:over_150kb", "pricing_page:not_webp", "product:dimension_mismatch"]);
+    expect((await send(m, [page("product", { width: 1281 })])).status).toBe(400);
+    expect(m.surfaces).toHaveLength(0); expect(m.objects.size).toBe(0);
+  });
+  it("refuses untracked and opted-out brands; same hash only moves last_seen_at; keeps the newest 12", async () => {
+    const m = memory({ optouts: ["linear.app"] });
+    expect((await send(m, [page("product", { domain: "example.org" }), page("product", { domain: "linear.app" })])).body.refused.map((x: { reason: string }) => x.reason)).toEqual(["untracked_domain", "opted_out"]);
+    await send(m, [page("product")]);
+    expect((await send(m, [page("product", { captured_at: "2026-11-22T06:00:00Z" })])).body).toEqual({ stored: 0, unchanged: 1, refused: [] });
+    expect(m.surfaces[0]).toMatchObject({ first_seen_at: "2026-11-15T06:00:00Z", last_seen_at: "2026-11-22T06:00:00Z" });
+    for (let i = 1; i <= 12; i++) await send(m, [page("product", { hash: hash(800 + i), captured_at: `2026-11-${String(i + 15)}T07:00:00Z` })]);
+    expect(m.surfaces).toHaveLength(12);
+    expect(m.surfaces.some(x => x.hash === hash(700))).toBe(false);
+  });
+  it("is served through /crops/… while visible, and an opt-out deletes it with the brand's other images", async () => {
+    const m = memory(); await send(m, [page("about"), cap()]);
+    const path = "vercel.com/about/2026-11-15-00000000.webp";
+    expect((await serveCrop(path, m.store)).status).toBe(200);
+    expect((await serveCrop("vercel.com/pricing_page/2026-11-15-00000000.webp", m.store)).status).toBe(404);
+    expect(await deleteImagesFor("vercel.com", m.store)).toEqual({ crops: 1, assets: 0, surfaces: 1 });
+    expect(m.objects.size).toBe(0);
+    expect((await serveCrop(path, m.store)).status).toBe(404);
   });
 });

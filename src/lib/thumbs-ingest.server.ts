@@ -103,7 +103,7 @@ export async function handleThumbOptout(request: Request, store?: ThumbStore, cr
     if (crops === null) return json({ ok: true, domain, action, deleted: rows.length });
     const { deleteImagesFor } = await import("./crops-ingest.server");
     const gone = await deleteImagesFor(domain, crops);
-    return json({ ok: true, domain, action, deleted: rows.length, crops_deleted: gone.crops, assets_deleted: gone.assets });
+    return json({ ok: true, domain, action, deleted: rows.length, crops_deleted: gone.crops, assets_deleted: gone.assets, surfaces_deleted: gone.surfaces });
   } catch (error) {
     console.error("Thumbnail opt-out failed", error instanceof Error ? error.name : "UnknownError");
     return json({ error: "Internal error" }, 500);

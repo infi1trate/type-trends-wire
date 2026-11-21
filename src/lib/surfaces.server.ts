@@ -2,7 +2,7 @@
 // Anonymous SELECTs only: the latest live desktop capture of each surface page (measured fields by JSON path), the pictures index
 // (icon, card, hero first screen, same addresses the page already shows) and the stored icon and card versions with their verdicts.
 import { supabaseAnon } from "./mcp/supabase";
-import { SURFACE_FIELDS, SURFACE_FIELD_NAME, SURFACE_NAME, SURFACE_PAGES, fieldText, latestSurfaces, productLine, productPair, surfaceMatch, type SurfaceCapture, type SurfacePage, type BrandSurfaces, type SurfaceTile, type SurfaceRow } from "./surfaces";
+import { SURFACE_FIELDS, SURFACE_FIELD_NAME, SURFACE_NAME, SURFACE_PAGES, fieldText, latestSurfaces, matchLine, productLine, productPair, surfaceList, surfaceMatch, type SurfaceCapture, type SurfaceCrop, type SurfacePage, type BrandSurfaces, type SurfaceRow } from "./surfaces";
 import { longDay } from "./pictures";
 
 const COLS = "id,domain,page_type,captured_at,run_id,url,h1:signals->type->rendered->h1,body:signals->type->rendered->body,theme:signals->color->>theme,accent:signals->color->>accent";
@@ -25,30 +25,30 @@ export async function surfaceCaptures(o: { domain?: string | null; pages?: reado
 }
 
 /** A failed read shows no block (the page is as it was before W1b). */
-export const loadBrandSurfaces = (domain: string): Promise<BrandSurfaces> => brandSurfaces(domain).catch(() => ({ domain, show: false, tiles: [], productLine: null, rows: [], fieldNames: [], history: [] }));
+export const loadBrandSurfaces = (domain: string): Promise<BrandSurfaces> => brandSurfaces(domain).catch(() => ({ domain, show: false, list: [], matchLine: null, productLine: null, rows: [], fieldNames: [], history: [] }));
+/** W1c · the brand's stored first screens of its other pages (anonymous: opted-out brands are hidden by policy), newest first, each
+ *  marked blank when its measured quality says near-blank or flat. A failed read means no thumbnails. */
+async function surfaceCrops(domain: string): Promise<SurfaceCrop[]> {
+  const db = supabaseAnon(), { cropSrc } = await import("./crops");
+  const r = await db.from("surface_crops").select("section,path,width,height,captured_at").eq("domain", domain).eq("viewport", "desktop").order("captured_at", { ascending: false }).limit(36);
+  if (r.error || !r.data?.length) return [];
+  const q = await db.from("crop_quality").select("path,lead_ok,reason").in("path", r.data.map(x => x.path));
+  const blank = new Set((q.data ?? []).filter(x => !x.lead_ok && /near-blank|flat/.test(x.reason ?? "")).map(x => x.path));
+  return r.data.map(x => ({ section: x.section, path: x.path, src: cropSrc(x.path), width: x.width, height: x.height, captured_at: x.captured_at, blank: blank.has(x.path) }));
+}
 async function brandSurfaces(domain: string): Promise<BrandSurfaces> {
-  const [captures, { picturesSafe }, { picsOf }, { reportHref }, assets] = await Promise.all([
-    surfaceCaptures({ domain, days: 30 }), import("./pictures.server"), import("./pictures"), import("./crops"),
+  const [captures, crops, { reportHref }, assets] = await Promise.all([
+    surfaceCaptures({ domain, days: 30 }), surfaceCrops(domain).catch(() => []), import("./crops"),
     import("./asset-changes.server").then(m => m.assetHistory()).catch(() => null),
   ]);
-  const latest = latestSurfaces(captures), home = latest.home ?? null, pics = picsOf(await picturesSafe(), domain), report = reportHref(domain);
+  const latest = latestSurfaces(captures), home = latest.home ?? null;
   const others = SURFACE_PAGES.filter(p => p !== "home" && latest[p]);
-  const live = (c: SurfaceCapture | null | undefined) => c?.url ?? `https://${domain}`;
-  const tiles: SurfaceTile[] = [];
-  if (home) tiles.push({ key: "home", what: "Homepage · first screen", at: pics.hero?.at ?? home.captured_at, live: live(home), report,
-    pic: pics.hero ? { src: pics.hero.src, width: pics.hero.width, height: pics.hero.height, alt: `${domain} homepage first screen, captured ${longDay(pics.hero.at)}`, fit: "cover", ratio: "3 / 2" } : null, lines: [] });
-  for (const p of others) {
-    const c = latest[p]!;
-    // The crawler keeps pictures of homepages only, so other pages show what was measured on them, in the same fixed box.
-    tiles.push({ key: p, what: SURFACE_NAME[p], at: c.captured_at, live: live(c), report, pic: null,
-      lines: [`Headline ${fieldText(c, "h1")}`, `Body ${fieldText(c, "body")}`, `Accent ${fieldText(c, "accent").toLowerCase()}`, ...(home ? [`Matches the homepage: ${surfaceMatch(home, c)}`] : [])] });
-  }
-  if (pics.icon) tiles.push({ key: "icon", what: "Site icon", at: pics.icon.at, live: `https://${domain}`, report, pic: { src: pics.icon.src, width: pics.icon.width, height: pics.icon.height, alt: `The site icon ${domain} publishes, captured ${longDay(pics.icon.at)}`, fit: "contain", ratio: "1 / 1" }, lines: [] });
-  if (pics.card) tiles.push({ key: "card", what: "Social card", at: pics.card.at, live: `https://${domain}`, report, pic: { src: pics.card.src, width: pics.card.width, height: pics.card.height, alt: `The social share image ${domain} publishes, captured ${longDay(pics.card.at)}`, fit: "contain", ratio: "1.91 / 1" }, lines: [] });
+  // W1c: one compact row per surface; a row shows a small first screen only once the crawler has sent one for that page.
+  const list = surfaceList(latest, { domain, crops, report: reportHref(domain), day: longDay });
   const rows: SurfaceRow[] = SURFACE_PAGES.filter(p => latest[p]).map(p => { const c = latest[p]!; return { page: SURFACE_NAME[p as SurfacePage], fields: Object.fromEntries(SURFACE_FIELDS.map(k => [SURFACE_FIELD_NAME[k], fieldText(c, k)])), at: c.captured_at, url: c.url, match: p === "home" ? "this is home" : home ? surfaceMatch(home, c) : "not comparable" }; });
   const verdictOf = new Map((assets?.comparisons ?? []).filter(c => c.domain === domain).map(c => [c.to.path, c.verdict]));
   const { cropSrc } = await import("./crops");
   const mine = (assets?.versions ?? []).filter(v => v.domain === domain).sort((a, b) => a.kind.localeCompare(b.kind) || a.first_seen_at.localeCompare(b.first_seen_at));
   const history = mine.map(v => ({ kind: v.kind === "icon" ? "Site icon" : "Social card", version: mine.filter(x => x.kind === v.kind && x.first_seen_at <= v.first_seen_at).length, first: v.first_seen_at, last: v.last_seen_at, src: cropSrc(v.path), width: v.width, height: v.height, verdict: verdictOf.get(v.path) ?? null }));
-  return { domain, show: others.length > 0, tiles, productLine: productLine(productPair(captures), longDay), rows, fieldNames: SURFACE_FIELDS.map(k => SURFACE_FIELD_NAME[k]), history };
+  return { domain, show: others.length > 0, list, matchLine: matchLine(list), productLine: productLine(productPair(captures), longDay), rows, fieldNames: SURFACE_FIELDS.map(k => SURFACE_FIELD_NAME[k]), history };
 }

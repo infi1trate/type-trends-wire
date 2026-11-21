@@ -1,44 +1,43 @@
-// W1b · "Surfaces" on the brand page: the latest first screen slug holds for the brand plus its site icon and social card, each in a
-// fixed 3:2 box (explicit size, lazy, no layout shift) with what it is, the capture date, the live link and "Report"; then one line per
-// other page we read (product, about, pricing), with what was measured on it, because the crawler keeps pictures of homepages only.
+// W1b · W1c · "Surfaces" on the brand page: a compact, table-like list with one row per page we read for the brand (home, product, about,
+// pricing, changelog): its measured headline typeface, its accent colour as a small swatch with the colour's name, whether it matches
+// the homepage, the capture date and a link to the live page (the page's name); one plain line above says how many other pages match. No pictures until
+// the crawler sends first screens of those pages; then the row shows a small one in a fixed box (explicit size, lazy, no layout shift),
+// credited by the row itself (page, brand, date), linked to the live page, with "Report this image".
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { brandSurfacesQuery } from "@/lib/data";
 import { longDay } from "@/lib/pictures";
-import type { BrandSurfaces } from "@/lib/surfaces";
+import type { BrandSurfaces, SurfaceListRow } from "@/lib/surfaces";
 import { pr } from "@/components/digest/Editorial";
-import { BlockPart } from "./ObjectPage";
 
 export const SURFACES_TITLE = "Surfaces";
+const MATCH_WORD = { yes: "yes", no: "no", "not comparable": "not comparable" } as const;
+const match = (r: SurfaceListRow) => <span className="surface-match ed-caption">{r.match === "this is home" ? "The homepage" : <>Matches home: {MATCH_WORD[r.match]}</>}</span>;
 export function SurfacesBlock({ s }: { s: BrandSurfaces }) {
-  if (!s.show) return null;
-  const pics = s.tiles.filter(t => t.pic), pages = s.tiles.filter(t => !t.pic && t.key !== "home");
-  return <div className="mt-10" data-surfaces-block=""><BlockPart title={SURFACES_TITLE} kicker="The latest capture of each page we read for this brand. Only the homepage is kept as a picture; for the other pages, what we measured on them.">
-    <div data-surfaces="">
-      {pics.length > 0 && <ul className="surface-wall">{pics.map(t => <li key={t.key} className="min-w-0" data-surface-key={t.key}>
-        <figure className="min-w-0" data-surface={t.key}>
-          <a href={t.live} target="_blank" rel="noopener" aria-label={`Open ${s.domain} (live site)`} className="surface-box block" style={{ aspectRatio: "3 / 2" }} data-fit={t.pic!.fit} {...pr(t.live)}>
-            <img src={t.pic!.src} width={t.pic!.width} height={t.pic!.height} alt={t.pic!.alt} loading="lazy" decoding="async" />
-          </a>
-          <figcaption className="ed-caption mt-1">
-            <span className="block">{t.what}{t.at && <> · captured <time dateTime={t.at} className="whitespace-nowrap">{longDay(t.at)}</time></>}</span>
-            <span className="flex flex-wrap gap-x-4">
-              <a href={t.live} target="_blank" rel="noopener" className="ed-tap" {...pr(t.live)}>Live site ↗</a>
-              <a href={t.report} className="ed-tap">Report this image</a>
-            </span>
-          </figcaption>
-        </figure>
-      </li>)}</ul>}
-      {pages.length > 0 && <ul className="surface-list mt-6">{pages.map(t => <li key={t.key} data-surface={t.key}>
-        <p className="ed-data flex flex-wrap items-baseline gap-x-3">
-          <span>{t.what}</span>
-          {t.at && <span className="ed-caption">captured <time dateTime={t.at} className="whitespace-nowrap">{longDay(t.at)}</time></span>}
-          <a href={t.live} target="_blank" rel="noopener" className="ed-tap ed-caption" {...pr(t.live)}>Live page ↗</a>
-        </p>
-        <p className="ed-caption">{t.lines.join(" · ")}</p>
-      </li>)}</ul>}
-      {s.productLine && <p className="ed-caption mt-4 max-w-[68ch]" data-product-line="">{s.productLine}</p>}
-    </div>
-  </BlockPart></div>;
+  if (!s.show || !s.list.length) return null;
+  const pics = s.list.some(r => r.pic);
+  return <div className="mt-8" data-surfaces-block="">
+    <h3 className="ed-kicker" id="ed-surfaces-title">{SURFACES_TITLE}</h3>
+    {s.matchLine && <p className="ed-caption mt-1 max-w-[68ch]" data-match-line="">{s.matchLine}</p>}
+    <ul className="surface-rows mt-2" aria-labelledby="ed-surfaces-title" data-surfaces="" data-pics={pics ? "" : undefined}>
+      {s.list.map(r => <li key={r.key} className="surface-row" data-surface={r.key}>
+        {pics && <span className="surface-thumb-cell">{r.pic && <a href={r.live} target="_blank" rel="noopener" className="surface-thumb" aria-label={`Open the live ${r.page.toLowerCase()} of ${s.domain}`} {...pr(r.live)}>
+          <img src={r.pic.src} width={r.pic.width} height={r.pic.height} alt={r.pic.alt} loading="lazy" decoding="async" />
+        </a>}</span>}
+        {/* Phones: two short lines (a row with a picture puts "Report this image" on the first, beside the page's link). From 768 px the
+            lines dissolve into one grid row with fixed column order (styles.css). */}
+        <span className="surface-line surface-line-1">
+          <a href={r.live} target="_blank" rel="noopener" className="surface-page ed-data ed-tap" aria-label={`${r.page} of ${s.domain}, live page`} {...pr(r.live)}>{r.page} ↗</a>
+          {r.pic ? <a href={r.report} className="surface-report ed-caption ed-tap">Report this image</a> : match(r)}
+        </span>
+        <span className="surface-line">
+          <span className="surface-type ed-caption"><span className="sr-only">Headline typeface: </span>{r.typeface}</span>
+          <span className="surface-accent ed-caption"><span className="sr-only">Accent colour: </span>{r.accent && <span className="surface-swatch" style={{ background: r.accent.hex }} aria-hidden="true" />}{r.accentText}</span>
+          {r.pic && match(r)}
+          <span className="surface-at ed-caption"><span className="sr-only">Captured </span><time dateTime={r.at}>{longDay(r.at)}</time></span>
+        </span>
+      </li>)}
+    </ul>
+  </div>;
 }
 /** Suspends inside the identity card's slot, so the block arrives with the card and nothing below it moves. */
 export function SurfacesPart({ domain }: { domain: string }) {

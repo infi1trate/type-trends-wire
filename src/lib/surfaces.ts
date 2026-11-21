@@ -5,9 +5,11 @@
 import { equalField } from "./library-diff";
 import { colourName } from "./colour-names";
 
-export const SURFACE_PAGES = ["home", "product", "about", "pricing"] as const;
+export const SURFACE_PAGES = ["home", "product", "about", "pricing", "changelog"] as const;
 export type SurfacePage = (typeof SURFACE_PAGES)[number];
-export const SURFACE_NAME: Record<SurfacePage, string> = { home: "Homepage", product: "Product page", about: "About page", pricing: "Pricing page" };
+export const SURFACE_NAME: Record<SurfacePage, string> = { home: "Homepage", product: "Product page", about: "About page", pricing: "Pricing page", changelog: "Changelog" };
+/** W1c · the stored first-screen crop section of each surface page that can have one (surface_crops; the homepage's is the hero). */
+export const SURFACE_CROP: Partial<Record<SurfacePage, string>> = { product: "product", about: "about", pricing: "pricing_page" };
 export type Font = { family: string; substituted?: boolean | null; webfont?: boolean | null } | null;
 export type SurfaceCapture = { id: number; domain: string; page_type: string; captured_at: string; run_id: string | null; url: string | null; h1: Font; body: Font; theme: string | null; accent: string | null };
 export type Match = "yes" | "no" | "not comparable";
@@ -75,10 +77,39 @@ export function productLine(p: ProductPair | null, day: (iso: string) => string)
 }
 
 // VIEW SHAPES (built by surfaces.server.ts) ------------------------------------------------------------------------------------
-export type SurfaceTile = { key: string; what: string; at: string | null; live: string; report: string; pic: { src: string; width: number; height: number; alt: string; fit: "cover" | "contain"; ratio: string } | null; lines: string[] };
 export type SurfaceRow = { page: string; fields: Record<string, string>; at: string; url: string | null; match: Match | "this is home" };
 export type AssetHistoryRow = { kind: string; version: number; first: string; last: string; src: string; width: number; height: number; verdict: string | null };
-export type BrandSurfaces = { domain: string; show: boolean; tiles: SurfaceTile[]; productLine: string | null; rows: SurfaceRow[]; fieldNames: string[]; history: AssetHistoryRow[] };
+/** W1c · one stored first-screen crop of a surface page (surface_crops), for the row's thumbnail. */
+export type SurfaceCrop = { section: string; path: string; src: string; width: number; height: number; captured_at: string; /** crop_quality says near-blank or flat. */ blank?: boolean };
+/** W1c · one row of the brand page's compact Surfaces list. */
+export type SurfaceListRow = { key: SurfacePage; page: string; typeface: string; accent: { hex: string; name: string } | null; accentText: string; match: Match | "this is home"; at: string; live: string;
+  /** A small first-screen picture of this page, once the crawler sends one (fixed box, lazy). */ pic: { src: string; width: number; height: number; alt: string; at: string } | null; report: string };
+export type BrandSurfaces = { domain: string; show: boolean; list: SurfaceListRow[]; matchLine: string | null; productLine: string | null; rows: SurfaceRow[]; fieldNames: string[]; history: AssetHistoryRow[] };
+
+const ACCENT_RE = /^#[0-9a-f]{6}$/i;
+/** The compact list: one row per surface the brand has, homepage first, with its newest usable first-screen crop when one is stored. */
+export function surfaceList(latest: Partial<Record<SurfacePage, SurfaceCapture>>, o: { domain: string; crops?: readonly SurfaceCrop[]; report: string; day: (iso: string) => string }): SurfaceListRow[] {
+  const home = latest.home ?? null, out: SurfaceListRow[] = [];
+  for (const p of SURFACE_PAGES) {
+    const c = latest[p]; if (!c) continue;
+    const accent = c.accent && ACCENT_RE.test(c.accent) ? { hex: c.accent.toUpperCase(), name: colourName(c.accent) ?? c.accent.toUpperCase() } : null;
+    const section = SURFACE_CROP[p], crop = section ? [...(o.crops ?? [])].filter(x => x.section === section && !x.blank).sort((a, b) => b.captured_at.localeCompare(a.captured_at))[0] ?? null : null;
+    out.push({ key: p, page: SURFACE_NAME[p], typeface: fieldText(c, "h1"), accent, accentText: accent ? accent.name : "not measured", match: p === "home" ? "this is home" : home ? surfaceMatch(home, c) : "not comparable",
+      at: c.captured_at, live: c.url ?? `https://${o.domain}`, report: o.report,
+      pic: crop ? { src: crop.src, width: crop.width, height: crop.height, at: crop.captured_at, alt: `${o.domain} ${SURFACE_NAME[p].toLowerCase()}, first screen, captured ${o.day(crop.captured_at)}` } : null });
+  }
+  return out;
+}
+/** "2 of the 4 other pages we read match the homepage." (with how many could not be compared), or null with no other page. */
+export function matchLine(list: readonly SurfaceListRow[]): string | null {
+  const others = list.filter(r => r.key !== "home");
+  if (!others.length) return null;
+  const yes = others.filter(r => r.match === "yes").length, nc = others.filter(r => r.match === "not comparable").length, n = others.length;
+  const main = n === 1 ? `The one other page we read ${yes ? "matches" : "does not match"} the homepage`
+    : yes === n ? (n === 2 ? "Both other pages we read match the homepage" : `All ${n} other pages we read match the homepage`) : yes === 0 ? `None of the ${n} other pages we read matches the homepage` : `${yes} of the ${n} other pages we read ${yes === 1 ? "matches" : "match"} the homepage`;
+  if (n === 1 && nc) return "The one other page we read could not be compared with the homepage.";
+  return `${main}${nc ? `; ${nc} could not be compared` : ""}.`;
+}
 /** The icon and card history's verdict column, in plain words. */
 export const ASSET_VERDICT_WORDS: Record<string, string> = { change: "Changed (confirmed)", "re-encode": "Same picture, saved again", waiting: "Looks different; waiting for captures", alternating: "Switches back to an earlier version", blank: "Blank capture, not counted", editorial: "Follows the latest article, not counted", unmeasured: "Not measured yet" };
 export const assetVerdictText = (v: string | null) => (v == null ? "First version" : ASSET_VERDICT_WORDS[v] ?? v);

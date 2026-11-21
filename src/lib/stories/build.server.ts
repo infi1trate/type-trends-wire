@@ -10,7 +10,7 @@ import { allCandidates, archiveMeasured, type BuildInput, type RunRows, type Wir
 import { comparisonPair } from "../run-gap";
 import { fetchRealRuns } from "../real-runs";
 import { planStories, type Existing, type Planned } from "./score";
-import { brandFolds, confirmedInput, type Fold, type ShownStory } from "./editor";
+import { brandFolds, confirmedInput, followFolds, type Fold, type ShownStory } from "./editor";
 import type { Check } from "../integrity";
 import { siteKind } from "../brand-names";
 import { knownFrom, validateWhy, WHY_PER_BUILD, WHY_PER_DAY } from "./why";
@@ -97,12 +97,14 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const fresh = deps.calls ? await deps.calls(loaded.events.filter(e => siteKind(e.domain, kinds.get(e.domain)) === "standard"), start + budget / 3, rotating).catch(() => ({})) : {};
   const input: BuildInput = { ...loaded, calls: { ...(loaded.calls ?? {}), ...fresh } };
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
-  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity } = allCandidates(input);
+  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows } = allCandidates(input);
   const allShare = (k: string) => ctx.row(ctx.cur, canonical(k))?.current_share ?? null;
   const tracked = new Set(input.sites.map(s => s.domain));
   // One brand, one story: a later change to a brand with a published story in the window becomes a correction to that story.
   const shown: ShownStory[] = existing.filter(e => e.headline != null).map(e => ({ id: e.id, type: e.type, state: e.state ?? e.status, happened_at: e.happened_at, domains: e.domains, headline: e.headline!, deck: e.deck ?? null, facts: e.facts ?? [], source_ids: e.source_ids ?? [] }));
   const { folds, told } = brandFolds(candidates, shown, input.now);
+  // W1c: a page that followed its homepage adds its one fact to the brand's own stored story, published or held (append-only edit).
+  folds.push(...followFolds(follows ?? [], shown, folds, input.now));
   const plan = planStories(candidates, existing, { tierOf: k => ctx.tiers.get(canonical(k)) ?? null, rankOf: d => ctx.rank.get(d) ?? null, tracked: d => tracked.has(d), covered: ctx.covered, shareOf: allShare }, { told });
   // AI lines: the top published new stories, then stored ones still without a line, inside the per-build and per-day caps, only while time remains.
   const lines = new Map<string, { line: string; model: string; at: string }>(), later: LineRow[] = [];
@@ -236,7 +238,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const h = new Map(now_.map(r => [r.domain, r]));
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
   // W1b: the quiet change's inputs (a failure means no quiet candidates this build; everything else is unaffected).
-  const quiet = await quietInput(db, events, now, o.days).then(q => q && { ...q, wire: q.wire.map(dec) }).catch(() => null);
+  const quiet = await quietInput(db, events, now, o.days, rebrands.rows.filter(x => x.source === "live" && sectorOf.has(x.domain)) as unknown as RebrandRow[]).then(q => q && { ...q, wire: q.wire.map(dec) }).catch(() => null);
   return {
     now: new Date(now).toISOString(), events, history, runs,
     rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since && sectorOf.has(x.domain)) as unknown as RebrandRow[],
@@ -254,15 +256,34 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
 }
 /** W1b · confirmed icon and card changes of the window, the addresses of the captures non-home identity changes cite, and the wire from
  *  14 days before the window to now (anonymous reads). */
-async function quietInput(db: ReturnType<typeof import("../mcp/supabase").supabaseAnon>, events: EventRow[], now: number, days: number): Promise<import("./quiet").QuietInput> {
+async function quietInput(db: ReturnType<typeof import("../mcp/supabase").supabaseAnon>, events: EventRow[], now: number, days: number, rebrands: RebrandRow[] = []): Promise<import("./quiet").QuietInput> {
   const { QUIET_EVENT_TYPES, QUIET_PAGES, QUIET_WINDOW_DAYS } = await import("./quiet");
-  const ids = [...new Set(events.filter(e => QUIET_PAGES[e.page_type ?? ""] && QUIET_EVENT_TYPES[e.type]).flatMap(e => [e.snapshot_id, e.prev_snapshot_id]).filter((x): x is number => typeof x === "number"))];
+  const others = events.filter(e => QUIET_PAGES[e.page_type ?? ""] && QUIET_EVENT_TYPES[e.type]);
+  const ids = [...new Set(others.flatMap(e => [e.snapshot_id, e.prev_snapshot_id]).filter((x): x is number => typeof x === "number"))];
   const [assets, urls, wire] = await Promise.all([
     import("../asset-changes.server").then(m => m.confirmedAssetChanges(days, now)),
     ids.length ? db.from("library_snapshots").select("id,url").in("id", ids.slice(0, 500)).then(r => { if (r.error) throw r.error; return Object.fromEntries((r.data ?? []).map(x => [x.id as number, (x.url as string | null) ?? null])); }) : Promise.resolve({}),
     pages<WireIn>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", new Date(now - (days + QUIET_WINDOW_DAYS) * 864e5).toISOString()).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
   ]);
-  return { assets: assets.map(a => ({ domain: a.domain, kind: a.kind, from: { path: a.from.path, last_seen_at: a.from.last_seen_at }, to: { path: a.to.path, first_seen_at: a.to.first_seen_at }, between: a.between, confirmed_at: a.confirmed_at })), urls, wire };
+  const home = await homeChanges(db, [...new Set([...others.map(e => e.domain), ...assets.filter(a => a.confirmed_at).map(a => a.domain)])], now, days, rebrands);
+  return { assets: assets.map(a => ({ domain: a.domain, kind: a.kind, from: { path: a.from.path, last_seen_at: a.from.last_seen_at }, to: { path: a.to.path, first_seen_at: a.to.first_seen_at }, between: a.between, confirmed_at: a.confirmed_at })), urls, wire, home };
+}
+/** W1c · the confirmed homepage identity changes (typeface, palette or accent, theme) of the given brands from 30 days before the
+ *  window to now: live desktop changes that pass the integrity check (only their confirmed part counts), plus confirmed rebrands. */
+async function homeChanges(db: ReturnType<typeof import("../mcp/supabase").supabaseAnon>, domains: string[], now: number, days: number, rebrands: RebrandRow[]): Promise<import("./quiet").HomeChange[]> {
+  if (!domains.length) return [];
+  const { HOME_FOLLOW_DAYS } = await import("./quiet");
+  const since = new Date(now - (days + HOME_FOLLOW_DAYS) * 864e5).toISOString();
+  const rows = await pages<EventRow>((f, t) => db.from("library_events").select("id,domain,type,before,after,detected_at,source,page_type,viewport,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").eq("page_type", "home")
+    .in("type", ["type_change", "palette_shift", "theme_flip"]).in("domain", domains.slice(0, 200)).gte("detected_at", since).order("id").range(f, t) as never);
+  const [{ computeChecks }, { splitChecked }] = await Promise.all([import("../integrity.server"), import("../integrity")]);
+  const checks = rows.length ? await computeChecks(db, rows) : new Map();
+  const confirmed = splitChecked(rows, checks).tape;
+  const wanted = new Set(domains);
+  return [
+    ...confirmed.map(e => ({ id: e.id, domain: e.domain, type: e.type, at: e.detected_at, after: e.after })),
+    ...rebrands.filter(r => wanted.has(r.domain) && r.confirmed_at >= since).map(r => ({ id: null, domain: r.domain, type: "rebrand", at: r.effective_at ?? r.confirmed_at })),
+  ];
 }
 
 

@@ -2455,6 +2455,57 @@ export type Database = {
         }
         Relationships: []
       }
+      surface_crops: {
+        Row: {
+          bytes: number
+          captured_at: string
+          created_at: string
+          domain: string
+          first_seen_at: string
+          hash: string
+          height: number
+          id: number
+          last_seen_at: string
+          path: string
+          run_id: string | null
+          section: string
+          viewport: string
+          width: number
+        }
+        Insert: {
+          bytes: number
+          captured_at: string
+          created_at?: string
+          domain: string
+          first_seen_at: string
+          hash: string
+          height: number
+          id?: never
+          last_seen_at: string
+          path: string
+          run_id?: string | null
+          section: string
+          viewport?: string
+          width: number
+        }
+        Update: {
+          bytes?: number
+          captured_at?: string
+          created_at?: string
+          domain?: string
+          first_seen_at?: string
+          hash?: string
+          height?: number
+          id?: never
+          last_seen_at?: string
+          path?: string
+          run_id?: string | null
+          section?: string
+          viewport?: string
+          width?: number
+        }
+        Relationships: []
+      }
       thumb_optouts: {
         Row: {
           created_at: string

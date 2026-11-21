@@ -2,7 +2,7 @@
 // Three tiers: every confirmed change is a tape line (tape.ts); a story must be a positioning change, an identity change, a headline
 // typeface change, a pattern (roundup, breakout, crossover, white space, shift, first seen), the weekly seasonal story or the weekly
 // against-the-grain roundup; outside news keeps its own rules. Changes to one brand inside seven days are one story.
-import { quietCandidates, type QuietVerdict } from "./quiet";
+import { HOME_FOLLOW_DAYS, quietCandidates, withFollowFacts, type QuietFollow, type QuietVerdict } from "./quiet";
 import { basis, label, sectorName, stageName } from "../labels";
 import type { EventRow } from "../agency/changes";
 import { brandName, nameText, siteKind, type SiteKind } from "../brand-names";
@@ -280,7 +280,7 @@ export function shifts(ctx: Ctx): Candidate[] {
 }
 
 // EVERYTHING -----------------------------------------------------------------------------------------------------------------------
-export type AllCandidates = { /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
+export type AllCandidates = { /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; /** W1c · other-page changes that follow the homepage (facts on the brand's own story). */ follows?: QuietFollow[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
   /** E2e · changes that failed the integrity check (Data view only): event id, its label ("Seen once" / "Alternating") and the conditions. */
   unconfirmed: { id: number; label: string; failed: Condition[] }[] };
 /** E2e · the input with only the passing part of each live change (integrity.ts); unchanged when it carries no checks. */
@@ -344,11 +344,13 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   // W1b · quiet changes: confirmed icon/card changes and same-address identity changes on other surfaces that no outlet we read named.
   const quiet = quietCandidates({ now: input.now, events: input.events.filter(e => !reversed.has(e.id)), quiet: input.quiet ?? null, matcher, sites: new Map(input.sites.map(s => [s.domain, { domain: s.domain, name: s.name, sector: s.sector, kind: kind(s.domain) }])) });
   const ws = whiteSpaceCandidates(ctx);
+  // W1c · a page that follows its own homepage adds one fact to the brand's own move or rebrand story instead.
+  const own = quiet.follows.length ? withFollowFacts(brand, quiet.follows) : brand;
   const candidates = [
-    ...brand, ...unclear, ...shifts(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx),
+    ...own, ...unclear, ...shifts(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx),
     ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...census, ...quiet.candidates, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => named(c, names));
-  return { quiet: quiet.verdicts, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
+  return { quiet: quiet.verdicts, follows: quiet.follows, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
 }
 
 // PART 3 · ONE BRAND, ONE STORY: fold a later change into the story that already ran ----------------------------------------------
@@ -381,4 +383,29 @@ export function brandFolds(candidates: Candidate[], existing: ShownStory[], now:
       note: `Updated ${tapeDate(now)}: added ${listOf([...new Set(add.map(f => f.text.split(" · ")[0]!.split(",")[0]!.trim().toLowerCase()))], 4)} (one brand, one story).` });
   }
   return { folds, told };
+}
+/**
+ * W1c · a page that followed its homepage adds one fact to the brand's own stored move or rebrand story, published or held (an appended
+ * `correct` edit keeping the story's headline and deck). The target is the stored single-brand story citing one of the homepage changes
+ * followed (a rebrand before a brand story before a move), else the brand's nearest within 30 days. Skips a story whose facts, or this
+ * build's folds for it, already carry the fact, so it is idempotent; brandFolds already covers a published story rebuilt this build.
+ */
+export function followFolds(follows: readonly QuietFollow[], existing: readonly ShownStory[], folds: readonly Fold[], now: string): Fold[] {
+  const out: Fold[] = [], rank = (s: ShownStory) => (s.type === "rebrand" ? 0 : s.id.startsWith("brand:") ? 1 : 2);
+  for (const f of follows) {
+    const mine = existing.filter(s => (s.state === "published" || s.state === "held") && !s.id.startsWith("quiet:") && s.domains.length === 1 && s.domains[0] === f.domain && (s.type === "move" || s.type === "rebrand"));
+    const cites = mine.filter(s => f.home.some(h => h.id != null && s.source_ids.includes(`event:${h.id}`))).sort((a, b) => rank(a) - rank(b) || a.id.localeCompare(b.id))[0];
+    const near = mine.filter(s => Math.abs(Date.parse(s.happened_at) - Date.parse(f.at)) <= HOME_FOLLOW_DAYS * DAY).sort((a, b) => Math.abs(Date.parse(a.happened_at) - Date.parse(f.at)) - Math.abs(Date.parse(b.happened_at) - Date.parse(f.at)) || rank(a) - rank(b))[0];
+    const t = cites ?? near;
+    if (!t) continue;
+    const pending = [...folds, ...out].filter(x => x.story_id === t.id), base = pending.at(-1)?.payload.facts ?? t.facts;
+    if (factTexts(base).has(undated(f.fact.text))) continue;
+    const keep = (Array.isArray(base) ? base : []).filter((x): x is Fact => !!x && typeof x === "object" && typeof (x as Fact).text === "string");
+    const at = keep.findIndex(x => x.kind === "date"), facts = [...keep]; facts.splice(at < 0 ? facts.length : at, 0, f.fact);
+    const fold: Fold = { story_id: t.id, candidate: `follow:${f.domain}:${f.at.slice(0, 10)}`, payload: { headline: pending.at(-1)?.payload.headline ?? t.headline, deck: pending.at(-1)?.payload.deck ?? t.deck ?? "", facts }, added: [f.fact.text],
+      note: `Updated ${tapeDate(now)}: ${f.fact.text[0]!.toLowerCase()}${f.fact.text.slice(1).split(", between")[0]!.split(", ")[0]}.` };
+    const prev = out.findIndex(x => x.story_id === t.id);
+    if (prev >= 0) out[prev] = { ...fold, added: [...out[prev]!.added, ...fold.added] }; else out.push(fold);
+  }
+  return out;
 }

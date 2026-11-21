@@ -84,3 +84,9 @@
 - [x] 5 Corrected story with hidden text first in writer queue + test; facts-built body without run numbers, lower-case stages; show No. 45 body
 - [ ] 6 Study No. 4 writer once; outcome — waiting: today's study allowance (4/4) was used before this build; run `bun scripts/w1b-study4.ts` once after the 7 pm ET reset
 - [ ] Tests, responsive, report, commit
+
+# W1c · Three changes to W1b
+- [x] 1 A page that follows its homepage (same kind, confirmed, ±30 days; icons/cards vs any identity change or rebrand) is not quiet; fact on the brand's own story (candidate + fold onto stored published/held story); today's candidates re-reported
+- [x] 2 Outlets = publications on the wire's source list only (RSS feeds); social and aggregators searched, never counted or named; N and list reported
+- [x] 3 Surfaces: compact rows (home/product/about/pricing/changelog), match line, ≤240 px at 1440 and ≤420 px at 390; crop intake accepts product/about/pricing_page first screens (own table, same rules); thumbnails from fixtures
+- [x] Tests, responsive 360–1920, report, commit

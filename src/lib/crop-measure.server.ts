@@ -24,8 +24,13 @@ export async function measurePendingCrops(o: { limitMs?: number; look?: number }
   const start = Date.now(), limit = o.limitMs ?? CROP_SWEEP_MS;
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
   const { CROP_BUCKET } = await import("./crops-ingest.server");
-  const { data: crops, error } = await db.from("site_crops").select("path,width,height,bytes,domain").order("id", { ascending: false }).limit(o.look ?? CROP_SWEEP_LOOK);
-  if (error) throw new Error("crop lookup failed");
+  // W1c: first screens of other pages (surface_crops) are swept the same way as homepage section crops.
+  const [site, surf] = await Promise.all([
+    db.from("site_crops").select("path,width,height,bytes,domain").order("id", { ascending: false }).limit(o.look ?? CROP_SWEEP_LOOK),
+    db.from("surface_crops").select("path,width,height,bytes,domain").order("id", { ascending: false }).limit(o.look ?? CROP_SWEEP_LOOK),
+  ]);
+  if (site.error || surf.error) throw new Error("crop lookup failed");
+  const crops = [...(surf.data ?? []), ...(site.data ?? [])];
   const paths = (crops ?? []).map(c => c.path), have = new Set<string>();
   for (let i = 0; i < paths.length; i += 100) {
     const { data, error: qe } = await db.from("crop_quality").select("path").in("path", paths.slice(i, i + 100));

@@ -12,7 +12,13 @@ export const isCropSection = (s: unknown): s is CropSection => typeof s === "str
 export const sectionName = (s: CropSection) => CROP_SECTION_NAME[s];
 /** I1: brand assets travel in the same payload as section crops (`section: "icon" | "card"`), stored in their own table. */
 export const ASSET_SECTIONS = ["icon", "card"] as const;
-export const CAPTURE_SECTIONS = [...CROP_SECTIONS, ...ASSET_SECTIONS] as const;
+/** W1c · the first screen of a brand's other pages (its own table, the same bucket and rules). `pricing_page`, because `pricing` already
+ *  names the homepage's pricing section. A first screen is at most 1280 × 800, like the homepage hero. */
+export const SURFACE_SECTIONS = ["product", "about", "pricing_page"] as const;
+export type SurfaceSection = (typeof SURFACE_SECTIONS)[number];
+export const isSurfaceSection = (s: unknown): s is SurfaceSection => typeof s === "string" && (SURFACE_SECTIONS as readonly string[]).includes(s);
+export const SURFACE_MAX_HEIGHT = 800;
+export const CAPTURE_SECTIONS = [...CROP_SECTIONS, ...ASSET_SECTIONS, ...SURFACE_SECTIONS] as const;
 
 export const CROP_LIMITS = {
   requestBytes: 4 * 1024 * 1024, // whole POST body
@@ -68,6 +74,16 @@ export const decodeCrop = (b64: string) => decodeB64(b64);
 export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 /** `<domain>/<section>/<yyyy-mm-dd>-<first 8 of hash>.webp` (UTC day of the capture). */
 export const cropPath = (domain: string, section: CropSection, capturedAt: string, hash: string) => `${domain}/${section}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
+/** W1c · `<domain>/<product|about|pricing_page>/<yyyy-mm-dd>-<hash8>.webp`; never the same folder as a homepage section. */
+export const surfacePath = (domain: string, section: SurfaceSection, capturedAt: string, hash: string) => `${domain}/${section}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
+export const SURFACE_PATH_RE = /^([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(product|about|pricing_page)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
+export const parseSurfacePath = (path: string) => { const m = SURFACE_PATH_RE.exec(path); return m && DOMAIN_RE.test(m[1]!) ? { domain: m[1]!, section: m[2] as SurfaceSection } : null; };
+/** A first screen: a crop that passes checkCrop and is no taller than 800 px. */
+export function checkSurface(bytes: Uint8Array, declared: { width: number; height: number }): CropCheck {
+  if (declared.height > SURFACE_MAX_HEIGHT) return { ok: false, reason: "too_large_dimensions" };
+  const c = checkCrop(bytes, declared);
+  return c.ok && c.height > SURFACE_MAX_HEIGHT ? { ok: false, reason: "too_large_dimensions" } : c;
+}
 export const CROP_PATH_RE = /^([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(hero|nav|pricing|cta|footer)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
 export const parseCropPath = (path: string) => { const m = CROP_PATH_RE.exec(path); return m && DOMAIN_RE.test(m[1]!) ? { domain: m[1]!, section: m[2] as CropSection } : null; };
 
@@ -177,7 +193,7 @@ export const NO_CAPTURE_LINE = `${NO_CAPTURE_TEXT}.`;
 export function imagePolicy(): { id: string; title: string; text: string }[] {
   const names = CROP_SECTIONS.map(s => CROP_SECTION_NAME[s].toLowerCase());
   return [
-    { id: "what", title: "What we keep", text: `Small crops of each tracked brand's public desktop homepage: ${names.slice(0, -1).join(", ")} and ${names.at(-1)}. WebP, at most ${CROP_LIMITS.maxWidth}×${CROP_LIMITS.maxHeight} and ${CROP_LIMITS.imageBytes / 1024} KB each. Never full-page captures.` },
+    { id: "what", title: "What we keep", text: `Small crops of each tracked brand's public desktop homepage: ${names.slice(0, -1).join(", ")} and ${names.at(-1)}. WebP, at most ${CROP_LIMITS.maxWidth}×${CROP_LIMITS.maxHeight} and ${CROP_LIMITS.imageBytes / 1024} KB each. Also the first screen of its product, about and pricing pages, at most ${CROP_LIMITS.maxWidth}×${SURFACE_MAX_HEIGHT} and ${CROP_LIMITS.imageBytes / 1024} KB, with the same history, credit and removal. Never full-page captures.` },
     { id: "assets", title: "The brand's own pictures", text: `Two pictures each brand publishes itself: its site icon (the small picture browsers show beside its name), kept between 48 and 256 pixels on each side, and the social share image it gives link previews. Both are re-saved as WebP of at most ${CROP_LIMITS.imageBytes / 1024} KB, ${CROP_LIMITS.keep} versions at most, with the same credit, live-site link and removal as the crops.` },
     { id: "history", title: "How history works", text: `A new version is stored only when a section looks different from its last stored version; otherwise we only note that it was seen again. At most ${CROP_LIMITS.keep} versions per section are kept; the oldest is deleted when a newer one arrives. A crop a published story shows is kept for as long as the story is published.` },
     { id: "credit", title: "Credit and access", text: "Every image shows the brand's domain and capture date and links to the live site. Every image is served with a do-not-index header, so search engines are asked not to list it, and none is used as this site's link-preview picture." },
