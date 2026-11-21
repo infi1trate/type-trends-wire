@@ -1795,6 +1795,112 @@ export type Database = {
           },
         ]
       }
+      living_edition_status: {
+        Row: {
+          at: string
+          edition: number
+          id: number
+          note: string | null
+          status: string
+        }
+        Insert: {
+          at?: string
+          edition: number
+          id?: never
+          note?: string | null
+          status: string
+        }
+        Update: {
+          at?: string
+          edition?: number
+          id?: never
+          note?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "living_edition_status_edition_fkey"
+            columns: ["edition"]
+            isOneToOne: false
+            referencedRelation: "living_editions"
+            referencedColumns: ["number"]
+          },
+        ]
+      }
+      living_editions: {
+        Row: {
+          comparison: Json | null
+          created_at: string
+          dated: string
+          number: number
+          values: Json
+        }
+        Insert: {
+          comparison?: Json | null
+          created_at?: string
+          dated: string
+          number: number
+          values: Json
+        }
+        Update: {
+          comparison?: Json | null
+          created_at?: string
+          dated?: string
+          number?: number
+          values?: Json
+        }
+        Relationships: []
+      }
+      living_moves: {
+        Row: {
+          base: number | null
+          count: number | null
+          created_at: string
+          edition: number
+          id: number
+          new_value: Json
+          old_value: Json
+          rule: string | null
+          setting: string
+          share: number | null
+          signal: string | null
+        }
+        Insert: {
+          base?: number | null
+          count?: number | null
+          created_at?: string
+          edition: number
+          id?: never
+          new_value: Json
+          old_value: Json
+          rule?: string | null
+          setting: string
+          share?: number | null
+          signal?: string | null
+        }
+        Update: {
+          base?: number | null
+          count?: number | null
+          created_at?: string
+          edition?: number
+          id?: never
+          new_value?: Json
+          old_value?: Json
+          rule?: string | null
+          setting?: string
+          share?: number | null
+          signal?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "living_moves_edition_fkey"
+            columns: ["edition"]
+            isOneToOne: false
+            referencedRelation: "living_editions"
+            referencedColumns: ["number"]
+          },
+        ]
+      }
       mcp_key_usage: {
         Row: {
           calls: number

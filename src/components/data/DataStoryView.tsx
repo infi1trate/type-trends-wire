@@ -182,7 +182,7 @@ export function Scenes({ s, scene, onScene, allFigures = false }: { s: StudyPage
     const io = new IntersectionObserver(es => { if (Date.now() < quiet.current) return; const hit = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (hit) { const j = Number((hit.target as HTMLElement).dataset["scene"]) - 1; if (Number.isFinite(j)) onScene(clampStep(j, n)); } }, { rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.5, 1] });
     blocks.current.forEach(b => b && io.observe(b)); return () => io.disconnect();
   }, [n, onScene]);
-  return <div ref={root} className="ed-wrap mt-12 lg:mt-16 lg:grid lg:grid-cols-12 lg:gap-10" data-scenes="" data-composition="data-story">
+  return <div ref={root} className="ed-wrap mt-[var(--sys-gap-section)] lg:grid lg:grid-cols-12 lg:gap-10" data-scenes="" data-composition="data-story">
     <div className="hidden self-start lg:sticky lg:top-4 lg:col-span-7 lg:block" data-scene-figure="">
       {fig && cur && <Deferred eager={allFigures} label={figureName(fig)} style={{ minHeight: "22rem" }}><FigureView fig={fig} view={cur.view} live /></Deferred>}
       <div className="no-print mt-3 flex items-center justify-end gap-2" role="group" aria-label="Move between scenes">
@@ -255,8 +255,8 @@ export function DataStoryView({ s, scene, onScene, allFigures = false, related }
         right={t.stale && t.at ? <span data-text-from="">Text from {dayText(t.at)}</span> : null} /></FiltersScope>
       <div className="ed-wrap mt-10 md:mt-14"><p className={scenePara} style={MEASURE} data-study-opening="">{t.opening}</p></div>
       <Scenes s={s} scene={scene} onScene={onScene} allFigures={allFigures} />
-      {t.use && <section aria-labelledby="study-use" className="ed-wrap mt-12 lg:mt-16" data-study-use=""><h2 id="study-use" className="ed-kicker">What to do with it</h2><p className={`${scenePara} mt-2`} style={MEASURE}>{t.use}</p></section>}
-      {s.limits.length > 0 && <section aria-labelledby="study-limits" className="ed-wrap mt-12 lg:mt-16" data-study-limits=""><h2 id="study-limits" className="ed-kicker">Limits</h2><p className="ed-small mt-2 max-w-[68ch]">{s.limits.join(" ")}</p></section>}
+      {t.use && <section aria-labelledby="study-use" className="ed-wrap mt-[var(--sys-gap-section)]" data-study-use=""><h2 id="study-use" className="ed-kicker">What to do with it</h2><p className={`${scenePara} mt-2`} style={MEASURE}>{t.use}</p></section>}
+      {s.limits.length > 0 && <section aria-labelledby="study-limits" className="ed-wrap mt-[var(--sys-gap-section)]" data-study-limits=""><h2 id="study-limits" className="ed-kicker">Limits</h2><p className="ed-small mt-2 max-w-[68ch]">{s.limits.join(" ")}</p></section>}
       <StudyBlock n={1} id="study-evidence" title="Evidence"><StudyEvidence s={s} /></StudyBlock>
       <StudyBlock n={2} id="study-related" title="Related">{related ?? null}</StudyBlock>
     </article>

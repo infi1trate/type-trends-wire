@@ -356,7 +356,7 @@
   .tk-svg-big { font-weight: 900; }
   /* Charts: 3 px ink axes, dashed newsprint gridlines, direct labels in Big Shoulders, gumball points, double-stroke lines. */
   .tk-svg-axis { stroke: var(--tk-chart-axis); stroke-width: var(--tk-border-strong); stroke-linecap: square; }
-  .tk-svg-grid { stroke: var(--tk-chart-grid); stroke-width: 1.5; stroke-dasharray: 4 4; }
+  .tk-svg-grid { stroke: var(--tk-chart-grid); stroke-width: var(--sys-chart-grid); stroke-dasharray: 4 4; }
   .tk-svg-dot { stroke: var(--tk-chart-outline); stroke-width: 1.5; }
   .tk-svg-slice { stroke: var(--tk-chart-outline); stroke-width: 1.5; }
   .tk-svg-bar { stroke: var(--tk-chart-outline); stroke-width: 1.5; }

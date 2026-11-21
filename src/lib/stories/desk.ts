@@ -25,6 +25,9 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("restore"), id, note }).strict(),
   // U4 · a pitch asks the engine; it never edits a story.
   pitchBody,
+  // L1 · approve a proposed design edition (after the gate) or roll one back; each appends one living_edition_status row.
+  z.object({ action: z.literal("living_approve"), edition: z.number().int().min(1).max(100_000), note }).strict(),
+  z.object({ action: z.literal("living_rollback"), edition: z.number().int().min(1).max(100_000), note }).strict(),
 ]);
 export type DeskBody = z.infer<typeof deskBody>;
 /** Pin must end in the future and within PIN_MAX_DAYS. */

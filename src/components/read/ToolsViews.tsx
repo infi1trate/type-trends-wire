@@ -18,6 +18,7 @@ const TOOLS: { title: string; line: string; href: string; cta: string }[] = [
   { title: "Competitive audit", line: "Compare two to six sites side by side: type, color, layout, vibe, versus the market and the open territory nobody uses yet.", href: "/audit/new", cta: "Start an audit" },
   { title: "Watchlists", line: "Save a set of brands and signals; get an RSS feed of every confirmed change, stage change and alert. No account: the links are the keys.", href: "/watch/new", cta: "Create a watchlist" },
   { title: "Forecast ledger", line: "Every forecast call we recorded and how it resolved, with the live hit rate once 20 calls resolve.", href: "/ledger", cta: "Read the ledger" },
+  { title: "Colophon", line: "How this site's own design changes: once a month, in small steps inside fixed limits, each change listed with its reason.", href: "/colophon", cta: "Read the colophon" },
   { title: "What we show and why", line: "The so-what test: how tiers, composites, Momentum and Confidence decide what you see by default, and where everything lives.", href: "/what-we-show", cta: "Read the rules" },
   { title: "Embeds", line: "Put a live signal chart on your own site or deck: every signal page and chart of the week has an embed panel with the iframe code.", href: "/signals", cta: "Pick a signal" },
   { title: "Agent access (MCP)", line: `Connect an AI agent to ${SITE_URL}/api/public/mcp: ${MCP_TOOL_COUNT} read-only tools with the same numbers and receipts. Owner-issued keys raise the rate limit.`, href: "/terminal#mcp", cta: "How to connect" },

@@ -15,7 +15,9 @@ async function bounded(request: Request, limit: number): Promise<string | null> 
   const all = new Uint8Array(size); let o = 0; for (const c of chunks) { all.set(c, o); o += c.byteLength; }
   return new TextDecoder().decode(all);
 }
-export type DeskStore = { pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
+/** L1 · the design editions: their records, and one appended status row per approval or roll-back. */
+export type LivingStore = { records: () => Promise<import("../living/editions").EditionRecord[]>; insertStatus: (row: { edition: number; status: "approved" | "rolled back"; note: string | null }) => Promise<void> };
+export type DeskStore = { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
 export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
 const limiter = createRateLimiter(DESK_RATE_PER_MIN, 60_000);
 
@@ -33,6 +35,14 @@ export async function handleDesk(request: Request, deps?: DeskDeps): Promise<Res
   if (b.action === "staff") return d.store.staff ? j(200, await d.store.staff(b.page)) : j(404, { error: "not_found" });
   if (b.action === "queue") return j(200, await d.store.queue(b.day ?? null));
   if (b.action === "pitch") { if (!d.store.pitch) return j(404, { error: "not_found" }); const { action: _, ...p } = b; return j(201, { ok: true, pitched: await d.store.pitch(p) }); }
+  if (b.action === "living_approve" || b.action === "living_rollback") {
+    if (!d.store.living) return j(404, { error: "not_found" });
+    const records = await d.store.living.records();
+    const decision = b.action === "living_approve" ? (await import("../living/gate")).approveDecision(records, b.edition) : (await import("../living/editions")).rollbackDecision(records, b.edition);
+    if (!decision.ok) return j(409, { error: "refused", reasons: decision.reasons });
+    await d.store.living.insertStatus({ edition: b.edition, status: decision.status as "approved" | "rolled back", note: b.note ?? null });
+    return j(201, { ok: true, edition: b.edition, status: decision.status, ...(decision.restores ? { restores: decision.restores } : {}) });
+  }
   if (!(await d.store.exists(b.id))) return j(404, { error: "not_found" });
   if (b.action === "pin" && !pinOk(b.until, d.now())) return j(400, { error: "invalid_input", issues: [{ path: "until", message: "must be in the future and within 7 days" }] });
   const payload: Record<string, unknown> = b.action === "pin" ? { until: new Date(b.until).toISOString() } : b.action === "kill" ? { reason: b.reason }
@@ -50,6 +60,10 @@ async function prodDeps(): Promise<DeskDeps> {
       insertEdit: async e => { const { data, error } = await db.from("story_edits").insert(e as never).select("id,story_id,action,payload,note,at").single(); if (error || !data) throw new Error("edit_insert_failed"); return data as unknown as EditRow; },
       queue: async day => { const [{ newsWindow }, { listPitches }] = await Promise.all([import("./page.server"), import("./pitch.server")]); const [q, news, pitches] = await Promise.all([loadQueue(day, true), newsWindow(), listPitches(db, 50).catch(() => [])]); return { ...q, news, pitches }; },
       pitch: async p => (await import("./pitch.server")).pitchNow(db, p),
+      living: {
+        records: async () => (await import("../living/living.server")).loadEditions(db),
+        insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },
+      },
       // Staff pages (/status, /status/launch, /welcome) load only here, after the key: nothing reaches the page's HTML first.
       staff: async page => page === "launch" ? (await import("../launch/launch.server")).loadLaunch()
         : page === "welcome" ? (await import("../editions/welcome.server")).loadWelcome()

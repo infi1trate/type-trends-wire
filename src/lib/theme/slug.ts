@@ -4,6 +4,9 @@
 import { slugBrand as K } from "../../../brand/tokens/slug.theme";
 import { BRAND_NAME } from "../brand";
 import type { Gumball, GumballName, Mode, ModeTokens, Shared, Theme, TypeRole, TypeRoleName } from "./contract";
+// L1 · the living settings (radius, heading tracking, motion timing) are read from the register, never written twice.
+import { LIVE_VALUES } from "../living/editions";
+import { durationCss, radiusCss, trackingCss, type LivingValues } from "../living/settings";
 
 const C = K.color, T = K.type, px = (n: number) => `${n}px`;
 type KMode = (typeof K.mode)[Mode];
@@ -27,16 +30,16 @@ const role = (family: TypeRole["family"], weight: string, size: string, leading:
   ({ family, weight, size, leading, tracking: "0", case: "none", style: "normal", opsz: "normal", numeric: "normal", wrap: family === "display" ? "balance" : family === "mono" ? "auto" : "pretty", ...o });
 const caps = { case: "uppercase", tracking: "0.12em" } as const;
 
-/** Read pages (light and vibes): the kit's role ladder. */
-const readType: Record<TypeRoleName, TypeRole> = {
+/** Read pages (light and vibes): the kit's role ladder. `trk` is the heading tracking setting (display, h1, h2, h3). */
+const readTypeOf = (trk: string): Record<TypeRoleName, TypeRole> => ({
   // CHOSEN: the mark is a drawing now; this role only sets the word where a drawing cannot go (plain-text fallbacks).
   wordmark: role("display", "900", "20px", "1", { case: "lowercase" }),
   // CHOSEN: the Digest masthead is the Display role.
   mast: kit("display", { base: 64, md: 104, leading: "0.9" }),
-  display: kit("display", { base: 56, md: 96, leading: "0.9" }),
-  h1: kit("h1", { base: 40, md: 56, leading: "0.95" }),
-  h2: kit("h2", { base: 30 }),
-  h3: kit("h3", { base: 22 }),
+  display: { ...kit("display", { base: 56, md: 96, leading: "0.9" }), tracking: trk },
+  h1: { ...kit("h1", { base: 40, md: 56, leading: "0.95" }), tracking: trk },
+  h2: { ...kit("h2", { base: 30 }), tracking: trk },
+  h3: { ...kit("h3", { base: 22 }), tracking: trk },
   // CHOSEN: the kit stops at H3; H4 continues the ladder.
   h4: role("display", "900", "19px", "1.05", { sizeMd: "22px", case: "uppercase" }),
   kicker: kit("kicker"),
@@ -55,15 +58,15 @@ const readType: Record<TypeRoleName, TypeRole> = {
   chip: kit("chip"),
   // CHOSEN: specimens render a measured font in its own face; the fallback is the text face.
   specimen: role("text", "400", "clamp(36px, 7vw, 72px)", "1.05"),
-};
+});
 /** The terminal (dark): the same brand at its densest (brand/README.md, "The terminal"). CHOSEN sizes keep the terminal's 11/13 grid. */
-const terminalType: Record<TypeRoleName, TypeRole> = {
-  ...readType,
+const terminalTypeOf = (trk: string): Record<TypeRoleName, TypeRole> => ({
+  ...readTypeOf(trk),
   mast: role("display", "900", "48px", "0.9", { case: "uppercase" }),
-  display: role("display", "900", "48px", "0.9", { case: "uppercase", numeric: "tabular-nums" }),
-  h1: role("display", "900", "24px", "1", { case: "uppercase" }),
-  h2: role("display", "900", "20px", "1", { case: "uppercase" }),
-  h3: role("display", "900", "16px", "1.1", { case: "uppercase" }),
+  display: role("display", "900", "48px", "0.9", { case: "uppercase", numeric: "tabular-nums", tracking: trk }),
+  h1: role("display", "900", "24px", "1", { case: "uppercase", tracking: trk }),
+  h2: role("display", "900", "20px", "1", { case: "uppercase", tracking: trk }),
+  h3: role("display", "900", "16px", "1.1", { case: "uppercase", tracking: trk }),
   h4: role("display", "700", "13px", "16px", caps),
   kicker: role("display", "700", "13px", "16px", caps),
   chip: role("display", "700", "11px", "14px", caps),
@@ -76,7 +79,7 @@ const terminalType: Record<TypeRoleName, TypeRole> = {
   figure: role("display", "900", "48px", "0.9", { numeric: "tabular-nums" }),
   stat: role("display", "900", "32px", "0.95", { numeric: "tabular-nums" }),
   data: role("mono", "400", "13px", "1.5", { numeric: "tabular-nums" }),
-};
+});
 
 const G = K.gumball;
 // CHOSEN: the kit has no newsprint gumball; Steady points need one. Light and dark are the newsprint lifted and pressed.
@@ -114,7 +117,7 @@ const D = K.density, M = K.motion, SH = K.shape;
 /** Each brand family is followed by a metric-matched local fallback (the @font-face rules in styles.css, FONT_FALLBACKS), so the page is
  * drawn at once in the fallback and the swap to the web font barely moves it. */
 export const FONT_FALLBACKS = { display: "slug Display Fallback", text: "slug Text Fallback", mono: "slug Mono Fallback" } as const;
-const shared: Shared = {
+const sharedOf = (v: LivingValues): Shared => ({
   fonts: {
     mono: K.font.mono.replace(/'/g, '"'), display: K.font.display.replace(/'/g, '"'), text: K.font.text.replace(/'/g, '"'), fallback: FONT_FALLBACKS,
     // One font link for every page: Big Shoulders 700/900, Newsreader 400/600/italic, IBM Plex Mono 400/600.
@@ -123,7 +126,7 @@ const shared: Shared = {
   },
   // CHOSEN: the root stays 13 px so rem-based spacing in existing layouts does not shift; every text role sets its own size.
   root: { size: "13px", leading: "20px" },
-  radius: { none: "0px", sm: px(SH.radius), md: px(SH.radius), pill: px(SH.radius), sticker: px(SH["radius-sticker"]), icon: SH["radius-app-icon"] },
+  radius: { none: "0px", sm: radiusCss(v.radius), md: radiusCss(v.radius), pill: radiusCss(v.radius), sticker: px(SH["radius-sticker"]), icon: SH["radius-app-icon"] },
   border: { hairline: px(SH["border-hairline"]), strong: px(SH["border-rule"]) },
   // The kit's shadows are ink in light/vibes and paper in dark: the offset comes from the kit, the colour from each mode's shadow ink.
   shadow: { flat: "none", raised: SH["shadow-raised"].replace(C.ink, "var(--tk-shadow-ink)"), pressed: SH["shadow-pressed"].replace(C.ink, "var(--tk-shadow-ink)"), sticker: SH["shadow-sticker"].replace(C.ink, "var(--tk-shadow-ink)") },
@@ -131,8 +134,8 @@ const shared: Shared = {
   // CHOSEN: page width and gutters keep today's grid; the measure is the kit's 62 characters.
   layout: { wrap: "1360px", gutter: "20px", gutterLg: "40px", gridGap: px(D.steady["gap-inner"] + 8), gridGapLg: px(D.steady["gap-block"]), measure: T.body.measure, tap: "44px" },
   motion: {
-    fast: M.tap, base: M.move, slow: M.arrive, ease: M["ease-settle"], tick: "1.6s", tickEase: "ease-in-out",
-    tap: M.tap, move: M.move, wipe: M.wipe, arrive: M.arrive, draw: "1600ms", stagger: M.stagger, ooze: M["ease-ooze"], cut: M["ease-cut"], settle: M["ease-settle"],
+    fast: durationCss(M.tap, v.motion), base: durationCss(M.move, v.motion), slow: durationCss(M.arrive, v.motion), ease: M["ease-settle"], tick: "1.6s", tickEase: "ease-in-out",
+    tap: durationCss(M.tap, v.motion), move: durationCss(M.move, v.motion), wipe: durationCss(M.wipe, v.motion), arrive: durationCss(M.arrive, v.motion), draw: durationCss("1600ms", v.motion), stagger: durationCss(M.stagger, v.motion), ooze: M["ease-ooze"], cut: M["ease-cut"], settle: M["ease-settle"],
   },
   // CHOSEN: Steady and Loud have no "air above the title" in the kit; they use 24 and 8 from the scale.
   density: {
@@ -149,10 +152,13 @@ const shared: Shared = {
     // Vibes: the pink page, a yellow card holding the chart, an ink plate for the headline; every mark and line edge is ink.
     vibes: { bg: C.pink, ink: C.ink, muted: C.ink, secondary: C.ink, rule: C.ink, accent: C.green, card: C.yellow, plate: C.ink, plateInk: C.paper, edge: C.ink, ball: G.green },
   },
-};
+});
 
 const lightFocus = { ring: C.ink, width: "3px", offset: "3px", halo: C.yellow };
-export const slug: Theme = {
+/** The theme for a set of living values (L1): the live site uses LIVE_VALUES; the edition gate and its tests build others. */
+export function slugThemeOf(v: LivingValues): Theme {
+  const trk = trackingCss(v.tracking), readType = readTypeOf(trk), terminalType = terminalTypeOf(trk), shared = sharedOf(v);
+  return {
   // The theme is named after the brand (a machine name: ACTIVE_THEME, kit labels).
   name: BRAND_NAME, label: `${BRAND_NAME} · P Extra Fine`, shared,
   modes: {
@@ -162,6 +168,8 @@ export const slug: Theme = {
     dark: mode("dark", terminalType, { accent: [C.yellow, C.green, C.pink, C.red], onAccent: [C.ink, C.ink, C.ink, C.ink], focus: { ring: C.yellow, width: "3px", offset: "2px", halo: "transparent" }, grid: C.muted, thumb: C.muted, unstaged: "#1D1B18" }),
     vibes: mode("vibes", readType, { accent: [C.ink, C.green, C.yellow, C.red], onAccent: [C.paper, C.ink, C.ink, C.ink], focus: lightFocus, grid: K.mode.vibes["surface-sunken"], thumb: C.ink, unstaged: C.white }),
   },
-};
+  };
+}
+export const slug: Theme = slugThemeOf(LIVE_VALUES);
 /** The kit itself, for pages that show the brand's own numbers (/brand) and for tests. */
 export const SLUG_KIT = K;

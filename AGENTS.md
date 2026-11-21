@@ -62,3 +62,4 @@ use the editor.
 - Forecast math stays pure in `src/lib/forecast*.ts` (model, signals, brief validation, one constants file); `forecast.server.ts` only loads public aggregates and writes a run, so models stay testable and MCP/UI read the same stored run.
 - Taste tools share pure math and one server handler layer between MCP and slash-console query options; anonymous reads stay separate from private cache, crawl requests and atomic public-AI reservations.
 - LITE outbound requests validate DNS and pin the approved address in the transport, failing closed when unavailable, so redirect and DNS-rebinding checks cannot be bypassed by an ordinary fetch.
+- The living design register, rules, gate and editions stay pure in `src/lib/living/`; tokens read the shipped edition values from code (`SHIPPED` in `editions.ts`) while the insert-only edition tables only record proposals, moves and statuses, so no page reads the database for its look.

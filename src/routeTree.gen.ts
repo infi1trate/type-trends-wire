@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
+import { Route as ColophonRouteImport } from './routes/colophon'
 import { Route as DeskRouteImport } from './routes/desk'
 import { Route as EditionsRouteImport } from './routes/editions'
 import { Route as FrontDotjsonRouteImport } from './routes/front[.]json'
@@ -112,6 +113,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuditDotpngRoute = AuditDotpngRouteImport.update({
   id: '/audit.png',
   path: '/audit.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ColophonRoute = ColophonRouteImport.update({
+  id: '/colophon',
+  path: '/colophon',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeskRoute = DeskRouteImport.update({
@@ -587,6 +593,7 @@ const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/colophon': typeof ColophonRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
   '/front.json': typeof FrontDotjsonRoute
@@ -683,6 +690,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/colophon': typeof ColophonRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
   '/front.json': typeof FrontDotjsonRoute
@@ -780,6 +788,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
+  '/colophon': typeof ColophonRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
   '/front.json': typeof FrontDotjsonRoute
@@ -878,6 +887,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/audit.png'
+    | '/colophon'
     | '/desk'
     | '/editions'
     | '/front.json'
@@ -974,6 +984,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/audit.png'
+    | '/colophon'
     | '/desk'
     | '/editions'
     | '/front.json'
@@ -1070,6 +1081,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/audit.png'
+    | '/colophon'
     | '/desk'
     | '/editions'
     | '/front.json'
@@ -1167,6 +1179,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuditDotpngRoute: typeof AuditDotpngRoute
+  ColophonRoute: typeof ColophonRoute
   DeskRoute: typeof DeskRoute
   EditionsRoute: typeof EditionsRoute
   FrontDotjsonRoute: typeof FrontDotjsonRoute
@@ -1275,6 +1288,13 @@ declare module '@tanstack/react-router' {
       path: '/audit.png'
       fullPath: '/audit.png'
       preLoaderRoute: typeof AuditDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/colophon': {
+      id: '/colophon'
+      path: '/colophon'
+      fullPath: '/colophon'
+      preLoaderRoute: typeof ColophonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desk': {
@@ -1927,6 +1947,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuditDotpngRoute: AuditDotpngRoute,
+  ColophonRoute: ColophonRoute,
   DeskRoute: DeskRoute,
   EditionsRoute: EditionsRoute,
   FrontDotjsonRoute: FrontDotjsonRoute,

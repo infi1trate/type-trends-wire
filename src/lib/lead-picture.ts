@@ -5,6 +5,8 @@
 import type { Crop } from "./crops";
 import type { Cover, Pic } from "./pictures";
 import type { Thumb } from "./thumbs";
+import { LIVE_VALUES } from "./living/editions";
+const coverOn = (k: string) => k === "none" || LIVE_VALUES.covers.includes(k);
 
 export type LeadKind = "pair" | "single" | "mosaic" | "words" | "swatches" | "card" | "chart" | "marks" | "none";
 export type LeadItem = {
@@ -128,8 +130,9 @@ function fallback(s: LeadStoryIn, p: LeadPics): LeadPlan {
 
 /** The lead picture of one subject. */
 export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
-  if (subject.kind === "study") return subject.chart ? plan("chart", "study", [], null) : plan("none", "none", [], null);
-  if (subject.kind === "digest") return plan(subject.cover === "picture" ? "card" : subject.cover === "chart" ? "chart" : "none", "digest", [], null);
+  // L1 · cover treatments are a living setting: a Digest or study cover takes only a layout in the live set, otherwise none.
+  if (subject.kind === "study") return subject.chart && coverOn("chart") ? plan("chart", "study", [], null) : plan("none", "none", [], null);
+  if (subject.kind === "digest") { const k: LeadKind = subject.cover === "picture" ? "card" : subject.cover === "chart" ? "chart" : "none"; return coverOn(k) ? plan(k, "digest", [], null) : plan("none", "none", [], null); }
   const s = subject.story, ev = s.evidence ?? null, id = s.id;
   const reportOf = (d: string) => p.card(d)?.report ?? p.hero(d)?.report ?? "/what-we-show#ed-w-images";
   const mosaicOf = (domains: string[], since: string | null) => domains.flatMap(d => { const x = firstScreen(d, p, since, reportOf); return x ? [x] : []; }).slice(0, MOSAIC_MAX);

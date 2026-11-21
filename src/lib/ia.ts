@@ -200,8 +200,11 @@ export const OBJECT_SECTION: Record<ViewObject, SectionId> = { story: "live", br
 export const VIEW_NAME = { read: "Read", data: "Data" } as const;
 /** The switch's two words, the same on every page: on an object page "Terminal" is its Data view. */
 export const MODE_NAME: Record<Mode, string> = { read: "Read", terminal: "Terminal" };
-/** True when the address shows an object's Data view (or the indicators page's, which shares the model). */
-export const isDataView = (pathname: string, search: Record<string, unknown> = {}) => search["view"] === "data" && (!!objectOf(pathname) || pathname === "/signals/leading");
+/** Pages that are not objects but keep a Read view and a Data view at one address: leading indicators (W2) and the colophon (L1). */
+export const VIEW_PAGES = ["/signals/leading", "/colophon"] as const;
+const isViewPage = (pathname: string) => (VIEW_PAGES as readonly string[]).includes(pathname);
+/** True when the address shows an object's Data view (or a view page's, which shares the model). */
+export const isDataView = (pathname: string, search: Record<string, unknown> = {}) => search["view"] === "data" && (!!objectOf(pathname) || isViewPage(pathname));
 /** Old terminal object views → the object's one address in its Data view, keeping every other parameter; null for section views. */
 export function terminalObjectHref(raw: Record<string, unknown>): string | null {
   const s = (k: string) => (typeof raw[k] === "string" && raw[k] !== "" ? (raw[k] as string) : undefined);
@@ -238,8 +241,8 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
   // U1: on an object's address the other mode is the same address with `view=data` added or removed; nothing else changes.
   const obj = objectOf(pathname);
   if (obj) return search["view"] === "data" ? readHref(obj, search) : dataHref(obj, search);
-  // W2: leading indicators keep one address; the switch moves between its Read view and its Data view.
-  if (seg[0] === "signals" && seg[1] === "leading" && seg.length === 2) return search["view"] === "data" ? "/signals/leading" : "/signals/leading?view=data";
+  // W2 + L1: view pages keep one address; the switch moves between their Read view and their Data view.
+  if (isViewPage(pathname)) return search["view"] === "data" ? pathname : `${pathname}?view=data`;
   if (modeOf(pathname, search) === "terminal") {
     if (seg[0] === "library" && seg[1]) return `${brandPath(seg[1])}${qs({ sector })}`;
     const objHref = terminalObjectHref(search);
@@ -370,6 +373,7 @@ export const SURFACES: Record<string, Surface> = {
   "chart.{$week}[.]png": S("digest", "both", "quiet", "Chart share image (open)."),
   "chart.{$week}[.]svg": S("digest", "both", "quiet", "Chart vector image (open)."),
   "tools": S("tools", "read", "shown", "One page linking every ACT tool."),
+  "colophon": S("tools", "read", "quiet", "L1 · how slug's own design changes: what never moves, the living settings with live specimens and proposed ranges, the editions newest first and today's dry run (not decided); Data view at ?view=data with the register, rules, dry run, receipts and editions. Linked from /tools and /brand/system; not in the navigation or footer."),
   "brand.system": S("tools", "read", "quiet", "Brand › The system (U3): every design-system value by name with its Read and Data value and a live sample, every kit chart in both looks from one fixture, and the key map; gated like /brand."),
   "brand.index": S("tools", "read", "quiet", "The brand: overview of the approved slug brand (P · Extra Fine) built from the live tokens; gated while BRAND_PUBLIC is false, linked from /tools and /kit."),
   "brand.mark": S("tools", "read", "quiet", "Brand › The mark: construction, clear space, the three cuts, the s, tiles and app icon, grounds, what not to do."),
@@ -455,7 +459,7 @@ export const DENSITIES = ["quiet", "steady", "loud"] as const;
 export type Density = (typeof DENSITIES)[number];
 export const DENSITY: Record<string, Density | "none"> = {
   index: "steady", "signals.index": "steady", "signals.leading": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
-  "sectors.index": "steady", "data.index": "steady", tools: "steady", "audit.index": "quiet", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
+  "sectors.index": "steady", "data.index": "steady", tools: "steady", colophon: "quiet", "audit.index": "quiet", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
   ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",
   "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet",
   "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",

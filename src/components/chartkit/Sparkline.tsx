@@ -3,6 +3,7 @@
 // rose; `large` is the same rank line at panel size with its axis labels. Every look carries its values for screen readers.
 import { pctText } from "@/lib/labels";
 import { ChartTable } from "./ChartTable";
+import { CHART, lw, pt } from "./ink";
 
 /** `what`: how the line is read aloud (default "share by quarter, N quarters"). */
 function ReadSpark({ points, label, w = 96, h = 24, what }: { points: number[] | undefined; label: string; w?: number; h?: number; what?: string }) {
@@ -10,8 +11,8 @@ function ReadSpark({ points, label, w = 96, h = 24, what }: { points: number[] |
   if (p.length < 2) return <span className="ed-caption" aria-label={`${label}: not enough history`}>—</span>;
   const W = w, H = h, max = Math.max(...p, 0.01), min = Math.min(...p, 0), r1 = (n: number) => Math.round(n * 10) / 10, x = (i: number) => r1(2 + (i / (p.length - 1)) * (W - 4)), y = (v: number) => r1(H - 2 - ((v - min) / Math.max(0.0001, max - min)) * (H - 4));
   return <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={`${label}: ${what ?? `share by quarter, ${p.length} quarters`}`} className="inline-block h-auto max-w-full align-middle" overflow="visible">
-    <polyline fill="none" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" points={p.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
-    <circle cx={x(p.length - 1)} cy={y(p[p.length - 1]!)} r="4" fill="currentColor" />
+    <polyline fill="none" stroke="currentColor" strokeWidth={lw(3)} strokeLinejoin="round" strokeLinecap="round" points={p.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
+    <circle cx={x(p.length - 1)} cy={y(p[p.length - 1]!)} r={pt(4)} fill="currentColor" />
   </svg>;
 }
 /** 64×16 sparkline of popularity rank, inverted so climbing goes up. */
@@ -25,7 +26,7 @@ function RankSpark({ ranks }: { ranks: number[] | undefined }) {
   const last = pts[pts.length - 1]!;
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="inline-block align-middle">
-      <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="var(--sys-color-ink)" strokeWidth="1" />
+      <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="var(--sys-color-ink)" strokeWidth={lw(1)} />
       {rising && <rect x={last[0] - 1} y={last[1] - 1} width="2" height="2" fill="var(--sys-color-highlight)" />}
     </svg>
   );
@@ -45,13 +46,13 @@ function RankLine({ points }: { points: { date: string; rank: number }[] }) {
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`Popularity rank from #${first.rank} to #${lastP.rank}`}>
       {grid.map((g) => (
         <g key={g}>
-          <line x1={pl} x2={w} y1={y(g)} y2={y(g)} stroke="var(--sys-color-rule)" strokeWidth="1" />
+          <line x1={pl} x2={w} y1={y(g)} y2={y(g)} stroke="var(--sys-color-rule)" strokeWidth={CHART.scale} />
           <text x={pl - 4} y={y(g) + 3} textAnchor="end" fontSize="9" fill="var(--sys-color-ink-muted)">#{g}</text>
         </g>
       ))}
       <text x={pl} y={h - 4} fontSize="9" fill="var(--sys-color-ink-muted)">{first.date}</text>
       <text x={w - 4} y={h - 4} fontSize="9" textAnchor="end" fill="var(--sys-color-ink-muted)">{lastP.date}</text>
-      <polyline points={points.map((p, i) => `${x(i)},${y(p.rank)}`).join(" ")} fill="none" stroke="var(--sys-color-ink)" strokeWidth="1" />
+      <polyline points={points.map((p, i) => `${x(i)},${y(p.rank)}`).join(" ")} fill="none" stroke="var(--sys-color-ink)" strokeWidth={lw(1)} />
       <rect x={x(points.length - 1) - 1.5} y={y(lastP.rank) - 1.5} width="3" height="3" fill="var(--sys-color-highlight)" />
     </svg>
   );

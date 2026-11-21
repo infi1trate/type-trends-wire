@@ -48,6 +48,7 @@ export const VOICE = {
   "signal.notFound": missing("/signals/<key> with a key not in the forecast", "No page for this signal",
     "Signal pages exist for signals in the latest weekly forecast. The key may be misspelled, or the signal has dropped out of the forecast.", go("All signals", "/signals")),
   "leading.failed": failed("/signals/leading", "Leading indicators didn't load", "The outside numbers", go("All signals", "/signals")),
+  "colophon.failed": failed("/colophon", "The colophon didn't load", "How the design changes", go("Tools", "/tools")),
   "leading.notStarted": empty("/signals/leading before the first daily run", "Collection starts on the next daily run.", WAIT("The crawler posts once a day")),
   "leading.topicEmpty": empty("/signals/leading, a topic table with no rows", "No numbers for this topic yet.", WAIT("The next daily run")),
   "leading.fontsEmpty": empty("/signals/leading, under the type table, before any Google Fonts ranks", "No Google Fonts ranks have been read yet.", WAIT("The daily Google Fonts read")),

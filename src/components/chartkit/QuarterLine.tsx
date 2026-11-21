@@ -14,7 +14,7 @@ import { BASIS_WORD, pctText, quarterText, type Basis } from "@/lib/labels";
 import type { GumballName } from "@/lib/theme/contract";
 import { Axis, ChartFrame, Gumball, GumballDefs, Mark, W, ballId, type FrameProps } from "./Frame";
 import { ChartTable } from "./ChartTable";
-import { ROLE_PALETTE } from "./ink";
+import { ROLE_PALETTE, lw, pt } from "./ink";
 export type Look = "read" | "data";
 
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "not measured" : d === 1 ? pctText(v) : `${(v * 100).toFixed(d)}%`);
@@ -37,8 +37,8 @@ function FramedLine({ series, y, ...frame }: FrameProps & { series: LineSeries[]
       <Axis y0={H - m.b} x0={m.l} x1={W - m.r} />
       {xs.map((q, i) => (i === 0 || i === xs.length - 1 || i % Math.ceil(xs.length / 4) === 0) && <text key={q} x={sx(q)} y={H - m.b + 16} textAnchor="middle" className="tk-svg-text tk-svg-muted" aria-hidden="true">{q}</text>)}
       {series.map((s, i) => { const ball = SERIES_BALL[i % SERIES_BALL.length]!, last = s.points[s.points.length - 1], pts = s.points.map(p => `${sx(p.x)},${sy(p.y)}`).join(" "); return <g key={s.id} data-series={ball}>
-        <g aria-hidden="true" fill="none" strokeLinejoin="round" strokeLinecap="round"><polyline points={pts} strokeWidth={8} className="tk-svg-line-outer" /><polyline points={pts} strokeWidth={5} className="tk-svg-line-inner" /><polyline points={pts} strokeWidth={3} style={{ stroke: `var(--tk-gumball-${ball}-base)` }} /></g>
-        {s.points.map(p => <Mark key={p.x} label={`${s.label}, ${p.x}: ${y.format(p.y)}`} tip={`${p.x} · ${y.format(p.y)}`} x={sx(p.x)} y={sy(p.y)}><Gumball id={gid} ball={ball} cx={sx(p.x)} cy={sy(p.y)} r={5} /></Mark>)}
+        <g aria-hidden="true" fill="none" strokeLinejoin="round" strokeLinecap="round"><polyline points={pts} strokeWidth={lw(8)} className="tk-svg-line-outer" /><polyline points={pts} strokeWidth={lw(5)} className="tk-svg-line-inner" /><polyline points={pts} strokeWidth={lw(3)} style={{ stroke: `var(--tk-gumball-${ball}-base)` }} /></g>
+        {s.points.map(p => <Mark key={p.x} label={`${s.label}, ${p.x}: ${y.format(p.y)}`} tip={`${p.x} · ${y.format(p.y)}`} x={sx(p.x)} y={sy(p.y)}><Gumball id={gid} ball={ball} cx={sx(p.x)} cy={sy(p.y)} r={pt(5)} /></Mark>)}
         {last && <text x={sx(last.x) + 10} y={sy(last.y) + 4 + i * 2} className="tk-svg-text" aria-hidden="true">{s.label.length > 16 ? `${s.label.slice(0, 15)}…` : s.label}</text>}
       </g>; })}
     </svg>}
@@ -70,14 +70,14 @@ function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }:
   const conePath = cone.length ? `M${x(latest)},${y(pn.s ?? 0)} ${cone.map(p => `L${x(latest + p.h)},${y(p.hi!)}`).join(" ")} ${[...cone].reverse().map(p => `L${x(latest + p.h)},${y(p.lo!)}`).join(" ")} Z` : "";
   return <svg viewBox={`0 0 ${W} ${H}`} className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label={`Share ${p0.q} to ${pn.q}${cone.length ? " with projection cone" : ""}`}>
     <line x1="0" x2={W} y1={H - 2} y2={H - 2} stroke="var(--sys-color-rule)" />
-    {sectors?.map(s => { const sp = s.pts.filter(p => p.s !== null && p.n >= 8 && p.c >= .25); return <polyline key={s.scope} fill="none" stroke="var(--sys-color-ink-muted)" strokeOpacity=".35" strokeWidth="1" points={sp.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")}><title>{s.scope}</title></polyline>; })}
+    {sectors?.map(s => { const sp = s.pts.filter(p => p.s !== null && p.n >= 8 && p.c >= .25); return <polyline key={s.scope} fill="none" stroke="var(--sys-color-ink-muted)" strokeOpacity=".35" strokeWidth={lw(1)} points={sp.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")}><title>{s.scope}</title></polyline>; })}
     {conePath && <path d={conePath} fill="var(--sys-color-highlight)" fillOpacity=".18" stroke="none" />}
     {fitted && <polyline fill="none" stroke="var(--sys-color-ink)" strokeOpacity=".5" strokeDasharray="4 3" points={fitted.filter(f => qi(f.quarter) <= last).map(f => `${x(qi(f.quarter))},${y(f.value)}`).join(" ")} />}
     {backtest && backtest.length > 0 && <polyline fill="none" stroke="var(--sys-color-ink-muted)" strokeDasharray="2 3" points={backtest.map(b => `${x(qi(b.quarter))},${y(b.predicted)}`).join(" ")}><title>Backtest prediction from 2025Q2</title></polyline>}
-    <polyline fill="none" stroke="var(--sys-color-ink)" strokeWidth={large ? 2 : 1} points={pts.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")} />
-    {large && faint.map(p => <circle key={`f${p.q}`} cx={x(qi(p.q))} cy={y(p.s!)} r="2" fill="var(--sys-color-ink-muted)" fillOpacity=".5"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · not usable`}</title></circle>)}
-    {pts.map(p => <circle key={p.q} cx={x(qi(p.q))} cy={y(p.s!)} r={large ? 3 : 1.5} fill="var(--sys-color-ink)"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · coverage ${(p.c * 100).toFixed(0)}%`}</title></circle>)}
-    {proj.filter(p => p.mid !== null).map(p => <circle key={p.h} cx={x(latest + p.h)} cy={y(p.mid!)} r={large ? 3 : 1.5} fill="var(--sys-color-highlight)"><title>{`+${p.h}Q ${ql(latest + p.h)} · ${pct(p.mid)} (${pct(p.lo)}–${pct(p.hi)})`}</title></circle>)}
+    <polyline fill="none" stroke="var(--sys-color-ink)" strokeWidth={lw(large ? 2 : 1)} points={pts.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")} />
+    {large && faint.map(p => <circle key={`f${p.q}`} cx={x(qi(p.q))} cy={y(p.s!)} r={pt(2)} fill="var(--sys-color-ink-muted)" fillOpacity=".5"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · not usable`}</title></circle>)}
+    {pts.map(p => <circle key={p.q} cx={x(qi(p.q))} cy={y(p.s!)} r={pt(large ? 3 : 1.5)} fill="var(--sys-color-ink)"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · coverage ${(p.c * 100).toFixed(0)}%`}</title></circle>)}
+    {proj.filter(p => p.mid !== null).map(p => <circle key={p.h} cx={x(latest + p.h)} cy={y(p.mid!)} r={pt(large ? 3 : 1.5)} fill="var(--sys-color-highlight)"><title>{`+${p.h}Q ${ql(latest + p.h)} · ${pct(p.mid)} (${pct(p.lo)}–${pct(p.hi)})`}</title></circle>)}
   </svg>;
 }
 

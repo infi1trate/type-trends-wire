@@ -5,7 +5,7 @@ import { linear } from "@/lib/charts/scale";
 import { pctText, quarterText as qText } from "@/lib/labels";
 import { Receipt } from "@/components/read/StoryCard";
 import { ChartFrame } from "./Frame";
-import { FIGURE_SOURCE, HL, INK, MUTED, POS, fade, hlMark, hlText } from "./ink";
+import { FIGURE_SOURCE, HL, INK, MUTED, POS, fade, hlMark, hlText, lw, pt } from "./ink";
 import type { Look } from "./QuarterLine";
 
 // SMALL MULTIPLES ---------------------------------------------------------------------------------
@@ -24,12 +24,12 @@ export function SmallMultiples({ f, v, look = "read" }: { f: MultiplesFig; v: Vi
           <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" aria-hidden="true">
             <line x1={m.l} x2={W - m.r} y1={H - m.b} y2={H - m.b} className="tk-svg-axis" />
             {f.chart === "line" ? <>
-              {hot && <polyline fill="none" stroke={HL} strokeWidth={9} strokeLinejoin="round" strokeLinecap="round" points={p.points.map(q => `${sx(q.x)},${sy(q.y)}`).join(" ")} data-highlighter="" />}
-              <polyline fill="none" stroke={hot && a && z && z.y > a.y ? POS : INK} strokeWidth={hot ? 2.5 : dense ? 1 : 1.5} points={p.points.map(q => `${sx(q.x)},${sy(q.y)}`).join(" ")} />
-              {p.points.map(q => <circle key={q.x} cx={sx(q.x)} cy={sy(q.y)} r={2.5} fill={INK} />)}
+              {hot && <polyline fill="none" stroke={HL} strokeWidth={lw(9)} strokeLinejoin="round" strokeLinecap="round" points={p.points.map(q => `${sx(q.x)},${sy(q.y)}`).join(" ")} data-highlighter="" />}
+              <polyline fill="none" stroke={hot && a && z && z.y > a.y ? POS : INK} strokeWidth={lw(hot ? 2.5 : dense ? 1 : 1.5)} points={p.points.map(q => `${sx(q.x)},${sy(q.y)}`).join(" ")} />
+              {p.points.map(q => <circle key={q.x} cx={sx(q.x)} cy={sy(q.y)} r={pt(2.5)} fill={INK} />)}
             </> : <>
               {p.points.map(q => <rect key={q.x} x={bx(q.x)} y={sy(q.y)} width={bw} height={Math.max(0, H - m.b - sy(q.y))} fill={INK} style={hot ? hlMark : undefined} />)}
-              {(p.marks ?? []).filter(q => q.y > 0).map(q => <line key={q.x} x1={bx(q.x)} x2={bx(q.x) + bw} y1={sy(q.y)} y2={sy(q.y)} stroke={MUTED} strokeWidth={3} />)}
+              {(p.marks ?? []).filter(q => q.y > 0).map(q => <line key={q.x} x1={bx(q.x)} x2={bx(q.x) + bw} y1={sy(q.y)} y2={sy(q.y)} stroke={MUTED} strokeWidth={lw(3)} />)}
             </>}
             {a && <text x={m.l} y={H - 4} className="tk-svg-text tk-svg-muted">{/Q/.test(f.xs[0] ?? "") ? f.xs[0]!.slice(0, 4) : f.xs[0]}</text>}
             <text x={W - m.r} y={H - 4} textAnchor="end" className="tk-svg-text tk-svg-muted">{/Q/.test(f.xs.at(-1) ?? "") ? f.xs.at(-1)!.slice(0, 4) : f.xs.at(-1)}</text>

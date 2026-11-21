@@ -11,7 +11,7 @@ import { line as voiced } from "@/lib/voice";
 
 export const STUDIES_TITLE = "Longer answers, built from five years of captures";
 export const STUDIES_STANDFIRST = "A study is one argument with its evidence, built from stored homepage captures, and each one belongs to a series that asks the same kind of question.";
-const GAP = "mt-12 lg:mt-16";
+const GAP = "mt-[var(--sys-gap-section)]";
 
 function Lead({ s }: { s: HomeStudy }) {
   return <section aria-labelledby="studies-lead" className={`ed-wrap ${GAP} grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10`} data-studies-lead="">

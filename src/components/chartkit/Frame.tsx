@@ -9,6 +9,7 @@ import { createContext, useContext, useId, type ReactNode } from "react";
 import { arcPath, arcs, extent, linear, point, ticks } from "@/lib/charts/scale";
 import { Receipt } from "@/components/read/StoryCard";
 import { GUMBALLS, type GumballName } from "@/lib/theme/contract";
+import { pt } from "./ink";
 
 export type Cell = string | number;
 export type FrameProps = { /** Heading level of the title: 3 under a section heading (default), 2 when the chart sits directly under the page h1. */ level?: 2 | 3; title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
@@ -78,7 +79,7 @@ export function ScatterChart({ points, x, y, ...frame }: FrameProps & { points: 
       <Axis y0={H - m.b} x0={m.l} x1={W - m.r} label={x.label} />
       <text x={m.l} y={m.t - 2} className="tk-svg-text tk-svg-muted" aria-hidden="true">{y.label}</text>
       {points.map(p => { const px = sx(p.x), py = sy(p.y), show = labelled.has(p.id); return <Mark key={p.id} label={`${p.label}: ${x.label} ${x.format(p.x)}, ${y.label} ${y.format(p.y)}${p.stage ? `, ${p.stage}` : ""}`} tip={show ? undefined : p.label} x={px} y={py}>
-        <Gumball id={gid} ball={stageBall(p.stage)} cx={px} cy={py} r={5.5} />
+        <Gumball id={gid} ball={stageBall(p.stage)} cx={px} cy={py} r={pt(5.5)} />
         {show && <text x={px + (right(px) ? 8 : -8)} y={py + 4} textAnchor={right(px) ? "start" : "end"} className="tk-svg-text" aria-hidden="true">{p.label}</text>}
       </Mark>; })}
     </svg>}

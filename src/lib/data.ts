@@ -483,3 +483,7 @@ export const storyDataQuery = (id: string) => queryOptions({ queryKey: ["story-d
 export const receiptQuery = (r: string) => queryOptions({ queryKey: ["receipt", r], staleTime: 5 * 60_000, queryFn: () => getReceipt({ data: { r } }) });
 export const studyDataQuery = (slug: string) => queryOptions({ queryKey: ["study-data", slug], staleTime: 10 * 60_000, queryFn: () => getStudyData({ data: { slug } }) });
 export const weekDataQuery = (week: string) => queryOptions({ queryKey: ["week-data", week], staleTime: 10 * 60_000, queryFn: () => getWeekData({ data: { week } }) });
+
+// L1 · the colophon: edition records, the leading brands' measured fields and today's dry run (reads only).
+import { getColophon } from "./living/living.functions";
+export const colophonQuery = () => queryOptions({ queryKey: ["colophon"], staleTime: 10 * 60_000, queryFn: () => getColophon() });

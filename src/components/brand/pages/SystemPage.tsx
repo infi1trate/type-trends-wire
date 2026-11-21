@@ -2,6 +2,7 @@
 // in the kit drawn in both looks from one fixture, and the key map. Everything is read from SYSTEM (src/lib/theme/system.ts) and
 // ia.ts, so the Living design track can change a value and diff this page.
 import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { SYSTEM, COLOR_ROLES, TYPE_STEPS, sysText, type SystemView } from "@/lib/theme";
 import { KEY_MAP, SECTIONS } from "@/lib/ia";
 import { pctText } from "@/lib/labels";
@@ -83,6 +84,7 @@ function Keys() {
 }
 export function BrandSystem() {
   return <BrandShell page="system">
+    <p className="ed-small" data-colophon-link="">Some of these values may move a little, once a month, inside fixed limits: <Link to="/colophon" className="ed-tap underline">the colophon</Link> lists which ones, their limits and every change.</p>
     <Screen id="sys-colour" label="Colour roles" title="Fifteen roles, two mappings"><Colours /></Screen>
     <Screen id="sys-type" label="Type" title="Named steps"><TypeSteps /></Screen>
     <Screen id="sys-space" label="Space, shape, motion" title="The rest of the values"><SpaceShapeMotion /></Screen>

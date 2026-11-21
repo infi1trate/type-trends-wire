@@ -5,6 +5,9 @@
 // (system.test.ts parses the CSS back and compares). Components name roles (`bg-page`, `var(--sys-color-ink)`), never a hex.
 // Pure; imports only the contract.
 import { flatten, type Mode, type Theme, type TypeRoleName } from "./contract";
+// L1 · section gaps, the accent role and the chart weights are living settings: their values come from the register.
+import { LIVE_VALUES } from "../living/editions";
+import { PALETTE, chartWeights, sectionGap, type LivingValues } from "../living/settings";
 
 export const SYSTEM_VIEWS = ["read", "data", "cover"] as const;
 export type SystemView = (typeof SYSTEM_VIEWS)[number];
@@ -44,8 +47,8 @@ const STEP_OVERRIDE: Partial<Record<TypeStep, Partial<Record<SystemView, Partial
 export type TypeValue = { family: "display" | "text" | "mono"; weight: string; size: string; sizeMd?: string | undefined; sizeXl?: string | undefined; leading: string; leadingMd?: string | undefined; tracking: string; case: string };
 
 // SPACE, SHAPE, MOTION ------------------------------------------------------------------------------------------------------
-/** Section gaps (E4): between a page's sections, phones then from 1024 px. They are Tailwind's 12 and 16 steps on the 13 px root. */
-const SECTION_GAP = { base: "3rem", lg: "4rem" } as const;
+// Section gaps (E4): between a page's sections, phones then from 1024 px (today Tailwind's 12 and 16 steps on the 13 px root): the
+// spacing density setting (living/settings.ts).
 /** The reading measure (story body, study opening, Digest argument). */
 const READING_MEASURE = "68ch";
 
@@ -55,14 +58,18 @@ export type SystemTokens = {
   type: Record<TypeStep, { role: TypeRoleName } & Record<SystemView, TypeValue>>;
   font: { display: string; text: string; mono: string };
   space: { scale: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, string>; section: { base: string; lg: string }; gutter: string; gutterLg: string; tap: string };
-  shape: { radius: { none: string; sm: string; sticker: string }; rule: { hairline: string; strong: string }; measure: string };
+  shape: { radius: { none: string; sm: string; sticker: string }; rule: { hairline: string; strong: string }; measure: string; /** L1 · chart kit weights (multiple of today's; grid in px). */ chart: { scale: number; grid: number } };
   motion: { duration: { tap: string; move: string; wipe: string; arrive: string; draw: string; stagger: string }; ease: { settle: string; ooze: string; cut: string }; reduced: string };
 };
 
 /** The design system of a theme: every named value, Read and Data side by side. */
-export function systemOf(theme: Theme): SystemTokens {
+/** `values`: the living settings (L1); the live site passes nothing and gets LIVE_VALUES, the edition gate passes a proposal. */
+export function systemOf(theme: Theme, values: LivingValues = LIVE_VALUES): SystemTokens {
   const flat = Object.fromEntries(SYSTEM_VIEWS.map(v => [v, flatten(theme, VIEW_MODE[v])])) as Record<SystemView, Record<string, string>>;
   const color = Object.fromEntries(COLOR_ROLES.map(r => { const s = COLOR_SOURCE[r]; return [r, { what: s.what, read: flat.read[s.read]!, data: flat.data[s.data]!, cover: flat.cover[s.cover]! }]; })) as SystemTokens["color"];
+  // The accent role is the accent rotation setting: one colour of the brand palette, the same in Read and Data (cover keeps its page).
+  color.accent = { ...color.accent, read: PALETTE[values.accent], data: PALETTE[values.accent] };
+  const cw = chartWeights(values.chart);
   const typeOf = (step: TypeStep, view: SystemView): TypeValue => {
     const t = theme.modes[VIEW_MODE[view]].type[STEP_ROLE[step]];
     const base: TypeValue = { family: t.family, weight: t.weight, size: t.size, sizeMd: t.sizeMd, sizeXl: t.sizeXl, leading: t.leading, leadingMd: t.leadingMd, tracking: t.tracking, case: t.case };
@@ -73,8 +80,8 @@ export function systemOf(theme: Theme): SystemTokens {
   return {
     theme: theme.name, color, type,
     font: { display: flat.read["--tk-font-display"]!, text: flat.read["--tk-font-text"]!, mono: flat.read["--tk-font-mono"]! },
-    space: { scale: sh.space, section: SECTION_GAP, gutter: sh.layout.gutter, gutterLg: sh.layout.gutterLg, tap: sh.layout.tap },
-    shape: { radius: { none: sh.radius.none, sm: sh.radius.sm, sticker: sh.radius.sticker }, rule: { hairline: sh.border.hairline, strong: sh.border.strong }, measure: READING_MEASURE },
+    space: { scale: sh.space, section: sectionGap(values.density), gutter: sh.layout.gutter, gutterLg: sh.layout.gutterLg, tap: sh.layout.tap },
+    shape: { radius: { none: sh.radius.none, sm: sh.radius.sm, sticker: sh.radius.sticker }, rule: { hairline: sh.border.hairline, strong: sh.border.strong }, measure: READING_MEASURE, chart: { scale: cw.scale, grid: cw.grid } },
     motion: { duration: { tap: m.tap, move: m.move, wipe: m.wipe, arrive: m.arrive, draw: m.draw, stagger: m.stagger }, ease: { settle: m.settle, ooze: m.ooze, cut: m.cut },
       reduced: "With reduced motion every duration is 0 ms: nothing slides, fades or draws; state changes still show." },
   };
@@ -100,7 +107,7 @@ export function systemVars(sys: SystemTokens, view: SystemView): Record<string, 
   for (const [k, v] of Object.entries(sys.space.scale)) out[`--sys-space-${k}`] = v;
   out["--sys-gap-section"] = sys.space.section.base; out["--sys-gutter"] = sys.space.gutter; out["--sys-tap"] = sys.space.tap;
   out["--sys-radius"] = sys.shape.radius.sm; out["--sys-radius-round"] = sys.shape.radius.sticker;
-  out["--sys-rule-hairline"] = sys.shape.rule.hairline; out["--sys-rule-strong"] = sys.shape.rule.strong; out["--sys-measure"] = sys.shape.measure;
+  out["--sys-rule-hairline"] = sys.shape.rule.hairline; out["--sys-rule-strong"] = sys.shape.rule.strong; out["--sys-measure"] = sys.shape.measure; out["--sys-chart-grid"] = String(sys.shape.chart.grid);
   for (const [k, v] of Object.entries(sys.motion.duration)) out[`--sys-motion-${k}`] = v;
   for (const [k, v] of Object.entries(sys.motion.ease)) out[`--sys-ease-${k}`] = v;
   return out;

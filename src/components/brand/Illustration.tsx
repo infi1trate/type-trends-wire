@@ -9,6 +9,9 @@ import { FILTER_DEFS } from "./filters.gen";
 import { ILLUSTRATION_MAX, seedOf, softSize, stripShifts, stripsOf, tapeOf, tiltOf, trailGeom, type TrailPoint } from "@/lib/illustration";
 import { MOTION_MS } from "@/lib/motion";
 import { useFirstView } from "./Motion";
+// L1 · illustration motifs are a living setting: a style outside the live set draws nothing (today all three are in it).
+import { LIVE_VALUES } from "@/lib/living/editions";
+const motifOn = (s: string) => LIVE_VALUES.motifs.includes(s);
 
 const Scope = createContext(false);
 /** The kit's filter definitions, once. Pages with an illustration render it (an illustration outside a scope renders its own). */
@@ -44,6 +47,7 @@ export function Trail({ points, label, format, w = 640, h = 360, ink = "green", 
   const g = trailGeom(points, Math.min(w, ILLUSTRATION_MAX.w), Math.min(h, ILLUSTRATION_MAX.h), 28), last = points.at(-1), uid = useId().replace(/:/g, "");
   const [ref, on] = useFirstView<HTMLElement>(MOTION_MS.draw), ball = ink === "green" ? "slug-ball1" : ink === "pink" ? "slug-ball0" : "slug-ball3", tilt = (seedOf(seed) % 5) - 2;
   const head = g.pts.at(-1);
+  if (!motifOn("trail")) return null;
   return <figure ref={ref} className={`ill ill-trail relative min-w-0 ${on ? "m-on" : ""} ${className}`.trim()} data-illustration="trail" style={{ maxWidth: ILLUSTRATION_MAX.w }}>
     <OwnDefs />
     <svg viewBox={`0 0 ${g.pts.length ? Math.min(w, ILLUSTRATION_MAX.w) : w} ${Math.min(h, ILLUSTRATION_MAX.h)}`} className="block h-full w-full overflow-visible" role="img" aria-label={`${label}: ${points.map(p => `${p.x} ${format(p.y)}`).join(", ")}`} preserveAspectRatio="xMidYMid meet">
@@ -82,6 +86,7 @@ const TAPE_POS: Record<string, CSSProperties> = { tl: { left: "-4%", top: "-3%" 
 /** A paper collage: a sheet (the paper filter, a short soft shadow), the picture taped at two corners, a pencil note. */
 export function CutAndPaste({ seed, picture, note, className = "" }: CutProps) {
   const s = seedOf(seed), tilt = tiltOf(s), tapes = tapeOf(s);
+  if (!motifOn("cut")) return null;
   return <figure className={`ill ill-cut relative min-w-0 ${className}`.trim()} data-illustration="cut" style={{ maxWidth: ILLUSTRATION_MAX.w, ["--tilt" as string]: `${tilt}deg` }}>
     <OwnDefs />
     {/* The sheet: cut paper with grain and a short real shadow. */}
@@ -121,6 +126,7 @@ export type SoftProps = {
 /** A number or short word as an inflated object (the puff filters) resting on a two-ink halftone print. */
 export function SoftObject({ text, seed, ink = "pink", print = "yellow", label, className = "" }: SoftProps) {
   const s = seedOf(seed), tilt = tiltOf(s), size = softSize(text), dots = print === "yellow" ? "slug-dotsY" : "slug-dotsP";
+  if (!motifOn("soft")) return null;
   return <figure className={`ill ill-soft relative min-w-0 ${className}`.trim()} data-illustration="soft" style={{ maxWidth: ILLUSTRATION_MAX.w }}>
     <OwnDefs />
     <svg viewBox="0 0 900 600" className="block h-auto w-full" role="img" aria-label={label}>

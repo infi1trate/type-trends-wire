@@ -533,6 +533,13 @@
       "when": 1795282934243,
       "tag": "0075_w1c_surface_crops",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1795286029707,
+      "tag": "0076_l1_living_editions",
+      "breakpoints": true
     }
   ]
 }

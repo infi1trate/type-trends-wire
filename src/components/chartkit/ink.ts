@@ -3,6 +3,12 @@
 // laid behind it, and rising values are drawn green.
 import { COLORS } from "@/lib/chart/card";
 
+// L1 · chart styling is a living setting: every line weight, point size and grid weight the kit draws goes through CHART.
+import { LIVE_VALUES } from "@/lib/living/editions";
+import { chartWeights } from "@/lib/living/settings";
+export const CHART = chartWeights(LIVE_VALUES.chart);
+/** A line of n px and a point of radius n at the current chart styling. */
+export const lw = CHART.line, pt = CHART.point;
 export const INK = "var(--sys-color-ink)", MUTED = "var(--sys-color-ink-muted)", RULE = "var(--sys-color-rule)", PAGE = "var(--sys-color-page)";
 export const HL = "var(--sys-color-highlight)", POS = "var(--sys-color-positive)";
 export const hlText = { background: HL, color: INK } as const;
