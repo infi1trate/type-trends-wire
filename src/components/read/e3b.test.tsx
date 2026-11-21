@@ -1,6 +1,6 @@
 // Phase E3b · speed back, and four touches on the new front page. Concrete values come from the owner's brief.
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderInRouter } from "@/test/router-harness";
 import { readTapeShows, tapeWhat, tapeRows, READ_TAPE, TERMINAL_TAPE } from "@/lib/tape";
@@ -51,6 +51,9 @@ describe("E3b · no twin pictures", () => {
 });
 
 describe("E3b · one heading for Earlier this week", () => {
+  // The fixtures are dated around NOW (16 Nov 2026); part of the render reads the real clock, so pin it there (failed from 21 Nov otherwise).
+  beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"], now: NOW }); });
+  afterEach(() => { vi.useRealTimers(); });
   it("the large heading carries the count; no second small heading", async () => {
     const stories = [st("lead", { happened_at: iso(NOW - H) }), ...[50, 51, 52, 53, 54, 55].map(k => st(`w${k}`, { happened_at: iso(NOW - k * H) }))];
     const r = await renderInRouter(() => createElement(FrontView, { m: frontModel(input({ stories })) }), "/");

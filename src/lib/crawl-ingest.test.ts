@@ -14,8 +14,6 @@ const afterJob = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock("./stories/build.server", () => ({ afterJob }));
 const refreshAfterJob = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => null));
 vi.mock("./records/refresh.server", () => ({ refreshAfterJob }));
-const refreshLibraryHistory = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => ({ outcome: "clean" })));
-vi.mock("./history-refresh.server", () => ({ refreshLibraryHistory }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   async rpc(name: string) {
     state.refreshes.push({ name, statuses: [...state.runs.values()].map(row => row['status']), siteCount: state.sites.size });
@@ -97,7 +95,6 @@ describe("crawler receiver", () => {
     expect(state.refreshes).toEqual([{ name: "refresh_crawl_aggregates", statuses: ["finished"], siteCount: 0 }]);
     // P1: the crawl finish rewrites every precomputed page record (the job that changes the data writes the records).
     expect(refreshAfterJob).toHaveBeenCalledWith("crawl-finish", expect.any(Number), { force: true });
-    expect(refreshLibraryHistory).toHaveBeenCalledWith(expect.objectContaining({ job: "crawl-finish" }));
   });
   it("refreshes after site reposts to an already finished run", async () => {
     state.runs.set("weekly_1", { id: "weekly_1", status: "finished" });

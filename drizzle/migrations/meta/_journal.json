@@ -470,6 +470,34 @@
       "when": 1795239630148,
       "tag": "0066_create_pitches",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795245309520,
+      "tag": "0067_u2c_incremental_history_refresh",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795245399799,
+      "tag": "0068_u2c_incremental_history_refresh_apply",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1795245505293,
+      "tag": "0069_u2c_slim_check_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1795245892254,
+      "tag": "0070_u2c_history_job_budget",
+      "breakpoints": true
     }
   ]
 }

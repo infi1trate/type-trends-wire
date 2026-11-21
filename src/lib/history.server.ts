@@ -1,5 +1,5 @@
 // Reads of the site history: one sample per brand per quarter. Pages read the stored rows (`library_site_history_rows`, the facade over
-// `library_site_history_mat`, refreshed by the history refresh after each crawl) instead of the live `library_site_history` view, which
+// `library_site_history_store`, replaced per brand by the scheduled history job as captures land, U2c) instead of the live `library_site_history` view, which
 // recomputed every capture on every page. The stored rows carry the view's exact columns (checked equal on 21 Nov 2026: 1,552 rows,
 // same md5 over every column); the live view stays for anything outside the app.
 import type { supabaseAnon } from "./mcp/supabase";

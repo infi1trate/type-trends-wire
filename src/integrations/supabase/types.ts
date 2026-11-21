@@ -1310,6 +1310,174 @@ export type Database = {
         }
         Relationships: []
       }
+      library_history_dirty_domains: {
+        Row: {
+          dirty_at: string
+          domain: string
+          mark: number
+          tries: number
+        }
+        Insert: {
+          dirty_at?: string
+          domain: string
+          mark?: number
+          tries?: number
+        }
+        Update: {
+          dirty_at?: string
+          domain?: string
+          mark?: number
+          tries?: number
+        }
+        Relationships: []
+      }
+      library_history_runs: {
+        Row: {
+          detail: Json
+          domain_ms: Json
+          domains_done: number
+          domains_left: number
+          feeding: boolean | null
+          finished_at: string
+          id: number
+          kind: string
+          ms: number
+          rows_written: number
+          started_at: string
+          stopped: string | null
+          views: Json
+        }
+        Insert: {
+          detail?: Json
+          domain_ms?: Json
+          domains_done?: number
+          domains_left?: number
+          feeding?: boolean | null
+          finished_at?: string
+          id?: never
+          kind: string
+          ms: number
+          rows_written?: number
+          started_at: string
+          stopped?: string | null
+          views?: Json
+        }
+        Update: {
+          detail?: Json
+          domain_ms?: Json
+          domains_done?: number
+          domains_left?: number
+          feeding?: boolean | null
+          finished_at?: string
+          id?: never
+          kind?: string
+          ms?: number
+          rows_written?: number
+          started_at?: string
+          stopped?: string | null
+          views?: Json
+        }
+        Relationships: []
+      }
+      library_history_view_state: {
+        Row: {
+          attempt_at: string | null
+          last_ms: number
+          position: number
+          refreshed_at: string | null
+          view: string
+        }
+        Insert: {
+          attempt_at?: string | null
+          last_ms: number
+          position: number
+          refreshed_at?: string | null
+          view: string
+        }
+        Update: {
+          attempt_at?: string | null
+          last_ms?: number
+          position?: number
+          refreshed_at?: string | null
+          view?: string
+        }
+        Relationships: []
+      }
+      library_site_history_store: {
+        Row: {
+          accent: string | null
+          ai_tags: Json | null
+          body_family: string | null
+          captured_at: string | null
+          css_features: Json | null
+          cta_radius_bucket: string | null
+          domain: string
+          frameworks: Json | null
+          grid_max_cols: number | null
+          h1_family: string | null
+          h1_size_px: number | null
+          h1_tracking: number | null
+          hero_media: string | null
+          now: boolean | null
+          page_bg: string | null
+          quarter: string
+          sector: string | null
+          snapshot_id: number | null
+          source: string | null
+          theme: string | null
+          webfont: boolean | null
+          whitespace_ratio: number | null
+        }
+        Insert: {
+          accent?: string | null
+          ai_tags?: Json | null
+          body_family?: string | null
+          captured_at?: string | null
+          css_features?: Json | null
+          cta_radius_bucket?: string | null
+          domain: string
+          frameworks?: Json | null
+          grid_max_cols?: number | null
+          h1_family?: string | null
+          h1_size_px?: number | null
+          h1_tracking?: number | null
+          hero_media?: string | null
+          now?: boolean | null
+          page_bg?: string | null
+          quarter: string
+          sector?: string | null
+          snapshot_id?: number | null
+          source?: string | null
+          theme?: string | null
+          webfont?: boolean | null
+          whitespace_ratio?: number | null
+        }
+        Update: {
+          accent?: string | null
+          ai_tags?: Json | null
+          body_family?: string | null
+          captured_at?: string | null
+          css_features?: Json | null
+          cta_radius_bucket?: string | null
+          domain?: string
+          frameworks?: Json | null
+          grid_max_cols?: number | null
+          h1_family?: string | null
+          h1_size_px?: number | null
+          h1_tracking?: number | null
+          hero_media?: string | null
+          now?: boolean | null
+          page_bg?: string | null
+          quarter?: string
+          sector?: string | null
+          snapshot_id?: number | null
+          source?: string | null
+          theme?: string | null
+          webfont?: boolean | null
+          whitespace_ratio?: number | null
+        }
+        Relationships: []
+      }
       library_sites: {
         Row: {
           active: boolean | null
@@ -1345,6 +1513,36 @@ export type Database = {
           site_kind?: string
         }
         Relationships: []
+      }
+      library_snapshot_check_store: {
+        Row: {
+          check_fields: Json
+          snapshot_id: number
+        }
+        Insert: {
+          check_fields: Json
+          snapshot_id: number
+        }
+        Update: {
+          check_fields?: Json
+          snapshot_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_snapshot_check_store_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_snapshot_check_store_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       library_snapshot_text: {
         Row: {
@@ -3681,6 +3879,54 @@ export type Database = {
           webfont: boolean | null
           whitespace_ratio: number | null
         }
+        Insert: {
+          accent?: string | null
+          ai_tags?: Json | null
+          body_family?: string | null
+          captured_at?: string | null
+          css_features?: Json | null
+          cta_radius_bucket?: string | null
+          domain?: string | null
+          frameworks?: Json | null
+          grid_max_cols?: number | null
+          h1_family?: string | null
+          h1_size_px?: number | null
+          h1_tracking?: number | null
+          hero_media?: string | null
+          now?: boolean | null
+          page_bg?: string | null
+          quarter?: string | null
+          sector?: string | null
+          snapshot_id?: number | null
+          source?: string | null
+          theme?: string | null
+          webfont?: boolean | null
+          whitespace_ratio?: number | null
+        }
+        Update: {
+          accent?: string | null
+          ai_tags?: Json | null
+          body_family?: string | null
+          captured_at?: string | null
+          css_features?: Json | null
+          cta_radius_bucket?: string | null
+          domain?: string | null
+          frameworks?: Json | null
+          grid_max_cols?: number | null
+          h1_family?: string | null
+          h1_size_px?: number | null
+          h1_tracking?: number | null
+          hero_media?: string | null
+          now?: boolean | null
+          page_bg?: string | null
+          quarter?: string | null
+          sector?: string | null
+          snapshot_id?: number | null
+          source?: string | null
+          theme?: string | null
+          webfont?: boolean | null
+          whitespace_ratio?: number | null
+        }
         Relationships: []
       }
       library_snapshot_fields: {
@@ -3693,26 +3939,6 @@ export type Database = {
           page_type: string | null
           source: string | null
           viewport: string | null
-        }
-        Insert: {
-          captured_at?: string | null
-          check_fields?: never
-          domain?: string | null
-          hero_carousel?: never
-          id?: number | null
-          page_type?: string | null
-          source?: string | null
-          viewport?: string | null
-        }
-        Update: {
-          captured_at?: string | null
-          check_fields?: never
-          domain?: string | null
-          hero_carousel?: never
-          id?: number | null
-          page_type?: string | null
-          source?: string | null
-          viewport?: string | null
         }
         Relationships: [
           {
@@ -3928,6 +4154,7 @@ export type Database = {
         Args: { r: string; s: Json; source: string }
         Returns: string
       }
+      library_history_mark: { Args: { p_domains: string[] }; Returns: number }
       library_history_refresh_begin: {
         Args: { p_min_age_seconds?: number }
         Returns: Json
@@ -3942,6 +4169,7 @@ export type Database = {
       }
       library_replay_input: { Args: never; Returns: Json }
       library_snapshot_check_fields: { Args: { s: Json }; Returns: Json }
+      library_snapshot_check_fields_slim: { Args: { s: Json }; Returns: Json }
       library_snapshot_context: { Args: { p_snapshot: Json }; Returns: Json }
       library_state: { Args: never; Returns: Json }
       library_store_snapshot: {

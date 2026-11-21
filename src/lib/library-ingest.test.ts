@@ -6,8 +6,6 @@ const afterJob = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock("./stories/build.server", () => ({ afterJob }));
 const refreshAfterJob = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => null));
 vi.mock("./records/refresh.server", () => ({ refreshAfterJob }));
-const refreshLibraryHistory = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => ({ outcome: "clean" })));
-vi.mock("./history-refresh.server", () => ({ refreshLibraryHistory }));
 const inlineHistory = vi.hoisted(() => ({ calls: 0 }));
 vi.mock("./vanguard.server", () => ({ loadVanguard: async () => ["linear.app", "vercel.com"] }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
@@ -132,32 +130,21 @@ it("with waitUntil the answer goes out before the refresh, which runs in the bac
   expect(res.status).toBe(200);
   expect(res.headers.get("x-records-refresh")).toBe("background");
   expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
-  expect(kept).toHaveLength(2); // cards and history, both after the answer
+  expect(kept).toHaveLength(1); // the card refresh, after the answer (history is the scheduled database job's)
   await vi.waitFor(() => expect(finish).toBeDefined());
   finish!(null);
   await kept[0];
 });
 
-// Fix · library intake: the history refresh never runs inside a batch's answer and can never fail a stored batch.
-it("a batch never runs the history refresh inline, and without waitUntil leaves it for the wire poll", async () => {
-  refreshLibraryHistory.mockClear(); inlineHistory.calls = 0;
-  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }));
+// U2c · a batch never refreshes history (inline or in the background): the insert triggers mark the brand dirty and the scheduled
+// database job does the work, so a stored batch always answers with its counts.
+it.each([["without", undefined], ["with", true]] as const)("a batch %s waitUntil does no history work and answers 200", async (_label, wait) => {
+  inlineHistory.calls = 0;
+  const kept: Promise<unknown>[] = [];
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }), wait ? { waitUntil: p => { kept.push(p); } } : undefined);
   expect(res.status).toBe(200);
   expect(await res.json()).toMatchObject({ ok: true, inserted: 2 });
-  expect(res.headers.get("x-history-refresh")).toBe("skipped");
+  expect(res.headers.get("x-history-refresh")).toBe("scheduled");
   expect(inlineHistory.calls).toBe(0);
-  expect(refreshLibraryHistory).not.toHaveBeenCalled();
-});
-it.each([
-  ["fails", () => Promise.reject(new Error("canceling statement due to statement timeout"))],
-  ["times out", () => new Promise(() => {})],
-])("a batch whose history refresh %s still answers 200 with inserted and events", async (_label, impl) => {
-  refreshLibraryHistory.mockClear();
-  refreshLibraryHistory.mockImplementationOnce(impl as never);
-  const kept: Promise<unknown>[] = [];
-  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }), { waitUntil: p => { kept.push(p); } });
-  expect(res.status).toBe(200);
-  expect(res.headers.get("x-history-refresh")).toBe("background");
-  expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
-  await vi.waitFor(() => expect(refreshLibraryHistory).toHaveBeenCalledWith(expect.objectContaining({ job: "library", deadline: expect.any(Number) })));
+  if (wait) expect(kept).toHaveLength(1); // the card refresh only
 });

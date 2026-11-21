@@ -38,8 +38,9 @@ export const healthFactsSchema = z.object({
   bluesky_window_end: ts, taste_refreshed_at: ts,
   // W2 · leading indicators: the newest outside_series run (time and point count), merged in by health.server.ts.
   indicators: z.object({ last_run_at: ts, points: num }).nullable().optional(),
-  // Library history series: when the last stepwise refresh finished, from the public library_history_facts() facade, merged in by health.server.ts.
-  library_history: z.object({ refreshed_at: ts }).nullable().optional(),
+  // Library history: when the aggregate series last finished refreshing, and (U2c) how many brands' stored rows have waited more than
+  // 30 minutes, from the public library_history_facts() facade, merged in by health.server.ts.
+  library_history: z.object({ refreshed_at: ts, rows_behind: num, views_too_slow: z.array(z.string()).nullable().optional() }).nullable().optional(),
   // E2b · the story writer: calls today and the last call / checked text, from the public story_writer_facts() facade.
   story_writer: z.object({ calls_today: num, last_call_at: ts, last_checked_at: ts }).nullable().optional(),
   brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),

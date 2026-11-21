@@ -22,8 +22,6 @@ const afterJob = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock("./stories/build.server", () => ({ afterJob }));
 const refreshAfterJob = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => null));
 vi.mock("./records/refresh.server", () => ({ refreshAfterJob }));
-const refreshLibraryHistory = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => ({ outcome: "clean" })));
-vi.mock("./history-refresh.server", () => ({ refreshLibraryHistory }));
 vi.mock("./ingest.server", () => ({ ingestWire: vi.fn(async () => Response.json({ ok: true, polled: true })) }));
 import { sha256Hex } from "./crawl-ingest.server";
 import { handleDiscourseTerms, handleIngestWire, handleSeedCandidates } from "./wire-ingest.server";
@@ -63,9 +61,6 @@ describe("ingest-wire endpoint", () => {
     expect(await res.json()).toEqual({ ok: true, polled: true });
     expect(afterJob).toHaveBeenCalledWith("wire", expect.any(Number));
     expect(refreshAfterJob).toHaveBeenCalledWith("wire", expect.any(Number)); // the 15-minute poll is the records sweeper (P1)
-    // The history step runs first (one view per call), then the records sweep.
-    expect(refreshLibraryHistory).toHaveBeenCalledWith(expect.objectContaining({ job: "wire" }));
-    expect(refreshLibraryHistory.mock.invocationCallOrder[0]!).toBeLessThan(refreshAfterJob.mock.invocationCallOrder[0]!);
     expect((await handleIngestWire(post({ kind: "items" }, { authorization: "Bearer test-only-cron" }))).status).toBe(400);
   });
   it("accepts x-crawl-secret too and caps the body at 256 KB", async () => {
