@@ -21,7 +21,16 @@ export type HealthStatus = "ok" | "degraded" | "down";
 export type JobHealth = { job: string; last_ok_at: string | null; last_run_at: string | null; last_status: string; expected_every: Every; stale: boolean; consecutive_failures: number; note?: string };
 /** I3b · health only (never reader-facing, never changes `status`): tracked brands whose name is missing from their latest home page title and headline. */
 export type BrandNameFacts = { checked_at: string; checked: number; not_captured: string[]; failing: { domain: string; name: string; title: string | null; h1: string | null }[] };
-export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null };
+/** N1 · the weekly spend cap as health states it: set or not, reached or not, and one plain line (no amounts on this public payload). */
+export type SpendFacts = { week_start: string | null; cap_set: boolean; reached: boolean; line: string };
+export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null; spend?: SpendFacts | null };
+/** N1 · read the public spend_facts() facade's answer. */
+export function spendFacts(raw: unknown): SpendFacts | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>, cap_set = r["cap_set"] === true, reached = cap_set && r["reached"] === true;
+  return { week_start: typeof r["week_start"] === "string" ? r["week_start"] : null, cap_set, reached,
+    line: !cap_set ? "No weekly spend cap is set; nothing is blocked." : reached ? "The weekly spend cap is reached: writer runs and desk actions that cost wait until Monday (Eastern time)." : "Under the weekly spend cap." };
+}
 
 const ts = z.string().nullable().optional().transform(v => v ?? null);
 const num = z.coerce.number().nullable().optional().transform(v => v ?? 0);

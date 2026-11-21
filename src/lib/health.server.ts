@@ -2,7 +2,7 @@
 // anonymous client and applies the pure rules in health.ts. Cached per isolate for 60 s.
 import { healthFactsResult } from "./health-facts.server";
 import { supabaseAnon } from "./mcp/supabase";
-import { buildHealth, unavailableHealth, type HealthPayload } from "./health";
+import { buildHealth, spendFacts, unavailableHealth, type HealthPayload } from "./health";
 let cache: { at: number; value: HealthPayload } | null = null;
 export async function healthPayload(): Promise<HealthPayload> {
   const now = Date.now();
@@ -22,7 +22,9 @@ export async function healthPayload(): Promise<HealthPayload> {
   } catch { value = unavailableHealth(new Date(now)); }
   // I3b: the brand-name check is a fact beside the jobs; unreadable reads as null and never changes the status.
   const names = await import("./name-check.server").then(m => m.brandNameCheck()).catch(() => null);
-  value = { ...value, brand_names: names };
+  // N1: the weekly spend cap (set or not, reached or not; no amounts); unreadable reads as null and never changes the status.
+  const spend = await supabaseAnon().rpc("spend_facts" as never).then(r => (r.error ? null : spendFacts(r.data)), () => null);
+  value = { ...value, brand_names: names, spend };
   cache = { at: now, value };
   return value;
 }

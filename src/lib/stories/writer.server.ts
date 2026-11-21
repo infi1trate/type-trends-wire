@@ -73,6 +73,8 @@ export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: Abo
   const { estimateCost } = await import("../ai-budget");
   const ai = aiClient(), provider = ai.provider, m = req.model as typeof AI_MODELS.writer | typeof AI_MODELS.text;
   if (!providerRuns(provider, m)) return null;
+  // N1 · the owner's weekly cap: while it is reached no writer call is made (the template text stands) and the refusal is logged.
+  if (await capRefused(admin, req.schemaName)) return null;
   const writer = m === AI_MODELS.writer, estimate = estimateCost({ provider, model: m, input_tokens: 6000, output_tokens: writer ? 2500 : 1200 });
   const res = await admin.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: WRITER_KIND, p_model: m, p_estimate: estimate });
   const r = res.data as { ok?: boolean; id?: number } | null;
@@ -94,6 +96,18 @@ export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: Abo
     await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: estimate, p_ok: false, p_error: "writer_unknown_outcome", p_state: "unknown" });
     return { raw: null, cost: estimate };
   }
+}
+let capLoggedAt = 0;
+/** True when the weekly cap is reached; logs one refusal per ten minutes per isolate to the desk log. */
+async function capRefused(admin: Admin, schemaName: string): Promise<boolean> {
+  const nr = await import("../newsroom/newsroom.server");
+  if (!(await nr.capReachedNow(admin))) return false;
+  if (Date.now() - capLoggedAt > 10 * 60_000) {
+    capLoggedAt = Date.now();
+    const actor = schemaName.startsWith("study") ? "study writer" : schemaName.startsWith("digest") ? "digest writer" : "story writer";
+    await nr.insertLog(admin, { actor, action: "write", level: "ships alone", subject_kind: "week", subject_id: null, decision: "refused", reason: "The weekly spend cap is reached; the writer waits until Monday (Eastern time) and the facts-built text stands." }).catch(() => {});
+  }
+  return true;
 }
 /** Whether the configured provider can run this model (the writers run only on the Lovable gateway). */
 export const providerCanRun = (model: string) => { try { const sel = (process.env["AI_PROVIDER"] ?? "").trim().toLowerCase() || "lovable"; return providerRuns(sel === "google" ? "google" : "lovable", model as never); } catch { return false; } };

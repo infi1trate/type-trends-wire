@@ -458,6 +458,8 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     else console.warn("story build timed out", job);
     // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
     if (r) await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + JOB_LIMIT_MS - 5000);
+    // N1 · the state history: what this build and its writers stored, recorded as states (at most every five minutes; never fails the job).
+    if (r && JOB_LIMIT_MS - (Date.now() - jobStartedAt) > 15_000) await (await import("../newsroom/newsroom.server")).syncStoryStates((await import("@/integrations/supabase/client.server")).supabaseAdmin, { days: 14 }).catch(e => console.error("story states failed", e instanceof Error ? e.message.slice(0, 60) : "UnknownError"));
     await studies(job, jobStartedAt);
   } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); }
 }

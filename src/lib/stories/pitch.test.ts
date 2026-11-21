@@ -7,6 +7,9 @@ import { goldenChecks, goldenInput } from "./golden/run";
 import { handleDesk, type DeskDeps } from "./desk.server";
 import { deskBody } from "./desk";
 import { isOpen, matches, pitchBody, pitchVerdict, subjectOf, verdictsToRecord, PITCH_NOTE_MAX, type EngineView, type Pitch } from "./pitch";
+// N1 · every desk call names its actor; the owner-level actions carry the confirmation phrase.
+const withActor = (b: unknown) => ({ actor: "owner", confirm: `owner confirms ${(b as { action?: string }).action ?? ""}`, ...(b as object) });
+
 
 type View = Omit<EngineView, "numberOf">;
 const build = async (o: { dry?: boolean; checks?: Record<number, Check>; withPitches?: boolean } = {}) => {
@@ -41,7 +44,7 @@ describe("U4 · pitch request", () => {
 });
 
 describe("U4 · the desk endpoint takes pitches only with the editor key", () => {
-  const post = (body: unknown, auth = "Bearer good") => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(body) });
+  const post = (body: unknown, auth = "Bearer good") => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(withActor(body)) });
   const deps = () => { const got: unknown[] = []; const d: DeskDeps = { authorize: async r => r.headers.get("authorization") === "Bearer good", allow: () => true, now: () => 0,
     store: { exists: async () => false, insertEdit: async () => { throw new Error("a pitch never edits a story"); }, queue: async () => ({}), pitch: async p => (got.push(p), { pitch: { id: 1, ...p }, verdict: null }) } }; return { d, got }; };
   const body = { action: "pitch", kind: "brand", ref: "netlify.com", facts: [], note: "Look again" };

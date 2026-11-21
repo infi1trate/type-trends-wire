@@ -22,12 +22,8 @@ const tapeOnly = (ids: number[]) => ids.every(id => !published.some(p => tells(p
 const one = <T,>(xs: T[]) => { expect(xs).toHaveLength(1); return xs[0]!; };
 
 /** Calls the engine cannot meet on this data, each with the reason (reported to the owner; never deleted to make the suite pass). */
-export const SKIPPED: Record<string, string> = {
-  "9 · one story from the two AI stage notices":
-    "Both stage notices come from comparing forecast runs 9 (14 Nov) and 13 (15 Nov), 39 hours apart. The standing rule compares only real runs at least six days apart, so no shift exists in this data; the engine does merge AI-positioning stage changes from one valid run pair into one story (editor.test.ts).",
-  "10 · studios and Swiss-grid layouts as a crossover or breakout":
-    "The crossover came from the same 39-hour run pair (retired by the six-day rule) and no breakout alert fired for Swiss grid, so the forecast data holds neither. The AI-read Swiss-grid roundup exists but is neither type.",
-};
+import { SKIPPED } from "./skipped";
+export { SKIPPED };
 const may = (name: string) => (name in SKIPPED ? it.skip : it);
 
 // E2e · the golden set changes with the facts. The approved wording and editorial calls stand (the twelve texts stay in the writer's

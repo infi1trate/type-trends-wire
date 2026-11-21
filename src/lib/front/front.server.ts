@@ -39,7 +39,9 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
   const now = Date.now();
   const [read, { loadFreshness }, { loadEditions }, { siteTraitIndex }] = await Promise.all([import("../read.server"), import("../freshness.server"), import("../editions/editions.server"), import("../read.server")]);
   const [all, { snap, tiers, signals }, moves, fresh, editions, series, index, studies] = await Promise.all([
-    storyIndex(), latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), withEditions ? loadEditions(null).catch(() => null) : Promise.resolve(null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
+    // N1 · the owner's wire-only switch takes stories off the front page only (off by default; an unreadable switch reads as off).
+    Promise.all([storyIndex(), import("../newsroom/newsroom.server").then(m => m.wireOnlyOn()).catch(() => false), import("../newsroom/wire-only")]).then(([a, on, w]) => w.frontStories(a, on)),
+    latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), withEditions ? loadEditions(null).catch(() => null) : Promise.resolve(null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
     import("../data-stories/page.server").then(m => m.storedStudyShelf()).catch(() => null),
   ]);
   const headlineKeys = new Set([...tiers.values()].filter(t => t.tier === "headline").map(t => t.key));

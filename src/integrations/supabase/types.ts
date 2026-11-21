@@ -474,6 +474,75 @@ export type Database = {
         }
         Relationships: []
       }
+      desk_log: {
+        Row: {
+          action: string
+          actor: string
+          at: string
+          decision: string
+          detail: Json
+          edit_id: number | null
+          id: number
+          level: string | null
+          reason: string | null
+          subject_id: string | null
+          subject_kind: string | null
+        }
+        Insert: {
+          action: string
+          actor: string
+          at?: string
+          decision: string
+          detail?: Json
+          edit_id?: number | null
+          id?: never
+          level?: string | null
+          reason?: string | null
+          subject_id?: string | null
+          subject_kind?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          at?: string
+          decision?: string
+          detail?: Json
+          edit_id?: number | null
+          id?: never
+          level?: string | null
+          reason?: string | null
+          subject_id?: string | null
+          subject_kind?: string | null
+        }
+        Relationships: []
+      }
+      desk_switches: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          is_on: boolean
+          name: string
+          reason: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          is_on: boolean
+          name: string
+          reason: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          is_on?: boolean
+          name?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       digest_texts: {
         Row: {
           argument: Json
@@ -2023,6 +2092,44 @@ export type Database = {
         }
         Relationships: []
       }
+      pitch_assignments: {
+        Row: {
+          actor: string
+          at: string
+          desk: string
+          id: number
+          pitch_id: number
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          desk: string
+          id?: never
+          pitch_id: number
+          reason?: string | null
+          status: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          desk?: string
+          id?: never
+          pitch_id?: number
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pitch_assignments_pitch_id_fkey"
+            columns: ["pitch_id"]
+            isOneToOne: false
+            referencedRelation: "pitches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pitch_verdicts: {
         Row: {
           created_at: string
@@ -2241,6 +2348,60 @@ export type Database = {
         }
         Relationships: []
       }
+      spend_caps: {
+        Row: {
+          actor: string
+          at: string
+          build_credits: number | null
+          id: number
+          model_usd: number | null
+          reason: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          build_credits?: number | null
+          id?: never
+          model_usd?: number | null
+          reason: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          build_credits?: number | null
+          id?: never
+          model_usd?: number | null
+          reason?: string
+        }
+        Relationships: []
+      }
+      spend_entries: {
+        Row: {
+          actor: string
+          at: string
+          credits: number
+          id: number
+          kind: string
+          what: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          credits: number
+          id?: never
+          kind?: string
+          what: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          credits?: number
+          id?: never
+          kind?: string
+          what?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           basis: string | null
@@ -2446,6 +2607,47 @@ export type Database = {
             foreignKeyName: "story_numbers_story_id_fkey"
             columns: ["story_id"]
             isOneToOne: true
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_states: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          reason: string | null
+          recorded_at: string
+          ref: string
+          state: string
+          story_id: string
+        }
+        Insert: {
+          actor: string
+          at: string
+          id?: never
+          reason?: string | null
+          recorded_at?: string
+          ref: string
+          state: string
+          story_id: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          reason?: string | null
+          recorded_at?: string
+          ref?: string
+          state?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_states_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
             referencedRelation: "stories"
             referencedColumns: ["id"]
           },
@@ -3465,6 +3667,21 @@ export type Database = {
           },
         ]
       }
+      desk_history: {
+        Row: {
+          action: string | null
+          actor: string | null
+          at: string | null
+          decision: string | null
+          level: string | null
+          reason: string | null
+          ref: string | null
+          source: string | null
+          subject_id: string | null
+          subject_kind: string | null
+        }
+        Relationships: []
+      }
       forecast_latest: {
         Row: {
           backtest: Json | null
@@ -4281,6 +4498,18 @@ export type Database = {
         }
         Relationships: []
       }
+      spend_ledger: {
+        Row: {
+          actor: string | null
+          calls: number | null
+          credits: number | null
+          day: string | null
+          kind: string | null
+          usd: number | null
+          what: string | null
+        }
+        Relationships: []
+      }
       trendsetters_latest: {
         Row: {
           domain: string | null
@@ -4359,6 +4588,7 @@ export type Database = {
         Returns: undefined
       }
       crop_opted_out: { Args: { p_domain: string }; Returns: boolean }
+      desk_switch_on: { Args: { p_name: string }; Returns: boolean }
       discourse_merge: {
         Args: { p_add: boolean; p_rows: Json }
         Returns: number
@@ -4457,6 +4687,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      spend_facts: { Args: never; Returns: Json }
+      spend_status: { Args: never; Returns: Json }
       story_writer_facts: { Args: never; Returns: Json }
     }
     Enums: {

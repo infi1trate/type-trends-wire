@@ -90,3 +90,13 @@
 - [x] 2 Outlets = publications on the wire's source list only (RSS feeds); social and aggregators searched, never counted or named; N and list reported
 - [x] 3 Surfaces: compact rows (home/product/about/pricing/changelog), match line, ≤240 px at 1440 and ≤420 px at 390; crop intake accepts product/about/pricing_page first screens (own table, same rules); thumbnails from fixtures
 - [x] Tests, responsive 360–1920, report, commit
+
+# Phase N1 · Newsroom foundations (no reader-facing change)
+- [x] 1 newsroom/ style.md (rules + examples + banned lists), beats.md, README.md; style-vs-code test
+- [x] 1 desk log (append-only) + history view with story_edits; board = pitches + assignments/status
+- [x] 2 story state history (8 states), pipeline writes, 14-day backfill
+- [x] 3 action register with levels; actor required; preview = proposal; owner + phrase; every call logged; memory action (<200 KB); wire-only switch (off); docs/editor-desk.md
+- [x] 4 spend ledger (model from ai_usage, build credits via desk), weekly cap (not set), cap stops writers/costly actions/health/log; ET Mon–Sun; this week's spend report
+- [x] 5 golden counts; writing set fixtures; scorer + suite; hand-run live script (refuses when allowance used, not run); version stamps + score files test; README rule
+- [x] 6 /desk: queue with state history, desk log with desk filter, spend vs cap, register, golden scores; responsive 7 widths
+- [x] Tests, report, commit

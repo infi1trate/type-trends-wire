@@ -1,0 +1,54 @@
+{
+ "writer": "story",
+ "version": "v1",
+ "prompt_hash": "4f5cbcfb",
+ "models": [
+  "openai/gpt-6.2-astra",
+  "google/gemini-3.1-flash-lite"
+ ],
+ "template": "t1",
+ "source": "frozen approved texts (no model call)",
+ "frozen_at": "2026-11-21T19:26:04.398Z",
+ "scored_at": "2026-11-21T19:40:52.935Z",
+ "items": [
+  {
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "number": 42,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "breakout:css:scroll_timeline:all:13",
+   "number": 43,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "number": 44,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "brand:coinbase.com:2026-11-20",
+   "number": 88,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "census:agents:2026-W47",
+   "number": 89,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "census:sale:2026-W47",
+   "number": 90,
+   "score": 100,
+   "failures": []
+  }
+ ],
+ "mean": 100,
+ "passed": 6,
+ "total": 6
+}

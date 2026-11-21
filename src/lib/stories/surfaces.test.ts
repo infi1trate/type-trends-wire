@@ -11,6 +11,9 @@ import { handleDesk, type DeskDeps } from "./desk.server";
 import { gate, isOpenPath } from "../gate";
 import { createRateLimiter } from "../mcp/rate-limit";
 import { StoryView } from "@/components/read/StoryView";
+// N1 · every desk call names its actor; the owner-level actions carry the confirmation phrase.
+const withActor = (b: unknown) => ({ actor: "owner", confirm: `owner confirms ${(b as { action?: string }).action ?? ""}`, ...(b as object) });
+
 
 const NOW = Date.parse("2026-11-16T12:00:00Z");
 const story = (o: Partial<StoredStory>): StoredStory => ({ id: "move:1", type: "move", status: "published", reason: "ran", score: 60, components: { size: { value: 15, why: "2 fields changed" }, brand: { value: 20, why: "trendsetter #12" }, novelty: { value: 15, why: "x" }, relevance: { value: 10, why: "y" } },
@@ -109,7 +112,7 @@ describe("desk endpoint", () => {
       store: { exists: async id => id === "move:1", insertEdit: async e => { edits.push(e); return { id: edits.length, at: new Date(NOW).toISOString(), ...e }; }, queue: async () => ({ ok: "queue" }) }, ...o };
     return { d, edits };
   };
-  const post = (body: unknown, auth = "Bearer good") => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(body) });
+  const post = (body: unknown, auth = "Bearer good") => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(withActor(body)) });
   it("401 without the key, before reading the body", async () => {
     const { d, edits } = deps();
     expect((await handleDesk(new Request("https://site.test/api/public/desk", { method: "POST", body: "{}" }), d)).status).toBe(401);

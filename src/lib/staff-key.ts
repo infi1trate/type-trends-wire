@@ -15,9 +15,11 @@ export const setStaffKey = (k: string | null) => { key = k && k.length ? k : nul
 /** The accepted key, or null. Server render and first hydration always read null, so staff content never ships in HTML. */
 export const useStaffKey = () => useSyncExternalStore(subscribe, staffKey, () => null);
 
-/** One call to the editor endpoint with the key as bearer. A 401 forgets the key. */
+/** N1 · the staff pages act as the owner (the person holding the editor key); desk sessions name their own desk. */
+export const STAFF_ACTOR = "owner";
+/** One call to the editor endpoint with the key as bearer. A 401 forgets the key. Every call names its actor (N1). */
 export async function staffCall(body: Record<string, unknown>, k: string | null = staffKey()): Promise<Response> {
-  const r = await fetch("/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${k ?? ""}` }, body: JSON.stringify(body), credentials: "same-origin" });
+  const r = await fetch("/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${k ?? ""}` }, body: JSON.stringify({ actor: STAFF_ACTOR, ...body }), credentials: "same-origin" });
   if (r.status === 401 && k === key) setStaffKey(null);
   return r;
 }

@@ -12,6 +12,9 @@ import { EDITION_0, LIVE_VALUES, SHIPPED, rollbackDecision, sequenceProblems, ty
 import { COMPARE_PAGES, COMPARE_WIDTHS, approveDecision, contrastPairs, gate } from "./gate";
 import { dryRun, type LeadingRow } from "./rules";
 import { handleDesk, type DeskDeps } from "../stories/desk.server";
+// N1 · every desk call names its actor; the owner-level actions carry the confirmation phrase.
+const withActor = (b: unknown) => ({ actor: "owner", confirm: `owner confirms ${(b as { action?: string }).action ?? ""}`, ...(b as object) });
+
 
 const tok = (css: string, name: string) => [...new Set([...css.matchAll(new RegExp(`${name}:([^;}]+)`, "g"))].map(m => m[1]!.trim()))];
 const mv = (setting: string, from: unknown, to: unknown): Move => ({ setting, from: from as Move["from"], to: to as Move["to"], signal: null, share: null, count: null, base: null, rule: null });
@@ -137,7 +140,7 @@ describe("approve and roll back", () => {
     const rows: unknown[] = [];
     const d: DeskDeps = { authorize: async r => r.headers.get("authorization") === "Bearer good", allow: () => true, now: () => 0,
       store: { exists: async () => false, insertEdit: async () => { throw new Error("no"); }, queue: async () => [], living: { records: async () => [base0, proposed], insertStatus: async r => { rows.push(r); } } } };
-    const post = (body: unknown, auth = "Bearer good") => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(body) });
+    const post = (body: unknown, auth = "Bearer good") => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(withActor(body)) });
     expect((await handleDesk(post({ action: "living_approve", edition: 1 }, "Bearer bad"), d)).status).toBe(401);
     expect(rows).toHaveLength(0);
     expect((await handleDesk(post({ action: "living_rollback", edition: 1 }), d)).status).toBe(409);

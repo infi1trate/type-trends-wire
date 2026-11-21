@@ -12,6 +12,9 @@ import { setStaffKey, staffKey, STAFF_HREFS } from "@/lib/staff-key";
 import { handleDesk, type DeskDeps } from "@/lib/stories/desk.server";
 import { Route as WelcomeRoute } from "@/routes/welcome";
 import { Route as KitRoute } from "@/routes/kit";
+// N1 · every desk call names its actor; the owner-level actions carry the confirmation phrase.
+const withActor = (b: unknown) => ({ actor: "owner", confirm: `owner confirms ${(b as { action?: string }).action ?? ""}`, ...(b as object) });
+
 
 const SECRET = "Story queue: lucidmotors.com changed its headline font · score 61 · health ok · pre-flight";
 const page = () => createElement(StaffGate, { page: "System status", children: () => createElement("p", null, SECRET) });
@@ -64,7 +67,7 @@ describe("staff pages", () => {
 describe("the endpoint behind the staff pages", () => {
   const d: DeskDeps = { authorize: async r => r.headers.get("authorization") === "Bearer good", allow: () => true, now: () => 0,
     store: { exists: async () => true, insertEdit: async e => ({ id: 1, at: "", ...e }), queue: async () => ({ q: 1 }), staff: async p => ({ page: p, checks: ["pre-flight"] }) } };
-  const post = (body: unknown, auth: string) => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(body) });
+  const post = (body: unknown, auth: string) => new Request("https://site.test/api/public/desk", { method: "POST", headers: { "content-type": "application/json", authorization: auth }, body: JSON.stringify(withActor(body)) });
   it("checks the key before returning any staff page data", async () => {
     for (const body of [{ action: "check" }, { action: "staff", page: "launch" }, { action: "staff", page: "welcome" }, { action: "queue" }]) {
       const bad = await handleDesk(post(body, "Bearer bad"), d);

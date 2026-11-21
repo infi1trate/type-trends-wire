@@ -1,0 +1,1221 @@
+{
+ "frozen_at": "2026-11-21T19:26:04.398Z",
+ "known": {
+  "stories": [
+   "Anthropic",
+   "Cerebras",
+   "Character.AI",
+   "Cohere",
+   "Descript",
+   "ElevenLabs",
+   "Glean",
+   "Granola",
+   "Groq",
+   "Harvey",
+   "HeyGen",
+   "Hugging Face",
+   "Ideogram",
+   "Jasper",
+   "Krea",
+   "Luma",
+   "Manus",
+   "Midjourney",
+   "Mistral",
+   "OpenAI",
+   "Perplexity",
+   "Pika",
+   "Replicate",
+   "Runway",
+   "Stability AI",
+   "Suno",
+   "Synthesia",
+   "Together AI",
+   "Writer",
+   "xAI",
+   "Aimé Leon Dore",
+   "Allbirds",
+   "Amazon",
+   "Away",
+   "Brooklinen",
+   "Casper",
+   "Olipop",
+   "Fishwife",
+   "Everlane",
+   "Our Place",
+   "Glossier",
+   "Graza",
+   "Gymshark",
+   "Ilia",
+   "Kith",
+   "Liquid Death",
+   "Madhappy",
+   "Mejuri",
+   "Nike",
+   "On",
+   "Parachute",
+   "Patagonia",
+   "Rhode",
+   "Ritual",
+   "Rothy's",
+   "Seed",
+   "Shopify",
+   "Skims",
+   "SSENSE",
+   "Vuori",
+   "Airbnb",
+   "Arc",
+   "Are.na",
+   "BeReal",
+   "Bumble",
+   "Calm",
+   "Canva",
+   "Cosmos",
+   "Things",
+   "Discord",
+   "DoorDash",
+   "Duolingo",
+   "Flighty",
+   "Headspace",
+   "Hinge",
+   "Instagram",
+   "Letterboxd",
+   "Lyft",
+   "Notion",
+   "Partiful",
+   "Readwise",
+   "Snapchat",
+   "Spotify",
+   "Strava",
+   "Superhuman",
+   "Telegram",
+   "TikTok",
+   "Tinder",
+   "Uber",
+   "WhatsApp",
+   "Astro",
+   "Bun",
+   "Clerk",
+   "Cloudflare",
+   "Convex",
+   "Cursor",
+   "Datadog",
+   "Deno",
+   "Fly.io",
+   "GitHub",
+   "GitLab",
+   "Linear",
+   "Lovable",
+   "Neon",
+   "Netlify",
+   "PlanetScale",
+   "PostHog",
+   "Postman",
+   "Railway",
+   "Raycast",
+   "Render",
+   "Replit",
+   "Resend",
+   "Retool",
+   "Sentry",
+   "Supabase",
+   "Tailwind CSS",
+   "Vercel",
+   "Warp",
+   "Zed",
+   "1Password",
+   "Airtable",
+   "Asana",
+   "Atlassian",
+   "Attio",
+   "Box",
+   "Calendly",
+   "Clay",
+   "Coda",
+   "Databricks",
+   "DocuSign",
+   "Dropbox",
+   "Figma",
+   "Framer",
+   "HubSpot",
+   "Intercom",
+   "Lattice",
+   "Loom",
+   "Miro",
+   "monday.com",
+   "MongoDB",
+   "Okta",
+   "Pitch",
+   "Slack",
+   "Snowflake",
+   "Twilio",
+   "Webflow",
+   "Workday",
+   "Zendesk",
+   "Zoom",
+   "Adyen",
+   "Affirm",
+   "Betterment",
+   "Brex",
+   "Carta",
+   "Cash App",
+   "Chime",
+   "Coinbase",
+   "Column",
+   "Deel",
+   "Gusto",
+   "Klarna",
+   "Kraken",
+   "Mercury",
+   "Monzo",
+   "N26",
+   "Nubank",
+   "Pilot",
+   "Plaid",
+   "Public",
+   "Ramp",
+   "Revolut",
+   "Rippling",
+   "Robinhood",
+   "SoFi",
+   "Square",
+   "Stripe",
+   "Venmo",
+   "Wealthfront",
+   "Wise",
+   "Analogue",
+   "Apple",
+   "Bang & Olufsen",
+   "Bose",
+   "Daylight",
+   "DJI",
+   "Dyson",
+   "Eight Sleep",
+   "Ember",
+   "Fairphone",
+   "Fujifilm X",
+   "Garmin",
+   "GoPro",
+   "Keychron",
+   "Leica",
+   "Lucid",
+   "Meta",
+   "Nintendo",
+   "Nothing",
+   "Peloton",
+   "Oura",
+   "Playdate",
+   "Polestar",
+   "Rabbit",
+   "reMarkable",
+   "Rivian",
+   "Samsung",
+   "Sonos",
+   "Teenage Engineering",
+   "The Light Phone",
+   "23andMe",
+   "AllTrails",
+   "Tia",
+   "Barry's",
+   "BetterHelp",
+   "Carbon Health",
+   "ClassPass",
+   "Equinox",
+   "Everlywell",
+   "Flo",
+   "Function Health",
+   "Future",
+   "Clue",
+   "Hims",
+   "Hinge Health",
+   "Ladder",
+   "Kindbody",
+   "Levels",
+   "Lyra Health",
+   "Maven Clinic",
+   "MyFitnessPal",
+   "Noom",
+   "Nurx",
+   "One Medical",
+   "Parsley Health",
+   "Prenuvo",
+   "Ro",
+   "Talkspace",
+   "Teladoc",
+   "Thirty Madison",
+   "404 Media",
+   "Aeon",
+   "Axios",
+   "BBC",
+   "Bloomberg",
+   "Business Insider",
+   "CNN",
+   "Defector",
+   "Designboom",
+   "Eater",
+   "It's Nice That",
+   "Medium",
+   "The New Yorker",
+   "New York Magazine",
+   "The New York Times",
+   "Pitchfork",
+   "Polygon",
+   "Puck",
+   "Quanta Magazine",
+   "Semafor",
+   "Substack",
+   "TechCrunch",
+   "The Atlantic",
+   "The Guardian",
+   "The Information",
+   "The Ringer",
+   "The Verge",
+   "Colossal",
+   "Vox",
+   "Wired",
+   "AKQA",
+   "AREA 17",
+   "BASIC/DEPT",
+   "Buck",
+   "DIA",
+   "DixonBaxi",
+   "Fantasy",
+   "Frog",
+   "Hello Monday",
+   "Huge",
+   "IDEO",
+   "Instrument",
+   "JKR",
+   "Koto",
+   "Landor",
+   "Locomotive",
+   "MetaLab",
+   "Mother",
+   "MSCHF",
+   "MVSM",
+   "Order",
+   "Pentagram",
+   "Ragged Edge",
+   "R/GA",
+   "Studio Dumbar",
+   "ustwo",
+   "Vault49",
+   "Collins",
+   "Wolff Olins",
+   "Work & Co"
+  ],
+  "studies": [
+   "Anthropic",
+   "Cerebras",
+   "Character.AI",
+   "Cohere",
+   "Descript",
+   "ElevenLabs",
+   "Glean",
+   "Granola",
+   "Groq",
+   "Harvey",
+   "HeyGen",
+   "Hugging Face",
+   "Ideogram",
+   "Jasper",
+   "Krea",
+   "Luma",
+   "Manus",
+   "Midjourney",
+   "Mistral",
+   "OpenAI",
+   "Perplexity",
+   "Pika",
+   "Replicate",
+   "Runway",
+   "Stability AI",
+   "Suno",
+   "Synthesia",
+   "Together AI",
+   "Writer",
+   "xAI",
+   "Aimé Leon Dore",
+   "Allbirds",
+   "Amazon",
+   "Away",
+   "Brooklinen",
+   "Casper",
+   "Olipop",
+   "Fishwife",
+   "Everlane",
+   "Our Place",
+   "Glossier",
+   "Graza",
+   "Gymshark",
+   "Ilia",
+   "Kith",
+   "Liquid Death",
+   "Madhappy",
+   "Mejuri",
+   "Nike",
+   "On",
+   "Parachute",
+   "Patagonia",
+   "Rhode",
+   "Ritual",
+   "Rothy's",
+   "Seed",
+   "Shopify",
+   "Skims",
+   "SSENSE",
+   "Vuori",
+   "Airbnb",
+   "Arc",
+   "Are.na",
+   "BeReal",
+   "Bumble",
+   "Calm",
+   "Canva",
+   "Cosmos",
+   "Things",
+   "Discord",
+   "DoorDash",
+   "Duolingo",
+   "Flighty",
+   "Headspace",
+   "Hinge",
+   "Instagram",
+   "Letterboxd",
+   "Lyft",
+   "Notion",
+   "Partiful",
+   "Readwise",
+   "Snapchat",
+   "Spotify",
+   "Strava",
+   "Superhuman",
+   "Telegram",
+   "TikTok",
+   "Tinder",
+   "Uber",
+   "WhatsApp",
+   "Astro",
+   "Bun",
+   "Clerk",
+   "Cloudflare",
+   "Convex",
+   "Cursor",
+   "Datadog",
+   "Deno",
+   "Fly.io",
+   "GitHub",
+   "GitLab",
+   "Linear",
+   "Lovable",
+   "Neon",
+   "Netlify",
+   "PlanetScale",
+   "PostHog",
+   "Postman",
+   "Railway",
+   "Raycast",
+   "Render",
+   "Replit",
+   "Resend",
+   "Retool",
+   "Sentry",
+   "Supabase",
+   "Tailwind CSS",
+   "Vercel",
+   "Warp",
+   "Zed",
+   "1Password",
+   "Airtable",
+   "Asana",
+   "Atlassian",
+   "Attio",
+   "Box",
+   "Calendly",
+   "Clay",
+   "Coda",
+   "Databricks",
+   "DocuSign",
+   "Dropbox",
+   "Figma",
+   "Framer",
+   "HubSpot",
+   "Intercom",
+   "Lattice",
+   "Loom",
+   "Miro",
+   "monday.com",
+   "MongoDB",
+   "Okta",
+   "Pitch",
+   "Slack",
+   "Snowflake",
+   "Twilio",
+   "Webflow",
+   "Workday",
+   "Zendesk",
+   "Zoom",
+   "Adyen",
+   "Affirm",
+   "Betterment",
+   "Brex",
+   "Carta",
+   "Cash App",
+   "Chime",
+   "Coinbase",
+   "Column",
+   "Deel",
+   "Gusto",
+   "Klarna",
+   "Kraken",
+   "Mercury",
+   "Monzo",
+   "N26",
+   "Nubank",
+   "Pilot",
+   "Plaid",
+   "Public",
+   "Ramp",
+   "Revolut",
+   "Rippling",
+   "Robinhood",
+   "SoFi",
+   "Square",
+   "Stripe",
+   "Venmo",
+   "Wealthfront",
+   "Wise",
+   "Analogue",
+   "Apple",
+   "Bang & Olufsen",
+   "Bose",
+   "Daylight",
+   "DJI",
+   "Dyson",
+   "Eight Sleep",
+   "Ember",
+   "Fairphone",
+   "Fujifilm X",
+   "Garmin",
+   "GoPro",
+   "Keychron",
+   "Leica",
+   "Lucid",
+   "Meta",
+   "Nintendo",
+   "Nothing",
+   "Peloton",
+   "Oura",
+   "Playdate",
+   "Polestar",
+   "Rabbit",
+   "reMarkable",
+   "Rivian",
+   "Samsung",
+   "Sonos",
+   "Teenage Engineering",
+   "The Light Phone",
+   "23andMe",
+   "AllTrails",
+   "Tia",
+   "Barry's",
+   "BetterHelp",
+   "Carbon Health",
+   "ClassPass",
+   "Equinox",
+   "Everlywell",
+   "Flo",
+   "Function Health",
+   "Future",
+   "Clue",
+   "Hims",
+   "Hinge Health",
+   "Ladder",
+   "Kindbody",
+   "Levels",
+   "Lyra Health",
+   "Maven Clinic",
+   "MyFitnessPal",
+   "Noom",
+   "Nurx",
+   "One Medical",
+   "Parsley Health",
+   "Prenuvo",
+   "Ro",
+   "Talkspace",
+   "Teladoc",
+   "Thirty Madison",
+   "404 Media",
+   "Aeon",
+   "Axios",
+   "BBC",
+   "Bloomberg",
+   "Business Insider",
+   "CNN",
+   "Defector",
+   "Designboom",
+   "Eater",
+   "It's Nice That",
+   "Medium",
+   "The New Yorker",
+   "New York Magazine",
+   "The New York Times",
+   "Pitchfork",
+   "Polygon",
+   "Puck",
+   "Quanta Magazine",
+   "Semafor",
+   "Substack",
+   "TechCrunch",
+   "The Atlantic",
+   "The Guardian",
+   "The Information",
+   "The Ringer",
+   "The Verge",
+   "Colossal",
+   "Vox",
+   "Wired",
+   "AKQA",
+   "AREA 17",
+   "BASIC/DEPT",
+   "Buck",
+   "DIA",
+   "DixonBaxi",
+   "Fantasy",
+   "Frog",
+   "Hello Monday",
+   "Huge",
+   "IDEO",
+   "Instrument",
+   "JKR",
+   "Koto",
+   "Landor",
+   "Locomotive",
+   "MetaLab",
+   "Mother",
+   "MSCHF",
+   "MVSM",
+   "Order",
+   "Pentagram",
+   "Ragged Edge",
+   "R/GA",
+   "Studio Dumbar",
+   "ustwo",
+   "Vault49",
+   "Collins",
+   "Wolff Olins",
+   "Work & Co"
+  ]
+ },
+ "items": [
+  {
+   "kind": "story",
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "number": 42,
+   "model": "openai/gpt-6.2-astra",
+   "written_at": "2026-11-21T01:15:29.153633+00:00",
+   "facts": {
+    "type": "breakout",
+    "kind": "Breakout",
+    "sector": "Consumer apps",
+    "brands": [
+     {
+      "name": "Headspace",
+      "role": "subject"
+     },
+     {
+      "name": "Readwise",
+      "role": "subject"
+     },
+     {
+      "name": "Canva",
+      "role": "subject"
+     }
+    ],
+    "changes": [],
+    "copy": [],
+    "headline_call": null,
+    "numbers": [
+     {
+      "text": "Logo walls: 127 of 281 tracked homepages with an AI read (45.2%), flat, momentum 0.4 points a quarter",
+      "basis": "ai"
+     },
+     {
+      "text": "Logo walls: 8 of 29 tracked Consumer apps homepages with an AI read (27.6%), accelerating, momentum 1.3 points a quarter",
+      "basis": "ai"
+     }
+    ],
+    "lines": [
+     {
+      "text": "Seen on 8 tracked consumer apps brands, including Headspace, Readwise and Canva",
+      "basis": "ai"
+     },
+     {
+      "text": "Alert fired by forecast run 13",
+      "basis": "ai"
+     }
+    ],
+    "dates": [
+     "2026-11-15"
+    ],
+    "rebrand": false
+   },
+   "text": {
+    "headline": "Consumer apps are adding logo walls",
+    "deck": "Logo walls are getting more common on consumer app homepages, while their share across tracked homepages is roughly flat.",
+    "body": [
+     "Headspace, Readwise and Canva are among the 8 of 29 tracked consumer app homepages that show a wall of logos. Across the full set, we found logo walls on 127 of 281 homepages.",
+     "Logo walls are still less common on consumer app homepages than in the full set, but the gap is narrowing. Their share among consumer apps is gaining 1.3 percentage points a quarter, against 0.4 points a quarter across all tracked homepages."
+    ],
+    "how_we_know": "The counts and quarterly changes come from our read of homepage imagery, an AI estimate."
+   },
+   "check_now": []
+  },
+  {
+   "kind": "story",
+   "id": "breakout:css:scroll_timeline:all:13",
+   "number": 43,
+   "model": "openai/gpt-6.2-astra",
+   "written_at": "2026-11-21T01:15:29.153633+00:00",
+   "facts": {
+    "type": "breakout",
+    "kind": "Breakout",
+    "sector": null,
+    "brands": [
+     {
+      "name": "Netlify",
+      "role": "subject"
+     },
+     {
+      "name": "Allbirds",
+      "role": "subject"
+     },
+     {
+      "name": "R/GA",
+      "role": "subject"
+     }
+    ],
+    "changes": [],
+    "copy": [],
+    "headline_call": null,
+    "numbers": [
+     {
+      "text": "Scroll-driven animation: 88 of 300 tracked homepages in the latest quarter (29.3%), flat, momentum 1.3 points a quarter",
+      "basis": "measured"
+     }
+    ],
+    "lines": [
+     {
+      "text": "Seen on 88 tracked brands, including Netlify, Allbirds and R/GA",
+      "basis": "measured"
+     },
+     {
+      "text": "Alert fired by forecast run 13",
+      "basis": "measured"
+     }
+    ],
+    "dates": [
+     "2026-11-15"
+    ],
+    "rebrand": false
+   },
+   "text": {
+    "headline": "Homepages put the scroll to work",
+    "deck": "Scroll-driven animation appeared on 88 of 300 tracked homepages in the latest quarter. Its share was flat.",
+    "body": [
+     "On Netlify, Allbirds and R/GA, scrolling does more than move the page: it drives the animation. Across the tracked homepages, the share using that technique came to 29.3% in the latest quarter.",
+     "That share held steady for the quarter. Over time, though, scroll-driven animation has gained ground at a pace of 1.3 percentage points a quarter. That puts it in the top tenth of the patterns we track for momentum."
+    ],
+    "how_we_know": "Share and momentum measured from tracked homepage captures."
+   },
+   "check_now": []
+  },
+  {
+   "kind": "story",
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "number": 44,
+   "model": "openai/gpt-6.2-astra",
+   "written_at": "2026-11-21T01:15:29.153633+00:00",
+   "facts": {
+    "type": "breakout",
+    "kind": "Breakout",
+    "sector": "Dev tools",
+    "brands": [
+     {
+      "name": "Tailwind CSS",
+      "role": "subject"
+     },
+     {
+      "name": "Astro",
+      "role": "subject"
+     },
+     {
+      "name": "Cloudflare",
+      "role": "subject"
+     }
+    ],
+    "changes": [],
+    "copy": [],
+    "headline_call": null,
+    "numbers": [
+     {
+      "text": "Charts and data visuals: 17 of 281 tracked homepages with an AI read (6.0%), emerging, momentum 0.1 points a quarter",
+      "basis": "ai"
+     },
+     {
+      "text": "Charts and data visuals: 9 of 30 tracked Dev tools homepages with an AI read (30.0%), accelerating, momentum 1.2 points a quarter",
+      "basis": "ai"
+     }
+    ],
+    "lines": [
+     {
+      "text": "Seen on 9 tracked dev tools brands, including Tailwind CSS, Astro and Cloudflare",
+      "basis": "ai"
+     },
+     {
+      "text": "Alert fired by forecast run 13",
+      "basis": "ai"
+     }
+    ],
+    "dates": [
+     "2026-11-15"
+    ],
+    "rebrand": false
+   },
+   "text": {
+    "headline": "Dev tools are putting charts on their homepages",
+    "deck": "Charts or data visuals appear on 9 of 30 tracked dev tools homepages. The sector’s share is gaining 1.2 percentage points a quarter.",
+    "body": [
+     "Tailwind CSS, Astro and Cloudflare all show charts or data visuals on their homepages. Across the full set of 281 tracked homepages we looked at, just 17 show them, dev tools included.",
+     "The share of homepages with charts or data visuals is growing across the full set, too, but by 0.1 percentage points a quarter. In dev tools, the pace is picking up."
+    ],
+    "how_we_know": "The counts and quarterly changes come from our read of homepage imagery, an AI estimate."
+   },
+   "check_now": []
+  },
+  {
+   "kind": "story",
+   "id": "brand:coinbase.com:2026-11-20",
+   "number": 88,
+   "model": "openai/gpt-6.2-astra",
+   "written_at": "2026-11-21T00:15:30.19504+00:00",
+   "facts": {
+    "type": "move",
+    "kind": "Move",
+    "sector": "Fintech",
+    "brands": [
+     {
+      "name": "Coinbase",
+      "role": "subject"
+     }
+    ],
+    "changes": [
+     {
+      "brand": "Coinbase",
+      "what": "hero",
+      "from": "video",
+      "to": "still",
+      "since": "2026-11-11T22:18:58.124+00:00",
+      "date": "2026-11-14T11:52:49.159+00:00",
+      "page": "home",
+      "basis": "measured"
+     },
+     {
+      "brand": "Coinbase",
+      "what": "headline",
+      "from": "Trusted by millions worldwide",
+      "to": "The trusted financial account for you and your agents",
+      "since": "2026-11-11T22:18:58.124+00:00",
+      "date": "2026-11-14T11:52:49.159+00:00",
+      "page": "home",
+      "basis": "measured"
+     }
+    ],
+    "copy": [
+     "The trusted financial account for you and your agents",
+     "Trade stocks around the clock",
+     "Sign in",
+     "Sign up",
+     "Trusted by millions worldwide"
+    ],
+    "headline_call": {
+     "call": "position",
+     "reason": "The brand shifted its focus from a general audience (\"millions worldwide\") to a specific utility and user base (\"financial account for you and your agents\")."
+    },
+    "numbers": [
+     {
+      "text": "AI as the product: 82 of 281 tracked homepages with an AI read (29.2%), flat, momentum 1.0 points a quarter",
+      "basis": "ai"
+     },
+     {
+      "text": "AI as the product: 4 of 28 tracked Fintech homepages with an AI read (14.3%), flat, momentum 0.0 points a quarter",
+      "basis": "ai"
+     },
+     {
+      "text": "AI as a feature: 41 of 281 tracked homepages with an AI read (14.6%), accelerating, momentum 0.6 points a quarter",
+      "basis": "ai"
+     },
+     {
+      "text": "AI as a feature: 8 of 28 tracked Fintech homepages with an AI read (28.6%), peaking, momentum 0.0 points a quarter",
+      "basis": "ai"
+     }
+    ],
+    "lines": [],
+    "dates": [
+     "2026-11-11",
+     "2026-11-14"
+    ],
+    "rebrand": false
+   },
+   "text": {
+    "headline": "Coinbase added agents to its headline",
+    "deck": "Between 11 and 14 November, Coinbase replaced “Trusted by millions worldwide” with “The trusted financial account for you and your agents”. Its homepage also went from video to a still.",
+    "body": [
+     "Trust stayed in the headline, but the crowd dropped out. The old line told you how many people trusted Coinbase. The new one names the product, a financial account, and says who it’s for: you and your agents.",
+     "The homepage also says “Trade stocks around the clock”. That line names something you can do with the account. The headline leaves open what the agents do."
+    ],
+    "how_we_know": "The headline and hero changes were measured from captures on 11 and 14 November; the AI figures are our read of homepage copy, an AI estimate."
+   },
+   "check_now": []
+  },
+  {
+   "kind": "story",
+   "id": "census:agents:2026-W47",
+   "number": 89,
+   "model": "openai/gpt-6.2-astra",
+   "written_at": "2026-11-21T00:45:28.846883+00:00",
+   "facts": {
+    "type": "census",
+    "kind": "Census: words in headlines (weekly piece)",
+    "sector": null,
+    "brands": [
+     {
+      "name": "Framer",
+      "role": "subject"
+     },
+     {
+      "name": "Slack",
+      "role": "subject"
+     },
+     {
+      "name": "Linear",
+      "role": "subject"
+     },
+     {
+      "name": "1Password",
+      "role": "subject"
+     },
+     {
+      "name": "Coinbase",
+      "role": "subject"
+     },
+     {
+      "name": "Cursor",
+      "role": "subject"
+     },
+     {
+      "name": "Fly.io",
+      "role": "subject"
+     },
+     {
+      "name": "monday.com",
+      "role": "subject"
+     },
+     {
+      "name": "MongoDB",
+      "role": "subject"
+     },
+     {
+      "name": "Neon",
+      "role": "subject"
+     },
+     {
+      "name": "Notion",
+      "role": "subject"
+     },
+     {
+      "name": "Okta",
+      "role": "subject"
+     },
+     {
+      "name": "Postman",
+      "role": "subject"
+     },
+     {
+      "name": "Snowflake",
+      "role": "subject"
+     }
+    ],
+    "changes": [
+     {
+      "brand": "Coinbase",
+      "what": "headline",
+      "from": "Trusted by millions worldwide",
+      "to": "The trusted financial account for you and your agents",
+      "since": "2026-11-11T22:18:58.124+00:00",
+      "date": "2026-11-14T11:52:49.159+00:00",
+      "page": "home",
+      "basis": "measured"
+     },
+     {
+      "brand": "MongoDB",
+      "what": "headline",
+      "from": "ONE DATA PLATFORM. UNLIMITED AI POTENTIAL.",
+      "to": "Every scale. Every agent. One platform",
+      "since": "2026-11-11T22:38:36.908+00:00",
+      "date": "2026-11-13T14:08:59.063+00:00",
+      "page": "home",
+      "basis": "measured"
+     }
+    ],
+    "copy": [
+     "Agentic Infrastructure",
+     "Framer is the pro website builder with a world-class design agent",
+     "All your people and AI agents working together",
+     "The product development system for teams and agents",
+     "Secure access for every human and AI agent",
+     "The trusted financial account for you and your agents",
+     "Cursor is your coding agent for building ambitious software.",
+     "One database for AI, apps and agents",
+     "Computers for agents, from sandboxes to production",
+     "The AI workspace for people and agents",
+     "Every scale. Every agent. One platform",
+     "The backend for apps and agents, built to scale on Lakebase Postgres.",
+     "Where teams and agents Think together.",
+     "Bring agents out of the shadows",
+     "API for your agents",
+     "The Agentic Enterprise Runs on Snowflake",
+     "Trusted by millions worldwide",
+     "ONE DATA PLATFORM. UNLIMITED AI POTENTIAL."
+    ],
+    "headline_call": null,
+    "numbers": [
+     {
+      "text": "16 of 162 tracked homepages whose headline we can read",
+      "basis": "measured"
+     },
+     {
+      "text": "By sector: Enterprise SaaS 8, Dev tools 6, Consumer apps 1, Fintech 1",
+      "basis": "measured"
+     }
+    ],
+    "lines": [
+     {
+      "text": "Vercel · “Agentic Infrastructure”",
+      "basis": "measured"
+     },
+     {
+      "text": "Framer · “Framer is the pro website builder with a world-class design agent”",
+      "basis": "measured"
+     },
+     {
+      "text": "Slack · “All your people and AI agents working together”",
+      "basis": "measured"
+     },
+     {
+      "text": "Linear · “The product development system for teams and agents”",
+      "basis": "measured"
+     },
+     {
+      "text": "1Password · “Secure access for every human and AI agent”",
+      "basis": "measured"
+     },
+     {
+      "text": "Coinbase · “The trusted financial account for you and your agents”",
+      "basis": "measured"
+     },
+     {
+      "text": "Cursor · “Cursor is your coding agent for building ambitious software.”",
+      "basis": "measured"
+     },
+     {
+      "text": "Databricks · “One database for AI, apps and agents”",
+      "basis": "measured"
+     },
+     {
+      "text": "Fly.io · “Computers for agents, from sandboxes to production”",
+      "basis": "measured"
+     },
+     {
+      "text": "monday.com · “The AI workspace for people and agents”",
+      "basis": "measured"
+     },
+     {
+      "text": "MongoDB · “Every scale. Every agent. One platform”",
+      "basis": "measured"
+     },
+     {
+      "text": "Neon · “The backend for apps and agents, built to scale on Lakebase Postgres.”",
+      "basis": "measured"
+     },
+     {
+      "text": "Notion · “Where teams and agents Think together.”",
+      "basis": "measured"
+     },
+     {
+      "text": "Okta · “Bring agents out of the shadows”",
+      "basis": "measured"
+     },
+     {
+      "text": "Postman · “API for your agents”",
+      "basis": "measured"
+     },
+     {
+      "text": "Snowflake · “The Agentic Enterprise Runs on Snowflake”",
+      "basis": "measured"
+     }
+    ],
+    "dates": [
+     "2026-11-11",
+     "2026-11-13",
+     "2026-11-14",
+     "2026-11-20"
+    ],
+    "rebrand": false,
+    "max_brands": 6
+   },
+   "text": {
+    "headline": "Homepages are making room for agents",
+    "deck": "Agent, agents or agentic appears in the headline on 16 of 162 tracked homepages whose headline we can read.",
+    "body": [
+     "Between 11 and 14 November, Coinbase went from “Trusted by millions worldwide” to “The trusted financial account for you and your agents”. Trust stayed in the line. The agents are new.",
+     "Between 11 and 13 November, MongoDB replaced “ONE DATA PLATFORM. UNLIMITED AI POTENTIAL.” with “Every scale. Every agent. One platform”.",
+     "At Slack, agents are colleagues: “All your people and AI agents working together”. At Cursor, the agent is the product: “Cursor is your coding agent for building ambitious software.”"
+    ],
+    "how_we_know": "The count and copy changes were measured from homepage captures between 11 and 20 November."
+   },
+   "check_now": []
+  },
+  {
+   "kind": "story",
+   "id": "census:sale:2026-W47",
+   "number": 90,
+   "model": "openai/gpt-6.2-astra",
+   "written_at": "2026-11-21T00:15:30.19504+00:00",
+   "facts": {
+    "type": "census",
+    "kind": "Census: sale mode (weekly piece)",
+    "sector": null,
+    "brands": [
+     {
+      "name": "Equinox",
+      "role": "subject"
+     },
+     {
+      "name": "Brooklinen",
+      "role": "subject"
+     },
+     {
+      "name": "Casper",
+      "role": "subject"
+     },
+     {
+      "name": "GoPro",
+      "role": "subject"
+     },
+     {
+      "name": "Olipop",
+      "role": "subject"
+     },
+     {
+      "name": "Our Place",
+      "role": "subject"
+     },
+     {
+      "name": "Parachute",
+      "role": "subject"
+     },
+     {
+      "name": "Peloton",
+      "role": "subject"
+     }
+    ],
+    "changes": [],
+    "copy": [
+     "Our biggest sale. Your comfiest season.",
+     "Get 50% off",
+     "SHOP THE SALE",
+     "Black Friday Early Access",
+     "25% Off Sitewide Black Friday Sale",
+     "Shop sale",
+     "Shop Deals",
+     "Shop 50% Off",
+     "Black Friday Sale, Save Up to 45%*",
+     "20% Off Everything",
+     "Up to $1,300 off Peloton equipment*"
+    ],
+    "headline_call": null,
+    "numbers": [
+     {
+      "text": "11 of 229 tracked homepages whose headline or buttons we can read",
+      "basis": "measured"
+     },
+     {
+      "text": "By sector: Commerce & DTC 7, Hardware 2, Consumer apps 1, Health 1",
+      "basis": "measured"
+     }
+    ],
+    "lines": [
+     {
+      "text": "Allbirds · “Our biggest sale. Your comfiest season.”",
+      "basis": "measured"
+     },
+     {
+      "text": "Headspace · “Get 50% off” (button)",
+      "basis": "measured"
+     },
+     {
+      "text": "Ilia · “SHOP THE SALE” (button)",
+      "basis": "measured"
+     },
+     {
+      "text": "Equinox · “Black Friday Early Access”",
+      "basis": "measured"
+     },
+     {
+      "text": "Brooklinen · “25% Off Sitewide Black Friday Sale”",
+      "basis": "measured"
+     },
+     {
+      "text": "Casper · “Shop sale” (button)",
+      "basis": "measured"
+     },
+     {
+      "text": "GoPro · “Shop Deals” (button)",
+      "basis": "measured"
+     },
+     {
+      "text": "Olipop · “Shop 50% Off” (button)",
+      "basis": "measured"
+     },
+     {
+      "text": "Our Place · “Black Friday Sale, Save Up to 45%*”",
+      "basis": "measured"
+     },
+     {
+      "text": "Parachute · “20% Off Everything”",
+      "basis": "measured"
+     },
+     {
+      "text": "Peloton · “Up to $1,300 off Peloton equipment*”",
+      "basis": "measured"
+     }
+    ],
+    "dates": [
+     "2026-11-20"
+    ],
+    "rebrand": false,
+    "max_brands": 6
+   },
+   "text": {
+    "headline": "Sale copy turns up on buttons too",
+    "deck": "On 20 November, sale copy appeared on 11 of 229 tracked homepages whose headline or buttons we can read.",
+    "body": [
+     "Equinox leads with access rather than a price: “Black Friday Early Access”. Brooklinen puts the discount first in “25% Off Sitewide Black Friday Sale”. Parachute skips the occasion and goes straight to “20% Off Everything”.",
+     "On the buttons, Casper keeps it to “Shop sale” and GoPro goes with “Shop Deals”. Neither names a price. Olipop fits the discount into the button itself: “Shop 50% Off”."
+    ],
+    "how_we_know": "Measured from homepage headlines and buttons captured on 20 November."
+   },
+   "check_now": []
+  }
+ ]
+}
