@@ -1,7 +1,12 @@
 import { supabaseAnon } from "./mcp/supabase";
+import { byCrawl } from "./crawl-stamp.server";
+// Every tag-share row, read once per instance until the next crawl or tag (`byCrawl`); filters apply in memory, same order and rows
+// as the filtered query they replace.
+const tagShare=byCrawl(async()=>{const db=supabaseAnon();const rows=[];for(let from=0;;from+=1000){const {data,error}=await db.from("library_tag_share").select("*").order("sector").order("dimension").order("value").range(from,from+999);if(error)throw error;rows.push(...(data??[]));if(!data||data.length<1000)break;}return rows;});
 export async function aiTrends(options: { dimension?: string | undefined; sector?: string | undefined }={}) {
  const db=supabaseAnon(); const sector=options.sector ?? "all";
- const tags=[];for(let from=0;;from+=1000){let q=db.from("library_tag_share").select("*").order("sector").order("dimension").order("value");if(options.sector)q=q.eq("sector",sector);if(options.dimension&&!['pricing','changelog','features'].includes(options.dimension))q=q.eq("dimension",options.dimension);const {data,error}=await q.range(from,from+999);if(error)throw error;tags.push(...(data??[]));if(!data||data.length<1000)break;}
+ const dim=options.dimension&&!['pricing','changelog','features'].includes(options.dimension)?options.dimension:null;
+ const tags=(await tagShare()).filter(t=>(!options.sector||t.sector===sector)&&(!dim||t.dimension===dim));
  const [pricing,changelog,features,spend,status]=await Promise.all([db.from("library_pricing_stats").select("*").range(0,999),db.from("library_changelog_stats").select("*").range(0,999),db.from("library_feature_themes").select("*").order("sites",{ascending:false}).range(0,999),db.from("ai_spend_summary").select("*").single(),db.from("library_ai_status").select("*").range(0,999)]);
  for(const result of [pricing,changelog,features,spend,status])if(result.error)throw result.error;
  return {tags,pricing:(pricing.data??[]).filter(p=>!options.sector||p.sector===sector),changelog:(changelog.data??[]).filter(p=>!options.sector||p.sector===sector),features:(features.data??[]).filter(p=>!options.sector||p.sector===sector),spend:spend.data,status:status.data??[]};

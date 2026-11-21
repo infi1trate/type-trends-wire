@@ -6,22 +6,33 @@ import { captureOf, checkEvent, splitChecked, type Capture, type Check, type Ver
 
 type Db = ReturnType<typeof supabaseAnon>;
 type Ev = { id: number; domain: string; type: string; before?: unknown; after?: unknown; detected_at: string; page_type?: string | null; viewport?: string | null; source?: string | null; snapshot_id?: number | null; prev_snapshot_id?: number | null };
-const SNAP = "id,domain,page_type,viewport,captured_at,rendered:signals->type->rendered,color:signals->color,layout:signals->layout,h1:signals->lexicon->h1,nav:signals->nav,prices:signals->prices,tech:signals->tech,ai_pricing:signals->ai_pricing";
-type SnapRow = { id: number; domain: string; page_type: string; viewport: string; captured_at: string; rendered: unknown; color: unknown; layout: unknown; h1: unknown; nav: unknown; prices: unknown; tech: unknown; ai_pricing: unknown };
+// The checked fields come from `library_snapshot_fields.check_fields` (one detoast of `signals` per capture, built in the database),
+// fetched by id without a sort: selecting eight JSON paths and ordering by id read each capture's signals eight times and sorted
+// ~2 MB on disk (371 ms per call); ids are listed first (index only), fields fetched by id, and rows ordered by id here.
+const SNAP = "id,domain,page_type,viewport,captured_at,check_fields";
+type Fields = { rendered: unknown; color: unknown; layout: unknown; h1: unknown; nav: unknown; prices: unknown; tech: unknown; ai_pricing: unknown };
+type SnapRow = { id: number; domain: string; page_type: string; viewport: string; captured_at: string; check_fields: Partial<Fields> | null };
 const AI = new Set(["imagery_shift", "aesthetic_shift"]);
 const key = (d: string, p: string | null | undefined, v: string | null | undefined) => `${d}|${p ?? "home"}|${v ?? "desktop"}`;
 
 /** Live captures per domain|page|viewport for these domains (signals read by JSON path; AI tags merged where asked). */
 export async function liveCaptures(db: Db, domains: string[], tagDomains: ReadonlySet<string>, sectorOf: ReadonlyMap<string, string>): Promise<Map<string, Capture[]>> {
-  const rows: SnapRow[] = [];
+  const ids: number[] = [];
   for (let i = 0; i < domains.length; i += 25) {
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await db.from("library_snapshots").select(SNAP).eq("source", "live").in("domain", domains.slice(i, i + 25)).order("id").range(from, from + 999);
+      const { data, error } = await db.from("library_snapshots").select("id").eq("source", "live").in("domain", domains.slice(i, i + 25)).order("id").range(from, from + 999);
       if (error) throw error;
-      rows.push(...((data ?? []) as unknown as SnapRow[]));
+      ids.push(...((data ?? []) as { id: number }[]).map(r => r.id));
       if (!data || data.length < 1000) break;
     }
   }
+  const rows: SnapRow[] = [], chunks = Array.from({ length: Math.ceil(ids.length / 100) }, (_, i) => ids.slice(i * 100, i * 100 + 100));
+  for (let i = 0; i < chunks.length; i += 6) // at most six requests at once
+    for (const { data, error } of await Promise.all(chunks.slice(i, i + 6).map(c => db.from("library_snapshot_fields").select(SNAP).in("id", c)))) {
+      if (error) throw error;
+      rows.push(...((data ?? []) as unknown as SnapRow[]));
+    }
+  rows.sort((a, b) => a.id - b.id);
   const wantTags = rows.filter(r => tagDomains.has(r.domain) && r.page_type === "home").map(r => r.id), tags = new Map<number, Record<string, unknown>>();
   for (let i = 0; i < wantTags.length; i += 200) {
     const { data, error } = await db.from("library_tags").select("snapshot_id,tags").in("snapshot_id", wantTags.slice(i, i + 200));
@@ -30,7 +41,8 @@ export async function liveCaptures(db: Db, domains: string[], tagDomains: Readon
   }
   const out = new Map<string, Capture[]>();
   for (const r of rows) {
-    const signals = { type: { rendered: r.rendered }, color: r.color, layout: r.layout, lexicon: { h1: r.h1 }, nav: r.nav, prices: r.prices, tech: r.tech, ai_pricing: r.ai_pricing } as Record<string, unknown>;
+    const f = r.check_fields ?? {};
+    const signals = { type: { rendered: f.rendered ?? null }, color: f.color ?? null, layout: f.layout ?? null, lexicon: { h1: f.h1 ?? null }, nav: f.nav ?? null, prices: f.prices ?? null, tech: f.tech ?? null, ai_pricing: f.ai_pricing ?? null } as Record<string, unknown>;
     const c = captureOf({ id: r.id, captured_at: r.captured_at, signals, tags: tags.get(r.id) ?? null }, { page_type: r.page_type, viewport: r.viewport, sector: sectorOf.get(r.domain) ?? "" });
     const k = key(r.domain, r.page_type, r.viewport); out.set(k, [...(out.get(k) ?? []), c]);
   }

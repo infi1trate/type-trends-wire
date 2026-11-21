@@ -32,3 +32,17 @@
 - [ ] 3 `storyForRow` and "No. N →" on data rows (one batched read per table)
 - [ ] 4 One name per thing (ia.ts/labels.ts), one glossary, names test
 - [ ] Tests, responsive 360–1920, TTFB before/after, report
+
+## U2b · DB load first, follow-ups, story truth fixes
+- [x] A1 confirm no API caller of refresh_library_history()
+- [x] A2 materialize library_site_history (same cols) + indexes, refresh in library_history_refresh_job, equality check, repoint callers
+- [x] A3 read history once / keyset, not pages of 200
+- [x] A4 cache forecasts / sector_stats / latest / tag_share (run-keyed), health_facts 60 s
+- [x] A5 library_snapshots slow selects: EXPLAIN before/after, index or narrow
+- [x] A6 EXPLAIN new object + three slowest remaining
+- [x] B1 /stories/no/<n> keeps query string
+- [x] B2 story page hydration #418
+- [x] B3 drawer/Data view change rows: capture dates first, "confirmed <date>"
+- [x] B4 pattern story links, one glossary test, 44 px check at 360/390, old links
+- [x] C one count per claim (white space, breakout, against the grain), sheet dedupe, evidence from sheet, headline wording, rebuild records
+- [x] D hexName fix + 20-hex tests, colour-word check

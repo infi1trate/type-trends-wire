@@ -3,6 +3,7 @@ import { supabaseAnon } from "./mcp/supabase";
 import { buildSignals, rowKey, tiersFrom, type SignalRow, type SignalSnapshot } from "./signals";
 import { fetchReaderRuns } from "./real-runs";
 import { stored } from "./records/store.server";
+import { forecastRunRows } from "./forecast-rows.server";
 import { packSnapshot, unpackSnapshot } from "./signal-pack";
 export type { SignalSnapshot };
 
@@ -11,7 +12,6 @@ async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[]
   for (let from = 0; ; from += size) { const { data, error } = await f(from, from + size - 1); if (error) throw error; out.push(...(data ?? [])); if (!data || data.length < size) break; }
   return out;
 }
-const COLS = "dimension,value,scope,status,stage,momentum,current_share,next_wave_score,present:components->present,sites:components->sites,usable:evidence->usable";
 const TTL = 5 * 60_000;
 
 /** The reader run (readerRuns: run 15 until a newer real run exists, then the latest real run) plus the two runs before it. Cached five minutes. */
@@ -23,7 +23,7 @@ export const snapshot = stored("signals", async (): Promise<SignalSnapshot> => {
   if (!run) return { run_id: null, computed_at: null, prev_runs: [], rows: [], prev: [] };
   const latest = { id: run.id, computed_at: run.at };
   const [rows, ...prevRows] = await Promise.all([
-    pages<SignalRow>((f, t) => db.from("forecasts").select(COLS).eq("run_id", latest.id).order("scope").order("dimension").order("value").range(f, t) as never),
+    forecastRunRows(latest.id),
     ...prev.map(p => pages<{ dimension: string; value: string; stage: string | null }>((f, t) => db.from("forecasts").select("dimension,value,stage").eq("run_id", p.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never)),
   ]);
   const prevStages = new Map<string, (string | null)[]>();

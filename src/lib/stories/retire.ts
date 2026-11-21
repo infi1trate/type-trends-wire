@@ -2,8 +2,9 @@
 // Stories are insert-only: scripts/retire-stories.ts turns these answers into `kill` and `correct` rows in story_edits.
 import { sectorName } from "../labels";
 import { gapOk, MIN_RUN_GAP_DAYS } from "../run-gap";
-import { deepEnough, firstSeenEligible, identityMove, inline, moveCandidate, noDollar } from "./candidates";
-import { AI_EVENTS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, FIRST_SEEN_MIN_BRANDS, ROUNDUP_MIN, type Candidate, type Fact, type NewsDropReason } from "./types";
+import { deepEnough, firstSeenEligible, identityMove, inline, moveCandidate, noDollar, whiteSpaceGap, whiteSpaceText } from "./candidates";
+import { runBase, type SampleRow } from "./sheet";
+import { AI_EVENTS, WHITE_SPACE_MAX_SHARE, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, FIRST_SEEN_MIN_BRANDS, ROUNDUP_MIN, type Candidate, type Fact, type NewsDropReason } from "./types";
 import { SEASONAL_HELD_EVENTS } from "../promo";
 import { isRebrand } from "../rebrand-rule";
 import type { EventRow, RebrandRow } from "../agency/changes";
@@ -271,4 +272,25 @@ export function replanEdits(stored: ReplanStored[], plan: ReplanPlanned[], day: 
     } else if (s.state === "held" && p?.status === "published") restores.push({ id: s.id, note: E2B_REPLAN.restore });
   }
   return { kills, restores };
+}
+
+// PHASE U2b · ONE COUNT PER CLAIM -------------------------------------------------------------------
+// A stored white space was counted from site traits; its claim is now judged on the forecast run's own sample (the run that gave the
+// signal its stage). A story that still passes is corrected to the run's numbers (append-only `correct` edit; its text is rewritten by
+// the scheduled job because its facts changed); one that no longer passes is retired with the count in the note. Thresholds never move.
+export const U2B_WHITE_NOTE = "Corrected: counts now come from the forecast run's latest-quarter sample, the same one that gives the signal its stage.";
+export const u2bWhiteRetire = (k: number, n: number, sector: string) =>
+  `Retired: on the forecast run's sample ${k} of ${n} tracked ${sector} homepages show it (${Math.round((k / n) * 1000) / 10}%), above the ${Math.round(WHITE_SPACE_MAX_SHARE * 100)}% a white space allows`;
+export type WhiteVerdict = { kill: string } | { correct: { headline: string; deck: string; facts: Fact[] }; note: string } | { keep: true } | { unknown: true };
+export function whiteSpaceRecheck(s: { sector: string | null; signal_keys: string[]; headline: string; deck: string | null; facts: unknown }, all: SampleRow | null | undefined, sec: SampleRow | null | undefined, stage: string): WhiteVerdict {
+  const key = s.signal_keys[0], b = runBase(sec);
+  if (!key || !s.sector || !runBase(all) || !b) return { unknown: true };
+  const g = whiteSpaceGap(all, sec);
+  if (!g) return { kill: u2bWhiteRetire(b.count, b.base, inline(sectorName(s.sector))).slice(0, 200) };
+  const t = whiteSpaceText(key, s.sector, g, stage);
+  const facts = Array.isArray(s.facts) ? (s.facts as Fact[]) : [];
+  const kept = facts.filter(f => f.kind !== "count" && !(f.kind === "share" && /other sectors/.test(f.text)));
+  const next = [...t.counts, ...kept];
+  if (t.deck === s.deck && t.headline === s.headline && JSON.stringify(next) === JSON.stringify(facts)) return { keep: true };
+  return { correct: { headline: t.headline, deck: t.deck, facts: next }, note: U2B_WHITE_NOTE };
 }

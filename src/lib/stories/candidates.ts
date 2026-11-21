@@ -4,6 +4,7 @@ import { basis, canonical, label, sectorName, stageName, untick, type Basis } fr
 import type { Check } from "../integrity";
 import { eventSentence, EVENT_KIND, REBRAND_WORDS, type EventRow, type RebrandRow } from "../agency/changes";
 import { siteTraits, type SiteRow } from "../forecast-signals";
+import { runBase, sampleQuarter, whiteSpaceHeadline, type SampleRow } from "./sheet";
 import { brandPath, patternPath, signalPath } from "../ia";
 import { pct } from "../digest/copy";
 import { isoWeek } from "../digest/week";
@@ -150,12 +151,12 @@ function layoutMove(e: EventRow): Candidate {
   const facts: Fact[] = [
     ...(fields.length === 1 ? [{ text: `Before: ${layoutName(fields[0]!, b[fields[0]!])}`, href: brand, basis: "measured" as const, kind: "before" as const }, { text: `After: ${layoutName(fields[0]!, a[fields[0]!])}`, href: brand, basis: "measured" as const, kind: "after" as const }] : []),
     ...lines.map(t => ({ text: t, href: brand, basis: "measured" as const })),
-    { text: `Confirmed on a second capture, ${shortDate(e.detected_at)}`, href: `/library/${encodeURIComponent(e.domain)}`, basis: "measured", kind: "date" },
+    { text: `Confirmed on a second capture, ${shortDate(e.detected_at)}`, href: `${brand}?view=data`, basis: "measured", kind: "date" },
   ];
   const what = fields.includes("hero_media") ? (fields.length > 1 ? "hero and headline alignment" : "hero") : "headline alignment";
   return { id: `move:${e.id}`, type: "move", kicker: `Move · ${EVENT_KIND[e.type] ?? "Change"}${e.sector ? ` · ${sectorName(e.sector)}` : ""}`, headline: `${e.domain} changed its ${what}`,
     deck: `${lines.join("; ")}. Confirmed ${shortDate(e.detected_at)}.`, facts, sector: e.sector ?? null, signalKeys: [], domains: [e.domain],
-    evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `/library/${encodeURIComponent(e.domain)}` }], sourceIds: [`event:${e.id}`], basis: "measured", happenedAt: e.detected_at,
+    evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `${brand}?view=data` }], sourceIds: [`event:${e.id}`], basis: "measured", happenedAt: e.detected_at,
     magnitude: Math.max(1, fields.length) };
 }
 export function moveCandidate(e: EventRow): Candidate {
@@ -168,12 +169,12 @@ export function moveCandidate(e: EventRow): Candidate {
   const b: Basis = AI_EVENTS.has(e.type) ? "ai" : "measured", brand = brandPath(e.domain);
   const facts: Fact[] = [
     ...(arrow.length === 2 ? [...(arrow[0] ? [{ text: `Before: ${arrow[0]}`, href: brand, basis: b, kind: "before" as const }] : []), { text: `After: ${arrow[1]}`, href: brand, basis: b, kind: "after" as const }] : parts.map(p => ({ text: p, href: brand, basis: b }))),
-    { text: `Confirmed on a second capture, ${shortDate(e.detected_at)}`, href: `/library/${encodeURIComponent(e.domain)}`, basis: b, kind: "date" },
+    { text: `Confirmed on a second capture, ${shortDate(e.detected_at)}`, href: `${brand}?view=data`, basis: b, kind: "date" },
   ];
   const fields = Object.keys(obj(e.after)).length;
   return { id: `move:${e.id}`, type: "move", kicker: `Move · ${EVENT_KIND[e.type] ?? "Change"}${e.sector ? ` · ${sectorName(e.sector)}` : ""}`, headline: head,
     deck: `${to ? `Now ${to[2]}. ` : detail ? `${detail}. ` : ""}Confirmed ${shortDate(e.detected_at)}.`, facts, sector: e.sector ?? null, signalKeys: [], domains: [e.domain],
-    evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `/library/${encodeURIComponent(e.domain)}` }], sourceIds: [`event:${e.id}`], basis: b, happenedAt: e.detected_at,
+    evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `${brand}?view=data` }], sourceIds: [`event:${e.id}`], basis: b, happenedAt: e.detected_at,
     magnitude: e.type === "redesign" ? 99 : Math.max(1, fields) };
 }
 
@@ -209,12 +210,12 @@ export function identityMove(r: RebrandRow, all: Candidate[]): Candidate {
   const changed = [...new Set(members.map(m => strip(m.headline)).filter(h => h.startsWith("changed its ")).map(h => h.slice(12)))];
   const others = [...new Set(members.map(m => strip(m.headline)).filter(h => !h.startsWith("changed its ")))];
   const said = [...(changed.length ? [`changed its ${listOf(changed, 6)}`] : []), ...others].join("; ");
-  const date = { text: `Confirmed on a second capture, ${shortDate(r.confirmed_at)}`, href: `/library/${encodeURIComponent(r.domain)}`, basis: "measured" as const, kind: "date" as const };
+  const date = { text: `Confirmed on a second capture, ${shortDate(r.confirmed_at)}`, href: `${brand}?view=data`, basis: "measured" as const, kind: "date" as const };
   return { id: `rebrand:${r.domain}:${r.confirmed_at.slice(0, 10)}`, type: "move", kicker: one ? one.kicker : `Move · Identity${r.sector ? ` · ${sectorName(r.sector)}` : ""}`,
     headline: one ? one.headline : `${r.domain} changed its ${changedWhat(r.reasons)}`,
     deck: one ? one.deck : `${said ? `${said[0]!.toUpperCase()}${said.slice(1)}. ` : ""}Confirmed ${shortDate(r.confirmed_at)}.`,
     facts: one ? one.facts : [{ text: `Changed: ${changedWhat(r.reasons)}`, href: brand, basis: "measured" }, ...members.map(m => ({ text: m.headline, href: brand, basis: m.basis, kind: "member" as const })), date],
-    sector: r.sector, signalKeys: [], domains: [r.domain], evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `/library/${encodeURIComponent(r.domain)}` }],
+    sector: r.sector, signalKeys: [], domains: [r.domain], evidence: [{ label: "Brand page", href: brand }, { label: "Library record", href: `${brand}?view=data` }],
     sourceIds: [`rebrand:${r.domain}:${r.confirmed_at}`, ...members.map(m => `story:${m.id}`)], basis: one ? one.basis : "measured", happenedAt: r.confirmed_at, magnitude: dims, members: members.map(m => m.id),
     ...(r.seasonal ? { holdReason: SEASONAL_REASON } : {}) };
 }
@@ -368,32 +369,54 @@ export function counterMoveCandidates(ctx: Ctx, moves: { c: Candidate; e: EventR
 // WHITE SPACE --------------------------------------------------------------------------------------
 /** A weekly story's time: the start of its ISO week (Monday 00:00 UTC), or the forecast run behind it when that came later. */
 export const weekOpen = (now: string, runAt: string) => { const d = new Date(now), monday = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return new Date(Math.max(monday, Date.parse(runAt) || 0)).toISOString(); };
+/** U2b · a white space judged on the run's own sample: the sector row's latest-quarter count and base, and the share of every other
+ *  sector's homepages in the same quarter (library-wide count minus the sector's). Null when either sample is missing, the quarters
+ *  differ, or the gap misses WHITE_SPACE_MAX_SHARE / WHITE_SPACE_MIN_ELSEWHERE. Pure, exported for tests. */
+export function whiteSpaceGap(all: SampleRow | null | undefined, sec: SampleRow | null | undefined): { k: number; n: number; elsewhere: number } | null {
+  const a = runBase(all), b = runBase(sec);
+  if (!a || !b || sampleQuarter(all) !== sampleQuarter(sec) || a.base <= b.base) return null;
+  const elsewhere = Math.max(0, a.count - b.count) / (a.base - b.base);
+  return b.count / b.base <= WHITE_SPACE_MAX_SHARE && elsewhere >= WHITE_SPACE_MIN_ELSEWHERE ? { k: b.count, n: b.base, elsewhere } : null;
+}
+/** A white space's words from its run numbers: the headline (wording follows the count), the deck and the two count lines. Pure; the
+ *  candidate and the U2b recheck of stored stories share it. */
+export function whiteSpaceText(key: string, sector: string, g: { k: number; n: number; elsewhere: number }, stage: string): { headline: string; deck: string; counts: Fact[] } {
+  const l = label(key), s = inline(sectorName(sector)), read = basis(key) === "ai" ? "with an AI read" : "in the latest quarter", show = g.k === 1 ? "shows" : "show";
+  return {
+    headline: whiteSpaceHeadline({ count: g.k, base: g.n, sector: s, signal: inline(l.name), stage: stage.toLowerCase() }),
+    deck: `${countWord(g.k)} of ${g.n} tracked ${s} homepages ${read} ${show} it, against ${pct(g.elsewhere, 0)} of homepages in other sectors.`,
+    counts: [
+      { text: `${g.k} of ${g.n} tracked ${s} homepages ${read} ${show} it`, href: `/patterns/${encodeURIComponent(key)}?sector=${sector}`, basis: basis(key), kind: "count" },
+      { text: `${pct(g.elsewhere, 0)} of homepages in other sectors show it`, href: patternPath(key), basis: basis(key), kind: "share" },
+    ],
+  };
+}
 export function whiteSpaceCandidates(ctx: Ctx): Candidate[] {
   if (!ctx.cur) return [];
   const out: Candidate[] = [], week = isoWeek(new Date(ctx.now));
   for (const [sector, list] of [...ctx.bySector].sort(([a], [b]) => a.localeCompare(b))) {
     if (list.length < WHITE_SPACE_MIN_SECTOR_SITES || !ctx.covered(sector)) continue;
-    const others = ctx.sites.filter(s => s.sector !== sector);
+    // U2b · one count per claim: the sector's count and base and the share elsewhere come from the forecast run's latest-quarter sample
+    // (the sample that gives the signal its stage), not from current site traits, and the thresholds are judged on those numbers.
     // A gap that could not be filled (WHITE_SPACE_NOT_APPLICABLE) is refused: no media brand will add product screenshots.
     const opts = [...ctx.headline].filter(key => !WHITE_SPACE_SKIP_CATEGORIES.has(category(key)) && !WHITE_SPACE_NOT_APPLICABLE[sector]?.[key]).flatMap(key => {
       const r = ctx.row(ctx.cur, key), st = stageName(r?.stage);
       if (r?.status !== "ok" || !st || !RISING.has(st)) return [];
-      const k = list.filter(s => s.traits.includes(key)).length, elsewhere = others.length ? others.filter(s => s.traits.includes(key)).length / others.length : 0;
-      return k / list.length <= WHITE_SPACE_MAX_SHARE && elsewhere >= WHITE_SPACE_MIN_ELSEWHERE ? [{ key, k, elsewhere, st, momentum: r.momentum ?? 0 }] : [];
+      const g = whiteSpaceGap(r, ctx.row(ctx.cur, key, sector)); if (!g) return [];
+      return [{ key, ...g, st, momentum: r.momentum ?? 0 }];
     }).sort((a, b) => b.elsewhere - a.elsewhere || b.momentum - a.momentum || a.key.localeCompare(b.key));
     const best = opts[0]; if (!best) continue;
     const l = label(best.key), s = inline(sectorName(sector)), ex = ctx.showing(best.key).filter(d => !list.some(x => x.domain === d));
+    const t = whiteSpaceText(best.key, sector, best, best.st);
     out.push({ id: `white:${sector}:${week}`, type: "white_space", kicker: `White space · ${sectorName(sector)}`,
-      headline: `Almost no ${s} brand uses ${inline(l.name)}; it is ${best.st.toLowerCase()} everywhere else`,
-      deck: `${countWord(best.k)} of ${list.length} tracked ${s} brands ${best.k === 1 ? "shows" : "show"} it, against ${pct(best.elsewhere, 0)} of brands in other sectors.`,
+      headline: t.headline, deck: t.deck,
       facts: [
-        { text: `${best.k} of ${list.length} tracked ${s} brands ${best.k === 1 ? "shows" : "show"} it`, href: `/patterns/${encodeURIComponent(best.key)}?sector=${sector}`, basis: basis(best.key), kind: "count" },
-        { text: `${pct(best.elsewhere, 0)} of brands in other sectors show it`, href: patternPath(best.key), basis: basis(best.key), kind: "share" },
+        ...t.counts,
         { text: `${l.name} is ${best.st} across all sectors (forecast run ${ctx.cur.id})`, href: signalPath(best.key), basis: basis(best.key), kind: "stage" },
         ...(ex.length ? [{ text: `Using it elsewhere: ${listOf(ex.slice(0, 4), 4)}`, href: patternPath(best.key), basis: basis(best.key), kind: "brand" as const }] : []),
       ],
       sector, signalKeys: [best.key], domains: ex.slice(0, 4), evidence: [{ label: "Signal page", href: signalPath(best.key) }, { label: "Pattern", href: patternPath(best.key) }],
-      sourceIds: [`run:${ctx.cur.id}`, `week:${week}`], basis: basis(best.key), happenedAt: weekOpen(ctx.now, ctx.cur.at), magnitude: (best.elsewhere - best.k / list.length) * 100, runId: ctx.cur.id, stage: ctx.row(ctx.cur, best.key)?.stage ?? null });
+      sourceIds: [`run:${ctx.cur.id}`, `week:${week}`], basis: basis(best.key), happenedAt: weekOpen(ctx.now, ctx.cur.at), magnitude: (best.elsewhere - best.k / best.n) * 100, runId: ctx.cur.id, stage: ctx.row(ctx.cur, best.key)?.stage ?? null });
   }
   return out;
 }

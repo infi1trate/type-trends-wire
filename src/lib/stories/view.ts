@@ -19,6 +19,8 @@ export const soWhatOf = (p: { type: StoryKind; signalKeys: string[]; stage?: str
   return ["shift", "breakout", "crossover", "white_space", "first_seen"].includes(p.type) && key ? soWhat(key, p.stage ?? null) : STORY_TYPE_DEFS[p.type].soWhat || (key ? soWhat(key, p.stage ?? null) : "");
 };
 
+import { sheetFacts, type SheetNumber } from "./sheet";
+import { recolour, type ColourEvent } from "./recolour";
 export type StoryRecord = Shown<StoredStory> & { written?: Written | null; template?: { headline: string; deck: string | null } };
 export const storyPath = (id: string) => `/stories/${encodeURIComponent(id)}`;
 export const isKind = (t: string): t is StoryKind => (STORY_KINDS as readonly string[]).includes(t);
@@ -115,8 +117,12 @@ export function censusLines(facts: Fact[]): { name: string; line: string; href: 
 export const dataFacts = (facts: Fact[]) => facts.filter(f => f.kind === "source" || f.kind === "date");
 /** The story page (Read side, E2b): kicker (kind · sector), headline, deck, the picture, the written body, one how-we-know line, the changes
  *  with receipts, then a way on. Score, threshold and why it ran stay in the Data view and on the desk; stored why lines are not shown. */
-export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[] }) {
-  const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], facts = asFacts(s.facts), census = s.id.startsWith("census:");
+export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[]; numbers?: SheetNumber[] | null; colourEvents?: ColourEvent[] | null }) {
+  const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], census = s.id.startsWith("census:");
+  const stored = related.colourEvents && s.domains.length === 1 ? recolour(asFacts(s.facts), related.colourEvents) : asFacts(s.facts);
+  // U2b · one list: with the run's numbers known, the list is the writer's sheet (stored lines it kept, then its numbers), so every count
+  // in the text is in the list and no second count for the same signal and scope is.
+  const facts = related.numbers && !census ? sheetFacts(stored, related.numbers, s.sector) : stored;
   const before = facts.find(f => f.kind === "before")?.text.replace(/^Before: /, "") ?? null, after = facts.find(f => f.kind === "after")?.text.replace(/^After: /, "") ?? null;
   const sector = s.sector ? sectorName(s.sector) : null;
   return {

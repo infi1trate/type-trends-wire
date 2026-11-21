@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { seededNames } from "../brand-names";
 import { AI_MODELS } from "../ai-models";
-import { APPROVED_EXAMPLES, APPROVED_STORIES, checkText, howWeKnow, parseWritten, writeWithFallback, WRITER_PER_DAY, type WriterChange, type WriterFacts, type WrittenText } from "./writer";
+import { APPROVED_EXAMPLES, APPROVED_STORIES, checkText, colourFailures, howWeKnow, parseWritten, writeWithFallback, WRITER_PER_DAY, type WriterChange, type WriterFacts, type WrittenText } from "./writer";
 
 const known = { names: seededNames() };
 const ch = (brand: string, what: string, from: string, to: string, date: string, basis: "measured" | "ai" = "measured"): WriterChange => ({ brand, what, from, to, date, page: "home", basis });
@@ -88,4 +88,16 @@ describe("fallback order and limits", () => {
     expect(r.model).toBe(AI_MODELS.text);
   });
   it("parses JSON text and a body given as one string", () => expect(parseWritten(JSON.stringify({ headline: "A b c d.", deck: "D", body: "One.\n\nTwo.", how_we_know: "How we know: x" }))).toEqual({ headline: "A b c d", deck: "D", body: ["One.", "Two."], how_we_know: "x" }));
+});
+
+// U2b · colour words are facts (No. 85: "Near-black gave way to pale blue" against a sheet naming the new palette).
+describe("colour words are facts", () => {
+  const f = (from: string[], to: string[]): WriterFacts => ({
+    type: "move", kind: "Move", sector: null, brands: [{ name: "Acme", role: "subject" }], copy: [], headline_call: null, numbers: [], lines: [], dates: [], rebrand: false,
+    changes: [{ brand: "Acme", what: "palette", from: from.join(", "), to: to.join(", "), date: "2026-11-14", page: "home", basis: "measured", colours: { from: from.map(name => ({ name, hex: "#000000" })), to: to.map(name => ({ name, hex: "#FFFFFF" })) } }],
+  });
+  it("passes when every colour word is on the sheet", () => expect(colourFailures("Near-black gave way to pale blue.", f(["Near-black"], ["Off-white", "Pale blue"]), ["Acme"])).toEqual([]));
+  it("rejects a colour the sheet does not name", () => expect(colourFailures("Near-black gave way to teal.", f(["Near-black"], ["Off-white", "Pale blue"]), ["Acme"])).toEqual(["colour word not in the facts: teal"]));
+  it("rejects grey when the sheet says pale blue", () => expect(colourFailures("It went light grey.", f(["Near-black"], ["Pale blue"]), ["Acme"])).toEqual(["colour word not in the facts: grey"]));
+  it("a brand name is not a colour", () => expect(colourFailures("Blue Apron moved to off-white.", { ...f(["Near-black"], ["Off-white"]), brands: [{ name: "Blue Apron", role: "subject" }] }, ["Blue Apron"])).toEqual([]));
 });

@@ -1,6 +1,7 @@
 // Reads the facts behind freshness.ts from what is already stored, with the shared anonymous SELECT-only client:
 // health_facts() (owner-rights facade), ingest_runs (ok rows are public), real forecast runs, job_steps, the newest story and crop.
 // Cached per runtime for 60 s. Nothing here writes.
+import { healthFactsResult } from "./health-facts.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { healthFactsSchema } from "./health";
 import { VANGUARD_RUN_PREFIX, freshness, freshnessLine, wireOnTime, type FreshRow, type JobFact, type JobId } from "./freshness";
@@ -17,7 +18,7 @@ async function build(): Promise<FreshnessPayload> {
   const db = supabaseAnon(), now = Date.now();
   const lastOk = (job: string) => db.from("ingest_runs").select("started_at,finished_at").eq("job", job).order("started_at", { ascending: false }).limit(1).then(r => (r.data ?? [])[0] ?? null);
   const [hf, wire, gfonts, ph, real, steps, story, crop, vanguard, ind] = await Promise.all([
-    db.rpc("health_facts").then(r => (r.error ? null : healthFactsSchema.safeParse(r.data).data ?? null)),
+    healthFactsResult().then(r => (r.error ? null : healthFactsSchema.safeParse(r.data).data ?? null)),
     lastOk("ingest-wire"), lastOk("ingest-gfonts"), lastOk("ingest-producthunt"),
     fetchRealRuns(db).catch(() => []),
     db.from("job_steps").select("*").order("queued_at", { ascending: false }).limit(60).then(r => (r.data ?? []) as StepRow[]),

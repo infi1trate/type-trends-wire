@@ -1,4 +1,6 @@
 // Weekly forecast job: loads public aggregates, runs pure models, persists a run. Service-role writes only.
+import { historyRows } from "./history.server";
+import type { Database } from "@/integrations/supabase/types";
 import { forecastSeries, backtestSeries, median, qIndex, usablePoints, type SeriesPoint } from "./forecast";
 import { crossingQuarter, nextWaveIneligibleReason, trendsetterScores, trendsetterGap, leadLag, keywordCount, nextWaveScores, forecastSiteTraits, siteTraits, emptyComponents, presentComponents, COMPONENT_KEYS, type SiteRow, type Components } from "./forecast-signals";
 import { EXCLUDED_DIMENSIONS, TRAIT_SPREAD, TRAIT_GFONT_CATEGORY, NEXT_WAVE_WEIGHTS, LEGACY_NEXT_WAVE_WEIGHTS } from "./forecast-constants";
@@ -74,7 +76,7 @@ async function compute(db: Db, runId: number) {
   const since90 = new Date(Date.now() - 90 * 864e5).toISOString(), since30 = Date.now() - 30 * 864e5;
   const [share, sites, spread, wire, gfLatest] = await Promise.all([
     pages(f => db.from("library_history_share").select("quarter,sector,dimension,value,denom,share,coverage").order("quarter").order("sector").order("dimension").order("value").range(f, f + 999)),
-    pages(f => db.from("library_site_history").select("domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags,h1_size_px,cta_radius_bucket,whitespace_ratio").order("domain").order("quarter").range(f, f + 999)),
+    historyRows<Database["public"]["Views"]["library_site_history_rows"]["Row"]>(db as never, "domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags,h1_size_px,cta_radius_bucket,whitespace_ratio"),
     db.from("crawl_spread").select("signal,spread_pts,vanguard_share,mainstream_share").eq("scope", "all"),
     pages(f => db.from("wire_items").select("title,excerpt,published_at").gte("published_at", since90).order("id").range(f, f + 999)),
     db.from("gfont_snapshots").select("captured_on").order("captured_on", { ascending: false }).limit(1),

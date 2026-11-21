@@ -93,6 +93,13 @@ export type Database = {
             foreignKeyName: "ai_usage_snapshot_id_fkey"
             columns: ["snapshot_id"]
             isOneToOne: false
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
             referencedRelation: "library_snapshots"
             referencedColumns: ["id"]
           },
@@ -1058,6 +1065,13 @@ export type Database = {
             foreignKeyName: "library_ai_jobs_snapshot_id_fkey"
             columns: ["snapshot_id"]
             isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_ai_jobs_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
             referencedRelation: "library_snapshots"
             referencedColumns: ["id"]
           },
@@ -1108,6 +1122,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "library_sites"
             referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_baselines_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "library_baselines_snapshot_id_fkey"
@@ -1186,7 +1207,21 @@ export type Database = {
             foreignKeyName: "library_events_prev_snapshot_id_fkey"
             columns: ["prev_snapshot_id"]
             isOneToOne: false
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_events_prev_snapshot_id_fkey"
+            columns: ["prev_snapshot_id"]
+            isOneToOne: false
             referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_events_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshot_fields"
             referencedColumns: ["id"]
           },
           {
@@ -1237,6 +1272,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "library_sites"
             referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_extractions_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "library_extractions_snapshot_id_fkey"
@@ -1318,6 +1360,13 @@ export type Database = {
           snapshot_id?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "library_snapshot_text_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "library_snapshot_text_snapshot_id_fkey"
             columns: ["snapshot_id"]
@@ -1429,6 +1478,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "library_sites"
             referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_tags_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "library_tags_snapshot_id_fkey"
@@ -3025,6 +3081,13 @@ export type Database = {
             foreignKeyName: "library_extractions_snapshot_id_fkey"
             columns: ["snapshot_id"]
             isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_extractions_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
             referencedRelation: "library_snapshots"
             referencedColumns: ["id"]
           },
@@ -3072,6 +3135,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "library_sites"
             referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_tags_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: true
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "library_tags_snapshot_id_fkey"
@@ -3165,7 +3235,21 @@ export type Database = {
             foreignKeyName: "library_events_prev_snapshot_id_fkey"
             columns: ["prev_snapshot_id"]
             isOneToOne: false
+            referencedRelation: "library_snapshot_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_events_prev_snapshot_id_fkey"
+            columns: ["prev_snapshot_id"]
+            isOneToOne: false
             referencedRelation: "library_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_events_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "library_snapshot_fields"
             referencedColumns: ["id"]
           },
           {
@@ -3474,6 +3558,108 @@ export type Database = {
         }
         Relationships: []
       }
+      library_site_history_mat: {
+        Row: {
+          accent: string | null
+          ai_tags: Json | null
+          body_family: string | null
+          captured_at: string | null
+          css_features: Json | null
+          cta_radius_bucket: string | null
+          domain: string | null
+          frameworks: Json | null
+          grid_max_cols: number | null
+          h1_family: string | null
+          h1_size_px: number | null
+          h1_tracking: number | null
+          hero_media: string | null
+          now: boolean | null
+          page_bg: string | null
+          quarter: string | null
+          sector: string | null
+          snapshot_id: number | null
+          source: string | null
+          theme: string | null
+          webfont: boolean | null
+          whitespace_ratio: number | null
+        }
+        Relationships: []
+      }
+      library_site_history_rows: {
+        Row: {
+          accent: string | null
+          ai_tags: Json | null
+          body_family: string | null
+          captured_at: string | null
+          css_features: Json | null
+          cta_radius_bucket: string | null
+          domain: string | null
+          frameworks: Json | null
+          grid_max_cols: number | null
+          h1_family: string | null
+          h1_size_px: number | null
+          h1_tracking: number | null
+          hero_media: string | null
+          now: boolean | null
+          page_bg: string | null
+          quarter: string | null
+          sector: string | null
+          snapshot_id: number | null
+          source: string | null
+          theme: string | null
+          webfont: boolean | null
+          whitespace_ratio: number | null
+        }
+        Relationships: []
+      }
+      library_snapshot_fields: {
+        Row: {
+          captured_at: string | null
+          check_fields: Json | null
+          domain: string | null
+          hero_carousel: Json | null
+          id: number | null
+          page_type: string | null
+          source: string | null
+          viewport: string | null
+        }
+        Insert: {
+          captured_at?: string | null
+          check_fields?: never
+          domain?: string | null
+          hero_carousel?: never
+          id?: number | null
+          page_type?: string | null
+          source?: string | null
+          viewport?: string | null
+        }
+        Update: {
+          captured_at?: string | null
+          check_fields?: never
+          domain?: string | null
+          hero_carousel?: never
+          id?: number | null
+          page_type?: string | null
+          source?: string | null
+          viewport?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_snapshots_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_latest"
+            referencedColumns: ["domain"]
+          },
+          {
+            foreignKeyName: "library_snapshots_domain_fkey"
+            columns: ["domain"]
+            isOneToOne: false
+            referencedRelation: "library_sites"
+            referencedColumns: ["domain"]
+          },
+        ]
+      }
       library_tag_history: {
         Row: {
           bucket: string | null
@@ -3684,6 +3870,7 @@ export type Database = {
         Returns: Json
       }
       library_replay_input: { Args: never; Returns: Json }
+      library_snapshot_check_fields: { Args: { s: Json }; Returns: Json }
       library_snapshot_context: { Args: { p_snapshot: Json }; Returns: Json }
       library_state: { Args: never; Returns: Json }
       library_store_snapshot: {

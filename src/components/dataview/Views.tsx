@@ -1,5 +1,6 @@
 // U1 · the Data view of each object type (`?view=data` on its one address), inside DataShell. Dark and dense, built from the terminal's
 // own parts; tables load after the frame (Later skeletons). Every table, score and field the terminal showed for the object is here.
+import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -47,9 +48,9 @@ function StoryDataBody({ id }: { id: string }) {
         {s.correctedAt && <p className="label text-compare-muted">CORRECTED {day(s.correctedAt)}</p>}</div>
     </Band>
     <Band title={`THE CHANGES BEHIND IT · ${s.changes.length}`}>
-      {s.changes.length ? <DataTable caption="Changes with raw fields" head={["Change", "Seen", "Brand", "Page", "Type", "Before", "After", "Confirmed", "Record"]}
-        rows={s.changes.map(c => [String(c.id), day(c.detected_at), c.domain, `${c.page_type}/${c.viewport}`, c.type, <ChangeValues key="b" value={c.before} />, <ChangeValues key="a" value={c.after} />, c.confirmed ? "YES" : c.line.split(" · ").slice(1).join(" · ") || "NO",
-          <Lnk key="r" href={`${brandDataPath(c.domain)}&page_type=${c.page_type}&viewport=${c.viewport}${c.snapshot_id ? `&a=${c.snapshot_id}` : ""}${c.prev_snapshot_id ? `&b=${c.prev_snapshot_id}` : ""}`}>COMPARE →</Lnk>])} />
+      {s.changes.length ? <DataTable caption="Changes with raw fields" head={["Change", "Captured", "Brand", "Page", "Type", "Before", "After", "Confirmed", "Record"]}
+        rows={s.changes.map(c => { const d = changeDates({ before: c.seen?.before, after: c.seen?.after, at: c.detected_at, confirmed: c.confirmed }); return [String(c.id), d.captured, c.domain, `${c.page_type}/${c.viewport}`, c.type, <ChangeValues key="b" value={c.before} />, <ChangeValues key="a" value={c.after} />, c.confirmed ? d.confirmed : c.line.split(" · ").slice(1).join(" · ") || "not confirmed",
+          <Lnk key="r" href={`${brandDataPath(c.domain)}&page_type=${c.page_type}&viewport=${c.viewport}${c.snapshot_id ? `&a=${c.snapshot_id}` : ""}${c.prev_snapshot_id ? `&b=${c.prev_snapshot_id}` : ""}`}>COMPARE →</Lnk>]; })} />
         : <P>This story is not built from brand changes{s.sourceIds.length ? `; its sources: ${s.sourceIds.join(", ")}` : ""}.</P>}
     </Band>
     <Band title="FACTS SHEET">

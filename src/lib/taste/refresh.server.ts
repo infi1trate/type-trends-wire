@@ -1,3 +1,4 @@
+import { historyRows } from "../history.server";
 import {supabaseAnon} from "../mcp/supabase";
 import {loadTasteSites,pages,measuredPalette,WIDE_PAGE} from "./store.server";
 import {buildFontCatalog,isNonType} from "./fonts";
@@ -15,7 +16,7 @@ export async function refreshTaste(){
  const read=supabaseAnon(),{supabaseAdmin:db}=await import("@/integrations/supabase/client.server");
  // Sites first: running this read alongside the full snapshot scan hits the read statement timeout under load.
  const rawSites=await loadTasteSites();
- const [history,historySignals,latest,oldCatalog,setters]=await Promise.all([pages(f=>read.from("library_site_history").select("domain,quarter,sector,h1_family").order("quarter").order("domain").range(f,f+999)),pages((f,t)=>read.from("library_snapshots").select("domain,captured_at,source,type:signals->type,color:signals->color").eq("page_type","home").eq("viewport","desktop").order("captured_at").order("id").range(f,t),WIDE_PAGE).then(rows=>rows.map(({type,color,...r})=>({...r,signals:{type,color}}))),read.from("gfont_snapshots").select("captured_on").order("captured_on",{ascending:false}).limit(1),pages(f=>read.from("font_catalog").select("key,category").order("key").range(f,f+999)),read.from("trendsetters_latest").select("domain").order("rank").limit(30)]);
+ const [history,historySignals,latest,oldCatalog,setters]=await Promise.all([historyRows<{domain:string;quarter:string;sector:string|null;h1_family:string|null}>(read,"domain,quarter,sector,h1_family").then(rows=>rows.sort((a,b)=>a.quarter.localeCompare(b.quarter)||a.domain.localeCompare(b.domain))),pages((f,t)=>read.from("library_snapshots").select("domain,captured_at,source,type:signals->type,color:signals->color").eq("page_type","home").eq("viewport","desktop").order("captured_at").order("id").range(f,t),WIDE_PAGE).then(rows=>rows.map(({type,color,...r})=>({...r,signals:{type,color}}))),read.from("gfont_snapshots").select("captured_on").order("captured_on",{ascending:false}).limit(1),pages(f=>read.from("font_catalog").select("key,category").order("key").range(f,f+999)),read.from("trendsetters_latest").select("domain").order("rank").limit(30)]);
  if(latest.error||setters.error)throw latest.error??setters.error;
  // Emoji/icon/symbol fonts are never faces: treat them as unmeasured so they leave usage, pairs and denominators.
  const nonType=new Set<string>(),face=(v:string|null)=>{if(v&&isNonType(v)){nonType.add(normalizeFont(v));return null;}return v;};

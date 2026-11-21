@@ -14,6 +14,15 @@ import { fetchReaderRuns } from "../real-runs";
 
 const EVENT_COLS = "id,domain,type,before,after,detected_at,effective_at,page_type,viewport,snapshot_id,prev_snapshot_id,summary,source,severity";
 const chunks = <T,>(xs: T[], n = 200) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
+/** When each change happened, from its integrity verdict (the last capture with the old value and the first with the new one, E2g):
+ *  the same capture dates a story's own facts state. Unreadable or undated verdicts leave the change undated. */
+async function seenByEvent(ids: number[]): Promise<Map<number, { before: string; after: string }>> {
+  if (!ids.length) return new Map();
+  const [{ latestChecks }, { seenOf }] = await Promise.all([import("../integrity.server"), import("../integrity")]);
+  const checks = await latestChecks(supabaseAnon(), ids), out = new Map<number, { before: string; after: string }>();
+  for (const [id, c] of checks) { const s = seenOf(c); if (s) out.set(id, s); }
+  return out;
+}
 async function eventsByIds(ids: number[]): Promise<ChangeRow[]> {
   if (!ids.length) return [];
   const db = supabaseAnon(), out: ChangeRow[] = [];
@@ -41,6 +50,7 @@ export async function loadStoryData(id: string) {
     ids.length ? tapeOf(ids).catch(() => []) : Promise.resolve([]),
     db.from("story_texts").select("version,headline,deck,body,how_we_know,model,created_at").eq("story_id", id).order("version").then(r => r.data ?? [], () => []),
   ]);
+  const seen = await seenByEvent(ids).catch(() => new Map<number, { before: string; after: string }>());
   const stream = streamOf(all), rank = rankScores(stream), day = s.happened_at.slice(0, 10);
   const sameDay = stream.filter(x => x.happened_at.slice(0, 10) === day).sort((a, b) => (rank.get(b.id) ?? b.score) - (rank.get(a.id) ?? a.score) || b.happened_at.localeCompare(a.happened_at) || a.id.localeCompare(b.id));
   const pos = sameDay.findIndex(x => x.id === id);
@@ -55,7 +65,7 @@ export async function loadStoryData(id: string) {
     happenedAt: s.happened_at, createdAt: s.created_at, sector: s.sector, domains: s.domains, signals: s.signal_keys, sourceIds: s.source_ids,
     facts: (Array.isArray(s.facts) ? s.facts : []) as { text: string; href?: string; basis?: string; kind?: string }[],
     evidence: (Array.isArray(s.evidence) ? s.evidence : []) as { label: string; href: string }[],
-    changes: raw.sort((a, b) => String(a.detected_at).localeCompare(String(b.detected_at)) || a.id - b.id).map(e => ({ ...e, line: line.get(e.id)?.text ?? e.summary ?? "", confirmed: line.get(e.id)?.confirmed ?? false })),
+    changes: raw.sort((a, b) => String(a.detected_at).localeCompare(String(b.detected_at)) || a.id - b.id).map(e => ({ ...e, line: line.get(e.id)?.text ?? e.summary ?? "", confirmed: line.get(e.id)?.confirmed ?? false, seen: seen.get(e.id) ?? null })),
     texts: (texts as { version: number; headline: string; deck: string; body: string[]; how_we_know: string; model: string; created_at: string }[]).map(t => ({ ...t, shown: s.written?.version === t.version })),
     template: s.template ?? { headline: s.stored.headline, deck: s.stored.deck },
     edits: s.edits.map(e => ({ action: e.action, at: e.at, note: e.note })),
@@ -88,11 +98,14 @@ export async function loadReceipt(raw: string): Promise<ReceiptModel | null> {
     }
     case "story": case "census": {
       const s = await storyById(r.id); if (!s || (s.state !== "published" && s.state !== "killed")) return null;
-      const page = storyPage(s, { earlier: [], patterns: [] });
+      const { storyNumbers, colourEventsOf } = await import("../stories/page.server");
+      const [numbers, colourEvents] = await Promise.all([storyNumbers(s), colourEventsOf(s).catch(() => [])]);
+      const page = storyPage(s, { earlier: [], patterns: [], numbers, colourEvents });
       if (page.census) return censusReceipt({ id: s.id, number: page.number, headline: page.headline }, page.census.lines.map(l => (l.line.includes(l.name) ? l.line : `${l.name}: ${l.line}`)), page.facts.map(f => f.text));
       const ids = sourceEventIds(s.source_ids), tape = ids.length ? await tapeOf(ids).catch(() => []) : [];
-      const at = new Map((await eventsByIds(ids).catch(() => [] as ChangeRow[])).map(e => [e.id, e.detected_at]));
-      return storyReceipt({ id: s.id, number: page.number, headline: page.headline, kicker: page.kicker }, tape.map(t => ({ id: t.id, text: t.text, at: at.get(t.id) ?? null, confirmed: t.confirmed })), page.facts.map(f => ({ text: f.text, basis: f.basis ?? null })));
+      const [evs, seen] = await Promise.all([eventsByIds(ids).catch(() => [] as ChangeRow[]), seenByEvent(ids).catch(() => new Map<number, { before: string; after: string }>())]);
+      const at = new Map(evs.map(e => [e.id, e.detected_at]));
+      return storyReceipt({ id: s.id, number: page.number, headline: page.headline, kicker: page.kicker }, tape.map(t => ({ id: t.id, text: t.text, at: at.get(t.id) ?? null, confirmed: t.confirmed, seen: seen.get(t.id) ?? null })), page.facts.map(f => ({ text: f.text, basis: f.basis ?? null })));
     }
     case "figure": {
       const [slug, fig] = r.id.split(":") as [string, string];

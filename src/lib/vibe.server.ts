@@ -1,4 +1,5 @@
 // Weekly vibe-map job (service-role writes) and anonymous reads shared by F7 and the MCP `vibe_map` tool.
+import { historyRows } from "./history.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { fitVibe, siteTokens, clusterMomentum, axisLabel, tagPhrase, type VibeSite, type VibeModel } from "./vibe";
 const qKey = (iso: string) => { const d = new Date(iso); return `${d.getUTCFullYear()}Q${Math.floor(d.getUTCMonth() / 3) + 1}`; };
@@ -6,11 +7,7 @@ type HistRow = { domain: string; quarter: string; sector: string; now: boolean |
 
 export async function computeVibe(runId: number) {
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-  const rows: HistRow[] = [];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await db.from("library_site_history").select("domain,quarter,sector,now,theme,h1_family,body_family,ai_tags,captured_at").order("domain").order("quarter").range(from, from + 999);
-    if (error) throw error; rows.push(...((data ?? []) as HistRow[])); if (!data || data.length < 1000) break;
-  }
+  const rows = await historyRows<HistRow>(db as never, "domain,quarter,sector,now,theme,h1_family,body_family,ai_tags,captured_at");
   const current: VibeSite[] = [], history: VibeSite[] = [];
   let latestTagged: string | null = null;
   for (const r of rows) {

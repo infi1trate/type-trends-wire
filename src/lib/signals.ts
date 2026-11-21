@@ -5,7 +5,7 @@ import { classifyAll, tierCounts, type Tier, type TierResult, type TierStats } f
 import { confidence, directionWord, momentumIndex, type ConfidenceLevel, type Direction } from "./momentum";
 import { soWhat } from "./digest/copy";
 
-export type SignalRow = { dimension: string; value: string; scope: string; status: string; stage: string | null; momentum: number | null; current_share: number | null; next_wave_score: number | null; present?: string[] | null; sites?: number | null; usable?: number | null };
+export type SignalRow = { dimension: string; value: string; scope: string; status: string; stage: string | null; momentum: number | null; current_share: number | null; next_wave_score: number | null; present?: string[] | null; sites?: number | null; usable?: number | null; /** Latest stored quarter { q, n, s } (forecast-rows). */ sample?: unknown };
 export type Signal = {
   key: string; name: string; dimension: Dimension; basis: Basis; tier: Tier; reasons: string[]; scope: string;
   stage: StageName | null; share: number | null; momentum: number | null; direction: Direction | null; next_wave_score: number | null;

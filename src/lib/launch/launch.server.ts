@@ -1,5 +1,6 @@
 // Loads the facts behind /status/launch from what is already stored, with the shared anonymous SELECT-only client,
 // and draws two share images in memory to prove the drawer works. Writes nothing. Cached 60 s per runtime.
+import { healthFactsResult } from "../health-facts.server";
 import { supabaseAnon } from "../mcp/supabase";
 import { healthFactsSchema } from "../health";
 import { healthPayload } from "../health.server";
@@ -24,7 +25,7 @@ async function drawn(): Promise<{ kind: string; ok: boolean; bytes: number }[]> 
 async function build(): Promise<LaunchPayload> {
   const db = supabaseAnon(), now = Date.now(), since = new Date(now - CRAWL_WINDOW_MS).toISOString();
   const [hf, lib, crops, phOk, health, images] = await Promise.all([
-    db.rpc("health_facts").then(r => (r.error ? null : healthFactsSchema.safeParse(r.data).data ?? null), () => null),
+    healthFactsResult().then(r => (r.error ? null : healthFactsSchema.safeParse(r.data).data ?? null), () => null),
     db.from("library_snapshots").select("received_at").eq("source", "live").order("received_at", { ascending: false, nullsFirst: false }).limit(1).then(r => (r.data ?? [])[0]?.received_at ?? null, () => null),
     db.from("site_crops").select("domain", { count: "exact", head: true }).then(r => (r.error ? null : r.count ?? 0), () => null),
     db.from("ingest_runs").select("started_at").eq("job", "ingest-producthunt").order("started_at", { ascending: false, nullsFirst: false }).limit(1).then(r => (r.data ?? [])[0]?.started_at ?? null, () => null),

@@ -1,0 +1,1 @@
+CREATE INDEX library_tags_created_idx ON public.library_tags (created_at DESC);

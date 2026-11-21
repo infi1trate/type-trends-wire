@@ -3,6 +3,35 @@ import { storyById, storyIndex, deskIndex } from "./read.server";
 import { memoBy } from "../memo";
 import { queueModel, storiesAbout, storyPage, isKind, type StoryRecord } from "./view";
 
+/** U2b · the numbers a story's text was written from: the story's own run when it has one, else the latest real forecast run at the
+ *  text's time (the build's own rule); its rows'
+ *  latest-quarter samples, for the story's first three signals in its sector and library-wide. Null when unknown (the stored list shows). */
+const realRunsOnce = memoBy(10 * 60_000, async (_: string) => {
+  const [{ supabaseAnon }, { fetchRealRuns }] = await Promise.all([import("../mcp/supabase"), import("../real-runs")]);
+  return fetchRealRuns(supabaseAnon() as never, { limit: 12 });
+}, { key: () => "runs", max: 1 });
+export async function storyNumbers(s: StoryRecord): Promise<import("./sheet").SheetNumber[] | null> {
+  if (!s.signal_keys.length || s.id.startsWith("census:")) return null;
+  try {
+    const [{ forecastRunRows }, { sheetNumbers, storyRunId }] = await Promise.all([import("../forecast-rows.server"), import("./sheet")]);
+    let runId = storyRunId(s.source_ids);
+    if (runId == null) {
+      const at = s.written?.at ?? new Date().toISOString(), runs = await realRunsOnce("runs");
+      runId = [...runs].sort((a, b) => a.id - b.id).filter(r => r.at <= at).at(-1)?.id ?? null;
+    }
+    if (runId == null) return null;
+    const rows = await forecastRunRows(runId), by = new Map(rows.map(r => [`${r.dimension}:${r.value}|${r.scope}`, r]));
+    return sheetNumbers((k, scope) => by.get(`${k}|${scope}`), s.signal_keys, s.sector);
+  } catch { return null; }
+}
+
+/** The story's palette changes (type and stored hexes), for its list's colour words (U2b). One indexed read; [] when none or unreadable. */
+export async function colourEventsOf(s: StoryRecord): Promise<import("./recolour").ColourEvent[]> {
+  const ids = sourceEventIds(s.source_ids); if (!ids.length || s.domains.length !== 1) return [];
+  const { supabaseAnon } = await import("../mcp/supabase");
+  const { data, error } = await supabaseAnon().from("library_events").select("type,before,after").in("id", ids).eq("type", "palette_shift");
+  return error ? [] : ((data ?? []) as import("./recolour").ColourEvent[]);
+}
 export async function loadStory(id: string) {
   const s = await storyById(id); if (!s) return null;
   const [{ latestSignals }, { isPatternSignal }, read] = await Promise.all([import("../signals.server"), import("../patterns"), import("../read.server")]);
@@ -10,7 +39,7 @@ export async function loadStory(id: string) {
   const byKey = new Map(signals.map(x => [x.key, x])), key = s.signal_keys[0];
   const type = isKind(s.type) ? s.type : "news";
   const earlier = storiesAbout(all, { signals: s.signal_keys, domain: s.domains.length === 1 ? s.domains[0] : undefined, exclude: s.id, limit: 6 }).filter(x => x.at <= s.happened_at || s.type === "white_space");
-  const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }) });
+  const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }), numbers: await storyNumbers(s), colourEvents: await colourEventsOf(s).catch(() => []) });
   const { pickThumb } = await import("../thumbs");
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
   const crops = await evidenceOf(s, type);
@@ -33,13 +62,15 @@ export async function loadStoryLead(id: string) {
   const type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0], d = s.domains[0];
   const [{ quarterSeries }, { wellCovered }, { pickThumb }, { supabaseAnon }] = await Promise.all([import("../front/front.server"), import("../kit"), import("../thumbs"), import("../mcp/supabase")]);
   const wantThumb = (type === "move" || type === "rebrand" || type === "counter_move") && !!d;
-  const [series, thumbs, crops, frames] = await Promise.all([
+  const [series, thumbs, crops, frames, numbers, colourEvents] = await Promise.all([
     key ? quarterSeries().then(all => all.find(x => x.key === key)?.quarters.filter(wellCovered).map(p => p.s as number) ?? []).catch(() => []) : Promise.resolve([] as number[]),
     wantThumb ? supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", d!).order("captured_at", { ascending: false }).limit(8).then(r => r.data ?? []) : Promise.resolve([]),
     evidenceOf(s, type),
     framesOf(s, type).catch(() => null),
+    storyNumbers(s),
+    colourEventsOf(s).catch(() => []),
   ]);
-  const page = storyPage(s, { earlier: [], patterns: [] });
+  const page = storyPage(s, { earlier: [], patterns: [], numbers, colourEvents });
   // I1: a single-brand story carries the brand's icon on its subject line, and its drawn captures can reveal the real hero crop.
   const [{ picsFor }, { revealOf }] = await Promise.all([import("../pictures.server"), import("../pictures")]);
   const pics = d ? await picsFor(d) : null, reveal = d ? revealOf(d, pics?.hero) : null;
@@ -70,10 +101,11 @@ export async function tapeOf(ids: number[]) {
   if (error) throw error;
   const rows = (data ?? []).flatMap(e => (e.detected_at ? [{ ...e, detected_at: e.detected_at }] : [])).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
   const [carousel, checks] = await Promise.all([carouselIds(db, rows).then(x => new Set(x)), import("../integrity.server").then(m => m.latestChecks(db, rows.map(e => e.id))).catch(() => new Map())]);
-  // E2e: a change that failed the integrity check is named as such (it is not on the tape).
-  const { VERDICT_LABEL } = await import("../integrity");
+  // E2e: a change that failed the integrity check is named as such (it is not on the tape). U2b: each line is dated by its captures
+  // (the check's last-old and first-new capture), as the story's own facts are, not by the day it was confirmed.
+  const { VERDICT_LABEL, seenOf } = await import("../integrity");
   const mark = (id: number) => { const c = checks.get(id); if (!c) return "Not checked"; if (c.verdict === "pass") return null; return c.verdict === "headline_element" ? "Not compared: the headline was not read from the page's h1" : VERDICT_LABEL[c.verdict as "seen_once" | "alternating"]; };
-  return rows.map(e => { const m = mark(e.id); return { id: e.id, text: `${tapeLine(e, { carousel: carousel.has(e.id) })}${m ? ` · ${m}` : ""}`, href: `/brands/${encodeURIComponent(e.domain)}?view=data`, confirmed: !m }; });
+  return rows.map(e => { const m = mark(e.id); return { id: e.id, text: `${tapeLine(((sn) => (sn ? { ...e, seen: sn } : e))(seenOf(checks.get(e.id))), { carousel: carousel.has(e.id) })}${m ? ` · ${m}` : ""}`, href: `/brands/${encodeURIComponent(e.domain)}?view=data`, confirmed: !m }; });
 }
 /** P1, deferred: earlier stories on the same signal or brand, the patterns among its signals, and the way on (Next, the study). */
 export async function loadStoryRelated(id: string) {

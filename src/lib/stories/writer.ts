@@ -18,10 +18,13 @@ export const WRITER_MAX_TOKENS = 4000;
 export const BODY_MIN_WORDS = 60, BODY_MAX_WORDS = 140, BODY_MIN_PARAS = 2, BODY_MAX_PARAS = 4;
 export const HEADLINE_MIN_WORDS = 4, HEADLINE_MAX_WORDS = 9;
 
+import { allowedColourWords, colourWordsIn } from "../colour-names";
 // FACTS ---------------------------------------------------------------------------------------------------------------------------
 export type Basis = "measured" | "ai";
 /** `since` (E2g): the last capture that showed the old value; `date`: the first capture that showed the new one. */
-export type WriterChange = { brand: string; what: string; from: string; to: string; since?: string; date: string; page: string; basis: Basis; hex?: { from: string | null; to: string | null } };
+export type WriterChange = { brand: string; what: string; from: string; to: string; since?: string; date: string; page: string; basis: Basis; hex?: { from: string | null; to: string | null };
+  /** U2b · each side's named colours (at most three, one naming function), the only colour words the text may use for this change. */
+  colours?: { from: { name: string; hex: string }[]; to: { name: string; hex: string }[] } };
 export type WriterNumber = { text: string; basis: Basis };
 export type WriterFacts = {
   /** Story type and its kind word ("Move", "Roundup"), sector name or null. */
@@ -249,6 +252,18 @@ export type Known = { names: string[] };
  * Every failure of a written text against the story's facts (empty = it may be stored). `body` is required for a stored text; the approved
  * headline-and-deck examples are checked without one.
  */
+/** U2b · colour words not on the sheet: the sheet's colour names (palette and accent sides, and any colour named in a change or stored
+ *  line) allow their own words; brand names are read out first so "Blue Apron" is a name, not a colour. Pure. */
+export function colourFailures(free: string, f: WriterFacts, brands: string[]): string[] {
+  const names = [
+    ...f.changes.flatMap(c => [...(c.colours?.from ?? []), ...(c.colours?.to ?? [])].map(x => x.name)),
+    ...f.changes.flatMap(c => [c.what, c.from, c.to]), ...f.lines.map(l => l.text), ...f.numbers.map(n => n.text),
+  ];
+  const allowed = allowedColourWords(names);
+  let text = free;
+  for (const b of brands) if (b) text = text.replace(new RegExp(`(?<![\\p{L}\\p{N}])${esc(b)}(?![\\p{L}\\p{N}])`, "gu"), " ");
+  return [...new Set(colourWordsIn(text).filter(w => !allowed.has(w)))].map(w => `colour word not in the facts: ${w}`);
+}
 export function checkText(t: Partial<WrittenText> & { headline: string; deck: string }, f: WriterFacts, known: Known, o: { requireBody?: boolean } = {}): string[] {
   const fail: string[] = [];
   const parts = [t.headline, t.deck, ...(t.body ?? []), t.how_we_know ?? ""].filter(Boolean);
@@ -284,6 +299,8 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
     const named = mine.filter(m => new RegExp(`(?<![\\p{L}\\p{N}])${esc(m)}(?![\\p{L}\\p{N}])`, "u").test(free));
     if (named.length > f.max_brands) fail.push(`names ${named.length} brands (at most ${f.max_brands})`);
   }
+  // U2b · colour words are facts: a hue or named shade outside quoted copy must be one of the sheet's colour names for this story.
+  fail.push(...colourFailures(free, f, mine));
   // Banned words and phrases (outside quoted homepage copy).
   fail.push(...bannedFailures(free));
   if (!f.rebrand && rebrandClaim(free)) fail.push("“rebrand” without type, colour and layout changing together");

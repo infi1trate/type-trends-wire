@@ -14,7 +14,7 @@ import type { Crop } from "@/lib/crops";
 import { D, H, NOW, input, iso, st } from "@/lib/front/fixtures";
 import { FrontView } from "./FrontView";
 
-// Meta's accent: two violets with one plain name ("Vivid violet"), and one that is a different colour.
+// Meta's accent: two indigos with one plain name ("Vivid indigo"), and one that is a different colour.
 const accent = (id: number, b: string, a: string, h = 30) => ({ id, domain: "meta.com", type: "palette_shift", before: { accent: b }, after: { accent: a }, page_type: "home", summary: null, detected_at: iso(NOW - h * H), seen: null, source: "live" });
 const pass = (f: string): Check => ({ verdict: "pass", pass: [f], fields: { [f]: { verdict: "pass", failed: [], before: 2, after: 2, beforeHours: 12, afterHours: 12, transitions: 1, lastBefore: iso(NOW - 3 * D), firstAfter: iso(NOW - 2 * D) } } });
 
@@ -25,15 +25,15 @@ describe("E3b · a colour change needs two names", () => {
     expect(tapeWhat(same, READ_TAPE)).toBe("");
     const t = frontTape([same, other], new Map([[1, pass("accent")], [2, pass("accent")]]), { now: NOW });
     expect(t.lines.map(l => l.id)).toEqual([2]);
-    expect(t.lines[0]!.what).toBe("accent, Vivid violet to Muted dark blue");
+    expect(t.lines[0]!.what).toBe("accent, Vivid indigo to Navy");
   });
   it("the terminal keeps it with both hex values, and two such changes stay two lines", () => {
-    expect(tapeWhat(same, TERMINAL_TAPE)).toBe("accent, Vivid violet (#4F46E5) to Vivid violet (#4338CA)");
+    expect(tapeWhat(same, TERMINAL_TAPE)).toBe("accent, Vivid indigo (#4F46E5) to Vivid indigo (#4338CA)");
     expect(tapeRows([same, accent(3, "#4F46E5", "#3730A3")], () => ({}), undefined, TERMINAL_TAPE)).toHaveLength(2);
   });
   it("a different colour reads the same everywhere", () => {
     expect(readTapeShows(other)).toBe(true);
-    expect(tapeWhat(other, TERMINAL_TAPE)).toBe("accent, Vivid violet to Muted dark blue");
+    expect(tapeWhat(other, TERMINAL_TAPE)).toBe("accent, Vivid indigo to Navy");
   });
 });
 

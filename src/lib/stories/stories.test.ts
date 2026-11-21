@@ -14,7 +14,7 @@ import { runBuild, toRow, type StoryRowOut } from "./build.server";
 import { roundups } from "./editor";
 
 const NOW = "2026-11-16T12:00:00.000Z";
-const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => { const [dimension, value] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)]; return { dimension, value, scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, ...o }; };
+const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => { const [dimension, value] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)]; return { dimension, value, scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, sample: { q: "2026Q4", n: scope === "all" ? 150 : 50, s: o.current_share ?? 0.3 }, ...o }; };
 const SECTORS = ["fintech", "ai", "dev-tools"];
 function sites(): SiteNow[] {
   const out: SiteNow[] = [];
@@ -96,8 +96,12 @@ describe("story types", () => {
     expect(c[0]!.id).toBe("counter:9:hero_media:video"); expect(c[0]!.headline).toContain("while it fades"); expect(c[0]!.members).toEqual(["move:9"]);
   });
   it("WHITE SPACE: rising elsewhere, almost unused in a covered sector, one per sector per week", () => {
-    const w = whiteSpaceCandidates(context(base()));
+    // U2b: judged on the run's own sample, so the run must put fintech at or under 5% (the default run has it at 12%: no white space).
+    expect(whiteSpaceCandidates(context(base()))).toEqual([]);
+    const runs = base().runs.map(r => (r.id === 13 ? { ...r, rows: runRows("accelerating", 0.02) } : r));
+    const w = whiteSpaceCandidates(context(base({ runs })));
     expect(w.map(x => x.id)).toEqual(["white:fintech:2026-W47"]);
+    expect(w[0]!.deck).toBe("One of 50 tracked fintech homepages in the latest quarter shows it, against 44% of homepages in other sectors.");
     expect(w[0]!.headline).toBe(`Almost no fintech brand uses ${label("theme:dark").name.toLowerCase()}; it is rising everywhere else`);
     expect(STORY_TYPE_DEFS.white_space.job).toBe("act");
   });

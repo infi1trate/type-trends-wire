@@ -12,7 +12,7 @@ export async function carouselSnapshots(db: Db, ids: (number | null | undefined)
   const rows: Row[] = [];
   const chunks = Array.from({ length: Math.ceil(want.length / 200) }, (_, i) => want.slice(i * 200, i * 200 + 200));
   for (let i = 0; i < chunks.length; i += 6) // at most six requests at once
-    for (const { data, error } of await Promise.all(chunks.slice(i, i + 6).map(c => db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,source,hc:signals->layout->hero_carousel").in("id", c)))) {
+    for (const { data, error } of await Promise.all(chunks.slice(i, i + 6).map(c => db.from("library_snapshot_fields").select("id,domain,page_type,viewport,captured_at,source,hc:hero_carousel").in("id", c)))) {
       if (error) throw error;
       rows.push(...((data ?? []) as unknown as Row[]));
     }
@@ -21,10 +21,11 @@ export async function carouselSnapshots(db: Db, ids: (number | null | undefined)
   const missing = rows.filter(r => flag(r) === null && r.source === "live");
   const keyed: FlagCapture[] = [];
   if (missing.length) {
+    // The flag is read through `library_snapshot_fields.hero_carousel`, which the carousel index covers (no detoast of every capture).
     // Inheriting can only make a capture a carousel where the page has a flagged-true capture, so only those brands are read in full.
     const asked = new Set(missing.map(r => r.domain)), from = missing.map(r => r.captured_at).sort()[0]!, flagged = new Set<string>();
     for (let off = 0; ; off += 1000) {
-      const { data, error } = await db.from("library_snapshots").select("domain").eq("source", "live").gt("captured_at", from).eq("signals->layout->hero_carousel", true).order("id").range(off, off + 999);
+      const { data, error } = await db.from("library_snapshot_fields").select("domain").eq("source", "live").gt("captured_at", from).eq("hero_carousel", true).order("id").range(off, off + 999);
       if (error) throw error;
       for (const r of (data ?? []) as { domain: string }[]) if (asked.has(r.domain)) flagged.add(r.domain);
       if (!data || data.length < 1000) break;
@@ -32,8 +33,8 @@ export async function carouselSnapshots(db: Db, ids: (number | null | undefined)
     const domains = [...flagged];
     for (let i = 0; i < domains.length; i += 25) {
       for (let off = 0; ; off += 1000) {
-        const { data, error } = await db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,source,hc:signals->layout->hero_carousel")
-          .in("domain", domains.slice(i, i + 25)).eq("source", "live").gt("captured_at", from).not("signals->layout->hero_carousel", "is", null).order("id").range(off, off + 999);
+        const { data, error } = await db.from("library_snapshot_fields").select("id,domain,page_type,viewport,captured_at,source,hc:hero_carousel")
+          .in("domain", domains.slice(i, i + 25)).eq("source", "live").gt("captured_at", from).not("hero_carousel", "is", null).order("id").range(off, off + 999);
         if (error) throw error;
         for (const r of (data ?? []) as unknown as Row[]) keyed.push({ id: r.id, page: page(r), at: r.captured_at, flag: flag(r) });
         if (!data || data.length < 1000) break;

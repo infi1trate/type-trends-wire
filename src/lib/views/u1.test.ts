@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { canonicalHref, dataHref, isDataView, modeOf, movedObjectHref, objectOf, readHref, terminalObjectHref, toggleHref, SECTIONS, READ_BAR, TABS } from "../ia";
-import { parseReceipt, receiptFor, shareReceipt, changeReceipt, changedFields, storyReceipt, censusReceipt, forecastReceipt, figureReceipt, tableCsv } from "./receipts";
+import { changeDates, parseReceipt, receiptFor, shareReceipt, changeReceipt, changedFields, storyReceipt, censusReceipt, forecastReceipt, figureReceipt, tableCsv } from "./receipts";
 import { storyForRow, storyLookup } from "./story-rows";
 import { dataViewHead } from "./head";
 import { viewSearch, brandDataSearch } from "./search";
@@ -128,6 +128,16 @@ describe("receipts", () => {
     expect(m.lines[0]).toBe("2 changes behind this story; 1 confirmed on a second capture.");
     expect(m.tables.map(t => t.caption)).toEqual(["The changes", "The facts it states"]);
     expect(m.full).toBe("/stories/s?view=data");
+  });
+  it("story: capture dates come first, the confirmation date is labelled", () => {
+    const m = storyReceipt({ id: "s", number: 88, headline: "H", kicker: "Move" }, [{ id: 1, text: "Coinbase · headline", at: "2026-11-20T09:00:00Z", confirmed: true, seen: { before: "2026-11-11T08:00:00Z", after: "2026-11-14T08:00:00Z" } }], []);
+    expect(m.tables[0]!.head).toEqual(["Captured", "Change", "Confirmed"]);
+    expect(m.tables[0]!.rows).toEqual([["between 11 and 14 Nov", "Coinbase · headline", "confirmed 20 Nov"]]);
+  });
+  it("change dates: same-day captures, missing captures, unconfirmed", () => {
+    expect(changeDates({ before: "2026-11-14T01:00:00Z", after: "2026-11-14T09:00:00Z", at: "2026-11-15T00:00:00Z", confirmed: true })).toEqual({ captured: "14 Nov", confirmed: "confirmed 15 Nov" });
+    expect(changeDates({ before: "2026-10-30T00:00:00Z", after: "2026-11-02T00:00:00Z", at: null, confirmed: false })).toEqual({ captured: "between 30 Oct and 2 Nov", confirmed: "not confirmed" });
+    expect(changeDates({ before: null, after: null, at: "2026-11-20T00:00:00Z", confirmed: true })).toEqual({ captured: "–", confirmed: "confirmed 20 Nov" });
   });
   it("census: its lines", () => {
     const m = censusReceipt({ id: "census:w", number: 90, headline: "Sale mode" }, ["Equinox: sale", "Netlify: sale"], []);

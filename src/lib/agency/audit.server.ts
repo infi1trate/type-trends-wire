@@ -39,7 +39,7 @@ export async function auditRows(domains: string[], sector: string | null, now = 
   const db = supabaseAnon(), since = new Date(+now - MOVES_DAYS * 864e5).toISOString();
   const [lib, history, events, thumbs, run] = await Promise.all([
     db.from("library_sites").select("domain,sector,name,active,last_snapshot_at,last_change_at").in("domain", domains).then(must),
-    db.from("library_site_history").select("domain,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags").in("domain", domains).eq("now", true).then(must),
+    db.from("library_site_history_rows").select("domain,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags").in("domain", domains).eq("now", true).then(must),
     db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary").in("domain", domains).eq("source", "live").eq("viewport", "desktop").gte("detected_at", since).order("detected_at", { ascending: false }).limit(300).then(must),
     db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).order("captured_at", { ascending: false }).limit(60).then(must),
     db.from("forecast_runs").select("id,data_through:model_card->>data_through").eq("status", "ok").order("id", { ascending: false }).limit(1).maybeSingle().then(must),

@@ -442,6 +442,27 @@
       "when": 1795218122643,
       "tag": "0062_digest_texts",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795234491655,
+      "tag": "0063_u2b_site_history_rows_and_snapshot_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795235102294,
+      "tag": "0064_u2b_snapshot_fields_single_detoast",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1795235211227,
+      "tag": "0065_u2b_library_tags_created_index",
+      "breakpoints": true
     }
   ]
 }

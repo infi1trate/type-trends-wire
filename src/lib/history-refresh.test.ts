@@ -40,9 +40,9 @@ describe("library history refresh step", () => {
     expect(f.views()).toEqual([]);
     expect(f.calls).toEqual(["library_history_refresh_begin"]);
   });
-  it("dirty → five calls in order, then the finish time is recorded and dirty stays clear", async () => {
+  it("dirty → six calls in order (stored site rows first), then the finish time is recorded and dirty stays clear", async () => {
     const f = fake(db, clock), r = await run(f.rpc);
-    expect(f.views()).toEqual(["library_signal_series_mat", "library_css_series_mat", "library_font_series_mat", "library_tag_series_mat", "library_history_share_mat"]);
+    expect(f.views()).toEqual(["library_site_history_mat", "library_signal_series_mat", "library_css_series_mat", "library_font_series_mat", "library_tag_series_mat", "library_history_share_mat"]);
     expect([...HISTORY_VIEWS]).toEqual(f.views());
     expect(f.calls.at(-1)).toBe("end:true");
     expect(r).toMatchObject({ outcome: "started", complete: true });
@@ -51,15 +51,15 @@ describe("library history refresh step", () => {
   it("a failing view stops the step, leaves dirty true and does not throw", async () => {
     const f = fake(db, clock, v => (v === "library_css_series_mat" ? { ms: 8_000, error: true } : { ms: 500 }));
     const r = await run(f.rpc);
-    expect(f.views()).toEqual(["library_signal_series_mat", "library_css_series_mat"]);
+    expect(f.views()).toEqual(["library_site_history_mat", "library_signal_series_mat", "library_css_series_mat"]);
     expect(r).toMatchObject({ complete: false, stopped: { view: "library_css_series_mat", why: "failed" } });
     expect(db.dirty).toBe(true);
     expect(db.refreshed_at).toBeNull();
   });
-  it("a failing share view (last) leaves the four small views already refreshed", async () => {
+  it("a failing share view (last) leaves the stored rows and four small views already refreshed", async () => {
     const f = fake(db, clock, v => (v === "library_history_share_mat" ? { ms: 8_000, error: true } : { ms: 500 }));
     const r = await run(f.rpc);
-    expect(r.ms).toEqual({ library_signal_series_mat: 500, library_css_series_mat: 500, library_font_series_mat: 500, library_tag_series_mat: 500 });
+    expect(r.ms).toEqual({ library_site_history_mat: 500, library_signal_series_mat: 500, library_css_series_mat: 500, library_font_series_mat: 500, library_tag_series_mat: 500 });
     expect(r).toMatchObject({ complete: false, stopped: { view: "library_history_share_mat", why: "failed" } });
     expect(db.dirty).toBe(true);
   });
@@ -81,15 +81,15 @@ describe("library history refresh step", () => {
   it("stops before a view whose usual time no longer fits, and puts dirty back", async () => {
     const f = fake(db, clock, () => ({ ms: 5_000 }));
     const r = await run(f.rpc, 6_000);
-    expect(f.views()).toEqual(["library_signal_series_mat"]);
-    expect(r).toMatchObject({ complete: false, stopped: { view: "library_css_series_mat", why: "deadline" } });
+    expect(f.views()).toEqual(["library_site_history_mat"]);
+    expect(r).toMatchObject({ complete: false, stopped: { view: "library_signal_series_mat", why: "deadline" } });
     expect(db.dirty).toBe(true);
   });
   it("a view that hangs is cut off at the deadline and the step still ends", async () => {
     const f = fake(db, clock);
     const hang: HistoryRpc = (name, args) => (name === "library_history_refresh_view" ? new Promise(() => {}) : f.rpc(name, args));
     const r = await refreshLibraryHistory({ deadline: Date.now() + 6_000, rpc: hang, job: "test" }).catch(e => e);
-    expect(r).toMatchObject({ complete: false, stopped: { view: "library_signal_series_mat", why: "cut_off" } });
+    expect(r).toMatchObject({ complete: false, stopped: { view: "library_site_history_mat", why: "cut_off" } });
     expect(db.dirty).toBe(true);
   }, 10_000);
   it("another refresh holding the lock → busy, nothing refreshed", async () => {

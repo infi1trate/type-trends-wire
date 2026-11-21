@@ -1,5 +1,6 @@
 // One bounded, idempotent story build: load what exists (anonymous public reads), make candidates, score, plan, write
 // at most a few "why it matters" lines inside the AI budget, and insert with ON CONFLICT DO NOTHING. Never runs in DEV runs.
+import { historyRows as readHistory } from "../history.server";
 import { decodeEntities } from "../entities";
 import { forecastSiteTraits, type SiteRow } from "../forecast-signals";
 import { canonical } from "../labels";
@@ -18,7 +19,8 @@ import { CALL_BUDGET_MS } from "../jobs/steps";
 import { REVERSAL_DAYS } from "../reversal";
 import { basis as basisOf, label, sectorName } from "../labels";
 import { seededNames } from "../brand-names";
-import { shareLine, writerFacts, type FactSource, type FactStory, type ShareBase } from "./writer-facts";
+import { sheetNumbers } from "./sheet";
+import { writerFacts, type FactSource, type FactStory, type ShareBase } from "./writer-facts";
 import { triedWriter, writeStories, writerIO, type WriterIO, type WriteResult } from "./writer.server";
 import { AI_MODELS } from "../ai-models";
 import type { Ctx } from "./candidates";
@@ -154,20 +156,17 @@ export function factSource(input: BuildInput, ctx: Ctx, bases: ReadonlyMap<strin
   const events = new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e]));
   const names = new Map(input.sites.map(x => [x.domain, x.name]));
   const known = [...new Set([...seededNames(), ...input.sites.map(x => x.name).filter((n): n is string => !!n)])];
-  // E2c: every share carries its own count and base ("4 of 29"), never the number of tracked brands, which can differ from the homepages counted.
-  const numbers = (keys: string[], sector: string | null) => keys.slice(0, 3).flatMap(k => {
-    const ck = canonical(k), all = ctx.row(ctx.cur, ck), sec = sector ? ctx.row(ctx.cur, ck, sector) : null, b = basisOf(k) === "ai" ? "ai" as const : "measured" as const, n = label(k).name;
-    const line = (r: NonNullable<typeof all>, scope: string, where: string) => ({ text: shareLine({ name: n, share: r.current_share!, where, basis: b, base: bases.get(`${ck}|${scope}`) ?? null, stage: r.stage, momentum: r.momentum }), basis: b });
-    return [
-      ...(all?.current_share != null ? [line(all, "all", "")] : []),
-      ...(sector && sec?.current_share != null ? [line(sec, sector, `${sectorName(sector)} `)] : []),
-    ];
-  });
+  // E2c: every share carries its own count and base ("4 of 29"), never the number of tracked brands. U2b: the count is the run's own
+  // latest-quarter sample (the one white-space candidates are judged on), so the sheet, the stored lines and the page agree.
+  // A story with its own run (a white space, a breakout) counts from that run, the one its stored lines and stage came from.
+  const numbers = (keys: string[], sector: string | null, runId?: number | null) => {
+    const own = runId != null ? ctx.runs.find(r => r.id === runId) ?? null : null;
+    return sheetNumbers((k, scope) => ctx.row(own ?? ctx.cur, k, scope), keys, sector, own && own.id !== ctx.cur?.id ? new Map() : bases);
+  };
   return { events, texts: new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v])), calls: input.calls ?? {}, names, known, numbers };
 }
 
 // ---- Real I/O ---------------------------------------------------------------------------------------------------
-const COLS = "dimension,value,scope,status,stage,momentum,current_share,next_wave_score,present:components->present,sites:components->sites,usable:evidence->usable";
 const HIST = "domain,quarter,sector,captured_at,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags,h1_size_px,cta_radius_bucket,whitespace_ratio";
 async function pages<T>(f: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500) {
   const out: T[] = [];
@@ -183,7 +182,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const pair = comparisonPair(realRuns.map(r => ({ id: r.id, at: r.computed_at })));
   const inWindow = realRuns.filter(r => r.computed_at >= since), pick = o.allRuns ? realRuns.slice(0, inWindow.length + 1) : realRuns.slice(0, 3);
   const chosen = [...new Map([...pick, ...realRuns.filter(r => r.id === pair?.earlier.id)].map(r => [r.id, r])).values()].sort((a, b) => a.id - b.id);
-  const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await pages<SignalRow>((f, t) => db.from("forecasts").select(COLS).eq("run_id", r.id).order("scope").order("dimension").order("value").range(f, t) as never, 1000)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
+  const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await (await import("../forecast-rows.server")).forecastRunRows(r.id)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
   const latest = chosen.at(-1)?.id ?? null;
   const [historyRows, alerts, wire, launches, sites, now_, archive, setters, rebrands] = await Promise.all([
     // From REVERSAL_DAYS before the window, so a change back inside the window finds the change it reverses (reversal.ts).
@@ -193,8 +192,8 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     pages<BuildInput["wire"][number]>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", since).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").eq("source_kind", "producthunt").gte("published_at", since).order("id").limit(200),
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_snapshot_at: string | null; site_kind: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_snapshot_at,site_kind").order("domain").range(f, t) as never),
-    pages<SiteRow & { captured_at: string | null }>((f, t) => db.from("library_site_history").select(HIST).eq("now", true).order("domain").range(f, t) as never, 200),
-    pages<SiteRow>((f, t) => db.from("library_site_history").select(HIST).eq("now", false).order("domain").order("quarter").range(f, t) as never, 200),
+    readHistory<SiteRow & { captured_at: string | null }>(db, HIST, { now: true }),
+    readHistory<SiteRow>(db, HIST, { now: false }),
     latest == null ? Promise.resolve({ data: [], error: null }) : db.from("trendsetters").select("domain,rank").eq("run_id", latest).order("rank"),
     import("../rebrands.server").then(m => m.rebrandRows()),
   ]);

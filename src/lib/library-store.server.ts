@@ -1,6 +1,10 @@
 import { supabaseAnon } from "./mcp/supabase";
 import { fingerprint, sectorMetrics } from "./library";
-export async function libraryRows() {
+import { byCrawl, crawlStamp } from "./crawl-stamp.server";
+import { memoBy } from "./memo";
+/** Latest capture per site; cached per instance until the next crawl (`byCrawl`). */
+export const libraryRows = byCrawl(loadLibraryRows);
+async function loadLibraryRows() {
   const db = supabaseAnon();
   const rows = [];
   for (let from = 0; ; from += 1000) {
@@ -20,12 +24,17 @@ export async function libraryEvents(opts: { sector?: string | undefined; type?: 
   if (error) throw error;
   return data ?? [];
 }
-export async function librarySectors() {
+/** Sector summaries; cached per instance until the next crawl (`byCrawl`). */
+export const librarySectors = byCrawl(async () => {
   const { data, error } = await supabaseAnon().from("library_sector_stats").select("*").order("sector").range(0, 999);
   if (error) throw error;
   return data ?? [];
-}
-export async function librarySnapshots(domain?: string, sector?: string) {
+});
+/** A brand's (or a sector's) captures with full signals; cached per instance until the next crawl, per argument pair. */
+export const librarySnapshots = async (domain?: string, sector?: string) =>
+  snapshotsByCrawl({ domain: domain ?? null, sector: sector ?? null, stamp: await crawlStamp().catch(() => `minute:${Math.floor(Date.now() / 60_000)}`) });
+const snapshotsByCrawl = memoBy(3_600_000, async (k: { domain: string | null; sector: string | null; stamp: string }) => loadLibrarySnapshots(k.domain ?? undefined, k.sector ?? undefined), { max: 200 });
+async function loadLibrarySnapshots(domain?: string, sector?: string) {
   const db = supabaseAnon();
   let domains: string[] | undefined;
   if (sector) domains = (await libraryRows()).filter(r => r.sector === sector).map(r => r.domain).filter((v): v is string => !!v);

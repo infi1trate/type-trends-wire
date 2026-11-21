@@ -1,6 +1,6 @@
 // Readable sentences for library change events, shared by watch pages, the watch feed and audits. Pure; names come from labels.ts.
-import { colorName, label } from "../labels";
-import { colorTicker } from "../taste/color";
+import { label } from "../labels";
+import { colourName } from "../colour-names";
 import { isRebrand, identitySentence } from "../rebrand-rule";
 import { brandName } from "../brand-names";
 import { oneHeadline } from "../headline-text";
@@ -13,8 +13,8 @@ const o = (v: unknown): Record<string, unknown> => (v && typeof v === "object" &
 const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 const hl = (v: unknown) => { const t = s(v); return t ? oneHeadline(t) : null; };
 const HEX = /^#[\da-f]{6}$/i;
-/** "#1C4673" → "Muted dark blue"; unknown input stays as given. */
-export const hexName = (hex: unknown) => (typeof hex === "string" && HEX.test(hex) ? colorName(colorTicker(hex)) ?? hex.toUpperCase() : String(hex ?? "none"));
+/** "#1C4673" → "Dark blue", "#D0E0E7" → "Pale blue" (U2b: one naming function, `colourName`); unknown input stays as given. */
+export const hexName = (hex: unknown) => (typeof hex === "string" && HEX.test(hex) ? colourName(hex) ?? hex.toUpperCase() : String(hex ?? "none"));
 const quote = (t: string, n = 90) => `“${t.length > n ? `${t.slice(0, n - 1)}…` : t}”`;
 const list = (xs: string[], n = 4) => (xs.length > n ? `${xs.slice(0, n).join(", ")} and ${xs.length - n} more` : xs.join(", "));
 const TECH: Record<string, string> = { next: "Next.js", nuxt: "Nuxt", astro: "Astro", gatsby: "Gatsby", sveltekit: "SvelteKit", framer: "Framer", webflow: "Webflow", wordpress: "WordPress", shopify: "Shopify", squarespace: "Squarespace", wix: "Wix", tailwind: "Tailwind CSS", gsap: "GSAP", lenis: "Lenis", lottie: "Lottie", three: "three.js", webgl_canvas: "a WebGL canvas" };

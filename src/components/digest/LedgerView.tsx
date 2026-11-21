@@ -20,7 +20,7 @@ export function LedgerCall({ c, showName = true }: { c: LedgerItem; showName?: b
       <p className="ed-data flex flex-wrap items-center gap-x-3 gap-y-1"><span className="ed-badge" aria-label={`Outcome: ${c.outcome_word}`}>{c.outcome_word}</span><span>Target {c.target_text}</span>{c.resolves_on && <span className="ed-muted">resolves {longDay(c.resolves_on)}</span>}</p>
       <p className="ed-small mt-2">{c.said}</p>
       {c.outcome_reason && <p className="ed-caption mt-1">{c.outcome_reason}</p>}
-      <p className="ed-data mt-1"><a href={c.receipts_path} className="ed-tap" {...pr(c.receipts_path)}>Receipts in the terminal →</a> <span className="ed-muted">run {c.run_id}</span></p>
+      <p className="ed-data mt-1"><a href={c.receipts_path} className="ed-tap" {...pr(c.receipts_path)}>Receipts in the Data view →</a> <span className="ed-muted">run {c.run_id}</span></p>
     </div>
   </li>;
 }

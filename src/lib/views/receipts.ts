@@ -3,6 +3,7 @@
 import { brandDataPath, dataHref, type ObjectRef } from "../ia";
 import { BASIS_WORD, label, type Basis } from "../labels";
 import { brandName } from "../brand-names";
+import { betweenDates, tapeDate } from "../tape";
 import type { Json } from "@/integrations/supabase/types";
 
 export const RECEIPT_TYPES = ["share", "change", "story", "census", "forecast", "figure"] as const;
@@ -89,14 +90,21 @@ export function changeReceipt(e: ChangeRow, captures: readonly CaptureRow[]): Re
     full: href,
   };
 }
-export type TapeRow = { id: number; text: string; at: string | null; confirmed: boolean };
+/** A change's dates, capture dates first (U2b): "between 11 and 14 Nov" from the captures either side, then the day it was confirmed
+ *  ("confirmed 20 Nov"), so a confirmation date is never read as the day a change happened. Pure. */
+export function changeDates(c: { before?: string | null | undefined; after?: string | null | undefined; at: string | null; confirmed: boolean }): { captured: string; confirmed: string } {
+  const captured = c.before && c.after ? betweenDates(c.before, c.after) : c.after ? tapeDate(c.after) : "–";
+  return { captured, confirmed: c.confirmed ? (c.at ? `confirmed ${tapeDate(c.at)}` : "confirmed") : "not confirmed" };
+}
+/** `at`: when the change was recorded (its confirmation); `seen`: the captures either side, when known. */
+export type TapeRow = { id: number; text: string; at: string | null; confirmed: boolean; seen?: { before: string | null; after: string | null } | null };
 /** A story's changes: the tape lines it was built from, and its stored facts. */
 export function storyReceipt(s: { id: string; number: number | null; headline: string; kicker: string }, tape: readonly TapeRow[], facts: readonly { text: string; basis: Basis | null }[]): ReceiptModel {
   return {
     type: "story", title: s.headline, kicker: `${s.number != null ? `NO. ${s.number} · ` : ""}${s.kicker.toUpperCase()} · THE CHANGES`,
     lines: [tape.length ? `${tape.length} change${tape.length === 1 ? "" : "s"} behind this story; ${tape.filter(t => t.confirmed).length} confirmed on a second capture.` : "This story is not built from brand changes."],
     tables: [
-      ...(tape.length ? [{ caption: "The changes", head: ["Date", "Change", "Confirmed"], rows: tape.map(t => [day(t.at), t.text, t.confirmed ? "yes" : "no"]) }] : []),
+      ...(tape.length ? [{ caption: "The changes", head: ["Captured", "Change", "Confirmed"], rows: tape.map(t => { const d = changeDates({ before: t.seen?.before, after: t.seen?.after, at: t.at, confirmed: t.confirmed }); return [d.captured, t.text, d.confirmed]; }) }] : []),
       ...(facts.length ? [{ caption: "The facts it states", head: ["Fact", "Basis"], rows: facts.map(f => [f.text, f.basis ? BASIS_WORD[f.basis] : "–"]) }] : []),
     ],
     full: dataHref({ type: "story", id: s.id }),

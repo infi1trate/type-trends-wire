@@ -40,7 +40,8 @@ const HERO: Record<string, string> = { image: "still", video: "video", webgl: "3
 const hero = (v: unknown) => (v == null || v === "" ? "none" : HERO[String(v)] ?? String(v).replace(/_/g, " "));
 const align = (v: unknown) => (v == null || v === "" ? "none" : String(v));
 const corners = (v: unknown) => (v === "pill" ? "pill" : v === "0" || v === 0 ? "square" : v == null ? "none" : `${String(v)} px`);
-const colours = (v: unknown) => [...new Set((Array.isArray(v) ? v : []).slice(0, 2).map(hexName))].join(" and ") || "none";
+/** The first two colours of a palette side by name ("Near-black and Off-white"), as every tape line words them. */
+export const colours = (v: unknown) => [...new Set((Array.isArray(v) ? v : []).slice(0, 2).map(hexName))].join(" and ") || "none";
 const tags = (dim: string, v: unknown) => (Array.isArray(v) ? v : typeof v === "string" ? [v] : []).filter((x): x is string => typeof x === "string").map(x => label(`${dim}:${x}`).name.toLowerCase()).join(", ") || "none";
 
 /** E3b · a colour change whose old and new colour have the same plain name says nothing in words. How a line treats such a part:

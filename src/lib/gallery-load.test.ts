@@ -14,6 +14,14 @@ function query(table: string) {
     lte: (c: string, v: number) => (f.push(r => (r[c] as number) <= v), q),
     lt: (c: string, v: string) => (f.push(r => String(r[c]) < v), q),
     range: (a: number, b: number) => ((lo = a), (hi = b), q),
+    // The history keyset walk: rows after (domain, quarter), as `afterKey` writes it.
+    or: (expr: string) => {
+      const m = /^domain\.gt\."(.*)",and\(domain\.eq\."(.*)",quarter\.gt\."(.*)"\)$/.exec(expr);
+      if (!m) throw new Error(`unexpected or(): ${expr}`);
+      const [, d, , qu] = m as unknown as [string, string, string, string];
+      f.push(r => String(r["domain"]) > d || (r["domain"] === d && String(r["quarter"]) > qu));
+      return q;
+    },
     limit: (n: number) => ((hi = lo + n - 1), q),
     then: (ok: (v: unknown) => unknown, bad?: (e: unknown) => unknown) => {
       db.requests.push(table); db.live++; db.peak = Math.max(db.peak, db.live);
@@ -47,7 +55,7 @@ function seed() {
   const forecasts: Row[] = [];
   for (const run of [13, 14, 15]) for (let k = 0; k < (run === 15 ? 1386 : 200); k++)
     forecasts.push({ run_id: run, scope: k < 200 ? "all" : SECTORS[k % 4], dimension: k === 0 ? "hero_media" : "x", value: k === 0 ? "video" : `v${k}`, status: "ok", stage: "Rising", momentum: 1, current_share: 0.5, next_wave_score: 1, present: [], sites: 100, usable: true });
-  db.tables = { library_sites: sites, library_site_history: history.sort((a, b) => String(a["domain"]).localeCompare(String(b["domain"]))), library_snapshots: snaps, site_crops: [], forecast_runs: runs,
+  db.tables = { library_sites: sites, library_site_history_rows: history.sort((a, b) => String(a["domain"]) < String(b["domain"]) ? -1 : String(a["domain"]) > String(b["domain"]) ? 1 : String(a["quarter"]) < String(b["quarter"]) ? -1 : 1), library_snapshots: snaps, site_crops: [], forecast_runs: runs,
     weekly_briefs: [13, 14, 15].map(run_id => ({ run_id })), chart_cards: [], forecast_calls: [], forecasts, library_events: [] };
   db.requests = []; db.live = 0; db.peak = 0; db.failNext = new Set();
 }
@@ -64,12 +72,12 @@ describe("a cold gallery view", () => {
     expect(db.requests.length).toBeLessThanOrEqual(COLD_BUDGET);
     expect(db.peak).toBeLessThanOrEqual(6);
     expect(db.requests).not.toContain("library_events"); // no change stamps unless the view is a "changed" view
-    expect(db.requests.filter(t => t === "library_site_history").length).toBe(3); // one per domain slice
+    expect(db.requests.filter(t => t === "library_site_history_rows").length).toBe(2); // keyset walk: one per 1,000 stored rows
     db.requests = [];
     await loadGallery(NO_FILTER); expect(db.requests).toEqual([]); // the settled view is reused
   });
   it("a statement timeout on the first history read is retried inside the loader", async () => {
-    db.failNext.add("library_site_history");
+    db.failNext.add("library_site_history_rows");
     const { loadGallery } = await import("./gallery.server"), { NO_FILTER } = await import("./gallery");
     const g = await loadGallery(NO_FILTER);
     expect(g.total).toBeGreaterThan(48);

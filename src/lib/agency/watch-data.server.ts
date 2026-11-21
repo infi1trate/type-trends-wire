@@ -24,7 +24,7 @@ export async function loadWatchRows(w: WatchPublic, now: Date): Promise<WatchRow
     domains.length ? db.from("library_sites").select("domain,sector,name,last_change_at").in("domain", domains).then(must) : none,
     domains.length ? pages<EventRow>((f, t) => db.from("library_event_feed").select(EVENT_COLS).in("domain", domains).eq("source", "live").eq("viewport", "desktop").gte("detected_at", since).order("detected_at", { ascending: false }).order("id", { ascending: false }).range(f, t) as never, 500, 2) : none,
     domains.length ? db.from("library_event_feed").select(EVENT_COLS).in("domain", domains).eq("source", "live").eq("viewport", "desktop").order("detected_at", { ascending: false }).limit(1).then(must) : none,
-    w.sites.length ? db.from("library_site_history").select("domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags").in("domain", w.sites).eq("now", true).then(must) : none,
+    w.sites.length ? db.from("library_site_history_rows").select("domain,quarter,sector,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags").in("domain", w.sites).eq("now", true).then(must) : none,
     domains.length ? db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").in("domain", domains).order("captured_at", { ascending: false }).limit(100).then(must) : none,
     // Run-to-run changes use real runs only, chained under the gap rule (run-gap.ts), like every other reader surface.
     fetchRealRuns(db, { limit: 40 }).then(rs => { const chain = gapChain(rs).map(r => ({ id: r.id, computed_at: r.at })); return { inside: chain.filter(r => r.computed_at >= since), before: chain.filter(r => r.computed_at < since).slice(-1) }; }),
