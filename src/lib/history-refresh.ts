@@ -15,7 +15,7 @@ export const HISTORY_NOTE_AFTER_MS = 3_600_000;
 /** A brand counts as "behind" once its stored rows have waited longer than this (the database counts it: rows_behind). */
 export const HISTORY_BEHIND_AFTER_MS = 30 * 60_000;
 
-export type HistoryFacts = { refreshed_at: string | null; rows_behind?: number | null; views_too_slow?: string[] | null };
+export type HistoryFacts = { refreshed_at: string | null; rows_behind?: number | null | undefined; views_too_slow?: string[] | null | undefined };
 
 /** The library_check note addition: nothing while the series are fresh and no brand is behind (or when the facts could not be read). */
 export function historyNote(h: HistoryFacts | null | undefined, now: number): string | null {
