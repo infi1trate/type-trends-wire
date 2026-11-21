@@ -22,7 +22,8 @@ export async function briefInputs(db: Db, runId: number) {
     db.from("forecast_runs").select("model_card,data_cutoff_quarter").eq("id", runId).single(),
   ]);
   for (const r of [fc, ev, wire, spread, card]) if (r.error) throw new Error("brief_inputs_failed");
-  const events = await briefEventList(db, (ev.data ?? []).filter((e): e is typeof e & { id: number; type: string } => e.id != null && !!e.type));
+  const active = await (await import("./active-sites.server")).activeDomains();
+  const events = await briefEventList(db, (ev.data ?? []).filter((e): e is typeof e & { id: number; type: string } => e.id != null && !!e.type && !!e.domain && active.has(e.domain)));
   const f = fc.data ?? [], pct = (v: number | null) => (v === null ? null : Number((v * 100).toFixed(1)));
   const slim = (r: (typeof f)[number]) => ({ id: `${r.dimension}:${r.value}:all`, trait: `${r.dimension}:${r.value}`, label: label(`${r.dimension}:${r.value}`).name, dimension: label(`${r.dimension}:${r.value}`).dimension, stage: r.stage, stage_label: stageName(r.stage), share_pct: pct(r.current_share), proj_4q_pct: pct(r.proj_q4), proj_4q_range_pct: [pct(r.proj_q4_lo), pct(r.proj_q4_hi)], momentum_pts_q: r.momentum === null ? null : Number(r.momentum.toFixed(2)), next_wave: r.next_wave_score === null ? null : Number(r.next_wave_score.toFixed(2)), trendsetter_gap_pts: (r.components as { raw?: { gap?: number | null } } | null)?.raw?.gap ?? null });
   const ok = f.filter(r => r.status === "ok");

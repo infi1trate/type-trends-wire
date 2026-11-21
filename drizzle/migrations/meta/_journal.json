@@ -512,6 +512,13 @@
       "when": 1795271232115,
       "tag": "0072_i3_crop_quality",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1795276211208,
+      "tag": "0073_i3b_read_version",
+      "breakpoints": true
     }
   ]
 }

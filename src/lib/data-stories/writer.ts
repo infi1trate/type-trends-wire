@@ -26,8 +26,22 @@ export type FactsSheet = {
   links: string[];
   /** Loose date phrasings the facts give ("early 2022"); otherwise quarters are written "Q1 2022". */
   phrasings: string[];
+  /** I3b · ranked lists the facts state, first entry highest; present only on a sheet that ranks (so other sheets hash as before). */
+  ranked?: { label: string; order: string[] }[];
 };
 export const RANKING_WORDS = ["first", "most", "least", "biggest", "largest", "fewest", "only", "highest", "lowest"] as const;
+/** I3b · superlatives a sentence may use about the first (top) or last (bottom) entry of a ranked list on the sheet. */
+export const RANK_TOP = ["highest", "most", "first"] as const, RANK_BOTTOM = ["lowest", "least", "last"] as const;
+const nameIn = (s: string, n: string) => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(s);
+/** Whether every sentence using `w` names the matching end of a ranked list: highest, most and first the first entry; lowest, least and
+ *  last the last. False for any other word, and when the sheet has no ranked list. */
+export function rankedEndClaim(text: string, w: string, ranked: readonly { order: readonly string[] }[] | undefined): boolean {
+  const top = (RANK_TOP as readonly string[]).includes(w), bottom = (RANK_BOTTOM as readonly string[]).includes(w);
+  const ends = (ranked ?? []).filter(r => r.order.length >= 2).map(r => (top ? r.order[0] : r.order[r.order.length - 1])).filter((x): x is string => !!x);
+  if ((!top && !bottom) || !ends.length) return false;
+  const sentences = text.split(/(?<=[.!?])\s+|\n+/).filter(s => has(s, w));
+  return sentences.length > 0 && sentences.every(s => ends.some(n => nameIn(s, n)));
+}
 export const CAUSAL = ["because", "driven by", "thanks to", "as a result of", "due to"] as const;
 export const STUDY_BANNED = ["it turns out", "in a world"] as const;
 const kindOf = (href: string): SheetName["kind"] => (href.startsWith("/brands/") ? "brand" : href.startsWith("/sectors/") ? "sector" : href.startsWith("/signals/") || href.startsWith("/patterns") ? "signal" : "other");
@@ -43,7 +57,7 @@ export function factsSheet(s: StoryModel): FactsSheet {
   });
   const texts = [s.question, s.key.n, s.key.label, ...scenes.flatMap(x => x.facts), ...s.limits];
   return { slug: s.slug, number: s.number, series: s.seriesTitle, question: s.question, key: s.key, templates: s.template, scenes, limits: s.limits,
-    rankings: RANKING_WORDS.filter(w => texts.some(t => has(t, w))), links: [], phrasings: [] };
+    rankings: RANKING_WORDS.filter(w => texts.some(t => has(t, w))), links: [], phrasings: [], ...(s.ranked?.length ? { ranked: s.ranked } : {}) };
 }
 /** A short stable fingerprint of a sheet (53-bit string hash, hex): a new one means the facts changed. */
 export function factsHash(sheet: FactsSheet | object): string {
@@ -54,7 +68,7 @@ export function factsHash(sheet: FactsSheet | object): string {
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, "0");
 }
-const sheetStrings = (f: FactsSheet) => [f.question, f.series, f.key.n, f.key.label, ...f.scenes.flatMap(s => [s.lead, ...s.facts, ...s.numbers.map(n => n.text), ...s.names.map(n => n.name)]), ...f.limits, ...f.phrasings];
+const sheetStrings = (f: FactsSheet) => [f.question, f.series, f.key.n, f.key.label, ...f.scenes.flatMap(s => [s.lead, ...s.facts, ...s.numbers.map(n => n.text), ...s.names.map(n => n.name)]), ...f.limits, ...f.phrasings, ...(f.ranked ?? []).flatMap(r => [r.label, ...r.order])];
 
 // PROMPT ---------------------------------------------------------------------------------------------------------------------------
 export const STUDY_STYLE = `Write as an editor explaining a chart to a smart colleague.
@@ -62,7 +76,7 @@ export const STUDY_STYLE = `Write as an editor explaining a chart to a smart col
 - No rhetorical questions, no "it turns out", no "in a world", no second person and no commands.
 - Numbers exactly as the facts write them. Dates as "early 2022" only when the facts give that phrasing; otherwise the quarter ("Q1 2022").
 - No cause ("because", "driven by", "thanks to", "as a result of") unless the facts list that link as measured.
-- No superlative ("first", "most", "least", "biggest", "only") unless the facts carry that ranking (the rankings list).
+- No superlative ("first", "most", "least", "biggest", "only") unless the facts carry that ranking (the rankings list). With a ranked list on the sheet, "highest", "most" or "first" may describe its first entry and "lowest", "least" or "last" its last, in a sentence that names that entry.
 - The headline is a finding, five to eleven words, never the question and never a question.`;
 export const STUDY_EXAMPLE = "Big type is on 27.7% of tracked homepages, up from 14.3% in the first quarter of 2021. That is not quite a doubling, and it was not one wave. Forty-three brands already had it in their first stored capture, so the archive cannot say who started it. The first three it can date are Parsley Health, Headspace and Netlify, all in Q1 2022. Since then 42 adopters have dropped it again, Mother and Wolff Olins among them. So the rising line hides two movements at once: brands arriving, and early adopters leaving.";
 export const STUDY_SYSTEM = [
@@ -90,7 +104,7 @@ export const STUDY_SCHEMA = {
 export const STUDY_TOOL = { type: "function" as const, function: { name: "emit_study", description: "Return the study's written text.", parameters: STUDY_SCHEMA as unknown as Record<string, unknown> } };
 /** The user message: the sheet without receipts (the page adds those), then the failures of the previous try if any. */
 export function studyUser(f: FactsSheet, failures: string[] = []): string {
-  const facts = { question: f.question, series: f.series, key_figure: `${f.key.n} ${f.key.label}`, scenes: f.scenes.map((s, i) => ({ scene: i + 1, facts: s.facts, numbers: s.numbers.map(n => n.text), names: s.names.map(n => `${n.name} (${n.kind})`) })), limits: f.limits, rankings: f.rankings, measured_links: f.links, phrasings: f.phrasings };
+  const facts = { question: f.question, series: f.series, key_figure: `${f.key.n} ${f.key.label}`, scenes: f.scenes.map((s, i) => ({ scene: i + 1, facts: s.facts, numbers: s.numbers.map(n => n.text), names: s.names.map(n => `${n.name} (${n.kind})`) })), limits: f.limits, rankings: f.rankings, ...(f.ranked?.length ? { ranked_lists: f.ranked } : {}), measured_links: f.links, phrasings: f.phrasings };
   return [`<facts>\n${JSON.stringify(facts, null, 1)}\n</facts>`, ...(failures.length ? [`Your previous text failed these checks; fix every one and return the whole text again:\n- ${failures.join("\n- ")}`] : [])].join("\n\n");
 }
 /** Model text as plain text: spaces collapsed and markdown emphasis removed (the page sets the lead-in in bold itself). Applied when a
@@ -172,7 +186,7 @@ export function checkStudyText(t: StudyWritten, f: FactsSheet, known: Known): st
   for (const s of sectorsNamed(free)) if (!mySectors.has(s)) fail.push(`sector not on the sheet: ${sectorName(s)}`);
   // Claims: cause only when measured, rankings only when the sheet carries them.
   if (!f.links.length) for (const c of CAUSAL) if (has(free, c)) fail.push(`a causal claim: ${c}`);
-  for (const w of RANKING_WORDS) if (!f.rankings.includes(w) && has(free, w)) fail.push(`a superlative the sheet does not carry: ${w}`);
+  for (const w of RANKING_WORDS) if (!f.rankings.includes(w) && has(free, w) && !rankedEndClaim(free, w, f.ranked)) fail.push(`a superlative the sheet does not carry: ${w}`);
   // Voice.
   if (/\?/.test(free)) fail.push("a question in the text");
   if (/(?<![\p{L}])(you|your|yours|you're)(?![\p{L}])/iu.test(free)) fail.push("second person");

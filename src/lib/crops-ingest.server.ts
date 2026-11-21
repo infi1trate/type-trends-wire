@@ -2,6 +2,7 @@
 // Storage and row writes go through an injectable store (tests use memory; nothing is written to the shared database or bucket).
 import { boundedText } from "./thumbs-ingest.server";
 import { CROP_LIMITS, checkCrop, cropEvictions, cropPath, cropPayload, decodeCrop, isCropSection, parseCropPath, planCrop, plainIssue, type CropRefusal, type CropRow, type CropSection } from "./crops";
+import { CROP_MEASURE_MS } from "./crop-measure.server";
 import { ASSET_LIMITS, assetPath, checkAsset, isAssetKind, parseAssetPath, type AssetKind, type AssetRefusal, type AssetRow } from "./brand-assets";
 
 export const CROP_BUCKET = "site-crops";
@@ -34,12 +35,15 @@ export type CropStore = {
   domainAssets(domain: string): Promise<StoredAsset[]>;
   /** The visible asset row at `path` (hidden when the domain opted out), for serving. */
   visibleAsset(path: string): Promise<{ domain: string } | null>;
+  /** I3b · measure a newly stored section crop from its pixels into crop_quality (absent = left to the scheduled sweep). */
+  measure?(crop: { path: string; width: number; height: number; bytes: number; domain: string }, data: Uint8Array): Promise<void>;
 };
 
 export type CropRefused = { domain: string; section: string; reason: CropRefusal | AssetRefusal };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
 
 export async function handleCropIngest(request: Request, store?: CropStore): Promise<Response> {
+  const started = Date.now();
   try {
     const db = store ?? (await adminCropStore());
     if (!await db.authenticate(request)) return json({ error: "Missing or wrong x-crawl-secret" }, 401);
@@ -83,6 +87,8 @@ export async function handleCropIngest(request: Request, store?: CropStore): Pro
       if (r === "opted_out") { await db.removeObjects([path]); refuse("opted_out"); continue; }
       if (r === "exists") { unchanged++; continue; }
       stored++; touched.add(`${c.domain}|${section}|${c.viewport}`);
+      // I3b: measured once now while the request has time; otherwise the scheduled sweep measures it (crop-measure.server.ts).
+      if (db.measure && Date.now() - started < CROP_MEASURE_MS) await db.measure({ path, width: check.width, height: check.height, bytes: check.bytes, domain: c.domain }, bytes).catch(() => null);
     }
     for (const k of touched) {
       const [domain, section, viewport] = k.split("|") as [string, CropSection, string];
@@ -188,5 +194,6 @@ async function adminCropStore(): Promise<CropStore> {
     async domainAssets(domain) { const r = await db.from("brand_assets").select(ACOLS).eq("domain", domain).limit(1000); if (r.error) fail("Asset lookup failed"); return (r.data ?? []) as StoredAsset[]; },
     async visibleAsset(path) { const r = await supabaseAnon().from("brand_assets").select("domain").eq("path", path).maybeSingle(); if (r.error) fail("Asset lookup failed"); return r.data ?? null; },
     async download(path) { const f = await db.storage.from(CROP_BUCKET).download(path); if (f.error || !f.data) return null; return new Uint8Array(await f.data.arrayBuffer()); },
+    async measure(crop, data) { await (await import("./crop-measure.server")).measureCrop(db, crop, data); },
   };
 }

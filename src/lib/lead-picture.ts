@@ -178,6 +178,17 @@ export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
   }
   return fallback(s, p);
 }
+/** I3b · the front lead's one shared caption line: what the pictures are, their capture date or dates (unless the caption already
+ *  dates them), then the rotating-hero note when it applies. */
+export function sharedLine(pl: LeadPlan): string | null {
+  const parts = (pl.caption ?? "").split(" · ").filter(Boolean);
+  const rotating = parts.filter(x => x.includes(CAROUSEL_CAPTION)), what = parts.filter(x => !x.includes(CAROUSEL_CAPTION));
+  const dates = [...new Set(pl.items.map(i => i.date))].sort();
+  const dated = !dates.length || dates.every(d => (pl.caption ?? "").includes(d));
+  const when = dated ? null : dates.length === 1 ? `captured ${dates[0]}` : `captured ${dates[0]} to ${dates[dates.length - 1]}`;
+  const out = [...what, ...(when ? [when] : []), ...rotating].join(" · ");
+  return out || null;
+}
 /** The plan's first real picture (cards and rows show one), or null. */
 export const leadThumb = (pl: LeadPlan): LeadItem | null => pl.items.find(i => i.role !== "before") ?? pl.items[0] ?? null;
 /** The Data view's "Pictures" rows: what each item is and where it came from. */

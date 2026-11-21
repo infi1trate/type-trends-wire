@@ -218,7 +218,8 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     import("../rebrands.server").then(m => m.rebrandRows()),
   ]);
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
-  const sectorOf = new Map(sites.map(x => [x.domain, x.sector]));
+  // I3b: changes count only for brands tracked now (an inactive brand is never a story candidate).
+  const sectorOf = new Map(sites.filter(x => x.active).map(x => [x.domain, x.sector]));
   const history = historyRows.filter(e => sectorOf.has(e.domain)).map(e => ({ ...e, sector: sectorOf.get(e.domain) ?? null })), events = history.filter(e => e.detected_at >= since);
   // E2e: every live change of the window (both viewports, every page) judged against the stored live captures. A failure fails the
   // build (fail closed: no change reaches a story unchecked).
@@ -236,7 +237,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
   return {
     now: new Date(now).toISOString(), events, history, runs,
-    rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since) as unknown as RebrandRow[],
+    rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since && sectorOf.has(x.domain)) as unknown as RebrandRow[],
     alerts: (alerts.data ?? []).map(a => dec({ ...a, ref: a.ref ?? null })) as BuildInput["alerts"], wire: wire.map(dec), launches: (launches.data ?? []).map(dec) as BuildInput["launches"],
     sites: sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, kind: s.site_kind, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; }),
     archive: archive.map(r => ({ domain: r.domain, sector: r.sector, quarter: r.quarter, traits: [...new Set(forecastSiteTraits(r))], measured: archiveMeasured(r) })),

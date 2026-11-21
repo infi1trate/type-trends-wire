@@ -76,6 +76,8 @@ export type StoryModel = {
   limits: string[];
   /** E4 · the template headline (a finding built from the key figure) shown when no written text has passed the check. */
   fallbackHeadline: string;
+  /** I3b · ranked lists the facts state, first entry highest (a study that ranks nothing has none). */
+  ranked?: { label: string; order: string[] }[];
 };
 /** E4 · the words a study page shows: the written text that passed the check, else the template built from the steps. */
 export type StudyScene = { lead: string; body: string };

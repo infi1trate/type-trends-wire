@@ -16,13 +16,15 @@ async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | n
   const runId = await readerRunId(db);
   const [rawEvents, sites, forecasts, wire, fonts] = await Promise.all([
     all<EventIn>((f, t) => db.from("library_events").select("id,domain,source,type,before,after,effective_at,detected_at,snapshot_id,prev_snapshot_id").in("type", [...MEASURED_EVENT_TYPES]).eq("page_type", "home").eq("viewport", "desktop").order("id").range(f, t) as never),
-    all<{ domain: string; sector: string; name: string | null }>((f, t) => db.from("library_sites").select("domain,sector,name").order("domain").range(f, t) as never),
+    all<{ domain: string; sector: string; name: string | null; active: boolean }>((f, t) => db.from("library_sites").select("domain,sector,name,active").order("domain").range(f, t) as never),
     all<ForecastIn>((f, t) => db.from("forecasts").select("dimension,value,scope,stage,status,current_share,momentum").eq("run_id", runId).eq("status", "ok").order("dimension").order("value").order("scope").range(f, t) as never),
     all<WireIn>((f, t) => db.from("wire_items").select("id,title,excerpt,url,source,source_kind,published_at").neq("source_kind", "alert").order("id").range(f, t) as never),
     all<{ family: string }>((f, t) => db.from("font_catalog").select("family").eq("source", "google").order("key").range(f, t) as never),
   ]);
   // E2e: only the passing part of each live change counts toward an identity change (integrity.ts; fails closed).
-  const events = (await (await import("./integrity.server")).checkedEvents(db, rawEvents as (EventIn & { id: number })[])).tape;
+  // I3b: rebrands only for brands tracked now.
+  const active = new Set(sites.filter(s => s.active).map(s => s.domain));
+  const events = (await (await import("./integrity.server")).checkedEvents(db, (rawEvents as (EventIn & { id: number })[]).filter(e => active.has(e.domain)))).tape;
   const ids = [...new Set(events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id]).filter((x): x is number => x != null))];
   const snaps: SideIn[] = [];
   for (let i = 0; i < ids.length; i += 200) {

@@ -135,7 +135,7 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
   const sector = s.sector ? sectorName(s.sector) : null;
   return {
     id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: census ? "Census" : def.kicker, kicker: type === "news" || census ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
-    basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil,
+    basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil, corrections: s.correctionNotes ?? [],
     // I3 · 0.4: without checked written text the page reads its facts as the body (never an empty section).
     body: s.written?.body?.length ? s.written.body.map(p => deLegacy(p)) : templateBody(census ? [] : readFacts(facts).map(f => ({ text: noDid(deLegacy(f.text)) }))), howWeKnow: noDid(storyHowWeKnow(s)),
     // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and

@@ -79,6 +79,15 @@ describe("POST /api/public/ingest-crops", () => {
     expect(m.rows[0]).toMatchObject({ path: "vercel.com/hero/2026-11-15-abcdef01.webp", hash: "abcdef0123456789", width: 1280, height: 800, run_id: "run-1", first_seen_at: "2026-11-15T06:00:00Z", last_seen_at: "2026-11-15T06:00:00Z" });
     expect(m.objects.has("vercel.com/hero/2026-11-15-abcdef01.webp")).toBe(true);
   });
+  it("I3b: a newly stored crop is measured once at intake; an unchanged one is not, and a failed measurement does not refuse the crop", async () => {
+    const m = memory(), seen: string[] = [];
+    m.store.measure = async c => { seen.push(c.path); };
+    await send(m, [cap()]);
+    await send(m, [cap({ captured_at: "2026-11-22T06:00:00Z" })]);
+    expect(seen).toEqual(["vercel.com/hero/2026-11-15-00000000.webp"]);
+    m.store.measure = async () => { throw new Error("decode failed"); };
+    expect((await send(m, [cap({ section: "nav", hash: hash(2) })])).body).toEqual({ stored: 1, unchanged: 0, refused: [] });
+  });
   it("same hash as the newest version: no new image, last_seen_at moves forward, counted unchanged", async () => {
     const m = memory();
     await send(m, [cap()]);

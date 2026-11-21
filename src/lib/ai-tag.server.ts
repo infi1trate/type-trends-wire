@@ -8,6 +8,7 @@ import { fingerprint } from "./library";
 import { jpegDimensions } from './ai-vision';
 import { extractFields, type Comparable } from "./library-diff";
 import { sameLookAndContent } from "./reread";
+import { visionReadVersion } from "./read-version";
 export async function readAiBody(request: Request): Promise<string | null> {
  if(Number(request.headers.get("content-length") ?? 0)>AI_LIMITS.body) return null;
  const reader=request.body?.getReader();if(!reader)return "";
@@ -33,24 +34,25 @@ export async function handleLibraryTag(request: Request) {
   const {data:snapshot,error}=await db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,source,signals,signals_hash,content_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source",input.source).eq("captured_at",input.captured_at).maybeSingle();
   if(error)throw new Error("Snapshot lookup failed");if(!snapshot)return Response.json({ok:false,code:"snapshot_not_found"},{status:404});
   if(snapshot.signals_hash!==input.signals_hash)return Response.json({ok:false,code:"signals_hash_mismatch"},{status:409});
-  const {data:previous,error:reuseError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,library_snapshots!inner(source)").eq("domain",input.domain).eq("signals_hash",input.signals_hash).eq("library_snapshots.source",input.source).gte("created_at",new Date(Date.now()-60*86400000).toISOString()).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const {data:previous,error:reuseError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,read_version,library_snapshots!inner(source)").eq("domain",input.domain).eq("signals_hash",input.signals_hash).eq("library_snapshots.source",input.source).gte("created_at",new Date(Date.now()-60*86400000).toISOString()).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(reuseError)throw new Error("Tag reuse lookup failed");
-  if(previous&&reusableTags(previous,input.domain,input.signals_hash)) {const tags=cleanTags(previous.tags);await storeAiResult(snapshot,"vision",previous.model,tags);return Response.json({ok:true,reused:true,tags});}
+  if(previous&&reusableTags(previous,input.domain,input.signals_hash)) {const tags=cleanTags(previous.tags);await storeAiResult(snapshot,"vision",previous.model,tags,previous.read_version??null);return Response.json({ok:true,reused:true,tags});}
   // I3 · 0.1.5: a new signals hash alone (a field added to every capture) is not a new page: when the previous capture's measured look
   // fields and content hash match this one, its reliable read is copied and the vision model is not called.
   const {data:earlier,error:earlierError}=await db.from("library_snapshots").select("id,signals,content_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source",input.source).lt("captured_at",input.captured_at).order("captured_at",{ascending:false}).limit(1).maybeSingle();
   if(earlierError)throw new Error("Previous capture lookup failed");
   if(earlier){
-   const {data:prevTags,error:prevError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model").eq("snapshot_id",earlier.id).maybeSingle();
+   const {data:prevTags,error:prevError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,read_version").eq("snapshot_id",earlier.id).maybeSingle();
    if(prevError)throw new Error("Tag reuse lookup failed");
    const ctx={page_type:"home",viewport:"desktop",sector:""};
    if(prevTags&&reusableTags(prevTags,input.domain,prevTags.signals_hash)&&sameLookAndContent({fields:extractFields(earlier.signals as Comparable,ctx),content_hash:earlier.content_hash??null},{fields:extractFields(snapshot.signals as Comparable,ctx),content_hash:snapshot.content_hash??null})){
-    const tags=cleanTags(prevTags.tags);await storeAiResult(snapshot,"vision",prevTags.model,tags);return Response.json({ok:true,reused:true,tags});
+    const tags=cleanTags(prevTags.tags);await storeAiResult(snapshot,"vision",prevTags.model,tags,prevTags.read_version??null);return Response.json({ok:true,reused:true,tags});
    }
   }
   const f=fingerprint(snapshot.signals);const {data:site}=await db.from("library_sites").select("sector").eq("domain",input.domain).single();
   const result=await inferAI({snapshot_id:snapshot.id,kind:"vision",captured_at:input.captured_at,context:JSON.stringify({domain:input.domain,sector:site?.sector,headline:f.h1,h1_font:f.h1_family,body_font:f.body_family,theme:f.theme}),images,imageLabels});
-  await storeAiResult(snapshot,"vision",result.model,result.data);
+  // I3b: a copied read keeps its source's stamp (above); a fresh read gets the stamp of the request made now.
+  await storeAiResult(snapshot,"vision",result.model,result.data,await visionReadVersion(result.model).catch(()=>null));
   return Response.json({ok:true,reused:false,tags:result.data});
  } catch(error) {return Response.json({ok:false,code:error instanceof AiFailure?error.code:"internal_error"},{status:error instanceof AiFailure?error.http:500});}
 }

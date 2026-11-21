@@ -44,7 +44,9 @@ async function load(): Promise<DataInput> {
     import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: x.id, domain: x.domain, at: x.confirmed_at, source: x.source }))).catch(() => []),
   ]);
   const raw = events.flatMap(e => { const at = e.effective_at ?? e.detected_at; return at ? [{ id: e.id, domain: e.domain, type: e.type, source: e.source, at, snapshot_id: e.snapshot_id, prev_snapshot_id: e.prev_snapshot_id, before: e.before, after: e.after }] : []; });
-  const ev: EventRow[] = await truthful(db, raw, sites);
+  // I3b: a study counts changes of brands tracked now only.
+  const tracked = new Set(sites.filter(s => s.active).map(s => s.domain));
+  const ev: EventRow[] = await truthful(db, raw.filter(e => tracked.has(e.domain)), sites);
   return { now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,
     headline: (signals?.signals ?? []).filter(s => s.tier === "headline").map(s => ({ key: s.key, name: s.name })) };
 }

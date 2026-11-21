@@ -64,7 +64,7 @@ export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
     import("./rebrands.server").then(m => m.readerRebrands()),
   ]);
   return { stories: [
-    ...(await (async () => { const evs = (await (await import("./integrity.server")).checkedEvents(db, (events ?? []) as EventRow[])).tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
+    ...(await (async () => { const active = await (await import("./active-sites.server")).activeDomains(); const evs = (await (await import("./integrity.server")).checkedEvents(db, ((events ?? []) as EventRow[]).filter(e => active.has(e.domain)))).tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
     ...rebrandAll.rows.filter(x => x.source === "live" && Date.parse(x.confirmed_at) >= now - 120 * day).map(x => fromRebrand(x as RebrandRow)),
   ] };
 });

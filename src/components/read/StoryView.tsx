@@ -133,6 +133,7 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
           left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Updated {day(s.correctedAt)}</span>}</>}
           right={<>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
+        {s.corrections?.map((c, i) => <p key={i} className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note" data-correction="">{c}</p>)}
         <Picture s={s} />
       </>,
       evidence: <>

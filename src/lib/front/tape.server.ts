@@ -15,6 +15,9 @@ async function load(): Promise<FrontTape> {
     for (const e of data ?? []) if (e.id != null && e.domain && e.type && e.detected_at) events.push(e as Row);
     if (!data || data.length < 1000) break;
   }
+  // I3b: only brands tracked now (an address that turned out to be another business leaves the tape).
+  const active = await (await import("../active-sites.server")).activeDomains();
+  events.splice(0, events.length, ...events.filter(e => active.has(e.domain)));
   const [{ latestChecks }, { reversalIds }] = await Promise.all([import("../integrity.server"), import("../reversal")]);
   const checks = await latestChecks(db, events.map(e => e.id));
   // Marks are read only for the changes behind the lines shown (each line can stand for several sightings).

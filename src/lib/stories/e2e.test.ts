@@ -29,6 +29,12 @@ describe("E2e · narrowing a gathered story", () => {
     expect(s.domains).toEqual(story.domains);
     expect(s.source_ids).toEqual(story.source_ids);
   });
+  it("I3b · a correction's dated line is kept for readers, and later corrections without one keep it", () => {
+    const note = "Corrected 21 Nov: an earlier version named Ragged Edge. The site we had on file under that name was a different business.";
+    const s = applyEdits(story, [edit({ domains: ["on.com"], correction: note }), { ...edit({ headline: "y" }), id: 2, at: "2026-11-21T16:00:00Z" }], Date.now());
+    expect(s.correctionNotes).toEqual([note]);
+    expect(applyEdits(story, [edit({ headline: "x" })], Date.now()).correctionNotes).toEqual([]);
+  });
 });
 
 import type { Check } from "../integrity";

@@ -1717,6 +1717,7 @@ export type Database = {
           created_at: string
           domain: string
           model: string
+          read_version: string | null
           signals_hash: string
           snapshot_id: number
           tags: Json
@@ -1725,6 +1726,7 @@ export type Database = {
           created_at?: string
           domain: string
           model: string
+          read_version?: string | null
           signals_hash: string
           snapshot_id: number
           tags: Json
@@ -1733,6 +1735,7 @@ export type Database = {
           created_at?: string
           domain?: string
           model?: string
+          read_version?: string | null
           signals_hash?: string
           snapshot_id?: number
           tags?: Json

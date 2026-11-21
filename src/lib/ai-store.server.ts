@@ -3,7 +3,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { advance, type Baseline, type Pending } from "./library-diff";
 import { pricingSchema, tagsSchema, type ExtractionKind } from "./ai-schema";
 import { replayArchive } from "./library-archive.server";
-export async function storeAiResult(snapshot: { id: number; domain: string; page_type: string; viewport: string; captured_at: string; source?: string }, kind: "vision" | ExtractionKind, model: string, data: Json) {
+export async function storeAiResult(snapshot: { id: number; domain: string; page_type: string; viewport: string; captured_at: string; source?: string }, kind: "vision" | ExtractionKind, model: string, data: Json, readVersion: string | null = null) {
  const baselineKind = snapshot.source === "wayback" ? `${kind}:wayback` : kind;
  for (let attempt=0;attempt<3;attempt++) {
   const { data: current, error } = await db.from("library_ai_baselines").select("*").eq("domain",snapshot.domain).eq("page_type",snapshot.page_type).eq("viewport",snapshot.viewport).eq("kind",baselineKind).maybeSingle();
@@ -16,6 +16,8 @@ export async function storeAiResult(snapshot: { id: number; domain: string; page
   if(snapshot.source==="wayback")state.events=[];
   const stored=await db.rpc("library_ai_store",{p_snapshot:snapshot.id,p_kind:kind,p_model:model,p_data:data,p_expected:current as Json,p_state:state as unknown as Json});
   if(stored.error) throw new Error("AI result write failed");
+  // I3b: stamp the stored vision read with how it was made (read-version.ts); a failed stamp leaves it null and the read stands.
+  if(stored.data && kind==="vision" && readVersion) { const {error:stampError}=await db.from("library_tags").update({read_version:readVersion}).eq("snapshot_id",snapshot.id); if(stampError) console.warn("read version stamp failed"); }
   if(stored.data) {if(snapshot.source==="wayback")await replayArchive(snapshot.domain);return;} // history: the library_tags trigger marks the domain dirty; the scheduled history job replaces its rows
  }
  throw new Error("AI confirmation contention");

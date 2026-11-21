@@ -26,7 +26,7 @@ import { BeforeAfter, CoverFigure, CropFigure } from "./Evidence";
 import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
-import { LeadFigureSlot } from "./Covers";
+import { LeadFigureCompact, LeadFigureSlot } from "./Covers";
 import { LeadPicture } from "./LeadPicture";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLive";
@@ -49,25 +49,37 @@ function FormatRow({ m }: { m: Pick<FrontModel, "sector" | "format"> }) {
   </nav>;
 }
 
-/** The lead: the page's one Plate. Kicker with the story number, H1, deck, a Raised "Receipts" button, the basis mark and the evidence slot. */
+/** The lead: the page's one Plate. Kicker with the story number, H1, deck, a Raised "Receipts" button, the basis mark and the evidence slot.
+ *  I3b: with a lead picture (pair, single, mosaic, words, swatches or card) the right column holds only the picture, with compact captions,
+ *  and from 1024 px the stat and trail sit small in the text column under the Receipts row; below 1024 px the order is kicker, headline,
+ *  deck, picture, Receipts row, stat and trail. Without one, the lead is laid out exactly as before I3. */
 function Lead({ m, now }: { m: FrontTop; now: number }) {
   const l = m.lead!, fig = leadFigure(l.evidence);
+  const kicker = <p className="ed-kicker flex flex-wrap items-center gap-x-3 gap-y-1">{l.story.number != null && <span className="plate-num">{numberLabel(l.story.number)}</span>}<span>{l.label}</span><span>{l.story.typeName}{l.story.sectorName ? ` · ${l.story.sectorName}` : ""}</span></p>;
+  const headline = <h2 id="front-lead" className="ed-h1 mt-4 break-words"><Link to="/stories/$id" params={{ id: l.story.id }} className="no-underline hover:underline">{l.story.headline}</Link></h2>;
+  const deck = l.story.line && <p className="ed-standfirst mt-5">{l.story.line}</p>;
+  const receipts = (cls: string) => <div className={`flex flex-wrap items-center gap-x-5 gap-y-3 ${cls}`}>
+    <Raised href={`/stories/${encodeURIComponent(l.story.id)}`}>Receipts →</Raised>
+    <span className="ed-data"><time dateTime={l.story.at}>{storyTime(l.story.at)}</time> · {relTime(l.story.at, now)}{l.story.corrected && <> · Corrected {l.story.corrected.slice(0, 10)}</>}</span>
+  </div>;
+  if (l.evidence?.kind === "plan") return <section aria-labelledby="front-lead"><Plate className="md:p-10">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:grid-rows-[auto_auto_1fr] lg:gap-y-6" data-lead-layout="picture">
+      <div className="min-w-0 lg:col-span-7 lg:row-start-1">{kicker}{headline}{deck}</div>
+      <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:row-start-1" data-evidence="plan"><LeadPicture plan={l.evidence.plan} compact tileSizes="(min-width: 1024px) 18vw, 50vw" /></div>
+      {receipts("lg:col-span-7 lg:row-start-2")}
+      {fig && <div className="min-w-0 lg:col-span-7 lg:row-start-3 lg:self-start"><div className="lg:hidden"><LeadFigureSlot f={fig} /></div><div className="max-lg:hidden"><LeadFigureCompact f={fig} /></div></div>}
+    </div>
+  </Plate></section>;
   return <section aria-labelledby="front-lead"><Plate className="md:p-10">
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
       <div className={l.evidence ? "lg:col-span-7" : "lg:col-span-10"}>
-        <p className="ed-kicker flex flex-wrap items-center gap-x-3 gap-y-1">{l.story.number != null && <span className="plate-num">{numberLabel(l.story.number)}</span>}<span>{l.label}</span><span>{l.story.typeName}{l.story.sectorName ? ` · ${l.story.sectorName}` : ""}</span></p>
-        <h2 id="front-lead" className="ed-h1 mt-4 break-words"><Link to="/stories/$id" params={{ id: l.story.id }} className="no-underline hover:underline">{l.story.headline}</Link></h2>
-        {l.story.line && <p className="ed-standfirst mt-5">{l.story.line}</p>}
-        <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <Raised href={`/stories/${encodeURIComponent(l.story.id)}`}>Receipts →</Raised>
-          <span className="ed-data"><time dateTime={l.story.at}>{storyTime(l.story.at)}</time> · {relTime(l.story.at, now)}{l.story.corrected && <> · Corrected {l.story.corrected.slice(0, 10)}</>}</span>
-        </div>
+        {kicker}{headline}{deck}
+        {receipts("mt-8")}
       </div>
       {l.evidence?.kind === "crops" && <figure className="lg:col-span-5" data-evidence=""><BeforeAfter before={l.evidence.before} after={l.evidence.after} /><figcaption className="ed-caption mt-2">Before → after · {l.evidence.section}</figcaption></figure>}
       {l.evidence?.kind === "crop" && <div className="lg:col-span-5" data-evidence="crop"><CropFigure crop={l.evidence.crop} label={`After · ${l.evidence.section}`} priority sizes="(min-width: 1024px) 40vw, 100vw" /></div>}
       {l.evidence?.kind === "card" && <div className="lg:col-span-5" data-evidence="card"><CoverFigure c={l.evidence.cover} /></div>}
-      {l.evidence?.kind === "plan" && <div className="min-w-0 lg:col-span-5" data-evidence="plan"><LeadPicture plan={l.evidence.plan} tileSizes="(min-width: 1024px) 18vw, 50vw" />{fig && <div className="mt-6 max-lg:hidden"><LeadFigureSlot f={fig} /></div>}</div>}
-      {fig && l.evidence?.kind !== "plan" && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
+      {fig && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
     </div>
   </Plate></section>;
 }

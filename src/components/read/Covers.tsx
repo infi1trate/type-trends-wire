@@ -29,6 +29,18 @@ export function LeadFigureSlot({ f }: { f: LeadFigureModel }) {
   </figure>;
 }
 
+/** I3b · the same figure set small for the front lead's text column (from 1024 px, beside a lead picture): the number in Stat type
+ *  beside a short trail, the coverage caption under both. */
+export function LeadFigureCompact({ f }: { f: LeadFigureModel }) {
+  return <figure className="lead-fig" data-evidence="" data-lead-figure={f.trail ? "trail" : "number"} data-compact="">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-x-6">
+      <p className="flex flex-col"><span className="ed-kicker">{f.name}</span><span className="ed-h3 mt-1 tabular-nums"><Count text={f.value} /></span><span className="ed-data">{f.unit}{f.date ? ` · ${f.date}` : ""}</span></p>
+      {f.trail ? <div className="lead-trail relative h-16 min-w-0"><Trail points={f.trail} label={`${f.name}: share of tracked homepages by quarter`} format={pctFmt} w={520} h={160} sticker={false} className="absolute inset-0" seed={f.key} /></div> : <span />}
+    </div>
+    <figcaption className="ed-caption mt-1">{f.caption} <Link to="/signals/$key" params={{ key: f.key }} className="ed-tap">Full chart →</Link></figcaption>
+  </figure>;
+}
+
 // ——— STORY COVER ———————————————————————————————————————————————————————————————————————————————————
 export type CoverObject =
   | { kind: "crop"; crop: Crop; note: string | null }

@@ -124,7 +124,9 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
       const { data: run, error: lookupError } = await db.from("crawl_runs").select("id").eq("id", payload.run_id).maybeSingle();
       if (lookupError) throw new Error("Crawler run lookup failed");
       if (!run) return Response.json({ error: "Unknown run" }, { status: 404 });
-      const rows = payload.sites.map((entry) => ({
+      // I3b: an address on file that belongs to a different business is not counted (site-corrections.ts).
+      const { isWrongSite } = await import("./site-corrections");
+      const rows = payload.sites.filter(entry => !isWrongSite(entry.domain)).map((entry) => ({
         run_id: entry.run_id, domain: entry.domain, index_name: entry.index,
         crawled_at: entry.crawled_at, ok: entry.ok,
         error: entry.error ?? null, final_url: entry.final_url ?? null,

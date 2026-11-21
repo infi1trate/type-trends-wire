@@ -15,6 +15,8 @@ export type State = "published" | "held" | "killed";
 export type Shown<S extends StoredStory = StoredStory> = S & {
   state: State; stored: { status: S["status"]; type: string; kicker: string; headline: string; deck: string | null; why_line: string | null; facts: unknown };
   pinnedUntil: string | null; correctedAt: string | null; killReason: string | null; edits: EditRow[];
+  /** I3b · dated correction lines a reader sees under the deck ("Corrected 21 Nov: …"), oldest first. */
+  correctionNotes?: string[];
 };
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 /** The subset of `stored` a correction keeps (null when the payload has no list): strings only, stored order, never an addition. */
@@ -29,6 +31,7 @@ export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: n
   const mine = edits.filter(e => e.story_id === s.id).sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
   let state: State = s.status, headline = s.headline, deck = s.deck, why = s.why_line, facts: unknown = s.facts, pinnedUntil: string | null = null, correctedAt: string | null = null, killReason: string | null = null;
   let type = s.type, kicker = s.kicker, domains = s.domains, sourceIds = s.source_ids, evidence: unknown = s.evidence;
+  const notes: string[] = [];
   for (const e of mine) {
     if (e.action === "kill") { state = "killed"; killReason = str(e.payload["reason"]); pinnedUntil = null; }
     else if (e.action === "restore") { state = "published"; killReason = null; }
@@ -44,13 +47,14 @@ export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: n
       const keepD = narrowed(e.payload["domains"], s.domains), keepS = narrowed(e.payload["source_ids"], s.source_ids), ev = e.payload["evidence"];
       if (keepD) domains = keepD; if (keepS) sourceIds = keepS;
       if (Array.isArray(ev) && ev.every(x => !!x && typeof x === "object" && typeof (x as { label?: unknown }).label === "string")) evidence = ev;
+      const c = str(e.payload["correction"]); if (c && c.trim()) notes.push(c.trim());
       correctedAt = e.at;
     }
   }
   if (pinnedUntil && (Date.parse(pinnedUntil) <= now || state !== "published")) pinnedUntil = null;
   const namedFacts = Array.isArray(facts) ? facts.map(f => (f && typeof f === "object" && typeof (f as { text?: unknown }).text === "string" ? { ...f, text: nameText((f as { text: string }).text) } : f)) : facts;
   const namedEvidence = Array.isArray(evidence) ? evidence.map(e => (e && typeof e === "object" && typeof (e as { label?: unknown }).label === "string" ? { ...e, label: nameText((e as { label: string }).label) } : e)) : evidence;
-  return { ...s, type, kicker: nameText(kicker), headline: nameText(headline), deck: nameText(deck), why_line: nameText(why), facts: namedFacts, evidence: namedEvidence, domains, source_ids: sourceIds, state, pinnedUntil, correctedAt, killReason, edits: mine, stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
+  return { ...s, type, kicker: nameText(kicker), headline: nameText(headline), deck: nameText(deck), why_line: nameText(why), facts: namedFacts, evidence: namedEvidence, domains, source_ids: sourceIds, state, pinnedUntil, correctedAt, killReason, edits: mine, correctionNotes: notes.map(n => nameText(n)), stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
 }
 export const overlay = <S extends StoredStory>(stories: S[], edits: EditRow[], now: number) => {
   const by = new Map<string, EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);

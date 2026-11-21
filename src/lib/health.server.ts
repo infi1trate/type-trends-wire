@@ -20,6 +20,9 @@ export async function healthPayload(): Promise<HealthPayload> {
     // The pause reason and probe times only add to the library_ai note; when they can't be read the job reads as before.
     value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}) } as never, new Date(now));
   } catch { value = unavailableHealth(new Date(now)); }
+  // I3b: the brand-name check is a fact beside the jobs; unreadable reads as null and never changes the status.
+  const names = await import("./name-check.server").then(m => m.brandNameCheck()).catch(() => null);
+  value = { ...value, brand_names: names };
   cache = { at: now, value };
   return value;
 }

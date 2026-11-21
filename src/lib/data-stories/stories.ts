@@ -18,7 +18,7 @@ import { qIndex } from "../forecast";
 export type Captures = Map<string, CaptureRaw[]>;
 export type Meta = { slug: string; number: number; question: string; deck: string; template: string; collection: Link; related: Link[]; series?: string; seriesTitle?: string };
 /** E4 · what a builder adds beside its steps: the scenes, the limits and the template headline. */
-type Extras = { scenes?: SceneDef[]; limits?: string[]; fallback?: string };
+type Extras = { scenes?: SceneDef[]; limits?: string[]; fallback?: string; ranked?: { label: string; order: string[] }[] };
 
 // Segments ------------------------------------------------------------------------------------------
 const pct = (v: number, href: string) => num(pctText(v), v, href);
@@ -220,6 +220,8 @@ export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryMo
         UNRANKED_LIMIT,
       ],
       fallback: lead ? `${sectorName(lead.s)} logs ${lr} changes per hundred archive captures` : `${total} measured homepage changes, sector by sector`,
+      // I3b · the ranking the facts state (busiest first), so the writer may call its ends highest and lowest.
+      ...(ranked.length >= 2 ? { ranked: [{ label: "ranked sectors by measured changes per hundred compared archive captures", order: ranked.map(r => sectorName(r.s)) }] } : {}),
     });
 }
 
@@ -287,7 +289,7 @@ function joinPairs(groups: Seg[][]): Seg[] {
 function model(m: Meta, i: DataInput, figures: Record<string, Figure>, steps: Step[], basis: StoryModel["basis"], key: StoryModel["key"], x: Extras = {}, over?: Partial<Meta>): StoryModel {
   const mm = { ...m, ...over };
   return { slug: mm.slug, number: mm.number, question: mm.question, deck: mm.deck, template: mm.template, dataThrough: lastDate(i), figures, steps, basis, collection: mm.collection, related: mm.related, key,
-    series: mm.series ?? "", seriesTitle: mm.seriesTitle ?? "", scenes: x.scenes ? resolveScenes(x.scenes, steps) : oneScenePerStep(steps), limits: (x.limits ?? []).slice(0, 3), fallbackHeadline: x.fallback ?? mm.question };
+    series: mm.series ?? "", seriesTitle: mm.seriesTitle ?? "", scenes: x.scenes ? resolveScenes(x.scenes, steps) : oneScenePerStep(steps), limits: (x.limits ?? []).slice(0, 3), fallbackHeadline: x.fallback ?? mm.question, ...(x.ranked?.length ? { ranked: x.ranked } : {}) };
 }
 /** E4 · the limit every archive-dated study carries. */
 export const ARCHIVE_LIMIT = "Archive captures are about a year apart, so a change is dated to the first capture that shows it.";

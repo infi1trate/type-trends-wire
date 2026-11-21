@@ -36,14 +36,17 @@ export const cropOk = (quality: ReadonlyMap<string, boolean>) => (c: Crop) => {
 
 export async function leadPics(name: (domain: string) => string = d => d): Promise<LeadPics> {
   const [{ picturesSafe }, read, { pickThumb }] = await Promise.all([import("./pictures.server"), import("./read.server"), import("./thumbs")]);
-  const [quality, carousel, pics, thumbs] = await Promise.all([
+  const [quality, carousel, pics, thumbs, active] = await Promise.all([
     qualityIndex().catch(() => new Map<string, boolean>()), carouselIndex().catch(() => new Set<string>()), picturesSafe(), read.allThumbs().catch(() => [] as ThumbRow[]),
+    import("./active-sites.server").then(m => m.activeDomains()),
   ]);
+  // I3b: no picture of a brand that is not tracked now.
+  const ok = cropOk(quality);
   return {
-    okCrop: cropOk(quality),
-    hero: d => { const h = pics.get(d)?.hero; return h ? heroCrop(d, h) : null; },
-    thumb: d => pickThumb(thumbs, d),
-    card: d => { const p = pics.get(d); return p ? coverOf(d, p) : null; },
+    okCrop: c => active.has(c.domain) && ok(c),
+    hero: d => { const h = active.has(d) ? pics.get(d)?.hero : null; return h ? heroCrop(d, h) : null; },
+    thumb: d => (active.has(d) ? pickThumb(thumbs, d) : null),
+    card: d => { const p = active.has(d) ? pics.get(d) : null; return p ? coverOf(d, p) : null; },
     carousel: d => carousel.has(d),
     name,
     icon: d => pics.get(d)?.icon ?? null,

@@ -19,7 +19,9 @@ export const TIMEOUT_NOTE = "callback timeout 5s — worker may be cut off";
 
 export type HealthStatus = "ok" | "degraded" | "down";
 export type JobHealth = { job: string; last_ok_at: string | null; last_run_at: string | null; last_status: string; expected_every: Every; stale: boolean; consecutive_failures: number; note?: string };
-export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[] };
+/** I3b · health only (never reader-facing, never changes `status`): tracked brands whose name is missing from their latest home page title and headline. */
+export type BrandNameFacts = { checked_at: string; checked: number; not_captured: string[]; failing: { domain: string; name: string; title: string | null; h1: string | null }[] };
+export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null };
 
 const ts = z.string().nullable().optional().transform(v => v ?? null);
 const num = z.coerce.number().nullable().optional().transform(v => v ?? 0);
