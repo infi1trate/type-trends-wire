@@ -7,7 +7,7 @@ import type { TraitPage } from "@/lib/digest/trait";
 import { pct, pts } from "@/lib/digest/copy";
 import { sectorName } from "@/lib/labels";
 import { topicAnchor, topicName, topicOfSignal } from "@/lib/indicators/topics";
-import { BasisWord, DigestShell, DigestFooter, Dim, Figure, SiteCard, StageWord, pr } from "@/components/digest/Editorial";
+import { BasisWord, DigestShell, DigestFooter, Dim, SiteCard, StageWord, pr } from "@/components/digest/Editorial";
 import { LedgerCall } from "@/components/digest/LedgerView";
 import { EmbedPanel } from "@/components/embed/EmbedPanel";
 import { AppLink } from "@/components/terminal/AppLink";
@@ -17,6 +17,7 @@ import { RelatedStories } from "./StoryCard";
 import { Raised, RuleBox } from "@/components/brand/Containers";
 import { FiltersScope, Trail } from "@/components/brand/Illustration";
 import { Count } from "@/components/brand/Motion";
+import { QuarterLine } from "@/components/chartkit";
 
 export function SignalView({ page: p, sector }: { page: TraitPage; sector: string }) {
   const footer = { methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: p.terminal, contact: null };
@@ -57,7 +58,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
       </header>,
       evidence: <>
         <BlockPart title="Share by quarter" kicker="Solid line measured, band forecast (80% interval). Only quarters with at least 15 sites and 25% archive coverage are drawn.">
-          {p.card ? <><Figure card={p.card} label={`${p.name}: share of tracked homepages by quarter, with the forecast band`} caption={<>Source: forecast run {p.runId ?? "—"}, data through {p.dataThrough ?? "—"}.</>} /><div className="mt-4"><EmbedPanel target={{ kind: "trait", key: p.key }} title={`${p.name} [${p.dimension}]`} /></div></> : <p className="ed-body">{p.chartNote}</p>}
+          {p.card ? <><QuarterLine look="read" card={p.card} label={`${p.name}: share of tracked homepages by quarter, with the forecast band`} caption={<>Source: forecast run {p.runId ?? "—"}, data through {p.dataThrough ?? "—"}.</>} /><div className="mt-4"><EmbedPanel target={{ kind: "trait", key: p.key }} title={`${p.name} [${p.dimension}]`} /></div></> : <p className="ed-body">{p.chartNote}</p>}
         </BlockPart>
         {p.sectors.length > 0 && <BlockPart title="Where it leads" kicker="Sectors whose share is above the all-sector share.">
           <RuleBox><ul className="grid grid-cols-1 gap-6 md:grid-cols-3">{p.sectors.map(s => <li key={s.sector} className="min-w-0"><p className="ed-h3">{sectorName(s.sector)}</p><p className="ed-data mt-1 flex flex-wrap items-center gap-2">{pct(s.share, 1)} <span className="ed-muted">(+{(s.lead * 100).toFixed(1)} pts vs all)</span><StageWord stage={s.stage} /></p></li>)}</ul></RuleBox>

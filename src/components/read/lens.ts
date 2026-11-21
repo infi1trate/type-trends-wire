@@ -3,6 +3,7 @@ import { useCallback, useEffect } from "react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { resolveSector, sectorStore } from "@/lib/sector-lens";
 import { isDataView, objectOf, toggleHref } from "@/lib/ia";
+import { readablePath } from "@/lib/path-text";
 
 const withParam = (pathname: string, searchStr: string, hash: string, key: string, value: string | null) => {
   const sp = new URLSearchParams(searchStr.startsWith("?") ? searchStr.slice(1) : searchStr);
@@ -12,7 +13,8 @@ const withParam = (pathname: string, searchStr: string, hash: string, key: strin
   return `${pathname}${q ? `?${q}` : ""}${hash ? `#${hash}` : ""}`;
 };
 export function useLocationParts() {
-  return useRouterState({ select: s => ({ pathname: s.location.pathname, search: s.location.search as Record<string, unknown>, searchStr: s.location.searchStr, hash: s.location.hash }) });
+  // The readable path (path-text.ts), so links and text built from it are the same on the server and in the browser.
+  return useRouterState({ select: s => ({ pathname: readablePath(s.location.pathname), search: s.location.search as Record<string, unknown>, searchStr: s.location.searchStr, hash: s.location.hash }) });
 }
 /** The `?sector=` lens: URL first (so SSR and hydration agree), then the device's remembered choice; storage failures read as All. */
 export function useSectorLens(): [string, (s: string) => void] {

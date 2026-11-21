@@ -8,6 +8,7 @@ import { Empty, PanelHeader } from "./primitives";
 import { StageBadge } from "./Info";
 const pct = (v: number | null) => (v == null ? "—" : `${(v * 100).toFixed(1)}%`);
 import type { MorningItem } from "@/lib/editions/morning";
+import { CsvScope } from "@/components/dataview/CopyCsv";
 
 const Row = ({ s, n }: { s: MorningItem; n: number | string }) => <li className="border-b border-rule last:border-b-0">
   <Link to="/stories/$id" params={{ id: s.id }} className="group grid min-h-11 grid-cols-[3ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[3ch_1fr_auto]">
@@ -54,13 +55,13 @@ export function SectorsTab({ sector }: { sector: string }) {
   return <section aria-label="Sector reports" className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
     <PanelHeader title="SECTOR REPORTS · QUARTERLY" g="s-digest" meta={data ? <>{data.sectors.filter(s => s.enough).length}/{data.sectors.length} COVERED</> : null} />
     {!data ? <p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p> : <ol className="divide-y divide-rule">{data.sectors.map(s => <li key={s.sector}><Link to="/sectors/$sector" params={{ sector: s.sector }} className="grid min-h-11 grid-cols-[18ch_1fr] gap-x-2 p-3 hover:bg-g900" aria-current={s.sector === pick ? "true" : undefined}>
-      <span className={s.sector === pick ? "text-signal" : "text-ink"}>{s.name.toUpperCase()}</span><span className="label text-g500">{s.brands} BRANDS · {s.covered}/{s.total} MEASURED · {s.stories} STORIES{s.enough ? "" : " · LOW COVERAGE"}</span></Link></li>)}</ol>}
+      <span className={s.sector === pick ? "text-highlight" : "text-ink"}>{s.name.toUpperCase()}</span><span className="label text-g500">{s.brands} BRANDS · {s.covered}/{s.total} MEASURED · {s.stories} STORIES{s.enough ? "" : " · LOW COVERAGE"}</span></Link></li>)}</ol>}
     {r && <div className="border-t border-rule">
       <PanelHeader title={r.title.toUpperCase()} meta={<>AS OF {storyTime(r.as_of).toUpperCase()}</>} />
-      {r.signals.length ? <table className="w-full text-left"><caption className="sr-only">Headline signals in {r.name}</caption>
+      {r.signals.length ? <CsvScope><table className="w-full text-left"><caption className="sr-only">Headline signals in {r.name}</caption>
         <thead><tr className="label text-g500"><th scope="col" className="p-2 font-normal">SIGNAL</th><th scope="col" className="p-2 font-normal">HERE</th><th scope="col" className="p-2 font-normal">ALL</th><th scope="col" className="p-2 font-normal">MOMENTUM · ALL SECTORS</th></tr></thead>
         <tbody>{r.signals.map(s => <tr key={s.key} className="border-t border-rule"><th scope="row" className="p-2 font-normal text-ink">{s.name}</th><td className="p-2"><StageBadge stage={s.here.stage} /> <span className="num">{pct(s.here.share)}</span></td><td className="p-2"><StageBadge stage={s.all.stage} /> <span className="num">{pct(s.all.share)}</span></td><td className="num p-2">{s.momentum_all ?? "—"}</td></tr>)}</tbody>
-      </table> : <Empty why={r.note ?? voiced("terminal.editions.5")} />}
+      </table></CsvScope> : <Empty why={r.note ?? voiced("terminal.editions.5")} />}
       <p className="label p-3 text-g500">{r.basis}</p>
     </div>}
   </section>;

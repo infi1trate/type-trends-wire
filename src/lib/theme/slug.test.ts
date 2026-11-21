@@ -70,7 +70,7 @@ describe("the slug theme", () => {
   });
   it("focus is a 3 px ink outline with a yellow offset ring in light mode", () => {
     expect(slug.modes.light.focus).toEqual({ ring: K.color.ink, width: "3px", offset: "3px", halo: K.color.yellow });
-    expect(readFileSync("src/styles.css", "utf8")).toMatch(/:focus-visible \{\n\s+outline: var\(--tk-focus-width\) solid var\(--tk-focus-ring\);\n\s+outline-offset: var\(--tk-focus-offset\);\n\s+box-shadow: 0 0 0 var\(--tk-focus-offset\) var\(--tk-focus-halo\);/);
+    expect(readFileSync("src/styles.css", "utf8")).toMatch(/:focus-visible \{\n\s+outline: var\(--tk-focus-width\) solid var\(--sys-color-focus\);\n\s+outline-offset: var\(--tk-focus-offset\);\n\s+box-shadow: 0 0 0 var\(--tk-focus-offset\) var\(--tk-focus-halo\);/);
   });
 });
 
@@ -127,9 +127,9 @@ describe("fonts", () => {
   });
   it("the utility face sets only code-like values on Read pages: .ed-code, the data role and the terminal", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    const mono = [...css.matchAll(/([^{}]+)\{([^{}]*var\(--tk-font-mono\)[^{}]*)\}/g)].map(m => m[1]!.trim().split("\n").pop()!.trim());
+    const mono = [...css.matchAll(/([^{}]+)\{([^{}]*var\(--sys-font-mono\)[^{}]*)\}/g)].map(m => m[1]!.trim().split("\n").pop()!.trim());
     // Tailwind's font-mono utility, code-like values, and printed addresses (link URLs, the sheet foot and the footnote list).
     expect(mono.sort()).toEqual([".digest .ed-code, .tk-code", ".digest .print-foot", ".digest .print-notes", ".digest a[data-print]::after", "@theme inline"]);
-    expect(css).not.toMatch(/\.ed-(h1|h2|h3|h4|cover|mast|kicker|standfirst|navtext)[^{]*\{[^}]*--tk-font-mono/);
+    expect(css).not.toMatch(/\.ed-(h1|h2|h3|h4|cover|mast|kicker|standfirst|navtext)[^{]*\{[^}]*--(tk|sys)-font-mono/);
   });
 });

@@ -34,6 +34,7 @@ import { Route as BrandIllustrationRouteImport } from './routes/brand.illustrati
 import { Route as BrandMarkRouteImport } from './routes/brand.mark'
 import { Route as BrandMotionRouteImport } from './routes/brand.motion'
 import { Route as BrandSpaceRouteImport } from './routes/brand.space'
+import { Route as BrandSystemRouteImport } from './routes/brand.system'
 import { Route as BrandTypeRouteImport } from './routes/brand.type'
 import { Route as BrandsIndexRouteImport } from './routes/brands.index'
 import { Route as BrandsDomainRouteImport } from './routes/brands.$domain'
@@ -226,6 +227,11 @@ const BrandMotionRoute = BrandMotionRouteImport.update({
 const BrandSpaceRoute = BrandSpaceRouteImport.update({
   id: '/brand/space',
   path: '/brand/space',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandSystemRoute = BrandSystemRouteImport.update({
+  id: '/brand/system',
+  path: '/brand/system',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandTypeRoute = BrandTypeRouteImport.update({
@@ -601,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/brand/mark': typeof BrandMarkRoute
   '/brand/motion': typeof BrandMotionRoute
   '/brand/space': typeof BrandSpaceRoute
+  '/brand/system': typeof BrandSystemRoute
   '/brand/type': typeof BrandTypeRoute
   '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
@@ -696,6 +703,7 @@ export interface FileRoutesByTo {
   '/brand/mark': typeof BrandMarkRoute
   '/brand/motion': typeof BrandMotionRoute
   '/brand/space': typeof BrandSpaceRoute
+  '/brand/system': typeof BrandSystemRoute
   '/brand/type': typeof BrandTypeRoute
   '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
@@ -792,6 +800,7 @@ export interface FileRoutesById {
   '/brand/mark': typeof BrandMarkRoute
   '/brand/motion': typeof BrandMotionRoute
   '/brand/space': typeof BrandSpaceRoute
+  '/brand/system': typeof BrandSystemRoute
   '/brand/type': typeof BrandTypeRoute
   '/brands/$domain': typeof BrandsDomainRoute
   '/chart/$week': typeof ChartWeekRoute
@@ -889,6 +898,7 @@ export interface FileRouteTypes {
     | '/brand/mark'
     | '/brand/motion'
     | '/brand/space'
+    | '/brand/system'
     | '/brand/type'
     | '/brands/$domain'
     | '/chart/$week'
@@ -984,6 +994,7 @@ export interface FileRouteTypes {
     | '/brand/mark'
     | '/brand/motion'
     | '/brand/space'
+    | '/brand/system'
     | '/brand/type'
     | '/brands/$domain'
     | '/chart/$week'
@@ -1079,6 +1090,7 @@ export interface FileRouteTypes {
     | '/brand/mark'
     | '/brand/motion'
     | '/brand/space'
+    | '/brand/system'
     | '/brand/type'
     | '/brands/$domain'
     | '/chart/$week'
@@ -1175,6 +1187,7 @@ export interface RootRouteChildren {
   BrandMarkRoute: typeof BrandMarkRoute
   BrandMotionRoute: typeof BrandMotionRoute
   BrandSpaceRoute: typeof BrandSpaceRoute
+  BrandSystemRoute: typeof BrandSystemRoute
   BrandTypeRoute: typeof BrandTypeRoute
   BrandsDomainRoute: typeof BrandsDomainRoute
   ChartWeekRoute: typeof ChartWeekRoute
@@ -1423,6 +1436,13 @@ declare module '@tanstack/react-router' {
       path: '/brand/space'
       fullPath: '/brand/space'
       preLoaderRoute: typeof BrandSpaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand/system': {
+      id: '/brand/system'
+      path: '/brand/system'
+      fullPath: '/brand/system'
+      preLoaderRoute: typeof BrandSystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brand/type': {
@@ -1927,6 +1947,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrandMarkRoute: BrandMarkRoute,
   BrandMotionRoute: BrandMotionRoute,
   BrandSpaceRoute: BrandSpaceRoute,
+  BrandSystemRoute: BrandSystemRoute,
   BrandTypeRoute: BrandTypeRoute,
   BrandsDomainRoute: BrandsDomainRoute,
   ChartWeekRoute: ChartWeekRoute,

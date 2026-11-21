@@ -1,7 +1,7 @@
-// One information architecture: six sections, four object types, two modes. Pure.
+// One information architecture: seven sections, four object types, two modes. Pure.
 // Every page route, old terminal panel, terminal tab, key and console command family resolves through this file (ia.test.ts checks for orphans).
 
-export type SectionId = "live" | "signals" | "brands" | "patterns" | "digest" | "tools";
+export type SectionId = "live" | "signals" | "brands" | "patterns" | "studies" | "digest" | "tools";
 export type Mode = "read" | "terminal";
 export type Section = { id: SectionId; label: string; purpose: string; read: string; terminal: TabId; key: string };
 
@@ -27,6 +27,7 @@ export const TABS = [
   { id: "rebrands", section: "brands", label: "MOVES" },
   { id: "history", section: "brands", label: "HISTORY" },
   { id: "patterns", section: "patterns", label: "PATTERNS" },
+  { id: "studies", section: "studies", label: "STUDIES" },
   { id: "digest", section: "digest", label: "ISSUES" },
   { id: "morning", section: "digest", label: "MORNING LINE" },
   { id: "sectors", section: "digest", label: "SECTOR REPORTS" },
@@ -40,13 +41,15 @@ export type TabId = (typeof TABS)[number]["id"];
 export type ViewId = TabId | "composition";
 export const SUB_VIEWS: Record<"composition", TabId> = { composition: "layout" };
 
+/** U3 · the seven sections, in one order for both modes: the Read bar and the terminal's F-keys both come from here. */
 export const SECTIONS: readonly Section[] = [
   { id: "live", label: "Today", purpose: "The front page: today's stories, the tape of confirmed changes and the rest of the week.", read: "/", terminal: "today", key: "F1" },
   { id: "signals", label: "Signals", purpose: "The design signals worth a decision, ranked, each with its receipts.", read: "/signals", terminal: "overview", key: "F2" },
   { id: "brands", label: "Brands", purpose: "Who is doing it: tracked brands, their identity and every confirmed move.", read: "/brands", terminal: "library", key: "F3" },
   { id: "patterns", label: "Patterns", purpose: "Signals seen as examples: the brands that show each layout pattern.", read: "/patterns", terminal: "patterns", key: "F4" },
-  { id: "digest", label: "Digest", purpose: "The editions: the daily Morning Line, the weekly Digest and quarterly sector reports.", read: "/digest", terminal: "digest", key: "F5" },
-  { id: "tools", label: "Tools", purpose: "Where to act: audits, watchlists, the forecast ledger and agent access.", read: "/tools", terminal: "watch", key: "F6" },
+  { id: "studies", label: "Studies", purpose: "Longer arguments from the stored history: each study, its figures and the check that keeps it live.", read: "/data", terminal: "studies", key: "F5" },
+  { id: "digest", label: "Digest", purpose: "The editions: the daily Morning Line, the weekly Digest and quarterly sector reports.", read: "/digest", terminal: "digest", key: "F6" },
+  { id: "tools", label: "Tools", purpose: "Where to act: audits, watchlists, the forecast ledger and agent access.", read: "/tools", terminal: "watch", key: "F7" },
 ];
 
 /** EDITIONS — the shapes people subscribe to in their heads, all under the Digest section, each with its rhythm. */
@@ -95,13 +98,13 @@ export function stepTab(v: ViewId, dir: 1 | -1): TabId {
   return tabs[(i + dir + tabs.length) % tabs.length]!.id;
 }
 
-// KEYS — F1–F6 (and 1–6) open sections; old keys are aliases to where their panel now lives.
+// KEYS — F1–F7 (and 1–7) open the seven sections; old keys are aliases to where their panel now lives. U3: F7 is Tools now, so the old
+// F7 (Vibe map) alias gave way; F5 and F6 open Studies and Digest (Digest keeps D, Tools keeps W).
 export type KeyTarget = { section: SectionId } | { view: ViewId } | { action: "glossary" | "console" | "mode" | "prev-tab" | "next-tab" | "close" };
 export type KeyDef = { key: string; target: KeyTarget; label: string; alias?: true };
 export const KEY_MAP: readonly KeyDef[] = [
   ...SECTIONS.map(s => ({ key: s.key, target: { section: s.id }, label: s.label })),
   { key: "T", target: { view: "today" }, label: "Today", alias: true },
-  { key: "F7", target: { view: "vibe" }, label: "Signals · Vibe map", alias: true },
   { key: "F8", target: { view: "wire" }, label: "Today · Wire", alias: true },
   { key: "F9", target: { view: "rebrands" }, label: "Brands · Moves", alias: true },
   { key: "F10", target: { view: "brief" }, label: "Signals · Forecast", alias: true },
@@ -116,9 +119,9 @@ export const KEY_MAP: readonly KeyDef[] = [
   { key: "/", target: { action: "console" }, label: "Console" },
   { key: "Esc", target: { action: "close" }, label: "Close overlay" },
 ];
-/** A pressed key (event.key) → its definition. Letters are case-insensitive; digits 1–6 open sections; ArrowLeft/Right step tabs. */
+/** A pressed key (event.key) → its definition. Letters are case-insensitive; digits 1–7 open sections; ArrowLeft/Right step tabs. */
 export function resolveKey(key: string): KeyDef | null {
-  if (/^[1-6]$/.test(key)) return KEY_MAP.find(k => k.key === `F${key}`) ?? null;
+  if (/^[1-7]$/.test(key)) return KEY_MAP.find(k => k.key === `F${key}`) ?? null;
   if (key === "ArrowLeft") return KEY_MAP.find(k => k.key === "[") ?? null;
   if (key === "ArrowRight") return KEY_MAP.find(k => k.key === "]") ?? null;
   if (key === "Escape") return KEY_MAP.find(k => k.key === "Esc") ?? null;
@@ -192,7 +195,7 @@ export const readHref = (o: ObjectRef, search: Record<string, unknown> = {}) => 
 /** Reader-facing names of the object types, one per type, used by both views (Part 4: one name per thing). */
 export const OBJECT_NAME: Record<ViewObject, string> = { story: "Story", brand: "Brand", signal: "Signal", pattern: "Pattern", study: "Study", week: "The Digest" };
 /** The section an object belongs to (F-keys and [ ] in its Data view work from there). */
-export const OBJECT_SECTION: Record<ViewObject, SectionId> = { story: "live", brand: "brands", signal: "signals", pattern: "patterns", study: "signals", week: "digest" };
+export const OBJECT_SECTION: Record<ViewObject, SectionId> = { story: "live", brand: "brands", signal: "signals", pattern: "patterns", study: "studies", week: "digest" };
 /** The two views' names, shown on the switch. */
 export const VIEW_NAME = { read: "Read", data: "Data" } as const;
 /** The switch's two words, the same on every page: on an object page "Terminal" is its Data view. */
@@ -261,6 +264,7 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     case "what-we-show": return t("overview");
     case "brands": return t(search["tab"] === "moves" ? "rebrands" : "library");
     case "patterns": return t("patterns");
+    case "data": return t("studies");
     case "digest": case "chart": case "editions": return t("digest");
     case "morning": return t("morning");
     case "sectors": return terminalHref("sectors", { sector: seg[1] ?? sector });
@@ -271,23 +275,27 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
     default: return t("today");
   }
 }
-// THE READ BAR (E3) — the Read shell's one bar, in order: Today, Signals, Brands, Patterns, Studies, Digest, then More, one menu holding
-// Tools, the glossary and the pages that explain the newsroom. Below 1024 px the same items, in the same order, sit in the Menu sheet.
-// Addresses never change: Today is `/`, Studies is the data stories index (/data). Sections (above) stay the terminal's six.
-export type BarId = "today" | "signals" | "brands" | "patterns" | "studies" | "digest";
-export const READ_BAR: readonly { id: BarId; label: string; href: string }[] = [
-  { id: "today", label: "Today", href: "/" },
-  { id: "signals", label: "Signals", href: "/signals" },
-  { id: "brands", label: "Brands", href: "/brands" },
-  { id: "patterns", label: "Patterns", href: "/patterns" },
-  { id: "studies", label: "Studies", href: "/data" },
-  { id: "digest", label: "Digest", href: "/digest" },
-];
+// THE READ BAR (E3, U3) — the Read shell's one bar: the seven sections in the order SECTIONS gives them (Today, Signals, Brands,
+// Patterns, Studies, Digest, Tools), then More, one menu holding the glossary and the pages that explain the newsroom. Tools sits in the
+// bar from 1024 px (`wide`); below 1024 px the bar moves into the Menu sheet and Tools sits under More there. Addresses never change.
+export type BarId = "today" | "signals" | "brands" | "patterns" | "studies" | "digest" | "tools";
+const BAR_ID: Record<SectionId, BarId> = { live: "today", signals: "signals", brands: "brands", patterns: "patterns", studies: "studies", digest: "digest", tools: "tools" };
+export const READ_BAR: readonly { id: BarId; label: string; href: string; wide?: true }[] = SECTIONS.map(s => ({ id: BAR_ID[s.id], label: s.label, href: s.read, ...(s.id === "tools" ? { wide: true as const } : {}) }));
+/** U3 · the Read view's keys, as in the terminal: 1–7 open the seven sections' Read addresses; "/" goes to search: the page's own search
+ *  field when it has one ("focus-search"), else the brand directory (its search field takes focus on arrival). Other keys: null (`?` and backtick are handled beside it). */
+export function readKeyHref(key: string, pageHasSearch: boolean): string | "focus-search" | null {
+  if (/^[1-7]$/.test(key)) return SECTIONS[Number(key) - 1]!.read;
+  if (key === "/") return pageHasSearch ? "focus-search" : "/brands";
+  return null;
+}
+/** The section a Read bar item opens (the number keys 1–7 follow this order). */
+export const barSection = (id: BarId): SectionId => SECTIONS.find(s => BAR_ID[s.id] === id)!.id;
 export const MORE_LABEL = "More";
 export type MoreId = "tools" | "glossary" | "story-rules" | "what-we-show" | "rss";
-/** The More menu. `href: null` opens the glossary overlay in place (the `?` key does the same). */
-export const MORE_MENU: readonly { id: MoreId; label: string; href: string | null }[] = [
-  { id: "tools", label: "Tools", href: "/tools" },
+/** The More menu. `href: null` opens the glossary overlay in place (the `?` key does the same). Tools is listed only below 1024 px
+ *  (`narrow`), where the bar itself is in the Menu sheet. */
+export const MORE_MENU: readonly { id: MoreId; label: string; href: string | null; narrow?: true }[] = [
+  { id: "tools", label: "Tools", href: "/tools", narrow: true },
   { id: "glossary", label: "Glossary", href: null },
   { id: "story-rules", label: "What makes a story", href: "/what-we-show#ed-w-story" },
   { id: "what-we-show", label: "What we show and why", href: "/what-we-show" },
@@ -296,16 +304,16 @@ export const MORE_MENU: readonly { id: MoreId; label: string; href: string | nul
 /** Which bar item a Read path lights up: a bar item, More (Tools and the explainer pages), or nothing. */
 export function readBarOf(pathname: string): BarId | "more" | null {
   const s = pathname.split("/").filter(Boolean)[0];
-  if (s === "data") return "studies";
   if (s === "what-we-show") return "more";
   const sec = readSectionOf(pathname);
-  return sec === "live" ? "today" : sec === "tools" ? "more" : sec;
+  return sec ? BAR_ID[sec] : null;
 }
 /** The Read section a path belongs to (for the active nav item). */
 export function readSectionOf(pathname: string): SectionId | null {
   const s = pathname.split("/").filter(Boolean)[0];
   if (!s || s === "stories" || s === "ambient") return "live";
-  if (s === "signals" || s === "trait" || s === "what-we-show" || s === "data") return "signals";
+  if (s === "data") return "studies";
+  if (s === "signals" || s === "trait" || s === "what-we-show") return "signals";
   if (s === "brands") return "brands";
   if (s === "patterns" || s === "collections") return "patterns";
   if (["digest", "chart", "morning", "sectors", "editions"].includes(s)) return "digest";
@@ -328,11 +336,11 @@ export const SURFACES: Record<string, Surface> = {
   "signals.index": S("signals", "read", "shown", "Headline signals ranked, dimension tabs, tier switch for the curious."),
   "signals.$key": S("signals", "read", "shown", "Signal object page (was the trait explainer)."),
   "signals.leading": S("signals", "read", "shown", "Leading indicators: npm installs, GitHub stars and Google Fonts risers by topic; Data view at ?view=data (same address)."),
-  "data.index": S("signals", "read", "shown", "Studies home: heading, lead study, the three series with their numbered studies, the in-the-works shelf (drafts and adoption candidates with their wait and earliest date) and the brand tool row. Gated."),
-  "data.$slug": S("signals", "read", "shown", "One study as an argument: headline block, opening, three to five scenes (sticky figure on wide screens; ?step= opens the scene holding that old step), what to do with it, limits, 01 Evidence, 02 Related. Gated."),
-  "data.where-you-sit": S("signals", "read", "shown", "A tool, not a study (no number): one tracked brand (?brand=) in its sector field, its strip and the signals that set it apart. Gated."),
-  "data.{$slug}[.]png": S("signals", "both", "quiet", "Study share image (Study No. N and the written headline); gated while DATA_STORIES_PUBLIC is false."),
-  "data.embed.$slug": S("signals", "read", "quiet", "One step of a study as a standalone page (?step=); gated while DATA_STORIES_PUBLIC is false."),
+  "data.index": S("studies", "read", "shown", "Studies home: heading, lead study, the three series with their numbered studies, the in-the-works shelf (drafts and adoption candidates with their wait and earliest date) and the brand tool row. Gated."),
+  "data.$slug": S("studies", "read", "shown", "One study as an argument: headline block, opening, three to five scenes (sticky figure on wide screens; ?step= opens the scene holding that old step), what to do with it, limits, 01 Evidence, 02 Related. Gated."),
+  "data.where-you-sit": S("studies", "read", "shown", "A tool, not a study (no number): one tracked brand (?brand=) in its sector field, its strip and the signals that set it apart. Gated."),
+  "data.{$slug}[.]png": S("studies", "both", "quiet", "Study share image (Study No. N and the written headline); gated while DATA_STORIES_PUBLIC is false."),
+  "data.embed.$slug": S("studies", "read", "quiet", "One step of a study as a standalone page (?step=); gated while DATA_STORIES_PUBLIC is false."),
   "stories.$id": S("live", "read", "shown", "Story object page: headline, facts with receipts, so-what with why-this-ran, related; backtick opens Terminal › Live › Today with it focused."),
   "desk": S("tools", "read", "quiet", "Editor's desk: today's queue (ran, held, killed) with scores and edit history; actions need the editor key, kept in memory for the tab."),
   "trait.$key": S("signals", "read", "quiet", "Redirects to /signals/<key>; kept so old links and share cards work."),
@@ -362,6 +370,7 @@ export const SURFACES: Record<string, Surface> = {
   "chart.{$week}[.]png": S("digest", "both", "quiet", "Chart share image (open)."),
   "chart.{$week}[.]svg": S("digest", "both", "quiet", "Chart vector image (open)."),
   "tools": S("tools", "read", "shown", "One page linking every ACT tool."),
+  "brand.system": S("tools", "read", "quiet", "Brand › The system (U3): every design-system value by name with its Read and Data value and a live sample, every kit chart in both looks from one fixture, and the key map; gated like /brand."),
   "brand.index": S("tools", "read", "quiet", "The brand: overview of the approved slug brand (P · Extra Fine) built from the live tokens; gated while BRAND_PUBLIC is false, linked from /tools and /kit."),
   "brand.mark": S("tools", "read", "quiet", "Brand › The mark: construction, clear space, the three cuts, the s, tiles and app icon, grounds, what not to do."),
   "brand.colour": S("tools", "read", "quiet", "Brand › Colour: proportions, roles with hex, job and limit, live contrast from the tokens, stage colours, three modes."),
@@ -407,6 +416,7 @@ export const SURFACES: Record<string, Surface> = {
   "panel:rebrands": S("brands", "terminal", "shown", "Brands · Moves: rebrands and recent changes (old F9)."),
   "panel:history": S("brands", "terminal", "shown", "Brands · History (old F12)."),
   "panel:patterns": S("patterns", "terminal", "shown", "Patterns: dense pattern list."),
+  "panel:studies": S("studies", "terminal", "shown", "Studies (F5): every study with its status, its live check and written text, each linking to its Data view."),
   "panel:digest": S("digest", "terminal", "shown", "Digest issues in terminal density (key D)."),
   "panel:morning": S("digest", "terminal", "shown", "Digest › Morning Line: today's edition in terminal density."),
   "panel:sectors": S("digest", "terminal", "shown", "Digest › Sector reports: sectors with coverage, opening each report."),
@@ -449,7 +459,7 @@ export const DENSITY: Record<string, Density | "none"> = {
   ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",
   "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet",
   "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
-  "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.space": "quiet",
+  "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.system": "quiet", "brand.space": "quiet",
   "brand.illustration": "quiet", "brand.motion": "quiet", "brand.downloads": "quiet",
   terminal: "loud", "library.$domain": "loud", "ambient.index": "loud", "ambient.setup": "steady", "status_.launch": "steady", "chart.index": "loud", "chart.$week": "loud", kit: "loud",
   "front[.]json": "none", "digest.rss[.]xml": "none", "digest.{$week}[.]png": "none", "morning.rss[.]xml": "none", "chart.{$week}[.]png": "none", "chart.{$week}[.]svg": "none",

@@ -10,6 +10,7 @@ export const BRAND_PAGES = [
   { slug: "illustration", path: "/brand/illustration", title: "Illustration", line: "Something printed, something made by hand, something with volume." },
   { slug: "motion", path: "/brand/motion", title: "Motion", line: "Objects squash. Pages cut. Data counts to its value." },
   { slug: "downloads", path: "/brand/downloads", title: "Downloads", line: "The kit: outlined logo files, tokens, motion, filters and the guidelines." },
+  { slug: "system", path: "/brand/system", title: "The system", line: "One set of named values. Read and Data are two mappings of the same names." },
 ] as const;
 export type BrandPageSlug = (typeof BRAND_PAGES)[number]["slug"];
 

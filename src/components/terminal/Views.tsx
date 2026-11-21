@@ -39,7 +39,7 @@ export function Overview({ go, freshIds }: { go: (p: PanelId) => void; freshIds:
           {isLoading ? <Loading /> : top ? (
             <span className="flex flex-wrap items-baseline gap-x-2">
               <span className="truncate">{top.name}</span>
-              <span className="text-signal">{top.momentum_index}</span>
+              <span className="text-highlight">{top.momentum_index}</span>
             </span>
           ) : dash}
         </Stat>

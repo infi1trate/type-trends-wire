@@ -3,7 +3,7 @@
 // the numbers line, corrections when needed, and three links to keep reading. Cream page, hairline rows, no gallery.
 import { Link } from "@tanstack/react-router";
 import type { Edition, EditionRow } from "@/lib/digest/edition";
-import { DigestShell, DigestFooter, Figure, SectionHead, pr } from "./Editorial";
+import { DigestShell, DigestFooter, SectionHead, pr } from "./Editorial";
 import { StoryCover } from "@/components/read/Covers";
 import { BeforeAfter, CropFigure } from "@/components/read/Evidence";
 import { FiltersScope } from "@/components/brand/Illustration";
@@ -11,6 +11,7 @@ import { StoryNo } from "@/components/brand/Ledger";
 import { Receipt } from "@/components/read/StoryCard";
 import { longDate } from "@/lib/digest/week";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { QuarterLine } from "@/components/chartkit";
 
 const LONG = 48;
 const footerOf = (e: Edition) => ({ methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: "/", contact: CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Correction: ${e.name} No. ${e.number}`)}` : null });
@@ -53,7 +54,7 @@ export function EditionView({ issue: e, latest = false }: { issue: Edition; late
 
         {e.chart && <section aria-labelledby="dg-chart" className="mt-16 lg:mt-20" data-digest-chart="">
           <SectionHead n={next()} title={`${e.chart.name}, by quarter`} id="dg-chart" />
-          <Figure card={{ series: e.chart.series, forecast: [] }} label={`${e.chart.name}: share of tracked homepages by quarter`} caption={<>{t.chart_caption ?? e.chart.caption}</>} />
+          <QuarterLine look="read" card={{ series: e.chart.series, forecast: [] }} label={`${e.chart.name}: share of tracked homepages by quarter`} caption={<>{t.chart_caption ?? e.chart.caption}</>} />
         </section>}
 
         <section aria-labelledby="dg-changes" className="mt-16 lg:mt-20" data-digest-changes="">

@@ -6,8 +6,8 @@ import { methodLink } from "./Info";
 import { KEY_MAP, SECTIONS } from "@/lib/ia";
 
 const GROUPS: [GlossaryKind, string][] = [["stage", "STAGES"], ["dimension", "DIMENSIONS"], ["metric", "MEASURES"], ["panel", "PANELS"], ["column", "COLUMNS"]];
-/** Keys come from the one IA registry (src/lib/ia.ts): F1–F6 sections, old keys as aliases. */
-export const KEYS: [string, string][] = [["F1–F6", "Sections: " + SECTIONS.map(s => `${s.key} ${s.label}`).join(" · ") + " (also 1–6)"], ...KEY_MAP.filter(k => k.alias).map(k => [k.key, `${k.label} (old key)`] as [string, string]), ...KEY_MAP.filter(k => !k.alias && "action" in k.target).map(k => [k.key, k.label] as [string, string]), ["ENTER", "Open the focused row"]];
+/** Keys come from the one IA registry (src/lib/ia.ts): F1–F7 sections, old keys as aliases. */
+export const KEYS: [string, string][] = [["F1–F7", "Sections: " + SECTIONS.map(s => `${s.key} ${s.label}`).join(" · ") + " (also 1–6)"], ...KEY_MAP.filter(k => k.alias).map(k => [k.key, `${k.label} (old key)`] as [string, string]), ...KEY_MAP.filter(k => !k.alias && "action" in k.target).map(k => [k.key, k.label] as [string, string]), ["ENTER", "Open the focused row"]];
 
 /** Searchable glossary: side panel on desktop, full-screen sheet on mobile. Entries deep-link as #g-<id>. */
 export function Glossary({ onClose, onTour, focus }: { onClose: () => void; onTour: () => void; focus?: string | null }) {

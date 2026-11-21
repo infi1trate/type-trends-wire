@@ -8,7 +8,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { indicatorPointsQuery, indicatorsQuery } from "@/lib/data";
 import { byInstalls, exact, readable, toCsv, type FontRisers, type IndicatorRow, type TopicTable } from "@/lib/indicators/series";
 import { pr } from "@/components/digest/Editorial";
-import { Spark } from "./Bits";
+import { Sparkline } from "@/components/chartkit";
 import { line as voiced } from "@/lib/voice";
 
 export const LEADING_TITLE = "Leading indicators";
@@ -33,7 +33,7 @@ const Stars = ({ r }: { r: IndicatorRow }) => r.github?.stars
   ? <a {...ext(r.github.href)} className="ed-tap tabular-nums" title={`${exact(r.github.stars.value)} stars · ${dayText(r.github.stars.period_end)} · ${r.github.key}`}>{readable(r.github.stars.value)}</a>
   : <Dash why="GitHub repository not stored" />;
 const Line = ({ r }: { r: IndicatorRow }) => r.npm && r.npm.weekly.length
-  ? <Spark points={r.npm.weekly.map(p => p.value)} label={`${r.label}, npm installs per week`} what={`weekly installs, ${r.npm.weekly.length} weeks`} />
+  ? <Sparkline look="read" values={r.npm.weekly.map(p => p.value)} label={`${r.label}, npm installs per week`} what={`weekly installs, ${r.npm.weekly.length} weeks`} />
   : <Dash why="A small line appears once four weekly counts exist" />;
 const Name = ({ r }: { r: IndicatorRow }) => r.npm ? <a {...ext(r.npm.href)} className="ed-tap font-semibold" title={`${r.npm.key} on npm`}>{r.label}</a> : <span className="font-semibold">{r.label}</span>;
 

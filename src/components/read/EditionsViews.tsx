@@ -22,7 +22,8 @@ import type { SectorReport } from "@/lib/editions/sector";
 import type { loadWelcome } from "@/lib/editions/welcome.server";
 import { BasisWord, DigestShell, SectionHead, StageWord, pr } from "@/components/digest/Editorial";
 import { CropFigure, CropFallback } from "./Evidence";
-import { ReadFooter, Spark } from "./Bits";
+import { ReadFooter } from "./Bits";
+import { Sparkline } from "@/components/chartkit";
 import { EditionCover } from "./Covers";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { Ledger, type LedgerRow } from "@/components/brand/Ledger";
@@ -48,7 +49,7 @@ const Item = ({ s, lead = false }: { s: MorningItem; lead?: boolean }) => <artic
 
 function LeadSpark({ k }: { k: string }) {
   const { data } = useQuery(signalSeriesQuery("all"));
-  return <p className="ed-data mt-3 flex flex-wrap items-center gap-3"><Spark points={data?.[k]} label={traitLabel(k).name} /><Link to="/signals/$key" params={{ key: k }} className="ed-tap">{traitLabel(k).name} →</Link></p>;
+  return <p className="ed-data mt-3 flex flex-wrap items-center gap-3"><Sparkline look="read" values={data?.[k]} label={traitLabel(k).name} /><Link to="/signals/$key" params={{ key: k }} className="ed-tap">{traitLabel(k).name} →</Link></p>;
 }
 
 export type MorningData = NonNullable<Awaited<ReturnType<typeof loadMorning>>>;
@@ -126,7 +127,7 @@ function SmallMultiples({ r }: { r: SectorReport }) {
       <Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="block no-underline">
         <span className="ed-kicker block truncate">{s.name}</span>
         <span className="ed-stat block">{share(s.here.share)}</span>
-        <Spark points={data?.[s.key]} label={`${s.name} in ${r.name}`} />
+        <Sparkline look="read" values={data?.[s.key]} label={`${s.name} in ${r.name}`} />
       </Link>
     </li>)}</ul>
   </section>;

@@ -9,15 +9,9 @@ import { REVERSED_LABEL } from "./reversal";
 import { CAROUSEL_LABEL } from "./carousel";
 import { oneHeadline } from "./headline-text";
 
-const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-export const tapeDate = (iso: string) => { const d = new Date(iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };
-/** E2g · two capture dates as one phrase: "14 Nov" when they are the same UTC day, "between 11 and 14 Nov", "between 30 Oct and 2 Nov". */
-export function betweenDates(before: string, after: string): string {
-  const a = new Date(before), b = new Date(after);
-  if (Number.isNaN(+a) || Number.isNaN(+b)) return tapeDate(after);
-  if (before.slice(0, 10) === after.slice(0, 10)) return tapeDate(after);
-  return a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear() ? `between ${a.getUTCDate()} and ${tapeDate(after)}` : `between ${tapeDate(before)} and ${tapeDate(after)}`;
-}
+// U3: the dates are formatted by labels.ts (one set of formats for both views); kept under their tape names.
+export { shortDay as tapeDate, betweenDays as betweenDates } from "./labels";
+import { shortDay as tapeDate, betweenDays as betweenDates } from "./labels";
 /** When a change happened, never when it was confirmed: between the last capture with the old value and the first with the new one
  *  (its integrity check), else, for a change without dated captures (archive, or a verdict stored before E2g), the day it was recorded. */
 export const changeWhen = (e: { detected_at: string; seen?: { before: string; after: string } | null }) => (e.seen ? betweenDates(e.seen.before, e.seen.after) : tapeDate(e.detected_at));

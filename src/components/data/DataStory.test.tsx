@@ -115,7 +115,7 @@ describe("before / after and the strip", () => {
 
 describe("embed", () => {
   it("covers every utility class the figures use", () => {
-    const src = readFileSync("src/components/data/Figures.tsx", "utf8") + readFileSync("src/components/charts/Charts.tsx", "utf8");
+    const src = ["src/components/data/Figures.tsx", "src/components/chartkit/Frame.tsx", "src/components/chartkit/Multiples.tsx", "src/components/chartkit/BeforeAfter.tsx"].map(f => readFileSync(f, "utf8")).join("\n");
     const classes = [...src.matchAll(/className=(?:\{`([^`]*)`|"([^"]*)")/g)].flatMap(m => (m[1] ?? m[2] ?? "").replace(/\$\{[^}]*\}/g, " ").split(/\s+/)).filter(c => c && !/^(tk-|ed-)/.test(c) && /^[a-z]/.test(c) && !c.includes("?"));
     const known = new Set([...Object.keys(EMBED_UTILITIES), "sm:grid-cols-2", "sm:grid-cols-3", "xl:grid-cols-4", "hover:underline", "strip-current"]);
     expect([...new Set(classes)].filter(c => !known.has(c))).toEqual([]);

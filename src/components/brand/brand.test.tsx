@@ -138,7 +138,7 @@ describe("<Ledger>", () => {
     expect(a.querySelector(".ledger-time")!.textContent).toBe("2 h ago");
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toMatch(/\.ledger-link \{[^}]*min-height: var\(--tk-layout-tap\)/);
-    expect(css).toMatch(/\.ledger-link:hover, \.ledger-link:focus-visible \{ background: var\(--tk-highlight-bg\)/);
+    expect(css).toMatch(/\.ledger-link:hover, \.ledger-link:focus-visible \{ background: var\(--sys-color-highlight\)/);
     expect(css).toMatch(/\.ledger \{ border-top: var\(--tk-border-hairline\)/);
   });
   it("keeps the number, the title and one fact beside each other on narrow screens; the rest wraps under the title", () => {

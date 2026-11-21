@@ -44,7 +44,7 @@ describe("phase 20 polish", () => {
   });
   it("terminal sentences use the text face; cells stay mono", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toMatch(/\.t-say\s*\{[^}]*font-family:\s*var\(--tk-font-text\)/);
+    expect(css).toMatch(/\.t-say\s*\{[^}]*font-family:\s*var\(--sys-font-text\)/);
     for (const f of ["Tour", "Glossary", "primitives"]) expect(readFileSync(`src/components/terminal/${f}.tsx`, "utf8")).toContain("t-say");
   });
 });

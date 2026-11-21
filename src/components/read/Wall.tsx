@@ -18,9 +18,9 @@ function Tile({ t, eager }: { t: GalleryTile; eager: boolean }) {
   const reveal = !t.crop && t.frame?.reveal ? t.frame.reveal : null, r = useReveal(reveal, { link: true });
   return <a href={t.href} className="wall-tile" aria-label={reveal ? `${t.label}. ${REVEAL_HINT}, Enter again to open: ${reveal.credit}` : t.label} data-tile={t.id} data-reveal={reveal ? "" : undefined} {...r.handlers}>
     <span aria-hidden="true" className="relative block">
-      {t.crop ? <img src={t.crop.src} width={t.crop.width} height={t.crop.height} alt="" loading="lazy" className="wall-ink border" style={{ borderColor: "var(--tk-rule-hairline)" }} data-frame="crop" />
-        : t.frame ? <Deferred eager={eager} style={{ aspectRatio: `${t.frame.w} / ${t.frame.h}`, border: "1px solid var(--tk-rule-hairline)" }}><CaptureFrame fr={t.frame} label={t.label} reveal={false} /></Deferred>
-        : <span className="ed-caption block border p-3" style={{ borderColor: "var(--tk-rule-hairline)" }}>{voiced("read.wall.1")}</span>}
+      {t.crop ? <img src={t.crop.src} width={t.crop.width} height={t.crop.height} alt="" loading="lazy" className="wall-ink border" style={{ borderColor: "var(--sys-color-rule)" }} data-frame="crop" />
+        : t.frame ? <Deferred eager={eager} style={{ aspectRatio: `${t.frame.w} / ${t.frame.h}`, border: "1px solid var(--sys-color-rule)" }}><CaptureFrame fr={t.frame} label={t.label} reveal={false} /></Deferred>
+        : <span className="ed-caption block border p-3" style={{ borderColor: "var(--sys-color-rule)" }}>{voiced("read.wall.1")}</span>}
       {reveal && <RevealLayer reveal={reveal} shown={r.shown} requested={r.requested} reduced={r.reduced} />}
     </span>
     <span className="wall-cap" aria-hidden="true"><span>{t.domain}</span><span>{t.day}</span>{t.note && <span>{t.note}</span>}</span>

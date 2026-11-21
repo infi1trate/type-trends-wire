@@ -3,7 +3,7 @@ import { line as voiced } from "@/lib/voice";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { archiveQuery, brandsQuery, patternsQuery } from "@/lib/data";
+import { archiveQuery, brandsQuery, dataIndexQuery, patternsQuery } from "@/lib/data";
 import { parseAuditSites } from "@/lib/agency/audit";
 import { sectorFirst } from "@/lib/sector-lens";
 import { PATTERN_MIN_EXAMPLES } from "@/lib/patterns";
@@ -15,6 +15,11 @@ import { LedgerOutput } from "./Ledger";
 import { RebrandDesk } from "./Rebrands";
 import { useSignalDrawer } from "./Signals";
 import { StoryLink } from "@/components/dataview/StoryLink";
+import { DataTable } from "@/components/dataview/DataTable";
+import { AppLink } from "./AppLink";
+import { dataHref } from "@/lib/ia";
+import { seriesOf, studyLabel } from "@/lib/data-stories/registry";
+import { dayText } from "@/lib/labels";
 
 /** F4 PATTERNS: headline layout and composite signals with their example brands, dense. */
 export function PatternsTab({ sector }: { sector: string }) {
@@ -31,7 +36,22 @@ export function PatternsTab({ sector }: { sector: string }) {
   </section>;
 }
 
-/** F5 DIGEST: every issue, terminal density, linking to the editorial issue. */
+/** F5 STUDIES (U3): every study in number order with its status, the check that keeps it live and whether its text is written, each
+ *  linking to its Data view (the figures' tables, the facts sheet and the check). Drafts show the check's own words for what they wait on. */
+export function StudiesTab() {
+  const { data } = useSuspenseQuery(dataIndexQuery());
+  const home = new Map(data.home.series.flatMap(x => x.studies).map(x => [x.slug, x]));
+  const rows = data.rows.map(r => { const h = home.get(r.slug); return { r, h, cells: [studyLabel(r.number), h?.headline ?? r.question, h?.seriesTitle ?? seriesOf(r.series)?.title ?? r.series, r.status === "live" ? "LIVE" : "DRAFT", r.status === "live" ? "Passes on current data" : r.reason ?? "Its check does not pass yet", r.status !== "live" ? "–" : h?.written ? "WRITTEN" : "TEMPLATE", r.dataThrough ? dayText(r.dataThrough) : "–"] }; });
+  return <section aria-label="Studies" className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
+    <PanelHeader title="STUDIES" g="s-studies" meta={<>{rows.filter(x => x.r.status === "live").length} LIVE · {rows.length} IN ALL · <Link to="/data" className="text-ink underline-offset-2 hover:underline">READ →</Link></>} />
+    <DataTable caption="Every study, its check and its text" head={["Study", "Headline", "Series", "Status", "Check", "Text", "Data through", "Data view"]}
+      rows={rows.map(({ r, cells }) => [...cells, r.status === "live" ? <AppLink key="d" href={dataHref({ type: "study", id: r.slug })} className="text-ink underline underline-offset-2">DATA →</AppLink> : "–"])}
+      csv={{ name: "studies", rows: rows.map(x => x.cells) }} />
+    {data.home.shelf.length > 0 && <DataTable caption="In the works" head={["Study", "Series", "Waits on", "Earliest"]} rows={data.home.shelf.map(x => [x.question, x.series, x.wait, x.earliest ?? "–"])} csv={{ name: "studies-in-the-works", rows: data.home.shelf.map(x => [x.question, x.series, x.wait, x.earliest ?? ""]) }} />}
+  </section>;
+}
+
+/** F6 DIGEST: every issue, terminal density, linking to the editorial issue. */
 export function DigestTab() {
   const { data } = useQuery(archiveQuery());
   return <section aria-label="Digest issues" className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">

@@ -11,6 +11,7 @@ import { WildFamily } from "./CrawlPanels";
 import { Button } from "@/components/ui/button";
 import { Info, StageBadge, DimTag } from "./Info";
 import { label as traitLabel } from "@/lib/labels";
+import { CsvScope } from "@/components/dataview/CopyCsv";
 
 const PAGE = 20;
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "undated");
@@ -18,7 +19,7 @@ const words = (v: string | null | undefined) => (v ? v.replace(/_/g, " ").toUppe
 
 function Chip({ hex }: { hex: string | null }) {
   if (!hex) return null;
-  return <span className="inline-flex items-center gap-1"><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill={hex} stroke="var(--tk-rule-hairline)" /></svg><span className="num">{hex.toUpperCase()}</span></span>;
+  return <span className="inline-flex items-center gap-1"><svg width="12" height="12" aria-hidden><rect width="12" height="12" fill={hex} stroke="var(--sys-color-rule)" /></svg><span className="num">{hex.toUpperCase()}</span></span>;
 }
 function Fonts({ s }: { s: Side }) {
   if (!s.h1 && !s.body) return <span className="text-compare-muted">{voiced("terminal.rebrands.1")}</span>;
@@ -58,7 +59,7 @@ function Entry({ r }: { r: Rebrand }) {
       {r.seasonal && <span className="label border border-rule px-1 text-compare-muted">SEASONAL</span>}
       <StoryLink row={{ events: r.event_ids }} className="ml-auto" />
     </header>
-    <table className="mt-2 w-full table-fixed text-body">
+    <CsvScope><table className="mt-2 w-full table-fixed text-body">
       <caption className="sr-only">Before and after for {r.domain}</caption>
       <thead className="label text-compare-muted"><tr><th className="w-[11ch] p-2 text-left font-normal">FIELD<Info g="field" /></th><th className="p-2 text-left font-normal">BEFORE · {day(b.captured_at)}<Info g="before-after" /></th><th className="w-[2ch]" /><th className="p-2 text-left font-normal">AFTER · {day(a.captured_at)}</th></tr></thead>
       <tbody>
@@ -69,7 +70,7 @@ function Entry({ r }: { r: Rebrand }) {
         <Row label="AESTHETIC" before={tagList(b, "aesthetic")} after={tagList(a, "aesthetic")} changed={tagged && !sameJson(b.tags?.aesthetic, a.tags?.aesthetic)} />
         <Row label="TONE" before={tagList(b, "tone")} after={tagList(a, "tone")} changed={tagged && !sameJson(b.tags?.tone, a.tags?.tone)} />
       </tbody>
-    </table>
+    </table></CsvScope>
     <div className="flex flex-col gap-2 p-3">
       <p className="text-body text-ink"><span className="label text-compare-muted">READ </span>{r.read}</p>
       <Traits list={r.new_traits} />

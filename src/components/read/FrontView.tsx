@@ -19,7 +19,7 @@ import { storyTime } from "@/lib/stories";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
 import { DigestShell, Dim, StageWord } from "@/components/digest/Editorial";
-import { BarChart, DonutChart, LineChart, ScatterChart } from "@/components/charts/Charts";
+import { Bars, DonutChart, QuarterLine, ScatterChart } from "@/components/chartkit";
 import { Card, Plate, Raised, RuleBox } from "@/components/brand/Containers";
 import { Ledger } from "@/components/brand/Ledger";
 import { BeforeAfter, CoverFigure, CropFigure } from "./Evidence";
@@ -87,8 +87,8 @@ function ChartOfDay({ c }: { c: NonNullable<FrontModel["chart"]> }) {
     <Kicker id="front-chart">Chart of the day</Kicker>
     <div className="mt-3">
       {c.kind === "scatter" && <ScatterChart {...f} points={c.points} x={{ label: "Share", format: share }} y={{ label: "Momentum (pts/q)", format: signed }} />}
-      {c.kind === "line" && <LineChart {...f} series={c.series} y={{ label: "Share", format: share }} />}
-      {c.kind === "bar" && <BarChart {...f} bars={c.bars} format={share} valueLabel="Share" />}
+      {c.kind === "line" && <QuarterLine look="read" {...f} series={c.series} y={{ label: "Share", format: share }} />}
+      {c.kind === "bar" && <Bars look="read" {...f} bars={c.bars} format={share} valueLabel="Share" />}
       {c.kind === "donut" && <DonutChart {...f} slices={c.slices} unit="stories" />}
     </div>
   </Card></section>;

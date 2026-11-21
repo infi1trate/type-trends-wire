@@ -156,6 +156,7 @@ export const VOICE = {
   "read.deskView.2": { kind: "empty", where: "Read · DeskView", text: "Nothing was held.", next: [] },
   "read.deskView.3": { kind: "empty", where: "Read · DeskView", text: "Nothing was killed.", next: [] },
   "read.deskView.4": { kind: "empty", where: "Read · DeskView", text: "No edits yet.", next: [] },
+  "read.deskView.5": { kind: "empty", where: "Read · DeskView · Pitched", text: "Nothing pitched yet. With the editor key open, rows in the terminal and Data views show a Pitch link.", next: [] },
   "read.editionsViews.1": { kind: "empty", where: "Read · EditionsViews", text: "No lead today.", next: [] },
   "read.editionsViews.2": { kind: "empty", where: "Read · EditionsViews", text: "No opening this time: no unused white-space story from the last seven days.", next: [] },
   "read.editionsViews.3": { kind: "empty", where: "Read · EditionsViews", text: "No headline signal changed stage between those runs.", next: [] },

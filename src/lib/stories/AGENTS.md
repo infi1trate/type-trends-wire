@@ -1,0 +1,1 @@
+- Pitches are judged only from the build's own plan and rule refusals (`pitchView` → pure `pitch.ts`); a pitch never adds a candidate, changes a score or publishes, and `pitches`/`pitch_verdicts` are insert-only and service-role only behind the editor key.

@@ -2,7 +2,7 @@
 // own parts; tables load after the frame (Later skeletons). Every table, score and field the terminal showed for the object is here.
 import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
 import { LibraryBand, ChangeValues } from "@/components/terminal/LibraryShared";
@@ -17,7 +17,8 @@ import { DataTable } from "./DataTable";
 import { DataNote } from "./DataShell";
 import { StoryLink } from "./StoryLink";
 import { factsSheet } from "@/lib/data-stories/writer";
-import { figureTables } from "@/lib/views/figure-tables";
+import { consoleHref, lensedFigureTables, studyCommand } from "@/lib/views/study-commands";
+import { resolveSector } from "@/lib/sector-lens";
 import { briefMovers } from "@/lib/views/week";
 import { brandDataPath, dataHref } from "@/lib/ia";
 import { label } from "@/lib/labels";
@@ -48,7 +49,7 @@ function StoryDataBody({ id }: { id: string }) {
         {s.correctedAt && <p className="label text-compare-muted">CORRECTED {day(s.correctedAt)}</p>}</div>
     </Band>
     <Band title={`THE CHANGES BEHIND IT · ${s.changes.length}`}>
-      {s.changes.length ? <DataTable caption="Changes with raw fields" head={["Change", "Captured", "Brand", "Page", "Type", "Before", "After", "Confirmed", "Record"]}
+      {s.changes.length ? <DataTable caption="Changes with raw fields" head={["Change", "Captured", "Brand", "Page", "Type", "Before", "After", "Confirmed", "Record"]} pitch={i => ({ kind: "change", ref: String(s.changes[i]!.id) })}
         rows={s.changes.map(c => { const d = changeDates({ before: c.seen?.before, after: c.seen?.after, at: c.detected_at, confirmed: c.confirmed }); return [String(c.id), d.captured, c.domain, `${c.page_type}/${c.viewport}`, c.type, <ChangeValues key="b" value={c.before} />, <ChangeValues key="a" value={c.after} />, c.confirmed ? d.confirmed : c.line.split(" · ").slice(1).join(" · ") || "not confirmed",
           <Lnk key="r" href={`${brandDataPath(c.domain)}&page_type=${c.page_type}&viewport=${c.viewport}${c.snapshot_id ? `&a=${c.snapshot_id}` : ""}${c.prev_snapshot_id ? `&b=${c.prev_snapshot_id}` : ""}`}>COMPARE →</Lnk>]; })} />
         : <P>This story is not built from brand changes{s.sourceIds.length ? `; its sources: ${s.sourceIds.join(", ")}` : ""}.</P>}
@@ -96,9 +97,9 @@ function PatternDataBody({ k, sector }: { k: string; sector: string }) {
   const p = data.patterns.find(x => x.key === k), tracked = sig?.signals.some(x => x.key === k);
   return <>
     <Band title="PATTERN">
-      {p ? <><DataTable caption="The terminal's pattern row" head={["Pattern", "Dimension", "Basis", "Stage", "Momentum", "Confidence", "Brands", "Story"]}
+      {p ? <><DataTable caption="The terminal's pattern row" head={["Pattern", "Dimension", "Basis", "Stage", "Momentum", "Confidence", "Brands", "Story"]} pitch={() => ({ kind: "signal", ref: k })}
         rows={[[p.name, p.dimension, <BasisChip key="b" basis={p.basis} />, <StageBadge key="s" stage={p.stage} />, String(p.momentum_index ?? "–"), p.confidence.toUpperCase(), String(p.examples), <StoryLink key="n" row={{ signal: k }} />]]} />
-        <DataTable caption="Example brands" head={["Brand", "Record"]} rows={p.sample.map(d => [d, <Lnk key="r" href={brandDataPath(d)}>DATA →</Lnk>])} /></>
+        <DataTable caption="Example brands" head={["Brand", "Record"]} pitch={i => ({ kind: "brand", ref: p.sample[i]! })} rows={p.sample.map(d => [d, <Lnk key="r" href={brandDataPath(d)}>DATA →</Lnk>])} /></>
         : <DataNote>Not in the terminal's pattern list {sector !== "all" ? "for this sector" : "yet"}: it needs enough example brands. What we track for it is below.</DataNote>}
     </Band>
     {tracked ? <Band title="SIGNAL DETAIL"><div className="p-3"><Detail {...split(k)} /></div></Band>
@@ -111,9 +112,10 @@ export function StudyData({ slug }: { slug: string }) {
   return <Later id="study-data-later" shapes={rowsShape(8)}><StudyDataBody slug={slug} /></Later>;
 }
 function StudyDataBody({ slug }: { slug: string }) {
+  const search = useSearch({ strict: false });
   const { data: d } = useSuspenseQuery(dataStoryQuery(slug)), { data: x } = useQuery(studyDataQuery(slug));
   if (d.kind !== "live") return <DataNote>{d.kind === "draft" ? `This study is not live: ${d.reason ?? "its check does not pass yet"}.` : "No such study."}</DataNote>;
-  const s = d.story, sheet = factsSheet(s);
+  const s = d.story, sheet = factsSheet(s), lens = resolveSector((search as Record<string, unknown>)["sector"]), sector = lens === "all" ? null : lens;
   return <>
     <Band title="FACTS SHEET">
       <DataTable caption="The sheet the writer sees, scene by scene" head={["Scene", "Fact"]} rows={sheet.scenes.flatMap(sc => sc.facts.map(f => [sc.id, f]))} csv={{ name: `${slug}-facts`, rows: sheet.scenes.flatMap(sc => sc.facts.map(f => [sc.id, f])) }} />
@@ -121,7 +123,8 @@ function StudyDataBody({ slug }: { slug: string }) {
       <p className="label p-3 text-compare-muted">FINGERPRINT {s.hash} · LIMITS {sheet.limits.join(" · ") || "–"}</p>
     </Band>
     <Band title="THE DATA BEHIND EACH FIGURE">
-      {Object.entries(s.figures).flatMap(([id, f]) => figureTables(f).map((t, i) => <DataTable key={`${id}-${i}`} id={i === 0 ? `fig-${id}` : undefined} caption={t.caption} head={t.head} rows={t.rows} csv={{ name: `${slug}-${id}${i ? `-${i + 1}` : ""}`, rows: t.rows }} />))}
+      {Object.entries(s.figures).flatMap(([id, f]) => lensedFigureTables(f, sector).map((t, i) => <DataTable key={`${id}-${i}`} id={i === 0 ? `fig-${id}` : undefined} caption={t.lens ? `${t.caption} · ${t.lens}` : t.caption} head={t.head} rows={t.rows} csv={{ name: `${slug}-${id}${i ? `-${i + 1}` : ""}`, rows: t.rows }}
+        tools={<Lnk href={consoleHref(studyCommand(slug, id, i + 1), sector)}>Open in console</Lnk>} />))}
     </Band>
     <Band title="THE CHECK THAT KEEPS IT LIVE">
       {!x ? <P>Loading the check…</P> : !x.check ? <P>This study has no live check.</P> : <>

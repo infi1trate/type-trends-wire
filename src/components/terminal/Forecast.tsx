@@ -15,11 +15,13 @@ import { SECTORS } from "@/lib/library";
 import { Button } from "@/components/ui/button";
 import { LibraryBand } from "./LibraryShared";
 import { Overlay } from "./primitives";
+import { QuarterLine, type QuarterPoint as Pt } from "@/components/chartkit";
 import { BasisChip, ConfidenceText, MomentumText, TierChip } from "./SignalBits";
 import { signalsQuery } from "@/lib/data";
 import { buildSignals, type Signal } from "@/lib/signals";
 import { evidenceKeys } from "@/lib/tiers";
 import { compositeOf, ruleText } from "@/lib/composites";
+import { CsvScope } from "@/components/dataview/CopyCsv";
 
 const COMPONENTS = [["gap", "TRENDSETTER GAP"], ["vanguard", "VANGUARD"], ["curation", "CURATION"], ["momentum", "MOMENTUM"], ["corroboration", "CORROBORATION"], ["discourse", "DISCOURSE"], ["supply", "SUPPLY"]] as const;
 const COMPONENT_G: Record<string, string> = { gap: "gap", vanguard: "vanguard", curation: "curation", momentum: "momentum", corroboration: "corroboration", discourse: "discourse", supply: "supply" };
@@ -34,32 +36,10 @@ function TraitName({ dimension, value }: { dimension: string; value: string }) {
 function Explainer({ dimension, value }: { dimension: string; value: string }) { return <span className="inline-flex items-center"><Link to="/signals/$key" params={{ key: `${dimension}:${value}` }} className="label ml-2 whitespace-nowrap text-compare-muted underline-offset-2 hover:text-ink hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">EXPLAINER →</Link><AddToWatch target={`${dimension}:${value}`} name={label(`${dimension}:${value}`).name} /></span>; }
 const key = (r: { dimension: string; value: string }) => `${r.dimension}:${r.value}`;
 
-type Pt = { q: string; s: number | null; n: number; c: number };
-function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }: { quarters: Pt[]; proj: { h: number; mid: number | null; lo: number | null; hi: number | null }[]; fitted?: { quarter: string; value: number }[] | undefined; backtest?: { quarter: string; predicted: number }[] | undefined; large?: boolean; sectors?: { scope: string; pts: Pt[] }[] }) {
-  const quarters = raw, pts = raw.filter(p => p.s !== null && p.n >= 15 && p.c >= .25), faint = raw.filter(p => p.s !== null && p.n > 0 && !(p.n >= 15 && p.c >= .25));
-  if (!pts.length) return <svg viewBox="0 0 120 32" className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label={voiced("terminal.forecast.2")}><line x1="0" x2="120" y1="31" y2="31" stroke="var(--tk-rule-hairline)" /></svg>;
-  const p0 = pts[0]!, pn = pts[pts.length - 1]!, first = qi(quarters[0]?.q ?? p0.q), latest = qi(pn.q), last = latest + 4, W = large ? 600 : 120, H = large ? 220 : 32;
-  const all = [...pts.map(p => p.s ?? 0), ...(large ? faint.map(p => p.s ?? 0) : []), ...proj.flatMap(p => [p.hi ?? 0, p.mid ?? 0]), ...(fitted ?? []).map(f => f.value), ...(sectors ?? []).flatMap(s => s.pts.map(p => p.s ?? 0))];
-  const max = Math.max(0.05, ...all);
-  const x = (q: number) => 4 + (q - first) / Math.max(1, last - first) * (W - 8), y = (v: number) => H - 3 - v / max * (H - 8);
-  const cone = proj.filter(p => p.lo !== null && p.hi !== null);
-  const conePath = cone.length ? `M${x(latest)},${y(pn.s ?? 0)} ${cone.map(p => `L${x(latest + p.h)},${y(p.hi!)}`).join(" ")} ${[...cone].reverse().map(p => `L${x(latest + p.h)},${y(p.lo!)}`).join(" ")} Z` : "";
-  return <svg viewBox={`0 0 ${W} ${H}`} className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label={`Share ${p0.q} to ${pn.q}${cone.length ? " with projection cone" : ""}`}>
-    <line x1="0" x2={W} y1={H - 2} y2={H - 2} stroke="var(--tk-rule-hairline)" />
-    {sectors?.map(s => { const sp = s.pts.filter(p => p.s !== null && p.n >= 8 && p.c >= .25); return <polyline key={s.scope} fill="none" stroke="var(--tk-text-secondary)" strokeOpacity=".35" strokeWidth="1" points={sp.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")}><title>{s.scope}</title></polyline>; })}
-    {conePath && <path d={conePath} fill="var(--tk-accent-1)" fillOpacity=".18" stroke="none" />}
-    {fitted && <polyline fill="none" stroke="var(--tk-text-primary)" strokeOpacity=".5" strokeDasharray="4 3" points={fitted.filter(f => qi(f.quarter) <= last).map(f => `${x(qi(f.quarter))},${y(f.value)}`).join(" ")} />}
-    {backtest && backtest.length > 0 && <polyline fill="none" stroke="var(--tk-text-secondary)" strokeDasharray="2 3" points={backtest.map(b => `${x(qi(b.quarter))},${y(b.predicted)}`).join(" ")}><title>Backtest prediction from 2025Q2</title></polyline>}
-    <polyline fill="none" stroke="var(--tk-text-primary)" strokeWidth={large ? 2 : 1} points={pts.map(p => `${x(qi(p.q))},${y(p.s!)}`).join(" ")} />
-    {large && faint.map(p => <circle key={`f${p.q}`} cx={x(qi(p.q))} cy={y(p.s!)} r="2" fill="var(--tk-text-secondary)" fillOpacity=".5"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · not usable`}</title></circle>)}
-    {pts.map(p => <circle key={p.q} cx={x(qi(p.q))} cy={y(p.s!)} r={large ? 3 : 1.5} fill="var(--tk-text-primary)"><title>{`${p.q} · ${pct(p.s)} · n=${p.n} · coverage ${(p.c * 100).toFixed(0)}%`}</title></circle>)}
-    {proj.filter(p => p.mid !== null).map(p => <circle key={p.h} cx={x(latest + p.h)} cy={y(p.mid!)} r={large ? 3 : 1.5} fill="var(--tk-accent-1)"><title>{`+${p.h}Q ${ql(latest + p.h)} · ${pct(p.mid)} (${pct(p.lo)}–${pct(p.hi)})`}</title></circle>)}
-  </svg>;
-}
 const projOf = (r: Pick<ForecastRow, "proj_q1" | "proj_q1_lo" | "proj_q1_hi" | "proj_q2" | "proj_q2_lo" | "proj_q2_hi" | "proj_q4" | "proj_q4_lo" | "proj_q4_hi">) => [{ h: 1, mid: r.proj_q1, lo: r.proj_q1_lo, hi: r.proj_q1_hi }, { h: 2, mid: r.proj_q2, lo: r.proj_q2_lo, hi: r.proj_q2_hi }, { h: 4, mid: r.proj_q4, lo: r.proj_q4_lo, hi: r.proj_q4_hi }];
 function ZBar({ z, label }: { z: number | null | undefined; label: string }) {
   const v = z == null ? null : Math.max(-2, Math.min(2, z));
-  return <svg viewBox="0 0 40 6" width="40" height="6" role="img" aria-label={`${label} ${z == null ? "n/a" : z.toFixed(2)}`}><rect width="40" height="6" fill="var(--tk-rule-hairline)" /><line x1="20" x2="20" y1="0" y2="6" stroke="var(--tk-text-secondary)" />{v !== null && <rect x={v < 0 ? 20 + v * 10 : 20} width={Math.abs(v) * 10} height="6" fill={v > 0 ? "var(--tk-accent-1)" : "var(--tk-text-secondary)"} />}<title>{`${label}: ${z == null ? "n/a" : `z ${z.toFixed(2)}`}`}</title></svg>;
+  return <svg viewBox="0 0 40 6" width="40" height="6" role="img" aria-label={`${label} ${z == null ? "n/a" : z.toFixed(2)}`}><rect width="40" height="6" fill="var(--sys-color-rule)" /><line x1="20" x2="20" y1="0" y2="6" stroke="var(--sys-color-ink-muted)" />{v !== null && <rect x={v < 0 ? 20 + v * 10 : 20} width={Math.abs(v) * 10} height="6" fill={v > 0 ? "var(--sys-color-highlight)" : "var(--sys-color-ink-muted)"} />}<title>{`${label}: ${z == null ? "n/a" : `z ${z.toFixed(2)}`}`}</title></svg>;
 }
 function StageTag({ stage }: { stage: string | null }) { return <StageBadge stage={stage} />; }
 
@@ -97,15 +77,15 @@ export function ForecastPanel() {
     </section>
     {!card && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.5")}</p>}
     {card && card.n_forecast_ok === 0 && <p className="border-b border-rule p-3 text-compare-muted">Curves aren't fitted yet: each trait needs at least 4 usable quarters (15+ sites and 25% coverage) from the archive backfill. Until then, rankings use trendsetter gap, vanguard and corroboration.</p>}
-    <div className="flex flex-wrap gap-1 border-b border-rule p-3" aria-label="Forecast sector filter">{["all", ...SECTORS].map(s => <Button key={s} variant="ghost" className={`label h-8 ${sector === s ? "text-signal" : "text-compare-muted"}`} aria-pressed={sector === s} onClick={() => navigate({ search: prev => ({ ...prev, sector: s }) })}>{s}</Button>)}</div>
+    <div className="flex flex-wrap gap-1 border-b border-rule p-3" aria-label="Forecast sector filter">{["all", ...SECTORS].map(s => <Button key={s} variant="ghost" className={`label h-8 ${sector === s ? "text-highlight" : "text-compare-muted"}`} aria-pressed={sector === s} onClick={() => navigate({ search: prev => ({ ...prev, sector: s }) })}>{s}</Button>)}</div>
 
     <LibraryBand g="p-next-wave" title={`NEXT WAVE · HEADLINE · TOP 15 · ${sector === "all" ? "ALL SECTORS" : sector}`}>
       <ul className="divide-y divide-rule md:hidden">{wave.map(({ a, s, x }) => <li key={key(a)} className="space-y-1 p-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2"><Button variant="link" className="label h-auto min-h-11 whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><BasisChip k={key(a)} /><Explainer {...a} /></div>
         <div className="label flex flex-wrap gap-x-3 text-compare-muted"><StageTag stage={s.stage} /><span>SHARE {pct(s.current_share)}</span><span>+4Q {s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</span>{x && <><span>MOMENTUM <MomentumText s={x} /></span><span>CONFIDENCE <ConfidenceText s={x} /></span></>}</div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><Cone quarters={s.quarters ?? []} proj={projOf(s)} /></div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><QuarterLine look="data" quarters={s.quarters ?? []} proj={projOf(s)} /></div>
       </li>)}</ul>
-      <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[880px] text-left">
+      <div className="hidden overflow-x-auto md:block"><CsvScope><table className="w-full min-w-[880px] text-left">
         <thead className="label text-compare-muted"><tr className="border-b border-rule">{[{ h: "SIGNAL", g: "trait" }, { h: "BASIS", g: "basis-measured" }, { h: "STAGE", g: "stage" }, { h: "SHARE", g: "share" }, { h: "+4Q (LO–HI)", g: "projection" }, { h: "MOMENTUM", g: "momentum-index" }, { h: "CONFIDENCE", g: "confidence" }, { h: "SERIES", g: "series" }].map(({ h, g }) => <th key={h} scope="col" className="p-2 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead>
         <tbody>{wave.map(({ a, s, x }) => <tr key={key(a)} className="border-b border-rule align-middle">
           <td className="p-2"><Button variant="link" className="label h-auto whitespace-normal p-0 text-left text-ink" onClick={() => setOpen(a)}><TraitName {...a} /></Button><Explainer {...a} /></td>
@@ -115,9 +95,9 @@ export function ForecastPanel() {
           <td className="label p-2 tabular-nums">{s.proj_q4 == null ? NO_PROJ : `${pct(s.proj_q4)} (${pct(s.proj_q4_lo, 0)}–${pct(s.proj_q4_hi, 0)})`}</td>
           <td className="p-2">{x ? <MomentumText s={x} /> : "—"}</td>
           <td className="p-2">{x ? <ConfidenceText s={x} /> : "—"}</td>
-          <td className="p-2"><Cone quarters={s.quarters ?? []} proj={projOf(s)} /></td>
+          <td className="p-2"><QuarterLine look="data" quarters={s.quarters ?? []} proj={projOf(s)} /></td>
         </tr>)}</tbody>
-      </table></div>
+      </table></CsvScope></div>
       <p className="label border-t border-rule p-2 text-compare-muted">Headline signals only, ranked by the stored next-wave score. Open a row for its seven score parts.</p>
       {!wave.length && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.6")}</p>}
     </LibraryBand>
@@ -137,10 +117,10 @@ export function ForecastPanel() {
         {!setters.length && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.7")}</p>}
       </LibraryBand>
       <LibraryBand g="p-lead-lag" title="LEAD–LAG · FIRST QUARTER ≥10% BY SECTOR">
-        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left">
+        <div className="overflow-x-auto"><CsvScope><table className="w-full min-w-[760px] text-left">
           <thead className="label text-compare-muted"><tr className="border-b border-rule"><th scope="col" className="p-2 font-normal"><span className="inline-flex items-center">TRAIT<Info g="trait" /></span></th>{SECTORS.map((s, i) => <th key={s} scope="col" className={`p-1 font-normal ${sector === s ? "text-ink underline" : ""}`}><span className="inline-flex items-center">{s.slice(0, 8)}{i === 0 && <Info g="first-quarter" />}</span></th>)}</tr></thead>
-          <tbody>{lagRows.map(r => { const qs = Object.values(r.sectors!).filter((q): q is string => !!q).sort(); return <tr key={key(r)} className="border-b border-rule"><th scope="row" className="label p-2 text-left font-normal"><Button variant="link" className="label h-auto p-0 text-left text-ink" onClick={() => setOpen(r)}><TraitName {...r} /></Button></th>{SECTORS.map(s => { const q = r.sectors![s]; return <td key={s} className={`label p-1 tabular-nums ${q && q === qs[0] ? "text-signal" : "text-compare-muted"}`}>{q ? q.slice(2) : "·"}</td>; })}</tr>; })}</tbody>
-        </table></div>
+          <tbody>{lagRows.map(r => { const qs = Object.values(r.sectors!).filter((q): q is string => !!q).sort(); return <tr key={key(r)} className="border-b border-rule"><th scope="row" className="label p-2 text-left font-normal"><Button variant="link" className="label h-auto p-0 text-left text-ink" onClick={() => setOpen(r)}><TraitName {...r} /></Button></th>{SECTORS.map(s => { const q = r.sectors![s]; return <td key={s} className={`label p-1 tabular-nums ${q && q === qs[0] ? "text-highlight" : "text-compare-muted"}`}>{q ? q.slice(2) : "·"}</td>; })}</tr>; })}</tbody>
+        </table></CsvScope></div>
         {!lagRows.length && <p className="p-3 text-compare-muted">{voiced("terminal.forecast.8")}</p>}
       </LibraryBand>
     </div>
@@ -149,7 +129,7 @@ export function ForecastPanel() {
     <LibraryBand g="p-brief" title={`BRIEF${brief?.week ? ` · ${brief.week}` : ""} · AI VIA ${brief?.brief.provider === "google" ? "GOOGLE AI STUDIO" : "LOVABLE AI"}`}>
       <BriefWithdrawn week={brief?.week} className="border-b border-rule p-3" />
       {brief ? <BriefView brief={brief.brief} onTrait={(id) => { const [dimension, ...rest] = id.replace(/:all$/, "").split(":"); setOpen({ dimension: dimension ?? "", value: rest.join(":") }); }} /> : <p className="p-3 text-compare-muted">{voiced("terminal.forecast.9")}</p>}
-      {data.briefs.length > 1 && <div className="flex flex-wrap gap-1 border-t border-rule p-3" aria-label="Brief archive"><span className="label text-compare-muted">ARCHIVE</span>{data.briefs.map(b => <Button key={b.week} variant="ghost" className={`label h-8 ${b.week === brief?.week ? "text-signal" : ""}`} aria-pressed={b.week === brief?.week} onClick={() => setWeek(b.week)}>{b.week}</Button>)}</div>}
+      {data.briefs.length > 1 && <div className="flex flex-wrap gap-1 border-t border-rule p-3" aria-label="Brief archive"><span className="label text-compare-muted">ARCHIVE</span>{data.briefs.map(b => <Button key={b.week} variant="ghost" className={`label h-8 ${b.week === brief?.week ? "text-highlight" : ""}`} aria-pressed={b.week === brief?.week} onClick={() => setWeek(b.week)}>{b.week}</Button>)}</div>}
     </LibraryBand>
     {open && <TraitDrawer {...open} onClose={() => setOpen(null)} />}
   </div>;
@@ -159,7 +139,7 @@ function ChartBand({ week }: { week: string | null }) { const { data } = useSusp
 export function BriefView({ brief, onTrait }: { brief: BriefDoc; onTrait: (id: string) => void }) {
   const shown = briefDisplay(brief);
   return <article className="p-3">
-    <h3 className="text-hero font-semibold"><span className="label mr-2 text-signal">AI</span>{shown.headline}</h3>
+    <h3 className="text-hero font-semibold"><span className="label mr-2 text-highlight">AI</span>{shown.headline}</h3>
     <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{shown.sections.map(s => <section key={s.title} className="min-w-0 border border-rule p-3">
       <h4 className="label font-semibold">{s.title.toUpperCase()}</h4><p className="mt-1">{s.body}</p>
       <div className="mt-2 flex flex-wrap gap-1">{s.citations.map(c => { const ref = brief.refs?.[`${c.kind}:${c.id}`]; const text = deLegacy(c.text); const cls = "label inline-flex h-6 items-center border border-rule px-2 text-compare-muted hover:text-ink";
@@ -200,12 +180,12 @@ export function TraitDetail({ dimension, value, explainer = true }: { dimension:
       <Evidence k={k} signals={sig?.signals ?? []} />
       {explainer && <p className="label"><Link to="/signals/$key" params={{ key: `${dimension}:${value}` }} className="text-ink underline underline-offset-2">EXPLAINER →</Link> <span className="text-compare-muted">plain-English page with example sites</span></p>}
       <p className="label text-compare-muted">{main.status === "ok" ? `MODEL ${main.model?.toUpperCase()} · ${ev.usable} USABLE QUARTERS` : `Not fitted yet: ${ev.usable ?? 0} of the 4 usable quarters a curve needs`}{ev.crossed_20 ? ` · CROSSED 20% ${ev.crossed_20}` : ""}</p>
-      <Cone large quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
+      <QuarterLine look="data" large label={traitLabel(dimension, value)} quarters={ev.quarters ?? []} proj={projOf(main)} fitted={ev.fitted} backtest={bt.predictions} sectors={sectors} />
       <p className="label text-compare-muted">SOLID = MEASURED · DASHED = FIT · CONE = 80% BOOTSTRAP · DOTTED = 2025Q2 BACKTEST · GREY LINES = SECTORS · FAINT POINTS = UNUSABLE QUARTERS (N&lt;15 OR COVERAGE&lt;25%)</p>
       <p className="label">BACKTEST {bt.status === "ok" ? `MAE ${bt.mae_pts?.toFixed(1)} PTS · HIT ${pct(bt.hit_rate, 0)}` : "· not enough history before 2025Q2 to test this trait"}</p>
       <div><button type="button" aria-expanded={parts} onClick={() => setParts(p => !p)} className="label inline-flex min-h-11 items-center text-ink underline underline-offset-2 md:min-h-0">{parts ? "▾" : "▸"} SEVEN SCORE PARTS</button>{parts && <div className="mt-2"><Components comp={comp} /></div>}</div>
       <div><h3 className="label flex items-center text-compare-muted">LED BY<Info g="p-led-by" /></h3><ul className="flex flex-wrap gap-x-3">{(ev.sites ?? []).map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} search={{ view: "data" }} className="underline-offset-2 hover:underline">{s.domain}</Link> <span className="label text-compare-muted">{s.adopted} · +{s.lead}Q</span></li>)}{!ev.sites?.length && <li className="text-compare-muted">{voiced("terminal.forecast.10")}</li>}</ul></div>
-      <div className="overflow-x-auto"><table className="w-full text-left"><thead className="label text-compare-muted"><tr>{[{ h: "QUARTER", g: "quarter" }, { h: "SHARE", g: "share" }, { h: "N", g: "sample-n" }, { h: "COVERAGE", g: "coverage" }].map(({ h, g }) => <th key={h} scope="col" className="p-1 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead><tbody>{(ev.quarters ?? []).filter(p => p.n > 0).map(p => <tr key={p.q} className={`label tabular-nums ${p.n < 15 || p.c < .25 ? "text-compare-muted" : ""}`}><td className="p-1">{p.q}</td><td className="p-1">{pct(p.s)}</td><td className="p-1">{p.n}</td><td className="p-1">{(p.c * 100).toFixed(0)}%</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><CsvScope><table className="w-full text-left"><thead className="label text-compare-muted"><tr>{[{ h: "QUARTER", g: "quarter" }, { h: "SHARE", g: "share" }, { h: "N", g: "sample-n" }, { h: "COVERAGE", g: "coverage" }].map(({ h, g }) => <th key={h} scope="col" className="p-1 font-normal"><span className="inline-flex items-center">{h}<Info g={g} /></span></th>)}</tr></thead><tbody>{(ev.quarters ?? []).filter(p => p.n > 0).map(p => <tr key={p.q} className={`label tabular-nums ${p.n < 15 || p.c < .25 ? "text-compare-muted" : ""}`}><td className="p-1">{p.q}</td><td className="p-1">{pct(p.s)}</td><td className="p-1">{p.n}</td><td className="p-1">{(p.c * 100).toFixed(0)}%</td></tr>)}</tbody></table></CsvScope></div>
     </div>}
   </>;
 }

@@ -1617,6 +1617,77 @@ export type Database = {
         }
         Relationships: []
       }
+      pitch_verdicts: {
+        Row: {
+          created_at: string
+          id: number
+          pitch_id: number
+          source: string
+          status: string
+          story_id: string | null
+          story_number: number | null
+          verdict: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          pitch_id: number
+          source: string
+          status: string
+          story_id?: string | null
+          story_number?: number | null
+          verdict: Json
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          pitch_id?: number
+          source?: string
+          status?: string
+          story_id?: string | null
+          story_number?: number | null
+          verdict?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pitch_verdicts_pitch_id_fkey"
+            columns: ["pitch_id"]
+            isOneToOne: false
+            referencedRelation: "pitches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pitches: {
+        Row: {
+          created_at: string
+          facts: Json
+          id: number
+          kind: string
+          note: string
+          pitched_by: string
+          ref: string
+        }
+        Insert: {
+          created_at?: string
+          facts?: Json
+          id?: never
+          kind: string
+          note: string
+          pitched_by: string
+          ref: string
+        }
+        Update: {
+          created_at?: string
+          facts?: Json
+          id?: never
+          kind?: string
+          note?: string
+          pitched_by?: string
+          ref?: string
+        }
+        Relationships: []
+      }
       read_records: {
         Row: {
           body: Json

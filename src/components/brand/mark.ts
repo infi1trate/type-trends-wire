@@ -3,9 +3,10 @@
 import { MARK_PATHS } from "./mark.gen";
 import { BRAND_NAME } from "@/lib/brand";
 import type { MarkCut } from "./mark-files";
+import { BRAND_KIT } from "@/lib/theme";
 
 /** The mark's only colour (brand/tokens: mark.colour). */
-export const MARK_INK = "#0A0A0A";
+export const MARK_INK = BRAND_KIT.color.ink;
 /** Cut thresholds by rendered height in CSS px (brand/README.md, "The mark"). */
 export const CUT_MIN_PX = { display: 96, standard: 32, micro: 0 } as const;
 export type WordCut = Exclude<MarkCut, "s">;
@@ -15,7 +16,7 @@ export const cutFor = (height: number): WordCut => (height >= CUT_MIN_PX.display
 export const GROUNDS = ["paper", "pink", "yellow", "green", "ink", "image", "auto"] as const;
 export type Ground = (typeof GROUNDS)[number];
 /** Slab colours (brand kit): pink on ink, paper over an image. "auto" uses the mode's mark-ground token. */
-export const SLAB = { ink: "#FF8FC4", image: "#F1ECE0" } as const;
+export const SLAB = { ink: BRAND_KIT.color.pink, image: BRAND_KIT.color.paper } as const;
 export const needsSlab = (g: Ground) => g === "ink" || g === "image" || g === "auto";
 export const slabFill = (g: Ground): string | null => (g === "ink" ? SLAB.ink : g === "image" ? SLAB.image : g === "auto" ? "var(--tk-mark-ground)" : null);
 /** Clear space and slab padding: half the x-height. The x-height is 0.4 of the mark's height (the kit's clear-space file pads 200 on 1000). */

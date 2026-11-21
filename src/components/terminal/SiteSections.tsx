@@ -13,7 +13,7 @@ export function SiteSections({ domain }: { domain: string }) {
     {!data ? <span className="label text-compare-muted">{isError ? "COULDN'T READ CROPS" : "…"}</span>
       : !latest.length ? <span className="label text-compare-muted">NO SECTION CAPTURES YET</span>
       : CROP_SECTIONS.map(s => { const c = byKey.get(s); return c
-        ? <Link key={s} to="/brands/$domain" params={{ domain }} search={{ section: s }} hash="ed-sections" className="label inline-flex items-center hover:text-signal max-md:h-11">{CROP_SECTION_NAME[s].toUpperCase()} <span className="num ml-1 text-compare-muted">{c.captured_at.slice(0, 10)} · {c.versions}V</span></Link>
+        ? <Link key={s} to="/brands/$domain" params={{ domain }} search={{ section: s }} hash="ed-sections" className="label inline-flex items-center hover:text-highlight max-md:h-11">{CROP_SECTION_NAME[s].toUpperCase()} <span className="num ml-1 text-compare-muted">{c.captured_at.slice(0, 10)} · {c.versions}V</span></Link>
         : <span key={s} className="label text-compare-muted">{CROP_SECTION_NAME[s].toUpperCase()} —</span>; })}
   </div>;
 }

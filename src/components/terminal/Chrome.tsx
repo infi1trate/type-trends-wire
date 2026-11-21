@@ -24,7 +24,7 @@ function Clock() {
   return <time className="tabular-nums text-ink" aria-label="UTC time">{s} <span className="text-g500">UTC</span></time>;
 }
 
-/** F1–F6: the six sections (old F7–F12, T, W and D stay as aliases; see src/lib/ia.ts). */
+/** F1–F7: the seven sections (old F8–F12, T, W and D stay as aliases; see src/lib/ia.ts). */
 export function FKeys({ active, onSelect }: { active: PanelId; onSelect: (p: PanelId) => void }) {
   const nav=useRef<HTMLElement>(null), current = sectionOf(active);
   useEffect(()=>{nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView({block:"nearest",inline:"nearest"});},[active]);
@@ -54,7 +54,7 @@ export function TabRow({ active, onSelect, sector, onSector, readHref, onRead }:
       <div role="tablist" aria-label={`${sectionById(sectionOf(active)).label} tabs`} className="no-scrollbar flex min-w-0 flex-1 basis-full overflow-x-auto border-b border-rule md:basis-0 md:border-b-0">
         {tabs.map(t => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} tabIndex={tab === t.id ? 0 : -1} onClick={() => onSelect(t.id)}
-            className={`label min-h-11 shrink-0 border-r border-rule px-3 md:min-h-8 ${tab === t.id ? "text-ink underline decoration-signal decoration-2 underline-offset-4" : "text-g500 hover:text-ink"}`}>{t.label}</button>
+            className={`label min-h-11 shrink-0 border-r border-rule px-3 md:min-h-8 ${tab === t.id ? "text-ink underline decoration-highlight decoration-2 underline-offset-4" : "text-g500 hover:text-ink"}`}>{t.label}</button>
         ))}
         <span className="label hidden items-center px-3 text-g500 lg:flex">[ ] OR ← → · ` READ</span>
       </div>

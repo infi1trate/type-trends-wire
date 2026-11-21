@@ -46,3 +46,15 @@
 - [x] B4 pattern story links, one glossary test, 44 px check at 360/390, old links
 - [x] C one count per claim (white space, breakout, against the grain), sheet dedupe, evidence from sheet, headline wording, rebuild records
 - [x] D hexName fix + 20-hex tests, colour-word check
+
+# U3 + U4 · One design system for both views; the terminal as a workbench
+- [x] 0 Print footer path identical on server and client (decoded); check brand/signal/pattern/study/Digest
+- [x] 1.1 One token source (system.ts): type steps, colour roles (Read + Data), space/shape, motion → CSS vars + typed mirror, test
+- [x] 1.2 Adopt tokens in Read + terminal components; lint test (no raw hex / px font size in src/components)
+- [x] 1.3 One chart kit (line by quarter, small multiples, bars, sparkline, before/after strip) with look read|data, tables, labels.ts formats; remove duplicates
+- [x] 1.4 One navigation: seven sections from ia.ts (Studies added), F1–F7, Read keys 1–7 ? / `, Tools in bar ≥1024 if it fits
+- [x] 1.5 /brand/system page (BRAND_PUBLIC)
+- [x] 2.1 Study figure tables: "Open in console" with prefilled command; pure commands + tests; sector lens on Data view tables
+- [x] 2.2 "Copy as CSV" on Data view + terminal tables
+- [x] 2.3 Pitches: table (additive), editor-only Pitch form, desk Pitched list with engine verdicts, builder evaluates open pitches
+- [x] Responsive 360–1920 both views, TTFB before/after, report

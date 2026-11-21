@@ -99,7 +99,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
               }`}
             >
               <time className="shrink-0 tabular-nums text-g500">{hhmm(r.published_at)}</time>
-              <span className={`label w-[5ch] shrink-0 ${r.source_kind === "alert" ? "text-signal" : "text-g500"}`}>{KIND_LABEL[r.source_kind] ?? ""}</span>
+              <span className={`label w-[5ch] shrink-0 ${r.source_kind === "alert" ? "text-highlight" : "text-g500"}`}>{KIND_LABEL[r.source_kind] ?? ""}</span>
               <span className="label hidden w-[18ch] shrink-0 truncate text-g500 sm:inline">{r.source.toUpperCase()}</span>
               <span className="min-w-0 flex-1">
                 {r.source_kind === "alert" ? (

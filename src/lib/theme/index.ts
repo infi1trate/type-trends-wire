@@ -7,6 +7,8 @@ import { slug, SLUG_KIT } from "./slug";
 /** The owner's kit values (brand/tokens), for pages that show the brand's own numbers (/brand) and for tests. */
 export const BRAND_KIT = SLUG_KIT;
 import { themeCss } from "./css";
+import { systemOf } from "./system";
+export * from "./system";
 
 export * from "./contract";
 /** Themes pages may use. "legacy" (the look before the brand) is kept out on purpose: only before/after comparisons import it. */
@@ -17,6 +19,8 @@ export const COMPARISON_THEMES: Readonly<Record<string, Theme>> = { legacy };
 export const ACTIVE_THEME: string = slug.name;
 export const activeTheme: Theme = THEMES[ACTIVE_THEME]!;
 export const activeCss = () => themeCss(activeTheme);
+/** The design system in use (U3): every named value with its Read and Data mapping; the typed mirror of the --sys-* properties. */
+export const SYSTEM = systemOf(activeTheme);
 /** Mode tokens for code that cannot read CSS variables (raster images, standalone HTML). */
 export const tokensFor = (mode: Mode) => activeTheme.modes[mode];
 

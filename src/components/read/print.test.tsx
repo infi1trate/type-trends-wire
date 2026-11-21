@@ -11,7 +11,7 @@ describe("print rules", () => {
     expect(printBlocks).toMatch(/@page \{ size: auto;/);
     expect(printBlocks).toMatch(/background: var\(--tk-print-paper\)/);
     expect(printBlocks).toMatch(/color: var\(--tk-print-ink\) !important/);
-    expect(printBlocks).toMatch(/\[data-stage\][^{]*\{ color: var\(--tk-positive\)/);
+    expect(printBlocks).toMatch(/\[data-stage\][^{]*\{ color: var\(--sys-color-positive\)/);
   });
   it("no chrome, controls or ticker; the mark on top and the address and date on every sheet", () => {
     for (const sel of [".shell-top", "[data-shell-row]", ".ed-nav", ".front-ticker", "button", "form", ".c-raised", ".ed-footer"]) expect(printBlocks, sel).toContain(sel);

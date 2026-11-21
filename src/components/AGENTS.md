@@ -1,0 +1,3 @@
+- Design values live in one object (`src/lib/theme/system.ts`) that generates both the CSS custom properties and the typed mirror; components use role tokens only, and `tokens-lint.test.ts` fails on a raw hex or raw px font size, because the Living design track changes the system in one place.
+- The five shared chart types live in `chartkit/` and take a `look` of `read` or `data`, draw from tokens and format through `labels.ts`; specialised panel charts (scatter, vibe map, history flows) stay local but take colours from tokens.
+- "Copy as CSV" reads the table as shown (headers and cells), skipping cells marked `data-no-csv`, so copied columns always match what the reader sees.

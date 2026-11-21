@@ -11,10 +11,13 @@ import { isDataView } from "@/lib/ia";
 import { AppLink } from "@/components/terminal/AppLink";
 import { DataTable } from "@/components/dataview/DataTable";
 import { takeOpener, useReceiptNav } from "./open";
+import { Bars } from "@/components/chartkit";
+import { PitchButton } from "@/components/pitch/Pitch";
+import { readablePath } from "@/lib/path-text";
 
 export function ReceiptDrawer() {
   const hydrated = useHydrated();
-  const loc = useRouterState({ select: s => ({ path: s.location.pathname, search: s.location.search as Record<string, unknown> }) });
+  const loc = useRouterState({ select: s => ({ path: readablePath(s.location.pathname), search: s.location.search as Record<string, unknown> }) });
   const r = parseReceipt(loc.search["receipt"]);
   if (!hydrated || !r || isDataView(loc.path, loc.search)) return null;
   return <Drawer r={receiptParam(r)} />;
@@ -57,7 +60,7 @@ function Drawer({ r }: { r: string }) {
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain" data-receipt-body="">
         {isLoading ? <Skeleton /> : isError || !data ? <p className="p-3 text-compare-muted">This receipt did not load. The full record is one step away.</p> : <Body m={data} />}
       </div>
-      {data && <div className="border-t border-rule p-3"><AppLink href={data.full} className="label inline-flex min-h-[44px] items-center text-ink underline underline-offset-2" data-receipt-full="">Open the full Data view →</AppLink></div>}
+      {data && <div className="flex flex-wrap items-start justify-between gap-x-4 border-t border-rule p-3"><PitchButton target={{ kind: "receipt", ref: r, facts: [data.title, ...data.lines].slice(0, 20) }} /><AppLink href={data.full} className="label inline-flex min-h-[44px] items-center text-ink underline underline-offset-2" data-receipt-full="">Open the full Data view →</AppLink></div>}
     </div>
   </div>;
 }
@@ -67,19 +70,8 @@ function Skeleton() {
 function Body({ m }: { m: ReceiptModel }) {
   return <>
     <div className="space-y-1 p-3">{m.lines.map(l => <p key={l} className="text-body">{l}</p>)}</div>
-    {m.chart && <ShareChart c={m.chart} />}
+    {m.chart && <Bars look="data" label={m.chart.label} points={m.chart.points} />}
     {m.tables.map(t => <DataTable key={t.caption} caption={t.caption} head={t.head} rows={t.rows} />)}
   </>;
 }
-/** Share by quarter: bars, well-covered quarters solid, the rest faint (they are not used). */
-function ShareChart({ c }: { c: NonNullable<ReceiptModel["chart"]> }) {
-  const pts = c.points, max = Math.max(0.01, ...pts.map(p => p.share ?? 0)), W = 520, H = 120, bw = W / Math.max(1, pts.length);
-  return <figure className="px-3">
-    <svg viewBox={`0 0 ${W} ${H + 16}`} className="h-auto w-full" role="img" aria-label={`${c.label}: share of tracked homepages by quarter`}>
-      <line x1="0" x2={W} y1={H} y2={H} stroke="var(--tk-rule-hairline)" />
-      {pts.map((p, i) => { const h = ((p.share ?? 0) / max) * (H - 8); return <rect key={p.q} x={i * bw + 1} y={H - h} width={Math.max(1, bw - 2)} height={h} fill={p.usable ? "var(--tk-text-primary)" : "var(--tk-text-muted)"} opacity={p.usable ? 1 : 0.4} />; })}
-      {pts.length > 0 && <><text x="0" y={H + 13} fontSize="10" fill="var(--tk-text-muted)">{pts[0]!.q}</text><text x={W} y={H + 13} fontSize="10" textAnchor="end" fill="var(--tk-text-muted)">{pts[pts.length - 1]!.q}</text></>}
-    </svg>
-    <figcaption className="label text-compare-muted">SOLID = WELL COVERED · FAINT = TOO FEW HOMEPAGES TO USE</figcaption>
-  </figure>;
-}
+

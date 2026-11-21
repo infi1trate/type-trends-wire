@@ -14,6 +14,7 @@ import { AUDIT_MAX } from "@/lib/agency/audit";
 import type { WatchRange } from "@/lib/agency/watch-feed";
 import { label } from "@/lib/labels";
 import { SITE_URL } from "@/lib/site";
+import { CsvScope } from "@/components/dataview/CopyCsv";
 
 const KIND: Record<string, string> = { site: "SITE", rebrand: "REBRAND", stage: "STAGE", alert: "ALERT", summary: "WEEK" };
 function useLocalList() {
@@ -53,9 +54,9 @@ export function WatchPanel() {
           : q.isError ? <p className="p-3 text-g500">Couldn't load this watchlist just now.</p>
           : !v ? <p className="p-3 text-g500">This watchlist no longer exists. Forget it on this device.</p>
           : v.empty ? <p className="p-3 text-g500">{v.empty}</p>
-          : <table className="w-full table-fixed text-left"><caption className="sr-only">Changes</caption>
+          : <CsvScope><table className="w-full table-fixed text-left"><caption className="sr-only">Changes</caption>
               <thead className="label text-g500"><tr className="border-b border-rule"><th scope="col" className="w-24 px-3 py-2 font-normal">DATE</th><th scope="col" className="w-20 py-2 font-normal max-md:hidden">KIND</th><th scope="col" className="py-2 pr-3 font-normal">CHANGE</th></tr></thead>
-              <tbody>{v.items.map(i => <tr key={i.guid} className="border-b border-rule align-top"><td className="px-3 py-2 tabular-nums text-g500">{i.at.slice(5, 10)}</td><td className="label py-2 max-md:hidden">{KIND[i.kind]}</td><td className="break-words py-2 pr-3"><a href={i.href} className="hover:underline">{i.title}</a>{i.detail && <span className="block text-g500">{i.detail}</span>}</td></tr>)}</tbody></table>}
+              <tbody>{v.items.map(i => <tr key={i.guid} className="border-b border-rule align-top"><td className="px-3 py-2 tabular-nums text-g500">{i.at.slice(5, 10)}</td><td className="label py-2 max-md:hidden">{KIND[i.kind]}</td><td className="break-words py-2 pr-3"><a href={i.href} className="hover:underline">{i.title}</a>{i.detail && <span className="block text-g500">{i.detail}</span>}</td></tr>)}</tbody></table></CsvScope>}
       </div>
     </div>
   </section>;

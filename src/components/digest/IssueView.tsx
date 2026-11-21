@@ -2,12 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { numberLabel } from "@/lib/stories/numbers";
 import type { Issue } from "@/lib/digest/issue";
 import { pct } from "@/lib/digest/copy";
-import { BasisWord, DigestShell, DigestFooter, Dim, Figure, SectionHead, SiteCard, StageWord, Swatches, pr } from "./Editorial";
+import { BasisWord, DigestShell, DigestFooter, Dim, SectionHead, SiteCard, StageWord, Swatches, pr } from "./Editorial";
 import { EditionCover } from "@/components/read/Covers";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { Ledger, StoryNo } from "@/components/brand/Ledger";
 import { RuleBox } from "@/components/brand/Containers";
 import { isNewIssue } from "@/lib/digest/week";
+import { QuarterLine } from "@/components/chartkit";
 
 const SECTION_TITLE: Record<string, string> = { stories: "The week in stories", movers: "The Movers", specimens: "Specimens", palette: "Palette", wild: "Seen in the wild", rebrands: "Rebrands of the week", numbers: "The Numbers" };
 const SECTION_WORD = (n: number) => `${n + 1} ${n + 1 === 1 ? "section" : "sections"}`;
@@ -46,7 +47,7 @@ export function IssueView({ issue }: { issue: Issue }) {
           <p className="ed-pull">{c.why}</p>
         </aside>}
         {c.card && c.card.series.length > 0 && c.lead && <div className={c.why ? "lg:col-span-8" : "lg:col-span-12"}>
-          <Figure card={c.card} label={`${c.lead.name}: share of tracked homepages by quarter, with the forecast band`}
+          <QuarterLine look="read" card={c.card} label={`${c.lead.name}: share of tracked homepages by quarter, with the forecast band`}
             caption={<>{c.lead.name} [{c.lead.dimension}] · share of tracked homepages by quarter, solid line measured, band forecast. {c.call ? `${c.call} ` : ""}Source: forecast run {c.card.forecast_run ?? c.card.run_id}, data through {issue.dataThrough ?? "—"}. <Link to="/chart/$week" params={{ week: issue.week }} {...pr(`/chart/${issue.week}`)}>Chart card →</Link></>} />
         </div>}
         {c.body.length > 0 && <div className="ed-body lg:col-span-8 lg:col-start-3">
@@ -83,7 +84,7 @@ export function IssueView({ issue }: { issue: Issue }) {
           {([["Rising", issue.specimens.rising], ["Fading", issue.specimens.fading], ["Seen this week", issue.specimens.seen]] as const).filter(([, l]) => l.length).map(([title, list]) => <div key={title}>
             <h3 className="ed-kicker mb-3">{title}</h3>
             <ul className="space-y-8">{list.map(s => <li key={s.family} className="ed-hair grid grid-cols-1 gap-2 pt-4 lg:grid-cols-12">
-              <p className="ed-specimen lg:col-span-8" style={s.google ? { fontFamily: `"${s.family}", var(--tk-font-text)` } : undefined} lang="en">{s.google ? s.family : <span className="italic">{s.family}</span>}</p>
+              <p className="ed-specimen lg:col-span-8" style={s.google ? { fontFamily: `"${s.family}", var(--sys-font-text)` } : undefined} lang="en">{s.google ? s.family : <span className="italic">{s.family}</span>}</p>
               <div className="lg:col-span-4">
                 <p className="ed-data">{s.family} · {s.role}</p>
                 <p className="ed-small mt-1">{s.line}</p>

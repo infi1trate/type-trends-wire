@@ -112,49 +112,6 @@ export function PanelHeader({ title, meta, g }: { title: string; meta?: React.Re
   );
 }
 
-/** 64×16 sparkline of popularity rank, inverted so climbing goes up. */
-export function Sparkline({ ranks }: { ranks: number[] | undefined }) {
-  if (!ranks || ranks.length < 2) return <span className="text-g500">—</span>;
-  const w = 64, h = 16;
-  const min = Math.min(...ranks), max = Math.max(...ranks);
-  const span = max - min || 1;
-  const pts: [number, number][] = ranks.map((r, i) => [(i / (ranks.length - 1)) * (w - 3) + 1, ((r - min) / span) * (h - 3) + 1.5] as [number, number]);
-  const rising = ranks[ranks.length - 1]! < ranks[0]!;
-  const last = pts[pts.length - 1]!;
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="inline-block align-middle">
-      <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke="var(--tk-text-primary)" strokeWidth="1" />
-      {rising && <rect x={last[0] - 1} y={last[1] - 1} width="2" height="2" fill="var(--tk-accent-1)" />}
-    </svg>
-  );
-}
-
-export function LineChart({ points }: { points: { date: string; rank: number }[] }) {
-  if (points.length < 2) return <p className="t-say py-6 text-g500">Only {points.length} daily snapshot so far; the line draws once a second day is collected.</p>;
-  const w = 456, h = 160, pl = 36, pb = 18, pt = 6;
-  const first = points[0]!, lastP = points[points.length - 1]!;
-  const ranks = points.map((p) => p.rank);
-  const min = Math.min(...ranks), max = Math.max(...ranks);
-  const span = max - min || 1;
-  const x = (i: number) => pl + (i / (points.length - 1)) * (w - pl - 4);
-  const y = (r: number) => pt + ((r - min) / span) * (h - pt - pb);
-  const grid = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(min + t * span));
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`Popularity rank from #${first.rank} to #${lastP.rank}`}>
-      {grid.map((g) => (
-        <g key={g}>
-          <line x1={pl} x2={w} y1={y(g)} y2={y(g)} stroke="var(--tk-rule-hairline)" strokeWidth="1" />
-          <text x={pl - 4} y={y(g) + 3} textAnchor="end" fontSize="9" fill="var(--tk-text-muted)">#{g}</text>
-        </g>
-      ))}
-      <text x={pl} y={h - 4} fontSize="9" fill="var(--tk-text-muted)">{first.date}</text>
-      <text x={w - 4} y={h - 4} fontSize="9" textAnchor="end" fill="var(--tk-text-muted)">{lastP.date}</text>
-      <polyline points={points.map((p, i) => `${x(i)},${y(p.rank)}`).join(" ")} fill="none" stroke="var(--tk-text-primary)" strokeWidth="1" />
-      <rect x={x(points.length - 1) - 1.5} y={y(lastP.rank) - 1.5} width="3" height="3" fill="var(--tk-accent-1)" />
-    </svg>
-  );
-}
-
 export function Overlay({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 md:p-4" onClick={onClose}>

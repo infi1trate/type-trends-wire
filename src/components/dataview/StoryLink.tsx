@@ -13,5 +13,5 @@ export function useStoryLookup() {
 export function StoryLink({ row, className = "" }: { row: RowRef; className?: string }) {
   const lookup = useStoryLookup(), s = storyForRow(lookup, row);
   if (!s) return null;
-  return <AppLink href={s.href} className={`label inline-flex min-h-[44px] items-center whitespace-nowrap text-signal underline-offset-2 hover:underline md:min-h-6 ${className}`} data-story-for-row={s.number} aria-label={`Story No. ${s.number}`}>{s.text}</AppLink>;
+  return <AppLink href={s.href} className={`label inline-flex min-h-[44px] items-center whitespace-nowrap text-highlight underline-offset-2 hover:underline md:min-h-6 ${className}`} data-story-for-row={s.number} aria-label={`Story No. ${s.number}`}>{s.text}</AppLink>;
 }

@@ -16,7 +16,7 @@ export function HealthLine() {
   const status = data?.status ?? null;
   const bad = status === "degraded" || status === "down";
   return <>
-    <Button variant="link" aria-label={`System health: ${status ?? "loading"}. Open job table`} onClick={() => setOpen(true)} className={`label h-6 px-2 max-md:h-10 ${bad ? "text-signal" : "text-g500"}`}>
+    <Button variant="link" aria-label={`System health: ${status ?? "loading"}. Open job table`} onClick={() => setOpen(true)} className={`label h-6 px-2 max-md:h-10 ${bad ? "text-highlight" : "text-g500"}`}>
       <span className="max-sm:hidden">HEALTH&nbsp;</span>{status ? status.toUpperCase() : "CHECKING"}
     </Button>
     {open && <Overlay title={`HEALTH · ${status?.toUpperCase() ?? "CHECKING"}`} onClose={() => setOpen(false)}>
@@ -30,7 +30,7 @@ export function HealthLine() {
               <th scope="row" className="py-1 pr-2 text-left font-normal text-ink">{j.job.replace(/_/g, " ").toUpperCase()}{j.note && <div className="label text-g500">{j.note}</div>}</th>
               <td className="py-1 pr-2 text-g500">{j.expected_every}</td>
               <td className="py-1 pr-2 text-ink whitespace-nowrap">{when(j.last_ok_at)}</td>
-              <td className={`py-1 ${j.stale || j.last_status === "low_ok_rate" ? "text-signal" : "text-ink"}`}>{j.stale ? "STALE" : j.last_status.toUpperCase()}{j.consecutive_failures > 0 && ` · ${j.consecutive_failures}✕`}</td>
+              <td className={`py-1 ${j.stale || j.last_status === "low_ok_rate" ? "text-highlight" : "text-ink"}`}>{j.stale ? "STALE" : j.last_status.toUpperCase()}{j.consecutive_failures > 0 && ` · ${j.consecutive_failures}✕`}</td>
             </tr>)}</tbody>
           </table>}
       </>}

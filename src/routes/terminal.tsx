@@ -15,7 +15,7 @@ import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
 import { Library } from "@/components/terminal/Library";
-import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery, patternsQuery, storyQueueQuery } from "@/lib/data";
+import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery, patternsQuery, storyQueueQuery, dataIndexQuery } from "@/lib/data";
 import { VibeMap } from "@/components/terminal/VibeMap";
 import { PanelHeadlines } from "@/components/terminal/Signals";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
@@ -24,7 +24,7 @@ import { TasteConsole, type LocalCommand } from "@/components/terminal/TasteCons
 import { HealthLine } from "@/components/terminal/Health";
 import { GATE_ENABLED } from "@/lib/gate";
 import { WatchPanel } from "@/components/terminal/Watch";
-import { AuditTab, ConsoleTab, DigestTab, LedgerTab, MovesTab, PatternsTab } from "@/components/terminal/Sections";
+import { AuditTab, ConsoleTab, DigestTab, LedgerTab, MovesTab, PatternsTab, StudiesTab } from "@/components/terminal/Sections";
 import { MorningTab, SectorsTab } from "@/components/terminal/Editions";
 import { parseAuditSites } from "@/lib/agency/audit";
 import { terminalObjectHref, keyView, resolveKey, resolveView, sectionById, sectionOf, stepTab, type TerminalSearch, type ViewId } from "@/lib/ia";
@@ -34,7 +34,7 @@ import { BRAND_NAME } from "@/lib/brand";
 import { useStaffKey } from "@/lib/staff-key";
 
 const TITLE = `Terminal — ${BRAND_NAME}`;
-const DESC = `The dense, keyboard-first view of ${BRAND_NAME}: six sections (Live, Signals, Brands, Patterns, Digest, Tools) with every number's receipts.`;
+const DESC = `The dense, keyboard-first view of ${BRAND_NAME}: seven sections (Today, Signals, Brands, Patterns, Studies, Digest, Tools) with every number's receipts.`;
 const str = (v: unknown) => (typeof v === "string" ? v : undefined);
 
 export const Route = createFileRoute("/terminal")({
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/terminal")({
     const extra: Promise<unknown>[] =
       v === "today" ? [q.ensureQueryData(todayQuery()), q.ensureQueryData(storyQueueQuery(null)).catch(() => null)] : v === "library" ? [q.ensureQueryData(libraryQuery())] : v === "history" ? [q.ensureQueryData(libraryHistoryQuery())]
       : v === "brief" ? [q.ensureQueryData(forecastQuery()), q.ensureQueryData(chartCardQuery(null))] : v === "vibe" ? [q.ensureQueryData(vibeQuery())]
-      : v === "rebrands" ? [q.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 }))] : v === "patterns" ? [q.ensureQueryData(patternsQuery(deps.sector))] : [];
+      : v === "rebrands" ? [q.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 }))] : v === "patterns" ? [q.ensureQueryData(patternsQuery(deps.sector))] : v === "studies" ? [q.ensureQueryData(dataIndexQuery())] : [];
     return Promise.all([q.ensureQueryData(signalsQuery()).catch(() => null), ...extra]).then(() => undefined);
   },
   errorComponent: () => <div role="alert" className="p-3">{sayState("terminal.failed").title} · {sayState("terminal.failed").text} · <Link to="/" className="underline">LIVE FRONT PAGE</Link></div>,
@@ -149,6 +149,7 @@ function Terminal() {
         {view === "rebrands" && <Wait><MovesTab sector={sector} onSector={setSector} /></Wait>}
         {view === "history" && <Wait><HistoryPanel /></Wait>}
         {view === "patterns" && <Wait><PatternsTab sector={sector} /></Wait>}
+        {view === "studies" && <Wait><StudiesTab /></Wait>}
         {view === "digest" && <DigestTab />}
         {view === "morning" && <MorningTab />}
         {view === "sectors" && <SectorsTab sector={sector} />}

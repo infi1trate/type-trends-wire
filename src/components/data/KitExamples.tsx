@@ -8,12 +8,13 @@ import { snapIndex, rowsIn } from "@/lib/data-stories/series";
 import { TEMPLATES } from "@/lib/data-stories/registry";
 import type { Figure, View } from "@/lib/data-stories/types";
 import { FigureView } from "./Figures";
+import { BRAND_KIT } from "@/lib/theme";
 
 const META = { slug: "kit", number: 0, question: "", deck: "", template: "", collection: { label: "", href: "/data" }, related: [] };
 export function DataKitExamples() {
   const ex = useMemo(() => {
     const i = fxInput({ perSector: 16 }), snaps = snapIndex(i);
-    const a = fxCapture(1, "2021-02-10T00:00:00Z"), b = fxCapture(2, "2023-02-10T00:00:00Z", { h1_size: 88 }), c = fxCapture(3, "2026-11-14T00:00:00Z", { source: "live", bg: "#0A0A0A" });
+    const a = fxCapture(1, "2021-02-10T00:00:00Z"), b = fxCapture(2, "2023-02-10T00:00:00Z", { h1_size: 88 }), c = fxCapture(3, "2026-11-14T00:00:00Z", { source: "live", bg: BRAND_KIT.color.ink });
     const drift = paletteDrift({ title: "Fixture palette by quarter", note: "One band per well-covered quarter from stored palette colours, weighted by share.", scope: "fintech", quarters: ["2021Q1", "2022Q1", "2023Q1", "2024Q1", "2026Q4"],
       captures: rowsIn(i, ["fintech"]).map(r => ({ domain: r.domain, q: r.quarter, palette: snaps.get(r.snapshot_id!)?.palette ?? [] })), minBrands: 10 });
     const out: [keyof typeof TEMPLATES, Figure, View, string][] = [

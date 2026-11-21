@@ -21,11 +21,9 @@ export function list(items: Seg[]): Seg[] {
 export const capList = (before: string, items: Seg[], after = ""): Caption => [before, ...list(items), ...(after ? [after] : [])];
 
 // Number formats --------------------------------------------------------------------------------------
-export const pctText = (v: number) => `${(v * 100).toFixed(1)}%`;
-export const ptsText = (d: number) => `${d >= 0 ? "+" : "−"}${Math.abs(d * 100).toFixed(1)} points`;
-export const qText = (q: string) => { const m = /^(\d{4})Q([1-4])$/.exec(q); return m ? `Q${m[2]} ${m[1]}` : q; };
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-export const dayText = (iso: string) => { const d = new Date(iso); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+// U3: one set of formats, in labels.ts; re-exported here for the study modules that import them from text.ts.
+export { pctText, ptsText, quarterText as qText, dayText } from "../labels";
+import { dayText } from "../labels";
 /** Before/after stamps that never read the same: the day; with the UTC time when both captures share a day; with seconds if they share a minute. */
 export function pairStamps(before: string, after: string): [string, string] {
   const hm = (iso: string, sec: boolean) => { const d = new Date(iso), p = (n: number) => String(n).padStart(2, "0"); return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}${sec ? `:${p(d.getUTCSeconds())}` : ""} UTC`; };

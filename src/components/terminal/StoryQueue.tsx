@@ -22,7 +22,7 @@ function FormatTabs({ value, onChange, counts }: { value: FormatFilter; onChange
   return <div role="tablist" aria-label="Story format" className="flex flex-wrap border-b border-rule">
     {TABS.map((f, i) => <button key={f} ref={el => { refs.current[i] = el; }} type="button" role="tab" id={`sq-tab-${f}`} aria-controls="sq-panel" aria-selected={value === f} tabIndex={value === f ? 0 : -1}
       onClick={() => onChange(f)} onKeyDown={e => key(e, i)}
-      className={`label min-h-11 border-r border-rule px-3 ${value === f ? "bg-g900 text-signal" : "text-g500 hover:text-ink"}`}>
+      className={`label min-h-11 border-r border-rule px-3 ${value === f ? "bg-g900 text-highlight" : "text-g500 hover:text-ink"}`}>
       {FORMAT_LABEL[f].toUpperCase()}{counts ? <span className="num"> {counts[f]}</span> : null}
     </button>)}
   </div>;
@@ -41,7 +41,7 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule p-3">
       <h2 className="label font-semibold text-ink">STORIES · LAST 7 DAYS{data ? <span className="num text-g500"> · {data.published.length} RAN · {data.held.length} HELD</span> : null}</h2>
       <span className="flex items-center gap-3">
-        <button type="button" aria-pressed={held} onClick={() => setHeld(h => !h)} className={`label min-h-11 border px-3 ${held ? "border-signal text-signal" : "border-rule text-g500"}`}>HELD {held ? "ON" : "OFF"}</button>
+        <button type="button" aria-pressed={held} onClick={() => setHeld(h => !h)} className={`label min-h-11 border px-3 ${held ? "border-highlight text-highlight" : "border-rule text-g500"}`}>HELD {held ? "ON" : "OFF"}</button>
         <AppLink href="/desk" className="label text-g500 underline underline-offset-2">DESK →</AppLink>
       </span>
     </div>
@@ -49,7 +49,7 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
     <div role="tabpanel" id="sq-panel" aria-labelledby={`sq-tab-${format}`}>
     {isPending ? <p className="p-3 text-g500">{voiced("busy.stories")}</p> : isError ? <p className="p-3 text-g500">{voiced("terminal.stories.failed")}</p>
       : !rows.length ? <p className="p-3 text-g500">{format === "all" ? "NO STORY HAS RUN IN THE LAST 7 DAYS." : format === "explore" ? "EXPLORE IS FOR PATTERN AND BRAND PAGES; NO STORY TYPE IS IN THIS FORMAT. SEE F4 PATTERNS AND F3 BRANDS." : `NO ${FORMAT_LABEL[format].toUpperCase()} STORY IN THE LAST 7 DAYS.`}</p>
-      : <ol className="flex flex-col">{rows.map(s => <li key={s.id} id={`story-${s.id}`} className={`border-b border-rule last:border-b-0 ${s.id === focus ? "border-l-2 border-l-signal bg-g900" : ""}`}>
+      : <ol className="flex flex-col">{rows.map(s => <li key={s.id} id={`story-${s.id}`} className={`border-b border-rule last:border-b-0 ${s.id === focus ? "border-l-2 border-l-highlight bg-g900" : ""}`}>
         <AppLink href={s.evidence} className="group grid min-h-11 grid-cols-[4ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[4ch_8ch_14ch_1fr_auto]">
           <span className="num label text-g500" title="Newsworthiness score">{s.score}</span>
           <span className="num label text-ink max-md:hidden" data-story-number="">{s.number != null ? `NO. ${s.number}` : "—"}</span>

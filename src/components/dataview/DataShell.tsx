@@ -1,6 +1,6 @@
 // U1 · THE DATA VIEW SHELL — an object's Data view (`?view=data` on its one address) inside the terminal's dark chrome: the same top bar,
 // ticker and keys as /terminal. Its first line names the thing exactly as its Read view does, with the switch and one "Read view" link.
-// F1–F6 open the terminal's sections, [ ] step the object's section tabs, ? the glossary, / the console, Esc closes, ` returns to Read.
+// F1–F7 open the terminal's sections, [ ] step the object's section tabs, ? the glossary, / the console, Esc closes, ` returns to Read.
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { MobileKeys, Ticker, TopBar } from "@/components/terminal/Chrome";
@@ -69,7 +69,7 @@ export function DataShell({ object, name, number, kicker, children }: DataShellP
     </div>
     <main id="tk-main" aria-label={`${OBJECT_NAME[object.type]} data`} className="library min-w-0 flex-1">{children}</main>
     <footer className="label flex min-h-6 shrink-0 flex-wrap items-center justify-end gap-x-1 border-t border-rule bg-g900 px-3 text-g500 max-md:hidden">
-      <span className="mr-auto">F1–F6 SECTIONS · [ ] TABS · ? GLOSSARY · / CONSOLE · ` READ</span>
+      <span className="mr-auto">F1–F7 SECTIONS · [ ] TABS · ? GLOSSARY · / CONSOLE · ` READ</span>
       <button type="button" onClick={() => setOverlay("console")} className="label h-6 px-2 text-ink hover:underline">/</button>
       <button type="button" onClick={() => setOverlay("glossary")} className="label h-6 px-2 text-ink hover:underline">GLOSSARY</button>
     </footer>

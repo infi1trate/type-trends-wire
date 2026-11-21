@@ -242,3 +242,23 @@ export function briefDisplay<T extends BriefLike>(b: T) {
 
 // HOMEPAGE SECTIONS — names for section crops (Phase 15).
 export const CROP_SECTION_NAME = { hero: "Hero", nav: "Navigation", pricing: "Pricing", cta: "Call to action", footer: "Footer" } as const;
+
+// FORMATS (U3) — the one set of number, date and quarter formats both views and the chart kit use. Pure, UTC.
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** A share as a percent to one decimal: 0.1234 → "12.3%". */
+export const pctText = (v: number) => `${(v * 100).toFixed(1)}%`;
+/** A change in share as points to one decimal: +0.012 → "+1.2 points". */
+export const ptsText = (d: number) => `${d >= 0 ? "+" : "−"}${Math.abs(d * 100).toFixed(1)} points`;
+/** A stored quarter key as words: "2026Q4" → "Q4 2026" (anything else unchanged). */
+export const quarterText = (q: string) => { const m = /^(\d{4})Q([1-4])$/.exec(q); return m ? `Q${m[2]} ${m[1]}` : q; };
+/** A day with its year: "14 Nov 2026". */
+export const dayText = (iso: string) => { const d = new Date(iso); return `${d.getUTCDate()} ${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+/** A day without its year: "14 Nov" (the tape's date). */
+export const shortDay = (iso: string) => { const d = new Date(iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${MONTH_ABBR[d.getUTCMonth()]}`; };
+/** Two capture dates as one phrase: "14 Nov" on the same UTC day, "between 11 and 14 Nov", "between 30 Oct and 2 Nov". */
+export function betweenDays(before: string, after: string): string {
+  const a = new Date(before), b = new Date(after);
+  if (Number.isNaN(+a) || Number.isNaN(+b)) return shortDay(after);
+  if (before.slice(0, 10) === after.slice(0, 10)) return shortDay(after);
+  return a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear() ? `between ${a.getUTCDate()} and ${shortDay(after)}` : `between ${shortDay(before)} and ${shortDay(after)}`;
+}

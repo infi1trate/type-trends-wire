@@ -4,6 +4,8 @@ import { BASIS_WORD, basis as basisOf, type Basis } from "@/lib/labels";
 import { TIERS, TIER_WORD, type Tier } from "@/lib/tiers";
 import type { Signal } from "@/lib/signals";
 import { DimTag, Info, StageBadge } from "./Info";
+import { CsvScope } from "@/components/dataview/CopyCsv";
+import { PitchButton } from "@/components/pitch/Pitch";
 
 /** MEASURED / AI ESTIMATE: one small word chip, outlined, no color. */
 export function BasisChip({ k, basis, info = false }: { k?: string; basis?: Basis; info?: boolean }) {
@@ -43,7 +45,7 @@ export function SignalTable({ rows, onOpen, reasons = false, caption }: { rows: 
       </button>
       <StoryLink row={{ signal: s.key }} className="px-2" />
     </li>)}</ul>
-    <table className="hidden w-full border-collapse text-body md:table">
+    <div className="hidden md:block"><CsvScope><table className="w-full border-collapse text-body">
       <caption className="sr-only">{caption}</caption>
       <thead><tr>
         <th scope="col" className={th}>SIGNAL<Info g="signal" /></th>
@@ -61,8 +63,8 @@ export function SignalTable({ rows, onOpen, reasons = false, caption }: { rows: 
         <td className="px-2"><MomentumText s={s} /></td>
         <td className="px-2"><ConfidenceText s={s} /></td>
         {reasons && <td className="px-2 text-g500">{s.reasons.slice(1).join(" ") || s.reasons[0]}</td>}
-        <td className="px-2 text-right" onClick={e => e.stopPropagation()}><StoryLink row={{ signal: s.key }} /></td>
+        <td className="px-2 text-right" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}><StoryLink row={{ signal: s.key }} /><PitchButton target={{ kind: "signal", ref: s.key, facts: [`Signal: ${s.name}`, `Stage: ${s.stage}`, `Share: ${pct(s.share)}`] }} /></td>
       </tr>)}</tbody>
-    </table>
+    </table></CsvScope></div>
   </>;
 }

@@ -12,7 +12,8 @@ import { brandPath, signalPath } from "@/lib/ia";
 import { pct } from "@/lib/digest/copy";
 import { BRAND_LINE, BRAND_NAME } from "@/lib/brand";
 import { DigestShell, StageWord, BasisWord } from "@/components/digest/Editorial";
-import { ReadFooter, Spark } from "@/components/read/Bits";
+import { ReadFooter } from "@/components/read/Bits";
+import { Sparkline } from "@/components/chartkit";
 import { StoryCard, StoryRow, Receipt } from "@/components/read/StoryCard";
 import { Treated, TREATMENTS, TREATMENT_NOTE } from "@/components/read/Treated";
 import { NextCheck } from "@/components/read/Freshness";
@@ -20,7 +21,7 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { StageBadge } from "@/components/terminal/Info";
 import { BasisChip, TierChip } from "@/components/terminal/SignalBits";
 import { Ticker } from "@/components/terminal/Chrome";
-import { BarChart, DonutChart, LineChart, ScatterChart } from "@/components/charts/Charts";
+import { Bars, DonutChart, QuarterLine, ScatterChart } from "@/components/chartkit";
 import { DataKitExamples } from "@/components/data/KitExamples";
 import { CONTAINER_RULES, Plate, Slab } from "@/components/brand/Containers";
 import { Button, Byline, Container, LiveChip, LiveStamp, ModePanels, SearchInput, Segmented, Tabs, TickValue } from "./Parts";
@@ -76,7 +77,7 @@ function Controls() {
 function SignalLine({ k, name, stage, share: s, points }: { k: string; name: string; stage: (typeof STAGES)[number] | null; share: number | null; points: number[] | undefined }) {
   return <li className="ed-hair py-2">
     <Receipt href={signalPath(k)} className="tk-t-h4 block break-words no-underline hover:underline">{name}</Receipt>
-    <span className="mt-1 flex min-h-11 flex-wrap items-center gap-3"><StageWord stage={stage} /><span className="tk-t-data">{s == null ? "—" : share(s)}</span><Spark points={points} label={name} /></span>
+    <span className="mt-1 flex min-h-11 flex-wrap items-center gap-3"><StageWord stage={stage} /><span className="tk-t-data">{s == null ? "—" : share(s)}</span><Sparkline look="read" values={points} label={name} /></span>
   </li>;
 }
 
@@ -123,8 +124,8 @@ export function KitView() {
     <Section id="kit-charts" title={KIT_SECTIONS[6].title} note="Four primitives on one frame: title, one-line note, source and receipt. Points take keyboard focus; a table carries the same numbers for screen readers.">
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <ScatterChart title="Share against Momentum" note={`The ${c.scatter.length} composite signals, all sectors.`} source={`forecast run ${d.run_id ?? "—"}`} receipt={{ href: "/what-we-show", label: "How composites work" }} points={c.scatter} x={{ label: "Share", format: share }} y={{ label: "Momentum (pts/q)", format: signed }} />
-        <LineChart title="Two composites over time" note="Share by quarter, well-covered quarters only (15+ sites, 25%+ coverage)." source={`forecast run ${d.run_id ?? "—"}`} receipt={c.lines[0] ? { href: signalPath(c.lines[0].id), label: "Signal page" } : undefined} series={c.lines} y={{ label: "Share", format: share }} />
-        <BarChart title="Most common composites" note="The six composite signals with the highest share, all sectors." source={`forecast run ${d.run_id ?? "—"}`} receipt={{ href: "/signals", label: "All signals" }} bars={c.bars} format={share} valueLabel="Share" />
+        <QuarterLine look="read" title="Two composites over time" note="Share by quarter, well-covered quarters only (15+ sites, 25%+ coverage)." source={`forecast run ${d.run_id ?? "—"}`} receipt={c.lines[0] ? { href: signalPath(c.lines[0].id), label: "Signal page" } : undefined} series={c.lines} y={{ label: "Share", format: share }} />
+        <Bars look="read" title="Most common composites" note="The six composite signals with the highest share, all sectors." source={`forecast run ${d.run_id ?? "—"}`} receipt={{ href: "/signals", label: "All signals" }} bars={c.bars} format={share} valueLabel="Share" />
         <DonutChart title="Published stories by type" note={`Every published story in the reading window (${d.published}).`} source="stored stories, edits applied" receipt={{ href: "/", label: "Read the stories" }} slices={c.slices} unit="stories" />
       </div>
       <div className="mt-12"><ModePanels>{() => <ScatterChart title="Share against Momentum" note="The same chart in each mode." source={`forecast run ${d.run_id ?? "—"}`} points={c.scatter} x={{ label: "Share", format: share }} y={{ label: "Momentum (pts/q)", format: signed }} />}</ModePanels></div>

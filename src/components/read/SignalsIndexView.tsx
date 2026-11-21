@@ -11,7 +11,8 @@ import { pct } from "@/lib/digest/copy";
 import { BasisWord, DigestShell, StageWord, pr } from "@/components/digest/Editorial";
 import { Ledger } from "@/components/brand/Ledger";
 import { RuleBox } from "@/components/brand/Containers";
-import { ReadFooter, Spark } from "./Bits";
+import { ReadFooter } from "./Bits";
+import { Sparkline } from "@/components/chartkit";
 import { ScrollRow } from "./ScrollRow";
 
 const TIER_NOTE: Record<SignalsGroup["tier"], string> = { headline: "Shown by default everywhere: visible, decision-worthy, well measured and moving.", supporting: "Evidence: shown inside headline signals, audits and drawers.", archive: "Collected, never deleted, not shown by default." };
@@ -20,7 +21,7 @@ const signed = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : "−
 function rowsOf(rows: SignalsRow[], scoped: boolean, sector: string, lensQ: string | undefined) {
   return rows.map((r: SignalsRow) => ({
     key: r.key, href: `/signals/${encodeURIComponent(r.key)}${lensQ ? `?sector=${lensQ}` : ""}`, number: r.rank, title: r.name,
-    line: <span className="inline-flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /><Spark points={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>,
+    line: <span className="inline-flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /><Sparkline look="read" values={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>,
     facts: [
       <span key="s" className="tabular-nums">{scoped ? <>{pct(r.share, 1) ?? "—"} <span className="ledger-muted">{sectorName(sector)} · {pct(r.allShare, 1) ?? "—"} all</span></> : pct(r.share, 1) ?? "—"}</span>,
       momentumText(r), signed(r.change),

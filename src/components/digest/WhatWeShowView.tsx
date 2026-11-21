@@ -107,7 +107,7 @@ export function WhatWeShowView({ tiers, signals, runId }: { tiers: Map<string, T
         <p className="ed-caption mt-2" aria-live="polite">{shown.length} of {list.length} signals</p>
         {TIERS.map(t => { const rows = shown.filter(r => r.tier === t); return rows.length ? <div key={t} className="mt-8"><h3 className="ed-kicker">{TIER_WORD[t]} · {rows.length}</h3>
           <ul className="mt-2">{rows.map(r => <li key={r.key} className="ed-hair grid grid-cols-1 gap-x-6 py-2 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-            <p className="min-w-0"><span className="font-medium">{r.name}</span> <Dim d={r.dimension} /> <BasisWord b={r.basis as "measured" | "ai"} /><span className="ed-data ed-muted block break-all text-[11px]">{r.key}</span></p>
+            <p className="min-w-0"><span className="font-medium">{r.name}</span> <Dim d={r.dimension} /> <BasisWord b={r.basis as "measured" | "ai"} /><span className="ed-data ed-muted block break-all text-chip">{r.key}</span></p>
             <p className="ed-caption min-w-0">{r.reasons.join(" ")}</p>
           </li>)}</ul></div> : null; })}
         {!ql && <div className="mt-8"><h3 className="ed-kicker">Open-ended categories</h3><ul className="mt-2">{OPEN_CATEGORIES.map(c => <li key={c.category} className="ed-hair grid grid-cols-1 gap-x-6 py-2 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]"><p><span className="font-medium">{CAT_NAME[c.category] ?? c.category}</span> <span className="ed-data ed-muted">{c.category}:*</span></p><p className="ed-caption">{c.evidence ? "Evidence, supporting at most. " : c.visible && c.decision ? "Each value is tiered by the four questions. " : "Archive. "}{c.why}</p></li>)}</ul></div>}

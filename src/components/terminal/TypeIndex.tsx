@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { familyHistoryQuery, sparkQuery, typeIndexQuery, type FamilyRow } from "@/lib/data";
 import { computeBand } from "@/lib/bands";
 import { Info } from "./Info";
-import { BandTag, Delta, Empty, LineChart, Loading, PanelHeader, QueryBar, Seg, Sparkline } from "./primitives";
+import { BandTag, Delta, Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
+import { Sparkline } from "@/components/chartkit";
+import { CsvScope } from "@/components/dataview/CopyCsv";
 
 const CATS = ["ALL", "SANS", "SERIF", "DISPLAY", "HAND", "MONO"] as const;
 const CAT_MAP: Record<string, string> = {
@@ -86,7 +88,7 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
         <Empty why={voiced("terminal.typeIndex.1")} />
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
-          <table className="w-full border-collapse text-body">
+          <CsvScope><table className="w-full border-collapse text-body">
             <thead>
               <tr>
                 <th scope="col" className={`${th} text-right`}>RANK<Info g="rank" /></th>
@@ -119,11 +121,11 @@ export function TypeIndex({ compact = false, onOpenFull }: { compact?: boolean; 
                   <td className="num px-2"><Delta v={r.delta28} /></td>
                   <td className="num px-2 text-ink">{r.trending_rank}</td>
                   {!compact && <td className="px-2"><BandTag band={r.band} /></td>}
-                  <td className={`px-2 ${hideSm}`}><Sparkline ranks={spark?.get(r.family)} /></td>
+                  <td className={`px-2 ${hideSm}`}><Sparkline look="data" values={spark?.get(r.family)} label={r.family} /></td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></CsvScope>
           {!compact && pages > 1 && (
             <div className="label flex items-center justify-between border-b border-rule p-3 text-g500">
               <button className="h-10 px-2 hover:text-ink disabled:opacity-40 md:h-8" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>◀ PREV</button>
@@ -194,11 +196,11 @@ function Drawer({ row, latest, onClose }: { row: FamilyRow; latest: string; onCl
         </div>
         <div className="border-b border-rule p-3">
           <div className="label mb-2 text-g500">POPULARITY RANK · HISTORY (▲ = CLIMBING)</div>
-          {isLoading ? <Loading /> : <LineChart points={(hist ?? []).map((h) => ({ date: h.captured_on, rank: h.popularity_rank }))} />}
+          {isLoading ? <Loading /> : <Sparkline look="data" large points={(hist ?? []).map((h) => ({ date: h.captured_on, rank: h.popularity_rank }))} />}
         </div>
         <div className="border-b border-rule p-3">
           <div className="label mb-2 text-g500">SPECIMEN</div>
-          <p className="break-words text-ink" style={{ fontFamily: `"${row.family}", var(--tk-font-mono)`, fontSize: 28, lineHeight: "36px" }}>
+          <p className="break-words text-ink" style={{ fontFamily: `"${row.family}", var(--sys-font-mono)`, fontSize: "var(--sys-text-specimen-size)", lineHeight: "var(--sys-text-specimen-leading)" }}>
             The quick brown fox — 0123456789
           </p>
         </div>

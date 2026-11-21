@@ -5,8 +5,8 @@
 // Reuses the Digest editorial system; no health or model jargon here (that lives on /status).
 import { PrintFrame, PrintMark } from "./PrintFrame";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { MORE_LABEL, MORE_MENU, READ_BAR, isDataView, readBarOf, readSectionOf, type SectionId } from "@/lib/ia";
+import { Link, useRouter } from "@tanstack/react-router";
+import { MORE_LABEL, MORE_MENU, READ_BAR, isDataView, readBarOf, readKeyHref, readSectionOf, type SectionId } from "@/lib/ia";
 import { LENS_SECTORS } from "@/lib/sector-lens";
 import { lensLine, type BarItem } from "@/lib/shell";
 import { sectorName } from "@/lib/labels";
@@ -24,7 +24,7 @@ import { ArrivingMark } from "@/components/brand/Motion";
 /** `dateline`: the front page's date and clock beside the wordmark; `segmented`: show the Read / Terminal switch as a two-part control. */
 type Props = { children: ReactNode; label: string; section?: SectionId | null; lens?: boolean; note?: string | null; sub?: ReactNode; tour?: boolean; fixedSector?: { value: string; onChange: (s: string) => void } | undefined; dateline?: ReactNode; segmented?: boolean | undefined };
 
-/** One bar item (E3: Today, Signals, Brands, Patterns, Studies, Digest; lib/ia.ts READ_BAR). Addresses are the sections' own. */
+/** One bar item (U3: the seven sections in ia.ts order; lib/ia.ts READ_BAR). Addresses are the sections' own. */
 function BarLink({ b, active, onGo }: { b: (typeof READ_BAR)[number]; active: boolean; onGo: () => void }) {
   const cls = "inline-flex min-h-11 items-center";
   const aria = active ? ({ "aria-current": "page" } as const) : {};
@@ -35,6 +35,7 @@ function BarLink({ b, active, onGo }: { b: (typeof READ_BAR)[number]; active: bo
     case "patterns": return <Link to="/patterns" className={cls} onClick={onGo} {...aria}>{b.label}</Link>;
     case "studies": return <Link to="/data" className={cls} onClick={onGo} {...aria}>{b.label}</Link>;
     case "digest": return <Link to="/digest" className={cls} onClick={onGo} {...aria}>{b.label}</Link>;
+    case "tools": return <Link to="/tools" className={cls} onClick={onGo} {...aria}>{b.label}</Link>;
   }
 }
 /** One More item: a page link, the RSS feed, or the glossary overlay. */
@@ -50,6 +51,8 @@ function MoreLink({ m, current, onGo, onGlossary }: { m: (typeof MORE_MENU)[numb
   }
 }
 const moreCurrent = (id: string, path: string) => (id === "tools" && readSectionOf(path) === "tools") || (id === "what-we-show" && path === "/what-we-show");
+/** U3 · the bar's More list (from 1024 px) leaves out what the bar already holds (Tools); the Menu sheet's More list keeps it. */
+const BAR_MORE = MORE_MENU.filter(m => !m.narrow), SHEET_BAR = READ_BAR.filter(b => !b.wide);
 /** More in the bar (from 1024 px): one button opening a short list on the ink slab. A disclosure, not a trap: Escape closes it and
  *  returns focus to the button, and it closes when focus or a click leaves it. */
 function MoreMenu({ active, path, onGlossary }: { active: boolean; path: string; onGlossary: () => void }) {
@@ -66,7 +69,7 @@ function MoreMenu({ active, path, onGlossary }: { active: boolean; path: string;
       {MORE_LABEL}<span aria-hidden="true">{open ? "▴" : "▾"}</span>
     </button>
     <ul id="shell-more" hidden={!open} className="c-slab shell-more absolute left-0 top-full z-50 grid min-w-[15rem] px-4 py-2" data-container="slab">
-      {MORE_MENU.map(m => <li key={m.id}><MoreLink m={m} current={moreCurrent(m.id, path)} onGo={() => setOpen(false)} onGlossary={onGlossary} /></li>)}
+      {BAR_MORE.map(m => <li key={m.id}><MoreLink m={m} current={moreCurrent(m.id, path)} onGo={() => setOpen(false)} onGlossary={onGlossary} /></li>)}
     </ul>
   </div>;
 }
@@ -102,8 +105,8 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
   const ctx = useRef({ setNote: (n: string | null | undefined) => setHanded(n) }).current;
   const loc = useLocationParts();
   // The bar lights up by address (Studies and the explainer pages have their own item); a page that names its section keeps it.
-  const barActive = section === null ? null : loc.pathname.startsWith("/data") ? "studies" : section === undefined ? readBarOf(loc.pathname) : section === "live" ? "today" : section === "tools" ? "more" : section;
-  const [lensSector, setLensSector] = useSectorLens(), mode = useModeToggle();
+  const barActive = section === null ? null : loc.pathname.startsWith("/data") ? "studies" : section === undefined ? readBarOf(loc.pathname) : section === "live" ? "today" : section;
+  const [lensSector, setLensSector] = useSectorLens(), mode = useModeToggle(), router = useRouter();
   const sector = fixedSector?.value ?? lensSector, setSector = fixedSector?.onChange ?? setLensSector;
   const [open, setOpen] = useState(false), [overlay, setOverlay] = useState<null | "glossary" | "method">(null), [anchor, setAnchor] = useState<string | null>(null), [touring, setTouring] = useState(false);
   const close = useCallback(() => { setOverlay(null); setAnchor(null); if (/^#[mg]-/.test(window.location.hash)) history.replaceState(history.state, "", window.location.pathname + window.location.search); }, []);
@@ -121,9 +124,11 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
       if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
       if (e.key === "`") { e.preventDefault(); mode.go(); }
       else if (e.key === "?") { e.preventDefault(); setOverlay("glossary"); }
+      // U3 · the terminal's keys in Read: 1–7 open the seven sections, / goes to search (the page's own search field, else the directory's).
+      else { const href = readKeyHref(e.key, !!document.querySelector('input[type="search"]')); if (href === "focus-search") { e.preventDefault(); document.querySelector<HTMLInputElement>('input[type="search"]')?.focus(); } else if (href) { e.preventDefault(); const search = e.key === "/"; void router.navigate({ href }).then(() => { if (search) requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[type="search"]')?.focus()); }); } }
     };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
-  }, [mode, close]);
+  }, [mode, close, router]);
   // The Menu sheet is a disclosure, not a trap: Tab can leave it, and it closes when focus leaves the bar; Escape closes it and returns focus to Menu.
   const menuRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -142,7 +147,7 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
   </ul></nav>;
   // Below 1024 px: the same items in the same order in the Menu sheet, More's list under its own label.
   const sheetNav = <nav aria-label="Sections" className={SHEET_CLS.sections}>
-    <ul className="grid grid-cols-2 gap-x-6 sm:grid-cols-3">{READ_BAR.map(b => <li key={b.id}><BarLink b={b} active={barActive === b.id} onGo={() => setOpen(false)} /></li>)}</ul>
+    <ul className="grid grid-cols-2 gap-x-6 sm:grid-cols-3">{SHEET_BAR.map(b => <li key={b.id}><BarLink b={b} active={barActive === b.id} onGo={() => setOpen(false)} /></li>)}</ul>
     <p className="shell-item mt-3" id="shell-sheet-more">{MORE_LABEL}</p>
     <ul className="grid grid-cols-2 gap-x-6 sm:grid-cols-3" aria-labelledby="shell-sheet-more">{MORE_MENU.map(m => <li key={m.id}><MoreLink m={m} current={moreCurrent(m.id, loc.pathname)} onGo={() => setOpen(false)} onGlossary={openGlossary} /></li>)}</ul>
   </nav>;

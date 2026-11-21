@@ -27,7 +27,7 @@ import type { StudyPage } from "@/lib/data-stories/types";
 import { factsSheet, numbersInText } from "@/lib/data-stories/writer";
 import { StoryCover } from "@/components/read/Covers";
 import { FigureTable } from "./Tables";
-import { ChartTitleQuiet } from "@/components/charts/Charts";
+import { ChartTitleQuiet } from "@/components/chartkit";
 import { line as voiced } from "@/lib/voice";
 
 export function CaptionText({ c }: { c: Caption }) {
@@ -106,7 +106,7 @@ export function Stepper({ s, step, onStep }: { s: StoryModel; step: number; onSt
     blocks.current.forEach(b => b && io.observe(b)); return () => io.disconnect();
   }, [n, onStep]);
   return <div ref={root} className="ed-wrap mt-8 lg:grid lg:grid-cols-12 lg:gap-10" data-stepper="" data-composition="data-story">
-    <div className="sticky top-0 z-10 self-start border-b py-3 lg:col-span-7 lg:top-4 lg:border-b-0" data-stepper-picture="" style={{ background: "var(--tk-surface-page)", borderColor: "var(--tk-rule-hairline)" }}>
+    <div className="sticky top-0 z-10 self-start border-b py-3 lg:col-span-7 lg:top-4 lg:border-b-0" data-stepper-picture="" style={{ background: "var(--sys-color-page)", borderColor: "var(--sys-color-rule)" }}>
       <div className="max-h-[46vh] overflow-y-auto lg:max-h-none lg:overflow-visible">{fig && <FigureView fig={fig} view={cur.view} live />}</div>
       <div className="no-print mt-3 flex items-center gap-2" role="group" aria-label="Step through the story">
         <Raised className="tk-t-kicker" onClick={() => go(k - 1)} disabled={k === 0} aria-label="Previous step">← Previous</Raised>
@@ -193,7 +193,7 @@ export function Scenes({ s, scene, onScene, allFigures = false }: { s: StudyPage
     </div>
     <ol className="lg:col-span-5" aria-label="Scenes">{s.scenes.map((sc, j) => { const f = s.figures[sc.view.figure], t = text[j];
       return <li key={sc.id} id={`scene-${j + 1}`} ref={el => { blocks.current[j] = el; }} data-scene={j + 1} aria-current={j === k ? "step" : undefined}
-        className="break-inside-avoid border-t py-8 first:border-t-0 first:pt-0 lg:flex lg:min-h-[60vh] lg:items-center lg:border-t-0 lg:py-10 lg:first:pt-10" style={{ borderColor: "var(--tk-rule-hairline)" }}>
+        className="break-inside-avoid border-t py-8 first:border-t-0 first:pt-0 lg:flex lg:min-h-[60vh] lg:items-center lg:border-t-0 lg:py-10 lg:first:pt-10" style={{ borderColor: "var(--sys-color-rule)" }}>
         <div className="w-full">
           {f && <div className="mb-5 lg:hidden" data-scene-inline=""><Deferred eager={allFigures || j === 0} label={figureName(f)} style={{ minHeight: "16rem" }} noscript={<a href={`?figures=all#scene-${j + 1}`} className="ed-tap ed-data underline">Draw this scene's figure ({figureName(f)}) →</a>}><ChartTitleQuiet.Provider value={j > 0 && s.scenes[j - 1]?.view.figure === sc.view.figure}><FigureView fig={f} view={sc.view} /></ChartTitleQuiet.Provider></Deferred></div>}
           <p className={`${scenePara} transition-colors duration-200 motion-reduce:transition-none ${j === k ? "" : "lg:opacity-60"}`} style={MEASURE}><strong className="font-semibold">{t?.lead || sc.lead}.</strong> {t?.body}</p>

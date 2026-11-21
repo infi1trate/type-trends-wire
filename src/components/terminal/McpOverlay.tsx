@@ -10,7 +10,7 @@ const COMMAND=`claude mcp add --transport http ${BRAND_NAME} ${ENDPOINT}`;
 function CopyLine({label,value}:{label:string;value:string}){
   const [status,setStatus]=useState<'idle'|'copied'|'failed'>('idle');
   return <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b border-rule py-3">
-    <div className="min-w-0"><div className="label text-g500">{label}</div><div className="break-all text-ink">{value}</div>{status==='failed'&&<span role="status" className="label text-signal">COPY FAILED</span>}</div>
+    <div className="min-w-0"><div className="label text-g500">{label}</div><div className="break-all text-ink">{value}</div>{status==='failed'&&<span role="status" className="label text-highlight">COPY FAILED</span>}</div>
     <Button variant="ghost" size="icon" className="shrink-0 text-ink" aria-label={`Copy ${label.toLowerCase()}`} title={status==='copied'?'Copied':`Copy ${label.toLowerCase()}`} onClick={async()=>{try{await navigator.clipboard.writeText(value);setStatus('copied');setTimeout(()=>setStatus('idle'),2000);}catch{setStatus('failed');}}}>{status==='copied'?<Check/>:<Copy/>}</Button>
   </div>;
 }

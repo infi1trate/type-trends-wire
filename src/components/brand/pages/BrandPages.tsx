@@ -50,7 +50,7 @@ export function BrandShell({ page, children }: { page: BrandPageSlug; children: 
   </DigestShell>;
 }
 /** One idea per screen: air above, a label in the left third, the idea in the two thirds beside it. */
-function Screen({ label, title, children, id, tall = false }: { label: string; title?: string; children: ReactNode; id: string; tall?: boolean }) {
+export function Screen({ label, title, children, id, tall = false }: { label: string; title?: string; children: ReactNode; id: string; tall?: boolean }) {
   return <section aria-labelledby={`${id}-h`} className={`ed-wrap d-air ${tall ? "brand-screen-tall" : ""}`.trim()}>
     <div className="d-quiet">
       <p className="d-quiet-label ed-kicker" id={title ? undefined : `${id}-h`}>{label}</p>
@@ -116,7 +116,7 @@ function WrongMark({ kind }: { kind: (typeof MARK_RULES.donts)[number]["id"] }) 
     return <svg width={w * 1.3} height={h} viewBox={`0 0 ${p.w * 1.3} ${p.h}`} aria-hidden="true">{subs.map((d, i) => { const x = Number(d.slice(1).split(/[ Q]/)[0]); const k = cuts.filter(c => x > c).length; return <path key={i} d={d} fill={MARK_INK} transform={`translate(${k * p.w * 0.1} 0)`} />; })}</svg>;
   }
   const t = kind === "lean" ? `skewX(-14) translate(${p.h * 0.25} 0)` : kind === "stretch" ? "scale(1.35 1)" : undefined;
-  const style: CSSProperties | undefined = kind === "glow" ? { filter: "drop-shadow(0 0 10px rgba(255,143,196,.9)) drop-shadow(0 6px 12px rgba(10,10,10,.45))" } : undefined;
+  const style: CSSProperties | undefined = kind === "glow" ? { filter: "drop-shadow(0 0 10px color-mix(in srgb, var(--sys-color-accent) 90%, transparent)) drop-shadow(0 6px 12px rgba(10,10,10,.45))" } : undefined;
   return <svg width={kind === "stretch" ? w * 1.35 : w * 1.1} height={h} viewBox={`0 0 ${kind === "stretch" ? p.w * 1.35 : p.w * 1.1} ${p.h}`} style={style} aria-hidden="true"><path d={p.d} fill={kind === "colour" ? C.pink : MARK_INK} transform={t} /></svg>;
 }
 const GROUND_HEX = { paper: C.paper, pink: C.pink, yellow: C.yellow, green: C.green } as const;
@@ -218,7 +218,7 @@ function ModeSample({ mode }: { mode: Mode }) {
 }
 
 // ——— /brand/type ———————————————————————————————————————————————————————————————————————————————————
-const SPEC: Record<string, string> = { display: "Aa", text: "Aa", mono: "0123 #FF8FC4" };
+const SPEC: Record<string, string> = { display: "Aa", text: "Aa", mono: `0123 ${BRAND_KIT.color.pink}` };
 export function BrandType() {
   const { data } = useSuspenseQuery(kitQuery());
   const [a, b, c] = [data.stories[0], data.stories[1] ?? data.stories[0], data.stories[2] ?? data.stories[0]];
@@ -226,11 +226,11 @@ export function BrandType() {
   const copy: Record<(typeof TYPE_LADDER)[number], string> = {
     display: sig?.name ?? "Big type", h1: a?.headline ?? "", h2: b?.headline ?? "", h3: c?.headline ?? "", kicker: a?.kicker ?? "Today", chip: "Measured",
     deck: a?.deck ?? b?.deck ?? "", body: b?.deck ?? a?.deck ?? "", quote: c?.deck ?? a?.deck ?? "", figure: sig?.share != null ? `${(sig.share * 100).toFixed(1)}%` : "27.6%",
-    caption: a ? `Story captured ${a.at.slice(0, 10)}, with its receipts.` : "Captured with receipts.", data: sig ? `${sig.key} · ${C.pink}` : "combo:big_type · #FF8FC4",
+    caption: a ? `Story captured ${a.at.slice(0, 10)}, with its receipts.` : "Captured with receipts.", data: sig ? `${sig.key} · ${C.pink}` : `combo:big_type · ${C.pink}`,
   };
   return <BrandShell page="type">
     <Screen id="t-faces" label="Faces" title="Two families and one utility face">
-      <ul className="space-y-8">{TYPE_FACES.map(f => <li key={f.id} className="ed-hair pt-4"><p style={{ fontFamily: `var(--tk-font-${f.id})`, fontWeight: f.id === "display" ? 900 : 400, fontSize: 96, lineHeight: 1 }} aria-hidden="true">{SPEC[f.id]}</p><h3 className="ed-h3 mt-3">{f.name}</h3><p className="ed-body mt-2">{f.use}</p></li>)}</ul>
+      <ul className="space-y-8">{TYPE_FACES.map(f => <li key={f.id} className="ed-hair pt-4"><p style={{ fontFamily: `var(--tk-font-${f.id})`, fontWeight: f.id === "display" ? 900 : 400, fontSize: "var(--sys-text-figure-size)", lineHeight: 1 }} aria-hidden="true">{SPEC[f.id]}</p><h3 className="ed-h3 mt-3">{f.name}</h3><p className="ed-body mt-2">{f.use}</p></li>)}</ul>
     </Screen>
     <Screen id="t-ladder" label="The ladder" title="Every role, set with real story copy">
       <ul className="space-y-10">{TYPE_LADDER.map(r => { const t = LIGHT.type[r]; const kit = (K.type as Record<string, { size: number; leading: number; tracking?: string | number }>)[r]!;
@@ -316,7 +316,7 @@ const ILLUSTRATION_USE: Record<string, string> = {
 /** Demo data: the shape of real stored values (a share series and a story), labelled as a sample. */
 const DEMO_SERIES = [{ x: "Q1 2024", y: 0.212 }, { x: "Q3 2024", y: 0.268 }, { x: "Q1 2025", y: 0.241 }, { x: "Q3 2025", y: 0.336 }, { x: "Q1 2026", y: 0.47 }];
 /** A sample after-frame redrawn from fixture skeleton boxes (the same path story covers use), so the demo shows a real redraw. */
-const DEMO_FRAME = storyFrames("sample.com", [fxCapture(1, "2026-10-01T00:00:00Z"), fxCapture(2, "2026-11-16T00:00:00Z", { bg: "#0A0A0A", source: "live" })], "2026-11-15T00:00:00Z")?.after ?? null;
+const DEMO_FRAME = storyFrames("sample.com", [fxCapture(1, "2026-10-01T00:00:00Z"), fxCapture(2, "2026-11-16T00:00:00Z", { bg: BRAND_KIT.color.ink, source: "live" })], "2026-11-15T00:00:00Z")?.after ?? null;
 function IllustrationDemo({ id }: { id: string }) {
   if (id === "trail") return <Trail points={DEMO_SERIES} label="Sample: a signal's share of homepages by quarter" format={v => `${(v * 100).toFixed(1)}%`} w={720} h={400} seed="brand-trail" />;
   if (id === "soft") return <SoftObject text="47" seed="brand-soft" ink="pink" print="yellow" label="Sample: the number 47 as a soft object" />;

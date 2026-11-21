@@ -56,7 +56,7 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
       <h1 className="ed-cover mt-4 break-words">{list(a.domains)}</h1>
       <p className="ed-standfirst mt-6">{n} sites compared on type, color, layout and voice, read against {where}{a.sectorSource === "majority" ? " (their most common sector)" : a.sectorSource === "chosen" ? "" : ""}.</p>
       <figure className="mt-8 flex flex-wrap items-end gap-x-4 gap-y-1" data-report-figure="">
-        <span className="ed-display tabular-nums" style={{ fontFamily: "var(--tk-font-display)", fontWeight: 900, fontSize: "clamp(4rem, 12vw, 8rem)", lineHeight: 0.85 }}>{fig.value}</span>
+        <span className="ed-display tabular-nums" style={{ fontFamily: "var(--sys-font-display)", fontWeight: 900, fontSize: "clamp(4rem, 12vw, 8rem)", lineHeight: 0.85 }}>{fig.value}</span>
         <figcaption className="pb-2"><span className="ed-h3 block">{fig.unit}</span><span className="ed-caption block max-w-[44ch]">{fig.caption}</span></figcaption>
       </figure>
       <p className="ed-data mt-4">{latest ? `Latest capture ${day(latest)}` : voiced("agency.auditView.1")}{a.dataThrough ? ` · forecast data through ${a.dataThrough}` : ""} · prepared {day(a.now)}</p>

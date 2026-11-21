@@ -7,13 +7,14 @@ import type { NewsDrops } from "@/lib/stories/candidates";
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { QueueModel } from "@/lib/stories/view";
+import type { PitchedItem } from "@/lib/stories/pitch";
 import { storyTime } from "@/lib/stories";
 import { DigestShell } from "@/components/digest/Editorial";
 import { AppLink } from "@/components/terminal/AppLink";
 import { ReadFooter } from "./Bits";
 
 type Item = QueueModel["published"][number];
-export type DeskQueue = QueueModel & { news?: { kept: number; dropped: number; drops: NewsDrops } | null };
+export type DeskQueue = QueueModel & { news?: { kept: number; dropped: number; drops: NewsDrops } | null; pitches?: PitchedItem[] };
 const day = (iso: string) => iso.slice(0, 10);
 
 function Actions({ s, send }: { s: Item; send: (body: Record<string, unknown>) => Promise<string> }) {
@@ -54,6 +55,21 @@ function Row({ s, send }: { s: Item; send: ((body: Record<string, unknown>) => P
   </li>;
 }
 
+const VERDICT_LABEL: Record<string, string> = { story: "Already a story", ran: "Ran", would_run: "Would run", held: "Held", refused: "Not a change under the rules" };
+/** U4 · what editors pitched, each with the engine's own answer. A pitch never publishes; it only records the answer. */
+function Pitched({ items }: { items: PitchedItem[] }) {
+  return <section aria-labelledby="desk-pitched" className="ed-wrap mt-12" data-desk-pitched="">
+    <h2 id="desk-pitched" className="ed-h2 ed-rule pt-3">Pitched · {items.length}</h2>
+    <p className="ed-small mt-3">Rows sent from the terminal, Data views and receipts. The engine answers each with the rules that build stories; held pitches are asked again on every build, and one that passes every rule and the daily cap runs like any other story.</p>
+    {items.length ? <ul className="mt-4 space-y-5">{items.map(({ pitch: p, verdict: v, answeredAt }) => <li key={p.id} className="ed-hair pt-3" data-pitch-status={v?.status ?? "open"}>
+      <p className="ed-kicker flex flex-wrap gap-x-3"><span>{VERDICT_LABEL[v?.status ?? ""] ?? "Waiting for the next build"}</span><span className="ed-muted">{p.kind} · {p.ref}</span><time dateTime={p.at} className="ed-muted">{storyTime(p.at)}</time></p>
+      <p className="ed-small mt-1">“{p.note}”</p>
+      {v && <p className="ed-data mt-1">{v.text}{"storyId" in v ? <> <Link to="/stories/$id" params={{ id: v.storyId }} className="ed-tap">{v.number != null ? `No. ${v.number}` : "Open"} →</Link></> : null}{answeredAt ? <span className="ed-muted"> · answered {storyTime(answeredAt)}</span> : null}</p>}
+      {p.facts.length > 0 && <details className="mt-1"><summary className="ed-tap ed-data cursor-pointer">The row as pitched</summary><ul className="ed-data mt-1">{p.facts.map((f, i) => <li key={i}>{f}</li>)}</ul></details>}
+    </li>)}</ul> : <p className="ed-small mt-3">{voiced("read.deskView.5")}</p>}
+  </section>;
+}
+
 export function DeskView({ q, onDay }: { q: DeskQueue; onDay: (d: string | null) => void }) {
   const client = useQueryClient();
   const send = async (body: Record<string, unknown>) => {
@@ -82,6 +98,7 @@ export function DeskView({ q, onDay }: { q: DeskQueue; onDay: (d: string | null)
       <h2 id={`desk-${title}`} className="ed-h2 ed-rule pt-3">{title} · {items.length}</h2>
       {items.length ? <ul className="mt-4 space-y-6">{items.map(s => <Row key={s.id} s={s} send={send} />)}</ul> : <p className="ed-small mt-3">{empty}</p>}
     </section>)}
+    <Pitched items={q.pitches ?? []} />
     <section aria-labelledby="desk-log" className="ed-wrap mt-12">
       <h2 id="desk-log" className="ed-h2 ed-rule pt-3">Editor's log</h2>
       {q.edits.length ? <ol className="ed-data mt-4 space-y-1">{q.edits.map((e, i) => <li key={i}><time dateTime={e.at}>{e.at.slice(0, 16).replace("T", " ")}</time> · {e.action} · <Link to="/stories/$id" params={{ id: e.story }} className="ed-tap">{e.headline}</Link>{e.note ? ` · ${e.note}` : ""}</li>)}</ol> : <p className="ed-small mt-3">{voiced("read.deskView.4")}</p>}

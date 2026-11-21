@@ -2,7 +2,7 @@
 // A recipe whose data is too thin is skipped and the next one in the list is tried; with nothing left the section is absent.
 import type { Signal } from "../signals";
 import { kitCharts, wellCovered, type QuarterSeries } from "../kit";
-// Same shapes as the shared chart primitives (components/charts/Charts.tsx), kept here so this module stays pure.
+// Same shapes as the shared chart primitives (components/chartkit), kept here so this module stays pure.
 export type ScatterPoint = { id: string; label: string; x: number; y: number; stage?: string | null };
 export type LineSeries = { id: string; label: string; points: { x: string; y: number }[] };
 export type Bar = { id: string; label: string; value: number; stage?: string | null };

@@ -6,7 +6,7 @@ const q = (x: string) => (/^\d{4}Q[1-4]$/.test(x) ? qText(x) : x);
 const Wrap = ({ caption, children }: { caption: string; children: React.ReactNode }) =>
   <div className="mt-6 overflow-x-auto first:mt-0" data-figure-table=""><table className="tk-t-data w-full min-w-[20rem] border-collapse text-left"><caption className="ed-kicker pb-2 text-left">{caption}</caption>{children}</table></div>;
 const th = "border-b px-2 py-1 font-semibold", td = "border-b px-2 py-1 align-top";
-const rule = { borderColor: "var(--tk-rule-hairline)" };
+const rule = { borderColor: "var(--sys-color-rule)" };
 export function FigureTable({ fig }: { fig: Figure }) {
   switch (fig.kind) {
     case "multiples": {

@@ -3,7 +3,6 @@ import { canonicalHref } from "@/lib/ia";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { SITE_URL, DIGEST_NAME } from "@/lib/site";
-import { figureSvg, type CardModel } from "@/lib/chart/card";
 import type { Thumb } from "@/lib/thumbs";
 import { BASIS_WORD, type Basis, type StageName } from "@/lib/labels";
 import { GATE_ENABLED } from "@/lib/gate";
@@ -54,14 +53,6 @@ export function SectionHead({ n, title, kicker, id }: { n: string; title: string
 }
 
 /** Lead chart at two sizes: wide for ≥768, compact for phones (keeps axis labels legible). */
-export function Figure({ card, label, caption }: { card: Pick<CardModel, "series" | "forecast">; label: string; caption: ReactNode }) {
-  return <figure className="ed-figure ed-bleed">
-    <div className="hidden md:block" dangerouslySetInnerHTML={{ __html: figureSvg(card, 1280, 520, label) }} />
-    <div className="md:hidden" dangerouslySetInnerHTML={{ __html: figureSvg(card, 640, 480, label) }} />
-    <figcaption className="ed-caption mt-2 px-5 md:px-0">{caption}</figcaption>
-  </figure>;
-}
-
 /** Thumbnail with caption and links, or a typographic card when none is stored (or the site opted out). */
 export function SiteCard({ domain, name, sector, lines, thumb, sizes = "(min-width: 1024px) 25vw, 100vw" }: { domain: string; name: string | null; sector: string; lines: string[]; thumb: Thumb | null; sizes?: string }) {
   return <article className="flex flex-col gap-2">
@@ -84,7 +75,7 @@ export function Swatches({ colors, label }: { colors: { hex: string; name: strin
   return <ul aria-label={label} className={`grid gap-2 ${single ? "grid-cols-1" : "grid-cols-5"}`}>{colors.map((c, i) => <li key={`${c.hex}${i}`} className="min-w-0">
     <span className={`ed-swatch ${single ? "aspect-[3/2]" : ""}`} style={{ background: c.hex }} aria-hidden="true" />
     <span className={`ed-caption mt-1 block ${single ? "" : "truncate"}`} title={c.name}>{c.name}</span>
-    <span className="ed-data block text-[11px]">{c.hex}</span>
+    <span className="ed-data block text-chip">{c.hex}</span>
   </li>)}</ul>;
 }
 

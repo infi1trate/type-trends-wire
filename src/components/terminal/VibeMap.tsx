@@ -58,12 +58,12 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
         <div className="label mb-1 text-compare-muted">Y · {ay ? `↓ ${ay.negative.map(tagPhrase).join(" · ")}   ${ay.positive.map(tagPhrase).join(" · ")} ↑` : "—"}</div>
         <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-260px))] max-md:max-w-full">
           <svg ref={svgRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full border border-rule outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-ink" tabIndex={0} role="group" aria-label={`Vibe map of ${data.n} sites in ${data.k} clusters. Use arrow keys to move between sites, Enter to open.`} aria-describedby="vibe-readout" onKeyDown={onKey}>
-            <line x1={SIZE / 2} y1={0} x2={SIZE / 2} y2={SIZE} stroke="var(--tk-rule-hairline)" strokeWidth={1} />
-            <line x1={0} y1={SIZE / 2} x2={SIZE} y2={SIZE / 2} stroke="var(--tk-rule-hairline)" strokeWidth={1} />
+            <line x1={SIZE / 2} y1={0} x2={SIZE / 2} y2={SIZE} stroke="var(--sys-color-rule)" strokeWidth={1} />
+            <line x1={0} y1={SIZE / 2} x2={SIZE} y2={SIZE / 2} stroke="var(--sys-color-rule)" strokeWidth={1} />
             {points.map(p => {
               const dim = sector !== "all" && p.sector !== sector, on = selected == null || p.cluster === selected, isFocus = p.domain === focus;
               return <rect key={p.domain} x={scale.X(p.x) - DOT / 2} y={scale.Y(p.y) - DOT / 2} width={DOT} height={DOT}
-                fill={isFocus ? "var(--tk-accent-1)" : on && selected != null ? "var(--tk-text-primary)" : "var(--tk-text-muted)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
+                fill={isFocus ? "var(--sys-color-highlight)" : on && selected != null ? "var(--sys-color-ink)" : "var(--sys-color-ink-muted)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
                 onMouseEnter={() => setFocus(p.domain)} onClick={() => { setFocus(p.domain); setSelected(p.cluster); svgRef.current?.focus(); }} className="cursor-pointer"><title>{p.domain}</title></rect>;
             })}
           </svg>
@@ -90,7 +90,7 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
           <ul className="label mb-3 text-compare-muted">{(sel.top_tags ?? []).slice(0, 5).map(t => <li key={t.tag}><span className="text-ink">{(t.phrase ?? tagPhrase(t.tag)).toUpperCase()}</span> {pct(t.share)} · +{t.lift_pts.toFixed(0)} PTS VS MAP</li>)}</ul>
           {!!sel.drivers?.length && <><h4 className="label mb-1 text-compare-muted">FORECAST TRAITS DRIVING IT</h4><ul className="label mb-3 text-compare-muted">{sel.drivers.map(d => <li key={d.trait}><span className="normal-case text-ink">{traitLabel(d.trait).name}</span> <DimTag d={traitLabel(d.trait).dimension} /> <StageBadge stage={d.stage} />{d.momentum != null && ` · ${d.momentum >= 0 ? "+" : ""}${d.momentum.toFixed(2)} PTS/Q`}</li>)}</ul></>}
           <h4 className="label mb-1 text-compare-muted">SITES · {members.length}</h4>
-          <ul className="text-body">{members.map(p => <li key={p.domain} className="border-t border-rule py-1"><Link to="/brands/$domain" params={{ domain: p.domain }} search={{ view: "data" }} className={`hover:underline ${p.domain === focus ? "text-signal" : "text-ink"}`} onFocus={() => setFocus(p.domain)}>{p.domain}</Link> <span className="label text-compare-muted">{p.sector.toUpperCase()}</span><div className="label text-compare-muted">{tagText(p.tags)}</div></li>)}</ul>
+          <ul className="text-body">{members.map(p => <li key={p.domain} className="border-t border-rule py-1"><Link to="/brands/$domain" params={{ domain: p.domain }} search={{ view: "data" }} className={`hover:underline ${p.domain === focus ? "text-highlight" : "text-ink"}`} onFocus={() => setFocus(p.domain)}>{p.domain}</Link> <span className="label text-compare-muted">{p.sector.toUpperCase()}</span><div className="label text-compare-muted">{tagText(p.tags)}</div></li>)}</ul>
         </div>}
         <p className="label p-3 text-compare-muted">{data.n} SITES WITH VALID AI TAGS · TAGS THROUGH {data.data_through?.slice(0, 10) ?? "UNDATED"} · PCA {ax ? pct(ax.explained) : "NOT COMPUTED"} + {ay ? pct(ay.explained) : "NOT COMPUTED"} OF VARIANCE · K={data.k} BY SILHOUETTE {data.silhouette?.toFixed(2)} · TAG-SPACE SIMILARITY, NOT VISUAL SIMILARITY · <button type="button" onClick={onMethod} className="text-ink underline">METHOD</button></p>
       </div>

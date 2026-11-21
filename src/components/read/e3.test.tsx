@@ -63,7 +63,8 @@ describe("E3 · part 0: how a census is read", () => {
 describe("E3 · part 1: navigation", () => {
   const BAR = ["Today", "Signals", "Brands", "Patterns", "Studies", "Digest"], MORE = ["Tools", "Glossary", "What makes a story", "What we show and why", "RSS"];
   it("the bar's items and order; More holds Tools, Glossary, the two explainers and RSS; / is Today", () => {
-    expect(READ_BAR.map(b => b.label)).toEqual(BAR);
+    // U3: Tools joins the bar as the seventh section (from 1024 px); below that it stays under More.
+    expect(READ_BAR.map(b => b.label)).toEqual([...BAR, "Tools"]);
     expect(MORE_MENU.map(m => m.label)).toEqual(MORE);
     expect(READ_BAR[0]).toEqual({ id: "today", label: "Today", href: "/" });
     expect(SECTIONS[0]!.label).toBe("Today");
@@ -73,8 +74,8 @@ describe("E3 · part 1: navigation", () => {
     const [bar, sheet] = [...r.container.querySelectorAll('nav[aria-label="Sections"]')] as HTMLElement[];
     const items = (el: Element | null | undefined) => [...(el?.querySelectorAll(":scope > ul > li > a, :scope > ul > li > button, :scope > ul > li > div > button") ?? [])].map(x => x.textContent!.replace(/[▾▴]/g, "").trim());
     expect(bar!.className).toContain("max-lg:hidden"); expect(sheet!.className).toContain("lg:hidden");
-    expect(items(bar)).toEqual([...BAR, "More"]);
-    expect([...bar!.querySelectorAll("#shell-more li")].map(x => x.textContent!.trim())).toEqual(MORE);
+    expect(items(bar)).toEqual([...BAR, "Tools", "More"]);
+    expect([...bar!.querySelectorAll("#shell-more li")].map(x => x.textContent!.trim())).toEqual(MORE.filter(m => m !== "Tools"));
     expect([...sheet!.querySelectorAll("li")].map(x => x.textContent!.trim())).toEqual([...BAR, ...MORE]);
     expect(bar!.querySelector('a[aria-current="page"]')!.textContent).toBe("Today");
     const glossaries = [...r.container.querySelectorAll("header button")].filter(b => b.textContent === "Glossary");

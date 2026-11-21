@@ -1,14 +1,14 @@
 import { line } from "@/lib/voice";
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import { BarChart, DonutChart, LineChart, ScatterChart } from "./Charts";
+import { Bars, DonutChart, QuarterLine, ScatterChart } from "./index";
 
 const fmt = (v: number) => `${Math.round(v * 100)}%`;
 const frame = { title: "Test chart", note: "One line about it.", source: "forecast run 15" };
 const cases = [
   ["scatter", (empty: boolean) => <ScatterChart {...frame} points={empty ? [] : [{ id: "a", label: "Alpha", x: 0.2, y: 1.1, stage: "Rising" }, { id: "b", label: "Beta", x: 0.5, y: -0.4, stage: null }]} x={{ label: "Share", format: fmt }} y={{ label: "Momentum", format: v => v.toFixed(1) }} />],
-  ["line", (empty: boolean) => <LineChart {...frame} series={empty ? [] : [{ id: "a", label: "Alpha", points: [{ x: "2025Q1", y: 0.1 }, { x: "2025Q2", y: 0.2 }] }]} y={{ label: "Share", format: fmt }} />],
-  ["bar", (empty: boolean) => <BarChart {...frame} bars={empty ? [] : [{ id: "a", label: "Alpha", value: 0.4, stage: "Peaking" }, { id: "b", label: "Beta", value: 0.2 }]} format={fmt} valueLabel="Share" />],
+  ["line", (empty: boolean) => <QuarterLine look="read" {...frame} series={empty ? [] : [{ id: "a", label: "Alpha", points: [{ x: "2025Q1", y: 0.1 }, { x: "2025Q2", y: 0.2 }] }]} y={{ label: "Share", format: fmt }} />],
+  ["bar", (empty: boolean) => <Bars look="read" {...frame} bars={empty ? [] : [{ id: "a", label: "Alpha", value: 0.4, stage: "Peaking" }, { id: "b", label: "Beta", value: 0.2 }]} format={fmt} valueLabel="Share" />],
   ["donut", (empty: boolean) => <DonutChart {...frame} slices={empty ? [] : [{ id: "move", label: "Move", value: 6 }, { id: "news", label: "News", value: 4 }]} unit="stories" />],
 ] as const;
 

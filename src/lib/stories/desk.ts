@@ -1,6 +1,7 @@
-// Editor's desk request schema (pure). Every write is one appended story_edits row.
+// Editor's desk request schema (pure). Every story write is one appended story_edits row; a pitch is one appended pitches row.
 import { z } from "zod";
 import { WHY_MAX_CHARS } from "./why";
+import { pitchBody } from "./pitch";
 
 export const DESK_BODY_LIMIT = 8 * 1024;
 /** Desk calls per IP per minute (failed auth counts too). */
@@ -22,6 +23,8 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("correct"), id, headline: z.string().min(3).max(200).refine(noDollar).optional(), deck: z.string().max(400).refine(noDollar).optional(), why_line: z.string().max(WHY_MAX_CHARS).refine(noDollar).optional(), note })
     .strict().refine(b => b.headline !== undefined || b.deck !== undefined || b.why_line !== undefined, { message: "nothing to correct" }),
   z.object({ action: z.literal("restore"), id, note }).strict(),
+  // U4 · a pitch asks the engine; it never edits a story.
+  pitchBody,
 ]);
 export type DeskBody = z.infer<typeof deskBody>;
 /** Pin must end in the future and within PIN_MAX_DAYS. */

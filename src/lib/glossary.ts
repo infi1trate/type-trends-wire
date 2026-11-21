@@ -63,9 +63,9 @@ const PANELS: Row[] = [
   ["p-console", "Console (/)", "Ask for type, palettes, differentiation or a critique in plain commands.", "Type help to see commands; every answer carries receipts.", "m-taste-tools"],
 ];
 
-/** Phase 13: the six sections, four objects, the sector lens and the two modes. */
+/** Phase 13 (U3: seven sections): the sections, four objects, the sector lens and the two modes. */
 const IA: Row[] = [
-  ["sections", "Six sections", `Everything lives in one of six sections, in both modes: ${SECTIONS.map(s => s.label).join(", ")}.`, "Read mode shows them as pages; Terminal mode as F1–F6 with tabs.", "m-where-things-live"],
+  ["sections", "Seven sections", `Everything lives in one of seven sections, in the same order in both modes: ${SECTIONS.map(s => s.label).join(", ")}.`, "Read mode shows them as pages (keys 1–7); Terminal mode as F1–F7 with tabs.", "m-where-things-live"],
   ...SECTIONS.map((s): Row => [`s-${s.id}`, `${s.label} (${s.key})`, s.purpose, `Read: ${s.read}. Terminal: ${s.key}.`, "m-where-things-live"]),
   ["objects", "Four objects", "Signals, brands, stories and patterns. Every object page has the same four blocks in the same order: Headline, Evidence, So what, Related.", "Read top to bottom: what it is now, the receipts, why it matters, where to go next.", "m-where-things-live"],
   ["o-signal", "Signal (object)", "A design trait we watch for movement, with its stage, Momentum, Confidence and basis.", "Open /signals/<key>; in the terminal it is the signal drawer.", "m-where-things-live"],
@@ -74,7 +74,7 @@ const IA: Row[] = [
   ["o-pattern", "Pattern (object)", "A headline layout or composite signal seen as examples: the brands whose current homepage shows it.", "Filter by sector; thumbnails appear where a credited crop is stored, typographic cards otherwise.", "m-where-things-live"],
   ["sector-lens", "Sector lens", "One sector switch for both modes (All plus the ten tracked sectors), kept in the address (?sector=) and remembered on this device.", "Signal lists use that sector's numbers (or say when they fall back to all sectors); brand lists filter; Today ranks that sector's stories first.", "m-where-things-live"],
   ["mode-read", "Read mode", "The editorial view: the front page and object pages, set like the Digest.", "Press ` (backtick) or use the Terminal switch for the dense view of the same page.", "m-where-things-live"],
-  ["mode-terminal", "Terminal mode", "The dense, keyboard-first pro view at /terminal: F1–F6 sections with tabs, the console and every panel.", "Press ` or READ to return to the same object in Read mode.", "m-where-things-live"],
+  ["mode-terminal", "Terminal mode", "The dense, keyboard-first pro view at /terminal: F1–F7 sections with tabs, the console and every panel.", "Press ` or READ to return to the same object in Read mode.", "m-where-things-live"],
 ];
 
 const METRICS: Row[] = [
