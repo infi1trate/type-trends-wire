@@ -9,7 +9,7 @@ export const SURFACE_PAGES = ["home", "product", "about", "pricing", "changelog"
 export type SurfacePage = (typeof SURFACE_PAGES)[number];
 export const SURFACE_NAME: Record<SurfacePage, string> = { home: "Homepage", product: "Product page", about: "About page", pricing: "Pricing page", changelog: "Changelog" };
 /** W1c · the stored first-screen crop section of each surface page that can have one (surface_crops; the homepage's is the hero). */
-export const SURFACE_CROP: Partial<Record<SurfacePage, string>> = { product: "product", about: "about", pricing: "pricing_page" };
+export const SURFACE_CROP: Partial<Record<SurfacePage, string>> = { product: "page-product", about: "page-about", pricing: "page-pricing" };
 export type Font = { family: string; substituted?: boolean | null; webfont?: boolean | null } | null;
 export type SurfaceCapture = { id: number; domain: string; page_type: string; captured_at: string; run_id: string | null; url: string | null; h1: Font; body: Font; theme: string | null; accent: string | null };
 export type Match = "yes" | "no" | "not comparable";

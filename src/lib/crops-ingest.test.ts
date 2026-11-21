@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { deleteCropsFor, deleteImagesFor, handleCropIngest, serveCrop, type CropStore, type StoredAsset, type StoredCrop } from "./crops-ingest.server";
 import { handleThumbOptout, type ThumbStore } from "./thumbs-ingest.server";
-import { CROP_LIMITS } from "./crops";
+import { CROP_LIMITS, SURFACE_COLUMN, SURFACE_SECTIONS, parseSurfacePath, surfaceSectionOf } from "./crops";
 import { b64, png, webp } from "./__fixtures__/webp";
 
 const SECRET = "test-only-secret";
@@ -59,7 +59,7 @@ describe("POST /api/public/ingest-crops", () => {
     const bad = await handleCropIngest(post("{nope"), m.store);
     expect([bad.status, await bad.json()]).toEqual([400, { error: "Body is not valid JSON" }]);
     const sec = await send(m, [cap({ section: "logo" })]);
-    expect(sec.status).toBe(400); expect(sec.body.error).toBe('captures.0.section: unknown section "logo" (expected hero, nav, pricing, cta, footer, icon, card, product, about, pricing_page)');
+    expect(sec.status).toBe(400); expect(sec.body.error).toBe('captures.0.section: unknown section "logo" (expected hero, nav, pricing, cta, footer, icon, card, page-product, page-about, page-pricing)');
     expect((await send(m, [])).status).toBe(400);
     expect((await send(m, Array.from({ length: 13 }, (_, i) => cap({ hash: hash(i + 1) })))).status).toBe(400);
     expect((await send(m, [cap({ width: 1281 })])).status).toBe(400);
@@ -230,34 +230,47 @@ describe("W1c · first screens of the product, about and pricing pages", () => {
   it("stores each in its own folder and table, never with the homepage sections, and measures it on arrival", async () => {
     const m = memory(), seen: string[] = [];
     m.store.measure = async c => { seen.push(c.path); };
-    const r = await send(m, [page("product"), page("about"), page("pricing_page"), cap({ section: "pricing" })]);
+    const r = await send(m, [page("page-product"), page("page-about"), page("page-pricing"), cap({ section: "pricing" })]);
     expect(r.body).toEqual({ stored: 4, unchanged: 0, refused: [] });
-    expect(m.surfaces.map(x => [x.section, x.path])).toEqual([["product", "vercel.com/product/2026-11-15-00000000.webp"], ["about", "vercel.com/about/2026-11-15-00000000.webp"], ["pricing_page", "vercel.com/pricing_page/2026-11-15-00000000.webp"]]);
+    expect(m.surfaces.map(x => [x.section, x.path])).toEqual([["page-product", "vercel.com/page-product/2026-11-15-00000000.webp"], ["page-about", "vercel.com/page-about/2026-11-15-00000000.webp"], ["page-pricing", "vercel.com/page-pricing/2026-11-15-00000000.webp"]]);
     expect(m.rows.map(x => x.section)).toEqual(["pricing"]);
-    expect(seen).toEqual(["vercel.com/product/2026-11-15-00000000.webp", "vercel.com/about/2026-11-15-00000000.webp", "vercel.com/pricing_page/2026-11-15-00000000.webp", "vercel.com/pricing/2026-11-15-00000000.webp"]);
+    expect(seen).toEqual(["vercel.com/page-product/2026-11-15-00000000.webp", "vercel.com/page-about/2026-11-15-00000000.webp", "vercel.com/page-pricing/2026-11-15-00000000.webp", "vercel.com/pricing/2026-11-15-00000000.webp"]);
+  });
+  it("accepts only the page- names; the bare names are refused and `pricing` stays the homepage's pricing block", async () => {
+    for (const old of ["product", "about", "pricing_page"]) {
+      const m = memory(), r = await send(m, [page(old)]);
+      expect([r.status, String(r.body.error).startsWith(`captures.0.section: unknown section "${old}"`)]).toEqual([400, true]);
+      expect(m.surfaces).toHaveLength(0);
+    }
+    const m = memory(); await send(m, [cap({ section: "pricing" })]);
+    expect([m.rows.map(x => x.path), m.surfaces]).toEqual([["vercel.com/pricing/2026-11-15-00000000.webp"], []]);
+    // a homepage pricing crop's path is never served or read as a pricing page's first screen
+    expect(parseSurfacePath("vercel.com/pricing/2026-11-15-00000000.webp")).toBeNull();
+    expect(surfaceSectionOf("pricing")).toBeNull();
+    expect(SURFACE_SECTIONS.map(s => [s, SURFACE_COLUMN[s], surfaceSectionOf(SURFACE_COLUMN[s])])).toEqual([["page-product", "product", "page-product"], ["page-about", "about", "page-about"], ["page-pricing", "pricing_page", "page-pricing"]]);
   });
   it("a first screen is WebP, at most 1280 × 800 and 150 KB, with the size it declares", async () => {
     const m = memory();
-    const r = await send(m, [page("product", { height: 801, webp_base64: b64(webp(1280, 801)) }), page("about", { webp_base64: b64(webp(1280, 800, { bytes: 150 * 1024 + 1 })) }), page("pricing_page", { webp_base64: b64(png()) }), page("product", { width: 1200 })]);
-    expect(r.body.refused.map((x: { section: string; reason: string }) => `${x.section}:${x.reason}`)).toEqual(["product:too_large_dimensions", "about:over_150kb", "pricing_page:not_webp", "product:dimension_mismatch"]);
-    expect((await send(m, [page("product", { width: 1281 })])).status).toBe(400);
+    const r = await send(m, [page("page-product", { height: 801, webp_base64: b64(webp(1280, 801)) }), page("page-about", { webp_base64: b64(webp(1280, 800, { bytes: 150 * 1024 + 1 })) }), page("page-pricing", { webp_base64: b64(png()) }), page("page-product", { width: 1200 })]);
+    expect(r.body.refused.map((x: { section: string; reason: string }) => `${x.section}:${x.reason}`)).toEqual(["page-product:too_large_dimensions", "page-about:over_150kb", "page-pricing:not_webp", "page-product:dimension_mismatch"]);
+    expect((await send(m, [page("page-product", { width: 1281 })])).status).toBe(400);
     expect(m.surfaces).toHaveLength(0); expect(m.objects.size).toBe(0);
   });
   it("refuses untracked and opted-out brands; same hash only moves last_seen_at; keeps the newest 12", async () => {
     const m = memory({ optouts: ["linear.app"] });
-    expect((await send(m, [page("product", { domain: "example.org" }), page("product", { domain: "linear.app" })])).body.refused.map((x: { reason: string }) => x.reason)).toEqual(["untracked_domain", "opted_out"]);
-    await send(m, [page("product")]);
-    expect((await send(m, [page("product", { captured_at: "2026-11-22T06:00:00Z" })])).body).toEqual({ stored: 0, unchanged: 1, refused: [] });
+    expect((await send(m, [page("page-product", { domain: "example.org" }), page("page-product", { domain: "linear.app" })])).body.refused.map((x: { reason: string }) => x.reason)).toEqual(["untracked_domain", "opted_out"]);
+    await send(m, [page("page-product")]);
+    expect((await send(m, [page("page-product", { captured_at: "2026-11-22T06:00:00Z" })])).body).toEqual({ stored: 0, unchanged: 1, refused: [] });
     expect(m.surfaces[0]).toMatchObject({ first_seen_at: "2026-11-15T06:00:00Z", last_seen_at: "2026-11-22T06:00:00Z" });
-    for (let i = 1; i <= 12; i++) await send(m, [page("product", { hash: hash(800 + i), captured_at: `2026-11-${String(i + 15)}T07:00:00Z` })]);
+    for (let i = 1; i <= 12; i++) await send(m, [page("page-product", { hash: hash(800 + i), captured_at: `2026-11-${String(i + 15)}T07:00:00Z` })]);
     expect(m.surfaces).toHaveLength(12);
     expect(m.surfaces.some(x => x.hash === hash(700))).toBe(false);
   });
   it("is served through /crops/… while visible, and an opt-out deletes it with the brand's other images", async () => {
-    const m = memory(); await send(m, [page("about"), cap()]);
-    const path = "vercel.com/about/2026-11-15-00000000.webp";
+    const m = memory(); await send(m, [page("page-about"), cap()]);
+    const path = "vercel.com/page-about/2026-11-15-00000000.webp";
     expect((await serveCrop(path, m.store)).status).toBe(200);
-    expect((await serveCrop("vercel.com/pricing_page/2026-11-15-00000000.webp", m.store)).status).toBe(404);
+    expect((await serveCrop("vercel.com/page-pricing/2026-11-15-00000000.webp", m.store)).status).toBe(404);
     expect(await deleteImagesFor("vercel.com", m.store)).toEqual({ crops: 1, assets: 0, surfaces: 1 });
     expect(m.objects.size).toBe(0);
     expect((await serveCrop(path, m.store)).status).toBe(404);

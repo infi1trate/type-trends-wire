@@ -29,7 +29,7 @@ describe("W1c · Surfaces list", () => {
     expect(container.querySelector("[data-pics]")).toBeNull();
   });
   it("a stored first screen shows on its own row as a lazy thumbnail with explicit size, live link and Report this image", () => {
-    const { container } = render(createElement(SurfacesBlock, { s: block([crop("product"), crop("pricing_page", { blank: true })]) }));
+    const { container } = render(createElement(SurfacesBlock, { s: block([crop("page-product"), crop("page-pricing", { blank: true })]) }));
     const imgs = [...container.querySelectorAll("img")];
     expect(imgs).toHaveLength(1);
     expect([imgs[0]!.getAttribute("width"), imgs[0]!.getAttribute("height"), imgs[0]!.getAttribute("loading"), imgs[0]!.closest("[data-surface]")!.getAttribute("data-surface")]).toEqual(["1280", "800", "lazy", "product"]);
@@ -37,6 +37,10 @@ describe("W1c · Surfaces list", () => {
     const row = imgs[0]!.closest("[data-surface]")!;
     expect([...row.querySelectorAll("a")].map(a => a.textContent)).toContain("Report this image");
     expect(container.querySelector("[data-surface='pricing'] img")).toBeNull(); // near-blank crops are not shown
+  });
+  it("a homepage section crop named pricing is never shown as the pricing page's first screen", () => {
+    const { container } = render(createElement(SurfacesBlock, { s: block([crop("pricing"), crop("product"), crop("pricing_page")]) }));
+    expect(container.querySelectorAll("img")).toHaveLength(0);
   });
   it("no block when the brand has only a homepage", () => {
     const list = surfaceList(latestSurfaces([cap("home")]), { domain: "acme.com", report: "", day: longDay });

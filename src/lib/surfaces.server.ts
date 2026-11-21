@@ -29,12 +29,13 @@ export const loadBrandSurfaces = (domain: string): Promise<BrandSurfaces> => bra
 /** W1c · the brand's stored first screens of its other pages (anonymous: opted-out brands are hidden by policy), newest first, each
  *  marked blank when its measured quality says near-blank or flat. A failed read means no thumbnails. */
 async function surfaceCrops(domain: string): Promise<SurfaceCrop[]> {
-  const db = supabaseAnon(), { cropSrc } = await import("./crops");
+  const db = supabaseAnon(), { cropSrc, surfaceSectionOf } = await import("./crops");
   const r = await db.from("surface_crops").select("section,path,width,height,captured_at").eq("domain", domain).eq("viewport", "desktop").order("captured_at", { ascending: false }).limit(36);
   if (r.error || !r.data?.length) return [];
   const q = await db.from("crop_quality").select("path,lead_ok,reason").in("path", r.data.map(x => x.path));
   const blank = new Set((q.data ?? []).filter(x => !x.lead_ok && /near-blank|flat/.test(x.reason ?? "")).map(x => x.path));
-  return r.data.map(x => ({ section: x.section, path: x.path, src: cropSrc(x.path), width: x.width, height: x.height, captured_at: x.captured_at, blank: blank.has(x.path) }));
+  // Stored section values are mapped to their `page-` names; only surface_crops is read, never a homepage section crop.
+  return r.data.flatMap(x => { const section = surfaceSectionOf(x.section); return section ? [{ section, path: x.path, src: cropSrc(x.path), width: x.width, height: x.height, captured_at: x.captured_at, blank: blank.has(x.path) }] : []; });
 }
 async function brandSurfaces(domain: string): Promise<BrandSurfaces> {
   const [captures, crops, { reportHref }, assets] = await Promise.all([

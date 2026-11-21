@@ -12,11 +12,16 @@ export const isCropSection = (s: unknown): s is CropSection => typeof s === "str
 export const sectionName = (s: CropSection) => CROP_SECTION_NAME[s];
 /** I1: brand assets travel in the same payload as section crops (`section: "icon" | "card"`), stored in their own table. */
 export const ASSET_SECTIONS = ["icon", "card"] as const;
-/** W1c · the first screen of a brand's other pages (its own table, the same bucket and rules). `pricing_page`, because `pricing` already
- *  names the homepage's pricing section. A first screen is at most 1280 × 800, like the homepage hero. */
-export const SURFACE_SECTIONS = ["product", "about", "pricing_page"] as const;
+/** W1c · the first screen of a brand's other pages (its own table, the same bucket and rules). Every name starts with `page-`, because
+ *  `pricing` already names the pricing block on a homepage. A first screen is at most 1280 × 800, like the homepage hero. */
+export const SURFACE_SECTIONS = ["page-product", "page-about", "page-pricing"] as const;
 export type SurfaceSection = (typeof SURFACE_SECTIONS)[number];
 export const isSurfaceSection = (s: unknown): s is SurfaceSection => typeof s === "string" && (SURFACE_SECTIONS as readonly string[]).includes(s);
+/** The value stored in `surface_crops.section` for each name. That column's check was written before the rename and changing it needs the
+ *  owner's approval, so the mapping lives here, at the database edge only; everything else uses the `page-` names. */
+export const SURFACE_COLUMN = { "page-product": "product", "page-about": "about", "page-pricing": "pricing_page" } as const satisfies Record<SurfaceSection, string>;
+/** The `page-` name of a stored `surface_crops.section` value (null for anything else, so nothing unknown is ever shown). */
+export const surfaceSectionOf = (column: string): SurfaceSection | null => SURFACE_SECTIONS.find(s => SURFACE_COLUMN[s] === column) ?? null;
 export const SURFACE_MAX_HEIGHT = 800;
 export const CAPTURE_SECTIONS = [...CROP_SECTIONS, ...ASSET_SECTIONS, ...SURFACE_SECTIONS] as const;
 
@@ -74,9 +79,9 @@ export const decodeCrop = (b64: string) => decodeB64(b64);
 export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 /** `<domain>/<section>/<yyyy-mm-dd>-<first 8 of hash>.webp` (UTC day of the capture). */
 export const cropPath = (domain: string, section: CropSection, capturedAt: string, hash: string) => `${domain}/${section}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
-/** W1c · `<domain>/<product|about|pricing_page>/<yyyy-mm-dd>-<hash8>.webp`; never the same folder as a homepage section. */
+/** W1c · `<domain>/<page-product|page-about|page-pricing>/<yyyy-mm-dd>-<hash8>.webp`; never the same folder as a homepage section. */
 export const surfacePath = (domain: string, section: SurfaceSection, capturedAt: string, hash: string) => `${domain}/${section}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
-export const SURFACE_PATH_RE = /^([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(product|about|pricing_page)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
+export const SURFACE_PATH_RE = /^([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(page-product|page-about|page-pricing)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
 export const parseSurfacePath = (path: string) => { const m = SURFACE_PATH_RE.exec(path); return m && DOMAIN_RE.test(m[1]!) ? { domain: m[1]!, section: m[2] as SurfaceSection } : null; };
 /** A first screen: a crop that passes checkCrop and is no taller than 800 px. */
 export function checkSurface(bytes: Uint8Array, declared: { width: number; height: number }): CropCheck {

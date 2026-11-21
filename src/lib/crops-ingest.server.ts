@@ -1,7 +1,7 @@
 // POST /api/public/ingest-crops and GET /crops/<path>. Crawler-secret auth runs before the body is read; never logs payloads or bytes.
 // Storage and row writes go through an injectable store (tests use memory; nothing is written to the shared database or bucket).
 import { boundedText } from "./thumbs-ingest.server";
-import { CROP_LIMITS, checkCrop, checkSurface, cropEvictions, cropPath, cropPayload, decodeCrop, isCropSection, isSurfaceSection, parseCropPath, parseSurfacePath, planCrop, plainIssue, surfacePath, type CropRefusal, type CropRow, type CropSection, type SurfaceSection } from "./crops";
+import { CROP_LIMITS, checkCrop, checkSurface, cropEvictions, cropPath, cropPayload, decodeCrop, isCropSection, isSurfaceSection, parseCropPath, parseSurfacePath, planCrop, plainIssue, surfacePath, surfaceSectionOf, SURFACE_COLUMN, type CropRefusal, type CropRow, type CropSection, type SurfaceSection } from "./crops";
 import { CROP_MEASURE_MS } from "./crop-measure.server";
 import { ASSET_LIMITS, assetPath, checkAsset, isAssetKind, parseAssetPath, type AssetKind, type AssetRefusal, type AssetRow } from "./brand-assets";
 
@@ -229,13 +229,14 @@ async function adminCropStore(): Promise<CropStore> {
     async domainAssets(domain) { const r = await db.from("brand_assets").select(ACOLS).eq("domain", domain).limit(1000); if (r.error) fail("Asset lookup failed"); return (r.data ?? []) as StoredAsset[]; },
     async visibleAsset(path) { const r = await supabaseAnon().from("brand_assets").select("domain").eq("path", path).maybeSingle(); if (r.error) fail("Asset lookup failed"); return r.data ?? null; },
     async download(path) { const f = await db.storage.from(CROP_BUCKET).download(path); if (f.error || !f.data) return null; return new Uint8Array(await f.data.arrayBuffer()); },
+    // W1c: `surface_crops.section` holds SURFACE_COLUMN values; they are mapped to and from the `page-` names here and nowhere else.
     async surfaceVersions(domain, section, viewport) {
-      const r = await db.from("surface_crops").select(COLS).eq("domain", domain).eq("section", section).eq("viewport", viewport).order("captured_at", { ascending: false }).limit(100);
-      if (r.error) fail("Surface lookup failed"); return (r.data ?? []) as StoredCrop[];
+      const r = await db.from("surface_crops").select(COLS).eq("domain", domain).eq("section", SURFACE_COLUMN[section]).eq("viewport", viewport).order("captured_at", { ascending: false }).limit(100);
+      if (r.error) fail("Surface lookup failed"); return ((r.data ?? []) as StoredCrop[]).map(x => ({ ...x, section: surfaceSectionOf(x.section) ?? x.section }));
     },
     async touchSurface(id, lastSeenAt) { const r = await db.from("surface_crops").update({ last_seen_at: lastSeenAt }).eq("id", id); if (r.error) fail("Surface touch failed"); },
     async insertSurface(row) {
-      const r = await db.from("surface_crops").insert(row);
+      const r = await db.from("surface_crops").insert({ ...row, section: SURFACE_COLUMN[row.section as SurfaceSection] });
       if (r.error) { if (r.error.code === "23514" && /opt-out/.test(r.error.message)) return "opted_out"; if (r.error.code === "23505") return "exists"; fail("Surface row write failed"); }
       return "ok";
     },
