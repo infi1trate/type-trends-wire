@@ -1,6 +1,6 @@
 // Head tags for Digest and explainer pages: canonical on SITE_URL, og/twitter cards with absolute images. Pure.
 import { SITE_URL, DIGEST_NAME } from "../site";
-import type { Issue } from "./issue";
+import type { Edition } from "./edition";
 import type { TraitPage } from "./trait";
 import { traitSummary } from "./trait";
 import { oembedLink } from "../embed/embed";
@@ -16,8 +16,8 @@ const card = (title: string, description: string, url: string, image: string, w:
   { name: "twitter:card", content: "summary_large_image" }, { name: "twitter:title", content: title }, { name: "twitter:description", content: description }, { name: "twitter:image", content: image },
 ];
 /** `path` is the page's own path (/digest or /digest/<week>); the image is always the issue's 1200×630 card. */
-export function issueHead(i: Issue, path: string, specimenLinks: { rel: string; href: string }[] = []) {
-  const url = `${SITE_URL}${path}`, title = `${i.cover.headline} — ${i.name} No. ${i.number}`, desc = (i.cover.standfirst || `${i.name} No. ${i.number}, ${i.dates.label}.`).slice(0, 300);
+export function issueHead(i: Pick<Edition, "name" | "number" | "week" | "dates"> & { text: Pick<Edition["text"], "headline" | "deck"> }, path: string, specimenLinks: { rel: string; href: string }[] = []) {
+  const url = `${SITE_URL}${path}`, title = `${i.text.headline} — ${i.name} No. ${i.number}`, desc = (i.text.deck || `${i.name} No. ${i.number}, ${i.dates.label}.`).slice(0, 300);
   return { meta: card(title, desc, url, `${SITE_URL}/digest/${i.week}.png`, 1200, 630, "article"), links: [{ rel: "canonical", href: url }, rss, ...fontLinks(), ...specimenLinks] };
 }
 export function traitHead(p: Pick<TraitPage, "key" | "name" | "dimension" | "definition" | "stage" | "share" | "momentum">) {
@@ -27,7 +27,7 @@ export function traitHead(p: Pick<TraitPage, "key" | "name" | "dimension" | "def
   return { meta: card(title, desc, url, `${SITE_URL}/trait/${encodeURIComponent(p.key)}.png`, 1200, 675, "article"), links: [{ rel: "canonical", href: url }, rss, oembedLink(url, `${p.name} [${p.dimension}]`), ...fontLinks()] };
 }
 export function archiveHead() {
-  const url = `${SITE_URL}/digest/archive`, title = `Archive — ${DIGEST_NAME} · ${BRAND_NAME}`, desc = `Every issue of ${DIGEST_NAME}, the weekly edition of ${BRAND_NAME}: what moved in type, color, layout and vibe.`;
+  const url = `${SITE_URL}/digest/archive`, title = `Archive — ${DIGEST_NAME} · ${BRAND_NAME}`, desc = `Every issue of ${DIGEST_NAME}, the weekly edition of ${BRAND_NAME}: one argument a week, built from the stories that ran.`;
   return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "website" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: url }, rss, ...fontLinks()] };
 }
 /** Google Fonts stylesheet for one specimen, subset to the characters it shows. */

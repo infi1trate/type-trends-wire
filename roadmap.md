@@ -15,3 +15,12 @@
 - [x] 2d No. 90 deck correction (two captures at least six hours apart)
 - [x] 3 Writer order after reset: lead, census pieces, rest by rank; reset time ET
 
+
+# Phase E5 · The Digest: one argument a week
+- [x] 0 /data lead study chart fits at 360/390 (value label inside padding)
+- [x] 1 Issue model from published stories: cover choice (pure), five rows, three pictures, one chart, numbers line, keep reading, 600-word budget
+- [x] 2 Digest writer (sheet, schema, checks, 2/day, digest_texts insert-only, fallback)
+- [x] 3 No. 1 rebuilt; corrections names (pure); archive rows
+- [x] 4 Terminal weekly brief: withdrawn line; brief generator input = published/integrity-passed only
+- [x] 5 RSS, share image, meta, Editions row, Read bar, next-issue line, no-story week = no issue
+- [x] Tests, responsive 360–1920, heights + TTFB before/after, report

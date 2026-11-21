@@ -1,4 +1,5 @@
 import { deLegacy, sitePath } from "@/lib/brand";
+import { BriefWithdrawn } from "./BriefWithdrawn";
 import { line as voiced } from "@/lib/voice";
 import { Suspense, useEffect, useState } from "react";
 import { AddToWatch } from "./Watch";
@@ -146,6 +147,7 @@ export function ForecastPanel() {
 
     <LibraryBand g="p-chart-of-week" title={`CHART OF THE WEEK${brief?.week ? ` · ${brief.week}` : ""}`}><Suspense fallback={<p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p>}><ChartBand week={brief?.week ?? null} /></Suspense></LibraryBand>
     <LibraryBand g="p-brief" title={`BRIEF${brief?.week ? ` · ${brief.week}` : ""} · AI VIA ${brief?.brief.provider === "google" ? "GOOGLE AI STUDIO" : "LOVABLE AI"}`}>
+      <BriefWithdrawn week={brief?.week} className="border-b border-rule p-3" />
       {brief ? <BriefView brief={brief.brief} onTrait={(id) => { const [dimension, ...rest] = id.replace(/:all$/, "").split(":"); setOpen({ dimension: dimension ?? "", value: rest.join(":") }); }} /> : <p className="p-3 text-compare-muted">{voiced("terminal.forecast.9")}</p>}
       {data.briefs.length > 1 && <div className="flex flex-wrap gap-1 border-t border-rule p-3" aria-label="Brief archive"><span className="label text-compare-muted">ARCHIVE</span>{data.briefs.map(b => <Button key={b.week} variant="ghost" className={`label h-8 ${b.week === brief?.week ? "text-signal" : ""}`} aria-pressed={b.week === brief?.week} onClick={() => setWeek(b.week)}>{b.week}</Button>)}</div>}
     </LibraryBand>

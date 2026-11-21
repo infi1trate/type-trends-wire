@@ -404,5 +404,7 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
 /** E4 · after the stories (their twelve calls come first), the study writer takes what time is left, when a call still fits. Never throws. */
 async function studies(job: string, jobStartedAt: number) {
   await (await import("../data-stories/writer.server")).runStudyWriter(job, jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
+  // E5 · then the digest writer (two calls a day at most, its own count), when a call still fits.
+  await (await import("../digest/writer.server")).runDigestWriter(job, jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
 }
 export const storyLabel = (k: string) => label(k).name;

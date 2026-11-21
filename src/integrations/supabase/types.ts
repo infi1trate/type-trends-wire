@@ -407,6 +407,66 @@ export type Database = {
           },
         ]
       }
+      digest_texts: {
+        Row: {
+          argument: Json
+          attempts: number
+          changes: Json
+          chart_caption: string | null
+          checked_at: string | null
+          cost: number
+          created_at: string
+          deck: string
+          facts_hash: string
+          failures: string[]
+          headline: string
+          id: number
+          log: Json
+          model: string
+          passed: boolean
+          use_text: string | null
+          week: string
+        }
+        Insert: {
+          argument?: Json
+          attempts?: number
+          changes?: Json
+          chart_caption?: string | null
+          checked_at?: string | null
+          cost?: number
+          created_at?: string
+          deck: string
+          facts_hash: string
+          failures?: string[]
+          headline: string
+          id?: never
+          log?: Json
+          model: string
+          passed?: boolean
+          use_text?: string | null
+          week: string
+        }
+        Update: {
+          argument?: Json
+          attempts?: number
+          changes?: Json
+          chart_caption?: string | null
+          checked_at?: string | null
+          cost?: number
+          created_at?: string
+          deck?: string
+          facts_hash?: string
+          failures?: string[]
+          headline?: string
+          id?: never
+          log?: Json
+          model?: string
+          passed?: boolean
+          use_text?: string | null
+          week?: string
+        }
+        Relationships: []
+      }
       discourse_counts: {
         Row: {
           design_posts: number

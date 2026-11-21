@@ -1,21 +1,21 @@
-// Digest + explainer loaders: anonymous SELECT-only reads of stored rows for one week (never today's data for an old issue).
-import { comparisonPair } from "../run-gap";
-import { fetchRealRuns, fetchStageRows } from "../real-runs";
+// Digest + explainer loaders: anonymous SELECT-only reads. E5 · an issue is assembled from the story engine's published stories of one
+// closed ISO week as they stand when it is read (pure edition.ts + writer.ts); finished weeks are stored page records the story build
+// and the digest writer rewrite, so a page never computes on its first byte unless its record is missing or older than the E5 shape.
 import { supabaseAnon } from "../mcp/supabase";
 import { DIGEST_FIRST_WEEK } from "../site";
-import { weekRange } from "./week";
-import { issueModel, archiveEntries, STORIES_FIRST_WEEK, type WeekStory, type IssueRows, type FRow, type SiteEvent, type FontMove, type StoredBrief, type RebrandLite } from "./issue";
+import { issueNumber, weekRange } from "./week";
 import { traitModel, type TraitRows } from "./trait";
-import type { CardModel } from "../chart/card";
 import type { ThumbRow } from "../thumbs";
 import { basis, canonical, explainerPath, label, stageName } from "../labels";
 import { traitDefinition } from "./copy";
 import { evidenceKeys, tierFor } from "../tiers";
-import { tiersFrom } from "../signals";
-import { asOf, ledgerSummary, type StoredCall } from "../ledger/ledger";
 import { readerRunId } from "../real-runs";
 import { storedBy } from "../records/store.server";
 import { pageKey } from "../records/records";
+import { briefEventDomains, closedWeeks, editionParts, fiveRows, weekStories, archiveRows, type Edition, type EditionRows, type EditionStory, type Picture, type RetiredStory } from "./edition";
+import { issueOf } from "./writer";
+import type { StoredCall } from "../ledger/ledger";
+import { withdrewChange } from "./withdrawn";
 type Db = ReturnType<typeof supabaseAnon>;
 async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, size = 500) {
   const out: T[] = [];
@@ -23,108 +23,92 @@ async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: 
   return out;
 }
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
-const FCOLS = "dimension,value,scope,status,stage,current_share,momentum,next_wave_score,sites:components->sites,lead_sites:evidence->sites";
 
-async function fontMoves(db: Db, start: string, end: string) {
-  const { fontSnapshot } = await import("../mcp/store.server");
-  const { movers } = await import("../mcp/analysis");
-  const latest = await fontSnapshot(end); if (!latest) return null;
-  const dayBefore = new Date(Date.parse(`${start}T00:00:00Z`) - 864e5).toISOString().slice(0, 10);
-  let earlierDate = must(await db.from("gfont_snapshots").select("captured_on").lte("captured_on", dayBefore).order("captured_on", { ascending: false }).limit(1))?.[0]?.captured_on
-    ?? must(await db.from("gfont_snapshots").select("captured_on").gte("captured_on", start).order("captured_on").limit(1))?.[0]?.captured_on;
-  if (!earlierDate || earlierDate >= latest.date) return null;
-  const earlier = await fontSnapshot(earlierDate); if (!earlier) return null;
-  const pick = (dir: "rising" | "falling"): FontMove[] => movers(latest.rows, earlier.rows, { direction: dir, limit: 12 }).map(m => ({ family: m.family, category: m.category, change: m.popularity_change ?? 0, rank: m.popularity_rank }));
-  return { date: latest.date, since: earlier.date, rising: pick("rising"), fading: pick("falling") };
+type Rec = import("../stories/view").StoryRecord;
+const factList = (v: unknown): { text: string; kind: string | null }[] => (Array.isArray(v) ? v.flatMap(f => typeof f === "string" ? [{ text: f, kind: null }] : f && typeof f === "object" && typeof (f as { text?: unknown }).text === "string" ? [{ text: (f as { text: string }).text, kind: typeof (f as { kind?: unknown }).kind === "string" ? (f as { kind: string }).kind : null }] : []) : []);
+export const editionStory = (s: Rec): EditionStory & { source_ids: string[] } => ({ id: s.id, number: s.number ?? null, type: s.type, basis: s.basis, score: s.score, happened_at: s.happened_at, created_at: s.created_at,
+  kicker: s.kicker, headline: s.headline, deck: s.deck, body: s.written?.body ?? (s.why_line ? [s.why_line] : []), domains: s.domains, sector: s.sector, signal_keys: s.signal_keys, facts: factList(s.facts), source_ids: s.source_ids });
+/** A story that ran and was later retired with its change withdrawn (withdrawn.ts), with when the editor retired it. */
+export const retiredOf = (s: Rec): RetiredStory | null => (s.state === "killed" && s.stored.status === "published" && withdrewChange(s)
+  ? { id: s.id, number: s.number ?? null, domains: s.domains, happened_at: s.happened_at, retired_at: s.edits.filter(e => e.action === "kill").at(-1)?.at ?? null } : null);
+
+async function pictureOf(s: EditionStory & { source_ids: string[] }): Promise<Picture | null> {
+  const { evidenceOf } = await import("../stories/page.server");
+  const ev = await evidenceOf(s, s.type).catch(() => null);
+  if (!ev) return null;
+  if (ev.compare) return { kind: "pair", before: ev.compare.before, after: ev.compare.after };
+  if (ev.after) return { kind: "one", crop: ev.after };
+  const g = ev.grid?.find(x => x.crop)?.crop;
+  return g ? { kind: "one", crop: g } : null;
 }
-
-export async function issueRows(week: string | null): Promise<IssueRows | null> {
+/** The week's live changes split by the integrity rule: confirmed (passed) and seen once (still unconfirmed). */
+async function weekCounts(db: Db, startIso: string, endIso: string): Promise<{ confirmed: number; unconfirmed: number }> {
+  const events = await pages<{ id: number; type: string; before: unknown; after: unknown; source: string | null }>((f, t) => db.from("library_event_feed").select("id,type,before,after,source").eq("source", "live").gte("detected_at", startIso).lt("detected_at", endIso).order("id").range(f, t) as never, 1000);
+  const [{ latestChecks }, { splitChecked }] = await Promise.all([import("../integrity.server"), import("../integrity")]);
+  const checks = await latestChecks(db, events.map(e => e.id));
+  const split = splitChecked(events, checks);
+  return { confirmed: split.tape.length, unconfirmed: split.unconfirmed.length };
+}
+/** Everything one closed week's issue is assembled from, or null when the week is not an issue week. */
+export async function editionRows(week: string): Promise<EditionRows | null> {
+  const range = weekRange(week);
+  if (!range || issueNumber(week) === null) return null;
   const db = supabaseAnon();
-  let q = db.from("weekly_briefs").select("week,run_id,brief").gte("week", DIGEST_FIRST_WEEK);
-  q = week ? q.eq("week", week) : q.order("week", { ascending: false });
-  const b = must(await q.limit(1).maybeSingle());
-  if (!b) return null;
-  const range = weekRange(b.week); if (!range) return null;
-  const runId = b.run_id;
-  const [run, card, prevRuns, alerts, typeEvents, colorEvents, sites, thumbs, libCount, crawl, wire] = await Promise.all([
-    runId == null ? Promise.resolve(null) : db.from("forecast_runs").select("id,computed_at,data_through:model_card->>data_through").eq("id", runId).maybeSingle().then(must),
-    db.from("chart_cards").select("model").eq("week", b.week).maybeSingle().then(must),
-    runId == null ? Promise.resolve([]) : db.from("forecast_runs").select("id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(2).then(must),
-    runId == null ? Promise.resolve([]) : db.from("wire_items").select("title,ref,url,tags,published_at").eq("source_kind", "alert").ilike("url", `%alert=${runId}-%`).order("published_at", { ascending: false }).limit(20).then(must),
-    pages<SiteEvent>((f, t) => db.from("library_event_feed").select("domain,sector,before,after,detected_at").eq("source", "live").eq("type", "type_change").eq("page_type", "home").eq("viewport", "desktop").gte("detected_at", range.startIso).lt("detected_at", range.endIso).order("detected_at", { ascending: false }).range(f, t) as never),
-    pages<SiteEvent>((f, t) => db.from("library_event_feed").select("domain,sector,before,after,detected_at").eq("source", "live").eq("type", "palette_shift").eq("page_type", "home").eq("viewport", "desktop").gte("detected_at", range.startIso).lt("detected_at", range.endIso).order("detected_at", { ascending: false }).range(f, t) as never),
-    pages<{ domain: string; sector: string; name: string | null }>((f, t) => db.from("library_sites").select("domain,sector,name").order("domain").range(f, t) as never),
-    pages<ThumbRow>((f, t) => db.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").order("id").range(f, t) as never),
+  const [{ storyIndex }, { streamOf }] = await Promise.all([import("../stories/read.server"), import("../stories/view")]);
+  const all = await storyIndex();
+  const stories = streamOf(all).map(editionStory), retired = all.map(retiredOf).filter((x): x is RetiredStory => !!x);
+  const rows = fiveRows(weekStories(week, stories));
+  const [pictures, series, counts, brands, calls, texts, study, brief] = await Promise.all([
+    Promise.all(rows.map(async r => [r.id, await pictureOf(r)] as const)).then(x => Object.fromEntries(x)),
+    import("../front/front.server").then(async ({ quarterSeries }) => { const { wellCovered } = await import("../kit"); const keys = new Set(rows.flatMap(r => r.signal_keys));
+      return Object.fromEntries((await quarterSeries()).filter(x => keys.has(x.key)).map(x => [x.key, x.quarters.filter(wellCovered).map(p => ({ q: p.q, s: p.s as number, n: p.n }))])); }).catch(() => ({})),
+    weekCounts(db, range.startIso, range.endIso),
     db.from("library_sites").select("domain", { count: "exact", head: true }).eq("active", true).lt("added_at", range.endIso),
-    db.from("crawl_runs").select("finished_at,stats").eq("status", "finished").lt("finished_at", range.endIso).order("finished_at", { ascending: false }).limit(1).maybeSingle().then(must),
-    db.from("wire_items").select("id", { count: "exact", head: true }).neq("source_kind", "alert").gte("published_at", range.startIso).lt("published_at", range.endIso),
+    pages<StoredCall>((f, t) => db.from("forecast_calls").select("made_at,resolved_at,outcome,trait,stage_at_call,target_quarter").lt("made_at", range.endIso).order("id").range(f, t) as never),
+    db.from("digest_texts").select("week,facts_hash,headline,deck,argument,changes,chart_caption,use_text,model,passed,checked_at,created_at").eq("week", week).order("created_at", { ascending: false }).limit(20).then(r => (r.error ? [] : r.data ?? [])),
+    import("../data-stories/page.server").then(m => m.storedStudyShelf()).then(x => x?.[0] ? { href: x[0].href, headline: x[0].headline } : null).catch(() => null),
+    db.from("weekly_briefs").select("brief").eq("week", week).maybeSingle().then(must),
   ]);
-  // Ledger as it stood at the end of the issue week (later resolutions don't rewrite old issues).
-  const ledgerCalls = await pages<StoredCall>((f, t) => db.from("forecast_calls").select("made_at,resolved_at,outcome,trait,stage_at_call,target_quarter").lt("made_at", range.endIso).order("id").range(f, t) as never);
-  const ledger = ledgerSummary(asOf(ledgerCalls, range.endIso));
-  if (libCount.error || wire.error) throw libCount.error ?? wire.error;
-  const [prevRun, prev2Run] = (prevRuns ?? []) as { id: number }[];
-  const [forecasts, previous, previous2] = runId == null ? [[], [], []] : await Promise.all([
-    pages<FRow>((f, t) => db.from("forecasts").select(FCOLS).eq("run_id", runId).order("scope").order("dimension").order("value").range(f, t) as never),
-    prevRun ? pages<FRow>((f, t) => db.from("forecasts").select("dimension,value,stage,momentum,current_share").eq("run_id", prevRun.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never) : Promise.resolve([]),
-    prev2Run ? pages<FRow>((f, t) => db.from("forecasts").select("dimension,value,stage").eq("run_id", prev2Run.id).eq("scope", "all").order("dimension").order("value").range(f, t) as never) : Promise.resolve([]),
-  ]);
-  // Movers compare this run only with the most recent real run at least MIN_RUN_GAP_DAYS older (closer runs are reruns, not a week).
-  const real = runId == null ? [] : await fetchRealRuns(db, { upTo: runId, extra: [runId] });
-  const pair = comparisonPair(real), partner = pair && pair.latest.id === runId ? pair.earlier.id : null;
-  const compare: FRow[] = partner == null ? [] : partner === prevRun?.id ? previous : (await fetchStageRows(db, partner)).map(r => ({ ...r, scope: "all" }));
-  // Tiers as of this issue's run (and its two previous runs), so an old issue's selection never changes with newer data.
-  const prevStages = new Map<string, (string | null)[]>();
-  for (const [i, list] of [previous, previous2].entries()) for (const p of list) { const k = `${p.dimension}:${p.value}`, a = prevStages.get(k) ?? [null, null]; a[i] = p.stage; prevStages.set(k, a); }
-  const tiers = tiersFrom((forecasts as (FRow & { status: string })[]).map(f => ({ ...f, status: f.status ?? "ok", next_wave_score: f.next_wave_score ?? null, sites: f.sites ?? null })), prevStages);
-  const families = [...new Set(typeEvents.flatMap(e => ["h1", "body"].map(k => e.after?.[k]).filter((x): x is string => typeof x === "string" && !!x)))];
-  const [google, fonts, rebrandAll] = await Promise.all([
-    families.length ? db.from("font_catalog").select("family").eq("source", "google").in("family", families).then(must) : Promise.resolve([]),
-    fontMoves(db, range.start, range.end),
-    import("../rebrands.server").then(m => m.readerRebrands()),
-  ]);
-  const crawlSites = crawl?.stats && typeof crawl.stats === "object" ? Object.values(crawl.stats as Record<string, { ok?: number }>).reduce((s, v) => s + (typeof v?.ok === "number" ? v.ok : 0), 0) : 0;
-  const rebrands: RebrandLite[] = rebrandAll.rows.filter(x => x.source === "live" && x.confirmed_at >= range.startIso && x.confirmed_at < range.endIso)
-    .map(x => ({ domain: x.domain, sector: x.sector, name: x.name, confirmed_at: x.confirmed_at, read: x.read, reasons: x.reasons, seasonal: x.seasonal, before: { h1: x.before.h1, accent: x.before.accent }, after: { h1: x.after.h1, accent: x.after.accent } }));
-  // The week in stories: published stories of the issue week as they stood when it ended (later edits never rewrite an old issue).
-  const stories = b.week >= STORIES_FIRST_WEEK ? await weekStories(range.startIso, range.endIso).catch(() => null) : null;
-  return {
-    week: b.week, brief: b.brief as unknown as StoredBrief, stories,
-    run: run ? { id: run.id, computed_at: run.computed_at, data_through: (run as { data_through: string | null }).data_through } : null,
-    card: (card?.model as unknown as CardModel | undefined) ?? null, forecasts, previous: compare, alerts: alerts ?? [], headline: [...tiers.values()].filter(t => t.tier === "headline").map(t => t.key), fonts, typeEvents, googleFamilies: (google ?? []).map(g => g.family), colorEvents, sites, thumbs, rebrands,
-    numbers: { ledger: { rate: ledger.rate, hits: ledger.hits, resolved: ledger.resolved }, library_sites: libCount.count ?? null, crawl: crawl?.finished_at && crawlSites ? { finished_at: crawl.finished_at, sites: crawlSites } : null, wire_stories: wire.count ?? 0 },
-  };
+  if (brands.error) throw brands.error;
+  const { ledgerSummary, asOf } = await import("../ledger/ledger"), ledger = ledgerSummary(asOf(calls, range.endIso));
+  return { week, stories, retired, briefDomains: brief ? briefEventDomains(brief.brief) : null, pictures, series, texts: texts as EditionRows["texts"], study,
+    numbers: { brands: brands.count ?? null, ...counts, ledger: { rate: ledger.rate, hits: ledger.hits, resolved: ledger.resolved } } };
 }
-async function weekStories(startIso: string, endIso: string): Promise<WeekStory[]> {
-  const [{ storyRaw }, { shownAsOf, MORNING_BASELINE }, { streamOf }] = await Promise.all([import("../stories/read.server"), import("../editions/morning"), import("../stories/view")]);
-  const end = Math.min(Date.parse(endIso), Date.now()), known = Math.min(Math.max(Date.parse(endIso), Date.parse(MORNING_BASELINE)), Date.now());
-  return streamOf(shownAsOf(await storyRaw(), end, known)).filter(s => s.type !== "launch" && s.happened_at >= startIso && s.happened_at < endIso)
-    .map(s => ({ id: s.id, number: s.number ?? null, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, happened_at: s.happened_at, sector: s.sector, score: s.score }));
+/** The issue a reader sees for one closed week, or null when that week has no published story. */
+export async function computeIssue(week: string | null): Promise<Edition | null> {
+  if (!week || !finishedWeek(week)) return null;
+  const rows = await editionRows(week);
+  return rows ? issueOf(rows)?.edition ?? null : null;
 }
-export async function computeIssue(week: string | null) { const rows = await issueRows(week); return rows ? issueModel(rows) : null; }
-// P1: an issue whose week has ended never changes (stories as they stood at its end, the run it was written from), so finished
-// weeks are precomputed records (records.ts "digest"); the issue still in its week, or one not yet stored, is computed live.
+/** The writer's view: the issue's parts, sheet and fingerprint (service code only). */
+export async function issueJob(week: string) {
+  const rows = await editionRows(week);
+  const p = rows ? editionParts(rows) : null, r = rows ? issueOf(rows) : null;
+  return p && r ? { parts: p, sheet: r.sheet, edition: r.edition } : null;
+}
+export const ISSUE_V = 5;
+const isEdition = (x: unknown): x is Edition => !!x && typeof x === "object" && (x as { v?: unknown }).v === ISSUE_V;
 const issueRecord = storedBy((week: string) => pageKey("digest", week), (week: string) => computeIssue(week));
 export const finishedWeek = (week: string, now = Date.now()) => { const r = weekRange(week); return !!r && Date.parse(r.endIso) <= now; };
-/** The newest issue weeks (records the sweeper keeps). */
-export async function latestIssueWeeks(n = 4): Promise<string[]> {
-  return ((must(await supabaseAnon().from("weekly_briefs").select("week").gte("week", DIGEST_FIRST_WEEK).order("week", { ascending: false }).limit(n)) ?? []) as { week: string }[]).map(b => b.week);
+/** The newest closed issue weeks, newest first (records the sweeper keeps). A week with no published story has no issue. */
+export async function latestIssueWeeks(n = 4): Promise<string[]> { return closedWeeks(Date.now(), DIGEST_FIRST_WEEK).slice(0, n); }
+/** One closed week's issue from its record (a record from before E5 is ignored and the issue computed). */
+export async function storedIssue(week: string): Promise<Edition | null> {
+  if (!finishedWeek(week)) return null;
+  const r = await issueRecord(week).catch(() => null);
+  return isEdition(r) ? r : computeIssue(week);
 }
-export async function loadIssue(week: string | null) {
-  const w = week ?? (await latestIssueWeeks(1))[0] ?? null;
-  if (!w) return null;
-  return finishedWeek(w) ? issueRecord(w) : computeIssue(w);
+/** /digest: the newest closed week that has an issue; /digest/<week>: that week, only once it has closed. */
+export async function loadIssue(week: string | null): Promise<Edition | null> {
+  if (week) return storedIssue(week);
+  for (const w of (await latestIssueWeeks(8))) { const e = await storedIssue(w); if (e) return e; }
+  return null;
 }
+/** /digest/archive: one row per issue, newest first, by its written headline. */
 export async function loadArchive(limit = 60) {
-  const db = supabaseAnon();
-  const [briefs, cards] = await Promise.all([
-    db.from("weekly_briefs").select("week,headline:brief->>headline").gte("week", DIGEST_FIRST_WEEK).order("week", { ascending: false }).limit(limit).then(must),
-    db.from("chart_cards").select("week,model").gte("week", DIGEST_FIRST_WEEK).order("week", { ascending: false }).limit(limit).then(must),
-  ]);
-  const byWeek = new Map((cards ?? []).map(c => [c.week, c.model as unknown as CardModel]));
-  return archiveEntries((briefs ?? []).map(b => ({ week: b.week, headline: (b as { headline: string | null }).headline ?? "", card: byWeek.get(b.week) ?? null })));
+  const weeks = await latestIssueWeeks(limit), issues = (await Promise.all(weeks.map(w => storedIssue(w).catch(() => null)))).filter((x): x is Edition => !!x);
+  return archiveRows(issues.map(i => ({ week: i.week, number: i.number, dates: i.dates, headline: i.text.headline })));
 }
-
 const TCOLS = "dimension,value,scope,status,stage,current_share,momentum,next_wave_score,components,quarters:evidence->quarters,lead_sites:evidence->sites,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi,run_id,computed_at";
 export async function traitRows(rawKey: string): Promise<TraitRows | null> {
   const key = canonical(rawKey), i = key.indexOf(":");

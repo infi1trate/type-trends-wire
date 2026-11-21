@@ -219,7 +219,7 @@ export function EditionsView({ d }: { d: EditionsData }) {
     <section aria-label="The editions" className="ed-wrap d-air">
       <Ledger label="The editions" rows={EDITIONS.map((x, i) => ({ key: x.id, href: x.read, number: String(i + 1).padStart(2, "0"), tags: [x.rhythm], title: x.name, facts: [x.rhythm],
         line: <>{x.what} {x.id === "morning" ? (d.morning?.lead ? `Today: ${d.morning.lead.headline} · ${d.morning.count} ${d.morning.count === 1 ? "story" : "stories"}.` : voiced("read.editionsViews.15"))
-          : x.id === "digest" ? (d.digest ? `Latest issue: ${d.digest.week}.` : voiced("read.editionsViews.16"))
+          : x.id === "digest" ? (d.digest ? `Latest issue: The Digest No. ${d.digest.number}, ${d.digest.dates}: ${d.digest.headline}.` : voiced("read.editionsViews.16"))
           : `${d.sectors.filter(s => s.enough).length} of ${d.sectors.length} sectors have forecast coverage.`}</> }))} />
     </section>
     <ReadFooter terminal="/terminal?panel=digest" />

@@ -10,7 +10,7 @@ import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functio
 import {runTasteCommand} from "./taste.functions";
 import { getRebrands, getVibeMap, getChartCard } from "./showcase.functions";
 import { getHealth } from "./health.functions";
-import { getIssue, getArchive, getTrait, getTraitHead } from "./digest.functions";
+import { getIssue, getArchive, getTrait, getTraitHead, getBriefWithdrawn } from "./digest.functions";
 import { getSignalSnapshot } from "./signals.functions";
 
 import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
@@ -369,6 +369,7 @@ export const discourseSinceQuery = () => queryOptions({ queryKey: ["discourse-si
 
 // The Digest + trait explainers (public, same 10-minute TTL as the other showcase reads).
 export const issueQuery = (week: string | null) => queryOptions({ queryKey: ["digest-issue", week ?? "latest"], staleTime: 10 * 60_000, queryFn: () => getIssue({ data: { week } }) });
+export const briefWithdrawnQuery = (week: string) => queryOptions({ queryKey: ["brief-withdrawn", week], staleTime: 10 * 60_000, queryFn: () => getBriefWithdrawn({ data: { week } }) });
 export const archiveQuery = () => queryOptions({ queryKey: ["digest-archive"], staleTime: 10 * 60_000, queryFn: () => getArchive() });
 export const traitPageQuery = (key: string) => queryOptions({ queryKey: ["trait-page", key], staleTime: 10 * 60_000, queryFn: () => getTrait({ data: { key } }) });
 export const siteThumbQuery = (domain: string) => queryOptions({ queryKey: ["site-thumb", domain], staleTime: 10 * 60_000, queryFn: async () => {

@@ -38,6 +38,8 @@ export type TrailProps = {
   seed?: number | string;
 };
 /** The chart line as a wet, raised trail: gumballs at the measured points, the last value as a sticker. Table fallback kept. */
+/** From this far across, a trail's value label is anchored by its right edge. */
+export const STICKER_END_FROM = 0.55;
 export function Trail({ points, label, format, w = 640, h = 360, ink = "green", sticker = true, className = "", seed = label }: TrailProps) {
   const g = trailGeom(points, Math.min(w, ILLUSTRATION_MAX.w), Math.min(h, ILLUSTRATION_MAX.h), 28), last = points.at(-1), uid = useId().replace(/:/g, "");
   const [ref, on] = useFirstView<HTMLElement>(MOTION_MS.draw), ball = ink === "green" ? "slug-ball1" : ink === "pink" ? "slug-ball0" : "slug-ball3", tilt = (seedOf(seed) % 5) - 2;
@@ -55,8 +57,12 @@ export function Trail({ points, label, format, w = 640, h = 360, ink = "green", 
         </g>)}
       </>}
     </svg>
-    {sticker && last && head && <span className="c-sticker ill-sticker pointer-events-none absolute" aria-hidden="true" data-container="sticker"
-      style={{ left: `${(head[0] / Math.min(w, ILLUSTRATION_MAX.w)) * 100}%`, top: `${(head[1] / Math.min(h, ILLUSTRATION_MAX.h)) * 100}%`, ["--tilt" as string]: `${tilt * 2 + 6}deg` }}>{format(last.y)}</span>}
+    {sticker && last && head && (() => {
+      // E5 · a value near the right edge is anchored by its right side, so the label never runs past the chart (or the page) on phones.
+      const fx = head[0] / Math.min(w, ILLUSTRATION_MAX.w), end = fx > STICKER_END_FROM;
+      return <span className="c-sticker ill-sticker pointer-events-none absolute" aria-hidden="true" data-container="sticker" data-anchor={end ? "end" : undefined}
+        style={{ ...(end ? { right: `max(0.25rem, calc(${((1 - fx) * 100).toFixed(2)}% - 1.5rem))` } : { left: `${fx * 100}%` }), top: `${(head[1] / Math.min(h, ILLUSTRATION_MAX.h)) * 100}%`, ["--tilt" as string]: `${tilt * 2 + 6}deg` }}>{format(last.y)}</span>;
+    })()}
     <table className="sr-only" data-chart-table=""><caption>{label}: the data behind the trail</caption><thead><tr><th scope="col">Point</th><th scope="col">Value</th></tr></thead>
       <tbody>{points.map(p => <tr key={p.x}><th scope="row">{p.x}</th><td>{format(p.y)}</td></tr>)}</tbody></table>
   </figure>;

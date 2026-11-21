@@ -52,7 +52,7 @@ export const SECTIONS: readonly Section[] = [
 /** EDITIONS — the shapes people subscribe to in their heads, all under the Digest section, each with its rhythm. */
 export const EDITIONS = [
   { id: "morning", name: "The Morning Line", rhythm: "Daily", read: "/morning", tab: "morning", what: "The day's lead, five more stories ranked by score, Moving now, one opening and what the desk held." },
-  { id: "digest", name: "The Digest", rhythm: "Weekly", read: "/digest", tab: "digest", what: "The week in stories, movers, specimens, palettes and rebrands of the week." },
+  { id: "digest", name: "The Digest", rhythm: "Weekly", read: "/digest", tab: "digest", what: "One argument a week: the five changes that mattered, three pictures and one chart, from the stories that ran." },
   { id: "sectors", name: "Sector reports", rhythm: "Quarterly", read: "/sectors", tab: "sectors", what: "The state of one sector this quarter: its signals against all sectors, white space, counter-moves, leaders and patterns." },
 ] as const satisfies readonly { id: string; name: string; rhythm: string; read: string; tab: TabId; what: string }[];
 
@@ -270,9 +270,9 @@ export const SURFACES: Record<string, Surface> = {
   "collections.index": S("patterns", "read", "shown", "Numbered collections: saved gallery filters, live at 12 or more tiles."),
   "collections.$slug": S("patterns", "read", "shown", "One collection as a wall, paired with its study or signal."),
   "patterns.$key": S("patterns", "read", "shown", "Pattern object page: example brands as a grid, filterable by sector."),
-  "digest.index": S("digest", "read", "shown", "Latest issue."),
-  "digest.$week": S("digest", "read", "shown", "One issue."),
-  "digest.archive": S("digest", "read", "shown", "Every issue."),
+  "digest.index": S("digest", "read", "shown", "Latest issue: the newest closed week with a published story (E5 edition model)."),
+  "digest.$week": S("digest", "read", "shown", "One closed week's issue, assembled from its published stories; a week with no story has no issue."),
+  "digest.archive": S("digest", "read", "shown", "Every issue by its written headline."),
   "digest.rss[.]xml": S("digest", "read", "quiet", "Digest RSS feed (gated)."),
   "digest.{$week}[.]png": S("digest", "both", "quiet", "Issue share image (open)."),
   "editions": S("digest", "read", "shown", "Editions index: the Morning Line (daily), the Digest (weekly) and sector reports (quarterly)."),

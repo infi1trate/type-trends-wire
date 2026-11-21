@@ -37,7 +37,7 @@ export function DigestTab() {
     <PanelHeader title="THE DIGEST · ISSUES" g="s-digest" meta={<Link to="/digest" className="text-ink underline-offset-2 hover:underline">LATEST →</Link>} />
     {!data ? <p className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></p> : data.length ? <ol className="divide-y divide-rule">{data.map(i => <li key={i.week}>
       <Link to="/digest/$week" params={{ week: i.week }} className="grid min-h-11 grid-cols-[6ch_1fr] gap-x-2 p-3 hover:bg-g900 md:grid-cols-[6ch_16ch_1fr]">
-        <span className="num label text-g500">No.{i.number}</span><span className="label text-g500 max-md:col-start-2">{i.dates.toUpperCase()}</span><span className="text-ink max-md:col-start-2">{i.headline}{i.lead && <span className="label text-g500"> · LEAD {i.lead.name.toUpperCase()}</span>}</span>
+        <span className="num label text-g500">No.{i.number}</span><span className="label text-g500 max-md:col-start-2">{i.dates.toUpperCase()}</span><span className="text-ink max-md:col-start-2">{i.headline}</span>
       </Link></li>)}</ol> : <Empty why={voiced("terminal.sections.2")} />}
   </section>;
 }

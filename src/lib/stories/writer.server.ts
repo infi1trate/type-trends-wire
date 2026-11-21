@@ -101,7 +101,7 @@ export const providerCanRun = (model: string) => { try { const sel = (process.en
 export function writerIO(admin: Admin): WriterIO {
   return {
     // E4: study calls share the ledger purpose and model, so the study writer's own writer calls today are taken out of the story count.
-    used: async () => { const [all, studies] = await Promise.all([writerUsedToday(admin), import("../data-stories/writer.server").then(m => m.studyWriterCallsToday(admin)).catch(() => 0)]); return Math.max(0, all - studies); },
+    used: async () => { const [all, studies, digests] = await Promise.all([writerUsedToday(admin), import("../data-stories/writer.server").then(m => m.studyWriterCallsToday(admin)).catch(() => 0), import("../digest/writer.server").then(m => m.digestWriterCallsToday(admin)).catch(() => 0)]); return Math.max(0, all - studies - digests); },
     runs: providerCanRun,
     call: (model, facts, failures, signal) => gatewayCall(admin, { model, system: WRITER_SYSTEM, user: writerUser(facts, failures), schema: WRITER_SCHEMA as unknown as Record<string, unknown>, schemaName: "story_text", tool: WRITER_TOOL, maxTokens: WRITER_MAX_TOKENS }, signal),
     versions: async ids => {

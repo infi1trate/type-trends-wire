@@ -91,8 +91,10 @@ export const loadSectorIndex = memo(TTL, async (_: null) => {
 
 /** /editions: today's Morning Line lead, the latest Digest issue and the sector reports. */
 export const loadEditions = memo(TTL, async (_: null) => {
-  const [m, s, digest] = await Promise.all([loadMorning(null), loadSectorIndex(null), supabaseAnon().from("weekly_briefs").select("week,created_at").not("brief", "is", null).order("week", { ascending: false }).limit(1).then(must)]);
-  return { morning: m ? { title: m.edition.title, href: m.edition.href, lead: m.edition.lead, count: m.edition.count, thin: m.edition.thin, archive: m.archive.slice(0, 7) } : null, digest: (digest ?? [])[0] ?? null, sectors: s.sectors, run: s.run };
+  // E5 · the latest Digest is the newest closed week that has an issue, named by its written headline.
+  const [m, s, digest] = await Promise.all([loadMorning(null), loadSectorIndex(null), import("../digest/digest.server").then(d => d.loadIssue(null)).catch(() => null)]);
+  return { morning: m ? { title: m.edition.title, href: m.edition.href, lead: m.edition.lead, count: m.edition.count, thin: m.edition.thin, archive: m.archive.slice(0, 7) } : null,
+    digest: digest ? { week: digest.week, number: digest.number, headline: digest.text.headline, dates: digest.dates.label } : null, sectors: s.sectors, run: s.run };
 });
 
 /** P1, critical for /sectors/<sector>: the head's title and basis (two small reads); null for an unknown sector (404). */

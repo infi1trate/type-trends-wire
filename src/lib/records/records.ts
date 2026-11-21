@@ -33,8 +33,9 @@ export const PAGES = {
   collections: { maxAge: 6 * HOUR, every: 30 * MIN },
   collection: { maxAge: 6 * HOUR, every: 30 * MIN },
   gallery: { maxAge: 6 * HOUR, every: 30 * MIN },
-  /** Digest issues of finished weeks: immutable once the week ends, so they live a week and are rechecked daily. */
-  digest: { maxAge: 7 * 24 * HOUR, every: 24 * HOUR },
+  /** E5 · Digest issues of finished weeks hold their week's stories as they stand now (a retirement rebuilds the issue), so they are
+   *  rechecked like the other pages. */
+  digest: { maxAge: 6 * HOUR, every: 30 * MIN },
   "brands-index": { maxAge: 3 * HOUR, every: 15 * MIN },
 } as const;
 export type PageKind = keyof typeof PAGES;

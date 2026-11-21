@@ -40,7 +40,8 @@ describe("RSS", () => {
 const get = (meta: { title?: string; name?: string; property?: string; content?: string }[], k: string) => meta.find(m => m.property === k || m.name === k)?.content;
 describe("share cards", () => {
   it("issue pages carry og/twitter tags with an absolute 1200×630 image, canonical and RSS alternate", () => {
-    const issue = issueModel(fixture())!, head = issueHead(issue, "/digest/2026-W46");
+    // E5: the head reads the issue's written text (headline and deck).
+    const issue = issueModel(fixture())!, head = issueHead({ ...issue, text: { headline: issue.cover.headline, deck: issue.cover.standfirst ?? "" } }, "/digest/2026-W46");
     expect(head.meta[0]).toEqual({ title: "Subgrid Momentum, Dropbox Pivots, and the End of Maximalism — The Digest No. 1" });
     expect(get(head.meta, "og:image")).toBe("https://slug.global/digest/2026-W46.png");
     expect([get(head.meta, "og:image:width"), get(head.meta, "og:image:height")]).toEqual(["1200", "630"]);

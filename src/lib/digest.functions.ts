@@ -17,3 +17,10 @@ export const getTraitHead = createServerFn({ method: "GET" }).inputValidator(z.o
   const { loadTraitHead } = await import("./digest/digest.server");
   return loadTraitHead(data.key);
 });
+/** E5 · the terminal's weekly brief line: how many changes the stored brief for this week cites that were later withdrawn. */
+export const getBriefWithdrawn = createServerFn({ method: "GET" }).inputValidator(z.object({ week: z.string().regex(/^\d{4}-W\d{2}$/) })).handler(async ({ data }) => {
+  const { loadIssue } = await import("./digest/digest.server");
+  const i = await loadIssue(data.week).catch(() => null);
+  const { withdrawnBriefLine } = await import("./digest/edition");
+  return i && i.briefWithdrawn > 0 ? { n: i.briefWithdrawn, line: withdrawnBriefLine(i.briefWithdrawn), href: `/digest/${i.week}` } : null;
+});

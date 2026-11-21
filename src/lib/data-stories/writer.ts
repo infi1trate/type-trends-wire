@@ -46,7 +46,7 @@ export function factsSheet(s: StoryModel): FactsSheet {
     rankings: RANKING_WORDS.filter(w => texts.some(t => has(t, w))), links: [], phrasings: [] };
 }
 /** A short stable fingerprint of a sheet (53-bit string hash, hex): a new one means the facts changed. */
-export function factsHash(sheet: FactsSheet): string {
+export function factsHash(sheet: FactsSheet | object): string {
   const str = JSON.stringify(sheet);
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
   for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
@@ -116,7 +116,7 @@ export function spelledNumbers(text: string): { value: number; index: number; te
   return [...text.matchAll(SPELLED)].map(m => ({ value: m[1] ? TENS.indexOf(m[1].toLowerCase()) * 10 + (m[2] ? UNITS.indexOf(m[2].toLowerCase()) : 0) : UNITS.indexOf(m[3]!.toLowerCase()), index: m.index!, text: m[0] }));
 }
 /** Small counts ("one idea", "two movements") read as ordinary words; from four up a number in words must be on the sheet. */
-const SPELLED_FREE = 3;
+export const SPELLED_FREE = 3;
 const QUARTER = /\bQ([1-4])\s+(\d{4})\b/g, QUARTER_WORDS = /\b(first|second|third|fourth) quarter of (\d{4})\b/gi, LOOSE = /\b(early|late|mid-?)\s?(\d{4})\b/gi;
 const ORD = ["first", "second", "third", "fourth"];
 export function quartersIn(text: string): string[] {

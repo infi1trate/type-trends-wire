@@ -16,13 +16,11 @@ export async function respond(scene: { w: number; h: number; prims: Prim[] }, fo
 export async function issueImage(param: string) {
   const m = /^(\d{4}-W\d{2})\.(png|svg)$/.exec(param) ?? /^(\d{4}-W\d{2})$/.exec(param);
   if (!m) return nf();
-  const { issueRows } = await import("./digest.server");
-  const { issueModel } = await import("./issue");
-  const { issueOgScene } = await import("./og");
-  const rows = await issueRows(m[1]!);
-  const issue = rows ? issueModel({ ...rows, fonts: null, rebrands: [], thumbs: [] }) : null;
+  const { loadIssue } = await import("./digest.server");
+  const { editionOgScene, editionOgAlt } = await import("./og");
+  const issue = await loadIssue(m[1]!).catch(() => null);
   if (!issue) return nf();
-  return respond(issueOgScene(issue), (m[2] as "png" | "svg" | undefined) ?? "png", `${issue.name} No. ${issue.number}: ${issue.cover.headline}`);
+  return respond(editionOgScene(issue), (m[2] as "png" | "svg" | undefined) ?? "png", editionOgAlt(issue));
 }
 export async function traitImage(rawKey: string, format: "png" | "svg") {
   const { traitRows } = await import("./digest.server");

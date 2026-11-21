@@ -560,6 +560,7 @@
   @media (prefers-reduced-data: reduce) { .ill-f { filter: none; } }
   .ill { position: relative; }
   .ill-sticker { transform: translate(-40%, -130%) rotate(var(--tilt, 6deg)); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ill-sticker[data-anchor="end"] { transform: translate(0, -130%) rotate(var(--tilt, 6deg)); }
   .ill-cut { padding: 6% 8% 7%; }
   .ill-sheet { pointer-events: none; }
   .ill-pic-frame { border: var(--tk-border-strong) solid var(--tk-rule-strong); background: var(--tk-surface-card); line-height: 0; }

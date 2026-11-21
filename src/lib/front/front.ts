@@ -182,12 +182,12 @@ export function movingLine(m: MovingIn): string | null {
   if (m.pair) return `No headline signal changed stage between run ${m.pair.earlier.id} and run ${m.pair.latest.id}.`;
   return m.next ? `No week-over-week comparison yet. The first one is expected with the weekly forecast on ${dm(m.next.expected)}.` : NO_COMPARISON_TEXT;
 }
-export type EditionsIn = { morning: { day: string; title: string; href: string; count: number } | null; digest: { week: string; number: number; dates: string; href: string } | null; sectors: { at: string | null; count: number } | null };
+export type EditionsIn = { morning: { day: string; title: string; href: string; count: number } | null; digest: { week: string; number: number; dates: string; href: string; headline?: string | null } | null; sectors: { at: string | null; count: number } | null };
 export type EditionLine = { id: "morning-line" | "digest" | "sector-reports"; title: string; date: string; href: string; format: Format };
 export function editionLines(e: EditionsIn, filter: FormatFilter): EditionLine[] {
   const out: EditionLine[] = [];
   if (e.morning) out.push({ id: "morning-line", title: `${e.morning.title}${e.morning.count ? ` · ${e.morning.count} ${e.morning.count === 1 ? "story" : "stories"}` : ""}`, date: e.morning.day, href: e.morning.href, format: "updating" });
-  if (e.digest) out.push({ id: "digest", title: `The Digest No. ${e.digest.number}`, date: e.digest.dates, href: e.digest.href, format: "read" });
+  if (e.digest) out.push({ id: "digest", title: `The Digest No. ${e.digest.number}${e.digest.headline ? `: ${e.digest.headline}` : ""}`, date: e.digest.dates, href: e.digest.href, format: "read" });
   if (e.sectors) out.push({ id: "sector-reports", title: `Sector reports · ${e.sectors.count} sectors, updated with each weekly forecast`, date: e.sectors.at ? longDate(e.sectors.at) : "Not updated yet", href: "/sectors", format: "updating" });
   return out.filter(l => shows(filter, l.format));
 }

@@ -37,8 +37,8 @@ async function sharedBody(k: SharedKey): Promise<unknown> {
     case "front-cards": return (await import("../front/front.server")).frontCards.compute();
   }
 }
-/** Page models: one record per key (`kind:part…`), built by the page's own loader. None holds live stories (a finished week's Digest
- * shows its stories as they stood when the week ended), so a kill or a new story never waits on a record. */
+/** Page models: one record per key (`kind:part…`), built by the page's own loader. A finished week's Digest holds its week's stories
+ * as they stand now (E5), so its records are rechecked every half hour like the other pages. */
 async function pageKeys(): Promise<string[]> {
   const [{ DATA_STORIES }, { COLLECTIONS }] = await Promise.all([import("../data-stories/registry"), import("../collections/registry")]);
   const d = await import("../digest/digest.server"), weeks = (await d.latestIssueWeeks(4).catch(() => [] as string[])).filter(w => d.finishedWeek(w));

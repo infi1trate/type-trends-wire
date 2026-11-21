@@ -34,3 +34,10 @@ export function isoWeekKey(d: Date) {
   const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())), day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
   const y = t.getUTCFullYear(), w = Math.ceil(((+t - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7); return `${y}-W${String(w).padStart(2, "0")}`;
 }
+
+// E5 · THE BRIEF'S CHANGES — the weekly brief generator is given only changes that are published stories or pass the integrity rule;
+// rotating first screens (the carousel rule) and unconfirmed changes are not in its input. Pure; the server reads the marks.
+export const BRIEF_EVENTS_MAX = 20, BRIEF_EVENT_POOL = 120;
+export function briefEvents<E extends { id: number }>(events: readonly E[], o: { storyEvents: ReadonlySet<number>; confirmed: ReadonlySet<number>; rotating: ReadonlySet<number> }, max = BRIEF_EVENTS_MAX): E[] {
+  return events.filter(e => !o.rotating.has(e.id) && (o.storyEvents.has(e.id) || o.confirmed.has(e.id))).slice(0, max);
+}
