@@ -16,6 +16,10 @@ on:
       dry_run:
         description: "1 = don't post, upload results as an artifact"
         default: "0"
+# actions: write lets a run start the next one (see the last step).
+permissions:
+  contents: read
+  actions: write
 concurrency: { group: wayback, cancel-in-progress: false }
 defaults:
   run:
@@ -46,6 +50,17 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           WB_CONCURRENCY: "3"
         run: npm run wayback
+      # GitHub often starts scheduled runs hours late or not at all. While the yearly samples (the Q1 of each year) are
+      # unfinished, a run that ran out of time with captures to show starts the next one itself, for those samples only.
+      # It stops on its own: a run that captures fewer than five pages does not start another.
+      - name: Start the next run while yearly samples remain
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          more=$(node -e 'const s=JSON.parse(require("fs").readFileSync("out/last-run.json","utf8")); console.log(s.stopped_for_time && s.captured >= 5 ? "1" : "0")' 2>/dev/null || echo 0)
+          echo "start another: $more"
+          if [ "$more" = "1" ]; then gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/wayback.yml/dispatches" -f ref=main -f 'inputs[pass_max]=1' -f 'inputs[budget_min]=50'; fi
       - if: always()
         uses: actions/cache/save@v4
         with: { path: crawler/.cache, key: "wayback-cache-${{ github.run_id }}" }

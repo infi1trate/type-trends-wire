@@ -264,6 +264,8 @@ async function main() {
   progress(true);
   const summary = { run_id: RUN_ID, missing: all.length, queue: queue.length, ...totals, errors, minutes: Math.round((Date.now() - t0) / 60000) };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
+  // Read by the workflow to decide whether to start the next run straight away.
+  try { mkdirSync("out", { recursive: true }); writeFileSync("out/last-run.json", JSON.stringify(summary)); } catch { /* the run's result does not depend on it */ }
   console.log("done", JSON.stringify(summary));
 }
 
