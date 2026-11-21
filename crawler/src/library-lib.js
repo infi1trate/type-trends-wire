@@ -17,7 +17,27 @@ const RULES = {
   about: { path: /^\/(about|about-us|company|our-story|story|mission)(\/|$)/i, text: /^(about|about us|company|our story|mission)$/i },
 };
 
-/** Pick one URL per page type from a page's same-site links. Nav links win, then shortest path. */
+/** A product page that stands for nothing: gift cards and vouchers look the same at every shop. */
+export const WEAK_PRODUCT = /gift|voucher/i;
+
+/** Pick one URL per page type from a page's same-site links. Nav links win, then shortest path; a gift-card page is the last choice for "product". */
+/**
+ * Which address to capture for each page type on a full crawl: the one chosen before stays chosen (a shop features a
+ * different product every week, and a new address each time would read as a changed page), unless it was a gift-card
+ * page and a better one is on offer. `fallback` holds the newly found address to try when the kept one is gone.
+ */
+export function choosePages(known, found) {
+  const choice = { ...found }, fallback = {};
+  for (const [type, url] of Object.entries(known ?? {})) {
+    if (type === "home" || !url) continue;
+    const fresh = found?.[type];
+    if (type === "product" && fresh && WEAK_PRODUCT.test(url) && !WEAK_PRODUCT.test(fresh)) continue; // trade the gift card for a real product
+    choice[type] = url;
+    if (fresh && fresh !== url) fallback[type] = fresh;
+  }
+  return { choice, fallback };
+}
+
 export function discoverPages(links, homeUrl) {
   const home = new URL(homeUrl);
   const out = {};
@@ -28,9 +48,9 @@ export function discoverPages(links, homeUrl) {
       if (u.hostname.replace(/^www\./, "") !== home.hostname.replace(/^www\./, "")) continue; // same host only: docs./app. subdomains are other products
       const path = u.pathname.replace(/\/+$/, "") || "/";
       if (path === "/" || path.split("/").length > 3) continue;
-      if (rule.path.test(path) || rule.text.test(l.text ?? "")) cands.push({ url: u.origin + path, nav: !!l.in_nav, len: path.length, byPath: rule.path.test(path) });
+      if (rule.path.test(path) || rule.text.test(l.text ?? "")) cands.push({ url: u.origin + path, nav: !!l.in_nav, len: path.length, byPath: rule.path.test(path), weak: type === "product" && WEAK_PRODUCT.test(`${path} ${l.text ?? ""}`) });
     }
-    cands.sort((a, b) => (b.byPath - a.byPath) || (b.nav - a.nav) || (a.len - b.len));
+    cands.sort((a, b) => (a.weak - b.weak) || (b.byPath - a.byPath) || (b.nav - a.nav) || (a.len - b.len));
     if (cands[0]) out[type] = cands[0].url;
   }
   return out;

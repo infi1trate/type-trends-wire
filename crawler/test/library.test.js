@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { serve } from "./serve.js";
 import { homepageAllowed } from "../src/robots.js";
-import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash } from "../src/library-lib.js";
+import { parseLibrary, discoverPages, choosePages, htmlHash, contentHash, signalsHash } from "../src/library-lib.js";
 const run = promisify(execFile);
 
 test("library csv", () => {
@@ -35,6 +35,23 @@ test("discoverPages", () => {
     { href: "https://b.com/pricing", text: "Pricing", in_nav: true },
   ];
   assert.deepEqual(discoverPages(links, "https://www.a.com/"), { pricing: "https://a.com/pricing", changelog: "https://a.com/changelog", product: "https://a.com/features", about: "https://a.com/company" });
+});
+
+test("product pages: a gift card is the last choice, and a page chosen before stays chosen", () => {
+  const shop = [
+    { href: "https://shop.com/products/gift-card", text: "Gift card", in_nav: true },
+    { href: "https://shop.com/products/the-big-wool-sweater", text: "The Big Wool Sweater", in_nav: false },
+  ];
+  assert.equal(discoverPages(shop, "https://shop.com/").product, "https://shop.com/products/the-big-wool-sweater");
+  assert.equal(discoverPages([shop[0]], "https://shop.com/").product, "https://shop.com/products/gift-card"); // nothing better on offer
+  const found = { product: "https://shop.com/products/new-thing", about: "https://shop.com/about" };
+  // kept while it lasts; the newly linked page is the fallback if the kept one is gone
+  assert.deepEqual(choosePages({ home: "https://shop.com/", product: "https://shop.com/products/old-thing" }, found),
+    { choice: { product: "https://shop.com/products/old-thing", about: "https://shop.com/about" }, fallback: { product: "https://shop.com/products/new-thing" } });
+  // a gift card chosen before is traded for a real product
+  assert.deepEqual(choosePages({ product: "https://shop.com/products/egift-card" }, found).choice.product, "https://shop.com/products/new-thing");
+  assert.deepEqual(choosePages({}, found), { choice: found, fallback: {} });
+  assert.deepEqual(choosePages({ pricing: "https://shop.com/pricing" }, {}), { choice: { pricing: "https://shop.com/pricing" }, fallback: {} });
 });
 
 test("hashes ignore noise", () => {

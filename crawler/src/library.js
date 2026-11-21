@@ -21,7 +21,7 @@ import { chromium } from "playwright";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { VIEWPORTS, UA, makePoster, robotsOk, openPage, analyzePage, evalSettled, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
-import { parseLibrary, discoverPages, htmlHash, contentHash, signalsHash, pickCaptures, parseSlice, inSlice, pickVanguard } from "./library-lib.js";
+import { parseLibrary, discoverPages, choosePages, htmlHash, contentHash, signalsHash, pickCaptures, parseSlice, inSlice, pickVanguard } from "./library-lib.js";
 import sharp from "sharp";
 import { encodeThumb, captureBody, makeThumbSender } from "./thumbs.js";
 import { captureCrops, makeCropSender } from "./crops.js";
@@ -219,10 +219,23 @@ async function crawlSite(browser, site, st, emitRaw, errors) {
     if (discover) {
       const home = await snapshot(await pageFor("desktop"), { domain: site.domain, page_type: "home", viewport: "desktop", url: origin + "/" });
       if (home.error) { errors[home.error] = (errors[home.error] ?? 0) + 1; return { error: home.error }; }
-      const found = discoverPages(home.links, home.record.url || origin + "/");
-      home.record.discovered_pages = found;
-      await emit(home.record, home.images); n++;
-      jobs = [...Object.entries({ ...known, ...found }).filter(([t]) => t !== "home").map(([page_type, url]) => ({ page_type, viewport: "desktop", url })), { page_type: "home", viewport: "mobile", url: origin + "/" }];
+      const { choice, fallback } = choosePages(known, discoverPages(home.links, home.record.url || origin + "/"));
+      // The home capture is sent after the other pages, so the addresses it reports are the ones that answered.
+      try {
+        for (const [page_type, kept] of Object.entries(choice)) {
+          let r = await snapshot(await pageFor("desktop"), { domain: site.domain, page_type, viewport: "desktop", url: kept });
+          if (/^http_(404|410)$/.test(r.error ?? "") && fallback[page_type]) { // the kept page is gone: take the one the homepage links to now
+            choice[page_type] = fallback[page_type];
+            r = await snapshot(await pageFor("desktop"), { domain: site.domain, page_type, viewport: "desktop", url: fallback[page_type] });
+          }
+          if (r.error) { errors[`${page_type}:${r.error}`] = (errors[`${page_type}:${r.error}`] ?? 0) + 1; continue; }
+          await emit(r.record, r.images); n++;
+        }
+      } finally {
+        home.record.discovered_pages = choice;
+        await emit(home.record, home.images); n++;
+      }
+      jobs = [{ page_type: "home", viewport: "mobile", url: origin + "/" }];
     }
     for (const j of jobs) {
       const r = await snapshot(await pageFor(j.viewport), { domain: site.domain, ...j });
