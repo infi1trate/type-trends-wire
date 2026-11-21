@@ -31,6 +31,10 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      # What the Archive holds per brand, and what failed to render, carried from run to run: asking its index again
+      # for 300 brands took most of a run.
+      - uses: actions/cache/restore@v4
+        with: { path: crawler/.cache, key: "wayback-cache-${{ github.run_id }}", restore-keys: "wayback-cache-" }
       - name: Wayback backfill
         env:
           CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
@@ -42,6 +46,9 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           WB_CONCURRENCY: "3"
         run: npm run wayback
+      - if: always()
+        uses: actions/cache/save@v4
+        with: { path: crawler/.cache, key: "wayback-cache-${{ github.run_id }}" }
       - if: always()
         uses: actions/upload-artifact@v4
         with: { name: wayback-out, path: crawler/out/, if-no-files-found: ignore, retention-days: 14 }

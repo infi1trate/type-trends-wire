@@ -4,9 +4,11 @@
 // Env: CRAWL_ENDPOINT, CRAWL_SECRET, DRY_RUN=1, LIMIT (first N sites), PASS_MAX (1..3, default 3),
 //      WB_CONCURRENCY (default 3), TIME_BUDGET_MIN (default 320), LIBRARY_FILE, LIBRARY_TAG=0 to skip tagging,
 //      WB_ARCHIVE_BASE (tests: replaces https://web.archive.org), STATE_FILE (dry runs),
-//      WB_RECYCLE (renders per browser before a fresh one, default 30)
+//      WB_RECYCLE (renders per browser before a fresh one, default 30), WB_RENDER_DEADLINE_S (default 200),
+//      WB_CACHE_FILE (what the Archive holds per brand and what failed, kept between runs; default .cache/wayback.json)
 import { chromium } from "playwright";
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, renameSync } from "node:fs";
+import { dirname } from "node:path";
 import os from "node:os";
 import sharp from "sharp";
 import { VIEWPORTS, UA, makePoster, analyzePage, evalSettled, hideOverlays, errorCode } from "./core.js";
@@ -23,6 +25,12 @@ const CONCURRENCY = Number(process.env.WB_CONCURRENCY ?? 3);
 const BUDGET_MS = Number(process.env.TIME_BUDGET_MIN ?? 320) * 60_000;
 const TAG = process.env.LIBRARY_TAG !== "0";
 const RECYCLE = Math.max(1, Number(process.env.WB_RECYCLE ?? 30));
+const RENDER_DEADLINE_MS = Number(process.env.WB_RENDER_DEADLINE_S ?? 200) * 1000;
+const CACHE_FILE = process.env.WB_CACHE_FILE ?? ".cache/wayback.json";
+const CACHE_DAYS = 21;   // the Archive keeps adding captures to recent quarters, so its index is asked again after three weeks
+const FAIL_LIMIT = 2;    // a capture that failed to render in two runs is left alone until its index entry expires
+const LOW_MEMORY = 3e9;  // free bytes below which a worker replaces its browser before the next render
+const THROTTLED = /^archive_(429|503|throttled)$/;
 const BASE = process.env.WB_ARCHIVE_BASE; // tests only
 const RUN_ID = process.env.RUN_ID ?? `wb-${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).slice(2, 6)}`;
 const post = makePoster({ endpoint: ENDPOINT, secret: SECRET, dry: DRY, runId: RUN_ID });
@@ -136,16 +144,40 @@ async function main() {
   const state = await getState();
   const have = new Map((state.sites ?? []).map((s) => [s.domain, new Set((s.wayback ?? []).map((w) => w.quarter))]));
   const qs = quarters();
-  const queue = buildQueue(sites, have, qs, PASS_MAX);
-  console.log(`run ${RUN_ID}: ${sites.length} sites, ${qs.length} quarters, ${queue.length} captures to go (pass ≤ ${PASS_MAX})`);
+  // Kept between runs: for each brand, the Archive's usable captures per quarter (asking its index took most of
+  // a run: about 12 s a brand), and how often a quarter failed to render. A run with a warm file spends its time rendering.
+  let cache = { v: 1, cdx: {}, failed: {} };
+  try { const c = JSON.parse(readFileSync(CACHE_FILE, "utf8")); if (c?.v === 1 && c.cdx && c.failed) cache = c; } catch { /* first run, or an unreadable file: start empty */ }
+  const saveCache = () => { try { mkdirSync(dirname(CACHE_FILE), { recursive: true }); writeFileSync(CACHE_FILE + ".tmp", JSON.stringify(cache)); renameSync(CACHE_FILE + ".tmp", CACHE_FILE); } catch { /* the file is a saving, not a need */ } };
+  const fresh = (e) => e && Date.now() - Date.parse(e.at) < CACHE_DAYS * 86400000;
+  for (const d of Object.keys(cache.cdx)) if (!fresh(cache.cdx[d])) { delete cache.cdx[d]; for (const k of Object.keys(cache.failed)) if (k.startsWith(d + "|")) delete cache.failed[k]; }
+  const all = buildQueue(sites, have, qs, PASS_MAX);
+  // Skip, without asking anyone, what the file already knows: quarters with no capture and quarters that failed twice.
+  const queue = all.filter((i) => { const e = cache.cdx[i.domain]; return !(e && !(e.picks[i.quarter]?.length)) && (cache.failed[`${i.domain}|${i.quarter}`] ?? 0) < FAIL_LIMIT; });
+  console.log(`run ${RUN_ID}: ${sites.length} sites, ${qs.length} quarters, ${all.length} captures missing, ${queue.length} to try (pass ≤ ${PASS_MAX}); known from earlier runs: ${Object.keys(cache.cdx).length} brands indexed, ${all.length - queue.length} skipped`);
 
-  const cdx = new Map(); // domain -> Promise<timestamps|null>
-  const cdxFor = (d) => { if (!cdx.has(d)) cdx.set(d, fetchCdx(d)); return cdx.get(d); };
+  const cdx = new Map(); // domain -> Promise<{ quarter: [timestamps] } | null>
+  const picksFor = (d) => {
+    if (cache.cdx[d]) return Promise.resolve(cache.cdx[d].picks);
+    if (!cdx.has(d)) cdx.set(d, fetchCdx(d).then((stamps) => {
+      if (stamps === null) return null;
+      const picks = {};
+      for (const q of qs) { const c = pickCaptures(stamps, q); if (c.length) picks[q] = c; }
+      cache.cdx[d] = { at: new Date().toISOString(), picks };
+      return picks;
+    }));
+    return cdx.get(d);
+  };
   if (DRY) mkdirSync("out", { recursive: true });
-  // One browser per worker, replaced every RECYCLE renders: archived pages are heavy, and a browser kept
-  // for hours took the hosted runner down mid-run (15–21 Nov), losing the run's log and unsent captures.
-  const launch = () => chromium.launch({ args: ["--disable-dev-shm-usage"] });
-  const totals = { captured: 0, no_capture: 0, failed: 0, cdx_unknown: 0, tagged: 0, tag_failed: 0, stopped_for_time: false };
+  // One browser per worker, behind a server handle so it can be killed outright. It is replaced every RECYCLE renders,
+  // when a render passes its deadline, and when the machine runs low on memory: on 21 Nov one archived page took
+  // 10 GB in 17 minutes and the hosted runner was lost, with the run's log and unsent captures.
+  const launch = async () => {
+    const server = await chromium.launchServer({ args: ["--disable-dev-shm-usage"] });
+    const browser = await chromium.connect(server.wsEndpoint());
+    return { browser, kill: async () => { await Promise.race([browser.close().catch(() => {}), sleep(5000)]); await server.kill().catch(() => {}); } };
+  };
+  const totals = { captured: 0, no_capture: 0, failed: 0, cdx_unknown: 0, tagged: 0, tag_failed: 0, killed: 0, stopped_for_time: false };
   const errors = {};
   let buffer = [], bufBytes = 0;
   const pendingImages = new Map();
@@ -182,40 +214,55 @@ async function main() {
   const progress = (force = false) => {
     if (!force && Date.now() - lastLog < 120_000) return;
     lastLog = Date.now();
-    console.log(`progress ${next}/${queue.length} · captured ${totals.captured} · none ${totals.no_capture} · failed ${totals.failed} · ${Math.round((Date.now() - t0) / 60000)} min · rss ${Math.round(process.memoryUsage().rss / 1e6)} MB · free ${Math.round(os.freemem() / 1e6)} MB`);
+    const why = Object.entries(errors).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} ${n}`).join(", ");
+    console.log(`progress ${next}/${queue.length} · captured ${totals.captured} · none ${totals.no_capture} · failed ${totals.failed}${why ? ` (${why})` : ""} · browsers killed ${totals.killed} · ${Math.round((Date.now() - t0) / 60000)} min · rss ${Math.round(process.memoryUsage().rss / 1e6)} MB · free ${Math.round(os.freemem() / 1e6)} MB`);
+    saveCache();
   };
+  const overBudget = () => Date.now() - t0 > BUDGET_MS;
   const worker = async () => {
-    let browser = await launch(), renders = 0;
+    let b = await launch(), renders = 0;
+    const replace = async () => { await b.kill(); b = await launch(); renders = 0; };
     try {
     while (next < queue.length) {
-      if (Date.now() - t0 > BUDGET_MS) { totals.stopped_for_time = true; return; }
+      if (overBudget()) { totals.stopped_for_time = true; return; }
       progress();
       const item = queue[next++];
-      const stamps = await cdxFor(item.domain);
-      if (stamps === null) { totals.cdx_unknown++; continue; }
-      const candidates = pickCaptures(stamps, item.quarter);
+      const picks = await picksFor(item.domain);
+      if (picks === null) { totals.cdx_unknown++; continue; }
+      const candidates = picks[item.quarter] ?? [];
       if (!candidates.length) { totals.no_capture++; continue; }
       let r = null;
-      for (const ts of candidates) { // nearest mid-quarter first; alternates when the archive render is blank/broken
+      attempts: for (const ts of candidates) { // nearest mid-quarter first; alternates when the archive render is blank/broken
         // Throttling (429/503/refused) is about the Archive, not the capture: wait out the global back-off and retry it.
         for (let attempt = 1; attempt <= 3; attempt++) {
-          if (renders >= RECYCLE) { await browser.close().catch(() => {}); browser = await launch(); renders = 0; }
+          if (overBudget()) { totals.stopped_for_time = true; r = r ?? { error: "out_of_time" }; break attempts; }
+          if (renders >= RECYCLE || os.freemem() < LOW_MEMORY) await replace();
           renders++;
-          r = await renderCapture(browser, item, ts);
-          if (!/^archive_(429|503|throttled)$/.test(r.error ?? "")) break;
+          // A page that hangs or eats memory never comes back on its own: past the deadline its browser is killed.
+          const late = Symbol("late");
+          let timer;
+          const got = await Promise.race([renderCapture(b.browser, item, ts), new Promise((res) => { timer = setTimeout(() => res(late), RENDER_DEADLINE_MS); })]);
+          clearTimeout(timer);
+          if (got === late) { totals.killed++; await replace(); r = { error: "render_deadline" }; } else r = got;
+          if (!THROTTLED.test(r.error ?? "")) break;
         }
         if (!r.error && blankArchive(r.record.signals)) r = { error: "blank_archive" };
-        if (!r.error || /^archive_(429|503|throttled)$/.test(r.error)) break;
+        if (!r.error || THROTTLED.test(r.error)) break;
       }
-      if (r.error) { totals.failed++; errors[r.error] = (errors[r.error] ?? 0) + 1; continue; }
+      if (r.error) {
+        totals.failed++; errors[r.error] = (errors[r.error] ?? 0) + 1;
+        // The Archive being busy, or the run ending, says nothing about the capture; anything else counts against it.
+        if (!THROTTLED.test(r.error) && r.error !== "out_of_time") { const k = `${item.domain}|${item.quarter}`; cache.failed[k] = (cache.failed[k] ?? 0) + 1; }
+        continue;
+      }
       await emit(r.record, r.images);
     }
-    } finally { await browser.close().catch(() => {}); }
+    } finally { await b.kill(); }
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   await flush();
   progress(true);
-  const summary = { run_id: RUN_ID, queue: queue.length, ...totals, errors, minutes: Math.round((Date.now() - t0) / 60000) };
+  const summary = { run_id: RUN_ID, missing: all.length, queue: queue.length, ...totals, errors, minutes: Math.round((Date.now() - t0) / 60000) };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
   console.log("done", JSON.stringify(summary));
 }

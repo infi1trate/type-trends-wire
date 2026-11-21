@@ -39,12 +39,18 @@ test("queue is coarse-first, sector-interleaved, and skips what exists", () => {
 });
 
 test("wayback dry run against a fake archive", { timeout: 180000 }, async () => {
+  let hang = false;
+  const cacheFile = "/tmp/wbtest-cache.json";
+  rmSync(cacheFile, { force: true });
   const page = readFileSync("test/fixtures/lib/index.html", "utf8");
+  let asked = 0;
   const server = http.createServer((req, res) => {
     if (req.url.startsWith("/cdx/")) {
+      asked++;
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify([["timestamp", "statuscode", "mimetype"], ["20210210000000", "200", "text/html"], ["20220212000000", "200", "text/html"], ["20220815000000", "200", "text/html"]]));
     }
+    if (/^\/web\/20220815\d{6}if_\//.test(req.url) && hang) return; // never answers: a page that hangs
     if (/^\/web\/\d{14}if_\//.test(req.url)) { res.writeHead(200, { "content-type": "text/html" }); return res.end(page); }
     res.writeHead(404); res.end();
   });
@@ -53,7 +59,7 @@ test("wayback dry run against a fake archive", { timeout: 180000 }, async () => 
   writeFileSync("/tmp/wbstate.json", JSON.stringify({ sites: [{ domain: "example.com", wayback: [{ quarter: "2022Q1", captured_at: "2022-02-12T00:00:00Z" }] }] }));
   rmSync("out", { recursive: true, force: true });
   try {
-    await run("node", ["src/wayback.js"], { env: { ...process.env, DRY_RUN: "1", RUN_ID: "wbtest", LIBRARY_FILE: "/tmp/wb.csv", STATE_FILE: "/tmp/wbstate.json", WB_ARCHIVE_BASE: "http://localhost:4831", WB_CONCURRENCY: "2" } });
+    await run("node", ["src/wayback.js"], { env: { ...process.env, DRY_RUN: "1", RUN_ID: "wbtest", LIBRARY_FILE: "/tmp/wb.csv", STATE_FILE: "/tmp/wbstate.json", WB_ARCHIVE_BASE: "http://localhost:4831", WB_CONCURRENCY: "2", WB_CACHE_FILE: cacheFile } });
     const sum = JSON.parse(readFileSync("out/wbtest.summary.json", "utf8"));
     assert.equal(sum.captured, 2);           // 2021Q1 + 2022Q3; 2022Q1 already in state
     assert.ok(sum.no_capture > 10);          // quarters with no archive capture are skipped without rendering
@@ -70,5 +76,19 @@ test("wayback dry run against a fake archive", { timeout: 180000 }, async () => 
     const tags = readFileSync("out/wbtest.tags.jsonl", "utf8").trim().split("\n").map((l) => JSON.parse(l));
     assert.equal(tags.length, 2);
     assert.ok(tags.every((t) => t.source === "wayback" && t.images.fold > 1000));
-  } finally { server.close(); }
+
+    // A second run with the file from the first: the Archive's index is not asked again, quarters known to be empty are
+    // not queued, and a page that never answers is given up at the deadline, its browser killed, and counted against it.
+    assert.equal(asked, 1);
+    const kept = JSON.parse(readFileSync(cacheFile, "utf8"));
+    assert.deepEqual(Object.keys(kept.cdx["example.com"].picks).sort(), ["2021Q1", "2022Q1", "2022Q3"]);
+    hang = true;
+    await run("node", ["src/wayback.js"], { env: { ...process.env, DRY_RUN: "1", RUN_ID: "wbtest2", LIBRARY_FILE: "/tmp/wb.csv", STATE_FILE: "/tmp/wbstate.json", WB_ARCHIVE_BASE: "http://localhost:4831", WB_CONCURRENCY: "2", WB_CACHE_FILE: cacheFile, WB_RENDER_DEADLINE_S: "4" } });
+    const sum2 = JSON.parse(readFileSync("out/wbtest2.summary.json", "utf8"));
+    assert.equal(asked, 1);
+    assert.equal(sum2.queue, 2); assert.equal(sum2.no_capture, 0);
+    assert.equal(sum2.captured, 1); assert.equal(sum2.killed, 1);
+    assert.deepEqual(sum2.errors, { render_deadline: 1 });
+    assert.equal(JSON.parse(readFileSync(cacheFile, "utf8")).failed["example.com|2022Q3"], 1);
+  } finally { server.closeAllConnections?.(); server.close(); }
 });
