@@ -31,6 +31,7 @@ function Row({ r }: { r: EditionRow }) {
   </li>;
 }
 
+const ARGUMENT_MEASURE = { maxWidth: "68ch" } as const;
 export function EditionView({ issue: e, latest = false }: { issue: Edition; latest?: boolean }) {
   const t = e.text;
   let n = 0; const next = () => String(++n).padStart(2, "0");
@@ -44,8 +45,9 @@ export function EditionView({ issue: e, latest = false }: { issue: Edition; late
 
       <div className="ed-wrap">
         {latest && <p className="ed-caption mt-6" data-digest-next="">{`Next issue: No. ${e.next.number}, ${longDate(e.next.monday)}`}</p>}
-        <section aria-label="The argument" className="ed-body mt-12 space-y-5 md:mt-16" data-digest-argument="">
-          {t.argument.map((p, i) => <p key={i} className="max-w-[62ch] text-[1.125rem] leading-relaxed">{p}</p>)}
+        {/* E5b · the argument is the issue's main text: set exactly as a study's opening paragraph (ed-body, 68ch). */}
+        <section aria-label="The argument" className="mt-12 space-y-5 md:mt-16" data-digest-argument="">
+          {t.argument.map((p, i) => <p key={i} className="ed-body" style={ARGUMENT_MEASURE}>{p}</p>)}
           {t.stale && t.at && <p className="ed-caption" data-text-from="">Text from {longDate(t.at)}</p>}
         </section>
 

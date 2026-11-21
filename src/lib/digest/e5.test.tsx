@@ -102,7 +102,7 @@ describe("corrections", () => {
   });
   it("the line, dated, only when needed", () => {
     expect(corrections([], "2026-11-20")).toBeNull();
-    expect(corrections(["dropbox.com"], "2026-11-20")!.text).toMatch(/^Corrections: this issue was rebuilt on 20 November 2026\. Reports of changes at .+ were withdrawn after a second look\.$/);
+    expect(corrections(["dropbox.com"], "2026-11-20")!.text).toMatch(/^Corrections: this issue was rebuilt on 20 November 2026\. The first version reported changes at .+ that are not confirmed stories\.$/);
   });
   it("No. 1 carries the stored brief's withdrawn brands; a later issue only retirements after its week closed", () => {
     const brief = { sections: [{ citations: [{ kind: "event", id: "1" }, { kind: "forecast", id: "x" }] }], refs: { "event:1": { domain: "dropbox.com" } } };
@@ -124,8 +124,8 @@ describe("corrections", () => {
     expect(withdrewChange({ type: "breakout", domains: ["a.com"], killReason: "Retired: reversed within seven days" })).toBe(false);
   });
   it("the terminal's brief line", () => {
-    expect(withdrawnBriefLine(5)).toBe("5 changes cited here were later withdrawn. See the Digest for the corrected week.");
-    expect(withdrawnBriefLine(1)).toBe("1 change cited here was later withdrawn. See the Digest for the corrected week.");
+    expect(withdrawnBriefLine(5)).toBe("5 changes cited here are not confirmed stories. See the Digest for the corrected week.");
+    expect(withdrawnBriefLine(1)).toBe("1 change cited here is not a confirmed story. See the Digest for the corrected week.");
   });
 });
 

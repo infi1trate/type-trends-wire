@@ -74,6 +74,14 @@ describe("the shelf", () => {
     expect(frontStudies(h).map(x => x.slug)).toEqual(["b", "a", "c"]);
     expect(frontStudies(studiesHome([a, b, c, study({ slug: "d", number: 6 })], [])).length).toBe(3);
   });
+  it("a study with checked written text leads before one on fallback text, then the latest facts change, then the lowest number", () => {
+    const one = study({ slug: "one", number: 1, written: true, changedAt: "2026-11-12" }), two = study({ slug: "two", number: 2, written: true, changedAt: "2026-11-12" }),
+      four = study({ slug: "four", number: 4, written: false, changedAt: "2026-11-20" });
+    expect(leadOf([four, two, one])?.slug).toBe("one");
+    expect(leadOf([four, one, study({ slug: "two", number: 2, written: true, changedAt: "2026-11-14" })])?.slug).toBe("two");
+    expect(leadOf([four, study({ slug: "five", number: 5, written: false, changedAt: "2026-11-21" })])?.slug).toBe("five");
+    expect(leadOf([{ ...four, written: true }, one, two])?.slug).toBe("four");
+  });
   it("facts that changed the same day tie (the lowest number leads); a sheet with nothing written from it changed today", () => {
     const rows = [{ slug: "a", facts_hash: "h1", created_at: "2026-11-20T22:46:41Z" }, { slug: "b", facts_hash: "h2", created_at: "2026-11-20T22:47:07Z" }, { slug: "a", facts_hash: "old", created_at: "2026-10-01T00:00:00Z" }];
     expect(changedAt(rows, "a", "h1", NOV_20)).toBe("2026-11-20");

@@ -30,9 +30,11 @@ export function changedAt(rows: readonly { slug: string; facts_hash: string; cre
   const at = rows.filter(r => r.slug === slug && r.facts_hash === hash).map(r => r.created_at).sort()[0];
   return (at ?? new Date(now).toISOString()).slice(0, 10);
 }
-export type HomeStudy = { slug: string; number: number; label: string; series: string; seriesTitle: string; headline: string; deck: string; question: string; dataThrough: string | null; href: string; key: StoryModel["key"]; cover: CoverTrail | null; changedAt: string };
-/** The lead: the live study whose facts changed most recently (ties: the lowest number). */
-export const leadOf = (studies: readonly HomeStudy[]): HomeStudy | null => [...studies].sort((a, b) => b.changedAt.localeCompare(a.changedAt) || a.number - b.number)[0] ?? null;
+export type HomeStudy = { slug: string; number: number; label: string; series: string; seriesTitle: string; headline: string; deck: string; question: string; dataThrough: string | null; href: string; key: StoryModel["key"]; cover: CoverTrail | null; changedAt: string; written?: boolean };
+/** The lead (E5b): a live study with checked written text before one still on fallback text; among those, the one whose facts changed
+ *  most recently (ties: the lowest number). A record stored before E5b has no `written`, which reads as fallback for every study. */
+export const leadOf = (studies: readonly HomeStudy[]): HomeStudy | null =>
+  [...studies].sort((a, b) => Number(!!b.written) - Number(!!a.written) || b.changedAt.localeCompare(a.changedAt) || a.number - b.number)[0] ?? null;
 export type HomeSeries = { id: string; title: string; description: string; studies: HomeStudy[] };
 export type StudiesHome = { lead: HomeStudy | null; series: HomeSeries[]; shelf: ShelfRow[]; tool: { question: string; line: string; href: string } };
 export const TOOL_LINE = "Pick a tracked brand and see where it sits in its sector, and how its homepage has changed.";

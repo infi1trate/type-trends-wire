@@ -42,7 +42,7 @@ export async function computeDataIndex(): Promise<DataIndex> {
   const studies: HomeStudy[] = live.flatMap((e, k) => {
     const m = models[k]; if (!m) return [];
     const p = studyPage(m, texts);
-    return [{ slug: e.slug, number: e.number, label: studyLabel(e.number), series: e.series, seriesTitle: seriesOf(e.series)?.title ?? "", headline: p.text.headline, deck: p.text.deck, question: e.question, dataThrough: m.dataThrough, href: `/data/${e.slug}`, key: m.key, cover: coverTrail(m), changedAt: changedAt(texts, e.slug, p.hash, now) }];
+    return [{ slug: e.slug, number: e.number, label: studyLabel(e.number), series: e.series, seriesTitle: seriesOf(e.series)?.title ?? "", headline: p.text.headline, deck: p.text.deck, question: e.question, dataThrough: m.dataThrough, href: `/data/${e.slug}`, key: m.key, cover: coverTrail(m), changedAt: changedAt(texts, e.slug, p.hash, now), written: p.text.source !== "fallback" }];
   });
   const drafts = DATA_STORIES.filter(e => !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
   const cands = i ? i.headline.filter(h => h.key !== BIG_TYPE.key).map(h => ({ key: h.key, name: h.name, entries: adoptionEntries(i, h.key, h.name) })) : [];

@@ -164,11 +164,11 @@ export type Corrections = { text: string; names: string[]; date: string; href: s
 export function corrections(domains: readonly string[], rebuiltOn: string | null): Corrections | null {
   if (!domains.length || !rebuiltOn) return null;
   const date = longDate(rebuiltOn);
-  return { text: `Corrections: this issue was rebuilt on ${date}. Reports of changes at ${namesList(domains)} were withdrawn after a second look.`, names: domains.map(d => brandName(d)), date, href: CORRECTIONS_HREF };
+  return { text: `Corrections: this issue was rebuilt on ${date}. The first version reported changes at ${namesList(domains)} that are not confirmed stories.`, names: domains.map(d => brandName(d)), date, href: CORRECTIONS_HREF };
 }
 /** How many of a stored brief's cited changes are at withdrawn brands (the terminal's weekly brief line). */
 export const withdrawnCited = (briefDomains: readonly string[], withdrawn: readonly string[]) => briefDomains.filter(d => withdrawn.includes(d)).length;
-export const withdrawnBriefLine = (n: number) => `${n} ${n === 1 ? "change" : "changes"} cited here ${n === 1 ? "was" : "were"} later withdrawn. See the Digest for the corrected week.`;
+export const withdrawnBriefLine = (n: number) => `${n} ${n === 1 ? "change" : "changes"} cited here ${n === 1 ? "is not a confirmed story" : "are not confirmed stories"}. See the Digest for the corrected week.`;
 
 // THE TEXT -----------------------------------------------------------------------------------------------------------------------------
 export type DigestText = { headline: string; deck: string; argument: string[]; changes: string[]; chart_caption: string | null; use: string | null; source: "model" | "fallback"; model: string; at: string | null; stale: boolean };

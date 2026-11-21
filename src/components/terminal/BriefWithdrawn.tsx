@@ -1,4 +1,4 @@
-// E5 · one line above a stored weekly brief that cites changes later withdrawn, linking to that week's corrected Digest. The stored
+// E5 · one line above a stored weekly brief that cites changes that are not confirmed stories (E5b wording), linking to that week's corrected Digest. The stored
 // brief itself is never rewritten. Loads after the panel (never in front of it); renders nothing until it knows, or when none were.
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
