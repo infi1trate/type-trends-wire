@@ -126,3 +126,13 @@
 - [x] 6 proof runs (<30 calls) + report + commit
 - [ ] N3 open: second reader alone passed No. 91 on the final prompt; the brief's "tune once more and re-run all ten" needs ~10 more fixture calls beyond the 30-call ceiling (owner)
 - [ ] N3 open: backtest waits for a forecast run at least 28 days old
+
+# Phase N4 · Design review and engineering, through a gate
+- [x] 0 migration: page_reviews, build_queue (+moves), gate_results (append-only, service role); spend_entries.queue_item; desk_calls/desk_log checks wider
+- [x] 1 page reviews: REVIEW_PAGES × 1440/768/390, `review` door action (kinds weekly/before/after/test, measures, picture to crops bucket under reviews/), budgets + breaches + run diffs (design-review.ts)
+- [x] 2 build queue: queue_add / queue_move / gate_result; order, proposal-accepted and gate-pass rules at the door; gate checks in one file; spend names an item
+- [x] 3 engineering desk: daily health run files/declines bug items by key (jobs, staleness, speed, desk/writer failures, shared check, history refresh); no model
+- [x] 4 design review desk: weekly after a complete weekly run; breaches first; one vision call per page (9/day); moves enforced in code; ≤5 proposals/week; propose + queue item
+- [x] 5 /desk Design review + Engineering panels; memory facts; beats.md + README regenerated; drift tests; 390/1280 check
+- [x] 6 second reader re-run: Nos. 44, 90 (pass), 92 (hold)
+- [x] 7 proof: two test review runs, gate tests, health run live, design review fixtures (front/story/brand), reader pages unchanged; report; commit

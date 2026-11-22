@@ -8,10 +8,11 @@ export type { HistoryRow, LogRow } from "./log";
 
 type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 
-export async function insertLog(db: Admin, r: LogRow): Promise<void> {
+export async function insertLog(db: Admin, r: LogRow): Promise<number> {
   const row = { ...r, actor: r.actor.slice(0, 40), action: r.action.slice(0, 40), subject_id: r.subject_id?.slice(0, 200) ?? null, reason: r.reason?.slice(0, 600) ?? null, detail: r.detail ?? {} };
-  const { error } = await db.from("desk_log").insert(row as never);
-  if (error) throw new Error("desk_log_insert_failed");
+  const { data, error } = await db.from("desk_log").insert(row as never).select("id").single();
+  if (error || !data) throw new Error("desk_log_insert_failed");
+  return (data as { id: number }).id;
 }
 /** The desk history (log plus story edits), newest first. */
 export async function loadHistory(db: Admin, o: { days: number; actor?: string | null; limit?: number }): Promise<HistoryRow[]> {
@@ -44,8 +45,8 @@ export async function capReachedNow(db: Admin, now = Date.now()): Promise<boolea
   return reached;
 }
 export const resetCapMemo = () => { capMemo = null; };
-export async function insertSpend(db: Admin, r: { credits: number; what: string; actor: string }) {
-  const { data, error } = await db.from("spend_entries" as never).insert({ kind: "build", ...r } as never).select("id,at").single();
+export async function insertSpend(db: Admin, r: { credits: number; what: string; actor: string; queue_item?: number | null }) {
+  const { data, error } = await db.from("spend_entries" as never).insert({ kind: "build", ...r, queue_item: r.queue_item ?? null } as never).select("id,at").single();
   if (error || !data) throw new Error("spend_insert_failed");
   return data as unknown as { id: number; at: string };
 }

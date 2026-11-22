@@ -42,6 +42,7 @@ export async function loadMemory(db: Admin) {
   const ids = items.map(i => String(i["id"]));
   const [states, notes, proposals, caps, reviews, n3] = await Promise.all([statesFor(db, ids).catch(() => new Map()), loadNotes(db).catch(() => []), loadProposals(db).catch(() => []), deskCaps(db).catch(() => null), reviewsFor(db, ids).catch(() => new Map()),
     import("./panels.server").then(m => m.n3Panels(db)).catch(() => null)]);
+  const n4 = await import("./panels.server").then(m => m.n4Panels(db)).catch(() => null);
   return fitMemory({
     read_at: new Date().toISOString(),
     files: { "newsroom/README.md": readme, "newsroom/style.md": style, "newsroom/beats.md": beats },
@@ -54,6 +55,10 @@ export async function loadMemory(db: Admin) {
     // N3 · the news, graphics and data desks: the same facts /desk shows (picks, drops, picture changes, share failures, findings,
     // backtest, proposals, calls against limits, and which log rows are tests).
     newsroom_desks: n3,
+    // N4 · the design review and engineering desks: review runs, breaches, the build queue, the newest gate and the health run's items,
+    // and how many accepted setting moves wait for the next monthly design edition.
+    product_loop: n4 ? { ...n4, design: { ...n4.design, newest: n4.design.newest ? { ...n4.design.newest, rows: undefined } : null, tests: n4.design.tests ? { ...n4.design.tests, newest: { ...n4.design.tests.newest, rows: undefined } } : null },
+      edition_waiting: `${n4.design.waiting_moves} accepted setting ${n4.design.waiting_moves === 1 ? "move waits" : "moves wait"} for the next monthly design edition.` } : null,
     spend: spend ? { ...spend, split: spendSplit(spend), reached: capReached(spend), line: capLine(spend) } : null,
     golden,
     design: colophon ? { live_edition: colophon.live, editions: colophon.editions.map(e => ({ number: e.number, dated: e.dated, status: e.statuses[e.statuses.length - 1]?.status ?? null, moves: e.moves.length })), dry_run: colophon.dry } : null,

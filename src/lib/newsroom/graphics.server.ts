@@ -39,34 +39,13 @@ async function bytesOf(db: Admin, src: string): Promise<Uint8Array | null> {
 const b64 = (u: Uint8Array) => { let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
 const mime = (u: Uint8Array) => (u[0] === 0x89 && u[1] === 0x50 ? "image/png" : u[0] === 0xff && u[1] === 0xd8 ? "image/jpeg" : "image/webp");
 
-/** One vision call on the AI reads' model under the cost ledger (`desk_vision`), recorded in desk_calls. Null when no call was made. */
+/** One vision call on the AI reads' model under the cost ledger (`desk_vision`), recorded in desk_calls (shared with the design review
+ *  desk through vision.server.ts). Null when no call was made. */
 export async function visionDeskCall(db: Admin, purpose: "picture" | "fixture", g: GraphicsInput, images: { ref: string; url: string }[], signal: AbortSignal) {
-  const [{ aiClient, markProvider, ProviderError }, { estimateCost }, { AI_MODELS, providerRuns }, nr] = await Promise.all([import("../ai-provider.server"), import("../ai-budget"), import("../ai-models"), import("./newsroom.server")]);
-  const ai = aiClient(), provider = ai.provider, model = AI_MODELS.vision;
-  if (!providerRuns(provider, model) || (await nr.capReachedNow(db))) return null;
-  const estimate = estimateCost({ provider, model, input_tokens: 9000, output_tokens: 800 });
-  const res = await db.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: "desk_vision", p_model: model, p_estimate: estimate });
-  const rv = res.data as { ok?: boolean; id?: number } | null;
-  if (res.error || !rv?.ok || typeof rv.id !== "number") return null;
-  const uid = rv.id;
-  if (!(await markProvider(db, uid, provider))) { await db.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: "usage_write_failed", p_state: "rejected" }); return null; }
-  const content: import("../ai-provider").ContentPart[] = [{ type: "text", text: graphicsText(g) }];
-  for (const im of images) { content.push({ type: "text", text: `ref ${im.ref}:` }); content.push({ type: "image_url", image_url: { url: im.url } }); }
-  let raw: unknown = null, cost = estimate, error: string | null = null;
-  try {
-    const resp = await ai.complete({ model, max_tokens: 1200, temperature: 0.1, signal, messages: [{ role: "system", content: GRAPHICS_SYSTEM }, { role: "user", content }], tools: [GRAPHICS_TOOL], tool_choice: { type: "function", function: { name: GRAPHICS_TOOL.function.name } } });
-    cost = estimateCost({ provider, model, input_tokens: resp.usage.prompt_tokens, output_tokens: resp.usage.completion_tokens });
-    raw = resp.tool_call_args ?? resp.text ?? null;
-    await db.rpc("ai_settle", { p_id: uid, p_input: resp.usage.prompt_tokens, p_output: resp.usage.completion_tokens, p_cost: cost, p_ok: raw != null, p_error: raw != null ? null as unknown as string : "no_answer", p_state: "done" });
-  } catch (e) {
-    if (e instanceof ProviderError && e.outcome === "not_started") { await db.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "rejected" }); return null; }
-    error = e instanceof ProviderError ? e.code : "unknown outcome";
-    await db.rpc("ai_settle", { p_id: uid, p_input: e instanceof ProviderError && e.usage ? e.usage.prompt_tokens : 0, p_output: e instanceof ProviderError && e.usage ? e.usage.completion_tokens : 0, p_cost: estimate, p_ok: false, p_error: `desk_vision_${error}`.slice(0, 80), p_state: "unknown" });
-  }
-  const parsed = raw != null ? parseGraphics(raw, [...g.chosen, ...g.alternates].map(x => x.ref)) : null;
-  const { data } = await db.from("desk_calls").insert({ desk: "graphics", purpose, model, usage_id: uid, ok: parsed != null, cost: Math.round(cost * 1e6) / 1e6, prompt_version: currentDeskVersion("graphics")?.version ?? null, story_ids: [g.story.id],
-    answer: (parsed ?? {}) as never, error: parsed == null ? (error ?? (raw == null ? "no answer" : "not the fixed structure")) : null }).select("id").single();
-  return { parsed, call_id: (data?.id as number | undefined) ?? null, cost };
+  const { visionCall } = await import("./vision.server");
+  const c = await visionCall(db, { desk: "graphics", purpose, system: GRAPHICS_SYSTEM, tool: GRAPHICS_TOOL, text: graphicsText(g), images: images.map(i => ({ label: `ref ${i.ref}`, url: i.url })),
+    parse: raw => parseGraphics(raw, [...g.chosen, ...g.alternates].map(x => x.ref)), storyIds: [g.story.id], promptVersion: currentDeskVersion("graphics")?.version ?? null, maxTokens: 1200, estimate: { input: 9000, output: 800 }, signal });
+  return c ? { parsed: c.parsed, call_id: c.call_id, cost: c.cost } : null;
 }
 
 export type PictureRun = { decision: PictureDecision; call_id: number | null; called: boolean; plan: import("../lead-picture").LeadPlan | null; refs: PictureRef[] };

@@ -1,0 +1,219 @@
+{
+ "desk": "design review",
+ "version": "v1",
+ "prompt_hash": "2161424a",
+ "run_at": "2026-11-22T09:39:15.820Z",
+ "cases": 3,
+ "run": "N4-proof-2",
+ "against": "N4-proof-1",
+ "items": [],
+ "pages": [
+  {
+   "page": "front",
+   "called": true,
+   "call_id": 49,
+   "observations": [
+    {
+     "where": "Main pink headline block",
+     "sees": "The main headline 'DEV TOOLS MOSTLY SKIP LIFESTYLE PHOTOGRAPHY' feels slightly loose compared to the dense, bold weight of the typeface.",
+     "focus": "hierarchy",
+     "evidence": "1440 px picture",
+     "measure": "headings",
+     "move": {
+      "type": "setting",
+      "setting": "tracking",
+      "value": "-0.01",
+      "text": "Tighten the letter-spacing of the main headline to improve its impact as the primary focal point.",
+      "touches": "none"
+     }
+    },
+    {
+     "where": "Screenshot gallery links on mobile",
+     "sees": "The 'Report' and domain links under the screenshots are very small and close together, making them difficult to tap accurately.",
+     "focus": "access",
+     "evidence": "390 px picture",
+     "measure": "small_targets",
+     "move": {
+      "type": "layout",
+      "setting": "none",
+      "value": "none",
+      "text": "Increase the vertical padding and font size of the 'Report' and domain links below the screenshots to ensure they are easier to tap on mobile.",
+      "touches": "none"
+     }
+    }
+   ],
+   "why": "answered"
+  },
+  {
+   "page": "story",
+   "called": true,
+   "call_id": 50,
+   "observations": [
+    {
+     "where": "Headline block",
+     "sees": "The large headline blocks at 390px feel slightly loose, making the words harder to group visually.",
+     "focus": "hierarchy",
+     "evidence": "390 px picture",
+     "measure": "headings",
+     "move": {
+      "type": "setting",
+      "setting": "tracking",
+      "value": "-0.01",
+      "text": "Tighten the letter-spacing of the large headline blocks to improve readability at smaller scales.",
+      "touches": "none"
+     }
+    },
+    {
+     "where": "Headline section",
+     "sees": "The black headline section occupies a significant amount of vertical space before the main content begins.",
+     "focus": "density",
+     "evidence": "1440 px picture",
+     "measure": "height_px",
+     "move": {
+      "type": "setting",
+      "setting": "density",
+      "value": "3.5",
+      "text": "Reduce the vertical gap between the headline section and the following content to tighten the page flow.",
+      "touches": "none"
+     }
+    }
+   ],
+   "why": "answered"
+  },
+  {
+   "page": "brand",
+   "called": true,
+   "call_id": 51,
+   "observations": [
+    {
+     "where": "brand header and section labels",
+     "sees": "The condensed 'NETLIFY' title and uppercase section headers feel slightly loose, weakening the impact of the brand identity.",
+     "focus": "hierarchy",
+     "evidence": "1440 px picture",
+     "measure": "headings",
+     "move": {
+      "type": "setting",
+      "setting": "tracking",
+      "value": "-0.01",
+      "text": "Tighten the letter-spacing of the condensed brand name and section headers to improve their visual weight.",
+      "touches": "none"
+     }
+    },
+    {
+     "where": "image caption links",
+     "sees": "The links below the social card image are very close together, especially on touch-capable widths.",
+     "focus": "density",
+     "evidence": "1440 px picture, 768 px picture",
+     "measure": "small_targets",
+     "move": {
+      "type": "layout",
+      "setting": "none",
+      "value": "none",
+      "text": "Increase the vertical spacing between the 'Live site' and 'Report this image' links to prevent accidental taps.",
+      "touches": "none"
+     }
+    }
+   ],
+   "why": "answered"
+  }
+ ],
+ "kept": [
+  {
+   "type": "setting",
+   "page": "front",
+   "setting": "tracking",
+   "from": 0,
+   "to": -0.01,
+   "text": "Tighten the letter-spacing of the main headline to improve its impact as the primary focal point."
+  },
+  {
+   "type": "layout",
+   "page": "front",
+   "needs_owner": true,
+   "text": "Increase the vertical padding and font size of the 'Report' and domain links below the screenshots to ensure they are easier to tap on mobile."
+  },
+  {
+   "type": "setting",
+   "page": "story",
+   "setting": "tracking",
+   "from": 0,
+   "to": -0.01,
+   "text": "Tighten the letter-spacing of the large headline blocks to improve readability at smaller scales."
+  },
+  {
+   "type": "setting",
+   "page": "story",
+   "setting": "density",
+   "from": 4,
+   "to": 3.5,
+   "text": "Reduce the vertical gap between the headline section and the following content to tighten the page flow."
+  },
+  {
+   "type": "layout",
+   "page": "brand",
+   "needs_owner": true,
+   "text": "Increase the vertical spacing between the 'Live site' and 'Report this image' links to prevent accidental taps."
+  }
+ ],
+ "dropped": [
+  {
+   "page": "brand",
+   "move": {
+    "type": "setting",
+    "setting": "tracking",
+    "value": "-0.01",
+    "text": "Tighten the letter-spacing of the condensed brand name and section headers to improve their visual weight.",
+    "touches": "none"
+   },
+   "why": "Its words touch The name, slug, always lowercase, which never moves without the owner."
+  }
+ ],
+ "filed": [
+  {
+   "type": "setting",
+   "page": "front",
+   "tied": false,
+   "text": "Design review · The front page: The main headline 'DEV TOOLS MOSTLY SKIP LIFESTYLE PHOTOGRAPHY' feels slightly loose compared to the dense, bold weight of the typeface. (Main pink headline block; 1440 px picture). Move: Heading tracking from 0 em to −0.01 em.",
+   "proposal_log": 309,
+   "item": 5,
+   "status": 202
+  },
+  {
+   "type": "layout",
+   "page": "front",
+   "tied": false,
+   "text": "Design review · The front page: The 'Report' and domain links under the screenshots are very small and close together, making them difficult to tap accurately. (Screenshot gallery links on mobile; 390 px picture). Layout move (needs the owner): Increase the vertical padding and font size of the 'Report' and domain links below the screenshots to ensure they are easier to tap on mobile.",
+   "proposal_log": 312,
+   "item": 6,
+   "status": 202
+  },
+  {
+   "type": "setting",
+   "page": "story",
+   "tied": false,
+   "text": "Design review · A story page: The large headline blocks at 390px feel slightly loose, making the words harder to group visually. (Headline block; 390 px picture). Move: Heading tracking from 0 em to −0.01 em.",
+   "proposal_log": 315,
+   "item": 7,
+   "status": 202
+  },
+  {
+   "type": "setting",
+   "page": "story",
+   "tied": false,
+   "text": "Design review · A story page: The black headline section occupies a significant amount of vertical space before the main content begins. (Headline section; 1440 px picture). Move: Spacing density from 4 rem to 3.5 rem.",
+   "proposal_log": 318,
+   "item": 8,
+   "status": 202
+  },
+  {
+   "type": "layout",
+   "page": "brand",
+   "tied": false,
+   "text": "Design review · A brand page: The links below the social card image are very close together, especially on touch-capable widths. (image caption links; 1440 px picture, 768 px picture). Layout move (needs the owner): Increase the vertical spacing between the 'Live site' and 'Report this image' links to prevent accidental taps.",
+   "proposal_log": 321,
+   "item": 9,
+   "status": 202
+  }
+ ],
+ "note": "Baseline (N4 proof): fixture calls on the second test review run; filed as tests (test_mark rows and test queue items), so none is a real proposal."
+}

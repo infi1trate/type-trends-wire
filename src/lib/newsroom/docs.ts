@@ -17,6 +17,10 @@ import { DESK_CAPS, DESK_LIMITS } from "./caps";
 import { REGISTER } from "./register";
 import { COPY_RUN_MAX, LINE_MAX, NEWS_MAX_CANDIDATES, NEWS_MIN_NEW, NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, PITCH_WINDOW_DAYS, WIRE_BLOCK_HOURS } from "./news";
 import { ALTERNATES_MAX } from "./graphics";
+import { BUDGET_GROWTH, BUDGET_RULES, PROPOSALS_PER_WEEK, REVIEW_PAGES, REVIEW_WIDTHS, REVIEW_KINDS, MEASURE_IDS } from "./design-review";
+import { GATE_CHECKS, NO_WORSE, VISIBLE_LIMITS } from "./build-gate";
+import { EXPECTS, NEXT, QUEUE_KINDS, QUEUE_STATUSES, SHIPS_ALONE_KINDS } from "./queue";
+import { CALL_FAIL_SHARE, CHECK_FAIL_SHARE, HISTORY_MAX_MS, LATE_FACTOR, SLOW_FACTOR, SLOW_FLOOR_MS } from "./engineering";
 import { BACKTEST_DAYS, COVERAGE_DAYS, DETECTOR_SAMPLE, FINDING_KINDS, PROPOSAL_MAX_SIGNALS, PROPOSAL_MAX_STUDIES, SECTOR_MIN } from "./datadesk";
 
 export const LISTS_START = "<!-- lists:start (written by scripts/newsroom-docs.ts from the code; do not edit by hand) -->";
@@ -112,7 +116,29 @@ export function desksBlock(): string[] {
     "## The data desk", "",
     `Daily checks (code) record findings of these kinds: ${FINDING_KINDS.join(", ")}. The detector sample re-derives ${DETECTOR_SAMPLE} measured events a day under today's rules; coverage flags active brands with no good capture for ${COVERAGE_DAYS} days and sectors under ${SECTOR_MIN} measured homepages. An open finding on a brand and measure a story cites holds it (checklist item 9). Weekly, after the forecast, it scores the forecast made ${BACKTEST_DAYS} days earlier against what the measurements show, then makes one call that files at most ${PROPOSAL_MAX_STUDIES} study pitches and ${PROPOSAL_MAX_SIGNALS} signal ideas; code drops any that name a measure the product does not hold.`, "",
     "## Door actions added in N3", "",
-    ...n3.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
+    ...n3.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`), "",
+    ...productLoopBlock(),
+  ];
+}
+/** N4 · the product loop: page reviews, the design review and engineering desks, the build queue and the gate, from the constants. */
+export function productLoopBlock(): string[] {
+  const n4 = REGISTER.filter(a => a.since === "N4");
+  const lim = (k: keyof typeof VISIBLE_LIMITS) => { const l = VISIBLE_LIMITS[k]; return !l ? "no pixel limit, but the owner's accepted proposal" : `at most ${pct(l.share)} of pixels changed and height within ${l.heightPx != null ? `${l.heightPx} px` : pct(l.heightShare!)}`; };
+  return [
+    "## Page reviews", "",
+    `A review run measures ${REVIEW_PAGES.length} pages (${REVIEW_PAGES.map(p => `${p.name.toLowerCase()} \`${p.id}\``).join(", ")}) at ${REVIEW_WIDTHS.join(", ")} px. An outside browser job sends one \`review\` call per page and width with its measures (${MEASURE_IDS.map(m => `\`${m}\``).join(", ")}) and an optional small WebP picture (the crops' rule; kept under its own folder, never shown to readers). A run's kind is ${REVIEW_KINDS.join(", ")}; a test run is shown as a test and never counts toward budgets, breaches or the gate. A missing measure is not measured, never zero.`, "",
+    `Budgets per page and width: ${BUDGET_RULES.map(r => `${r.measure.replace(/_/g, " ")} (${r.basis}${r.limit != null ? `: ${r.limit}` : ""})`).join("; ")}. The first-run budgets are the first complete weekly run plus ${pct(BUDGET_GROWTH)}, so nothing breaches on day one; until a first weekly run exists there are none.`, "",
+    "## The design review desk", "",
+    `Weekly, after a complete weekly run (all ${REVIEW_PAGES.length} pages at ${REVIEW_WIDTHS.length} widths), once per run. Breaches first, in code: overflow, contrast, tap targets, errors and speed become bug items on the queue; height, words, links and image weight become proposals. Then one vision call per page (limit ${DESK_LIMITS.find(l => l.desk === "design review")?.cap ?? 0} a day) sees the page's three pictures, its measures with last week's and the register of design settings with their ranges, and returns at most two observations about density, hierarchy and access, each with one move. Code keeps a setting move only when it names a register setting and a value inside its range; anything else is a layout move that needs the owner; a move that touches the name, the wordmark, the brand direction, the type families, the navigation or a page's structure is dropped. At most ${PROPOSALS_PER_WEEK} proposals a week, the ones tied to a breach first, each filed with \`propose\` and a queue item linked to it. Nothing live changes. Setting moves the owner accepts wait for the next monthly design edition.`, "",
+    "## The engineering desk", "",
+    `Daily, code only, no model: files or declines bug items by stable key for a scheduled job whose newest run failed, that has not run within ${LATE_FACTOR} times its usual interval, or whose newest run took more than ${SLOW_FACTOR} times its 14-day median (and over ${SLOW_FLOOR_MS / 1000} s); a crawl or the wire older than the health staleness rules; a page over its speed target in the newest review run; more than ${pct(CALL_FAIL_SHARE)} of a desk's or the writers' model calls failing over 24 hours; a writer's texts failing the shared check more than ${pct(CHECK_FAIL_SHARE)} of the time over 24 hours; the history refresh taking over ${HISTORY_MAX_MS / 1000} s. Job facts are names, run times, durations and success only. An item whose problem is gone is declined “no longer found”; nothing is deleted.`, "",
+    "## The build queue", "",
+    `One list for every product change. Kinds: ${QUEUE_KINDS.join(", ")}. What readers should see: ${EXPECTS.join(", ")}. Statuses: ${QUEUE_STATUSES.join(", ")}. The order: ${Object.entries(NEXT).filter(([, v]) => v.length).map(([k, v]) => `${k} → ${v.join(" or ")}`).join("; ")}; built → gate passed or gate failed only through \`gate_result\`; declined at any open point with a reason. Briefed and live for anything but ${SHIPS_ALONE_KINDS.join(" and ")} need the owner's accepted proposal; live needs the newest gate result to be a pass.`, "",
+    "## The gate", "",
+    ...GATE_CHECKS.map((c, i) => `${i + 1}. ${c.name}.`), "",
+    `Visible change: no visible change allows ${lim("no visible change")}; small allows ${lim("small")}; layout has ${lim("layout")}. Not above the before run: ${NO_WORSE.map(m => m.replace(/_/g, " ")).join(", ")}. A design move also passes the living-design gate (its checks except the edition's move count).`, "",
+    "## Door actions added in N4", "",
+    ...n4.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
   ];
 }
 /** The block between the desks markers in README.md, or null. */

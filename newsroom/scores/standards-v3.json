@@ -2,9 +2,9 @@
  "desk": "standards",
  "version": "v3",
  "prompt_hash": "b14b95c3",
- "run_at": "2026-11-22T07:22:01.302Z",
- "cases": 5,
- "correct": 5,
+ "run_at": "2026-11-22T09:31:25.993Z",
+ "cases": 7,
+ "correct": 7,
  "wrong": [],
  "items": [
   {
@@ -65,6 +65,80 @@
    "problems": [],
    "model": "openai/gpt-6.2-astra",
    "cost": 0.011944
+  },
+  {
+   "number": 44,
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "expect": "pass",
+   "verdict": "pass",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "pass",
+   "problems": [
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "Both count bullets use newsroom shorthand for homepages whose imagery the AI assessed.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "momentum",
+     "severity": "note",
+     "why": "Both count bullets use an internal metric name rather than saying, as the deck does, that the figure measures how much the share changes each quarter.",
+     "found": true
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.021
   },
   {
    "number": 45,
@@ -243,6 +317,65 @@
    "cost": 0.019816
   },
   {
+   "number": 90,
+   "id": "census:sale:2026-W47",
+   "expect": "pass",
+   "verdict": "pass",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": "the deck dates 20 Nov are not in How we know (“Read from each homepage's headline and buttons in our newest capture and one at least six hours older.”)"
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "pass",
+   "problems": [],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.022776
+  },
+  {
    "number": 91,
    "id": "roundup:all:aesthetic:corporate:2026-11-20",
    "expect": "hold",
@@ -383,19 +516,19 @@
      "kind": "contradiction",
      "words": "Before: Vivid pink",
      "severity": "blocker",
-     "why": "The change record says “Vivid pink,” but the measured facts line says “Before: Vivid red,” so the records disagree about the original colour.",
+     "why": "The colour-change record calls the earlier accent vivid pink, but the stored measurement calls it vivid red.",
      "found": true
     },
     {
      "kind": "thin",
-     "words": "(empty)",
+     "words": "Body:\n(empty)",
      "severity": "blocker",
-     "why": "The body is empty, leaving a single accent-colour change on one page as the whole story.",
+     "why": "The story reports a single accent-colour change, and the empty body gives readers no context for it.",
      "found": false
     }
    ],
    "model": "openai/gpt-6.2-astra",
-   "cost": 0.016328
+   "cost": 0.017424
   }
  ]
 }

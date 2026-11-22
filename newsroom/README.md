@@ -58,6 +58,7 @@ candidate → drafted → checked → picture checked (graphics) → standards (
 - **graphics**, picture check: 8 a day.
 - **graphics**, study chart: 2 a day.
 - **data**, weekly proposal: 1 a day.
+- **design review**, page review: 9 a day.
 
 ### The news desk
 
@@ -79,5 +80,43 @@ Daily checks (code) record findings of these kinds: contradiction, detector, imp
 - **`finding`** (ships alone): The data desk records a finding: wrong or contradictory data, with what was expected, what was found and the receipt. An open finding on a brand and measure holds a story that cites them.
 - **`finding_close`** (ships alone): Closes a data finding with who and why (data, standards or the editor in chief).
 - **`data_run`** (ships alone): The data desk's daily checks, the weekly forecast backtest, the share-image check, the study chart check or one news desk pass: records what the run found (counts by kind). It fixes nothing.
+
+### Page reviews
+
+A review run measures 9 pages (the front page `front`, a story page `story`, a brand page `brand`, a study page `study`, the terminal `terminal`, the digest `digest`, studies `studies`, brands `brands`, signals `signals`) at 1440, 768, 390 px. An outside browser job sends one `review` call per page and width with its measures (`height_px`, `words`, `links`, `images`, `image_kb`, `first_byte_ms`, `lcp_ms`, `cls`, `overflow_x`, `small_targets`, `low_contrast`, `h1`, `headings`, `console_errors`, `failed_requests`, `changed_share`) and an optional small WebP picture (the crops' rule; kept under its own folder, never shown to readers). A run's kind is weekly, before, after, test; a test run is shown as a test and never counts toward budgets, breaches or the gate. A missing measure is not measured, never zero.
+
+Budgets per page and width: height px (first weekly run plus 10%); words (first weekly run plus 10%); links (first weekly run plus 10%); image kb (first weekly run plus 10%); first byte ms (speed target: 800); lcp ms (speed target: 2500); cls (speed target: 0.05); overflow x (must be false); small targets (not above the previous weekly run); low contrast (not above the previous weekly run); console errors (not above the previous weekly run); failed requests (not above the previous weekly run). The first-run budgets are the first complete weekly run plus 10%, so nothing breaches on day one; until a first weekly run exists there are none.
+
+### The design review desk
+
+Weekly, after a complete weekly run (all 9 pages at 3 widths), once per run. Breaches first, in code: overflow, contrast, tap targets, errors and speed become bug items on the queue; height, words, links and image weight become proposals. Then one vision call per page (limit 9 a day) sees the page's three pictures, its measures with last week's and the register of design settings with their ranges, and returns at most two observations about density, hierarchy and access, each with one move. Code keeps a setting move only when it names a register setting and a value inside its range; anything else is a layout move that needs the owner; a move that touches the name, the wordmark, the brand direction, the type families, the navigation or a page's structure is dropped. At most 5 proposals a week, the ones tied to a breach first, each filed with `propose` and a queue item linked to it. Nothing live changes. Setting moves the owner accepts wait for the next monthly design edition.
+
+### The engineering desk
+
+Daily, code only, no model: files or declines bug items by stable key for a scheduled job whose newest run failed, that has not run within 2 times its usual interval, or whose newest run took more than 3 times its 14-day median (and over 5 s); a crawl or the wire older than the health staleness rules; a page over its speed target in the newest review run; more than 10% of a desk's or the writers' model calls failing over 24 hours; a writer's texts failing the shared check more than 50% of the time over 24 hours; the history refresh taking over 60 s. Job facts are names, run times, durations and success only. An item whose problem is gone is declined “no longer found”; nothing is deleted.
+
+### The build queue
+
+One list for every product change. Kinds: bug, label, design move, layout, feature. What readers should see: no visible change, small, layout. Statuses: queued, briefed, built, gate passed, gate failed, live, declined. The order: queued → briefed; briefed → built; gate failed → built; gate passed → live; built → gate passed or gate failed only through `gate_result`; declined at any open point with a reason. Briefed and live for anything but bug and label need the owner's accepted proposal; live needs the newest gate result to be a pass.
+
+### The gate
+
+1. No failed tests.
+2. Every page and width of the review list is in the after run.
+3. No page scrolls sideways at any width.
+4. First byte within 800 ms on every page and width.
+5. Console errors, failed requests, small tap targets and low-contrast text not above the before run.
+6. Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit).
+7. A layout change has the owner's accepted proposal.
+8. A design move passes the living-design gate.
+
+Visible change: no visible change allows at most 1% of pixels changed and height within 20 px; small allows at most 10% of pixels changed and height within 8%; layout has no pixel limit, but the owner's accepted proposal. Not above the before run: console errors, failed requests, small targets, low contrast. A design move also passes the living-design gate (its checks except the edition's move count).
+
+### Door actions added in N4
+
+- **`review`** (ships alone): One page at one width from a review run (the outside browser job): its measures and an optional small picture, stored as sent; a missing measure is not measured, never zero. A test run is shown as a test and never counts toward budgets, breaches or the gate.
+- **`queue_add`** (ships alone): Files a product change on the build queue: title, why, kind, what readers should see, its source and a stable key (the same key is not filed twice while open).
+- **`queue_move`** (ships alone): Moves a queue item along (engineering; the owner may decline): queued, briefed, built, then a gate result, then live; or declined with a reason. Briefed and live for anything but a bug or a label need the owner's accepted proposal; live needs the newest gate result to be a pass.
+- **`gate_result`** (ships alone): Records a build's gate (engineering): the commit, the test numbers and the before and after review runs. Code works out every check and the verdict; the door takes no verdict.
 
 <!-- desks:end -->

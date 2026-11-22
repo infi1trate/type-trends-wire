@@ -177,6 +177,100 @@ export type Database = {
         }
         Relationships: []
       }
+      build_queue: {
+        Row: {
+          at: string
+          desk: string
+          expects: string
+          id: number
+          ikey: string | null
+          kind: string
+          move: Json | null
+          proposal_log_id: number | null
+          source_kind: string
+          source_ref: string | null
+          test: boolean
+          title: string
+          why: string
+        }
+        Insert: {
+          at?: string
+          desk: string
+          expects: string
+          id?: never
+          ikey?: string | null
+          kind: string
+          move?: Json | null
+          proposal_log_id?: number | null
+          source_kind?: string
+          source_ref?: string | null
+          test?: boolean
+          title: string
+          why: string
+        }
+        Update: {
+          at?: string
+          desk?: string
+          expects?: string
+          id?: never
+          ikey?: string | null
+          kind?: string
+          move?: Json | null
+          proposal_log_id?: number | null
+          source_kind?: string
+          source_ref?: string | null
+          test?: boolean
+          title?: string
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "build_queue_proposal_log_id_fkey"
+            columns: ["proposal_log_id"]
+            isOneToOne: false
+            referencedRelation: "desk_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      build_queue_moves: {
+        Row: {
+          actor: string
+          at: string
+          detail: Json
+          id: number
+          item_id: number
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          detail?: Json
+          id?: never
+          item_id: number
+          reason?: string | null
+          status: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          detail?: Json
+          id?: never
+          item_id?: number
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "build_queue_moves_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "build_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       census_counts: {
         Row: {
           base: number
@@ -1154,6 +1248,53 @@ export type Database = {
             columns: ["run_id"]
             isOneToOne: false
             referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gate_results: {
+        Row: {
+          actor: string
+          after_run: string
+          at: string
+          before_run: string
+          checks: Json
+          commit_sha: string
+          id: number
+          item_id: number
+          pass: boolean
+          tests: Json
+        }
+        Insert: {
+          actor: string
+          after_run: string
+          at?: string
+          before_run: string
+          checks: Json
+          commit_sha: string
+          id?: never
+          item_id: number
+          pass: boolean
+          tests: Json
+        }
+        Update: {
+          actor?: string
+          after_run?: string
+          at?: string
+          before_run?: string
+          checks?: Json
+          commit_sha?: string
+          id?: never
+          item_id?: number
+          pass?: boolean
+          tests?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gate_results_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "build_queue"
             referencedColumns: ["id"]
           },
         ]
@@ -2311,6 +2452,57 @@ export type Database = {
         }
         Relationships: []
       }
+      page_reviews: {
+        Row: {
+          actor: string
+          against: string | null
+          at: string
+          id: number
+          kind: string
+          measures: Json
+          page: string
+          path: string
+          picture_bytes: number | null
+          picture_height: number | null
+          picture_path: string | null
+          picture_width: number | null
+          run: string
+          width: number
+        }
+        Insert: {
+          actor: string
+          against?: string | null
+          at?: string
+          id?: never
+          kind: string
+          measures?: Json
+          page: string
+          path: string
+          picture_bytes?: number | null
+          picture_height?: number | null
+          picture_path?: string | null
+          picture_width?: number | null
+          run: string
+          width: number
+        }
+        Update: {
+          actor?: string
+          against?: string | null
+          at?: string
+          id?: never
+          kind?: string
+          measures?: Json
+          page?: string
+          path?: string
+          picture_bytes?: number | null
+          picture_height?: number | null
+          picture_path?: string | null
+          picture_width?: number | null
+          run?: string
+          width?: number
+        }
+        Relationships: []
+      }
       palette_examples: {
         Row: {
           data: Json
@@ -2732,6 +2924,7 @@ export type Database = {
           credits: number
           id: number
           kind: string
+          queue_item: number | null
           what: string
         }
         Insert: {
@@ -2740,6 +2933,7 @@ export type Database = {
           credits: number
           id?: never
           kind?: string
+          queue_item?: number | null
           what: string
         }
         Update: {
@@ -2748,9 +2942,18 @@ export type Database = {
           credits?: number
           id?: never
           kind?: string
+          queue_item?: number | null
           what?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "spend_entries_queue_item_fkey"
+            columns: ["queue_item"]
+            isOneToOne: false
+            referencedRelation: "build_queue"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stories: {
         Row: {

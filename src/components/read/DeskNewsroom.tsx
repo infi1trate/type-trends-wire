@@ -12,6 +12,7 @@ import { ACTORS, PIPELINE } from "@/lib/newsroom/desks";
 import { CHECKLIST } from "@/lib/newsroom/checklist-names";
 import { staffCall } from "@/lib/staff-key";
 import { useQueryClient } from "@tanstack/react-query";
+import { DeskN4, type N4 } from "./DeskN4";
 
 export type Newsroom = {
   log: HistoryRow[];
@@ -31,6 +32,8 @@ export type Newsroom = {
   reviews?: { story_id: string; headline: string; standards: Review | null; chief: Review | null }[];
   // N3 · the news, graphics and data desks.
   n3?: N3 | null;
+  // N4 · the design review and engineering desks.
+  n4?: N4 | null;
 };
 type N3 = {
   limits: { desk: string; what: string; cap: number; used: number }[];
@@ -68,6 +71,7 @@ export function DeskNewsroom() {
   return <>
     <DeskDesks data={data} />
     {data.n3 ? <DeskN3 n={data.n3} /> : null}
+    {data.n4 ? <DeskN4 n={data.n4} /> : null}
     <section aria-labelledby="desk-spend" className="ed-wrap mt-12" data-desk-spend="">
       <h2 id="desk-spend" className="ed-h2 ed-rule pt-3">Spend this week</h2>
       {s ? <>
@@ -179,7 +183,7 @@ function DeskDesks({ data }: { data: Newsroom }) {
       <p className="ed-small mt-3">Every propose call, with its status. Only the owner sets a status.</p>
       {msg ? <p className="ed-small mt-2" role="status">{msg}</p> : null}
       {data.proposals?.length ? <Table caption="Proposals from the desks with the owner's status" head={["When", "Desk", "Kind", "Proposal", "Status", "Set"]} min={720}>
-        {data.proposals.map(p => <tr key={p.id} className="ed-hair"><td className={td}><time dateTime={p.at}>{storyTime(p.at)}</time></td><td className={td}>{p.desk}</td><td className={td}>{p.kind}{p.subject ? <span className="ed-caption block">{p.subject}</span> : null}</td><td className={td}>{p.text}</td><td className={td}>{p.status}{p.status_reason ? <span className="ed-caption block">{p.status_reason}</span> : null}</td>
+        {data.proposals.map(p => <tr key={p.id} className="ed-hair"><td className={td}><time dateTime={p.at}>{storyTime(p.at)}</time>{data.n3?.tests.includes(`log:${p.id}`) ? <span className="ed-kicker block" data-test-row="">Test</span> : null}</td><td className={td}>{p.desk}</td><td className={td}>{p.kind}{p.subject ? <span className="ed-caption block">{p.subject}</span> : null}</td><td className={td}>{p.text}</td><td className={td}>{p.status}{p.status_reason ? <span className="ed-caption block">{p.status_reason}</span> : null}</td>
           <td className={td} data-no-csv=""><span className="flex flex-wrap gap-2">{(["accepted", "declined", "open"] as const).filter(x => x !== p.status).map(x => <button key={x} type="button" onClick={() => void setStatus(p.id, x)} className="ed-tap ed-data min-h-[44px] border border-ed-ink px-3">{x === "accepted" ? "Accept" : x === "declined" ? "Decline" : "Reopen"}</button>)}</span></td></tr>)}
       </Table> : <p className="ed-small mt-3">{voiced("read.deskNewsroom.proposals")}</p>}
     </section>

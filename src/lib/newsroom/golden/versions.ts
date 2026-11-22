@@ -11,6 +11,7 @@ import { CHIEF_SCHEMA, CHIEF_SYSTEM } from "../chief";
 import { NEWS_SCHEMA, NEWS_SYSTEM } from "../news";
 import { CHART_SCHEMA, CHART_SYSTEM, GRAPHICS_SCHEMA, GRAPHICS_SYSTEM } from "../graphics";
 import { PROPOSAL_SCHEMA, PROPOSAL_SYSTEM } from "../datadesk";
+import { DESIGN_SCHEMA, DESIGN_SYSTEM } from "../design-review";
 
 export const WRITERS = ["story", "study", "digest"] as const;
 export type Writer = (typeof WRITERS)[number];
@@ -46,12 +47,14 @@ export const currentVersion = (w: Writer) => {
 // result is no worse than the baseline's (deskGatePasses).
 // N3 adds the news desk's picks, the graphics desk's picture check (the AI reads' vision model) and chart choice, and the data desk's
 // weekly proposal, under the same rule.
-export const DESK_PROMPTS = ["standards", "editor in chief", "news", "graphics", "graphics chart", "data"] as const;
+// N4 adds the design review desk's weekly page review (the vision model).
+export const DESK_PROMPTS = ["standards", "editor in chief", "news", "graphics", "graphics chart", "data", "design review"] as const;
 export type DeskPrompt = (typeof DESK_PROMPTS)[number];
 const DESK_PARTS: Record<DeskPrompt, { system: string; schema: unknown; models?: () => string[] }> = {
   standards: { system: STANDARDS_SYSTEM, schema: STANDARDS_SCHEMA }, "editor in chief": { system: CHIEF_SYSTEM, schema: CHIEF_SCHEMA },
   news: { system: NEWS_SYSTEM, schema: NEWS_SCHEMA }, graphics: { system: GRAPHICS_SYSTEM, schema: GRAPHICS_SCHEMA, models: () => [AI_MODELS.vision] },
   "graphics chart": { system: CHART_SYSTEM, schema: CHART_SCHEMA }, data: { system: PROPOSAL_SYSTEM, schema: PROPOSAL_SCHEMA },
+  "design review": { system: DESIGN_SYSTEM, schema: DESIGN_SCHEMA, models: () => [AI_MODELS.vision] },
 };
 export const deskModels = (d: DeskPrompt) => DESK_PARTS[d].models?.() ?? writerModels();
 export const deskPromptHash = (d: DeskPrompt) => fnv(JSON.stringify([DESK_PARTS[d].system, DESK_PARTS[d].schema, deskModels(d)]));
@@ -64,6 +67,7 @@ export const DESK_VERSIONS: readonly DeskVersion[] = [
   { desk: "news", version: "v1", prompt_hash: "34175f15", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/news-v1.json", note: "Baseline (N3 proof): replayed 19, 20 and 21 Nov, one pick a day, none dropped by the line check; the Mother Design item stays untagged." },
   { desk: "graphics", version: "v1", prompt_hash: "800fb210", models: ["google/gemini-3-flash-preview"], score_file: "newsroom/scores/graphics-v1.json", note: "Baseline (N3 proof): the ten N2 golden stories and five failed-gate crops in one call; no failed crop came back usable." },
   { desk: "graphics chart", version: "v1", prompt_hash: "0811aa29", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/graphics-chart-v1.json", note: "Baseline, not yet run (see the score file)." },
+  { desk: "design review", version: "v1", prompt_hash: "2161424a", models: ["google/gemini-3-flash-preview"], score_file: "newsroom/scores/design-review-v1.json", note: "Baseline (N4 proof): three pages (front, story, brand) of the second test review run, as fixture calls; what code kept and dropped is in the score file." },
   { desk: "data", version: "v1", prompt_hash: "43d08926", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/data-v1.json", note: "Baseline, not yet run (see the score file)." },
 ];
 export const currentDeskVersion = (d: DeskPrompt) => DESK_VERSIONS.find(v => v.desk === d && v.prompt_hash === deskPromptHash(d)) ?? null;

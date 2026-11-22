@@ -2,9 +2,13 @@
 import { z } from "zod";
 import { WHY_MAX_CHARS } from "./why";
 import { pitchBody } from "./pitch";
-import { DESKS } from "../newsroom/desks";
+import { ACTORS, DESKS } from "../newsroom/desks";
+import { PICTURE_B64_MAX, REVIEW_KINDS, REVIEW_PAGE_IDS, RUN_MAX, measuresSchema, pathOk } from "../newsroom/design-review";
+import { EXPECTS, QUEUE_KINDS, QUEUE_STATUSES, SOURCE_KINDS } from "../newsroom/queue";
 
 export const DESK_BODY_LIMIT = 8 * 1024;
+/** N4 · a `review` call may carry one picture (at most 150 KB as WebP, about 200 KB as base64); every other action keeps 8 KB. */
+export const DESK_REVIEW_BODY_LIMIT = 224 * 1024;
 /** Desk calls per IP per minute (failed auth counts too). */
 export const DESK_RATE_PER_MIN = 30;
 /** A pin lasts at most 7 days. */
@@ -29,7 +33,10 @@ export const FINDING_KINDS = ["contradiction", "detector", "impossible", "covera
 /** Who may take each N3 action (enforced at the door, after the register's level). */
 export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   wire_pick: ["news", "owner"], wire_drop: ["news", "standards", "editor in chief", "owner"], picture: ["graphics", "owner"],
-  finding: ["data", "owner"], finding_close: ["data", "standards", "editor in chief", "owner"], data_run: ["data", "graphics", "news", "owner"],
+  finding: ["data", "owner"], finding_close: ["data", "standards", "editor in chief", "owner"], data_run: ["data", "graphics", "news", "engineering", "design review", "owner"],
+  // N4 · page reviews come from the design review and engineering desks' outside sessions; any desk files a queue item; the engineering
+  // desk moves items along and records gate results (the owner may decline an item).
+  review: ["design review", "engineering"], queue_add: ACTORS, queue_move: ["engineering", "owner"], gate_result: ["engineering"],
 };
 /** N3 · the reason standards gives when it releases a story only its second reader held. */
 export const OVERRULE_MIN = 20;
@@ -50,7 +57,20 @@ export const deskBody = z.discriminatedUnion("action", [
     .refine(b => b.choice !== "pair" || b.assets?.length === 2, { message: "a pair is two crops: before, then after", path: ["assets"] }),
   z.object({ action: z.literal("finding"), kind: z.enum(FINDING_KINDS), key: z.string().trim().min(3).max(300), subject: z.string().trim().min(1).max(300), measure: z.string().trim().max(120).optional(), expected: z.string().max(600).optional(), found: z.string().max(600).optional(), receipt: z.record(z.string(), z.unknown()).optional() }).strict(),
   z.object({ action: z.literal("finding_close"), finding: z.number().int().min(1), reason: z.string().trim().min(3).max(600) }).strict(),
-  z.object({ action: z.literal("data_run"), run: z.enum(["checks", "backtest", "share", "proposal", "chart", "picks"]), summary: z.string().trim().min(3).max(600), counts: z.record(z.string().max(40), z.number().int().min(0)).optional() }).strict(),
+  z.object({ action: z.literal("data_run"), run: z.enum(["checks", "backtest", "share", "proposal", "chart", "picks", "health", "design review"]), ref: z.string().trim().min(3).max(200).optional(), summary: z.string().trim().min(3).max(600), counts: z.record(z.string().max(40), z.number().int().min(0)).optional() }).strict(),
+  // N4 · one page at one width from a review run (the outside browser job); the build queue: file, move, and a gate result.
+  z.object({ action: z.literal("review"), run: z.string().trim().min(1).max(RUN_MAX).regex(/^[A-Za-z0-9][A-Za-z0-9 ._:-]*$/, "letters, digits, spaces and . _ : -"), kind: z.enum(REVIEW_KINDS), page: z.enum(REVIEW_PAGE_IDS), path: z.string().trim().min(1).max(300),
+    width: z.union([z.literal(1440), z.literal(768), z.literal(390)]), against: z.string().trim().min(1).max(RUN_MAX).optional(), measures: measuresSchema,
+    picture: z.string().min(16).max(PICTURE_B64_MAX, "the picture is far over 150 KB").regex(/^[A-Za-z0-9+/]+={0,2}$/, "the picture must be base64").optional() }).strict()
+    .refine(b => pathOk(b.page, b.path), { message: "the path is not this page's address", path: ["path"] }),
+  z.object({ action: z.literal("queue_add"), title: z.string().trim().min(3).max(140).refine(noDollar), why: z.string().trim().min(3).max(600).refine(noDollar), kind: z.enum(QUEUE_KINDS), expects: z.enum(EXPECTS),
+    source: z.object({ kind: z.enum(SOURCE_KINDS), log: z.number().int().min(1).optional(), ref: z.string().trim().min(1).max(200).optional() }).strict().optional(),
+    key: z.string().trim().min(3).max(200).optional(), move: z.object({ setting: z.string().min(1).max(40), from: z.unknown().optional(), to: z.unknown() }).strict().optional(), test: z.boolean().optional() }).strict()
+    .refine(b => (b.source?.kind === "proposal") === (b.source?.log !== undefined), { message: "a proposal source names its desk-log id (log), and only a proposal source does", path: ["source"] })
+    .refine(b => b.kind === "design move" || b.move === undefined, { message: "only a design move names a setting move", path: ["move"] }),
+  z.object({ action: z.literal("queue_move"), item: z.number().int().min(1), to: z.enum(QUEUE_STATUSES), reason: z.string().trim().min(3).max(600).optional() }).strict(),
+  z.object({ action: z.literal("gate_result"), item: z.number().int().min(1), commit: z.string().trim().regex(/^[0-9a-fA-F]{7,40}$/, "a commit sha"), tests: z.object({ passed: z.number().int().min(0), failed: z.number().int().min(0), skipped: z.number().int().min(0) }).strict(),
+    before_run: z.string().trim().min(1).max(RUN_MAX), after_run: z.string().trim().min(1).max(RUN_MAX) }).strict(),
   // U4 · a pitch asks the engine; it never edits a story.
   pitchBody,
   // L1 · approve a proposed design edition (after the gate) or roll one back; each appends one living_edition_status row.
@@ -61,7 +81,7 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("newsroom"), desk: z.string().min(1).max(40).optional() }).strict(),
   z.object({ action: z.literal("assign"), pitch: z.number().int().min(1), desk: z.enum(DESKS), status: z.enum(ASSIGN_STATUSES), reason: z.string().trim().min(3).max(300).optional() }).strict()
     .refine(b => b.status !== "dropped" || !!b.reason, { message: "a dropped pitch carries a reason", path: ["reason"] }),
-  z.object({ action: z.literal("spend"), credits: z.number().positive().max(100_000), what: z.string().trim().min(3).max(300).refine(noDollar) }).strict(),
+  z.object({ action: z.literal("spend"), credits: z.number().positive().max(100_000), what: z.string().trim().min(3).max(300).refine(noDollar), item: z.number().int().min(1).optional() }).strict(),
   z.object({ action: z.literal("spend_cap"), model_usd: z.number().min(0).max(100_000).nullable(), build_credits: z.number().min(0).max(1_000_000).nullable(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("wire_only"), on: z.boolean(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("propose"), kind: z.enum(PROPOSAL_KINDS), subject: z.string().trim().min(1).max(200).optional(), text: z.string().trim().min(3).max(1000) }).strict(),

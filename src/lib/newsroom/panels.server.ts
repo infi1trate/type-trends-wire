@@ -44,3 +44,48 @@ export async function n3Panels(db: Admin, now = Date.now()) {
     tests,
   };
 }
+
+/** N4 · /desk's Design review and Engineering panels and the matching memory facts: the newest weekly review run against the one before,
+ *  its breaches, the newest test runs, this week's design proposals with their statuses and the calls used; the build queue by status,
+ *  the newest gate result with every check, the health run's open items and credits per item. Reads only. */
+export async function n4Panels(db: Admin, now = Date.now()) {
+  const [dr, g, { loadReviews }, { loadQueueItems, newestGate }, { loadProposals }, { QUEUE_STATUSES }, { HEALTH_PREFIX }] = await Promise.all([
+    import("./design-review"), import("./build-gate"), import("./design-review.server"), import("./engineering.server"), import("./newsroom.server"), import("./queue"), import("./engineering")]);
+  const today = dayStart(now), week = new Date(now - 7 * 864e5).toISOString();
+  const [rows, items, gate, proposals, tests, calls, health] = await Promise.all([
+    loadReviews(db, { days: 60 }), loadQueueItems(db, { limit: 300 }), newestGate(db), loadProposals(db).catch(() => []), testRefs(db).catch(() => []),
+    db.from("desk_calls").select("purpose,at,ok,cost").eq("desk", "design review").gte("at", week).limit(200),
+    db.from("desk_log").select("at,reason,detail").eq("actor", "engineering").eq("action", "data_run").eq("subject_id", "health").order("id", { ascending: false }).limit(1),
+  ]);
+  const runs = dr.runsOf(rows), w = dr.weeklyRuns(rows), wb = dr.weeklyBreaches(rows);
+  const rowsOf = (run: string | undefined) => rows.filter(r => r.run === run);
+  const testRuns = runs.filter(r => r.kind === "test").slice(0, 2);
+  const summary = (run: string) => [...dr.cellsOf(rowsOf(run)).values()].map(r => ({ page: r.page, width: r.width, measures: r.measures, picture: !!r.picture, against: r.against }));
+  const marked = new Set(tests);
+  const design = proposals.filter(p => p.desk === "design review" && p.at >= week).map(p => ({ ...p, test: marked.has(`log:${p.id}`) }));
+  const c = calls.data ?? [];
+  // Counts are real items only; test items (the N4 proof) are listed, marked TEST, and counted apart.
+  const byStatus = { ...Object.fromEntries(QUEUE_STATUSES.map(s => [s, items.filter(i => i.status === s && !i.test).length])), tests: items.filter(i => i.test).length };
+  const slim = (i: (typeof items)[number]) => ({ id: i.id, at: i.at, title: i.title, why: i.why, desk: i.desk, kind: i.kind, expects: i.expects, status: i.status, source: i.source_kind, source_ref: i.source_ref, proposal: i.proposal, proposal_log: i.proposal_log_id, key: i.ikey, test: i.test, credits: i.credits, gate: i.gate, moves: i.moves });
+  return {
+    design: {
+      runs: runs.slice(0, 8),
+      newest: w.newest ? { ...w.newest, rows: summary(w.newest.run) } : null, previous: w.previous ?? null,
+      diff: w.newest && w.previous ? dr.runDiff(rowsOf(w.newest.run), rowsOf(w.previous.run)) : [],
+      breaches: wb.breaches.map(b => ({ ...b, line: dr.breachLine(b) })), budgets: wb.budgets.length,
+      tests: testRuns.length ? { newest: { ...testRuns[0]!, rows: summary(testRuns[0]!.run) }, previous: testRuns[1] ?? null, diff: testRuns[1] ? dr.runDiff(rowsOf(testRuns[0]!.run), rowsOf(testRuns[1].run)) : [] } : null,
+      proposals: design, proposals_counted: design.filter(p => !p.test).length, per_week: dr.PROPOSALS_PER_WEEK,
+      calls: { today: c.filter(x => x.purpose === "review" && x.at >= today).length, week: c.filter(x => x.purpose === "review").length, fixtures_week: c.filter(x => x.purpose === "fixture").length, cap: (await import("./caps")).capOf("design review", "review"), usd_week: Math.round(c.reduce((s, x) => s + Number(x.cost ?? 0), 0) * 1e4) / 1e4 },
+      pages: dr.REVIEW_PAGES, widths: dr.REVIEW_WIDTHS, rules: dr.BUDGET_RULES,
+      waiting_moves: items.filter(i => i.kind === "design move" && i.proposal === "accepted" && i.open && !i.test).length,
+    },
+    engineering: {
+      by_status: byStatus, items: items.slice(0, 60).map(slim),
+      gate: gate ? { ...gate, item_title: items.find(i => i.id === gate.item_id)?.title ?? null } : null,
+      checks: g.GATE_CHECKS, visible: g.VISIBLE_LIMITS, no_worse: g.NO_WORSE,
+      health: items.filter(i => i.open && i.desk === "engineering" && i.ikey?.startsWith(HEALTH_PREFIX)).map(slim),
+      health_run: health.data?.[0] ?? null,
+      credits: items.filter(i => i.credits > 0).map(i => ({ id: i.id, title: i.title, credits: i.credits })),
+    },
+  };
+}

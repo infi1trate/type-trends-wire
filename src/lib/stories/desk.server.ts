@@ -2,7 +2,7 @@
 // per-IP rate limit; every write is an appended row (stories are never changed). N1: every authenticated call goes through the door below
 // (actor, level, desk log).
 import { createRateLimiter } from "../mcp/rate-limit";
-import { DESK_BODY_LIMIT, DESK_RATE_PER_MIN, deskBody, pinOk, type DeskBody, type StaffPage } from "./desk";
+import { DESK_BODY_LIMIT, DESK_RATE_PER_MIN, DESK_REVIEW_BODY_LIMIT, deskBody, pinOk, type DeskBody, type StaffPage } from "./desk";
 import type { EditRow } from "./edits";
 
 const NO_STORE = { "cache-control": "no-store" };
@@ -21,7 +21,7 @@ export type LivingStore = { records: () => Promise<import("../living/editions").
 type LogRow = import("../newsroom/log").LogRow;
 /** N1 · the newsroom's stores; each is optional so a test can supply only what it exercises. */
 export type NewsroomStore = {
-  log?: (r: LogRow) => Promise<void>;
+  log?: (r: LogRow) => Promise<void | number>;
   memory?: () => Promise<unknown>;
   newsroom?: (desk: string | null) => Promise<unknown>;
   assign?: (r: { pitch_id: number; desk: string; status: string; actor: string; reason: string | null }) => Promise<unknown | null>;
@@ -47,6 +47,12 @@ export type NewsroomStore = {
   findingClose?: (r: { finding_id: number; actor: string; reason: string }) => Promise<{ id: number } | null>;
   note?: (r: { actor: string; subject_kind: string; subject_id: string; text: string }) => Promise<unknown>;
   proposalStatus?: (r: { log_id: number; status: string; reason: string | null }) => Promise<unknown | null>;
+  /** N4 · page reviews, the build queue, gate results, and whether a queue item exists (for spend). */
+  review?: (r: { run: string; kind: import("../newsroom/design-review").ReviewKind; page: import("../newsroom/design-review").ReviewPageId; path: string; width: number; against: string | null; measures: import("../newsroom/design-review").Measures; picture: string | null; actor: string }) => Promise<{ id: number; picture: string | null } | { refused: string }>;
+  queueAdd?: (r: { title: string; why: string; desk: string; kind: string; expects: string; source_kind: string; source_ref: string | null; proposal_log_id: number | null; ikey: string | null; move: unknown; test: boolean }) => Promise<{ id: number; existing: boolean } | { refused: string }>;
+  queueMove?: (r: { item: number; to: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
+  gateResult?: (r: { item: number; commit: string; tests: { passed: number; failed: number; skipped: number }; before_run: string; after_run: string; actor: string }) => Promise<{ id: number; pass: boolean; checks: unknown[] } | { refused: string } | null>;
+  queueItemExists?: (id: number) => Promise<boolean>;
 };
 export type DeskStore = NewsroomStore & { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
 export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
@@ -57,7 +63,8 @@ const subjectOf = (b: DeskBody): string | null =>
   "id" in b ? b.id : b.action === "pitch" ? b.ref : b.action === "assign" ? String(b.pitch) : b.action === "living_approve" || b.action === "living_rollback" ? String(b.edition)
     : b.action === "wire_only" ? "wire_only" : b.action === "propose" ? (b.subject ?? b.kind) : b.action === "queue" ? (b.day ?? null) : b.action === "staff" ? b.page
     : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
-    : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? b.run : null;
+    : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? (b.ref ?? b.run)
+    : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : null;
 
 /**
  * N1 · THE DOOR. Every authenticated call is logged in the desk log (allowed, proposed, refused or failed) with its actor, level,
@@ -69,13 +76,18 @@ export async function handleDesk(request: Request, deps?: DeskDeps): Promise<Res
   const d = deps ?? await prodDeps();
   if (!d.allow(ipOf(request))) return j(429, { error: "rate_limited" });
   if (!(await d.authorize(request))) return j(401, { error: "unauthorized" });
-  const text = await bounded(request, DESK_BODY_LIMIT);
+  // N4 · a review may carry one small picture; every other action keeps the 8 KB limit (checked once the action is known).
+  const text = await bounded(request, DESK_REVIEW_BODY_LIMIT);
   if (text === null) return refuse(d, 413, "unknown", "unknown", "The body is larger than the desk accepts.", { error: "body_too_large" });
   let raw: unknown; try { raw = JSON.parse(text); } catch { return refuse(d, 400, "unknown", "unknown", "The body is not JSON.", { error: "invalid_json" }); }
+  if (text.length > DESK_BODY_LIMIT && !(raw && typeof raw === "object" && (raw as Record<string, unknown>)["action"] === "review")) {
+    const o = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+    return refuse(d, 413, typeof o["actor"] === "string" ? String(o["actor"]).slice(0, 40) : "unknown", typeof o["action"] === "string" ? String(o["action"]).slice(0, 40) : "unknown", "The body is larger than the desk accepts.", { error: "body_too_large" });
+  }
   const r = await doorCall(d, raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {});
   return j(r.status, r.body);
 }
-const logWith = (d: DeskDeps) => async (r: LogRow) => { if (d.store.log) await d.store.log(r).catch(() => console.error("desk_log_failed")); };
+const logWith = (d: DeskDeps) => async (r: LogRow): Promise<number | null> => { if (!d.store.log) return null; const id = await d.store.log(r).catch(() => { console.error("desk_log_failed"); return null; }); return typeof id === "number" ? id : null; };
 async function refuse(d: DeskDeps, status: number, actor: string, action: string, reason: string, body: Record<string, unknown>) {
   const { actionDef } = await import("../newsroom/register"), def = actionDef(action);
   await logWith(d)({ actor, action, level: def?.level ?? null, subject_kind: def?.subject ?? null, subject_id: null, decision: "refused", reason });
@@ -103,8 +115,9 @@ export async function doorCall(d: DeskDeps, obj: Record<string, unknown>): Promi
   if (verdict.kind === "refused") { await log({ ...base, decision: "refused", reason: verdict.reason }); return { status: 403, body: { error: "refused", level: def.level, reason: verdict.reason, ...(verdict.confirm ? { confirm: verdict.confirm } : {}) } }; }
   if (verdict.kind === "proposal") {
     const detail = b.action === "propose" ? { kind: b.kind, text: b.text } : {};
-    await log({ ...base, decision: "proposed", reason: b.action === "propose" ? b.text.slice(0, 600) : null, detail });
-    return { status: 202, body: { ok: true, proposed: true, level: def.level, note: "Recorded as a proposal; nothing live changed." } };
+    const id = await log({ ...base, decision: "proposed", reason: b.action === "propose" ? b.text.slice(0, 600) : null, detail });
+    // N4 · the proposal's desk-log id, so a queue item can name it as its source.
+    return { status: 202, body: { ok: true, proposed: true, level: def.level, note: "Recorded as a proposal; nothing live changed.", ...(id != null ? { log: id } : {}) } };
   }
   let out: Outcome;
   try { out = await run(b, actor, d); }
@@ -135,7 +148,11 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
     const a = await d.store.assign({ pitch_id: b.pitch, desk: b.desk, status: b.status, actor, reason: b.reason ?? null });
     return a ? { status: 201, body: { ok: true, assignment: a }, decision: "done", reason: b.reason ?? null } : { ...missing, reason: "No such pitch." };
   }
-  if (b.action === "spend") { if (!d.store.spend) return missing; return { status: 201, body: { ok: true, entry: await d.store.spend({ credits: b.credits, what: b.what, actor }) }, decision: "done", reason: b.what }; }
+  if (b.action === "spend") {
+    if (!d.store.spend) return missing;
+    if (b.item != null && !(d.store.queueItemExists && await d.store.queueItemExists(b.item))) return { ...missing, reason: "No such queue item." };
+    return { status: 201, body: { ok: true, entry: await d.store.spend({ credits: b.credits, what: b.what, actor, ...(b.item != null ? { queue_item: b.item } : {}) }) }, decision: "done", reason: b.what, ...(b.item != null ? { detail: { item: b.item } } : {}) };
+  }
   if (b.action === "spend_cap") { if (!d.store.spendCap) return missing; await d.store.spendCap({ model_usd: b.model_usd, build_credits: b.build_credits, reason: b.reason }); return { status: 201, body: { ok: true, cap: b.model_usd == null && b.build_credits == null ? null : { model_usd: b.model_usd, build_credits: b.build_credits } }, decision: "done", reason: b.reason }; }
   if (b.action === "wire_only") { if (!d.store.wireOnly) return missing; await d.store.wireOnly(b.on, b.reason); return { status: 201, body: { ok: true, wire_only: b.on }, decision: "done", reason: b.reason, detail: { on: b.on } }; }
   if (b.action === "propose") return { status: 202, body: { ok: true, proposed: true }, decision: "proposed" };
@@ -175,6 +192,34 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
     return r ? { status: 201, body: { ok: true, close: r.id }, decision: "done", reason: b.reason } : { ...missing, reason: "No such open finding." };
   }
   if (b.action === "data_run") return { status: 201, body: { ok: true }, decision: "done", reason: b.summary, detail: { run: b.run, counts: b.counts ?? {} } };
+  // N4 · page reviews, the build queue and the gate. The order, the owner's yes and the gate's pass are enforced in the stores' rules.
+  if (b.action === "review") {
+    if (!d.store.review) return missing;
+    const r = await d.store.review({ run: b.run, kind: b.kind, page: b.page, path: b.path, width: b.width, against: b.against ?? null, measures: b.measures, picture: b.picture ?? null, actor });
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, review: r.id, picture: r.picture != null, test: b.kind === "test" }, decision: "done", reason: `${b.kind} run ${b.run}: ${b.page} at ${b.width} px`, detail: { run: b.run, kind: b.kind, page: b.page, width: b.width, review: r.id, measured: Object.keys(b.measures).length, picture: r.picture != null } };
+  }
+  if (b.action === "queue_add") {
+    if (!d.store.queueAdd) return missing;
+    const src = b.source ?? { kind: "none" as const };
+    const r = await d.store.queueAdd({ title: b.title, why: b.why, desk: actor, kind: b.kind, expects: b.expects, source_kind: src.kind, source_ref: src.ref ?? (src.log != null ? `log:${src.log}` : null), proposal_log_id: src.kind === "proposal" ? src.log ?? null : null, ikey: b.key ?? null, move: b.move ?? null, test: b.test ?? false });
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: r.existing ? 200 : 201, body: { ok: true, item: r.id, existing: r.existing }, decision: "done", reason: `${b.kind} · ${b.title}${b.test ? " (test)" : ""}`.slice(0, 600), detail: { item: r.id, existing: r.existing, kind: b.kind, expects: b.expects, test: b.test ?? false } };
+  }
+  if (b.action === "queue_move") {
+    if (!d.store.queueMove) return missing;
+    const r = await d.store.queueMove({ item: b.item, to: b.to, actor, reason: b.reason ?? null });
+    if (!r) return { ...missing, reason: "No such queue item." };
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, item: b.item, status: r.status }, decision: "done", reason: `${b.to}${b.reason ? `: ${b.reason}` : ""}`.slice(0, 600), detail: { item: b.item, to: b.to } };
+  }
+  if (b.action === "gate_result") {
+    if (!d.store.gateResult) return missing;
+    const r = await d.store.gateResult({ item: b.item, commit: b.commit, tests: b.tests, before_run: b.before_run, after_run: b.after_run, actor });
+    if (!r) return { ...missing, reason: "No such queue item." };
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, gate: r.id, pass: r.pass, checks: r.checks }, decision: "done", reason: `Gate ${r.pass ? "passed" : "failed"} for item ${b.item} at ${b.commit.slice(0, 12)}`, detail: { item: b.item, gate: r.id, pass: r.pass } };
+  }
   if (b.action === "proposal_status") {
     if (!d.store.proposalStatus) return missing;
     const r = await d.store.proposalStatus({ log_id: b.log, status: b.status, reason: b.reason ?? null });
@@ -240,7 +285,8 @@ export async function prodDeps(): Promise<DeskDeps> {
         const [nr, mem, sp] = await Promise.all([import("../newsroom/newsroom.server"), import("../newsroom/memory.server"), import("../newsroom/spend")]);
         const [log, spend, board, golden, wire, desks, notes, proposals, reviews, n3] = await Promise.all([nr.loadHistory(db, { days: 14, actor: desk, limit: 300 }), nr.spendStatus(db).catch(() => null), nr.loadBoard(db).catch(() => null), mem.goldenView(), nr.wireOnlyOn(),
           nr.deskCaps(db).catch(() => null), nr.loadNotes(db).catch(() => []), nr.loadProposals(db).catch(() => []), nr.recentReviews(db).catch(() => []), import("../newsroom/panels.server").then(m => m.n3Panels(db)).catch(() => null)]);
-        return { log, spend: spend ? { ...spend, split: sp.spendSplit(spend), reached: sp.capReached(spend), line: sp.capLine(spend) } : null, register: mem.registerView(), board, golden, switches: { wire_only: wire }, desks, notes, proposals, reviews, n3 };
+        const n4 = await import("../newsroom/panels.server").then(m => m.n4Panels(db)).catch(() => null);
+        return { log, spend: spend ? { ...spend, split: sp.spendSplit(spend), reached: sp.capReached(spend), line: sp.capLine(spend) } : null, register: mem.registerView(), board, golden, switches: { wire_only: wire }, desks, notes, proposals, reviews, n3, n4 };
       },
       assign: async r => (await import("../newsroom/newsroom.server")).insertAssignment(db, r),
       spend: async r => (await import("../newsroom/newsroom.server")).insertSpend(db, r),
@@ -259,6 +305,11 @@ export async function prodDeps(): Promise<DeskDeps> {
       picture: async r => (await import("../newsroom/graphics.server")).insertChoice(db, r),
       finding: async r => (await import("../newsroom/datadesk.server")).insertFinding(db, r),
       findingClose: async r => (await import("../newsroom/datadesk.server")).closeFinding(db, r),
+      review: async r => (await import("../newsroom/design-review.server")).insertReview(db, r),
+      queueAdd: async r => (await import("../newsroom/engineering.server")).insertQueueItem(db, r),
+      queueMove: async r => (await import("../newsroom/engineering.server")).moveQueueItem(db, r),
+      gateResult: async r => (await import("../newsroom/engineering.server")).recordGate(db, r),
+      queueItemExists: async id => (await import("../newsroom/engineering.server")).queueItemExists(db, id),
       living: {
         records: async () => (await import("../living/living.server")).loadEditions(db),
         insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },
