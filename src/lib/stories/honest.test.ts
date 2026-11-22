@@ -12,7 +12,7 @@ import { liveModel, queueModel, type StoryRecord } from "./view";
 import { storyRules, storyTypeList } from "./rules";
 
 const NOW = "2026-11-16T12:00:00.000Z";
-const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => ({ dimension: key.slice(0, key.indexOf(":")), value: key.slice(key.indexOf(":") + 1), scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, ...o });
+const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => ({ dimension: key.slice(0, key.indexOf(":")), value: key.slice(key.indexOf(":") + 1), scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, sample: { q: "2026Q4", n: 20, s: o.current_share ?? 0.3 }, ...o });
 const SECTORS = ["fintech", "ai", "dev-tools"];
 const sites = (): SiteNow[] => SECTORS.flatMap(s => Array.from({ length: 20 }, (_, i) => ({ domain: `${s}${i}.com`, name: null, sector: s, captured: "2026-11-14T00:00:00Z", traits: [s === "fintech" ? (i === 1 ? "theme:dark" : "theme:light") : i < 8 ? "theme:dark" : "theme:light"] })));
 const rows = (stage: string, fintechDark = 0.02, extra: SignalRow[] = []) => [row("theme:dark", "all", { stage }), row("headline:serif", "all"), ...SECTORS.map(s => row("theme:dark", s, { stage, current_share: s === "fintech" ? fintechDark : 0.4 })), ...SECTORS.map(s => row("headline:serif", s, { current_share: 0.2 })), ...extra];

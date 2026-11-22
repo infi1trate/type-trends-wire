@@ -17,31 +17,65 @@ export const VISIBLE_LIMITS = {
 } as const;
 /** Measures that may not rise above the before run on any page and width. */
 export const NO_WORSE = ["console_errors", "failed_requests", "small_targets", "low_contrast"] as const;
-/** L2b · one speed target over the after run: a page and width above the target fails unless the before run was already above it and
- *  the after run is not higher; a missing measure is "not measured" and fails neither way. */
-export function speedProblems(after: Iterable<ReviewRow>, before: ReadonlyMap<string, ReviewRow>, measure: "cls" | "lcp_ms", target: number) {
-  const problems: string[] = [], notMeasured: string[] = [], allowed: string[] = [];
-  const fmt = (x: number) => (measure === "cls" ? String(Math.round(x * 1000) / 1000) : `${Math.round(x)} ms`), what = measure === "cls" ? "layout shift" : "largest paint";
+/** P2 · the speed measures the gate judges against history, with how much worse than the history's middle value counts as this
+ *  deploy's doing. */
+export const SPEED_TOLERANCE = { first_byte_ms: 150, lcp_ms: 300, cls: 0.02 } as const;
+export type SpeedMeasure = keyof typeof SPEED_TOLERANCE;
+/** How many stored runs before the after run make a page's history, and which kinds count. */
+export const HISTORY_RUNS = 5;
+export const HISTORY_KINDS: readonly ReviewKind[] = ["weekly", "before", "after"];
+const SPEED_TARGET_OF: Record<SpeedMeasure, number> = { first_byte_ms: SPEED_TARGETS.firstMs, lcp_ms: SPEED_TARGETS.lcpMs, cls: SPEED_TARGETS.cls };
+export const NOT_CAUSED = "over target, not caused by this deploy";
+/** The middle value (the mean of the middle two for an even count). */
+export const middleOf = (xs: readonly number[]) => { const a = [...xs].sort((x, y) => x - y), n = a.length; return n ? (n % 2 ? a[(n - 1) / 2]! : (a[n / 2 - 1]! + a[n / 2]!) / 2) : null; };
+/** A page and width over its target but not worse than its history by more than the tolerance (filed once as a bug by the gate). */
+export type NotCaused = { key: string; page: string; width: number; measure: SpeedMeasure; after: number; middle: number; runs: string[]; line: string };
+const runAt = (r: GateRun) => r.rows.reduce((m, x) => (x.at < m ? x.at : m), r.rows[0]?.at ?? "");
+/** One page and width's history for one measure: the values of its last HISTORY_RUNS stored runs of a counted kind older than the
+ *  after run (newest first), or, with none, the named before run's value. */
+export function historyOf(page: string, width: number, measure: SpeedMeasure, after: GateRun, history: readonly GateRun[], before: GateRun | null): { values: number[]; runs: string[] } {
+  const t = runAt(after), values: number[] = [], runs: string[] = [];
+  const older = history.filter(h => h.run !== after.run && h.kind != null && HISTORY_KINDS.includes(h.kind) && h.rows.length && runAt(h) < t).sort((a, b) => runAt(b).localeCompare(runAt(a)));
+  for (const h of older) {
+    const v = h.rows.find(r => r.page === page && r.width === width)?.measures[measure];
+    if (typeof v === "number") { values.push(v); runs.push(h.run); }
+    if (values.length >= HISTORY_RUNS) break;
+  }
+  if (!values.length && before && before.kind !== "test") { const v = before.rows.find(r => r.page === page && r.width === width)?.measures[measure]; if (typeof v === "number") { values.push(v); runs.push(before.run); } }
+  return { values, runs };
+}
+/**
+ * P2 · one speed measure over the after run, judged against history: it fails only when the after value is over its target and worse
+ * than the middle of its history by more than its tolerance. Over target but not worse is reported as "over target, not caused by this
+ * deploy" and does not fail. A missing measure is "not measured" and fails neither way.
+ */
+export function speedProblems(after: GateRun, history: readonly GateRun[], before: GateRun | null, measure: SpeedMeasure) {
+  const target = SPEED_TARGET_OF[measure], tol = SPEED_TOLERANCE[measure], problems: string[] = [], notMeasured: string[] = [], notCaused: NotCaused[] = [];
+  const fmt = (x: number) => (measure === "cls" ? String(Math.round(x * 1000) / 1000) : `${Math.round(x)} ms`), what = measure === "cls" ? "layout shift" : measure === "lcp_ms" ? "largest paint" : "first byte";
   let worst = 0;
-  for (const r of after) {
+  for (const r of cellsOf(after.rows).values()) {
     const y = r.measures[measure];
     if (typeof y !== "number") { notMeasured.push(where(r)); continue; }
     worst = Math.max(worst, y);
     if (y <= target) continue;
-    const x = before.get(`${r.page}@${r.width}`)?.measures[measure];
-    if (typeof x === "number" && x > target && y <= x) { allowed.push(`${where(r)}: ${fmt(x)} → ${fmt(y)}`); continue; }
-    problems.push(`${where(r)}: ${what} ${typeof x === "number" ? `${fmt(x)} → ` : ""}${fmt(y)}, over ${fmt(target)}.`);
+    const h = historyOf(r.page, r.width, measure, after, history, before), mid = middleOf(h.values);
+    if (mid != null && y - mid <= tol + 1e-9) {
+      notCaused.push({ key: `speed:${measure}:${r.page}@${r.width}`, page: r.page, width: r.width, measure, after: y, middle: mid, runs: h.runs, line: `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}; its last ${h.values.length} run${h.values.length === 1 ? "" : "s"} read ${fmt(mid)} in the middle: ${NOT_CAUSED}.` });
+      continue;
+    }
+    problems.push(mid == null ? `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}, with no earlier run to compare.` : `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)} and ${fmt(y - mid)} worse than the middle of its last ${h.values.length} run${h.values.length === 1 ? "" : "s"} (${fmt(mid)}; tolerance ${fmt(tol)}).`);
   }
-  return { problems, numbers: { target, worst: measure === "cls" ? Math.round(worst * 1000) / 1000 : Math.round(worst), not_measured: notMeasured, allowed } };
+  const round = (x: number) => (measure === "cls" ? Math.round(x * 1000) / 1000 : Math.round(x));
+  return { problems, notCaused, numbers: { target, tolerance: tol, worst: round(worst), not_measured: notMeasured, not_caused: notCaused.map(n => ({ page: n.page, width: n.width, after: round(n.after), middle: round(n.middle), runs: n.runs })) } };
 }
 /** The gate's checks, in the order they are run and shown. */
 export const GATE_CHECKS = [
   { id: "tests", name: "No failed tests" },
   { id: "complete", name: "Every page and width of the review list is in the after run" },
   { id: "overflow", name: "No page scrolls sideways at any width" },
-  { id: "first_byte", name: `First byte within ${SPEED_TARGETS.firstMs} ms on every page and width` },
-  { id: "layout_shift", name: `Layout shift within ${SPEED_TARGETS.cls} on every page and width (unless the before run was already above it and the after run is not higher)` },
-  { id: "largest_paint", name: `Largest paint within ${SPEED_TARGETS.lcpMs} ms on every page and width (unless the before run was already above it and the after run is not higher)` },
+  { id: "first_byte", name: `First byte within ${SPEED_TARGETS.firstMs} ms on every page and width, or no more than ${SPEED_TOLERANCE.first_byte_ms} ms worse than the middle of its last ${HISTORY_RUNS} runs` },
+  { id: "layout_shift", name: `Layout shift within ${SPEED_TARGETS.cls} on every page and width, or no more than ${SPEED_TOLERANCE.cls} worse than the middle of its last ${HISTORY_RUNS} runs` },
+  { id: "largest_paint", name: `Largest paint within ${SPEED_TARGETS.lcpMs} ms on every page and width, or no more than ${SPEED_TOLERANCE.lcp_ms} ms worse than the middle of its last ${HISTORY_RUNS} runs` },
   { id: "no_worse", name: "Console errors, failed requests, small tap targets and low-contrast text not above the before run" },
   { id: "visible", name: "Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit)" },
   { id: "proposal", name: "A layout change has the owner's accepted proposal" },
@@ -54,6 +88,8 @@ export type GateInput = {
   item: { kind: string; expects: Expects; move: { setting: string; from?: Value; to: Value } | null };
   tests: { passed: number; failed: number; skipped: number };
   before: GateRun; after: GateRun;
+  /** P2 · stored runs (any kind; only weekly, before and after runs older than the after run count) for the speed checks' history. */
+  history?: readonly GateRun[];
   proposal: "open" | "accepted" | "declined" | null;
   live: LivingValues;
 };
@@ -61,7 +97,7 @@ const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
 const where = (r: { page: string; width: number }) => `${REVIEW_PAGES.find(p => p.id === r.page)?.name ?? r.page} at ${r.width} px`;
 
 /** Every check with its numbers, and pass only when every check that applies passes. */
-export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[] } {
+export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[]; notCaused: NotCaused[] } {
   const named = new Map(GATE_CHECKS.map(c => [c.id, c.name] as const));
   const checks: GateCheck[] = [];
   const add = (id: GateCheckId, problems: string[], numbers: Record<string, unknown>, applies = true) => checks.push({ id, name: named.get(id)!, ok: !applies || problems.length === 0, applies, numbers, problems });
@@ -79,7 +115,7 @@ export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[] 
     const m = r.measures;
     if (m.overflow_x === undefined) ov.push(`${where(r)}: sideways scrolling was not measured.`); else if (m.overflow_x) { sideways++; ov.push(`${where(r)} scrolls sideways.`); }
     if (m.first_byte_ms === undefined) fb.push(`${where(r)}: first byte was not measured.`);
-    else { slowest = Math.max(slowest, m.first_byte_ms); if (m.first_byte_ms > SPEED_TARGETS.firstMs) fb.push(`${where(r)}: first byte ${Math.round(m.first_byte_ms)} ms, over ${SPEED_TARGETS.firstMs} ms.`); }
+    else slowest = Math.max(slowest, m.first_byte_ms);
     const prev = before.get(`${r.page}@${r.width}`);
     for (const k of NO_WORSE) {
       const x = prev?.measures[k], y = m[k];
@@ -108,8 +144,10 @@ export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[] 
   }
   const noAfter = a.why ? [a.why] : [];
   add("overflow", [...noAfter, ...ov], { sideways });
-  add("first_byte", [...noAfter, ...fb], { target_ms: SPEED_TARGETS.firstMs, slowest_ms: Math.round(slowest) });
-  const cls = speedProblems(after.values(), before, "cls", SPEED_TARGETS.cls), lcp = speedProblems(after.values(), before, "lcp_ms", SPEED_TARGETS.lcpMs);
+  // P2 · the speed checks judge the after run against each page's own history, not the luck of one before load.
+  const hist = g.history ?? [], beforeRun = b.rows.length ? g.before : null, afterRun = { ...g.after, rows: a.rows };
+  const fbs = speedProblems(afterRun, hist, beforeRun, "first_byte_ms"), cls = speedProblems(afterRun, hist, beforeRun, "cls"), lcp = speedProblems(afterRun, hist, beforeRun, "lcp_ms");
+  add("first_byte", [...noAfter, ...fb, ...fbs.problems], { target_ms: SPEED_TARGETS.firstMs, slowest_ms: Math.round(slowest), ...fbs.numbers });
   add("layout_shift", [...noAfter, ...cls.problems], cls.numbers);
   add("largest_paint", [...noAfter, ...lcp.problems], lcp.numbers);
   add("no_worse", [...noAfter, ...(b.why ? [b.why] : []), ...worse], { measures: NO_WORSE });
@@ -130,5 +168,5 @@ export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[] 
       add("living", used.flatMap(c => c.problems), { checks: used.map(c => ({ id: c.id, ok: c.ok })), skipped: "count (an edition's three to five moves)" });
     }
   } else add("living", [], {}, false);
-  return { pass: checks.every(c => c.ok), checks };
+  return { pass: checks.every(c => c.ok), checks, notCaused: [...fbs.notCaused, ...cls.notCaused, ...lcp.notCaused] };
 }

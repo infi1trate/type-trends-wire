@@ -85,7 +85,7 @@ export type BuildDeps = {
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number;
   /** U4 · the desk asking now: a run that writes nothing, whose pitch answers say "would run" instead of "ran". */ pitchDry?: boolean;
   /** When the writer must stop starting calls (absolute ms); default the build's own budget. */ writeDeadline?: number; writerPerBuild?: number; writeLimit?: number };
-export type BuildResult = { ok: true; desks?: ReviewSummary; sheets?: number; checks_recorded?: number; retired_reread?: number; pitched?: number; skipped?: "dev" | "held"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
+export type BuildResult = { ok: true; /** P2 · stage changes and crossovers recorded as "more homepages read, not a change" (never built). */ more_read?: string[]; desks?: ReviewSummary; sheets?: number; checks_recorded?: number; retired_reread?: number; pitched?: number; skipped?: "dev" | "held"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
 
 /** N2 · a story the engine would run is stored held, awaiting review: standards, then the editor in chief, release it through the door.
  *  Launches (shown only in New on the scene, never ranked) are stored as before. */
@@ -111,7 +111,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const fresh = deps.calls ? await deps.calls(loaded.events.filter(e => siteKind(e.domain, kinds.get(e.domain)) === "standard"), start + budget / 3, rotating).catch(() => ({})) : {};
   const input: BuildInput = { ...loaded, calls: { ...(loaded.calls ?? {}), ...fresh } };
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
-  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows } = allCandidates(input);
+  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows, moreRead } = allCandidates(input);
   const allShare = (k: string) => ctx.row(ctx.cur, canonical(k))?.current_share ?? null;
   const tracked = new Set(input.sites.map(s => s.domain));
   // One brand, one story: a later change to a brand with a published story in the window becomes a correction to that story.
@@ -184,7 +184,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       if (r.written && deps.writtenSheets) await deps.writtenSheets(r.rows.flatMap(x => { const j = jobs.find(y => y.story.id === x.story_id); return j ? [{ story_id: x.story_id, sheet: j.facts }] : []; })).catch(() => 0);
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
-  return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
+  return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, ...(moreRead?.length ? { more_read: moreRead.map(m => `${m.id}: ${m.reason} (${m.earlier.read ?? "?"} homepages read in run ${m.earlier.run}, ${m.later.read ?? "?"} in run ${m.later.run})`) } : {}), plan };
 }
 
 /** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */

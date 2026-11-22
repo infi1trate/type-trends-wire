@@ -16,7 +16,7 @@ import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../prom
 import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import {
-  AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_ALIASES, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
+  AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, MORE_READ_REASON, READ_GROWTH_MIN_BASE, READ_GROWTH_MIN_RATIO, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_ALIASES, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
   REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
   WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, WHITE_SPACE_NOT_APPLICABLE, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
 } from "./types";
@@ -222,9 +222,26 @@ export function identityMove(r: RebrandRow, all: Candidate[]): Candidate {
     ...(r.seasonal ? { holdReason: SEASONAL_REASON } : {}) };
 }
 
+// P2 · LIKE WITH LIKE ----------------------------------------------------------------------------------
+/** Homepages read behind a row's share in its run: its latest stored quarter's base (n), or null when not stored. */
+export const homepagesRead = (r: SampleRow | null | undefined): number | null => {
+  const x = r?.sample && typeof r.sample === "object" ? (r.sample as { n?: unknown }) : null;
+  return x && typeof x.n === "number" && Number.isFinite(x.n) && x.n > 0 ? x.n : null;
+};
+/** A refused comparison: the story that would have been built and the homepages read in each run. */
+export type ReadGrowth = { id: string; reason: typeof MORE_READ_REASON; earlier: { run: number; read: number | null }; later: { run: number; read: number | null } };
+/** Whether two runs' rows for one signal and scope read comparable samples: the earlier run read at least READ_GROWTH_MIN_RATIO of the
+ *  later run's homepages and at least READ_GROWTH_MIN_BASE. An unknown count is not comparable (fail closed). */
+export function readComparable(earlier: SampleRow | null | undefined, later: SampleRow | null | undefined): boolean {
+  const a = homepagesRead(earlier), b = homepagesRead(later);
+  return a != null && b != null && a >= READ_GROWTH_MIN_BASE && a >= READ_GROWTH_MIN_RATIO * b;
+}
+const growth = (id: string, prev: { id: number }, cur: { id: number }, a: SampleRow | null | undefined, b: SampleRow | null | undefined): ReadGrowth =>
+  ({ id, reason: MORE_READ_REASON, earlier: { run: prev.id, read: homepagesRead(a) }, later: { run: cur.id, read: homepagesRead(b) } });
+
 // SHIFT --------------------------------------------------------------------------------------------
 export const stageDistance = (from: string | null, to: string | null) => { const a = stageName(from), b = stageName(to); return a && b ? Math.abs(STAGE_ORDER[a]! - STAGE_ORDER[b]!) : 1; };
-export function shiftCandidates(ctx: Ctx): Candidate[] {
+export function shiftCandidates(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
   const out: Candidate[] = [];
   // Only the latest real run against the most recent real run at least MIN_RUN_GAP_DAYS older; closer runs are reruns.
   if (ctx.pair) {
@@ -235,6 +252,8 @@ export function shiftCandidates(ctx: Ctx): Candidate[] {
       const was = ctx.row(prev, key); if (!was) continue; // a signal new since the earlier run is not a shift
       const before = stageName(was.stage), after = stageName(r.stage);
       if (!before || !after || before === after) continue;
+      // P2 · a stage that moved only because many more homepages were read is not a change.
+      if (!readComparable(was, r)) { refused?.push(growth(`shift:${key}:${cur.id}`, prev, cur, was, r)); continue; }
       const l = label(key), ex = ctx.showing(key);
       out.push({ id: `shift:${key}:${cur.id}`, type: "shift", kicker: `Shift · ${l.dimension}`, headline: `${l.name} moved from ${before} to ${after}`,
         deck: `${r.current_share != null ? `On ${pct(r.current_share, 1)} of tracked homepages` : "Share not measured"}${ex.length ? `, including ${listOf(ex.slice(0, 3))}` : ""}. Forecast run ${cur.id}.`,
@@ -316,7 +335,7 @@ export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[
 }
 
 // CROSSOVER ----------------------------------------------------------------------------------------
-export function crossoverCandidates(ctx: Ctx): Candidate[] {
+export function crossoverCandidates(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
   const out: Candidate[] = [];
   if (ctx.pair) {
     const prev = ctx.pair.earlier, cur = ctx.pair.latest, bySignal = new Map<string, SignalRow[]>();
@@ -327,9 +346,11 @@ export function crossoverCandidates(ctx: Ctx): Candidate[] {
       for (const r of rows) {
         if (r.scope === lead.scope) continue;
         if (!ctx.row(prev, key)) continue; // the signal did not exist in the earlier run
-        const before = ctx.row(prev, key, r.scope)?.current_share;
+        const was = ctx.row(prev, key, r.scope), before = was?.current_share;
         if (before == null || before >= CROSSOVER_FLOOR || r.current_share! < CROSSOVER_FLOOR) continue;
         const d = ctx.showing(key, r.scope); if (!d.length) continue;
+        // P2 · a share that "rose" because the sector's homepages read rose (12 → 28) is not a crossover.
+        if (!readComparable(was, r)) { refused?.push(growth(`crossover:${key}:${r.scope}:${cur.id}`, prev, cur, was, r)); continue; }
         const l = label(key), s = inline(sectorName(r.scope));
         out.push({ id: `crossover:${key}:${r.scope}:${cur.id}`, type: "crossover", kicker: `Crossover · ${l.dimension} · ${sectorName(r.scope)}`, headline: `${l.name} reaches ${s}`,
           deck: `Led by ${inline(sectorName(lead.scope))} at ${pct(lead.current_share, 1)}, it now sits on ${pct(r.current_share, 1)} of ${s} homepages, up from ${pct(before, 1)}.`,

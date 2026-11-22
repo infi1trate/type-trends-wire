@@ -41,6 +41,8 @@ export const getStoryQueue = createServerFn({ method: "GET" }).inputValidator(z.
   // The terminal's Today queue: always the cached index. The desk's fresh queue loads only through /api/public/desk with the editor key.
   return loadQueue(data.day ?? null, false);
 });
+/** P2 · the terminal list's first view, sent inside the Today panel so the list has its final height before the full queue loads. */
+export const getStoryQueueHead = createServerFn({ method: "GET" }).handler(async () => (await import("./stories/page.server")).loadQueueHead());
 export const getRunComparison = createServerFn({ method: "GET" }).handler(async () => {
   const { runComparison } = await import("./read.server");
   return runComparison();

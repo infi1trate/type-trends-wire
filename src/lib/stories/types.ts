@@ -63,6 +63,18 @@ export const FIRST_SEEN_ARCHIVE_MIN_QUARTERS = 4;
 export const CROSSOVER_FLOOR = 0.1;
 /** The sector it comes from must carry it on at least 20% of homepages, so "leads" means something. */
 export const CROSSOVER_LEAD_MIN = 0.2;
+/** P2 · a crossover or a stage change between two runs compares like with like: the sector's homepages read in the earlier run must be
+ *  at least this share of the later run's… */
+export const READ_GROWTH_MIN_RATIO = 0.8;
+/** …and at least this many; otherwise the rise is the count of homepages read, not a change. */
+export const READ_GROWTH_MIN_BASE = 15;
+export const MORE_READ_REASON = "more homepages read, not a change";
+/** The two stories the rule was written for (held by the editor in chief, 22 Nov). `earlier`/`later` are the editor in chief's counts
+ *  (1 of 12, 7 of 28); the stored run-13 sample reads 2 of 24, which the rule passes. */
+export const MORE_READ_EXAMPLES = [
+  { id: "crossover:hero_layout:split_left_text:media:16", share: "8.3% → 25.0%", bad: "It now sits on 25.0% of media homepages, up from 8.3%.", earlier: 12, later: 28, runs: [13, 16] },
+  { id: "crossover:tone:calm:media:16", share: "8.3% → 17.9%", bad: "It now sits on 17.9% of media homepages, up from 8.3%.", earlier: 12, later: 28, runs: [13, 16] },
+] as const;
 /** "Almost no one": at most 1 in 20 of the sector's tracked brands (1 of 30 today). */
 export const WHITE_SPACE_MAX_SHARE = 0.05;
 /** It must be real elsewhere: at least 15% of brands in other sectors show it. */

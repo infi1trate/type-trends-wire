@@ -34,13 +34,17 @@ function Series({ s }: { s: StudiesHome["series"][number] }) {
       : <p className="ed-small ed-muted mt-3" data-series-empty="">First study in the works.</p>}
   </section>;
 }
-export function DataIndexView({ home }: { home: StudiesHome }) {
-  return <DigestShell label="Studies" section="signals">
-    <header className="ed-wrap pt-8 md:pt-12" data-studies-head="">
+/** P2 · the Studies home in two parts: the heading (fixed copy, drawn with the shell) and the body (the lead, series, shelf and tool,
+ *  which read stored study rows and stream in behind the shell). `DataIndexView` draws both at once, as before. */
+export function DataIndexHead() {
+  return <header className="ed-wrap pt-8 md:pt-12" data-studies-head="">
       <p className="ed-kicker">Studies</p>
       <h1 className="ed-h1 mt-3 max-w-[24ch]">{STUDIES_TITLE}</h1>
       <p className="ed-standfirst mt-4 max-w-[60ch]">{STUDIES_STANDFIRST}</p>
-    </header>
+    </header>;
+}
+export function DataIndexBody({ home }: { home: StudiesHome }) {
+  return <>
     {home.lead && <Lead s={home.lead} />}
     <section aria-labelledby="studies-series" className={`ed-wrap ${GAP}`} data-studies-series="">
       <h2 id="studies-series" className="sr-only">The series</h2>
@@ -61,6 +65,12 @@ export function DataIndexView({ home }: { home: StudiesHome }) {
         <Link to="/data/where-you-sit" className="ed-tap ed-data inline-flex min-h-[44px] shrink-0 items-center md:ml-auto">Try it →</Link>
       </li></ul>
     </section>
+  </>;
+}
+export function DataIndexView({ home }: { home: StudiesHome }) {
+  return <DigestShell label="Studies" section="signals">
+    <DataIndexHead />
+    <DataIndexBody home={home} />
     <ReadFooter terminal="/terminal?panel=history" />
   </DigestShell>;
 }

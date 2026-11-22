@@ -8,6 +8,7 @@ import { DIGEST_WORDS, PICTURES_MAX, ROWS_MAX } from "../digest/edition";
 import { DATA_STORIES, SERIES } from "../data-stories/registry";
 import { CENSUS_DAYS, CENSUS_MIN, CENSUS_NAMED_MAX, CENSUS_SPAN_HOURS, PRODUCT_CENSUS_SECTORS, SALE_KEY, WATCH_LIST } from "../census";
 import { HOME_FOLLOW_DAYS, QUIET_NEEDS, QUIET_WINDOW_DAYS } from "../stories/quiet";
+import { MORE_READ_EXAMPLES, MORE_READ_REASON, READ_GROWTH_MIN_BASE, READ_GROWTH_MIN_RATIO } from "../stories/types";
 import { ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE, WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MIN_BRANDS, FIRST_SEEN_MAX_BRANDS, NEWS_NAME_MIN } from "../stories/types";
 import { AI_ROUNDUP_DAILY_CAP, DAILY_CAP, DEDUPE_DAYS, NEWS_DAILY_CAP, PUBLISH_MIN, SINGLE_BRAND_DAILY_CAP } from "../stories/score";
 import { AGAINST_MIN, SEASONAL_STORY_MIN } from "../stories/editor";
@@ -55,6 +56,8 @@ export function styleListsBlock(): string {
     "An arrow (→ or ->) in our own words; a hex code in the text; “rebrand” as a claim unless the facts show type, colour and layout changing together, or a new name or logo.", "",
     "### Steady is not flat", "",
     `A sentence may not call a share ${FLAT_WORDS.map(w => `“${w}”`).join(", ").replace(/, (“[^”]+”)$/, " or $1")} when the facts sheet gives that share's momentum as ${FLAT_MOMENTUM_MIN} points a quarter or more, in either direction (the story, study and Digest writers share the check; the sectors a sentence names pick the figure). A stage word such as “Steady” is not a flat share. Not: “${FLAT_BAD_EXAMPLE}” (No. 94, whose own numbers gave fintech's momentum as 1.6 points a quarter).`, "",
+    "### More homepages read is not a change", "",
+    `A share that rose between two forecast runs because many more of the sector's homepages were read is not a rise: the stage change or crossover is built only when the earlier run read at least ${pct(READ_GROWTH_MIN_RATIO)} as many homepages as the later one, and at least ${READ_GROWTH_MIN_BASE}. Not: ${MORE_READ_EXAMPLES.map(e => `“${e.bad}” (runs ${e.runs[0]} and ${e.runs[1]})`).join("; ")}.`, "",
     "### The copy desk (lines that are not written text)", "",
     "Kickers, the Numbers list, picture captions and credits, chart titles and notes, and labels are linted by the copy desk (`COPY_LINTS`, newsroom/copy.ts). A failing line fails the standards checklist; the weekly sweep records failing lines in the desk log under `copy desk` and fixes nothing.", "",
     ...COPY_LINTS.flatMap(l => [`- **${l.title}.** ${l.rule} Good: “${l.good}”. Not: “${l.bad}”.`]), "",
@@ -83,6 +86,7 @@ export function beatsDoc(): string {
     `- **Against the grain.** At least ${AGAINST_MIN} brands moving against their sector, in the weekly roundup; seasonal promotions need ${SEASONAL_STORY_MIN} brands to be a story.`,
     `- **First seen.** A signal first seen in a sector on ${FIRST_SEEN_MIN_BRANDS} to ${FIRST_SEEN_MAX_BRANDS} brands.`,
     `- **White space.** A signal on at most ${pct(WHITE_SPACE_MAX_SHARE)} of a sector's homepages while at least ${pct(WHITE_SPACE_MIN_ELSEWHERE)} elsewhere, in a sector with at least ${WHITE_SPACE_MIN_SECTOR_SITES} measured homepages.`,
+    `- **Shifts and crossovers.** A stage change or a crossover between two forecast runs is built only when the earlier run read at least ${pct(READ_GROWTH_MIN_RATIO)} as many of the sector's homepages as the later run, and at least ${READ_GROWTH_MIN_BASE}; otherwise it is recorded as “${MORE_READ_REASON}” and no story is built. Written for: ${MORE_READ_EXAMPLES.map(e => `\`${e.id}\` (${e.share} between runs ${e.runs[0]} and ${e.runs[1]})`).join("; ")}.`,
     `- **Breakouts.** A forecast alert that a signal reached the Breakout stage (stage words in \`labels.ts\`, alert rules in \`alerts.ts\`).`,
     `- **Outside news.** An item from the wire's publications that names a tracked brand (names of at least ${NEWS_NAME_MIN} letters, strict matching) and is about design; the story says what the item says, about that brand.`,
     `- **Quiet change.** Needs ${QUIET_NEEDS.what}, with no mention in the wire's publications within ${QUIET_WINDOW_DAYS} days either side. Never alone: ${QUIET_NEEDS.notAlone}. It needs a picture to lead with: ${QUIET_NEEDS.picture}. A page that follows a confirmed homepage change of the same kind within ${HOME_FOLLOW_DAYS} days is not quiet: it becomes a fact on the brand's own story.`, "",

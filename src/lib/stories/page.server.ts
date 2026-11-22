@@ -1,7 +1,7 @@
 // Story page + queue loaders (anonymous SELECT-only). No AI per view.
 import { storyById, storyIndex, deskIndex } from "./read.server";
 import { memoBy } from "../memo";
-import { queueModel, storiesAbout, storyPage, isKind, type StoryRecord } from "./view";
+import { queueHead, queueModel, storiesAbout, storyPage, isKind, type StoryRecord } from "./view";
 
 /** U2b · the numbers a story's text was written from: the story's own run when it has one, else the latest real forecast run at the
  *  text's time (the build's own rule); its rows'
@@ -249,6 +249,8 @@ export async function evidenceOf(s: { id?: string; type: string; domains: string
 export async function loadQueue(day: string | null, fresh: boolean) {
   return queueModel(await (fresh ? deskIndex() : storyIndex()), day, Date.now());
 }
+/** P2 · the terminal list's first view (`queueHead`), from the same cached index as the queue. */
+export async function loadQueueHead() { return queueHead(await loadQueue(null, false)); }
 
 /** The desk's outside-news line: what the last seven days of rss, Hacker News and Bluesky items would do under the news rule
  *  (anonymous reads; the same pure `newsCandidates` the build uses). Fails soft: the desk shows the queue without it. */

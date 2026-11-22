@@ -81,16 +81,29 @@ export async function recordGate(db: Admin, r: { item: number; commit: string; t
   if (!it) return null;
   if (!q.GATE_FROM.includes(it.status)) return { refused: `A gate result is recorded for a built item; this one is ${it.status}.` };
   const [{ loadReviews }, { gateVerdict }, { LIVE_VALUES }] = await Promise.all([import("./design-review.server"), import("./build-gate"), import("../living/editions")]);
-  const rows = await loadReviews(db, { runs: [r.before_run, r.after_run] });
-  const side = (run: string) => { const rs = rows.filter(x => x.run === run); return { run, kind: rs[0]?.kind ?? null, rows: rs }; };
+  // P2 · the speed checks read each page's history: every stored run of the last 30 days (the gate keeps only older weekly, before
+  // and after runs, at most five per page and width).
+  const rows = await loadReviews(db, { days: 30 }), named = rows.some(x => x.run === r.before_run) && rows.some(x => x.run === r.after_run) ? [] : await loadReviews(db, { runs: [r.before_run, r.after_run] });
+  const all = [...rows, ...named.filter(x => !rows.some(y => y.id === x.id))];
+  const side = (run: string) => { const rs = all.filter(x => x.run === run); return { run, kind: rs[0]?.kind ?? null, rows: rs }; };
+  const history = [...new Set(all.map(x => x.run))].map(side);
   const mv = it.move && typeof it.move === "object" ? (it.move as { setting: string; from?: never; to: never }) : null;
-  const v = gateVerdict({ item: { kind: it.kind, expects: it.expects as q.Expects, move: mv }, tests: r.tests, before: side(r.before_run), after: side(r.after_run), proposal: it.proposal, live: LIVE_VALUES });
+  const v = gateVerdict({ item: { kind: it.kind, expects: it.expects as q.Expects, move: mv }, tests: r.tests, before: side(r.before_run), after: side(r.after_run), history, proposal: it.proposal, live: LIVE_VALUES });
   const { data, error } = await db.from("gate_results").insert({ item_id: it.id, commit_sha: r.commit.toLowerCase(), tests: r.tests as never, before_run: r.before_run, after_run: r.after_run, pass: v.pass, checks: v.checks as never, actor: "engineering" }).select("id").single();
   if (error || !data) throw new Error("gate_insert_failed");
   const failed = v.checks.filter(c => !c.ok);
   const m = await db.from("build_queue_moves").insert({ item_id: it.id, status: v.pass ? "gate passed" : "gate failed", actor: "engineering", reason: (v.pass ? `Gate ${data.id} passed: every check passed.` : `Gate ${data.id} failed: ${failed.map(c => c.id).join(", ")}.`).slice(0, 600), detail: { gate: data.id, commit: r.commit } as never });
   if (m.error) throw new Error("queue_move_insert_failed");
-  return { id: data.id, pass: v.pass, checks: v.checks };
+  // P2 · a page already over its target before this deploy is filed once as a bug by the gate itself (stable key; an open item with
+  // the same key is not filed again). A filing failure never changes the stored verdict.
+  const filed: number[] = [];
+  for (const n of v.notCaused) {
+    try {
+      const got = await insertQueueItem(db, { title: `Over target before this deploy: ${n.line.split(":")[0]} (${n.measure === "cls" ? "layout shift" : n.measure === "lcp_ms" ? "largest paint" : "first byte"})`.slice(0, 200), why: `Gate ${data.id}: ${n.line}`.slice(0, 600), desk: "engineering", kind: "bug", expects: "no visible change", source_kind: "finding", source_ref: `gate:${data.id}`, proposal_log_id: null, ikey: n.key, move: null, test: false });
+      if ("id" in got && !got.existing) filed.push(got.id);
+    } catch { /* recorded verdict stands */ }
+  }
+  return { id: data.id, pass: v.pass, checks: v.checks, filed };
 }
 export async function newestGate(db: Admin) {
   const { data } = await db.from("gate_results").select("id,at,item_id,commit_sha,tests,before_run,after_run,pass,checks").order("id", { ascending: false }).limit(1);

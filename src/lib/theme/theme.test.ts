@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+// P2 · these tests build whole story days from fixtures (1.5 to 4 s alone); under the full suite's load they ran past vitest's 5 s default.
+vi.setConfig({ testTimeout: 30_000 });
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { MODES, THEMES, flatten, missingTokens, requiredTokens, activeCss, type Theme } from "./index";

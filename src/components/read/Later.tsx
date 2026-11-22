@@ -54,9 +54,11 @@ function Ready({ children, id, className }: { children: ReactNode; id?: string |
 }
 /** A deferred slot: placeholders (aria-busy) until the children's data is in; a failure stays inside the slot. `before` is drawn
  * above the placeholders only (a page's title block, when the whole page body is the deferred part and draws its own). */
-export function Later({ children, shapes, className, id, before }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode }) {
+/** P2 · `reserve` is a minimum height for the placeholder only (for example "100dvh" when the whole page body streams in): the slot
+ *  then already reaches past the bottom of the screen, so the footer is never on screen to be pushed down when the content lands. */
+export function Later({ children, shapes, className, id, before, reserve, placeholderClassName }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode; reserve?: string; placeholderClassName?: string }) {
   return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={reset} failed={retry => <div data-later="" id={id} className={className}>{before}<div className={before ? "ed-wrap mt-8" : undefined}><SectionFailed retry={retry} /></div></div>}>
-    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true">{before}<Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : ""} /></div>}>
+    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true" style={reserve ? { minHeight: reserve } : undefined}>{before}<Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} /></div>}>
       <Ready id={id} className={className}>{children}</Ready>
     </Suspense>
   </Catch>}</QueryErrorResetBoundary>;

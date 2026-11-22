@@ -11,6 +11,7 @@ The standing questions slug answers, and the series a reader learns to expect. E
 - **Against the grain.** At least 3 brands moving against their sector, in the weekly roundup; seasonal promotions need 3 brands to be a story.
 - **First seen.** A signal first seen in a sector on 2 to 5 brands.
 - **White space.** A signal on at most 5% of a sector's homepages while at least 15% elsewhere, in a sector with at least 15 measured homepages.
+- **Shifts and crossovers.** A stage change or a crossover between two forecast runs is built only when the earlier run read at least 80% as many of the sector's homepages as the later run, and at least 15; otherwise it is recorded as “more homepages read, not a change” and no story is built. Written for: `crossover:hero_layout:split_left_text:media:16` (8.3% → 25.0% between runs 13 and 16); `crossover:tone:calm:media:16` (8.3% → 17.9% between runs 13 and 16).
 - **Breakouts.** A forecast alert that a signal reached the Breakout stage (stage words in `labels.ts`, alert rules in `alerts.ts`).
 - **Outside news.** An item from the wire's publications that names a tracked brand (names of at least 4 letters, strict matching) and is about design; the story says what the item says, about that brand.
 - **Quiet change.** Needs a confirmed new site icon, a confirmed new social card, or a confirmed change of headline or body typeface on another page at the same address, with no mention in the wire's publications within 14 days either side. Never alone: an accent, palette or theme change alone on another page stays a line on the tape. It needs a picture to lead with: the old and new icon or card, or the page's first screen before and after; with no picture it does not run. A page that follows a confirmed homepage change of the same kind within 30 days is not quiet: it becomes a fact on the brand's own story.
@@ -101,9 +102,9 @@ One list for every product change. Kinds: bug, label, design move, layout, featu
 1. No failed tests.
 2. Every page and width of the review list is in the after run.
 3. No page scrolls sideways at any width.
-4. First byte within 800 ms on every page and width.
-5. Layout shift within 0.05 on every page and width (unless the before run was already above it and the after run is not higher).
-6. Largest paint within 2500 ms on every page and width (unless the before run was already above it and the after run is not higher).
+4. First byte within 800 ms on every page and width, or no more than 150 ms worse than the middle of its last 5 runs.
+5. Layout shift within 0.05 on every page and width, or no more than 0.02 worse than the middle of its last 5 runs.
+6. Largest paint within 2500 ms on every page and width, or no more than 300 ms worse than the middle of its last 5 runs.
 7. Console errors, failed requests, small tap targets and low-contrast text not above the before run.
 8. Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit).
 9. A layout change has the owner's accepted proposal.

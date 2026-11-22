@@ -18,7 +18,7 @@ const D = 864e5, T0 = Date.parse("2026-11-11T12:00:00Z");
 const at = (days: number) => new Date(T0 + days * D).toISOString();
 const ev = (id: number, domain: string, type: string, before: Record<string, unknown>, after: Record<string, unknown>, days: number): EventRow =>
   ({ id, domain, sector: "enterprise-saas", type, before, after, detected_at: at(days), source: "live", page_type: "home", viewport: "desktop" });
-const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => ({ dimension: key.split(":")[0]!, value: key.split(":")[1]!, scope, status: "ok", stage: "accelerating", momentum: 1, current_share: 0.2, next_wave_score: 1, sites: 20, ...o });
+const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => ({ dimension: key.split(":")[0]!, value: key.split(":")[1]!, scope, status: "ok", stage: "accelerating", momentum: 1, current_share: 0.2, next_wave_score: 1, sites: 20, sample: { q: "2026Q4", n: 30, s: o.current_share ?? 0.2 }, ...o });
 const input = (o: Partial<BuildInput> = {}): BuildInput => ({ now: at(10), events: [], rebrands: [], alerts: [], wire: [], launches: [], archive: [], trendsetters: [], sites: [], runs: [], ...o });
 const sctx: ScoreCtx = { tierOf: () => "headline", rankOf: () => 1, tracked: () => true, covered: () => true, shareOf: () => 0.3 };
 const cand = (o: Partial<Candidate>): Candidate => ({ id: "x", type: "roundup", kicker: "k", headline: "h", deck: null, facts: [], sector: null, signalKeys: [], domains: ["a.com", "b.com", "c.com"], evidence: [], sourceIds: [], basis: "measured", happenedAt: at(0), magnitude: 5, ...o });

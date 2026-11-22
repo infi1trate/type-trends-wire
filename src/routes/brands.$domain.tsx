@@ -52,7 +52,7 @@ function Brand() {
   const { domain } = Route.useParams(), { name, data } = Route.useLoaderData(), d = domain.toLowerCase();
   if (data) return <DataShell object={{ type: "brand", id: d }} name={name}><BrandData domain={d} /></DataShell>;
   return <BrandFrame name={name} domain={d}>
-    <Later id="brand-card-later" shapes={[{ kind: "block", height: 40 }, { kind: "block", height: 96 }, { kind: "rows", n: 3, height: ROW.compact }, { kind: "block", height: 260 }]}><CardLater domain={d} /></Later>
+    <Later id="brand-card-later" reserve="100dvh" shapes={[{ kind: "block", height: 40 }, { kind: "block", height: 96 }, { kind: "rows", n: 3, height: ROW.compact }, { kind: "block", height: 260 }]}><CardLater domain={d} /></Later>
   </BrandFrame>;
 }
 function CardLater({ domain }: { domain: string }) {

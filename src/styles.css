@@ -2,11 +2,12 @@
 @source "../src";
 @import "tw-animate-css";
 
-/* Metric-matched local fallbacks for the three web fonts (theme/slug.ts FONT_FALLBACKS): text draws at once and the swap barely moves it. */
+/* Metric-matched local fallbacks for the three web fonts (theme/slug.ts FONT_FALLBACKS): text draws at once and the swap barely moves it.
+   P2: the Arial-metric and Times-metric faces re-matched by width against Big Shoulders and Newsreader (76%, 103.5%), measured in Chromium. */
 @font-face { font-family: "slug Display Fallback"; src: local("Arial Narrow"), local("ArialNarrow"), local("Liberation Sans Narrow"); size-adjust: 86%; ascent-override: 104%; descent-override: 26%; line-gap-override: 0%; }
-@font-face { font-family: "slug Display Fallback Wide"; src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("Arimo"), local("Helvetica"); size-adjust: 80%; ascent-override: 120%; descent-override: 30%; line-gap-override: 0%; }
+@font-face { font-family: "slug Display Fallback Wide"; src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("Arimo"), local("Helvetica"); size-adjust: 76%; ascent-override: 120%; descent-override: 30%; line-gap-override: 0%; }
 @font-face { font-family: "slug Text Fallback"; src: local("Georgia"); size-adjust: 93%; ascent-override: 98%; descent-override: 26%; line-gap-override: 0%; }
-@font-face { font-family: "slug Text Fallback Times"; src: local("Times New Roman"), local("TimesNewRomanPSMT"), local("Liberation Serif"), local("Tinos"), local("Times"); size-adjust: 108.6%; ascent-override: 74%; descent-override: 19%; line-gap-override: 0%; }
+@font-face { font-family: "slug Text Fallback Times"; src: local("Times New Roman"), local("TimesNewRomanPSMT"), local("Liberation Serif"), local("Tinos"), local("Times"); size-adjust: 103.5%; ascent-override: 74%; descent-override: 19%; line-gap-override: 0%; }
 @font-face { font-family: "slug Mono Fallback"; src: local("Menlo"), local("Consolas"), local("Liberation Mono"), local("Courier New"); size-adjust: 100%; ascent-override: 102%; descent-override: 27%; line-gap-override: 0%; }
 
 @custom-variant dark (&:is(.dark *));

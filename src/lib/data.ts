@@ -17,7 +17,7 @@ import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
 import { getBrandCard, getBrandMoves, getBrandSections, getBrandSurfaces, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getFrontWire, getWirePicks, getStoryHead, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getChartSpecimens, getFront, getGallery, getCollections, getCollection } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getStoryQueueHead, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getChartSpecimens, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
 import type { GallerySearch } from "./gallery";
@@ -425,6 +425,7 @@ export const storyQuery = (id: string) => queryOptions({ queryKey: ["story", id]
 /** Real runs, the valid week-over-week pair (or null) and when the next one can land (/status). */
 export const runComparisonQuery = () => queryOptions({ queryKey: ["run-comparison"], staleTime: 5 * 60_000, queryFn: () => getRunComparison() });
 export const storyQueueQuery = (day: string | null, fresh = false) => queryOptions({ queryKey: ["story-queue", day ?? "recent", fresh], staleTime: fresh ? 0 : 60_000, queryFn: () => getStoryQueue({ data: { ...(day ? { day } : {}), fresh } }) });
+export const storyQueueHeadQuery = () => queryOptions({ queryKey: ["story-queue-head"], staleTime: 60_000, queryFn: () => getStoryQueueHead() });
 /** Brand page, critical: the identity card (null → 404). */
 export const brandCardQuery = (domain: string) => queryOptions({ queryKey: ["brand-card", domain], staleTime: 10 * 60_000, queryFn: () => getBrandCard({ data: { domain } }) });
 // Brand page, deferred sections (a route loader may start these but must never await them; see DEFERRED_QUERIES).

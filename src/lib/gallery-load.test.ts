@@ -1,6 +1,8 @@
 // A cold /patterns view against an in-memory stand-in for the public database, sized like the live library (300 brands, ~1,430
 // quarterly samples, ~2,460 home captures, ~1,390 forecast rows): counts every request and how many run at once.
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// P2 · these tests build whole story days from fixtures (1.5 to 4 s alone); under the full suite's load they ran past vitest's 5 s default.
+vi.setConfig({ testTimeout: 30_000 });
 
 type Row = Record<string, unknown>;
 const db: { tables: Record<string, Row[]>; requests: string[]; live: number; peak: number; failNext: Set<string> } = { tables: {}, requests: [], live: 0, peak: 0, failNext: new Set() };

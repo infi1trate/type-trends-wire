@@ -172,3 +172,11 @@
 - [x] B4 propose names registry forms; accepted → feature queue item; colophon by edition
 - [x] B5 /desk Graphics panel + memory; regen docs
 - [x] Proof 1–8, report, commit
+
+# P2 · Speed budget on every page
+- [ ] 1 First byte uncached <500 ms on front, story, brand, study, Digest, studies, brands, signals (shell first)
+- [ ] 2 Layout shift ≤0.05 on reviewed pages at 1440/768/390; front LCP element requested early (<2,000 ms)
+- [ ] 3 Terminal story list full height again; space reserved from the row count in the shell
+- [ ] 4 Gate: before from 5-run history, tolerances, "over target, not caused by this deploy" filed once; fix two slow tests
+- [ ] 5 Crossover/stage change needs comparable homepage counts (≥80%, ≥15); docs; sweep run 16
+- [ ] Proof tables, reader looks unchanged, full suite, commit

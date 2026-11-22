@@ -112,9 +112,9 @@ One list for every product change. Kinds: bug, label, design move, layout, featu
 1. No failed tests.
 2. Every page and width of the review list is in the after run.
 3. No page scrolls sideways at any width.
-4. First byte within 800 ms on every page and width.
-5. Layout shift within 0.05 on every page and width (unless the before run was already above it and the after run is not higher).
-6. Largest paint within 2500 ms on every page and width (unless the before run was already above it and the after run is not higher).
+4. First byte within 800 ms on every page and width, or no more than 150 ms worse than the middle of its last 5 runs.
+5. Layout shift within 0.05 on every page and width, or no more than 0.02 worse than the middle of its last 5 runs.
+6. Largest paint within 2500 ms on every page and width, or no more than 300 ms worse than the middle of its last 5 runs.
 7. Console errors, failed requests, small tap targets and low-contrast text not above the before run.
 8. Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit).
 9. A layout change has the owner's accepted proposal.

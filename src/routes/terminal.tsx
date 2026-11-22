@@ -15,7 +15,7 @@ import { McpOverlay } from "@/components/terminal/McpOverlay";
 import { CrawlScopeProvider, Toggle } from "@/components/terminal/CrawlControls";
 import { CrawlPanel, InTheWild } from "@/components/terminal/CrawlPanels";
 import { Library } from "@/components/terminal/Library";
-import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery, patternsQuery, storyQueueQuery, dataIndexQuery } from "@/lib/data";
+import { libraryQuery, libraryHistoryQuery, forecastQuery, vibeQuery, rebrandsQuery, chartCardQuery, todayQuery, signalsQuery, patternsQuery, storyQueueQuery, storyQueueHeadQuery, dataIndexQuery } from "@/lib/data";
 import { VibeMap } from "@/components/terminal/VibeMap";
 import { PanelHeadlines } from "@/components/terminal/Signals";
 import { HistoryPanel } from "@/components/terminal/LibraryHistory";
@@ -58,9 +58,10 @@ export const Route = createFileRoute("/terminal")({
 
 /** The reads a panel starts before the shell (the signal snapshot first: every panel filters by tier). On the server the story queue
  *  (a list of every published, held and taken-down story, ~470 KB) is not started: its panel reads it after hydration, as it already
- *  does on a cold client, so the server render no longer waits on it. */
+ *  does on a cold client, so the server render no longer waits on it. P2: its first view (`storyQueueHeadQuery`, a few kilobytes)
+ *  is started on both sides and read inside the Today panel, so the list is sent at its final height. */
 export function terminalReads(v: ViewId, sector: string, server = false): { queryKey: readonly unknown[] }[] {
-  const extra = v === "today" ? [todayQuery(), ...(server ? [] : [storyQueueQuery(null)])] : v === "library" ? [libraryQuery()] : v === "history" ? [libraryHistoryQuery()]
+  const extra = v === "today" ? [todayQuery(), storyQueueHeadQuery(), ...(server ? [] : [storyQueueQuery(null)])] : v === "library" ? [libraryQuery()] : v === "history" ? [libraryHistoryQuery()]
     : v === "brief" ? [forecastQuery(), chartCardQuery(null)] : v === "vibe" ? [vibeQuery()]
     : v === "rebrands" ? [rebrandsQuery({ sector: "all", limit: 20 })] : v === "patterns" ? [patternsQuery(sector)] : v === "studies" ? [dataIndexQuery()] : [];
   return [signalsQuery(), ...extra];

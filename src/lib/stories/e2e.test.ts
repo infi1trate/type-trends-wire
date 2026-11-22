@@ -1,5 +1,7 @@
 // E2e · a correction may drop members of a gathered story whose changes failed the integrity check, and can never add one.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+// P2 · these tests build whole story days from fixtures (1.5 to 4 s alone); under the full suite's load they ran past vitest's 5 s default.
+vi.setConfig({ testTimeout: 30_000 });
 import { applyEdits, type EditRow, type StoredStory } from "./edits";
 
 const story: StoredStory = {

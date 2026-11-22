@@ -31,7 +31,8 @@ describe("L2b · the gate checks layout shift and largest paint", () => {
     const after = run("A", "after", (p, w) => (p === "terminal" ? { cls: TERMINAL_CLS[w as 1440][1] } : {}));
     const c = check(gate(before, after), "layout_shift");
     expect(c.ok).toBe(false);
-    expect(c.problems).toEqual(["The terminal at 1440 px: layout shift 0.04 → 0.276, over 0.05.", "The terminal at 768 px: layout shift 0.059 → 0.784, over 0.05.", "The terminal at 390 px: layout shift 0.262 → 0.826, over 0.05."]);
+    // P2 wording: worse than the middle of its history (here only the named before run) by more than 0.02.
+    expect(c.problems).toEqual(["The terminal at 1440 px: layout shift 0.276, over 0.05 and 0.236 worse than the middle of its last 1 run (0.04; tolerance 0.02).", "The terminal at 768 px: layout shift 0.784, over 0.05 and 0.725 worse than the middle of its last 1 run (0.059; tolerance 0.02).", "The terminal at 390 px: layout shift 0.826, over 0.05 and 0.564 worse than the middle of its last 1 run (0.262; tolerance 0.02)."]);
     expect(c.numbers["worst"]).toBe(0.826);
     expect(gateVerdict(gate(before, after)).pass).toBe(false);
   });
@@ -40,7 +41,7 @@ describe("L2b · the gate checks layout shift and largest paint", () => {
     const after = run("A", "after", (p, w) => (p === "terminal" && w === 390 ? { cls: 0.2 } : {}));
     const c = check(gate(before, after), "layout_shift");
     expect(c.ok).toBe(true);
-    expect(c.numbers["allowed"]).toEqual(["The terminal at 390 px: 0.262 → 0.2"]);
+    expect(c.numbers["not_caused"]).toEqual([{ page: "terminal", width: 390, after: 0.2, middle: 0.262, runs: ["B"] }]);
   });
   it("within the target passes; just over fails", () => {
     expect(check(gate(run("B", "before"), run("A", "after", () => ({ cls: 0.05 }))), "layout_shift").ok).toBe(true);
@@ -49,10 +50,11 @@ describe("L2b · the gate checks layout shift and largest paint", () => {
   it("largest paint: over 2,500 ms fails, unless it was over before and is not slower", () => {
     const slow = check(gate(run("B", "before"), run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 2600 } : {}))), "largest_paint");
     expect(slow.ok).toBe(false);
-    expect(slow.problems).toEqual(["A story page at 390 px: largest paint 1200 ms → 2600 ms, over 2500 ms."]);
+    expect(slow.problems).toEqual(["A story page at 390 px: largest paint 2600 ms, over 2500 ms and 1400 ms worse than the middle of its last 1 run (1200 ms; tolerance 300 ms)."]);
     const was = run("B", "before", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 3000 } : {}));
     expect(check(gate(was, run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 2900 } : {}))), "largest_paint").ok).toBe(true);
-    expect(check(gate(was, run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 3100 } : {}))), "largest_paint").ok).toBe(false);
+    expect(check(gate(was, run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 3100 } : {}))), "largest_paint").ok).toBe(true); // P2: within the 300 ms tolerance
+    expect(check(gate(was, run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 3400 } : {}))), "largest_paint").ok).toBe(false);
   });
   it("a missing measure is not measured and fails neither check", () => {
     const after = run("A", "after", (p, w) => (p === "terminal" && w === 768 ? { cls: undefined, lcp_ms: undefined } : {}));

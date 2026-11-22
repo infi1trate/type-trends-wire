@@ -207,3 +207,10 @@ export function queueModel(all: StoryRecord[], day: string | null, now: number) 
   };
 }
 export type QueueModel = ReturnType<typeof queueModel>;
+/** P2 · the terminal's story list as it first shows (the last seven days' published stories, newest first): only the fields a row
+ *  draws, a few kilobytes from the same stored index, so the server sends the list at its final height inside the Today panel and the
+ *  full queue (every held and taken-down story, ~470 KB) still loads after hydration. */
+export type QueueHeadRow = Pick<QueueModel["published"][number], "id" | "evidence" | "score" | "number" | "type" | "headline" | "state" | "reason" | "killReason" | "at">;
+export function queueHead(m: QueueModel): { published: QueueHeadRow[]; held: number } {
+  return { published: m.published.map(s => ({ id: s.id, evidence: s.evidence, ...(s.score !== undefined ? { score: s.score } : {}), ...(s.number !== undefined ? { number: s.number } : {}), type: s.type, headline: s.headline, state: s.state, reason: s.reason, killReason: s.killReason, at: s.at })), held: m.held.length };
+}

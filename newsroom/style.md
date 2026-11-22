@@ -195,6 +195,10 @@ An arrow (→ or ->) in our own words; a hex code in the text; “rebrand” as 
 
 A sentence may not call a share “flat”, “unchanged”, “stable” or “level” when the facts sheet gives that share's momentum as 0.5 points a quarter or more, in either direction (the story, study and Digest writers share the check; the sectors a sentence names pick the figure). A stage word such as “Steady” is not a flat share. Not: “In fintech it’s more common, but its share is flat.” (No. 94, whose own numbers gave fintech's momentum as 1.6 points a quarter).
 
+### More homepages read is not a change
+
+A share that rose between two forecast runs because many more of the sector's homepages were read is not a rise: the stage change or crossover is built only when the earlier run read at least 80% as many homepages as the later one, and at least 15. Not: “It now sits on 25.0% of media homepages, up from 8.3%.” (runs 13 and 16); “It now sits on 17.9% of media homepages, up from 8.3%.” (runs 13 and 16).
+
 ### The copy desk (lines that are not written text)
 
 Kickers, the Numbers list, picture captions and credits, chart titles and notes, and labels are linted by the copy desk (`COPY_LINTS`, newsroom/copy.ts). A failing line fails the standards checklist; the weekly sweep records failing lines in the desk log under `copy desk` and fixes nothing.

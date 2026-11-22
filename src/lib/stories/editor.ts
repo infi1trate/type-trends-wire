@@ -20,7 +20,7 @@ import { carouselEventIds, isShowcaseSector, withoutRotations } from "../carouse
 import { splitChecked, type Condition } from "../integrity";
 import {
   breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, inline, isVisibleMove, launchCandidate, moveCandidate,
-  newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops,
+  newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops, type ReadGrowth,
 } from "./candidates";
 import { AI_EVENTS, COUNTER_HELD_REASON, countWord, ESTIMATE_ONLY_REASON, ROUNDUP_MIN, WHITE_SPACE_NOT_APPLICABLE, type Candidate, type Fact } from "./types";
 
@@ -264,8 +264,8 @@ export function roundups(ctx: Ctx, moves: Move[], against: Move[] = []): Candida
   return out;
 }
 /** Stage changes: under SHIFT_MIN_SHARE they go to the Brief table only; changes in one family of signals from one run pair are one story. */
-export function shifts(ctx: Ctx): Candidate[] {
-  const all = shiftCandidates(ctx).map(c => { const r = ctx.row(ctx.cur, c.signalKeys[0]!); return (r?.current_share ?? 0) < SHIFT_MIN_SHARE ? { ...c, holdReason: SHIFT_BRIEF_REASON } : c; });
+export function shifts(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
+  const all = shiftCandidates(ctx, refused).map(c => { const r = ctx.row(ctx.cur, c.signalKeys[0]!); return (r?.current_share ?? 0) < SHIFT_MIN_SHARE ? { ...c, holdReason: SHIFT_BRIEF_REASON } : c; });
   const out = [...all], fam = new Map<string, Candidate[]>();
   for (const c of all) { const cat = c.signalKeys[0]!.split(":")[0]!; if (!c.holdReason && SHIFT_FAMILIES.has(cat)) fam.set(`${cat}|${c.runId}`, [...(fam.get(`${cat}|${c.runId}`) ?? []), c]); }
   for (const [k, cs] of fam) {
@@ -280,7 +280,7 @@ export function shifts(ctx: Ctx): Candidate[] {
 }
 
 // EVERYTHING -----------------------------------------------------------------------------------------------------------------------
-export type AllCandidates = { /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; /** W1c · other-page changes that follow the homepage (facts on the brand's own story). */ follows?: QuietFollow[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
+export type AllCandidates = { /** P2 · comparisons refused as "more homepages read, not a change". */ moreRead?: ReadGrowth[]; /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; /** W1c · other-page changes that follow the homepage (facts on the brand's own story). */ follows?: QuietFollow[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
   /** E2e · changes that failed the integrity check (Data view only): event id, its label ("Seen once" / "Alternating") and the conditions. */
   unconfirmed: { id: number; label: string; failed: Condition[] }[] };
 /** E2e · the input with only the passing part of each live change (integrity.ts); unchanged when it carries no checks. */
@@ -346,11 +346,13 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   const ws = whiteSpaceCandidates(ctx);
   // W1c · a page that follows its own homepage adds one fact to the brand's own move or rebrand story instead.
   const own = quiet.follows.length ? withFollowFacts(brand, quiet.follows) : brand;
+  // P2 · stage changes and crossovers whose earlier run read too few of the sector's homepages are recorded, never built.
+  const moreRead: ReadGrowth[] = [];
   const candidates = [
-    ...own, ...unclear, ...shifts(ctx), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx),
+    ...own, ...unclear, ...shifts(ctx, moreRead), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx, moreRead),
     ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...census, ...quiet.candidates, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => named(c, names));
-  return { quiet: quiet.verdicts, follows: quiet.follows, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
+  return { moreRead, quiet: quiet.verdicts, follows: quiet.follows, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
 }
 
 // PART 3 · ONE BRAND, ONE STORY: fold a later change into the story that already ran ----------------------------------------------
