@@ -183,8 +183,11 @@ export async function refreshAfterJob(job: string, jobStartedAt: number, o: { do
     const { limitMs, ...rest } = o;
     const deadline = Math.min(jobStartedAt + CALL_BUDGET_MS - 5_000, limitMs !== undefined ? jobStartedAt + limitMs : Infinity);
     if (deadline - Date.now() < (o.only === "captured" ? MIN_LEFT_CAPTURED_MS : MIN_LEFT_MS)) return null;
+    // N4c · a job run row for the sweep (not for tests, which inject deps).
+    const run = o.deps ? null : await (await import("../jobs/runs.server")).startRun("records-refresh", { note: job });
     const r = await refreshRecords({ job, deadline, ...rest });
     console.info("records refresh", job, { written: r.written.length, skipped: r.skipped, timed_out: r.timed_out, errors: r.errors.length });
+    await run?.finish(r.errors.length === 0, `${job} · ${r.written.length} written, ${r.skipped} skipped${r.timed_out ? ", timed out" : ""}${r.errors.length ? `, ${r.errors.length} errors` : ""}`);
     return r;
   } catch (e) { console.error("records refresh failed", job, short(e)); return null; }
 }

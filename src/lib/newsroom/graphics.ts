@@ -203,3 +203,10 @@ export type ShareTarget = { kind: "story" | "study" | "digest"; id: string; path
 export type ShareResult = ShareTarget & { ok: boolean; rebuilt: boolean; error: string | null };
 /** One pass's summary: a failure that built on the second try counts as rebuilt; what still fails is listed on /desk. */
 export const shareSummary = (rs: readonly ShareResult[]) => ({ checked: rs.length, rebuilt: rs.filter(r => r.rebuilt).length, failures: rs.filter(r => !r.ok).map(r => ({ kind: r.kind, id: r.id, path: r.path, error: r.error })) });
+
+/** N4c · the desk's per-picture answer in the door's shape ({ asset, usable, why }, at most eight): refs become their stored assets and
+ *  the problem word leads the why. */
+export function doorPictures(per: GraphicsAnswer["pictures"], refs: readonly { ref: string; asset: string }[]): { asset: string; usable: boolean; why: string }[] {
+  const assetOf = new Map(refs.map(r => [r.ref, r.asset]));
+  return per.slice(0, 8).map(x => ({ asset: (assetOf.get(x.ref) ?? x.ref).slice(0, 300), usable: x.usable, why: `${x.problem !== "none" ? `${x.problem}: ` : ""}${x.why}`.slice(0, 300) }));
+}

@@ -22,17 +22,24 @@ export async function handleIngestWire(request: Request): Promise<Response> {
       const text = await boundedText(request, 1024);
       let body: unknown = null; try { body = text ? JSON.parse(text) : null; } catch { /* invalid */ }
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) return Response.json({ error: "Expected empty JSON object" }, { status: 400 });
-      const { ingestWire } = await import("./ingest.server"), res = await ingestWire();
-      if (res.ok) {
-        // N4b · the news desk's turn comes first, with its own limit, so the story build's tail never starves it.
-        const [{ newsTurn }, { CALL_BUDGET_MS }] = await Promise.all([import("./newsroom/news.server"), import("./jobs/steps")]);
-        await newsTurn(started, CALL_BUDGET_MS);
-        await (await import("./stories/build.server")).afterJob("wire", started);
-      }
-      // The 15-minute wire call is the records sweeper (records/refresh.server.ts): whatever time the call has left rewrites due records.
-      // (History is the scheduled database job's, U2c: the poll no longer refreshes it.)
-      await (await import("./records/refresh.server")).refreshAfterJob("wire", started);
-      return res;
+      // N4c · the run's start row before any work, its finish row after (runs.ts).
+      const run = await (await import("./jobs/runs.server")).startRun("ingest-wire");
+      try {
+        const { ingestWire } = await import("./ingest.server"), res = await ingestWire();
+        const ingestMs = Date.now() - started;
+        let news = "";
+        if (res.ok) {
+          // N4b · the news desk's turn comes first, with its own limit, so the story build's tail never starves it.
+          const [{ newsTurn }, { CALL_BUDGET_MS }] = await Promise.all([import("./newsroom/news.server"), import("./jobs/steps")]);
+          const t = Date.now(); await newsTurn(started, CALL_BUDGET_MS); news = ` · news ${Math.round((Date.now() - t) / 100) / 10} s`;
+          await (await import("./stories/build.server")).afterJob("wire", started);
+        }
+        // The 15-minute wire call is the records sweeper (records/refresh.server.ts): whatever time the call has left rewrites due records.
+        // (History is the scheduled database job's, U2c: the poll no longer refreshes it.)
+        await (await import("./records/refresh.server")).refreshAfterJob("wire", started);
+        await run.finish(res.ok, `ingest ${res.ok ? "ok" : "failed"} in ${Math.round(ingestMs / 100) / 10} s${news}`);
+        return res;
+      } catch (e) { await run.finish(false, e instanceof Error ? e.message.slice(0, 120) : "error"); throw e; }
     }
     const text = await boundedText(request, WIRE_INGEST_BODY_LIMIT);
     if (text === null) return Response.json({ error: "Body exceeds 256 KB" }, { status: 413, headers: noStore });
@@ -41,6 +48,12 @@ export async function handleIngestWire(request: Request): Promise<Response> {
     const parsed = wireIngestPayload.safeParse(json);
     if (!parsed.success) return Response.json({ error: "Invalid payload", issues: parsed.error.issues.slice(0, 10).map(i => ({ path: i.path.join("."), message: i.message })) }, { status: 400, headers: noStore });
     const payload = parsed.data;
+    const { withRun } = await import("./jobs/runs.server");
+    return await withRun("wire-sampler", () => samplerWork(payload, started), () => ({ note: payload.kind }));
+  } catch (error) { return internal("Wire ingestion failed", error); }
+}
+async function samplerWork(payload: import("./wire-payload").WireIngestPayload, started: number): Promise<Response> {
+  {
     if (payload.kind === "items") {
       const { rows, skipped } = blueskyRows(payload.items, Date.now());
       let written = 0;
@@ -55,7 +68,7 @@ export async function handleIngestWire(request: Request): Promise<Response> {
     const rows = mentionRows(payload);
     const written = await mergeCounts(db, rows, false);
     return Response.json({ ok: true, window_start: rows[0]!.window_start, window_end: rows[0]!.window_end, terms: rows.length - 1, written }, { headers: noStore });
-  } catch (error) { return internal("Wire ingestion failed", error); }
+  }
 }
 
 export async function handleDiscourseTerms(request: Request): Promise<Response> {

@@ -136,3 +136,14 @@
 - [x] 5 /desk Design review + Engineering panels; memory facts; beats.md + README regenerated; drift tests; 390/1280 check
 - [x] 6 second reader re-run: Nos. 44, 90 (pass), 92 (hold)
 - [x] 7 proof: two test review runs, gate tests, health run live, design review fixtures (front/story/brand), reader pages unchanged; report; commit
+
+# Phase N4c · Five faults from the desks' first live hours
+- [x] 1 checklist numbers: stored facts count; checklist fingerprint per standards review; checklist holds of 7 days re-checked once after a fix; sweep of item 1
+- [x] 2 review pass: own schedule (≤2 stories, <40 s, start/finish rows), picture → standards → EIC; build tail stores sheets only
+- [x] 3 news desk beat: prompt + code beat check, possessive-safe line check, 72 h fixture replay
+- [x] 4 front top line: readers never see "Late"; follow-ups late only against their own interval; test with 22 Nov times
+- [x] 5 job_runs: start/finish rows for every scheduled job; health run reads them; /desk 24 h lines; story build durations
+- [x] Report, tests, commit
+- [ ] N4c open: an editor in chief hold is re-offered by the next pass and runs in engine order when it is the only story (no decision to make); owner to decide
+- [ ] N4c open: the story build still times out in the :00 and :30 wire jobs (ingest ~20 s there); it completes on :15 and :45 and in the library jobs
+- [ ] N4c open: three test-suite forecast rows in job_runs at 12:07 UTC 22 Nov (append-only; owner to decide)

@@ -21,11 +21,11 @@ describe("freshness", () => {
     const ok = freshness({ wire: { ran: ago(7), finished: ago(6) }, library_check: { ran: ago(40) }, forecast: { ran: "2026-11-15T15:33:42Z" } }, NOW, JOBS.filter(j => ["wire", "library_check", "forecast"].includes(j.id)));
     expect(freshnessLine(ok, NOW)).toEqual({ late: false, text: "Wire checked 6 minutes ago · Library crawl 40 minutes ago · Forecast 15 Nov" });
   });
-  it("late: more than twice the interval since the last finish turns the line into a plain warning", () => {
+  it("late: more than twice the interval since the last finish is late (on /status), and the reader line stays plain", () => {
     const rows = freshness({ wire: { ran: ago(47), finished: ago(47) } }, NOW, JOBS.filter(j => j.id === "wire"));
     expect(rows[0]!.state).toBe("late");
     expect(wireOnTime(rows)).toBe(false);
-    expect(freshnessLine(rows, NOW)).toEqual({ late: true, text: "Late: Wire check last ran 47 minutes ago (expected every 15 minutes)" });
+    expect(freshnessLine(rows, NOW)).toEqual({ late: false, text: "Wire checked 47 minutes ago" }); // N4c: lateness goes to /desk and /status, never the reader line
     // Exactly twice the interval is still on time.
     expect(freshness({ wire: { ran: ago(30) } }, NOW, JOBS.filter(j => j.id === "wire"))[0]!.state).toBe("on_time");
   });
@@ -44,10 +44,11 @@ describe("freshness", () => {
     expect(freshnessLine(rows, NOW)).toEqual({ late: false, text: "Wire checked 6 minutes ago · Library crawl 3 days ago · Forecast 15 Nov" });
     for (const id of ["library_check", "vanguard", "library_full", "crawl", "crops", "discourse", "wayback"] as const) expect(READER_FACING.has(id)).toBe(false);
   });
-  it("reader-facing lateness raises the warning (wire, story build, forecast and its follow-ups)", () => {
+  it("N4c · readers never get a lateness warning: a late story build shows on /status, the line stays the normal one", () => {
     expect([...READER_FACING].sort()).toEqual(["digest", "follow_ups", "forecast", "stories", "wire"]);
     const rows = freshness({ wire: { ran: ago(7), finished: ago(6) }, stories: { ran: ago(3 * 1440) } }, NOW, JOBS.filter(j => ["wire", "stories"].includes(j.id)));
-    expect(freshnessLine(rows, NOW)).toEqual({ late: true, text: "Late: Story build last ran 3 days ago (expected after each wire, library and forecast job)" });
+    expect(row(rows, "stories").state).toBe("late");
+    expect(freshnessLine(rows, NOW)).toEqual({ late: false, text: "Wire checked 6 minutes ago" });
   });
   it("knows the crawler's rhythms: hourly check slices and the daily vanguard crawl", () => {
     const rows = freshness({ vanguard: { ran: ago(30 * 60) } }, NOW);

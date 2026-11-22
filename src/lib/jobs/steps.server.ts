@@ -32,14 +32,18 @@ export async function advanceFollowUps(callStartedAt: number, runners: Record<st
     if (!await db.claim(row, iso, new Date(now() + STEP_LEASE_MS).toISOString())) return { idle: true, reason: "lost_claim" };
     const run = runners[row.job]?.[row.step];
     if (!run) { await db.finish(row, "error", iso, "no runner for this step"); return { step: row.step, run_key: row.run_key, status: "error" }; }
+    // N4c · the step's run row (start before, finish after; not when a test injects its own store).
+    const jr = store ? null : await (await import("./runs.server")).startRun("follow-up", { note: `${row.job} ${row.step} ${row.run_key}` });
     try {
       const out = await run(row.run_key);
       const failed = !!out && typeof out === "object" && (out as { ok?: unknown }).ok === false;
       const code = failed ? String((out as { code?: unknown }).code ?? "failed").slice(0, 280) : null;
       await db.finish(row, failed ? "error" : "done", new Date(now()).toISOString(), code);
+      await jr?.finish(!failed, `${row.job} ${row.step} ${row.run_key}${code ? `: ${code}` : ""}`);
       return { step: row.step, run_key: row.run_key, status: failed ? "error" : "done" };
     } catch (e) {
       await db.finish(row, "error", new Date(now()).toISOString(), short(e));
+      await jr?.finish(false, `${row.job} ${row.step} ${row.run_key}: ${short(e)}`);
       return { step: row.step, run_key: row.run_key, status: "error" };
     }
   } catch (e) {

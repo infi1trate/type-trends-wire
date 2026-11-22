@@ -11,6 +11,9 @@ type Job = keyof typeof ACTOR;
 
 export async function runDeskJobs(deadline: number): Promise<Record<string, string>> {
   const out: Record<string, string> = {}, left = () => deadline - Date.now(), now = Date.now();
+  // N4c · the job tail's desk work has its own run row; the health run has one of its own inside it.
+  const { startRun, withRun } = await import("../jobs/runs.server");
+  const run = await startRun("desk-jobs");
   try {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const [{ deskDoor }, { heldJobs }] = await Promise.all([import("../stories/desk.server"), import("./passes.server")]);
@@ -27,11 +30,12 @@ export async function runDeskJobs(deadline: number): Promise<Record<string, stri
     if (left() > 25_000 && await begin("checks", today)) { const r = await (await import("./datadesk.server")).runDataChecks(db, { write: true, force: true }); out["checks"] = r.why || (r.errors[0] ?? "ok"); }
     if (left() > 15_000 && await begin("backtest", today)) { const b = await (await import("./datadesk.server")).runBacktest(db, { write: true }).catch(e => ({ scored: false as const, why: e instanceof Error ? e.message : "error", runs: 0 })); out["backtest"] = b.scored ? `scored ${b.calls}` : b.why; }
     if (left() > 25_000 && new Date(now).getUTCDay() === 1 && await begin("proposal", new Date(now - 7 * 864e5 + 3600_000).toISOString())) { const p = await (await import("./datadesk.server")).runProposal(db); out["proposal"] = p.why; }
-    if (left() > 15_000 && await begin("health", today)) { const h = await (await import("./engineering.server")).runHealth(db, { write: true, force: true }); out["health"] = h.why || (h.errors[0] ?? "ok"); }
+    if (left() > 15_000 && await begin("health", today)) { const h = await withRun("health", async () => (await import("./engineering.server")).runHealth(db, { write: true, force: true }), x => ({ ok: !x.errors.length, note: x.why || x.errors[0] || "ok" })); out["health"] = h.why || (h.errors[0] ?? "ok"); }
     if (left() > 35_000 && !held.has("design review")) {
       const r = await (await import("./design-review.server")).runDesignReview(db, { deadline: deadline - 5000, gate: run => begin("design review", today, `design review:${run}:${today.slice(0, 10)}`) });
       out["design review"] = r.why || (r.errors[0] ?? "ok");
     }
   } catch (e) { out["error"] = e instanceof Error ? e.message.slice(0, 80) : "error"; }
+  await run.finish(!out["error"], Object.entries(out).map(([k, v]) => `${k}: ${v}`).join("; ") || "nothing due");
   return out;
 }

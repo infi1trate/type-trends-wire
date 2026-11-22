@@ -73,7 +73,7 @@ export function checkDay(check: PassCheck, starts: readonly PassStart[], ends: r
 }
 
 // JOB HOLDS -----------------------------------------------------------------------------------------------------------------------------
-export const HOLD_JOBS = ["share", "chart", "picks", "checks", "health", "design review", "backtest", "proposal"] as const;
+export const HOLD_JOBS = ["share", "chart", "picks", "checks", "health", "design review", "backtest", "proposal", "reviews"] as const;
 export type HoldJob = (typeof HOLD_JOBS)[number];
 export const HOLD_MAX_DAYS = 7;
 export const HOLD_ACTORS = ["engineering", "owner"] as const;

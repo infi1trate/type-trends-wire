@@ -170,7 +170,10 @@ describe("the door: hold, note, proposal status and the release rule", () => {
   it("a story standards held is released only by the editor in chief or the owner", async () => {
     const held = { state: "held", pending: false, heldBy: "standards", standardsPassed: false };
     expect((await handleDesk(post({ actor: "copy desk", action: "restore", id: "move:1" }), mk(held).d)).status).toBe(403);
-    expect((await handleDesk(post({ actor: "editor in chief", action: "restore", id: "move:1" }), mk(held).d)).status).toBe(201);
+    // N4c · a checklist hold standing is the owner's to release; the editor in chief places it only after standards passed it again.
+    expect((await handleDesk(post({ actor: "editor in chief", action: "restore", id: "move:1" }), mk(held).d)).status).toBe(403);
+    expect((await handleDesk(post({ actor: "editor in chief", action: "restore", id: "move:1" }), mk({ ...held, standardsPassed: true }).d)).status).toBe(201);
+    expect((await handleDesk(post({ actor: "owner", action: "restore", id: "move:1" }), mk(held).d)).status).toBe(201);
   });
   it("a note ships alone; a proposal's status needs the owner", async () => {
     expect((await handleDesk(post({ actor: "data", action: "note", subject_kind: "signal", subject: "imagery:photography_lifestyle", text: "Watch the dev tools count next week" }), mk(published).d)).status).toBe(201);

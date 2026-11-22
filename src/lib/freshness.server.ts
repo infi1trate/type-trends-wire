@@ -4,7 +4,7 @@
 import { healthFactsResult } from "./health-facts.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { healthFactsSchema } from "./health";
-import { VANGUARD_RUN_PREFIX, freshness, freshnessLine, wireOnTime, type FreshRow, type JobFact, type JobId } from "./freshness";
+import { VANGUARD_RUN_PREFIX, followUpsFact, freshness, freshnessLine, wireOnTime, type FreshRow, type JobFact, type JobId } from "./freshness";
 import { progress, type StepRow } from "./jobs/steps";
 import { fetchRealRuns } from "./real-runs";
 import { memo } from "./memo";
@@ -50,7 +50,7 @@ async function build(): Promise<FreshnessPayload> {
     discourse: { ran: hf?.bluesky_window_end ?? null },
     wayback: { ran: hf?.wayback_received_at ?? null },
     forecast: { ran: latestReal?.at ?? null, finished: latestReal?.at ?? null },
-    follow_ups: lastSteps ? { ran: lastSteps.queued_at, finished: lastSteps.finished_at, waiting_since: open?.queued_at ?? null, failing: lastSteps.failed.length > 0 } : { ran: null },
+    follow_ups: followUpsFact({ forecastAt: latestReal?.at ?? null, queuedAt: lastSteps?.queued_at ?? null, finishedAt: lastSteps?.finished_at ?? null, openSince: open?.queued_at ?? null, failed: (lastSteps?.failed.length ?? 0) > 0 }),
     stories: { ran: story },
     digest: { ran: hf?.brief?.created_at ?? null },
     // Before the first daily post the job is not late, just not started.

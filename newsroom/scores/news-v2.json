@@ -1,0 +1,106 @@
+{
+ "desk": "news",
+ "version": "v2",
+ "prompt_hash": "24e2d43c",
+ "run_at": "2026-11-22T11:48:39.598Z",
+ "note": "N4c: the last 72 hours of candidates replayed as fixture calls on the beat prompt; every pick is checked by the code beat rule.",
+ "days": [
+  {
+   "at": "2026-11-20T23:59:00Z",
+   "candidates": 40,
+   "why": "0 picked, 1 dropped by the line check",
+   "call_id": 54,
+   "picks": [],
+   "dropped": [
+    {
+     "item": 101035,
+     "line": "A study found AI produced better designs from research summaries and recommendations than from user comments alone.",
+     "reasons": [
+      "off the beat: not about a brand's identity, a website or digital product, type, or design tools and the trade"
+     ],
+     "title": "Can AI Generate Good Designs from Raw User Data?",
+     "after_code_fix": "kept"
+    }
+   ],
+   "passed_over": [],
+   "on_beat": [
+    {
+     "item": 101034,
+     "title": "Qualitative User-Research Methods: An Overview"
+    },
+    {
+     "item": 92549,
+     "title": "UX Conference March Announced (Mar 1 - Mar 4)"
+    },
+    {
+     "item": 92550,
+     "title": "UX Conference February Announced (Feb 22 - Feb 26)"
+    },
+    {
+     "item": 88698,
+     "title": "Everyone’s got the tools. Not everyone’s got the tricks."
+    }
+   ],
+   "within_rules": true,
+   "day": "2026-11-20"
+  },
+  {
+   "at": "2026-11-21T23:59:00Z",
+   "candidates": 20,
+   "why": "0 picked, 1 dropped by the line check",
+   "call_id": 55,
+   "picks": [],
+   "dropped": [
+    {
+     "item": 101035,
+     "line": "A study found AI made better designs from research summaries and recommendations than from user comments alone.",
+     "reasons": [
+      "off the beat: not about a brand's identity, a website or digital product, type, or design tools and the trade"
+     ],
+     "title": "Can AI Generate Good Designs from Raw User Data?",
+     "after_code_fix": "kept"
+    }
+   ],
+   "passed_over": [],
+   "on_beat": [
+    {
+     "item": 110485,
+     "title": "The judge used to be the user"
+    },
+    {
+     "item": 101034,
+     "title": "Qualitative User-Research Methods: An Overview"
+    }
+   ],
+   "within_rules": true,
+   "day": "2026-11-21"
+  },
+  {
+   "at": "2026-11-22T11:48:25.535Z",
+   "candidates": 12,
+   "why": "0 picked, 1 dropped by the line check",
+   "call_id": 56,
+   "picks": [],
+   "dropped": [
+    {
+     "item": 118734,
+     "line": "Jony Ive and Margaret Calvert are among ten designers who made posters marking the Design Museum’s decade in Kensington.",
+     "reasons": [
+      "off the beat: about museum, not a brand's identity or website"
+     ],
+     "title": "Jony Ive and Margaret Calvert create posters to celebrate decade of Design Museum in Kensington",
+     "after_code_fix": "off the beat: about museum, not a brand's identity or website"
+    }
+   ],
+   "passed_over": [],
+   "on_beat": [
+    {
+     "item": 110485,
+     "title": "The judge used to be the user"
+    }
+   ],
+   "within_rules": true,
+   "day": "2026-11-22"
+  }
+ ]
+}

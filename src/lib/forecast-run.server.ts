@@ -21,7 +21,9 @@ export async function handleForecastRun(request: Request): Promise<Response> {
   try {
     // The scheduled call stores the run, then queues brief, chart, ledger, taste, vibe and the story build as follow-up steps that the
     // five-minute library AI callback advances one at a time (jobs/steps.ts), so this request answers well inside the platform limit.
-    const { runForecast } = await import("./forecast.server"), result = await runForecast({}, { defer: true });
+    const { runForecast } = await import("./forecast.server"), { withRun } = await import("./jobs/runs.server");
+    // N4c · the forecast's run row (start before, finish after).
+    const result = await withRun("forecast", () => runForecast({}, { defer: true }), r => { const o = r as { ok?: unknown; run_id?: unknown; code?: unknown }; return { ok: o.ok !== false, note: o.ok === false ? `failed: ${String(o.code ?? "")}` : `run ${String(o.run_id ?? "")}` }; });
     return Response.json(result);
   }
   catch { return Response.json({ ok: false, code: "forecast_failed" }, { status: 500 }); }

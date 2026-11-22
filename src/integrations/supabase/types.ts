@@ -1469,6 +1469,56 @@ export type Database = {
         }
         Relationships: []
       }
+      job_runs: {
+        Row: {
+          at: string
+          detail: Json | null
+          id: number
+          items: Json | null
+          job: string
+          ms: number | null
+          note: string | null
+          ok: boolean | null
+          phase: string
+          slot: string | null
+          start_id: number | null
+        }
+        Insert: {
+          at?: string
+          detail?: Json | null
+          id?: never
+          items?: Json | null
+          job: string
+          ms?: number | null
+          note?: string | null
+          ok?: boolean | null
+          phase: string
+          slot?: string | null
+          start_id?: number | null
+        }
+        Update: {
+          at?: string
+          detail?: Json | null
+          id?: never
+          items?: Json | null
+          job?: string
+          ms?: number | null
+          note?: string | null
+          ok?: boolean | null
+          phase?: string
+          slot?: string | null
+          start_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_runs_start_id_fkey"
+            columns: ["start_id"]
+            isOneToOne: false
+            referencedRelation: "job_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_steps: {
         Row: {
           attempts: number
@@ -2819,6 +2869,70 @@ export type Database = {
           source?: string
         }
         Relationships: []
+      }
+      review_checklists: {
+        Row: {
+          at: string
+          fingerprint: string
+          id: number
+          review_id: number
+          story_id: string
+        }
+        Insert: {
+          at?: string
+          fingerprint: string
+          id?: never
+          review_id: number
+          story_id: string
+        }
+        Update: {
+          at?: string
+          fingerprint?: string
+          id?: never
+          review_id?: number
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_checklists_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: true
+            referencedRelation: "story_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_sheets: {
+        Row: {
+          at: string
+          hash: string
+          id: number
+          sheet: Json
+          story_id: string
+        }
+        Insert: {
+          at?: string
+          hash: string
+          id?: never
+          sheet: Json
+          story_id: string
+        }
+        Update: {
+          at?: string
+          hash?: string
+          id?: never
+          sheet?: Json
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_sheets_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       share_checks: {
         Row: {

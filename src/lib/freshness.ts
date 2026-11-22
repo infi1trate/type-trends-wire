@@ -12,7 +12,8 @@ export type Rhythm =
 export type JobId = "wire" | "library_ai" | "gfonts" | "producthunt" | "library_check" | "vanguard" | "library_full" | "crawl" | "crops" | "discourse" | "wayback" | "forecast" | "follow_ups" | "stories" | "digest" | "indicators";
 /** `rhythm_text` overrides the generated words when the cadence needs more than one interval to describe. */
 export type JobDef = { id: JobId; name: string; feeds: string; rhythm: Rhythm; rhythm_text?: string; runs_on: "scheduled" | "crawler" | "chained"; note?: string; late_after_ms?: number };
-/** Jobs whose lateness a reader notices directly: only these raise the warning in the Read shell. Crawler-side lateness shows on /status only. */
+/** Jobs whose lateness a reader would notice directly. N4c: no job's lateness reaches the Read shell any more (readers always get the
+ *  normal line); this list marks the rows /status and /desk name first. */
 export const READER_FACING: ReadonlySet<JobId> = new Set<JobId>(["wire", "stories", "forecast", "follow_ups", "digest"]);
 /** Crawler runs whose id starts with this prefix are the daily vanguard crawl (read from stored snapshots; nothing is written). */
 export const VANGUARD_RUN_PREFIX = "lib-vanguard-";
@@ -108,15 +109,10 @@ export function freshness(facts: Partial<Record<JobId, JobFact>>, now: number, j
   });
 }
 
-/** The single quiet line in the Read shell: three times, or a plain warning naming a late reader-facing job (READER_FACING).
- *  A late crawler-side job does not raise it; its last-run time is still stated plainly and its lateness shows on /status. */
+/** The single quiet line in the Read shell: when the wire was checked, the library crawled and the forecast made. N4c: readers always
+ *  get this line; lateness (each job against its own interval) is shown on /desk, the status page and in the engineering health run. */
 export function freshnessLine(rows: FreshRow[], now: number): { text: string; late: boolean } {
   const by = (id: JobId) => rows.find(r => r.id === id);
-  const late = rows.filter(r => r.state === "late" && READER_FACING.has(r.id));
-  if (late.length) {
-    const words = late.slice(0, 2).map(r => `${r.name} last ran ${ago(r.last_finished ?? r.last_ran, now)} (expected ${r.rhythm.toLowerCase()})`);
-    return { late: true, text: `Late: ${words.join(" · ")}${late.length > 2 ? ` · and ${late.length - 2} more on the status page` : ""}` };
-  }
   const wire = by("wire"), lib = by("library_check"), fc = by("forecast"), parts: string[] = [];
   if (wire) parts.push(`Wire checked ${ago(wire.last_finished ?? wire.last_ran, now)}`);
   if (lib) parts.push(`Library crawl ${ago(lib.last_finished ?? lib.last_ran, now)}`);
@@ -125,3 +121,12 @@ export function freshnessLine(rows: FreshRow[], now: number): { text: string; la
 }
 /** Live's "next check within 15 minutes" is only true when the wire job is on time. */
 export const wireOnTime = (rows: FreshRow[]) => rows.find(r => r.id === "wire")?.state === "on_time";
+
+/** N4c · the forecast's follow-ups run only after a forecast: they are due when the newest forecast has no follow-up run queued after it
+ *  (or steps are still open), and late only when that has lasted more than twice their own interval. Between forecasts they are idle. */
+export function followUpsFact(o: { forecastAt: string | null; queuedAt: string | null; finishedAt: string | null; openSince: string | null; failed: boolean }): JobFact {
+  if (!o.queuedAt) return { ran: null, ...(o.forecastAt ? { waiting_since: o.forecastAt } : { idle: true }) };
+  const owed = o.forecastAt && Date.parse(o.forecastAt) > Date.parse(o.queuedAt) + 5 * MIN ? o.forecastAt : null;
+  const waiting = o.openSince ?? owed;
+  return { ran: o.queuedAt, finished: o.finishedAt, failing: o.failed, ...(waiting ? { waiting_since: waiting } : { idle: true }) };
+}

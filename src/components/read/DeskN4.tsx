@@ -24,6 +24,8 @@ export type N4 = {
     gate: { id: number; at: string; item_id: number; item_title: string | null; commit_sha: string; tests: { passed: number; failed: number; skipped: number }; before_run: string; after_run: string; pass: boolean; checks: Check[] } | null;
     checks: readonly { id: string; name: string }[]; health: Item[]; health_run: { at: string; reason: string | null } | null; credits: { id: number; title: string; credits: number }[];
     holds?: { job: string; actor: string; reason: string | null; until: string; at: string }[];
+    runs?: { job: string; name: string; line: string; unfinished: number; failed: number }[];
+    late?: { id: string; name: string; last: string | null; rhythm: string }[];
     passes?: { schedule: { name: string; cron: string }; limits: { items: number; slot_min: number; pass_ms: number }; today: { check: string; status: string; planned: number; done: number; failing: { id: string; error: string }[]; passes: number; failed_passes: number }[] } | null;
   };
 };
@@ -102,6 +104,10 @@ export function DeskN4({ n }: { n: N4 }) {
       <h3 className="ed-h3 mt-6">Health run</h3>
       <p className="ed-small mt-3">{e.health_run ? `${storyTime(e.health_run.at)}: ${e.health_run.reason ?? ""}` : voiced("read.deskN4.noHealthRun")}</p>
       {e.health.length ? <ul className="ed-data mt-3 space-y-2">{e.health.map(i => <li key={i.id}><span className="ed-kicker">Item {i.id} · {i.status}</span> {i.title}<span className="ed-caption block">{i.why}</span></li>)}</ul> : null}
+      <h3 className="ed-h3 mt-6">Job runs, last 24 hours</h3>
+      {e.runs?.length ? <ul className="ed-data mt-3 space-y-2">{e.runs.map(r => <li key={r.job}><span className="ed-kicker">{r.name}</span> <span className={r.unfinished || r.failed ? "font-semibold" : undefined}>{r.line}</span></li>)}</ul> : <p className="ed-small mt-3">{voiced("read.deskN4.noRuns")}</p>}
+      <h3 className="ed-h3 mt-6">Late against their own interval</h3>
+      {e.late?.length ? <ul className="ed-data mt-3 space-y-2">{e.late.map(l => <li key={l.id}><span className="ed-kicker">{l.name}</span> last {l.last ? <time dateTime={l.last}>{storyTime(l.last)}</time> : "never"} ({l.rhythm.toLowerCase()})</li>)}</ul> : <p className="ed-small mt-3">{voiced("read.deskN4.noLate")}</p>}
       <h3 className="ed-h3 mt-6">Held jobs</h3>
       {e.holds?.length ? <ul className="ed-data mt-3 space-y-2">{e.holds.map(h => <li key={h.job}><span className="ed-kicker">{h.job}</span> held by {h.actor} until <time dateTime={h.until}>{storyTime(h.until)}</time><span className="ed-caption block">{h.reason ?? ""}</span></li>)}</ul> : <p className="ed-small mt-3">{voiced("read.deskN4.noHolds")}</p>}
       {e.passes ? <>

@@ -60,7 +60,7 @@ export type ReviewIO = {
   writerOut: () => Promise<boolean>;
   input: (id: string) => Promise<ReviewInput | null>;
   /** The newest standards pass for a story (to reuse when nothing it read has changed). */
-  lastStandards: (ids: string[]) => Promise<Map<string, { facts_hash: string; verdict: string; second_reader: string | null; at: string }>>;
+  lastStandards: (ids: string[]) => Promise<Map<string, { facts_hash: string; verdict: string; second_reader: string | null; at: string; reason?: string | null }>>;
   callsToday: (desk: DeskName) => Promise<number>;
   secondReader: (i: ReviewInput, signal: AbortSignal) => Promise<{ problems: Problem[]; call_id: number | null } | null>;
   chief: (i: ChiefInput, ids: string[], signal: AbortSignal) => Promise<{ answer: ChiefAnswer; call_id: number | null } | null>;
@@ -80,34 +80,60 @@ export type ReviewIO = {
   openFindings?: () => Promise<OpenFinding[]>;
   /** N3 · stories standards released over their second reader and the editor in chief has not placed since. */
   overruled?: () => Promise<PendingStory[]>;
+  /** N4c · stories a checklist item held in the last seven days under an earlier checklist fingerprint (checked again once). */
+  checklistRechecks?: () => Promise<PendingStory[]>;
 };
+/** N4c · a checklist hold: the standards hold made before the second reader ran (a checklist item failed). */
+export const isChecklistHold = (r: { verdict: string; second_reader: string | null }) => r.verdict === "hold" && r.second_reader === "not run";
+/** N4c · stories whose newest standards review is a checklist hold made under another checklist fingerprint (none counts as another).
+ *  Rows newest first. Once re-checked, the newest review carries this fingerprint, so a story is checked again only once per change. */
+export function recheckDue(rows: readonly { id: number; story_id: string; verdict: string; second_reader: string | null; at: string; fingerprint: string | null; reason?: string | null }[], fingerprint: string): string[] {
+  const newest = new Map<string, (typeof rows)[number]>();
+  for (const r of [...rows].sort((a, b) => b.id - a.id)) if (!newest.has(r.story_id)) newest.set(r.story_id, r);
+  // A re-check that passed and still waits for the editor in chief (the story is still held by standards) is offered again.
+  return [...newest.values()].filter(r => (isChecklistHold(r) && r.fingerprint !== fingerprint) || recheckPassed(r)).map(r => r.story_id);
+}
+export const RECHECKED = "Re-checked after a checklist fix.";
+/** A standards pass made by a re-check after a checklist fix. */
+export const recheckPassed = (r: { verdict: string; reason?: string | null }) => r.verdict === "pass" && (r.reason ?? "").startsWith(RECHECKED);
 export type ReviewSummary = { checked: number; held: string[]; passed: string[]; released: string[]; lead: string | null; second_reader: { ran: number; skipped: Fallback[] }; chief: "called" | "no decision" | Fallback | "none"; rechecked: number; errors: string[];
-  /** N3 · pictures checked by the graphics desk, and the editor in chief's lead the code refused. */ pictures?: { checked: number; changed: number }; refused?: { id: string; why: string } | null };
+  /** N3 · pictures checked by the graphics desk, and the editor in chief's lead the code refused. */ pictures?: { checked: number; changed: number }; refused?: { id: string; why: string } | null;
+  /** N4c · stories that wait for the next pass (no time for their picture check). */ waiting?: string[] };
 
 const dayOf = (iso: string) => iso.slice(0, 10);
 const chiefStory = (p: PendingStory, i: ReviewInput, now: number, again = false): ChiefStory => ({ id: p.id, type: i.id.startsWith("census:") ? "census" : i.id.startsWith("quiet:") ? "quiet change" : p.type, headline: i.headline, deck: i.deck, facts: i.numbers.length, picture: i.picture?.kind ?? "none",
   basis: p.basis === "measured" || p.basis === "ai" ? p.basis : null, score: p.components, age_hours: Math.max(0, Math.round((now - Date.parse(p.happened_at)) / 36e5)), domains: p.domains, ...(again ? { offered_again: true } : {}) });
 
 /** One review pass: standards on what is ready (and on published stories whose facts changed), then the editor in chief. Never throws. */
-export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<ReviewSummary> {
+export async function runDesks(io: ReviewIO, o: { deadline: number; /** N4c · at most this many stories in one pass (picture, standards) */ limit?: number;
+  /** N4c · the pass's start row, written with the chosen stories before any work; false stops the pass (another pass took the slot). */
+  onStart?: (ids: string[]) => Promise<boolean>;
+  /** N4c · out of time means wait for the next pass, never a fallback (the scheduled pass comes back in five minutes). */
+  waitOnTime?: boolean }): Promise<ReviewSummary> {
   const sum: ReviewSummary = { checked: 0, held: [], passed: [], released: [], lead: null, second_reader: { ran: 0, skipped: [] }, chief: "none", rechecked: 0, errors: [] };
   const left = () => o.deadline - io.now(), err = (e: unknown, at: string) => sum.errors.push(`${at}: ${e instanceof Error ? e.message.slice(0, 80) : "error"}`);
   try {
-    const [pending, rechecks, writerOut] = await Promise.all([io.pending(), io.rechecks().catch(e => (err(e, "rechecks"), [])), io.writerOut().catch(() => true)]);
+    const [pending, rechecks, writerOut, fixed] = await Promise.all([io.pending(), io.rechecks().catch(e => (err(e, "rechecks"), [])), io.writerOut().catch(() => true), io.checklistRechecks ? io.checklistRechecks().catch(e => (err(e, "checklist rechecks"), [] as PendingStory[])) : Promise.resolve([] as PendingStory[])]);
     const ready = pending.filter(p => readyForReview(p, { now: io.now(), writerOut }));
-    const todo = [...ready.map(p => ({ p, published: false })), ...rechecks.filter(r => !ready.some(x => x.id === r.id)).map(p => ({ p, published: true }))];
+    const all = [...ready.map(p => ({ p, published: false, recheck: false })), ...fixed.filter(r => !ready.some(x => x.id === r.id)).map(p => ({ p, published: false, recheck: true })),
+      ...rechecks.filter(r => !ready.some(x => x.id === r.id) && !fixed.some(x => x.id === r.id)).map(p => ({ p, published: true, recheck: false }))];
+    const todo = o.limit != null ? all.slice(0, o.limit) : all;
+    if (o.onStart && !(await o.onStart(todo.map(t => t.p.id)))) { sum.errors.push("start: another pass took this slot"); return sum; }
     const overruled = io.overruled ? await io.overruled().catch(e => (err(e, "overruled"), [] as PendingStory[])) : [];
     if (!todo.length && !overruled.length && !(await io.reoffers().catch(() => [])).length) return sum;
     const findings = todo.length && io.openFindings ? await io.openFindings().catch(e => (err(e, "findings"), [] as OpenFinding[])) : [];
     sum.pictures = { checked: 0, changed: 0 };
     const last = await io.lastStandards(todo.map(t => t.p.id)).catch(() => new Map());
     // A · the checklist, then the second reader for what passed it.
-    const inputs = new Map<string, ReviewInput>(), hashes = new Map<string, string>(), passed: { p: PendingStory; published: boolean; secondReader: SecondReader }[] = [], toRead: { p: PendingStory; published: boolean; i: ReviewInput; hash: string }[] = [];
+    const inputs = new Map<string, ReviewInput>(), hashes = new Map<string, string>(), passed: { p: PendingStory; published: boolean; secondReader: SecondReader; recheck?: boolean }[] = [], toRead: { p: PendingStory; published: boolean; i: ReviewInput; hash: string; recheck?: boolean }[] = [];
+    const rechecked = new Set(todo.filter(t => t.recheck).map(t => t.p.id));
     for (const t of todo) {
       let i = await io.input(t.p.id).catch(e => (err(e, `input ${t.p.id}`), null)); if (!i) continue;
       // N3 · the graphics desk checks the picture first, so the checklist judges the final picture (a story waiting for review only).
       if (!t.published && io.picture) {
         const g = await io.picture(t.p.id, i, { msLeft: left() }).catch(e => (err(e, `picture ${t.p.id}`), null));
+        // N4c · no time for the check in this pass: the story waits for the next one (nothing recorded).
+        if (g?.verdict === "wait") { sum.waiting = [...(sum.waiting ?? []), t.p.id]; continue; }
         if (g) {
           sum.pictures!.checked++;
           if (g.changed) { sum.pictures!.changed++; i = (await io.input(t.p.id).catch(() => null)) ?? i; }
@@ -117,18 +143,21 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
       i = { ...i, findings };
       const hash = factsHash(i); inputs.set(t.p.id, i); hashes.set(t.p.id, hash);
       const prev = last.get(t.p.id);
-      if (prev && prev.facts_hash === hash && prev.verdict === "pass") { if (!t.published) passed.push({ p: t.p, published: false, secondReader: (prev.second_reader as SecondReader | null) ?? "ran" }); continue; }
+      // A pass for these same facts stands (for a re-check: only the pass its re-check made); the story goes on to the editor in chief.
+      if (prev && prev.facts_hash === hash && prev.verdict === "pass" && (!t.recheck || recheckPassed(prev))) { if (!t.published) passed.push({ p: t.p, published: false, secondReader: (prev.second_reader as SecondReader | null) ?? "ran", recheck: t.recheck }); continue; }
       if (t.published && prev && prev.facts_hash === hash) continue;
       sum.checked++; if (t.published) sum.rechecked++;
       const items = checklist(i);
       if (failed(items).length) {
         const reason = checklistReason(items)!;
         await io.record([{ story_id: t.p.id, desk: "standards", verdict: "hold", reason, facts_hash: hash, checklist: items, second_reader: "not run", prompt_version: io.promptVersion("standards") }]);
+        // N4c · a re-check that still fails: the story stays held (it already is); the new row records this checklist's verdict.
+        if (t.recheck) { sum.held.push(t.p.id); continue; }
         const d = await io.door("standards", { action: "hold", id: t.p.id, reason });
         if (d.ok) sum.held.push(t.p.id); else sum.errors.push(`hold ${t.p.id}: ${d.reason ?? d.status}`);
         continue;
       }
-      toRead.push({ p: t.p, published: t.published, i, hash });
+      toRead.push({ p: t.p, published: t.published, i, hash, recheck: t.recheck });
     }
     // The second reader: at most the desk's daily cap, a few at a time, only while a call still fits before the deadline.
     const used = await io.callsToday("standards").catch(() => Infinity);
@@ -142,7 +171,7 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
         else if (left() < DESK_CALL_MIN_MS) why = "time ran out";
         else { budget--; res = await io.secondReader(t.i, AbortSignal.timeout(Math.max(1000, left() - 2000))).catch(() => null); if (!res) why = "call failed"; }
         // Out of time: a story waiting for review waits for the next build (unless it has waited long); a published one is checked later.
-        if (why === "time ran out" && (t.published || io.now() - Date.parse(t.p.created_at) < 2 * READY_AFTER_MS)) continue;
+        if (why === "time ran out" && (o.waitOnTime || t.published || io.now() - Date.parse(t.p.created_at) < 2 * READY_AFTER_MS)) { sum.waiting = [...(sum.waiting ?? []), t.p.id]; continue; }
         const problems = res?.problems ?? [];
         if (res && blockers(problems).length) {
           const reason = blockerReason(problems)!;
@@ -153,8 +182,9 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
           continue;
         }
         if (res) sum.second_reader.ran++; else sum.second_reader.skipped.push(why!);
-        await io.record([{ story_id: t.p.id, desk: "standards", verdict: "pass", reason: why ? `reviewed without second reader: ${why}` : null, facts_hash: t.hash, checklist: items, problems, second_reader: res ? "ran" : why!, call_id: res?.call_id ?? null, prompt_version: io.promptVersion("standards") }]);
-        if (!t.published) passed.push({ p: t.p, published: false, secondReader: res ? "ran" : why! });
+        const passWhy = [t.recheck ? RECHECKED : null, why ? `reviewed without second reader: ${why}` : null].filter(Boolean).join(" ") || null;
+        await io.record([{ story_id: t.p.id, desk: "standards", verdict: "pass", reason: passWhy, facts_hash: t.hash, checklist: items, problems, second_reader: res ? "ran" : why!, call_id: res?.call_id ?? null, prompt_version: io.promptVersion("standards") }]);
+        if (!t.published) passed.push({ p: t.p, published: false, secondReader: res ? "ran" : why!, recheck: !!t.recheck });
       }
     };
     await Promise.all(Array.from({ length: DESK_CONCURRENCY }, worker));
@@ -188,7 +218,7 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
       else if (left() < DESK_CALL_MIN_MS) {
         // Out of time with a decision to make: the stories wait for the next build (they keep their standards pass), unless stale.
         const stale = offered.filter(x => io.now() - Date.parse(x.p.created_at) >= 2 * READY_AFTER_MS);
-        if (!stale.length) { sum.chief = "time ran out"; return sum; }
+        if (!stale.length || o.waitOnTime) { sum.chief = "time ran out"; sum.waiting = [...(sum.waiting ?? []), ...offered.map(x => x.p.id)]; return sum; }
         chiefWhy = "time ran out";
       } else {
         const ci: ChiefInput = { now: new Date(io.now()).toISOString(), stories: offered.map(x => chiefStory(x.p, x.i, io.now(), x.again)), leads: day.leads, slots: slotsToday, lead_open: day.leadOpen, beats: day.beats };
@@ -209,7 +239,7 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
     }
     for (const [n, id] of d.run.entries()) {
       const x = offered.find(y => y.p.id === id)!, lead = d.lead === id;
-      const note = reviewedLine({ secondReader: x.secondReader, chief: chiefWhy, place: n + 1, of: d.run.length, lead, leadBy: d.leadBy ?? "desk", refused: d.refused ?? null })
+      const note = (rechecked.has(id) ? `${RECHECKED} ` : "") + reviewedLine({ secondReader: x.secondReader, chief: chiefWhy, place: n + 1, of: d.run.length, lead, leadBy: d.leadBy ?? "desk", refused: d.refused ?? null })
         + (d.refused && d.refused.id === id && !lead ? ` The editor in chief chose it to lead; the code refused: ${d.refused.why}.` : "");
       await io.record([{ story_id: id, desk: "editor in chief", verdict: lead ? "lead" : "run", reason: note, facts_hash: hashOf(id), placement: n + 1, basis: answer ? "desk" : "engine order", call_id: callId, prompt_version: io.promptVersion("editor in chief") }]);
       const r = await io.door("editor in chief", { action: "restore", id, note });

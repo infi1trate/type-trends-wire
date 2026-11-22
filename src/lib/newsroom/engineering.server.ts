@@ -130,6 +130,10 @@ export async function runHealth(db: Admin, o: { now?: number; write?: boolean; f
     jobs.set("crawl", (crawl.data ?? []).map(r => ({ started_at: r.started_at, finished_at: r.finished_at, ok: r.status === "finished" ? true : r.status === "running" ? null : false })));
     jobs.set("forecast", (fc.data ?? []).filter(r => r.computed_at).map(r => ({ started_at: r.computed_at!, finished_at: null, ok: r.status === "ok" ? true : r.status === "error" ? false : null, error: r.error ? String(r.error).slice(0, 160) : null })));
     for (const [name, runs] of jobs) found.push(...e.jobProblems(name, runs, now));
+    // N4c · the product's own run rows: a run that started and never finished, or one over three times its 14-day median.
+    const jr = await import("../jobs/runs");
+    const runRows = jr.pairRuns(await (await import("../jobs/runs.server")).loadRunRows(db, { days: e.HEALTH_DAYS, now }), now);
+    for (const job of Object.keys(jr.RUN_JOBS)) found.push(...jr.runProblems(job, runRows, e.HEALTH_PREFIX));
     const { healthPayload } = await import("../health.server");
     const h = await healthPayload().catch(() => null);
     found.push(...e.staleProblems(h?.jobs ?? []));
@@ -144,7 +148,7 @@ export async function runHealth(db: Admin, o: { now?: number; write?: boolean; f
     const nh = (hist.data ?? [])[0];
     found.push(...e.historyProblem(nh ? { ms: nh.ms, started_at: nh.started_at } : null));
     out.found = found; out.ran = true;
-    out.facts = { jobs: [...jobs.entries()].map(([name, rs]) => ({ name, runs: rs.length, newest: rs[0]?.started_at ?? null, newest_ok: rs[0]?.ok ?? null })), review_run: newest?.run ?? null, desk_calls_24h: deskCalls.length, writer_calls_24h: (usage.data ?? []).filter(u => !deskUsage.has(u.id)).length, texts_24h: (st.data?.length ?? 0) + (sy.data?.length ?? 0) + (dg.data?.length ?? 0), history_ms: nh?.ms ?? null };
+    out.facts = { jobs: [...jobs.entries()].map(([name, rs]) => ({ name, runs: rs.length, newest: rs[0]?.started_at ?? null, newest_ok: rs[0]?.ok ?? null })), job_runs: runRows.length, review_run: newest?.run ?? null, desk_calls_24h: deskCalls.length, writer_calls_24h: (usage.data ?? []).filter(u => !deskUsage.has(u.id)).length, texts_24h: (st.data?.length ?? 0) + (sy.data?.length ?? 0) + (dg.data?.length ?? 0), history_ms: nh?.ms ?? null };
     out.why = `${found.length} problems found`;
     if (!o.write) return out;
     const { deskDoor } = await import("../stories/desk.server");

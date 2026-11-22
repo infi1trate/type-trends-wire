@@ -78,7 +78,10 @@ export function checklist(i: ReviewInput): ItemResult[] {
   const out: ItemResult[] = [];
   // 1 · numbers: the writer's own rule over headline, deck and body (the sheet; without one, the stored lines stand as the sheet).
   {
-    const sheet: WriterFacts = i.sheet ?? { type: i.type, kind: i.type, sector: null, brands: [], changes: [], copy: [], headline_call: null, numbers: [], lines: i.facts.map(f => ({ text: f.text, basis: null })), dates: [], rebrand: false };
+    // N4c · the story's own stored facts count too: the writer's sheet replaces a stored share line with its own number for that signal
+    // ("Media: 8.3% in run 13 → 17.9% in run 16" becomes "5 of 28 … (17.9%)"), which drops the earlier run's share the deck cites.
+    const stored = i.facts.map(f => ({ text: f.text, basis: null }));
+    const sheet: WriterFacts = i.sheet ? { ...i.sheet, lines: [...i.sheet.lines, ...stored] } : { type: i.type, kind: i.type, sector: null, brands: [], changes: [], copy: [], headline_call: null, numbers: [], lines: stored, dates: [], rebrand: false };
     const bad = numberFailures([i.headline, i.deck ?? "", ...i.body].join("\n"), sheet);
     out.push(r("numbers", bad.length ? "fail" : "pass", bad.length ? `not on the facts sheet: ${bad.slice(0, 6).join(", ")}` : null));
   }

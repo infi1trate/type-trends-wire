@@ -89,6 +89,9 @@ export async function n4Panels(db: Admin, now = Date.now()) {
       // N4b · the job holds in force (who, why, until when) and today's share and chart passes.
       holds: await import("./passes.server").then(m => m.heldJobs(db, now)).catch(() => []),
       passes: await import("./passes.server").then(m => m.passesPanel(db, now)).catch(() => null),
+      // N4c · the last 24 hours of the product's job runs, one line per job, and the scheduled lateness the front page no longer shows.
+      runs: await Promise.all([import("../jobs/runs"), import("../jobs/runs.server")]).then(async ([jr, js]) => jr.jobLines(jr.pairRuns(await js.loadRunRows(db, { days: 1, now }), now), now)).catch(() => []),
+      late: await import("../freshness.server").then(m => m.loadFreshness()).then(f => f.rows.filter(r => r.state === "late").map(r => ({ id: r.id, name: r.name, last: r.last_finished ?? r.last_ran, rhythm: r.rhythm }))).catch(() => []),
     },
   };
 }

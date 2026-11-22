@@ -265,6 +265,9 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
     if (h && b.action !== "hold" && actor !== "owner") {
       if (h.pending && (actor !== "editor in chief" || !h.standardsPassed)) return { status: 403, body: { error: "refused", reason: "A story waiting for review runs only when standards passed it and the editor in chief places it." }, decision: "refused", reason: `${actor} cannot run a story waiting for review.` };
       if (h.state === "held" && h.heldBy === "standards" && actor !== "editor in chief") return { status: 403, body: { error: "refused", reason: "A story the standards desk held is released only by the editor in chief or the owner." }, decision: "refused", reason: `${actor} cannot release a story standards held.` };
+      // N4c · the editor in chief releases a story standards held only after standards passed it since (a re-check after a checklist fix,
+      // or a pass over its second reader); a checklist hold standing is released only by the owner.
+      if (b.action === "restore" && h.state === "held" && h.heldBy === "standards" && actor === "editor in chief" && !h.standardsPassed) return { status: 403, body: { error: "refused", reason: "A story standards held runs only after standards passed it again; a checklist hold is released only by the owner." }, decision: "refused", reason: "editor in chief cannot release a story standards still holds." };
     }
   }
   if (b.action === "hold") {

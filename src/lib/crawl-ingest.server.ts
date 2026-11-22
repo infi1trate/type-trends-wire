@@ -83,6 +83,17 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
     const result = crawlPayload.safeParse(json);
     if (!result.success) return Response.json({ error: "Invalid input", issues: result.error.issues.map(({ path, message }) => ({ path: path.join("."), message })) }, { status: 400 });
     const payload = result.data;
+    // N4c · the batch's run row (start before the work, finish after).
+    const { withRun } = await import("./jobs/runs.server");
+    return await withRun("crawl-ingest", () => crawlWork(payload, started, ctx), r => ({ ok: r.status < 400, note: `${payload.kind} · ${r.status}` }), { note: payload.kind });
+  } catch (error) {
+    // Never log payloads, credentials, or provider errors that may contain input.
+    console.error("Crawler ingestion failed", error instanceof Error ? error.name : "UnknownError");
+    return Response.json({ error: "Internal error" }, { status: 500 });
+  }
+}
+async function crawlWork(payload: import("zod").infer<typeof crawlPayload>, started: number, ctx: IngestContext): Promise<Response> {
+  {
     if (payload.kind === "library_sync" || payload.kind === "library_snapshots") {
       const { ingestLibrary } = await import("./library-ingest.server");
       const res = await ingestLibrary(payload);
@@ -151,9 +162,5 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
     await (await import("./stories/build.server")).afterJob("crawl-finish", started);
     await (await import("./records/refresh.server")).refreshAfterJob("crawl-finish", started, { force: true });
     return Response.json({ ok: true, written: data.length });
-  } catch (error) {
-    // Never log payloads, credentials, or provider errors that may contain input.
-    console.error("Crawler ingestion failed", error instanceof Error ? error.name : "UnknownError");
-    return Response.json({ error: "Internal error" }, { status: 500 });
   }
 }
