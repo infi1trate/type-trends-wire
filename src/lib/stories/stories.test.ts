@@ -14,7 +14,7 @@ import { runBuild, toRow, type StoryRowOut } from "./build.server";
 import { roundups } from "./editor";
 
 const NOW = "2026-11-16T12:00:00.000Z";
-const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => { const [dimension, value] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)]; return { dimension, value, scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, sample: { q: "2026Q4", n: scope === "all" ? 150 : 50, s: o.current_share ?? 0.3 }, ...o }; };
+const row = (key: string, scope: string, o: Partial<SignalRow> = {}): SignalRow => { const [dimension, value] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)]; return { dimension, value, scope, status: "ok", stage: "accelerating", momentum: 2, current_share: 0.3, next_wave_score: 1, sites: 20, sample: { q: "2026Q4", n: scope === "all" ? 150 : 50, s: o.current_share ?? 0.3 }, quarters: [{ q: "2026Q1", n: 50, s: 0.02 }, { q: "2026Q4", n: 50, s: o.current_share ?? 0.3 }], ...o }; }; // P2b · a well-read earlier quarter below the floor
 const SECTORS = ["fintech", "ai", "dev-tools"];
 function sites(): SiteNow[] {
   const out: SiteNow[] = [];

@@ -50,7 +50,8 @@ describe("L2b · the gate checks layout shift and largest paint", () => {
   it("largest paint: over 2,500 ms fails, unless it was over before and is not slower", () => {
     const slow = check(gate(run("B", "before"), run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 2600 } : {}))), "largest_paint");
     expect(slow.ok).toBe(false);
-    expect(slow.problems).toEqual(["A story page at 390 px: largest paint 2600 ms, over 2500 ms and 1400 ms worse than the middle of its last 1 run (1200 ms; tolerance 300 ms)."]);
+    // P2b: with fewer than three after runs since the browser-name fix, largest paint is judged against the gate's own before run.
+    expect(slow.problems).toEqual(["A story page at 390 px: largest paint 2600 ms, over 2500 ms and 1400 ms worse than the before run (1200 ms; tolerance 300 ms)."]);
     const was = run("B", "before", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 3000 } : {}));
     expect(check(gate(was, run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 2900 } : {}))), "largest_paint").ok).toBe(true);
     expect(check(gate(was, run("A", "after", (p, w) => (p === "story" && w === 390 ? { lcp_ms: 3100 } : {}))), "largest_paint").ok).toBe(true); // P2: within the 300 ms tolerance

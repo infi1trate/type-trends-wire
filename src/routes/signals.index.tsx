@@ -27,7 +27,7 @@ export const Route = createFileRoute("/signals/")({
 function Signals() {
   const v = parseSignalsSearch(Route.useSearch());
   return <DigestShell label="Signals" section="signals" lens>
-    <Later id="signals-later" before={<TitleBlock kicker={`Signals · ${sectorName(resolveSector(v.sector))}`} title="What deserves your attention" deck={null} />} shapes={[{ kind: "block", height: 96 }, { kind: "rows", n: 12, height: ROW.ledger }]}>
+    <Later id="signals-later" before={<TitleBlock kicker={`Signals · ${sectorName(resolveSector(v.sector))}`} title="What deserves your attention" h1="ed-cover hold-signals-title" deck={null} />} shapes={[{ kind: "block", height: 96 }, { kind: "rows", n: 12, height: ROW.ledger }]}>
       <SignalsIndexView v={v} />
     </Later>
   </DigestShell>;

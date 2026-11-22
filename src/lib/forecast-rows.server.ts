@@ -19,3 +19,20 @@ const runRows = memoBy(6 * 3_600_000, async (runId: number): Promise<SignalRow[]
 }, { key: id => String(id), max: 12 });
 /** The run's rows (cached), or [] when it has none yet. */
 export const forecastRunRows = (runId: number): Promise<SignalRow[]> => runRows(runId).catch((e: unknown) => { if (e instanceof Error && e.message === EMPTY) return []; throw e; });
+
+/** P2b · the crossover rule reads a row's every stored quarter (~1.8 KB a row, 2.5 MB for a whole run against 0.1 MB for the latest
+ *  quarter alone), so the shared row read keeps only `sample` and the story build reads quarters for the few rows that pass every other
+ *  crossover check (`crossoverQuarterNeeds`). */
+export const FORECAST_QUARTERS_COLS = "dimension,value,scope,quarters:evidence->quarters";
+export async function forecastRowQuarters(runId: number, keys: { key: string; scope: string }[]): Promise<Map<string, unknown>> {
+  const out = new Map<string, unknown>(), want = new Set(keys.map(k => `${k.key}|${k.scope}`));
+  if (!keys.length) return out;
+  const split = keys.map(k => { const i = k.key.indexOf(":"); return { d: k.key.slice(0, i), v: k.key.slice(i + 1), scope: k.scope }; });
+  const { data, error } = await supabaseAnon().from("forecasts").select(FORECAST_QUARTERS_COLS).eq("run_id", runId)
+    .in("dimension", [...new Set(split.map(x => x.d))]).in("value", [...new Set(split.map(x => x.v))]).in("scope", [...new Set(split.map(x => x.scope))]).limit(1000);
+  if (error) throw error;
+  for (const r of (data ?? []) as unknown as { dimension: string; value: string; scope: string; quarters: unknown }[]) {
+    const k = `${r.dimension}:${r.value}|${r.scope}`; if (want.has(k)) out.set(k, r.quarters);
+  }
+  return out;
+}

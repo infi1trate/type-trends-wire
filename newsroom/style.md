@@ -197,7 +197,11 @@ A sentence may not call a share “flat”, “unchanged”, “stable” or “
 
 ### More homepages read is not a change
 
-A share that rose between two forecast runs because many more of the sector's homepages were read is not a rise: the stage change or crossover is built only when the earlier run read at least 80% as many homepages as the later one, and at least 15. Not: “It now sits on 25.0% of media homepages, up from 8.3%.” (runs 13 and 16); “It now sits on 17.9% of media homepages, up from 8.3%.” (runs 13 and 16).
+A share that rose between two forecast runs because many more of the sector's homepages were read is not a rise: the stage change or crossover is built only when the earlier run read at least 80% as many homepages as the later one, and at least 15.
+
+### A crossover must be new to the sector
+
+A crossover says a signal has just reached a sector, so the sector's own history must show it was not there before: in the later run's stored quarters (the last 12), every earlier quarter with at least 15 homepages read must sit below 10%, or it is “already there, not a crossover”. The “up from” figure is the most recent of those quarters and the sentence names it (“up from 4.0% in 2026 Q1”), never the earlier run's figure; with no such quarter it is “no earlier reading to compare” and no story is built. Not: “It now sits on 25.0% of media homepages, up from 8.3%.” (runs 13 and 16 read 24 and 28 media homepages; 2026 Q1 already read 18.5% of 27); “It now sits on 17.9% of media homepages, up from 8.3%.” (runs 13 and 16 read 24 and 28 media homepages; 2026 Q1 already read 11.1% of 27).
 
 ### The copy desk (lines that are not written text)
 

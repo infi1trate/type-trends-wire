@@ -20,7 +20,7 @@ import { carouselEventIds, isShowcaseSector, withoutRotations } from "../carouse
 import { splitChecked, type Condition } from "../integrity";
 import {
   breakoutCandidates, context, counterMoveCandidates, crossoverCandidates, firstSeenCandidates, inline, isVisibleMove, launchCandidate, moveCandidate,
-  newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops, type ReadGrowth,
+  newsCandidates, newsMatcher, noDollar, shiftCandidates, traitDelta, whiteSpaceCandidates, type BuildInput, type Ctx, type NewsDrops, type NotNew, type ReadGrowth,
 } from "./candidates";
 import { AI_EVENTS, COUNTER_HELD_REASON, countWord, ESTIMATE_ONLY_REASON, ROUNDUP_MIN, WHITE_SPACE_NOT_APPLICABLE, type Candidate, type Fact } from "./types";
 
@@ -280,7 +280,7 @@ export function shifts(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
 }
 
 // EVERYTHING -----------------------------------------------------------------------------------------------------------------------
-export type AllCandidates = { /** P2 · comparisons refused as "more homepages read, not a change". */ moreRead?: ReadGrowth[]; /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; /** W1c · other-page changes that follow the homepage (facts on the brand's own story). */ follows?: QuietFollow[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
+export type AllCandidates = { /** P2 · comparisons refused as "more homepages read, not a change". */ moreRead?: ReadGrowth[]; /** P2b · crossovers refused by the sector's own stored quarters ("already there", "no earlier reading"). */ notNew?: NotNew[]; /** W1b · every change considered as a quiet change, with its outcome. */ quiet?: QuietVerdict[]; /** W1c · other-page changes that follow the homepage (facts on the brand's own story). */ follows?: QuietFollow[]; candidates: Candidate[]; ctx: Ctx; newsDropped: number; newsKept: number; newsDrops: NewsDrops; reversed: number[]; reversedIdentity: string[]; groups: BrandGroup[]; tape: Record<number, string>;
   /** E2e · changes that failed the integrity check (Data view only): event id, its label ("Seen once" / "Alternating") and the conditions. */
   unconfirmed: { id: number; label: string; failed: Condition[] }[] };
 /** E2e · the input with only the passing part of each live change (integrity.ts); unchanged when it carries no checks. */
@@ -347,12 +347,12 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   // W1c · a page that follows its own homepage adds one fact to the brand's own move or rebrand story instead.
   const own = quiet.follows.length ? withFollowFacts(brand, quiet.follows) : brand;
   // P2 · stage changes and crossovers whose earlier run read too few of the sector's homepages are recorded, never built.
-  const moreRead: ReadGrowth[] = [];
+  const moreRead: ReadGrowth[] = [], notNew: NotNew[] = [];
   const candidates = [
-    ...own, ...unclear, ...shifts(ctx, moreRead), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx, moreRead),
+    ...own, ...unclear, ...shifts(ctx, moreRead), ...breakoutCandidates(ctx, input.alerts), ...firstSeenCandidates(ctx, input.archive), ...crossoverCandidates(ctx, moreRead, notNew),
     ...counters, ...(grain ? [grain] : []), ...ws, ...pattern, ...census, ...quiet.candidates, ...input.launches.map(launchCandidate), ...news.candidates,
   ].map(c => named(c, names));
-  return { moreRead, quiet: quiet.verdicts, follows: quiet.follows, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
+  return { moreRead, notNew, quiet: quiet.verdicts, follows: quiet.follows, candidates, ctx, newsDropped: news.dropped, newsKept: news.candidates.length, newsDrops: news.drops, reversed: [...reversed].sort((a, b) => a - b), reversedIdentity: [], groups, tape, unconfirmed };
 }
 
 // PART 3 · ONE BRAND, ONE STORY: fold a later change into the story that already ran ----------------------------------------------

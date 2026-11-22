@@ -111,7 +111,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const fresh = deps.calls ? await deps.calls(loaded.events.filter(e => siteKind(e.domain, kinds.get(e.domain)) === "standard"), start + budget / 3, rotating).catch(() => ({})) : {};
   const input: BuildInput = { ...loaded, calls: { ...(loaded.calls ?? {}), ...fresh } };
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
-  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows, moreRead } = allCandidates(input);
+  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows, moreRead, notNew } = allCandidates(input);
   const allShare = (k: string) => ctx.row(ctx.cur, canonical(k))?.current_share ?? null;
   const tracked = new Set(input.sites.map(s => s.domain));
   // One brand, one story: a later change to a brand with a published story in the window becomes a correction to that story.
@@ -184,7 +184,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       if (r.written && deps.writtenSheets) await deps.writtenSheets(r.rows.flatMap(x => { const j = jobs.find(y => y.story.id === x.story_id); return j ? [{ story_id: x.story_id, sheet: j.facts }] : []; })).catch(() => 0);
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
-  return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, ...(moreRead?.length ? { more_read: moreRead.map(m => `${m.id}: ${m.reason} (${m.earlier.read ?? "?"} homepages read in run ${m.earlier.run}, ${m.later.read ?? "?"} in run ${m.later.run})`) } : {}), plan };
+  return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, ...(moreRead?.length ? { more_read: moreRead.map(m => `${m.id}: ${m.reason} (${m.earlier.read ?? "?"} homepages read in run ${m.earlier.run}, ${m.later.read ?? "?"} in run ${m.later.run})`) } : {}), ...(notNew?.length ? { not_new: notNew.map(m => `${m.id}: ${m.reason}${m.quarter ? ` (${m.quarter.q}: ${(m.quarter.share * 100).toFixed(1)}% of ${m.quarter.read} homepages read)` : ""}`) } : {}), plan };
 }
 
 /** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */
@@ -229,6 +229,15 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const inWindow = realRuns.filter(r => r.computed_at >= since), pick = o.allRuns ? realRuns.slice(0, inWindow.length + 1) : realRuns.slice(0, 3);
   const chosen = [...new Map([...pick, ...realRuns.filter(r => r.id === pair?.earlier.id)].map(r => [r.id, r])).values()].sort((a, b) => a.id - b.id);
   const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await (await import("../forecast-rows.server")).forecastRunRows(r.id)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
+  // P2b · the crossover rule reads the later run's stored quarters, only for the rows that pass every other crossover check.
+  {
+    const { context: ctxOf, crossoverQuarterNeeds } = await import("./candidates"), { forecastRowQuarters } = await import("../forecast-rows.server");
+    const needs = crossoverQuarterNeeds(ctxOf({ now: new Date(now).toISOString(), runs, events: [], rebrands: [], alerts: [], wire: [], launches: [], sites: [], archive: [], trendsetters: [] }));
+    for (const runId of [...new Set(needs.map(n => n.run))]) {
+      const got = await forecastRowQuarters(runId, needs.filter(n => n.run === runId)), run = runs.find(r => r.id === runId);
+      for (const r of run?.rows ?? []) { const q = got.get(`${r.dimension}:${r.value}|${r.scope}`); if (q !== undefined) r.quarters = q; }
+    }
+  }
   const latest = chosen.at(-1)?.id ?? null;
   const [historyRows, alerts, wire, launches, sites, now_, archive, setters, rebrands] = await Promise.all([
     // From REVERSAL_DAYS before the window, so a change back inside the window finds the change it reverses (reversal.ts).

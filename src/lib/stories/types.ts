@@ -69,11 +69,19 @@ export const READ_GROWTH_MIN_RATIO = 0.8;
 /** …and at least this many; otherwise the rise is the count of homepages read, not a change. */
 export const READ_GROWTH_MIN_BASE = 15;
 export const MORE_READ_REASON = "more homepages read, not a change";
-/** The two stories the rule was written for (held by the editor in chief, 22 Nov). `earlier`/`later` are the editor in chief's counts
- *  (1 of 12, 7 of 28); the stored run-13 sample reads 2 of 24, which the rule passes. */
+/** P2b · a crossover must be new to the sector. The later run's own stored quarters for the signal in the receiving sector are read; a
+ *  quarter is well read at READ_GROWTH_MIN_BASE homepages or more. Any well-read quarter before the latest one, within the last
+ *  CROSSOVER_HISTORY_QUARTERS stored quarters, at or above CROSSOVER_FLOOR means it was already there… */
+export const CROSSOVER_HISTORY_QUARTERS = 12;
+export const ALREADY_THERE_REASON = "already there, not a crossover";
+/** …and with no well-read earlier quarter there is nothing to say it rose from. */
+export const NO_EARLIER_READING_REASON = "no earlier reading to compare";
+/** The two stories built from forecast runs 13 and 16 (held by the editor in chief, 22 Nov). Media read 24 homepages in run 13 and 28
+ *  in run 16, so the 80% rule passes them; they are refused because run 16's own quarters show the signal in media for years: the
+ *  "8.3%" was one odd reading of run 13. `refusedBy` is the most recent well-read earlier quarter at or above the floor. */
 export const MORE_READ_EXAMPLES = [
-  { id: "crossover:hero_layout:split_left_text:media:16", share: "8.3% → 25.0%", bad: "It now sits on 25.0% of media homepages, up from 8.3%.", earlier: 12, later: 28, runs: [13, 16] },
-  { id: "crossover:tone:calm:media:16", share: "8.3% → 17.9%", bad: "It now sits on 17.9% of media homepages, up from 8.3%.", earlier: 12, later: 28, runs: [13, 16] },
+  { id: "crossover:hero_layout:split_left_text:media:16", share: "8.3% → 25.0%", bad: "It now sits on 25.0% of media homepages, up from 8.3%.", earlier: 24, later: 28, runs: [13, 16], reason: ALREADY_THERE_REASON, refusedBy: { q: "2026Q1", share: 5 / 27, read: 27 } },
+  { id: "crossover:tone:calm:media:16", share: "8.3% → 17.9%", bad: "It now sits on 17.9% of media homepages, up from 8.3%.", earlier: 24, later: 28, runs: [13, 16], reason: ALREADY_THERE_REASON, refusedBy: { q: "2026Q1", share: 3 / 27, read: 27 } },
 ] as const;
 /** "Almost no one": at most 1 in 20 of the sector's tracked brands (1 of 30 today). */
 export const WHITE_SPACE_MAX_SHARE = 0.05;

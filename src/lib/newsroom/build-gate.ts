@@ -24,6 +24,14 @@ export type SpeedMeasure = keyof typeof SPEED_TOLERANCE;
 /** How many stored runs before the after run make a page's history, and which kinds count. */
 export const HISTORY_RUNS = 5;
 export const HISTORY_KINDS: readonly ReviewKind[] = ["weekly", "before", "after"];
+/** P2b · first byte and largest paint on an after run compare with other just-after-deploy runs only: the last HISTORY_RUNS runs of kind
+ *  "after" measured at or after this time. Earlier first bytes were measured with a headless browser name, which made the site render the
+ *  whole page before its first byte, so they read slow. */
+export const REVIEW_NAME_SINCE = "2026-11-22T19:45:00Z";
+/** With fewer than this many such runs, the measure falls back to the pair rule against the gate's own before run. */
+export const AFTER_HISTORY_MIN = 3;
+/** Measures whose history is after runs only (layout shift never depended on the browser name and keeps every counted kind). */
+export const AFTER_ONLY: readonly SpeedMeasure[] = ["first_byte_ms", "lcp_ms"];
 const SPEED_TARGET_OF: Record<SpeedMeasure, number> = { first_byte_ms: SPEED_TARGETS.firstMs, lcp_ms: SPEED_TARGETS.lcpMs, cls: SPEED_TARGETS.cls };
 export const NOT_CAUSED = "over target, not caused by this deploy";
 /** The middle value (the mean of the middle two for an even count). */
@@ -32,17 +40,24 @@ export const middleOf = (xs: readonly number[]) => { const a = [...xs].sort((x, 
 export type NotCaused = { key: string; page: string; width: number; measure: SpeedMeasure; after: number; middle: number; runs: string[]; line: string };
 const runAt = (r: GateRun) => r.rows.reduce((m, x) => (x.at < m ? x.at : m), r.rows[0]?.at ?? "");
 /** One page and width's history for one measure: the values of its last HISTORY_RUNS stored runs of a counted kind older than the
- *  after run (newest first), or, with none, the named before run's value. */
-export function historyOf(page: string, width: number, measure: SpeedMeasure, after: GateRun, history: readonly GateRun[], before: GateRun | null): { values: number[]; runs: string[] } {
-  const t = runAt(after), values: number[] = [], runs: string[] = [];
-  const older = history.filter(h => h.run !== after.run && h.kind != null && HISTORY_KINDS.includes(h.kind) && h.rows.length && runAt(h) < t).sort((a, b) => runAt(b).localeCompare(runAt(a)));
+ *  after run (newest first), or, with none, the named before run's value. P2b · first byte and largest paint read only after runs
+ *  measured since REVIEW_NAME_SINCE, never this gate's before run; with fewer than AFTER_HISTORY_MIN of them the history is the before
+ *  run alone (the pair rule). */
+export function historyOf(page: string, width: number, measure: SpeedMeasure, after: GateRun, history: readonly GateRun[], before: GateRun | null): { values: number[]; runs: string[]; pair: boolean } {
+  const t = runAt(after), values: number[] = [], runs: string[] = [], afterOnly = AFTER_ONLY.includes(measure);
+  const counted = (h: GateRun) => (afterOnly ? h.kind === "after" && runAt(h) >= REVIEW_NAME_SINCE && h.run !== before?.run : h.kind != null && HISTORY_KINDS.includes(h.kind));
+  const older = history.filter(h => h.run !== after.run && counted(h) && h.rows.length && runAt(h) < t).sort((a, b) => runAt(b).localeCompare(runAt(a)));
   for (const h of older) {
     const v = h.rows.find(r => r.page === page && r.width === width)?.measures[measure];
     if (typeof v === "number") { values.push(v); runs.push(h.run); }
     if (values.length >= HISTORY_RUNS) break;
   }
-  if (!values.length && before && before.kind !== "test") { const v = before.rows.find(r => r.page === page && r.width === width)?.measures[measure]; if (typeof v === "number") { values.push(v); runs.push(before.run); } }
-  return { values, runs };
+  const pairRule = afterOnly ? values.length < AFTER_HISTORY_MIN : !values.length;
+  if (pairRule) {
+    values.length = 0; runs.length = 0;
+    if (before && before.kind !== "test") { const v = before.rows.find(r => r.page === page && r.width === width)?.measures[measure]; if (typeof v === "number") { values.push(v); runs.push(before.run); } }
+  }
+  return { values, runs, pair: afterOnly && pairRule };
 }
 /**
  * P2 · one speed measure over the after run, judged against history: it fails only when the after value is over its target and worse
@@ -60,10 +75,10 @@ export function speedProblems(after: GateRun, history: readonly GateRun[], befor
     if (y <= target) continue;
     const h = historyOf(r.page, r.width, measure, after, history, before), mid = middleOf(h.values);
     if (mid != null && y - mid <= tol + 1e-9) {
-      notCaused.push({ key: `speed:${measure}:${r.page}@${r.width}`, page: r.page, width: r.width, measure, after: y, middle: mid, runs: h.runs, line: `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}; its last ${h.values.length} run${h.values.length === 1 ? "" : "s"} read ${fmt(mid)} in the middle: ${NOT_CAUSED}.` });
+      notCaused.push({ key: `speed:${measure}:${r.page}@${r.width}`, page: r.page, width: r.width, measure, after: y, middle: mid, runs: h.runs, line: h.pair ? `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}; the before run read ${fmt(mid)}: ${NOT_CAUSED}.` : `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}; its last ${h.values.length} run${h.values.length === 1 ? "" : "s"} read ${fmt(mid)} in the middle: ${NOT_CAUSED}.` });
       continue;
     }
-    problems.push(mid == null ? `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}, with no earlier run to compare.` : `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)} and ${fmt(y - mid)} worse than the middle of its last ${h.values.length} run${h.values.length === 1 ? "" : "s"} (${fmt(mid)}; tolerance ${fmt(tol)}).`);
+    problems.push(mid == null ? `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)}, with no earlier run to compare.` : h.pair ? `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)} and ${fmt(y - mid)} worse than the before run (${fmt(mid)}; tolerance ${fmt(tol)}).` : `${where(r)}: ${what} ${fmt(y)}, over ${fmt(target)} and ${fmt(y - mid)} worse than the middle of its last ${h.values.length} run${h.values.length === 1 ? "" : "s"} (${fmt(mid)}; tolerance ${fmt(tol)}).`);
   }
   const round = (x: number) => (measure === "cls" ? Math.round(x * 1000) / 1000 : Math.round(x));
   return { problems, notCaused, numbers: { target, tolerance: tol, worst: round(worst), not_measured: notMeasured, not_caused: notCaused.map(n => ({ page: n.page, width: n.width, after: round(n.after), middle: round(n.middle), runs: n.runs })) } };
@@ -73,9 +88,9 @@ export const GATE_CHECKS = [
   { id: "tests", name: "No failed tests" },
   { id: "complete", name: "Every page and width of the review list is in the after run" },
   { id: "overflow", name: "No page scrolls sideways at any width" },
-  { id: "first_byte", name: `First byte within ${SPEED_TARGETS.firstMs} ms on every page and width, or no more than ${SPEED_TOLERANCE.first_byte_ms} ms worse than the middle of its last ${HISTORY_RUNS} runs` },
-  { id: "layout_shift", name: `Layout shift within ${SPEED_TARGETS.cls} on every page and width, or no more than ${SPEED_TOLERANCE.cls} worse than the middle of its last ${HISTORY_RUNS} runs` },
-  { id: "largest_paint", name: `Largest paint within ${SPEED_TARGETS.lcpMs} ms on every page and width, or no more than ${SPEED_TOLERANCE.lcp_ms} ms worse than the middle of its last ${HISTORY_RUNS} runs` },
+  { id: "first_byte", name: `First byte within ${SPEED_TARGETS.firstMs} ms on every page and width, or no more than ${SPEED_TOLERANCE.first_byte_ms} ms worse than the middle of its last ${HISTORY_RUNS} after runs measured since ${REVIEW_NAME_SINCE.slice(0, 16).replace("T", " ")} UTC (with fewer than ${AFTER_HISTORY_MIN}, than the before run)` },
+  { id: "layout_shift", name: `Layout shift within ${SPEED_TARGETS.cls} on every page and width, or no more than ${SPEED_TOLERANCE.cls} worse than the middle of its last ${HISTORY_RUNS} weekly, before or after runs` },
+  { id: "largest_paint", name: `Largest paint within ${SPEED_TARGETS.lcpMs} ms on every page and width, or no more than ${SPEED_TOLERANCE.lcp_ms} ms worse than the middle of its last ${HISTORY_RUNS} after runs measured since ${REVIEW_NAME_SINCE.slice(0, 16).replace("T", " ")} UTC (with fewer than ${AFTER_HISTORY_MIN}, than the before run)` },
   { id: "no_worse", name: "Console errors, failed requests, small tap targets and low-contrast text not above the before run" },
   { id: "visible", name: "Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit)" },
   { id: "proposal", name: "A layout change has the owner's accepted proposal" },

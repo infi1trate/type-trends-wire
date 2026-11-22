@@ -32,7 +32,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Brands · {sectorName(v.sector)}</p>
       <h1 className="ed-cover mt-3">Who is doing it</h1>
-      <p className="ed-standfirst mt-5">{data.sites.length} tracked brands in ten sectors: their identity, every confirmed move and how each sits against its sector.</p>
+      <p className="ed-standfirst hold-brands-deck mt-5">{data.sites.length} tracked brands in ten sectors: their identity, every confirmed move and how each sits against its sector.</p>
     </header>
     <nav aria-label="Brand views" className="ed-wrap mt-8 border-y border-ed-ink"><ScrollRow className="ed-data gap-x-6 py-2">
       <Link to="/brands" search={brandsSearch({ ...v, tab: "directory" })} aria-current={v.tab === "directory" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "directory" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Directory <span className="ed-muted">{idx.rows.length}</span></Link>

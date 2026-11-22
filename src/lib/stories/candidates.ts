@@ -16,7 +16,7 @@ import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../prom
 import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
 import {
-  AI_EVENTS, CROSSOVER_FLOOR, CROSSOVER_LEAD_MIN, MORE_READ_REASON, READ_GROWTH_MIN_BASE, READ_GROWTH_MIN_RATIO, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_ALIASES, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
+  AI_EVENTS, ALREADY_THERE_REASON, CROSSOVER_FLOOR, CROSSOVER_HISTORY_QUARTERS, CROSSOVER_LEAD_MIN, MORE_READ_REASON, NO_EARLIER_READING_REASON, READ_GROWTH_MIN_BASE, READ_GROWTH_MIN_RATIO, FIRST_SEEN_MIN_BRANDS, MOVE_EVENTS, MOVE_LAYOUT_FIELDS, NEWS_ALIASES, NEWS_NAME_MIN, NEWS_NAME_STOPWORDS, NEWS_SIGNAL_MIN,
   REBRAND_FOLD_AFTER_DAYS, REBRAND_FOLD_BEFORE_DAYS, FIRST_SEEN_DIMENSIONS, FIRST_SEEN_ARCHIVE_MIN_BRANDS, FIRST_SEEN_ARCHIVE_MIN_QUARTERS, STORY_TYPE_DEFS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE,
   WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, WHITE_SPACE_NOT_APPLICABLE, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
 } from "./types";
@@ -335,34 +335,78 @@ export function firstSeenCandidates(ctx: Ctx, archive: ArchiveRow[]): Candidate[
 }
 
 // CROSSOVER ----------------------------------------------------------------------------------------
-export function crossoverCandidates(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
-  const out: Candidate[] = [];
-  if (ctx.pair) {
-    const prev = ctx.pair.earlier, cur = ctx.pair.latest, bySignal = new Map<string, SignalRow[]>();
-    for (const r of cur.rows) if (r.scope !== "all" && r.status === "ok" && r.current_share != null && shown(ctx, rowKey(r))) bySignal.set(rowKey(r), [...(bySignal.get(rowKey(r)) ?? []), r]);
-    for (const [key, rows] of bySignal) {
-      const lead = [...rows].sort((a, b) => b.current_share! - a.current_share! || a.scope.localeCompare(b.scope))[0]!;
-      if (lead.current_share! < CROSSOVER_LEAD_MIN) continue;
-      for (const r of rows) {
-        if (r.scope === lead.scope) continue;
-        if (!ctx.row(prev, key)) continue; // the signal did not exist in the earlier run
-        const was = ctx.row(prev, key, r.scope), before = was?.current_share;
-        if (before == null || before >= CROSSOVER_FLOOR || r.current_share! < CROSSOVER_FLOOR) continue;
-        const d = ctx.showing(key, r.scope); if (!d.length) continue;
-        // P2 · a share that "rose" because the sector's homepages read rose (12 → 28) is not a crossover.
-        if (!readComparable(was, r)) { refused?.push(growth(`crossover:${key}:${r.scope}:${cur.id}`, prev, cur, was, r)); continue; }
-        const l = label(key), s = inline(sectorName(r.scope));
-        out.push({ id: `crossover:${key}:${r.scope}:${cur.id}`, type: "crossover", kicker: `Crossover · ${l.dimension} · ${sectorName(r.scope)}`, headline: `${l.name} reaches ${s}`,
-          deck: `Led by ${inline(sectorName(lead.scope))} at ${pct(lead.current_share, 1)}, it now sits on ${pct(r.current_share, 1)} of ${s} homepages, up from ${pct(before, 1)}.`,
-          facts: [
-            { text: `${sectorName(lead.scope)}: ${pct(lead.current_share, 1)} of homepages (the leading sector)`, href: signalPath(key), basis: basis(key), kind: "share" },
-            { text: `${sectorName(r.scope)}: ${pct(before, 1)} in run ${prev.id} → ${pct(r.current_share, 1)} in run ${cur.id}`, href: signalPath(key), basis: basis(key), kind: "share" },
-            brandFact(d, d.length, r.scope, key),
-          ],
-          sector: r.scope, signalKeys: [key], domains: d.slice(0, 6), evidence: [{ label: "Signal page", href: signalPath(key) }], sourceIds: [`run:${prev.id}`, `run:${cur.id}`],
-          basis: basis(key), happenedAt: cur.at, magnitude: (r.current_share! - CROSSOVER_FLOOR) * 100, runId: cur.id, stage: r.stage });
-      }
+/** One stored quarter of a forecast row's evidence: its quarter, homepages read and share. */
+export type StoredQuarter = { q: string; n: number; s: number };
+/** "2026Q1" → "2026 Q1". */
+export const quarterName = (q: string) => q.replace(/^(\d{4})Q([1-4])$/, "$1 Q$2");
+/** A row's stored quarters ({ q, n, s }), oldest first; anything malformed is dropped. */
+export function storedQuarters(v: unknown): StoredQuarter[] {
+  if (!Array.isArray(v)) return [];
+  return v.flatMap(x => {
+    const o = x && typeof x === "object" ? (x as Record<string, unknown>) : null;
+    return o && typeof o["q"] === "string" && typeof o["n"] === "number" && Number.isFinite(o["n"]) && typeof o["s"] === "number" && Number.isFinite(o["s"]) ? [{ q: o["q"], n: o["n"], s: o["s"] }] : [];
+  });
+}
+/** P2b · whether a crossover is new to the sector, from the later run's own stored quarters for the signal there: the last
+ *  CROSSOVER_HISTORY_QUARTERS quarters, of which the last is "now". Every well-read quarter before it (READ_GROWTH_MIN_BASE homepages or
+ *  more) must sit below CROSSOVER_FLOOR, or it was already there; the "up from" figure is the most recent of them, and with none there is
+ *  no earlier reading to compare. A refusal names the most recent well-read quarter at or above the floor. Pure. */
+export function sectorHistory(stored: unknown): { ok: true; earlier: StoredQuarter; latest: StoredQuarter | null } | { ok: false; reason: typeof ALREADY_THERE_REASON | typeof NO_EARLIER_READING_REASON; quarter: StoredQuarter | null } {
+  const raw = Array.isArray(stored) ? stored.slice(-CROSSOVER_HISTORY_QUARTERS) : [];
+  const latestRaw = raw.at(-1), latest = storedQuarters(latestRaw == null ? [] : [latestRaw])[0] ?? null;
+  const earlier = storedQuarters(raw.slice(0, -1)).filter(x => x.n >= READ_GROWTH_MIN_BASE);
+  const there = [...earlier].reverse().find(x => x.s >= CROSSOVER_FLOOR - 1e-9);
+  if (there) return { ok: false, reason: ALREADY_THERE_REASON, quarter: there };
+  const last = earlier.at(-1);
+  return last ? { ok: true, earlier: last, latest } : { ok: false, reason: NO_EARLIER_READING_REASON, quarter: null };
+}
+/** A crossover refused by its sector's own history: the story id, the reason, and the quarter (share and homepages read) that refuses it. */
+export type NotNew = { id: string; reason: typeof ALREADY_THERE_REASON | typeof NO_EARLIER_READING_REASON; quarter: { q: string; share: number; read: number } | null };
+/** The sector rows that pass every row check of a crossover (lead, floors, the earlier run, like with like); only these need their stored
+ *  quarters, so the story build reads quarters for these rows alone (forecast-rows.server.ts `forecastRowQuarters`). */
+function crossoverPairs(ctx: Ctx) {
+  const out: { key: string; lead: SignalRow; r: SignalRow; was: SignalRow | null; before: number; comparable: boolean }[] = [];
+  if (!ctx.pair) return out;
+  const prev = ctx.pair.earlier, cur = ctx.pair.latest, bySignal = new Map<string, SignalRow[]>();
+  for (const r of cur.rows) if (r.scope !== "all" && r.status === "ok" && r.current_share != null && shown(ctx, rowKey(r))) bySignal.set(rowKey(r), [...(bySignal.get(rowKey(r)) ?? []), r]);
+  for (const [key, rows] of bySignal) {
+    const lead = [...rows].sort((a, b) => b.current_share! - a.current_share! || a.scope.localeCompare(b.scope))[0]!;
+    if (lead.current_share! < CROSSOVER_LEAD_MIN) continue;
+    for (const r of rows) {
+      if (r.scope === lead.scope) continue;
+      if (!ctx.row(prev, key)) continue; // the signal did not exist in the earlier run
+      const was = ctx.row(prev, key, r.scope), before = was?.current_share;
+      if (before == null || before >= CROSSOVER_FLOOR || r.current_share! < CROSSOVER_FLOOR) continue;
+      out.push({ key, lead, r, was, before, comparable: readComparable(was, r) });
     }
+  }
+  return out;
+}
+/** The rows (run, signal, sector) whose stored quarters the crossover rule reads. */
+export const crossoverQuarterNeeds = (ctx: Ctx): { run: number; key: string; scope: string }[] =>
+  ctx.pair ? crossoverPairs(ctx).filter(p => p.comparable).map(p => ({ run: ctx.pair!.latest.id, key: p.key, scope: p.r.scope })) : [];
+export function crossoverCandidates(ctx: Ctx, refused?: ReadGrowth[], notNew?: NotNew[]): Candidate[] {
+  const out: Candidate[] = [];
+  if (!ctx.pair) return out;
+  const prev = ctx.pair.earlier, cur = ctx.pair.latest;
+  for (const { key, lead, r, was, comparable } of crossoverPairs(ctx)) {
+    const d = ctx.showing(key, r.scope); if (!d.length) continue;
+    const id = `crossover:${key}:${r.scope}:${cur.id}`;
+    // P2 · a share that "rose" because the sector's homepages read rose (12 → 28) is not a crossover.
+    if (!comparable) { refused?.push(growth(id, prev, cur, was, r)); continue; }
+    // P2b · nor is a share that was already over the floor in a well-read earlier quarter of the later run's own history.
+    const h = sectorHistory(r.quarters);
+    if (!h.ok) { notNew?.push({ id, reason: h.reason, quarter: h.quarter ? { q: h.quarter.q, share: h.quarter.s, read: h.quarter.n } : null }); continue; }
+    const l = label(key), s = inline(sectorName(r.scope)), from = `${pct(h.earlier.s, 1)} in ${quarterName(h.earlier.q)}`;
+    out.push({ id, type: "crossover", kicker: `Crossover · ${l.dimension} · ${sectorName(r.scope)}`, headline: `${l.name} reaches ${s}`,
+      deck: `Led by ${inline(sectorName(lead.scope))} at ${pct(lead.current_share, 1)}, it now sits on ${pct(r.current_share, 1)} of ${s} homepages, up from ${from}.`,
+      facts: [
+        { text: `${sectorName(lead.scope)}: ${pct(lead.current_share, 1)} of homepages (the leading sector)`, href: signalPath(key), basis: basis(key), kind: "share" },
+        { text: `${sectorName(r.scope)}: ${pct(h.earlier.s, 1)} of ${h.earlier.n} homepages read in ${quarterName(h.earlier.q)} → ${pct(r.current_share, 1)}${h.latest ? ` of ${h.latest.n} in ${quarterName(h.latest.q)}` : ""} (forecast run ${cur.id})`, href: signalPath(key), basis: basis(key), kind: "share" },
+        brandFact(d, d.length, r.scope, key),
+      ],
+      sector: r.scope, signalKeys: [key], domains: d.slice(0, 6), evidence: [{ label: "Signal page", href: signalPath(key) }], sourceIds: [`run:${prev.id}`, `run:${cur.id}`],
+      basis: basis(key), happenedAt: cur.at, magnitude: (r.current_share! - CROSSOVER_FLOOR) * 100, runId: cur.id, stage: r.stage });
   }
   return out;
 }

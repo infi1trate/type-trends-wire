@@ -241,6 +241,21 @@
 .digest .ed-h3 { font-family: var(--sys-text-h3-family); font-size: var(--sys-text-h3-size); line-height: var(--sys-text-h3-leading); font-weight: var(--sys-text-h3-weight); text-transform: var(--sys-text-h3-case); letter-spacing: var(--sys-text-h3-tracking); text-wrap: balance; }
 .digest .ed-h4 { font-family: var(--tk-type-h4-family); font-size: var(--tk-type-h4-size); line-height: var(--tk-type-h4-leading); font-weight: var(--tk-type-h4-weight); text-transform: var(--tk-type-h4-case); letter-spacing: var(--tk-type-h4-tracking); text-wrap: balance; }
 .digest .ed-standfirst { font-family: var(--sys-text-deck-family); font-size: var(--sys-text-deck-size); line-height: var(--sys-text-deck-leading); font-weight: var(--sys-text-deck-weight); max-width: 40ch; text-wrap: pretty; }
+/* P2b · fixed-copy headings hold their height in lines while the web fonts load, so the stand-in fonts' extra line never pushes what
+   follows. Each range is where the real fonts give that line count (measured at every width from 320 to 1100 px and every 20 px to
+   1920), kept at least 4 px from where the count changes; outside the ranges the height is the text's own. Screen only. */
+@media screen and (min-width: 532px) { .digest .hold-studies-title { height: 2lh; } }
+@media screen and (min-width: 355px) and (max-width: 522px) { .digest .hold-studies-title { height: 3lh; } }
+@media screen and (min-width: 670px) { .digest .hold-studies-deck { height: 2lh; } }
+@media screen and (min-width: 471px) and (max-width: 660px) { .digest .hold-studies-deck { height: 3lh; } }
+@media screen and (min-width: 376px) and (max-width: 462px) { .digest .hold-studies-deck { height: 4lh; } }
+@media screen and (min-width: 481px) { .digest .hold-brands-deck { height: 2lh; } }
+@media screen and (min-width: 340px) and (max-width: 472px) { .digest .hold-brands-deck { height: 3lh; } }
+@media screen and (min-width: 386px) and (max-width: 396px) { .digest .hold-signals-title { height: 3lh; } }
+@media screen and (min-width: 405px) and (max-width: 1096px) { .digest .hold-signals-title { height: 2lh; } }
+@media screen and (min-width: 644px) { .digest .hold-signals-deck { height: 2lh; } }
+@media screen and (min-width: 472px) and (max-width: 635px) { .digest .hold-signals-deck { height: 3lh; } }
+@media screen and (min-width: 367px) and (max-width: 455px) { .digest .hold-signals-deck { height: 4lh; } }
 .digest .ed-body { max-width: var(--tk-layout-measure); text-wrap: pretty; }
 .digest .ed-body p, .digest p.ed-body { max-width: var(--tk-layout-measure); }
 .digest .ed-body p + p { margin-top: 1em; }

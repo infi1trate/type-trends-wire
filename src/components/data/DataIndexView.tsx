@@ -41,8 +41,8 @@ function Series({ s }: { s: StudiesHome["series"][number] }) {
 export function DataIndexHead() {
   return <header className="ed-wrap pt-8 md:pt-12" data-studies-head="">
       <p className="ed-kicker">Studies</p>
-      <h1 className="ed-h1 mt-3 max-w-[12.62em]">{STUDIES_TITLE}</h1>
-      <p className="ed-standfirst mt-4 max-w-[33.27em]">{STUDIES_STANDFIRST}</p>
+      <h1 className="ed-h1 hold-studies-title mt-3 max-w-[12.62em]">{STUDIES_TITLE}</h1>
+      <p className="ed-standfirst hold-studies-deck mt-4 max-w-[33.27em]">{STUDIES_STANDFIRST}</p>
     </header>;
 }
 export function DataIndexBody({ home }: { home: StudiesHome }) {
