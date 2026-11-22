@@ -40,6 +40,16 @@ export function nextCrawlRequestState(attempts: number, result: Pick<CrawlResult
 export const RENDERED_MAX_AGE_MS = 30 * 864e5;
 export const QUEUED_NOTE = "queued — rendered result usually within ~2 hours";
 
+/** Public callers (critique/differentiate) may only add new URLs to the render queue within these bounds, so nobody can point the crawler at an unbounded list of sites. */
+export const PUBLIC_QUEUE_MAX_PENDING = 50;
+export const PUBLIC_QUEUE_MAX_PER_DAY = 100;
+export const PUBLIC_QUEUE_FULL = "The rendering queue is full right now; try this URL again tomorrow";
+/** Refuse a new public queue entry when the backlog or the last 24 hours' additions are at their caps; counts that could not be read refuse (fail closed). */
+export function publicQueueAllowed(pending: number | null, lastDay: number | null): boolean {
+  if (pending === null || lastDay === null || !Number.isFinite(pending) || !Number.isFinite(lastDay)) return false;
+  return pending < PUBLIC_QUEUE_MAX_PENDING && lastDay < PUBLIC_QUEUE_MAX_PER_DAY;
+}
+
 /** host (lowercase, no www.) + path without trailing slashes; protocol, query and fragment ignored. */
 export function urlKey(raw: string): string {
   const u = new URL(raw), path = u.pathname.replace(/\/+$/, "") || "/";

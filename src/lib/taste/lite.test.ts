@@ -1,10 +1,39 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-const mock = vi.hoisted(() => ({ upserts: [] as Record<string, unknown>[] }));
-vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: (table: string) => ({ upsert: async (row: Record<string, unknown>) => { mock.upserts.push({ table, ...row }); return { error: null }; } }) } }));
+const mock = vi.hoisted(() => ({ upserts: [] as Record<string, unknown>[], existing: [] as { url: string }[], pending: 0 as number | null, lastDay: 0 as number | null }));
+vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from: (table: string) => ({
+  upsert: async (row: Record<string, unknown>) => { mock.upserts.push({ table, ...row }); return { error: null }; },
+  select: (_cols: string, opts?: { head?: boolean }) => {
+    if (!opts?.head) return { eq: () => ({ limit: async () => ({ data: mock.existing, error: null }) }) };
+    return { eq: async () => ({ count: mock.pending, error: null }), gte: async () => ({ count: mock.lastDay, error: null }) };
+  },
+}) } }));
 import { LITE_UNAVAILABLE, LiteUnavailableError, liteAnalysis, pinnedRequest, pinnedTransportSupported } from "./lite.server";
+import { PUBLIC_QUEUE_FULL, PUBLIC_QUEUE_MAX_PENDING, PUBLIC_QUEUE_MAX_PER_DAY, publicQueueAllowed } from "../crawl-requests";
 
-afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); mock.upserts = []; });
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); mock.upserts = []; mock.existing = []; mock.pending = 0; mock.lastDay = 0; });
+
+describe("public render queue caps", () => {
+  it("allows below both caps and refuses at either cap or on unreadable counts", () => {
+    expect(publicQueueAllowed(0, 0)).toBe(true);
+    expect(publicQueueAllowed(PUBLIC_QUEUE_MAX_PENDING - 1, PUBLIC_QUEUE_MAX_PER_DAY - 1)).toBe(true);
+    expect(publicQueueAllowed(PUBLIC_QUEUE_MAX_PENDING, 0)).toBe(false);
+    expect(publicQueueAllowed(0, PUBLIC_QUEUE_MAX_PER_DAY)).toBe(false);
+    expect(publicQueueAllowed(null, 0)).toBe(false);
+  });
+  it("refuses a new URL when the queue is full and writes nothing", async () => {
+    vi.stubGlobal("navigator", { userAgent: "Cloudflare-Workers" });
+    mock.pending = PUBLIC_QUEUE_MAX_PENDING;
+    await expect(liteAnalysis("https://another-studio.example.org/")).rejects.toThrow(PUBLIC_QUEUE_FULL);
+    expect(mock.upserts).toEqual([]);
+  });
+  it("still answers for a URL that is already queued when the queue is full", async () => {
+    vi.stubGlobal("navigator", { userAgent: "Cloudflare-Workers" });
+    mock.pending = PUBLIC_QUEUE_MAX_PENDING; mock.lastDay = PUBLIC_QUEUE_MAX_PER_DAY;
+    mock.existing = [{ url: "https://queued.example.org/" }];
+    await expect(liteAnalysis("https://queued.example.org/")).rejects.toThrow(LITE_UNAVAILABLE);
+  });
+});
 
 describe("LITE hosted fail-closed", () => {
   it("detects workerd as unsupported for pinned transport", () => {

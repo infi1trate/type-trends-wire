@@ -2,6 +2,7 @@ import {TasteError} from "./errors";
 import {checkResolved,safeUrl} from "./ssrf";
 import {siteFromSignals,type TasteSite} from "./store.server";
 import {decodeEntities} from "../entities";
+import {PUBLIC_QUEUE_FULL,publicQueueAllowed} from "../crawl-requests";
 import { LEGACY_UA_TOKEN, SITE_ORIGIN } from "../brand";
 // The user-agent token stays as published so site owners' robots.txt rules keep matching; only the info URL moved.
 const UA=`${LEGACY_UA_TOKEN}/0.1 (+${SITE_ORIGIN})`;
@@ -26,7 +27,11 @@ export function pinnedRequest(u:URL,ip:string,signal:AbortSignal,cap:number,tran
  if(looked)queueMicrotask(ready);else timer=setTimeout(()=>{if(looked)return ready();const e=new LiteUnavailableError();request.destroy(e);fail(e);},lookupTimeoutMs);
 });}
 async function pinned(raw:string,signal:AbortSignal,cap:number){const u=await checkResolved(raw,resolve),addresses=await resolve(u.hostname);await checkResolved(raw,async()=>addresses);const ip=ipLiteral(u.hostname)?u.hostname.replace(/^\[|\]$/g,""):addresses[0];if(!ip)throw new TasteError("No public address",422);let transport:Transport;try{transport=(u.protocol==="https:"?await import("node:https"):await import("node:http")) as unknown as Transport;}catch{throw new LiteUnavailableError();}if(typeof transport.request!=="function")throw new LiteUnavailableError();return pinnedRequest(u,ip,signal,cap,transport);}
-async function queueCrawlRequest(url:URL){const {supabaseAdmin:db}=await import("@/integrations/supabase/client.server");const saved=await db.from("crawl_requests").upsert({url:url.href,domain:url.hostname,status:"pending"},{onConflict:"url",ignoreDuplicates:true});if(saved.error)throw saved.error;}
+/** Adds a URL to the render queue; a URL not already queued is refused once the public queue caps are reached. */
+async function queueCrawlRequest(url:URL){const {supabaseAdmin:db}=await import("@/integrations/supabase/client.server");
+ const existing=await db.from("crawl_requests").select("url").eq("url",url.href).limit(1);if(existing.error)throw existing.error;
+ if(!existing.data?.length){const since=new Date(Date.now()-864e5).toISOString();const [pending,recent]=await Promise.all([db.from("crawl_requests").select("url",{count:"exact",head:true}).eq("status","pending"),db.from("crawl_requests").select("url",{count:"exact",head:true}).gte("requested_at",since)]);if(pending.error)throw pending.error;if(recent.error)throw recent.error;if(!publicQueueAllowed(pending.count,recent.count))throw new TasteError(PUBLIC_QUEUE_FULL,429);}
+ const saved=await db.from("crawl_requests").upsert({url:url.href,domain:url.hostname,status:"pending"},{onConflict:"url",ignoreDuplicates:true});if(saved.error)throw saved.error;}
 export async function liteAnalysis(raw:string):Promise<TasteSite>{const original=safeUrl(raw);
  // Fail closed before any DNS or page request when the host cannot pin addresses; the URL still goes to the rendering crawler.
  if(!pinnedTransportSupported()){await queueCrawlRequest(original);throw new LiteUnavailableError();}

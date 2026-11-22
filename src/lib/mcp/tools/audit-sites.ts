@@ -9,7 +9,7 @@ const abs = (p: string) => (p.startsWith("http") ? p : `${SITE_URL}${p}`);
 export function auditJson(a: Audit) {
   const refs = <T extends { explainer: string; receipt: string }>(xs: T[]) => xs.map(({ explainer: _e, receipt, ...x }) => ({ ...x, receipt: abs(receipt) }));
   return {
-    audit_url: a.url, note: "audit_url opens the printable audit page; the site is password-protected while in private preview.",
+    audit_url: a.url, note: "audit_url opens the printable audit page, which is public like the rest of slug.",
     domains: a.domains, sector: a.sector, sector_source: a.sectorSource, data_through: a.dataThrough, sections: a.sections, pending: a.pending,
     glance: a.glance.map(g => ({ domain: g.domain, name: g.name, sector: g.sector, status: g.status, captured_at: g.captured, latest_change: g.latest, thumbnail: g.thumb ? { url: abs(g.thumb.src), caption: g.thumb.caption, live: g.thumb.live } : null, terminal: abs(g.terminal) })),
     type: a.type, color: a.color,
