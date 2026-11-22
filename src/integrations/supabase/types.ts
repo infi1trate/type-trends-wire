@@ -105,6 +105,87 @@ export type Database = {
           },
         ]
       }
+      art_works: {
+        Row: {
+          artist: string | null
+          credit_line: string
+          date_display: string
+          first_seen: string
+          height: number
+          id: number
+          kind: string
+          last_seen: string
+          licence: string
+          link: string
+          movement: string | null
+          palette: Json
+          removed_at: string | null
+          removed_reason: string | null
+          run_id: string | null
+          source: string
+          source_id: string
+          thumb: string | null
+          thumb_hash: string | null
+          title: string
+          tradition: string
+          width: number
+          year_end: number
+          year_start: number
+        }
+        Insert: {
+          artist?: string | null
+          credit_line: string
+          date_display: string
+          first_seen?: string
+          height: number
+          id?: never
+          kind: string
+          last_seen?: string
+          licence: string
+          link: string
+          movement?: string | null
+          palette: Json
+          removed_at?: string | null
+          removed_reason?: string | null
+          run_id?: string | null
+          source: string
+          source_id: string
+          thumb?: string | null
+          thumb_hash?: string | null
+          title: string
+          tradition: string
+          width: number
+          year_end: number
+          year_start: number
+        }
+        Update: {
+          artist?: string | null
+          credit_line?: string
+          date_display?: string
+          first_seen?: string
+          height?: number
+          id?: never
+          kind?: string
+          last_seen?: string
+          licence?: string
+          link?: string
+          movement?: string | null
+          palette?: Json
+          removed_at?: string | null
+          removed_reason?: string | null
+          run_id?: string | null
+          source?: string
+          source_id?: string
+          thumb?: string | null
+          thumb_hash?: string | null
+          title?: string
+          tradition?: string
+          width?: number
+          year_end?: number
+          year_start?: number
+        }
+        Relationships: []
+      }
       asset_grids: {
         Row: {
           computed_at: string
@@ -2675,6 +2756,42 @@ export type Database = {
             referencedColumns: ["number"]
           },
         ]
+      }
+      living_readings: {
+        Row: {
+          edition: number
+          id: number
+          month: string
+          note: string
+          proposed_edition: number | null
+          read_at: string
+          ready: number
+          run_id: string | null
+          signals: Json
+        }
+        Insert: {
+          edition: number
+          id?: never
+          month: string
+          note: string
+          proposed_edition?: number | null
+          read_at?: string
+          ready?: number
+          run_id?: string | null
+          signals: Json
+        }
+        Update: {
+          edition?: number
+          id?: never
+          month?: string
+          note?: string
+          proposed_edition?: number | null
+          read_at?: string
+          ready?: number
+          run_id?: string | null
+          signals?: Json
+        }
+        Relationships: []
       }
       mcp_key_usage: {
         Row: {

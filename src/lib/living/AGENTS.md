@@ -1,0 +1,2 @@
+- The monthly reading and edition assembly stay pure in `reading.ts`; `reading.server.ts` only stores one insert-only `living_readings` row a month and, with 3–5 ready moves, writes a proposed edition and files one door proposal, because making an edition live stays the owner's path through the build queue and release gate.
+- The colophon's edition preview draws `brand/pages/SystemSpecimens.tsx` under the proposed values inside its own box only; SystemSpecimens never imports proposed chart forms, so the colophon cannot load them.

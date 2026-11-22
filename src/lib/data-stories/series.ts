@@ -21,6 +21,8 @@ export type HeadlineSignal = { key: string; name: string };
 export type DataInput = {
   now: number; sites: SiteInfo[]; history: HistRow[]; snaps: SnapMeta[]; captures: CaptureStamp[]; events: EventRow[]; rebrands: RebrandRow[];
   headline: HeadlineSignal[]; crops: CropRow[]; runId: number | null;
+  /** W3a · museum works and brand palettes (the museum study only); absent reads as none stored. */
+  art?: import("./museum").ArtInput;
 };
 
 /**

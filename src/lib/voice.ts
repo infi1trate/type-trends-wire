@@ -164,6 +164,7 @@ export const VOICE = {
   "read.deskNewsroom.backtest": { kind: "empty", where: "Read · DeskNewsroom · Data desk", text: "Backtest: no forecast run is old enough to score yet.", next: [] },
   "read.deskNewsroom.dataProposals": { kind: "empty", where: "Read · DeskNewsroom · Data desk", text: "No proposal from the data desk this week.", next: [] },
   "read.deskNewsroom.proposals": { kind: "empty", where: "Read · DeskNewsroom · Proposals", text: "No proposals yet.", next: [] },
+  "read.deskScout.museumRemoved": { kind: "empty", where: "Read · DeskN5 · Scout desk · Museum works", text: "No work has been removed.", next: [] },
   "read.deskN4.noWeekly": { kind: "empty", where: "Read · DeskN4 · Design review", text: "No complete weekly review run yet: no budgets beyond speed and sideways scrolling, and nothing to review.", next: [] },
   "read.deskN4.firstWeekly": { kind: "empty", where: "Read · DeskN4 · Design review", text: "This is the first weekly run: its numbers plus 10% are the budgets.", next: [] },
   "read.deskN4.noDiff": { kind: "empty", where: "Read · DeskN4 · Design review", text: "Nothing differs from the run before.", next: [] },

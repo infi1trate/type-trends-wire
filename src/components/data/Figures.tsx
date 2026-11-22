@@ -82,9 +82,9 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
 // PALETTE DRIFT ------------------------------------------------------------------------------------
 function Drift({ f, v }: { f: DriftFig; v: View }) {
   const on = new Set(v.highlight), any = on.size > 0;
-  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} isEmpty={!f.bands.length} table={{ columns: ["Quarter", "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, b.swatches.map(s => `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; ")]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} isEmpty={!f.bands.length} table={{ columns: [f.rowHead ?? "Quarter", f.rowHead ? "Count" : "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, b.swatches.map(s => `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; ")]) }}>
     {() => <ol className="grid gap-2" data-figure="drift">{f.bands.map(b => { const total = b.swatches.reduce((a, s) => a + s.w, 0) || 1, hot = v.focus === b.q;
-      return <li key={b.q} className="grid grid-cols-[9ch_1fr] items-center gap-2">
+      return <li key={b.q} className={f.rowHead ? "grid grid-cols-1 items-center gap-1 sm:grid-cols-[16rem_1fr] sm:gap-2" : "grid grid-cols-[9ch_1fr] items-center gap-2"}>
         <span className="tk-t-data" style={hot ? hlText : undefined}>{qText(b.q)}</span>
         <span className="flex h-8 w-full overflow-hidden border" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true">
           {b.swatches.map(s => <span key={s.id} title={`${familyName(s.id)} ${s.hex} · ${pctText(s.w)}`} className={fade} style={{ width: `${(100 * s.w) / total}%`, background: s.hex, opacity: any && !on.has(s.id) ? 0.25 : 1, outline: on.has(s.id) ? `2px solid ${INK}` : undefined, outlineOffset: -2 }} />)}

@@ -18,6 +18,7 @@ export type N5 = {
     candidates: { id: number; at: string; name: string; domain: string; sector: string; why: string; cites: string; status: string; test: boolean }[];
     week: string;
     calls: { today: number; week: number; fixtures_week: number; cap: number; usd_week: number };
+    museum?: { met: number; aic: number; removed: { source: string; source_id: string; title: string; at: string; reason: string }[] } | null;
   } | null;
 };
 const th = "py-2 pr-3 text-left font-normal ed-kicker align-bottom";
@@ -83,6 +84,13 @@ export function DeskN5({ n }: { n: N5 }) {
       <Table caption="Every outside source slug reads or has considered, with its status and terms" head={["Source", "Provides", "Status", "Terms read", "Terms"]} min={860}>
         {s.register.map(r => <tr key={r.id} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{r.name}{r.note ? <span className="ed-caption block">{r.note}</span> : null}</th><td className={td}>{r.provides}</td><td className={td}>{r.status}</td><td className={td}>{r.terms_read}</td><td className={`${td} break-all`}>{r.terms_link.startsWith("https://") ? <a className="ed-link" href={r.terms_link} rel="noopener noreferrer">{r.terms_link}</a> : r.terms_link}</td></tr>)}
       </Table>
+      {s.museum ? <>
+        <h3 className="ed-h3 mt-6" id="desk-museum">Museum works</h3>
+        <p className="ed-small mt-3">Stored: <span className="num">{s.museum.met}</span> from The Met, <span className="num">{s.museum.aic}</span> from the Art Institute of Chicago. The owner removes a work on request with <code className="ed-code">art_remove</code>; its thumbnail is deleted and it is never stored again.</p>
+        {s.museum.removed.length ? <Table caption="Museum works removed on request, newest first" head={["Work", "Removed", "Reason"]} min={560}>
+          {s.museum.removed.map(r => <tr key={`${r.source}:${r.source_id}`} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{r.title}<span className="ed-caption block">{r.source} {r.source_id}</span></th><td className={td}>{r.at.slice(0, 10)}</td><td className={td}>{r.reason}</td></tr>)}
+        </Table> : <p className="ed-small mt-2">No work has been removed.</p>}
+      </> : null}
     </section> : null}
   </>;
 }

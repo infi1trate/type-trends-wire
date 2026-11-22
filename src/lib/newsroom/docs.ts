@@ -77,7 +77,7 @@ export function listsBlockOf(md: string): string | null {
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 /** newsroom/beats.md, whole: the standing questions and series, each with its trigger and minimums from the code's constants. */
 export function beatsDoc(): string {
-  const studies = (s: string) => DATA_STORIES.filter(d => d.series === s).map(d => `  - Study No. ${d.number}, “${d.question}” (${d.status}${d.reason ? `: ${d.reason.split(":")[0]}` : ""})`);
+  const studies = (s: string) => DATA_STORIES.filter(d => d.series === s).map(d => `  - Study No. ${d.number}, “${d.question}” (${d.hidden ? "hidden from readers until its check passes on stored data" : d.status}${d.reason ? `: ${d.reason.split(":")[0]}` : ""})`);
   return [
     "# Beats", "",
     "The standing questions slug answers, and the series a reader learns to expect. Every trigger and minimum below is read from the code (`src/lib/newsroom/docs.ts` writes this file; a test fails when it drifts). Edit the constants, not this file.", "",

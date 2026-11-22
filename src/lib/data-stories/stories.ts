@@ -287,7 +287,7 @@ function joinPairs(groups: Seg[][]): Seg[] {
   return groups.flatMap((g, k) => (k === 0 ? g : k === groups.length - 1 ? [" and ", ...g] : [", ", ...g]));
 }
 
-function model(m: Meta, i: DataInput, figures: Record<string, Figure>, steps: Step[], basis: StoryModel["basis"], key: StoryModel["key"], x: Extras = {}, over?: Partial<Meta>): StoryModel {
+export function model(m: Meta, i: DataInput, figures: Record<string, Figure>, steps: Step[], basis: StoryModel["basis"], key: StoryModel["key"], x: Extras = {}, over?: Partial<Meta>): StoryModel {
   const mm = { ...m, ...over };
   return { slug: mm.slug, number: mm.number, question: mm.question, deck: mm.deck, template: mm.template, dataThrough: lastDate(i), figures, steps, basis, collection: mm.collection, related: mm.related, key,
     series: mm.series ?? "", seriesTitle: mm.seriesTitle ?? "", scenes: x.scenes ? resolveScenes(x.scenes, steps) : oneScenePerStep(steps), limits: (x.limits ?? []).slice(0, 3), fallbackHeadline: x.fallback ?? mm.question, ...(x.ranked?.length ? { ranked: x.ranked } : {}) };

@@ -82,10 +82,11 @@ export async function insertCandidateStatus(db: Admin, r: { candidate: number; s
 /** The /desk Scout panel and the memory: the register as shown, this week's candidates with status, the calls used. */
 export async function scoutPanel(db: Admin, now = Date.now()) {
   const { isoWeek } = await import("../digest/week");
-  const [{ data: notes }, { data: cands }, { data: calls }] = await Promise.all([
+  const [{ data: notes }, { data: cands }, { data: calls }, museum] = await Promise.all([
     db.from("source_notes").select("id,at,source,status,read_on,link,note,actor").order("id", { ascending: false }).limit(200),
     db.from("brand_candidates").select("id,at,week,name,domain,sector,why,cites,test").order("id", { ascending: false }).limit(40),
     db.from("desk_calls_weekly").select("id,at,purpose,ok,cost").eq("desk", "scout").gte("at", new Date(now - 7 * 864e5).toISOString()),
+    museumWorks(db).catch(() => null),
   ]);
   const ids = (cands ?? []).map(c => c.id);
   const { data: st } = ids.length ? await db.from("brand_candidate_statuses").select("candidate_id,status,at,actor").in("candidate_id", ids).order("id") : { data: [] };
@@ -95,6 +96,15 @@ export async function scoutPanel(db: Admin, now = Date.now()) {
     register: s.registerWithNotes((notes ?? []) as s.SourceNote[]),
     candidates: (cands ?? []).filter(c => c.week === latestWeek).map(c => ({ ...c, status: s.candidateStatusOf((st ?? []).filter(x => x.candidate_id === c.id)) })),
     week: latestWeek,
+    museum,
     calls: { today: (calls ?? []).filter(c => c.purpose === "candidates" && c.at >= today.toISOString()).length, week: (calls ?? []).filter(c => c.purpose === "candidates").length, fixtures_week: (calls ?? []).filter(c => c.purpose === "fixture").length, cap: 1, usd_week: Math.round((calls ?? []).reduce((a, c) => a + Number(c.cost ?? 0), 0) * 1e4) / 1e4 },
   };
+}
+
+/** W3a · museum works on the Scout panel: stored by source (not removed) and every removal with its date and reason. */
+export async function museumWorks(db: Admin) {
+  const count = (source: "met" | "aic") => db.from("art_works").select("id", { count: "exact", head: true }).eq("source", source).is("removed_at", null).then(r => r.count ?? 0);
+  const [met, aic, removed] = await Promise.all([count("met"), count("aic"),
+    db.from("art_works").select("source,source_id,title,removed_at,removed_reason").not("removed_at", "is", null).order("removed_at", { ascending: false }).limit(50).then(r => r.data ?? [])]);
+  return { met, aic, removed: removed.map(r => ({ source: r.source, source_id: r.source_id, title: r.title, at: r.removed_at as string, reason: r.removed_reason ?? "" })) };
 }

@@ -111,7 +111,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
   const fresh = deps.calls ? await deps.calls(loaded.events.filter(e => siteKind(e.domain, kinds.get(e.domain)) === "standard"), start + budget / 3, rotating).catch(() => ({})) : {};
   const input: BuildInput = { ...loaded, calls: { ...(loaded.calls ?? {}), ...fresh } };
   const existing = await deps.existing(new Date(Date.parse(input.now) - (days + 30) * 864e5).toISOString());
-  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows, moreRead, notNew } = allCandidates(input);
+  const { candidates, ctx, newsDropped, newsKept, newsDrops, reversed, reversedIdentity, follows, moreRead, notNew, notSteady } = allCandidates(input);
   const allShare = (k: string) => ctx.row(ctx.cur, canonical(k))?.current_share ?? null;
   const tracked = new Set(input.sites.map(s => s.domain));
   // One brand, one story: a later change to a brand with a published story in the window becomes a correction to that story.
@@ -184,7 +184,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       if (r.written && deps.writtenSheets) await deps.writtenSheets(r.rows.flatMap(x => { const j = jobs.find(y => y.story.id === x.story_id); return j ? [{ story_id: x.story_id, sheet: j.facts }] : []; })).catch(() => 0);
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
-  return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, ...(moreRead?.length ? { more_read: moreRead.map(m => `${m.id}: ${m.reason} (${m.earlier.read ?? "?"} homepages read in run ${m.earlier.run}, ${m.later.read ?? "?"} in run ${m.later.run})`) } : {}), ...(notNew?.length ? { not_new: notNew.map(m => `${m.id}: ${m.reason}${m.quarter ? ` (${m.quarter.q}: ${(m.quarter.share * 100).toFixed(1)}% of ${m.quarter.read} homepages read)` : ""}`) } : {}), plan };
+  return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, ...(moreRead?.length ? { more_read: moreRead.map(m => `${m.id}: ${m.reason} (${m.earlier.read ?? "?"} homepages read in run ${m.earlier.run}, ${m.later.read ?? "?"} in run ${m.later.run})`) } : {}), ...(notNew?.length ? { not_new: notNew.map(m => `${m.id}: ${m.reason}${m.quarter ? ` (${m.quarter.q}: ${(m.quarter.share * 100).toFixed(1)}% of ${m.quarter.read} homepages read)` : ""}`) } : {}), ...(notSteady?.length ? { not_steady: notSteady.map(m => `${m.id}: ${m.reason} (${m.field}, ${m.scope})`) } : {}), plan };
 }
 
 /** What the writer may know about the stories of this build: the loaded events, captured copy, headline calls, names and library numbers. */
@@ -272,7 +272,19 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const dec = <W extends { title: string; excerpt: string | null }>(w: W): W => ({ ...w, title: decodeEntities(w.title), excerpt: w.excerpt ? decodeEntities(w.excerpt) : null });
   // W1b: the quiet change's inputs (a failure means no quiet candidates this build; everything else is unaffected).
   const quiet = await quietInput(db, events, now, o.days, rebrands.rows.filter(x => x.source === "live" && sectorOf.has(x.domain)) as unknown as RebrandRow[]).then(q => q && { ...q, wire: q.wire.map(dec) }).catch(() => null);
+  // W3a Part E · the steadiness of each AI-read field a crossover or stage change would rest on, between the build's two runs (only
+  // for the pairs that pass every other check). A failed read means none known this build (logged; the other rules still apply).
+  const unsteady = await (async () => {
+    const { context: ctxOf, steadyNeeds } = await import("./candidates");
+    const c = ctxOf({ now: new Date(now).toISOString(), runs, events: [], rebrands: [], alerts: [], wire: [], launches: [], sites: [], archive: [], trendsetters: [] });
+    const needs = steadyNeeds(c);
+    if (!needs.length || !c.pair) return [];
+    const { steadyFor } = await import("./steady.server");
+    const got = await steadyFor(db, needs, sectorOf, c.pair.earlier.at, c.pair.latest.at);
+    return got.filter(x => !x.steady).map(x => ({ field: x.field, scope: x.scope, changed: x.changed, both: x.both }));
+  })().catch(e => { console.error("Steadiness read failed", e instanceof Error ? e.name : "UnknownError"); return []; });
   return {
+    unsteady,
     now: new Date(now).toISOString(), events, history, runs,
     rebrands: rebrands.rows.filter(x => x.source === "live" && x.confirmed_at >= since && sectorOf.has(x.domain)) as unknown as RebrandRow[],
     alerts: (alerts.data ?? []).map(a => dec({ ...a, ref: a.ref ?? null })) as BuildInput["alerts"], wire: wire.map(dec), launches: (launches.data ?? []).map(dec) as BuildInput["launches"],

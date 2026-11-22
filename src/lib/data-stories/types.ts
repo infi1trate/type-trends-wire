@@ -41,7 +41,7 @@ export type FieldFig = {
 
 export type Swatch = { id: string; hex: string; w: number };
 export type DriftBand = { q: string; brands: number; swatches: Swatch[] };
-export type DriftFig = { kind: "drift"; title: string; note: string; scope: string; bands: DriftBand[] };
+export type DriftFig = { kind: "drift"; title: string; note: string; scope: string; bands: DriftBand[]; /** W3a · rows that are not quarters (the museum study): the table head and a wider label column. */ rowHead?: string };
 
 /** One stored capture redrawn from its skeleton: compact boxes in page pixels, the capture's own colours, and a crop when one exists. */
 export type BoxKind = "h" | "t" | "c" | "m" | "s" | "o";

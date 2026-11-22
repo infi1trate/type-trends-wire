@@ -7,17 +7,21 @@ import { softwareFigures } from "./checks";
 import type { DataInput } from "./series";
 import type { CaptureRaw } from "./templates/frames";
 import type { StoryModel } from "./types";
+import { MUSEUM_SLUG, museumStory } from "./museum";
 
 type Builder = { domains: (i: DataInput) => string[]; build: (i: DataInput, caps: Captures, m: Meta) => StoryModel };
 export const BUILDERS: Record<string, Builder> = {
   "software-homepage-five-years": { domains: i => softwareFigures(i).topBrands.map(b => b.domain), build: softwareStory },
   "who-went-big-first": { domains: () => [], build: bigTypeStory },
   "which-sector-changes-its-mind": { domains: i => { const d = mindsBrand(i); return d ? [d] : []; }, build: sectorMindsStory },
+  [MUSEUM_SLUG]: { domains: () => [], build: museumStory },
 };
 export type Status = { status: "live" | "draft"; reason: string | null };
 /** The registry status, re-checked on current data: a live story whose check no longer passes, or that has no builder, reads as a draft. */
 export function statusOf(e: Entry, i: DataInput | null): Status {
   if (e.status === "draft") return { status: "draft", reason: e.reason };
+  // W3a · a hidden study is live only when its check passes on data in hand (never assumed without data).
+  if (e.hidden && !i) return { status: "draft", reason: "Withheld until its data is stored." };
   if (!BUILDERS[e.slug]) return { status: "draft", reason: "No builder for this story yet." };
   if (i && e.check) { const v = CHECKS[e.check](i); if (!v.pass) return { status: "draft", reason: `The check no longer passes on current data: ${v.reason}` }; }
   return { status: "live", reason: null };
@@ -25,7 +29,7 @@ export function statusOf(e: Entry, i: DataInput | null): Status {
 export type IndexRow = { slug: string; number: number; series: string; question: string; deck: string; template: string; status: "live" | "draft"; reason: string | null; dataThrough: string | null; href: string | null };
 /** Every study in number order (E4: the tool is not a study and is not listed; number 5 is retired). */
 export function indexRows(i: DataInput | null, dataThrough: string | null): IndexRow[] {
-  return DATA_STORIES.map(e => { const s = statusOf(e, i); return { slug: e.slug, number: e.number, series: e.series, question: e.question, deck: e.deck, template: templateName(e), ...s, dataThrough, href: s.status === "live" ? `/data/${e.slug}` : null }; }).sort((a, b) => a.number - b.number);
+  return DATA_STORIES.filter(e => !e.hidden || statusOf(e, i).status === "live").map(e => { const s = statusOf(e, i); return { slug: e.slug, number: e.number, series: e.series, question: e.question, deck: e.deck, template: templateName(e), ...s, dataThrough, href: s.status === "live" ? `/data/${e.slug}` : null }; }).sort((a, b) => a.number - b.number);
 }
 const metaOf = (e: Entry, live: Entry[]): Meta => ({ slug: e.slug, number: e.number, question: e.question, deck: e.deck, template: templateName(e), collection: collectionForStory(e.slug) ?? e.collection, related: relatedFor(e.slug, live), series: e.series, seriesTitle: seriesOf(e.series)?.title ?? "" });
 export const liveNow = (i: DataInput | null) => DATA_STORIES.filter(e => statusOf(e, i).status === "live");

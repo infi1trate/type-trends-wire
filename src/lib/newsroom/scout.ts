@@ -22,6 +22,9 @@ const S = (id: string, name: string, provides: string, status: SourceStatus, ter
 export const CLOSED_READ_ON = "2026-11-20";
 const slugOf = (n: string) => n.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 /** Every source, in the order /desk lists them: what the code reads today, then what was considered and closed. */
+/** What slug takes from each museum, and the date the owner read their terms. */
+export const MUSEUMS_READ_ON = "2026-11-22";
+export const MUSEUM_TAKES = "Public-domain works only: title, artist, dates, department or style, credit line, link, a 240 px thumbnail, and a palette we compute";
 export const SOURCES: readonly Source[] = [
   ...FEEDS.map(f => S(`rss:${slugOf(f.name)}`, f.name, "RSS headlines and excerpts for the wire and the news desk", "read")),
   S("hn", "Hacker News", "Front-page links for the wire (an aggregator, never counted as an outlet)", "read"),
@@ -33,6 +36,9 @@ export const SOURCES: readonly Source[] = [
   S("wayback", "Wayback Machine", "Archived homepage captures for brand history", "read"),
   ...["Figma Community", "Canva", "TikTok organic posts", "Instagram organic posts", "Dribbble", "Behance", "Mobbin", "Land-book", "Awwwards", "Fonts In Use", "LinkedIn"]
     .map(n => S(slugOf(n), n, "Considered; not read", "closed by its terms", CLOSED_READ_ON)),
+  // W3a · two museums' open-access programmes (terms read by the owner on 22 Nov 2026). Only works the museum marks public domain (CC0).
+  S("the-met", "The Metropolitan Museum of Art (Open Access)", MUSEUM_TAKES, "read", MUSEUMS_READ_ON, "https://www.metmuseum.org/policies/terms-and-conditions", "Works the museum marks public domain are CC0. API: https://metmuseum.github.io"),
+  S("art-institute-of-chicago", "Art Institute of Chicago (Open Access)", MUSEUM_TAKES, "read", MUSEUMS_READ_ON, "https://www.artic.edu/terms", "Images and data marked public domain are CC0 (https://www.artic.edu/open-access/open-access-images); the API's description field is CC-BY and is not used. API: https://api.artic.edu/docs"),
   // Are.na's terms link is the one the code already records beside its hard-off switch (sources.ts ARENA_ENABLED).
   S("are-na", "Are.na", "Channels of saved design references (adapter kept, hard off)", "off", CLOSED_READ_ON, "https://www.are.na/terms", "Its acceptable-use policy prohibits automated crawling and structured data harvesting."),
 ];

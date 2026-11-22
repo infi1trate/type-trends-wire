@@ -38,7 +38,11 @@ export type Entry = {
   check: CheckId | null;
   /** The check's figures when the status was set (16 Nov 2026), for the report and the registry test. */
   recorded: Record<string, number>;
+  /** W3a · does not exist for readers (not listed, not on the shelf, its page 404s) until its check passes on stored data. */
+  hidden?: boolean;
 };
+/** W3a · the museum study's address. */
+export const MUSEUM_STUDY_SLUG = "nearest-in-the-museum";
 export const DATA_STORIES: readonly Entry[] = [
   { slug: "software-homepage-five-years", number: 1, series: "long-view", question: "What happened to the software homepage in five years?",
     deck: "Twelve composite signals across dev tools and enterprise SaaS, then the two brands with the longest stored history, capture by capture.",
@@ -58,13 +62,20 @@ export const DATA_STORIES: readonly Entry[] = [
     deck: "Measured homepage changes and confirmed rebrands, sector by sector, per compared capture; then the most changeable brand, before and after.",
     templates: ["multiples", "before-after"], params: { sectors: null, period: "2020 to now" },
     collection: { label: "Rebrands", href: "/terminal?panel=rebrands" }, status: "live", reason: null, check: "sector-minds", recorded: { sectors: 10 } },
+  // W3a · hidden until 200 stored public-domain works fall into 8 groups of 15. `recorded` is the owner's 22 Nov dry run (297 works,
+  // 9 groups), never stored: with no works in the table the check fails at read time and the study does not exist for readers.
+  { slug: MUSEUM_STUDY_SLUG, number: 6, series: "sector-v-sector", question: "Which museum palettes are sector homepages nearest to?",
+    deck: "Each sector's homepage colours beside the group of public-domain paintings, prints and textiles most of its homepages are nearest to, by measured distance.",
+    templates: ["drift"], params: { sectors: null, period: "Newest capture" },
+    collection: { label: "All brands", href: "/brands" }, status: "live", reason: null, check: "museum", recorded: { works: 297, groups: 9 }, hidden: true },
 ];
 /** E4 · "Where does your brand sit?" (/data/where-you-sit) is a tool, not a study: no number (its old 5 is retired), no series. */
 export const WHERE_YOU_SIT = { slug: "where-you-sit", kind: "tool" as const, question: "Where does your brand sit?", deck: "Pick a tracked brand: where it sits in its sector, its homepage through time, and the signals that set it apart.", templates: ["field", "strip"] as TemplateId[] } as const;
 
 export const entryOf = (slug: string) => DATA_STORIES.find(e => e.slug === slug) ?? null;
 export const templateName = (e: { templates: readonly TemplateId[] }) => e.templates.map(t => TEMPLATES[t]).join(" + ");
-export const liveEntries = () => DATA_STORIES.filter(e => e.status === "live");
+/** Live in the registry and not hidden (a hidden study joins only through `liveNow`, when its check passes on stored data). */
+export const liveEntries = () => DATA_STORIES.filter(e => e.status === "live" && !e.hidden);
 /** A study's way on: the other live studies in its series, its collection, then all studies (never itself, never unrelated studies). */
 export function relatedFor(slug: string, live = liveEntries()): Link[] {
   const e = entryOf(slug);

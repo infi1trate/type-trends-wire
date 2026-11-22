@@ -81,6 +81,7 @@ import { Route as ApiPublicDiscourseTermsRouteImport } from './routes/api/public
 import { Route as ApiPublicForecastRunRouteImport } from './routes/api/public/forecast-run'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicIngestArenaRouteImport } from './routes/api/public/ingest-arena'
+import { Route as ApiPublicIngestArtRouteImport } from './routes/api/public/ingest-art'
 import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/ingest-crawl'
 import { Route as ApiPublicIngestCropsRouteImport } from './routes/api/public/ingest-crops'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
@@ -104,6 +105,7 @@ import { Route as EmbedChartWeekRouteImport } from './routes/embed.chart.$week'
 import { Route as EmbedTraitKeyRouteImport } from './routes/embed.trait.$key'
 import { Route as StoriesNoNumberRouteImport } from './routes/stories.no.$number'
 import { Route as ApiPublicJobsDeskPassesRouteImport } from './routes/api/public/jobs/desk-passes'
+import { Route as ApiPublicJobsLivingReadingRouteImport } from './routes/api/public/jobs/living-reading'
 import { Route as ApiPublicJobsReviewPassesRouteImport } from './routes/api/public/jobs/review-passes'
 import { Route as ApiPublicJobsWireFollowupsRouteImport } from './routes/api/public/jobs/wire-followups'
 import { Route as ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport } from './routes/api/public/watch-feed.{$token}[.]xml'
@@ -473,6 +475,11 @@ const ApiPublicIngestArenaRoute = ApiPublicIngestArenaRouteImport.update({
   path: '/api/public/ingest-arena',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestArtRoute = ApiPublicIngestArtRouteImport.update({
+  id: '/api/public/ingest-art',
+  path: '/api/public/ingest-art',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestCrawlRoute = ApiPublicIngestCrawlRouteImport.update({
   id: '/api/public/ingest-crawl',
   path: '/api/public/ingest-crawl',
@@ -591,6 +598,12 @@ const ApiPublicJobsDeskPassesRoute = ApiPublicJobsDeskPassesRouteImport.update({
   path: '/api/public/jobs/desk-passes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicJobsLivingReadingRoute =
+  ApiPublicJobsLivingReadingRouteImport.update({
+    id: '/api/public/jobs/living-reading',
+    path: '/api/public/jobs/living-reading',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicJobsReviewPassesRoute =
   ApiPublicJobsReviewPassesRouteImport.update({
     id: '/api/public/jobs/review-passes',
@@ -683,6 +696,7 @@ export interface FileRoutesByFullPath {
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
+  '/api/public/ingest-art': typeof ApiPublicIngestArtRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -706,6 +720,7 @@ export interface FileRoutesByFullPath {
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/jobs/desk-passes': typeof ApiPublicJobsDeskPassesRoute
+  '/api/public/jobs/living-reading': typeof ApiPublicJobsLivingReadingRoute
   '/api/public/jobs/review-passes': typeof ApiPublicJobsReviewPassesRoute
   '/api/public/jobs/wire-followups': typeof ApiPublicJobsWireFollowupsRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
@@ -783,6 +798,7 @@ export interface FileRoutesByTo {
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
+  '/api/public/ingest-art': typeof ApiPublicIngestArtRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -806,6 +822,7 @@ export interface FileRoutesByTo {
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/jobs/desk-passes': typeof ApiPublicJobsDeskPassesRoute
+  '/api/public/jobs/living-reading': typeof ApiPublicJobsLivingReadingRoute
   '/api/public/jobs/review-passes': typeof ApiPublicJobsReviewPassesRoute
   '/api/public/jobs/wire-followups': typeof ApiPublicJobsWireFollowupsRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
@@ -884,6 +901,7 @@ export interface FileRoutesById {
   '/api/public/forecast-run': typeof ApiPublicForecastRunRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/ingest-arena': typeof ApiPublicIngestArenaRoute
+  '/api/public/ingest-art': typeof ApiPublicIngestArtRoute
   '/api/public/ingest-crawl': typeof ApiPublicIngestCrawlRoute
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
@@ -907,6 +925,7 @@ export interface FileRoutesById {
   '/embed/trait/$key': typeof EmbedTraitKeyRoute
   '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/jobs/desk-passes': typeof ApiPublicJobsDeskPassesRoute
+  '/api/public/jobs/living-reading': typeof ApiPublicJobsLivingReadingRoute
   '/api/public/jobs/review-passes': typeof ApiPublicJobsReviewPassesRoute
   '/api/public/jobs/wire-followups': typeof ApiPublicJobsWireFollowupsRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
@@ -986,6 +1005,7 @@ export interface FileRouteTypes {
     | '/api/public/forecast-run'
     | '/api/public/health'
     | '/api/public/ingest-arena'
+    | '/api/public/ingest-art'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
@@ -1009,6 +1029,7 @@ export interface FileRouteTypes {
     | '/embed/trait/$key'
     | '/stories/no/$number'
     | '/api/public/jobs/desk-passes'
+    | '/api/public/jobs/living-reading'
     | '/api/public/jobs/review-passes'
     | '/api/public/jobs/wire-followups'
     | '/api/public/watch-feed/{$token}.xml'
@@ -1086,6 +1107,7 @@ export interface FileRouteTypes {
     | '/api/public/forecast-run'
     | '/api/public/health'
     | '/api/public/ingest-arena'
+    | '/api/public/ingest-art'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
@@ -1109,6 +1131,7 @@ export interface FileRouteTypes {
     | '/embed/trait/$key'
     | '/stories/no/$number'
     | '/api/public/jobs/desk-passes'
+    | '/api/public/jobs/living-reading'
     | '/api/public/jobs/review-passes'
     | '/api/public/jobs/wire-followups'
     | '/api/public/watch-feed/{$token}.xml'
@@ -1186,6 +1209,7 @@ export interface FileRouteTypes {
     | '/api/public/forecast-run'
     | '/api/public/health'
     | '/api/public/ingest-arena'
+    | '/api/public/ingest-art'
     | '/api/public/ingest-crawl'
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
@@ -1209,6 +1233,7 @@ export interface FileRouteTypes {
     | '/embed/trait/$key'
     | '/stories/no/$number'
     | '/api/public/jobs/desk-passes'
+    | '/api/public/jobs/living-reading'
     | '/api/public/jobs/review-passes'
     | '/api/public/jobs/wire-followups'
     | '/api/public/watch-feed/{$token}.xml'
@@ -1287,6 +1312,7 @@ export interface RootRouteChildren {
   ApiPublicForecastRunRoute: typeof ApiPublicForecastRunRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicIngestArenaRoute: typeof ApiPublicIngestArenaRoute
+  ApiPublicIngestArtRoute: typeof ApiPublicIngestArtRoute
   ApiPublicIngestCrawlRoute: typeof ApiPublicIngestCrawlRoute
   ApiPublicIngestCropsRoute: typeof ApiPublicIngestCropsRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
@@ -1310,6 +1336,7 @@ export interface RootRouteChildren {
   EmbedTraitKeyRoute: typeof EmbedTraitKeyRoute
   StoriesNoNumberRoute: typeof StoriesNoNumberRoute
   ApiPublicJobsDeskPassesRoute: typeof ApiPublicJobsDeskPassesRoute
+  ApiPublicJobsLivingReadingRoute: typeof ApiPublicJobsLivingReadingRoute
   ApiPublicJobsReviewPassesRoute: typeof ApiPublicJobsReviewPassesRoute
   ApiPublicJobsWireFollowupsRoute: typeof ApiPublicJobsWireFollowupsRoute
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute: typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
@@ -1821,6 +1848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestArenaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingest-art': {
+      id: '/api/public/ingest-art'
+      path: '/api/public/ingest-art'
+      fullPath: '/api/public/ingest-art'
+      preLoaderRoute: typeof ApiPublicIngestArtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest-crawl': {
       id: '/api/public/ingest-crawl'
       path: '/api/public/ingest-crawl'
@@ -1982,6 +2016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsDeskPassesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/living-reading': {
+      id: '/api/public/jobs/living-reading'
+      path: '/api/public/jobs/living-reading'
+      fullPath: '/api/public/jobs/living-reading'
+      preLoaderRoute: typeof ApiPublicJobsLivingReadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/review-passes': {
       id: '/api/public/jobs/review-passes'
       path: '/api/public/jobs/review-passes'
@@ -2079,6 +2120,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicForecastRunRoute: ApiPublicForecastRunRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicIngestArenaRoute: ApiPublicIngestArenaRoute,
+  ApiPublicIngestArtRoute: ApiPublicIngestArtRoute,
   ApiPublicIngestCrawlRoute: ApiPublicIngestCrawlRoute,
   ApiPublicIngestCropsRoute: ApiPublicIngestCropsRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
@@ -2102,6 +2144,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedTraitKeyRoute: EmbedTraitKeyRoute,
   StoriesNoNumberRoute: StoriesNoNumberRoute,
   ApiPublicJobsDeskPassesRoute: ApiPublicJobsDeskPassesRoute,
+  ApiPublicJobsLivingReadingRoute: ApiPublicJobsLivingReadingRoute,
   ApiPublicJobsReviewPassesRoute: ApiPublicJobsReviewPassesRoute,
   ApiPublicJobsWireFollowupsRoute: ApiPublicJobsWireFollowupsRoute,
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute:

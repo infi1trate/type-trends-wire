@@ -47,7 +47,8 @@ async function load(): Promise<DataInput> {
   // I3b: a study counts changes of brands tracked now only.
   const tracked = new Set(sites.filter(s => s.active).map(s => s.domain));
   const ev: EventRow[] = await truthful(db, raw.filter(e => tracked.has(e.domain)), sites);
-  return { now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,
+  const art = await museumInput(sites).catch(() => undefined);
+  return { ...(art ? { art } : {}), now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,
     headline: (signals?.signals ?? []).filter(s => s.tier === "headline").map(s => ({ key: s.key, name: s.name })) };
 }
 /** E4 · the changes a study may count (truth.ts), with the carousel flags and integrity verdicts read anonymously. */
@@ -60,6 +61,14 @@ async function truthful(db: Db, raw: RawEvent[], sites: SiteInfo[]): Promise<Eve
   const sector = new Map(sites.map(s => [s.domain, s.sector]));
   return truthEvents(raw, { carousel, checks, sectorOf: d => sector.get(d) ?? null })
     .map(e => ({ id: e.id, domain: e.domain, type: e.type, source: e.source, at: e.at, snapshot_id: e.snapshot_id, ...(e.seen ? { seen: e.seen } : {}) }));
+}
+/** W3a · the museum study's input: stored works (anonymous, not removed) and, only once they clear the line, every active brand's newest palette. */
+async function museumInput(sites: SiteInfo[]): Promise<import("./museum").ArtInput | undefined> {
+  const { storedArt, allBrandPalettes } = await import("../art/read.server");
+  const a = await storedArt();
+  if (!a.works.length) return undefined;
+  const through = (await supabaseAnon().from("art_works").select("last_seen").order("last_seen", { ascending: false }).limit(1)).data?.[0]?.last_seen ?? null;
+  return { works: a.works, brands: a.ready ? await allBrandPalettes(sites) : [], through };
 }
 const TTL = 10 * 60_000;
 const input = memo(TTL, load);

@@ -9,7 +9,9 @@ import { LEADING_TOP, dryRun, type DryRow, type LeadingRow } from "./rules";
 import type { LivingValues } from "./settings";
 
 type Db = SupabaseClient<Database>;
-export type Colophon = { live: number; editions: EditionRecord[]; dry: { group: number; rows: DryRow[] } | null; leading: LeadingRow[]; runId: number | null; read_at: string };
+export type Colophon = { live: number; editions: EditionRecord[]; dry: { group: number; rows: DryRow[] } | null; leading: LeadingRow[]; runId: number | null; read_at: string;
+  /** L3 · the stored monthly readings, newest first (absent on older records). */
+  readings?: Pick<import("./reading").Reading, "month" | "signals" | "note" | "proposed_edition">[] };
 
 /** Every stored edition with its moves and statuses (oldest status first). */
 export async function loadEditions(db: Db): Promise<EditionRecord[]> {
@@ -45,6 +47,6 @@ export async function loadLeading(db: Db): Promise<{ runId: number | null; rows:
 }
 export async function loadColophon(): Promise<Colophon> {
   const db = supabaseAnon();
-  const [editions, leading] = await Promise.all([loadEditions(db), loadLeading(db).catch(() => null)]);
-  return { live: LIVE_EDITION.number, editions: newestFirst(editions), dry: leading ? dryRun(LIVE_VALUES, leading.rows) : null, leading: leading?.rows ?? [], runId: leading?.runId ?? null, read_at: new Date().toISOString() };
+  const [editions, leading, readings] = await Promise.all([loadEditions(db), loadLeading(db).catch(() => null), import("./reading.server").then(m => m.loadReadings(db)).catch(() => [])]);
+  return { live: LIVE_EDITION.number, editions: newestFirst(editions), dry: leading ? dryRun(LIVE_VALUES, leading.rows) : null, leading: leading?.rows ?? [], runId: leading?.runId ?? null, read_at: new Date().toISOString(), readings };
 }

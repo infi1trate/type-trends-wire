@@ -61,13 +61,15 @@ const brandSector = storedBy((d: string) => brandKey("brand-sector", d), compute
 const brandCard = storedBy((d: string) => brandKey("brand-card", d), computeBrandCard, 60_000);
 
 /** The card as the page draws it: the stored card plus the brand's own icon and its cover (I1), read fresh beside the record. */
-export type BrandCardView = BrandCard & { icon: Pic | null; cover: Cover | null };
+export type BrandCardView = BrandCard & { icon: Pic | null; cover: Cover | null; art?: import("./art/read.server").ArtNear | null };
 /** Critical: the card, or null when the domain is not an active library brand (the route answers 404). Existence is read fresh. */
 export async function loadBrandCard(domain: string): Promise<BrandCardView | null> {
-  const [site, pics] = await Promise.all([siteOf(domain), picsFor(domain)]);
+  // W3a · the nearest museum work is read beside the record (never stored in it); nothing until the works clear the line, and a failed
+  // read draws no line.
+  const [site, pics, art] = await Promise.all([siteOf(domain), picsFor(domain), import("./art/read.server").then(m => m.brandArt(domain)).catch(() => null)]);
   if (!site?.active) return null;
   const card = await brandCard(domain);
-  return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics) } : null;
+  return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics), ...(art ? { art } : {}) } : null;
 }
 /** Deferred: every move with its before/after. */
 export async function loadBrandMoves(domain: string): Promise<{ timeline: BrandPage["timeline"] }> {

@@ -25,7 +25,7 @@ export function FigureTable({ fig }: { fig: Figure }) {
       return <Wrap caption={fig.title}><thead><tr><th scope="col" className={th} style={rule}>Brand</th><th scope="col" className={th} style={rule}>{fig.axes.x.label}</th><th scope="col" className={th} style={rule}>{fig.axes.y.label}</th></tr></thead>
         <tbody>{fig.points.map(p => <tr key={p.domain}><th scope="row" className={td} style={rule}>{p.name}</th><td className={td} style={rule}>{fig.axes.x.unit === "px" ? `${Math.round(p.x)}px` : pctText(p.x)}</td><td className={td} style={rule}>{fig.axes.y.unit === "px" ? `${Math.round(p.y)}px` : pctText(p.y)}</td></tr>)}</tbody></Wrap>;
     case "drift":
-      return <Wrap caption={fig.title}><thead><tr><th scope="col" className={th} style={rule}>Quarter</th><th scope="col" className={th} style={rule}>Brands</th><th scope="col" className={th} style={rule}>Colours</th></tr></thead>
+      return <Wrap caption={fig.title}><thead><tr><th scope="col" className={th} style={rule}>{fig.rowHead ?? "Quarter"}</th><th scope="col" className={th} style={rule}>{fig.rowHead ? "Count" : "Brands"}</th><th scope="col" className={th} style={rule}>Colours</th></tr></thead>
         <tbody>{fig.bands.map(b => <tr key={b.q}><th scope="row" className={td} style={rule}>{q(b.q)}</th><td className={td} style={rule}>{b.brands}</td><td className={td} style={rule}>{b.swatches.map(x => x.hex).join(", ")}</td></tr>)}</tbody></Wrap>;
     case "before-after":
       return <Wrap caption={`${fig.title} (${dayText(fig.before.at)} and ${dayText(fig.after.at)})`}><thead><tr><th scope="col" className={th} style={rule}>Field</th><th scope="col" className={th} style={rule}>Before</th><th scope="col" className={th} style={rule}>After</th></tr></thead>

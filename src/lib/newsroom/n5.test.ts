@@ -276,7 +276,11 @@ describe("B2 · the scout's register and candidates", () => {
     for (const n of ["Dezeen", "Hacker News", "Bluesky accounts", "Google Fonts", "GitHub indicators", "npm indicators", "Product Hunt", "Wayback Machine"]) expect(by.get(n)?.status).toBe("read");
     for (const n of ["Figma Community", "Canva", "TikTok organic posts", "Instagram organic posts", "Dribbble", "Behance", "Mobbin", "Land-book", "Awwwards", "Fonts In Use", "LinkedIn"]) expect(by.get(n)).toMatchObject({ status: "closed by its terms", terms_read: "2026-11-20", terms_link: sc.NOT_RECORDED });
     expect(by.get("Are.na")).toMatchObject({ status: "off" });
-    expect(sc.SOURCES.filter(s => s.status === "read").every(s => s.terms_read === sc.NOT_RECORDED && s.terms_link === sc.NOT_RECORDED)).toBe(true);
+    // W3a · the two museums are the only read sources whose terms the owner read and linked (22 Nov 2026); every other stays not recorded.
+    const museums = ["The Metropolitan Museum of Art (Open Access)", "Art Institute of Chicago (Open Access)"];
+    expect(sc.SOURCES.filter(s => s.status === "read" && !museums.includes(s.name)).every(s => s.terms_read === sc.NOT_RECORDED && s.terms_link === sc.NOT_RECORDED)).toBe(true);
+    expect(by.get(museums[0]!)).toMatchObject({ status: "read", terms_read: "2026-11-22", terms_link: "https://www.metmuseum.org/policies/terms-and-conditions" });
+    expect(by.get(museums[1]!)).toMatchObject({ status: "read", terms_read: "2026-11-22", terms_link: "https://www.artic.edu/terms" });
   });
   it("a terms reading changes only what the register shows", () => {
     const r = sc.registerWithNotes([{ id: 1, at: "2026-11-22T13:00:00Z", source: "dribbble", status: "needs permission", read_on: "2026-11-22", link: "https://dribbble.com/terms", note: "Asks for written permission.", actor: "scout" }]);

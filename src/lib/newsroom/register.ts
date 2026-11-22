@@ -57,6 +57,7 @@ export const REGISTER: readonly ActionDef[] = [
   A("wire_only", "needs the owner", "switch", "Turns “wire only” on or off: stories leave the front page; the tape, brands, signals, studies and the Digest stay as they are.", { since: "N1" }),
   A("spend_cap", "needs the owner", "spend", "Sets or clears the weekly cap (model dollars, build credits).", { since: "N1" }),
   A("draft_status", "needs the owner", "setting", "Sets a social draft's status: approved, posted or declined (from draft: approved or declined; from approved: posted or declined). There is no posting code: outbound posts stay the owner's.", { since: "N5" }),
+  A("art_remove", "needs the owner", "setting", "Removes a museum work on request (W3a): the work stops showing everywhere, its stored thumbnail is deleted and the crawler can never store it again. The row keeps the date and the reason (3 to 300 characters).", { since: "W3a" }),
   A("proposal_status", "needs the owner", "setting", "Sets a proposal's status: open, accepted or declined. Accepting records the owner's yes; the change itself still ships to preview.", { since: "N2" }),
 ];
 export const actionDef = (id: string): ActionDef | null => REGISTER.find(a => a.id === id) ?? null;

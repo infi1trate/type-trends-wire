@@ -28,7 +28,17 @@ export async function healthPayload(): Promise<HealthPayload> {
   const names = await import("./name-check.server").then(m => m.brandNameCheck()).catch(() => null);
   // N1: the weekly spend cap (set or not, reached or not; no amounts); unreadable reads as null and never changes the status.
   const spend = await supabaseAnon().rpc("spend_facts" as never).then(r => (r.error ? null : spendFacts(r.data)), () => null);
-  value = { ...value, brand_names: names, spend };
+  // W3a: museum works stored by source and the newest last_seen (public rows only); unreadable reads as null and never changes the status.
+  const art = await artHealth().catch(() => null);
+  value = { ...value, brand_names: names, spend, art };
   cache = { at: now, value };
   return value;
+}
+
+/** W3a · one line for the museum works: stored (not removed) by source, and when any was last seen. */
+async function artHealth(): Promise<{ met: number; aic: number; newest_last_seen: string | null }> {
+  const db = supabaseAnon();
+  const count = (source: "met" | "aic") => db.from("art_works").select("id", { count: "exact", head: true }).eq("source", source).then(r => { if (r.error) throw r.error; return r.count ?? 0; });
+  const [met, aic, newest] = await Promise.all([count("met"), count("aic"), db.from("art_works").select("last_seen").order("last_seen", { ascending: false }).limit(1).then(r => { if (r.error) throw r.error; return r.data?.[0]?.last_seen ?? null; })]);
+  return { met, aic, newest_last_seen: newest };
 }

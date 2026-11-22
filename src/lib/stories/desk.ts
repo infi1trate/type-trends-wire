@@ -8,6 +8,7 @@ import { EXPECTS, QUEUE_KINDS, QUEUE_STATUSES, SOURCE_KINDS } from "../newsroom/
 import { HOLD_ACTORS, HOLD_JOBS } from "../newsroom/passes";
 import { audienceBody } from "../newsroom/publisher";
 import { sourceNoteBody } from "../newsroom/scout";
+import { artRemoveBody } from "../art/contract";
 
 export const DESK_BODY_LIMIT = 8 * 1024;
 /** N4 · a `review` call may carry one picture (at most 150 KB as WebP, about 200 KB as base64); every other action keeps 8 KB. */
@@ -47,6 +48,8 @@ export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   audience: ["publisher", "owner"], source_note: ["scout", "owner"], candidate_status: ["engineering", "owner"],
   // L2b · a desk asks for a published story's rewrite at the writer's next allowance.
   rewrite: ["standards", "copy desk", "editor in chief", "owner"],
+  // W3a · a museum work is removed on request by the owner only.
+  art_remove: ["owner"],
 };
 /** N3 · the reason standards gives when it releases a story only its second reader held. */
 export const OVERRULE_MIN = 20;
@@ -113,6 +116,7 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("draft_status"), draft: z.number().int().min(1), status: z.enum(["approved", "posted", "declined"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),
   audienceBody.extend({ action: z.literal("audience") }).strict(),
   sourceNoteBody.extend({ action: z.literal("source_note") }).strict(),
+  artRemoveBody.extend({ action: z.literal("art_remove") }).strict(),
   z.object({ action: z.literal("candidate_status"), candidate: z.number().int().min(1), status: z.enum(["accepted", "declined", "added"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),
 ]);
 /** N1 · the call envelope every desk call carries beside its action: who is acting, and the owner's confirmation phrase when needed. */

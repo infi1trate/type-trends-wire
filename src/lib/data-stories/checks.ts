@@ -5,6 +5,8 @@ import { adoption } from "./templates/adoption";
 import { compositeKey } from "../composites";
 import { label } from "../labels";
 import { SECTORS } from "../library";
+import { museumFigures, museumVerdictText, type MuseumFigures } from "./museum";
+import { SHOW_MIN_GROUPS, SHOW_MIN_WORKS } from "../art/palette";
 
 export const SOFTWARE = { sectors: ["dev-tools", "enterprise-saas"] as const, movePts: 0.05, minMoved: 3, minCaptures: 6, minBrands: 2 } as const;
 export const BIG_TYPE = { key: compositeKey("big_type"), minEntries: 25 } as const;
@@ -77,6 +79,7 @@ export function waitOf(id: CheckId, i: DataInput): Wait {
     case "software": { const f = softwareFigures(i); return { have: f.moved, need: SOFTWARE.minMoved, text: `Has ${f.moved} composite signals that moved ${SOFTWARE.movePts * 100} points, needs ${SOFTWARE.minMoved}.`, perQuarter: false }; }
     case "big-type": { const f = bigTypeFigures(i); return { have: f.entries, need: BIG_TYPE.minEntries, text: `Has ${f.entries} dated adopters, needs ${BIG_TYPE.minEntries}.`, perQuarter: false }; }
     case "fintech-colour": { const f = fintechFigures(i); return { have: f.quarters, need: FINTECH_COLOUR.minQuarters, text: `Has ${f.quarters} well-covered quarters of fintech palettes, needs ${FINTECH_COLOUR.minQuarters}.`, perQuarter: true }; }
+    case "museum": { const f = museumFigures(i); return { have: f.works, need: SHOW_MIN_WORKS, text: museumVerdictText(f), perQuarter: false }; }
     case "sector-minds": { const f = sectorMindsFigures(i); return { have: f.sectors, need: SECTOR_MINDS.minSectors, text: `Has ${f.sectors} sectors with ${SECTOR_MINDS.minEvents} dated changes, needs ${SECTOR_MINDS.minSectors}.`, perQuarter: false }; }
   }
 }
@@ -85,5 +88,12 @@ export const CHECKS = {
   "big-type": (i: DataInput) => bigTypeVerdict(bigTypeFigures(i)),
   "fintech-colour": (i: DataInput) => fintechVerdict(fintechFigures(i)),
   "sector-minds": (i: DataInput) => sectorMindsVerdict(sectorMindsFigures(i)),
+  museum: (i: DataInput) => museumVerdict(museumFigures(i)),
 } as const;
 export type CheckId = keyof typeof CHECKS;
+
+// W3a · nearest in the museum: enough stored public-domain works, in enough groups of fifteen.
+export const museumVerdict = (f: MuseumFigures) => verdict([
+  { id: "works", label: "Public-domain works stored", value: f.works, need: SHOW_MIN_WORKS },
+  { id: "groups", label: "Groups of fifteen works or more", value: f.groups, need: SHOW_MIN_GROUPS },
+], x => x.id === "works" ? `Has ${x.value} works, needs ${x.need}.` : `Has ${x.value} groups, needs ${x.need}.`);

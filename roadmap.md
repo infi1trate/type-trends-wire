@@ -180,3 +180,23 @@
 - [x] 4 Gate: before from 5-run history, tolerances, "over target, not caused by this deploy" filed once; fix two slow tests
 - [x] 5 Crossover/stage change needs comparable homepage counts (≥80%, ≥15); docs; sweep run 16
 - [ ] Proof tables, reader looks unchanged, full suite, commit
+
+# W3a + L3 · Museum palettes, monthly design reading, one story rule
+- [x] A1 art_works table (additive, public read of non-removed)
+- [x] A2 POST /api/public/ingest-art (crawler secret, limits, CC0 + host checks, removed never stored again)
+- [x] A3 art_remove owner door action (removed_at + thumbnail deleted); shown on /desk
+- [x] A4 sources register: The Met, Art Institute of Chicago
+- [x] A5 health: art line
+- [x] B pure nearest-palette module + tests + proof picture/spread
+- [x] C1 brand page line + thumbnail (only near work, threshold met); Data view row
+- [x] C2 study (threshold-gated)
+- [x] D1 living_readings table + monthly job + November reading
+- [x] D2–D3 assembly (pure) + proposed edition write + one proposal
+- [x] D4 colophon side-by-side preview (only with a proposed edition)
+- [x] D5 colophon Readings lines
+- [x] D6 tests
+- [x] E1 reading-not-steady rule (AI fields) in crossovers and stage changes
+- [x] E2 data desk finding per unsteady field and sector
+- [x] E3 proof table runs 13 → 16
+- [x] E4 tests
+- [x] Report: heights, full suite, commit

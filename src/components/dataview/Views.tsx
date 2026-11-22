@@ -4,7 +4,7 @@ import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { brandSurfacesQuery, forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
+import { brandCardQuery, brandSurfacesQuery, forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
 import { LibraryBand, ChangeValues } from "@/components/terminal/LibraryShared";
 import { LibrarySite } from "@/components/terminal/LibrarySite";
 import { TraitDetail, BriefView } from "@/components/terminal/Forecast";
@@ -25,6 +25,7 @@ import { label } from "@/lib/labels";
 import { show } from "@/lib/library";
 import { assetVerdictText } from "@/lib/surfaces";
 import type { Edition } from "@/lib/digest/edition";
+import { MUSEUM_STUDY_SLUG } from "@/lib/data-stories/registry";
 
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "–");
 const rowsShape = (n = 6) => [{ kind: "rows" as const, n, height: ROW.compact }];
@@ -81,10 +82,16 @@ export function BrandData({ domain }: { domain: string }) {
   return <Later id="brand-data-later" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
 }
 function BrandDataBody({ domain }: { domain: string }) {
-  const { data } = useSuspenseQuery(librarySiteQuery(domain)), { data: s } = useSuspenseQuery(brandSurfacesQuery(domain));
+  const { data } = useSuspenseQuery(librarySiteQuery(domain)), { data: s } = useSuspenseQuery(brandSurfacesQuery(domain)), { data: card } = useSuspenseQuery(brandCardQuery(domain));
   if (!data) return <DataNote>Not in the library: only tracked brands have a record.</DataNote>;
+  const art = card?.art ?? null;
   return <>
     <LibrarySite domain={domain} embedded />
+    {/* W3a · the nearest museum work's measured distance and the method, only when the brand page shows the line. */}
+    {art && <Band title="NEAREST MUSEUM WORK">
+      <DataTable caption="Nearest public-domain work by palette (OKLab, neutrals set aside, share-weighted; 0 is identical)" head={["Work", "Distance", "Nearest group", "Group distance", "Method"]}
+        rows={[[<a key="w" href={art.href} target="_blank" rel="noopener" className="text-ink underline underline-offset-2">{art.work}</a>, art.distance.toFixed(4), art.group ?? "–", art.groupDistance != null ? art.groupDistance.toFixed(4) : "–", <Lnk key="m" href={`/data/${MUSEUM_STUDY_SLUG}`}>METHOD →</Lnk>]]} />
+    </Band>}
     {/* W1b · every surface side by side with the homepage, then every stored icon and card version with its verdict. */}
     {s.rows.length > 0 && <Band title="SURFACES">
       <DataTable caption="Latest live desktop capture of each page, measured fields side by side" head={["Surface", ...s.fieldNames, "Captured", "Address", "Matches home"]}

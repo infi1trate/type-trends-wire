@@ -103,6 +103,8 @@ export async function runDataChecks(db: Admin, o: { now?: number; write?: boolea
     findings.push(...dd.coverageFindings(sites.map(s => ({ domain: s.domain, name: s.name ?? s.domain, sector: s.sector, last_good: good.get(s.domain) ?? (s.last_snapshot_at && Date.parse(s.last_snapshot_at) < now - 4 * 864e5 ? s.last_snapshot_at : null) })), products.filter(p => active.has(p.domain)), now));
     // 5 · wrong website: the name in its own title or headline, or on the allow-list with the same title.
     findings.push(...dd.wrongWebsite(sites.filter(s => latest.has(s.domain)).map(s => { const l = latest.get(s.domain)!, name = brandName(s.domain, s.name); return { domain: s.domain, name, title: l.title, nameInTitle: nameAppears([s.name, name], s.domain, [l.title, l.h1]), allowed: allowed({ domain: s.domain, title: l.title }) }; })));
+    // 6 · W3a: AI-read fields whose reading was not steady in a sector between the latest two comparable forecast runs.
+    findings.push(...await steadyStep(db, sites).catch(e => { out.errors.push(`steadiness: ${e instanceof Error ? e.message.slice(0, 80) : "error"}`); return []; }));
     out.findings = findings; out.ran = true;
     for (const f of findings) out.counts[f.kind] = (out.counts[f.kind] ?? 0) + 1;
     out.why = `${findings.length} found: ${Object.entries(out.counts).map(([k, n]) => `${n} ${k}`).join(", ") || "none"}`;
@@ -122,6 +124,17 @@ export async function runDataChecks(db: Admin, o: { now?: number; write?: boolea
     await deskDoor("data", { action: "data_run", run: "checks", summary: `Daily checks: ${out.why}; ${out.opened} opened, ${out.closed} closed.`.slice(0, 600), counts: out.counts });
   } catch (e) { out.errors.push(e instanceof Error ? e.message.slice(0, 120) : "error"); }
   return out;
+}
+
+/** W3a · steadiness of every AI-read field in every sector between the latest real run and its comparison partner. */
+async function steadyStep(db: Admin, sites: { domain: string; sector: string }[]): Promise<dd.Finding[]> {
+  const [{ fetchRealRuns }, { comparisonPair }, { AI_FIELDS }, { steadyFor }, { SECTORS }] = await Promise.all([import("../real-runs"), import("../run-gap"), import("../stories/steady"), import("../stories/steady.server"), import("../library")]);
+  const pair = comparisonPair(await fetchRealRuns(db as never));
+  if (!pair) return [];
+  const pairs = AI_FIELDS.flatMap(field => SECTORS.map(scope => ({ field, scope })));
+  const got = await steadyFor(db, pairs, new Map(sites.map(s => [s.domain, s.sector])), pair.earlier.at, pair.latest.at);
+  const { steadyFindings } = await import("./steady-findings");
+  return steadyFindings(got, { early: pair.earlier.id, late: pair.latest.id });
 }
 
 // BACKTEST ------------------------------------------------------------------------------------------------------------------------------

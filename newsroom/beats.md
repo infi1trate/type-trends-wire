@@ -137,7 +137,7 @@ Mondays, after the Digest's week closes, in the desk jobs after the story build.
 
 ## The scout
 
-Keeps the sources register (28 sources: 16 read, 0 needs permission, 11 closed by its terms, 1 off); `source_note` appends a terms reading and changes only what the register shows. Reading a new source still needs the owner. Mondays, one candidates call (1 a day at most) over the last 7 days of outlet wire items, stored Product Hunt launches and names in news items the matcher could not tie to a tracked brand. Up to 15 come back; code keeps at most 10 whose website is a well-formed domain that is not tracked (active or not), not opted out, not proposed in the last 90 days and not a publication, store or social profile, whose sector is one of slug's ten and whose name appears in the item it cites. Each kept candidate is stored and filed with `propose`. Statuses: proposed → accepted or declined (the owner) → added (engineering, once the crawler's seed list carries it). Nothing is added to the library by the product.
+Keeps the sources register (30 sources: 18 read, 0 needs permission, 11 closed by its terms, 1 off); `source_note` appends a terms reading and changes only what the register shows. Reading a new source still needs the owner. Mondays, one candidates call (1 a day at most) over the last 7 days of outlet wire items, stored Product Hunt launches and names in news items the matcher could not tie to a tracked brand. Up to 15 come back; code keeps at most 10 whose website is a well-formed domain that is not tracked (active or not), not opted out, not proposed in the last 90 days and not a publication, store or social profile, whose sector is one of slug's ten and whose name appears in the item it cites. Each kept candidate is stored and filed with `propose`. Statuses: proposed → accepted or declined (the owner) → added (engineering, once the crawler's seed list carries it). Nothing is added to the library by the product.
 
 ## Door actions added in N5
 
@@ -163,6 +163,7 @@ A census counts what homepages say now: a brand counts when its newest capture a
   - Study No. 3, “Where did fintech's colour go?” (draft: Only 5 well-covered quarters have palettes for 15+ fintech brands (needs 8))
 - **Sector against sector** (`sector-v-sector`): The same measure across all ten sectors, side by side.
   - Study No. 4, “Which sector changes its mind most?” (live)
+  - Study No. 6, “Which museum palettes are sector homepages nearest to?” (hidden from readers until its check passes on stored data)
 
 ## The Digest
 

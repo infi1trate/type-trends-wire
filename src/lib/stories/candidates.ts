@@ -12,6 +12,7 @@ import { rowKey, tiersFrom, type SignalRow } from "../signals";
 import { SECTOR_COVERAGE_MIN } from "../sector-lens";
 import type { Tier } from "../tiers";
 import { comparisonPair } from "../run-gap";
+import { isAiField, notSteadyReason, unsteadyKey, type AiField, type NotSteady, type Unsteady } from "./steady";
 import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../promo";
 import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
 import { REVERSED_REASON, reversalIds } from "../reversal";
@@ -42,6 +43,8 @@ export type BuildInput = {
   /** E2e · measurement-integrity verdicts per live change (integrity.ts). When present, only the passing part of each change is a tape
    *  line or can feed a story; the rest is the Data view's unconfirmed list. Absent only in older rule tests. */
   checks?: Record<number, Check>;
+  /** W3a Part E · AI-read fields whose reading was not steady between the build's two runs, per scope (absent: none known). */
+  unsteady?: Unsteady[];
   events: EventRow[]; rebrands: RebrandRow[];
   /** Real (non-dev) forecast runs, oldest first. */
   runs: RunRows[];
@@ -108,7 +111,10 @@ export function context(input: BuildInput) {
   const stageFor = (key: string, sector: string | null) => { const s = sector && covered(sector) ? row(cur, key, sector) : null; return s?.status === "ok" ? { stage: s.stage, scope: sector! } : { stage: row(cur, key)?.stage ?? null, scope: "all" }; };
   /** The one valid run-to-run comparison (latest real run vs the most recent real run at least MIN_RUN_GAP_DAYS older), or null. */
   const pair = comparisonPair(runs);
-  return { runs, cur, pair, tiers, headline, row, sites, bySector, rank, byRank, showing, covered, stageFor, now: input.now };
+  const unsteadyMap = new Map((input.unsteady ?? []).map(u => [unsteadyKey(u.field, u.scope), u]));
+  /** W3a · the not-steady verdict for a signal key's field in a scope (null for measured fields or a steady reading). */
+  const unsteadyOf = (key: string, scope: string) => { const f = key.split(":")[0]!; return isAiField(f) ? unsteadyMap.get(unsteadyKey(f, scope)) ?? null : null; };
+  return { runs, cur, pair, tiers, headline, row, sites, bySector, rank, byRank, showing, covered, stageFor, unsteadyOf, now: input.now };
 }
 const tierOf = (ctx: Ctx, key: string): Tier | null => ctx.tiers.get(canonical(key)) ?? null;
 const shown = (ctx: Ctx, key: string) => { const t = tierOf(ctx, key); return t === "headline" || t === "supporting"; };
@@ -241,7 +247,7 @@ const growth = (id: string, prev: { id: number }, cur: { id: number }, a: Sample
 
 // SHIFT --------------------------------------------------------------------------------------------
 export const stageDistance = (from: string | null, to: string | null) => { const a = stageName(from), b = stageName(to); return a && b ? Math.abs(STAGE_ORDER[a]! - STAGE_ORDER[b]!) : 1; };
-export function shiftCandidates(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
+export function shiftCandidates(ctx: Ctx, refused?: ReadGrowth[], notSteady?: NotSteady[]): Candidate[] {
   const out: Candidate[] = [];
   // Only the latest real run against the most recent real run at least MIN_RUN_GAP_DAYS older; closer runs are reruns.
   if (ctx.pair) {
@@ -254,6 +260,9 @@ export function shiftCandidates(ctx: Ctx, refused?: ReadGrowth[]): Candidate[] {
       if (!before || !after || before === after) continue;
       // P2 · a stage that moved only because many more homepages were read is not a change.
       if (!readComparable(was, r)) { refused?.push(growth(`shift:${key}:${cur.id}`, prev, cur, was, r)); continue; }
+      // W3a · nor one whose AI-read field changed on too many homepages read in both runs (the reading follows the day's page).
+      const u = ctx.unsteadyOf(key, "all");
+      if (u) { notSteady?.push(steadyRefusal(`shift:${key}:${cur.id}`, u)); continue; }
       const l = label(key), ex = ctx.showing(key);
       out.push({ id: `shift:${key}:${cur.id}`, type: "shift", kicker: `Shift · ${l.dimension}`, headline: `${l.name} moved from ${before} to ${after}`,
         deck: `${r.current_share != null ? `On ${pct(r.current_share, 1)} of tracked homepages` : "Share not measured"}${ex.length ? `, including ${listOf(ex.slice(0, 3))}` : ""}. Forecast run ${cur.id}.`,
@@ -385,7 +394,17 @@ function crossoverPairs(ctx: Ctx) {
 /** The rows (run, signal, sector) whose stored quarters the crossover rule reads. */
 export const crossoverQuarterNeeds = (ctx: Ctx): { run: number; key: string; scope: string }[] =>
   ctx.pair ? crossoverPairs(ctx).filter(p => p.comparable).map(p => ({ run: ctx.pair!.latest.id, key: p.key, scope: p.r.scope })) : [];
-export function crossoverCandidates(ctx: Ctx, refused?: ReadGrowth[], notNew?: NotNew[]): Candidate[] {
+const steadyRefusal = (id: string, u: Unsteady): NotSteady => ({ id, field: u.field, scope: u.scope, changed: u.changed, both: u.both, reason: notSteadyReason(u.changed, u.both) });
+/** W3a · the (AI field, scope) pairs whose steadiness the build must read: crossovers passing every row check, and stage changes. */
+export function steadyNeeds(ctx: Ctx): { field: AiField; scope: string }[] {
+  if (!ctx.pair) return [];
+  const prev = ctx.pair.earlier, out = new Map<string, { field: AiField; scope: string }>();
+  const add = (key: string, scope: string) => { const f = key.split(":")[0]!; if (isAiField(f)) out.set(unsteadyKey(f, scope), { field: f, scope }); };
+  for (const p of crossoverPairs(ctx)) if (p.comparable) add(p.key, p.r.scope);
+  for (const r of ctx.pair.latest.rows) { const key = rowKey(r); if (r.scope !== "all" || !ctx.headline.has(key)) continue; const was = ctx.row(prev, key); if (was && stageName(was.stage) && stageName(r.stage) && stageName(was.stage) !== stageName(r.stage)) add(key, "all"); }
+  return [...out.values()].sort((a, b) => a.field.localeCompare(b.field) || a.scope.localeCompare(b.scope));
+}
+export function crossoverCandidates(ctx: Ctx, refused?: ReadGrowth[], notNew?: NotNew[], notSteady?: NotSteady[]): Candidate[] {
   const out: Candidate[] = [];
   if (!ctx.pair) return out;
   const prev = ctx.pair.earlier, cur = ctx.pair.latest;
@@ -394,6 +413,9 @@ export function crossoverCandidates(ctx: Ctx, refused?: ReadGrowth[], notNew?: N
     const id = `crossover:${key}:${r.scope}:${cur.id}`;
     // P2 · a share that "rose" because the sector's homepages read rose (12 → 28) is not a crossover.
     if (!comparable) { refused?.push(growth(id, prev, cur, was, r)); continue; }
+    // W3a · nor a share whose AI-read field changed on more than a quarter of the sector's homepages read in both runs.
+    const u = ctx.unsteadyOf(key, r.scope);
+    if (u) { notSteady?.push(steadyRefusal(id, u)); continue; }
     // P2b · nor is a share that was already over the floor in a well-read earlier quarter of the later run's own history.
     const h = sectorHistory(r.quarters);
     if (!h.ok) { notNew?.push({ id, reason: h.reason, quarter: h.quarter ? { q: h.quarter.q, share: h.quarter.s, read: h.quarter.n } : null }); continue; }

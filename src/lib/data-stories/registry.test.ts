@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { DATA_STORIES, WHERE_YOU_SIT, TEMPLATES, SERIES, RETIRED_NUMBERS, relatedFor } from "./registry";
 import { BUILDERS, statusOf, indexRows } from "./build";
-import { softwareVerdict, bigTypeVerdict, fintechVerdict, sectorMindsVerdict } from "./checks";
+import { softwareVerdict, bigTypeVerdict, fintechVerdict, sectorMindsVerdict, museumVerdict } from "./checks";
 import { pickBrands } from "./picker";
 
-const VERDICT = { software: softwareVerdict, "big-type": bigTypeVerdict, "fintech-colour": fintechVerdict, "sector-minds": sectorMindsVerdict } as const;
+const VERDICT = { software: softwareVerdict, "big-type": bigTypeVerdict, "fintech-colour": fintechVerdict, "sector-minds": sectorMindsVerdict, museum: museumVerdict } as const;
 describe("studies registry", () => {
   it("slugs and numbers are unique; the brand tool is not a study and number 5 is retired, never reused", () => {
     const slugs = [...DATA_STORIES.map(e => e.slug), WHERE_YOU_SIT.slug];
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(new Set(DATA_STORIES.map(e => e.number)).size).toBe(DATA_STORIES.length);
-    expect(DATA_STORIES.map(e => e.number)).toEqual([1, 2, 3, 4]);
+    expect(DATA_STORIES.map(e => e.number)).toEqual([1, 2, 3, 4, 6]);
     expect(RETIRED_NUMBERS).toEqual([5]);
     for (const n of RETIRED_NUMBERS) expect(DATA_STORIES.some(e => e.number === n)).toBe(false);
     expect("number" in WHERE_YOU_SIT).toBe(false);
@@ -21,7 +21,7 @@ describe("studies registry", () => {
     expect(SERIES.map(s => s.title)).toEqual(["Who moved first", "The long view", "Sector against sector"]);
     for (const s of SERIES) { expect(s.description.split(/\s+/).length).toBeLessThan(20); expect(s.description).not.toMatch(/\d/); }
     const of = Object.fromEntries(DATA_STORIES.map(e => [e.number, e.series]));
-    expect(of).toEqual({ 1: "long-view", 2: "first-movers", 3: "long-view", 4: "sector-v-sector" });
+    expect(of).toEqual({ 1: "long-view", 2: "first-movers", 3: "long-view", 4: "sector-v-sector", 6: "sector-v-sector" });
   });
   it("every live story passed its check on the recorded figures and has a builder; every draft carries a reason and failed", () => {
     for (const e of DATA_STORIES) {
@@ -29,7 +29,8 @@ describe("studies registry", () => {
       if (e.status === "live") { expect(v?.pass, e.slug).toBe(true); expect(BUILDERS[e.slug], e.slug).toBeDefined(); expect(e.reason).toBeNull(); }
       else { expect(e.reason?.length ?? 0, e.slug).toBeGreaterThan(20); expect(v?.pass, e.slug).toBe(false); }
     }
-    expect(DATA_STORIES.filter(e => e.status === "live").map(e => e.number)).toEqual([1, 2, 4]);
+    expect(DATA_STORIES.filter(e => e.status === "live").map(e => e.number)).toEqual([1, 2, 4, 6]);
+    expect(DATA_STORIES.filter(e => e.hidden).map(e => e.number)).toEqual([6]);
     expect(DATA_STORIES.find(e => e.number === 3)?.status).toBe("draft");
   });
   it("templates come from the six views", () => {
