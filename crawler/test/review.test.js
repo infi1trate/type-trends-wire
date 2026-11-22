@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isoWeek, settings, storyPath, changedShare, measuresOf, verdict, PAGES, WIDTHS } from "../src/review.js";
+import { isoWeek, settings, storyPath, changedShare, measuresOf, verdict, middle, PAGES, WIDTHS } from "../src/review.js";
 
 test("the weekly run is named for its ISO week", () => {
   assert.equal(isoWeek(new Date("2026-11-22T10:00:00Z")), "2026-W47");
@@ -50,4 +50,10 @@ test("the picture sent is the top of the page, within 1280 × 1600 and 150 KB", 
     assert.ok(meta.width <= PICTURE.maxWidth && meta.height <= PICTURE.maxHeight, `${w}×${h} → ${meta.width}×${meta.height}`);
     assert.equal(meta.width, Math.min(w, PICTURE.maxWidth));
   }
+});
+test("first byte is the middle of the loads that were measured", () => {
+  assert.equal(middle([902, 310, 420]), 420);
+  assert.equal(middle([NaN, 310, 420]), 310);
+  assert.equal(middle([1100]), 1100);
+  assert.ok(Number.isNaN(middle([NaN, NaN])));
 });

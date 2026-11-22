@@ -14,7 +14,7 @@ export const WIDTHS = [1440, 768, 390];
 export const KINDS = ["weekly", "before", "after", "test"];
 export const ACTORS = ["design review", "engineering"];
 export const PICTURE = { maxWidth: 1280, maxHeight: 1600, maxBytes: 150_000 }; // the door takes the top of the page: at most 1280 × 1600 and 150 KB
-export const FIRST_BYTE_RETRY_MS = 800;
+export const FIRST_BYTE_LOADS = 3;
 export const COMPARE_WIDTH = 720, COMPARE_MAX_HEIGHT = 12_000, PIXEL_TOLERANCE = 24;
 /** The pages the product reviews; `story` is resolved from the front page's own feed at run time. */
 export const PAGES = [
@@ -73,6 +73,11 @@ export function measuresOf(m, extra = {}) {
   if (typeof m.overflow_x === "boolean") out.overflow_x = m.overflow_x;
   if (Number.isFinite(extra.changed_share)) out.changed_share = Math.min(1, Math.max(0, Math.round(extra.changed_share * 1e4) / 1e4));
   return out;
+}
+/** Pure: the middle value of the numbers that were measured (the lower middle of an even count); NaN when none was. */
+export function middle(values) {
+  const v = values.filter(Number.isFinite).sort((a, b) => a - b);
+  return v.length ? v[Math.floor((v.length - 1) / 2)] : NaN;
 }
 /** Pure: only the door's verdict, never the body it echoed. */
 export function verdict(status, text) {
@@ -160,6 +165,15 @@ async function shoot(browser, base, p, width) {
     return { m: { ...m, console_errors: consoleErrors, failed_requests: failed }, png };
   } finally { await ctx.close().catch(() => null); }
 }
+/** A bare load of the page that reads only its first byte (request sent to first response byte), in a fresh context. */
+async function firstByte(browser, base, p, width) {
+  const ctx = await browser.newContext({ viewport: { width, height: 900 }, ignoreHTTPSErrors: process.env.REVIEW_INSECURE === "1" });
+  try {
+    const page = await ctx.newPage();
+    await page.goto(base + p.path, { waitUntil: "commit", timeout: 30_000 });
+    return await page.evaluate(() => { const n = performance.getEntriesByType("navigation")[0]; return n ? n.responseStart - n.requestStart : NaN; });
+  } finally { await ctx.close().catch(() => null); }
+}
 export async function picture(png) {
   const meta = await sharp(png).metadata(), w = meta.width || PICTURE.maxWidth, h = meta.height || PICTURE.maxHeight;
   for (const width of [Math.min(w, PICTURE.maxWidth), 1024, 800, 640].filter((x, i, a) => x <= w && a.indexOf(x) === i)) {
@@ -201,8 +215,10 @@ async function main() {
         let shot = null;
         try {
           shot = await shoot(browser, s.base, p, width);
-          // A cold start can push one load's first byte over the target; a second load says whether the page is slow or was cold.
-          if (shot.m.first_byte_ms > FIRST_BYTE_RETRY_MS) { const again = await shoot(browser, s.base, p, width).catch(() => null); if (again && again.m.first_byte_ms < shot.m.first_byte_ms) shot = again; }
+          // One load can meet a cold start. First byte is the middle of three loads, so a single slow or lucky one decides nothing.
+          const more = [];
+          for (let i = 0; i < FIRST_BYTE_LOADS - 1; i++) more.push(await firstByte(browser, s.base, p, width).catch(() => NaN));
+          shot.m.first_byte_ms = middle([shot.m.first_byte_ms, ...more]);
         } catch (e) { console.log(`${p.page} ${width}: could not be opened (${String(e?.message ?? e).slice(0, 80)})`); skipped++; continue; }
         const raw = await compareRaw(shot.png), file = `${p.page}-${width}.png`;
         await sharp(raw, { raw: { width: COMPARE_WIDTH, height: raw.length / (COMPARE_WIDTH * 3), channels: 3 } }).png({ compressionLevel: 9 }).toFile(path.join(mine, file));
