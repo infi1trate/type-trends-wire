@@ -180,7 +180,7 @@ export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
       return [t && t.captured_at.slice(0, 10) >= g.crop.captured_at.slice(0, 10) ? thumbItem(t, g.crop.report) : cropItem(g.crop, "after")];
     });
     const tiles = (fromGrid.length >= 2 ? fromGrid : mosaicOf(s.domains, null)).slice(0, MOSAIC_MAX);
-    if (tiles.length >= 2) return plan("mosaic", "roundup", tiles, captionOf(tiles, p, "After the change"));
+    if (tiles.length >= 2) return plan("mosaic", "roundup", tiles, captionOf(tiles, p, "Named brands' first screens"));
     return fallback(s, p);
   }
   if (s.type === "breakout" || s.type === "first_seen" || s.type === "white_space") {

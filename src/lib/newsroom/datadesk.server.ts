@@ -114,8 +114,9 @@ export async function runDataChecks(db: Admin, o: { now?: number; write?: boolea
       const res = await deskDoor("data", { action: "finding", kind: f.kind, key: f.key, subject: f.subject, ...(f.measure ? { measure: f.measure } : {}), ...(f.expected ? { expected: f.expected.slice(0, 600) } : {}), ...(f.found ? { found: f.found.slice(0, 600) } : {}), receipt: f.receipt });
       if (res.status < 300) out.opened++; else out.errors.push(`finding ${f.key}: ${res.status}`);
     }
+    const keyOf = new Map(open.map(o => [o.id, o.key])), day = new Date(now).toISOString().slice(0, 10);
     for (const id of r.close.slice(0, 200)) {
-      const res = await deskDoor("data", { action: "finding_close", finding: id, reason: `No longer found by the daily check on ${new Date(now).toISOString().slice(0, 10)}.` });
+      const res = await deskDoor("data", { action: "finding_close", finding: id, reason: dd.closeReason(keyOf.get(id) ?? "", day) });
       if (res.status < 300) out.closed++;
     }
     await deskDoor("data", { action: "data_run", run: "checks", summary: `Daily checks: ${out.why}; ${out.opened} opened, ${out.closed} closed.`.slice(0, 600), counts: out.counts });

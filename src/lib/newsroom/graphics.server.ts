@@ -2,7 +2,7 @@
 // call (the AI reads' model, recorded in desk_calls and ai_usage; images are never stored or logged), the choice through the door's
 // store, the study chart-form choices, and the share-image check. Service role only; every desk decision goes through the door.
 import type { Admin } from "./review.server";
-import { alternates, chosenRefs, decidePicture, graphicsText, parseGraphics, GRAPHICS_SYSTEM, GRAPHICS_TOOL, type GraphicsInput, type PictureDecision, type PictureRef } from "./graphics";
+import { alternates, chosenRefs, decidePicture, isSetStory, graphicsText, parseGraphics, GRAPHICS_SYSTEM, GRAPHICS_TOOL, type GraphicsInput, type PictureDecision, type PictureRef } from "./graphics";
 import { DESK_CAPS, capOf } from "./caps";
 import { currentDeskVersion } from "./golden/versions";
 
@@ -25,7 +25,7 @@ export async function pictureInput(id: string): Promise<{ g: GraphicsInput; plan
   const [{ cropsFor }, { toCrop }, { leadPics }] = await Promise.all([import("../read.server"), import("../crops"), import("../lead-picture.server")]);
   const [rows, pics] = await Promise.all([cropsFor(r.s.domains).catch(() => []), leadPics()]);
   const alt = alternates(r.plan, rows.map(toCrop), { ok: pics.okCrop, domains: r.s.domains, happened_at: r.s.happened_at });
-  return { plan: r.plan, g: { story: { id, headline: r.s.headline, deck: r.s.deck ?? null, caption: r.plan.caption }, chosen: chosenRefs(r.plan), alternates: alt.refs } };
+  return { plan: r.plan, g: { story: { id, headline: r.s.headline, deck: r.s.deck ?? null, caption: r.plan.caption }, chosen: chosenRefs(r.plan), alternates: alt.refs, set: isSetStory(id) } };
 }
 
 /** A stored picture's bytes, read in memory only (crops and assets from the crops bucket, fold thumbnails from the thumbnails bucket). */

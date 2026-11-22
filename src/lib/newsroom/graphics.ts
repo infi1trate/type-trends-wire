@@ -15,10 +15,11 @@ export type Overall = (typeof OVERALL)[number];
 /** One picture shown to the desk: `c<n>` the rule's own pictures in order, `a<n>` the alternates. */
 export type PictureRef = { ref: string; asset: string; src: string; domain: string; section: string; date: string; role: LeadItem["role"]; label: string };
 /** `failing`: assets of shown pictures that do not pass the quality gate; whatever the model says, they are never usable. */
-export type GraphicsInput = { story: { id: string; headline: string; deck: string | null; caption: string | null }; chosen: PictureRef[]; alternates: PictureRef[]; failing?: readonly string[] };
+export type GraphicsInput = { story: { id: string; headline: string; deck: string | null; caption: string | null }; chosen: PictureRef[]; alternates: PictureRef[]; failing?: readonly string[];
+  /** N3b · the story's rule picture is a set of several brands' first screens (`isSetStory`). */ set?: boolean };
 export type GraphicsAnswer = { pictures: { ref: string; usable: boolean; problem: PictureProblem; why: string }[]; overall: Overall; why: string };
 /** What the desk's call (or its fallback) decided, as stored in picture_choices. */
-export type PictureDecision = { kind: "rule" | "crop" | "pair" | "none"; assets: string[]; verdict: "keep" | "alternate" | "none" | "fallback"; reason: string; per_picture: GraphicsAnswer["pictures"]; ignored: string[] };
+export type PictureDecision = { kind: "rule" | "crop" | "pair" | "none"; assets: string[]; verdict: "keep" | "alternate" | "none" | "fallback"; reason: string; per_picture: GraphicsAnswer["pictures"]; ignored: string[] ; /** N3b · desk notes to record on the story (never shown to readers). */ notes?: string[] };
 
 const day = (iso: string) => iso.slice(0, 10);
 const pathOf = (src: string) => src.replace(/^\/(?:crops|thumbs|assets)\//, "");
@@ -85,7 +86,13 @@ export function parseGraphics(raw: unknown, refs: readonly string[]): GraphicsAn
  * otherwise); an alternate must be judged usable to be used. A pair with an unusable before and a usable after is reduced to the after
  * crop; a pair is never rebuilt from crops of other dates. With no answer (a failed call or the limit used) the rule's picture stands.
  */
-export function decidePicture(answer: GraphicsAnswer | null, g: Pick<GraphicsInput, "chosen" | "alternates" | "failing">, fallbackWhy?: string): PictureDecision {
+/** N3b · stories whose rule picture is a set of several brands' first screens: roundup, against the grain, breakout, white space, census
+ *  (agents and sale). One brand's change (move, rebrand, quiet change, news) is not a set. */
+export const SET_STORY = /^(roundup|against|breakout|white|census):/;
+export const isSetStory = (id: string) => SET_STORY.test(id);
+/** The problems that take a picture out of a set: the page itself is not shown. "change not visible" only leaves a desk note. */
+export const REMOVES_FROM_SET: ReadonlySet<PictureProblem> = new Set<PictureProblem>(["blank", "loading state", "cookie or consent banner", "login wall", "error page"]);
+export function decidePicture(answer: GraphicsAnswer | null, g: Pick<GraphicsInput, "chosen" | "alternates" | "failing" | "set">, fallbackWhy?: string): PictureDecision {
   const failing = new Set(g.failing ?? []);
   if (!answer && failing.size && g.chosen.some(c => failing.has(c.asset))) return { kind: "none", assets: [], verdict: "fallback", reason: `No usable picture: the rule's picture does not pass the quality gate and ${fallbackWhy ?? "no answer from the graphics desk"}.`.slice(0, 600), per_picture: [], ignored: [] };
   if (!answer) return { kind: "rule", assets: g.chosen.map(c => c.asset), verdict: "fallback", reason: `The rule's picture stands: ${fallbackWhy ?? "no answer from the graphics desk"}.`, per_picture: [], ignored: [] };
@@ -97,6 +104,25 @@ export function decidePicture(answer: GraphicsAnswer | null, g: Pick<GraphicsInp
   const keepRule = (): PictureDecision => ({ kind: "rule", assets: g.chosen.map(c => c.asset), verdict: "keep", reason: `Kept the rule's picture: ${why}`, per_picture: answer.pictures, ignored });
   const useAlt = (a: PictureRef, how: string): PictureDecision => ({ kind: "crop", assets: [a.asset], verdict: "alternate", reason: `${how}: ${why}`.slice(0, 600), per_picture: answer.pictures, ignored });
   const none = (how: string): PictureDecision => ({ kind: "none", assets: [], verdict: "none", reason: `${how}: ${why}`.slice(0, 600), per_picture: answer.pictures, ignored });
+  // N3b · a set of several brands' first screens: a picture leaves it only for its own problem (blank, loading, consent banner, login
+  // wall, error page) or the quality gate; "change not visible" (and any overall answer) removes nothing and is kept as a desk note.
+  if (g.set && g.chosen.length >= 2) {
+    const removes = (r: PictureRef) => { if (failing.has(r.asset)) return true; const p = by.get(r.ref); return !!p && !p.usable && REMOVES_FROM_SET.has(p.problem); };
+    const used = new Set<string>(), tiles: PictureRef[] = [], out: PictureRef[] = [];
+    for (const c of g.chosen) {
+      if (!removes(c)) { tiles.push(c); used.add(c.asset); continue; }
+      out.push(c);
+      const sub = g.alternates.find(a => a.domain === c.domain && !used.has(a.asset) && usable(a, true) && !removes(a));
+      if (sub) { tiles.push(sub); used.add(sub.asset); }
+    }
+    const unseen = tiles.filter(t => { const p = by.get(t.ref); return !!p && (p.problem === "change not visible" || (!p.usable && !REMOVES_FROM_SET.has(p.problem))); });
+    if (answer.overall !== "keep") ignored.push(`overall "${answer.overall}" is not applied to a set of named brands' first screens`);
+    const notes = unseen.length ? [`Picture check: ${unseen.map(t => `${t.ref} (${t.domain})`).join(", ")} ${unseen.length === 1 ? "does" : "do"} not show the claim (${why}). Kept as the named brands' first screens; nothing removed.`.slice(0, 1000)] : [];
+    const base = { per_picture: answer.pictures, ignored, notes };
+    if (tiles.length < 2) return { kind: "none", assets: [], verdict: "none", reason: `No usable picture: fewer than two of the named brands' first screens are usable (${out.map(o => o.ref).join(", ")} not usable): ${why}`.slice(0, 600), ...base };
+    if (!out.length) return { kind: "rule", assets: g.chosen.map(c => c.asset), verdict: "keep", reason: `Kept the named brands' first screens${unseen.length ? " (the change is not visible in them; noted for the desk)" : ""}: ${why}`.slice(0, 600), ...base };
+    return { kind: "crop", assets: tiles.map(t => t.asset).slice(0, 4), verdict: "alternate", reason: `The set keeps its usable first screens (${out.map(o => o.ref).join(", ")} not usable): ${why}`.slice(0, 600), ...base };
+  }
   if (answer.overall === "no picture shows it") return none("No picture shows it");
   const m = /^use alternate (\d)$/.exec(answer.overall);
   if (m) {

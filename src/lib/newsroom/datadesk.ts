@@ -40,11 +40,7 @@ export function contradictions(cards: readonly CardFacts[], log: readonly LogFac
     const th = newest.get(`${c.domain}|theme`);
     if (th && c.theme && c.theme !== th.value)
       out.push({ kind: "contradiction", key: `contradiction:${c.domain}:theme`, subject: c.domain, measure: "theme", expected: `${th.value} theme (the change log, ${th.at.slice(0, 10)})`, found: `${c.theme} theme (the brand card)`, receipt: { event: th.event, card_at: c.at } });
-    const dark = darkShare(c.palette);
-    if (c.theme === "light" && dark != null && dark >= 0.5)
-      out.push({ kind: "contradiction", key: `contradiction:${c.domain}:theme-palette`, subject: c.domain, measure: "theme", expected: "a light theme above a mostly light palette", found: `Light mode above a palette that is ${Math.round(dark * 100)}% dark`, receipt: { palette: c.palette.map(p => p.hex), card_at: c.at } });
-    if (c.theme === "dark" && dark != null && dark <= 0.2)
-      out.push({ kind: "contradiction", key: `contradiction:${c.domain}:theme-palette`, subject: c.domain, measure: "theme", expected: "a dark theme above a mostly dark palette", found: `Dark mode above a palette that is ${Math.round(dark * 100)}% dark`, receipt: { palette: c.palette.map(p => p.hex), card_at: c.at } });
+    // N3b · the theme-against-palette check is withdrawn (WITHDRAWN_CHECKS): the theme reads the page background, the palette every colour.
   }
   return out;
 }
@@ -120,6 +116,14 @@ export function coverageFindings(sites: readonly SiteCoverage[], products: reado
 export type TitleFacts = { domain: string; name: string; title: string | null; nameInTitle: boolean; allowed: boolean };
 export const wrongWebsite = (ts: readonly TitleFacts[]): Finding[] => ts.filter(t => !t.nameInTitle && !t.allowed).map(t => ({ kind: "wrong website" as const, key: `wrong website:${t.domain}`, subject: t.domain, measure: "page title", expected: `${t.name} in its own homepage title or headline`, found: t.title ? `title “${t.title.slice(0, 120)}”` : "no title", receipt: { title: t.title } }));
 
+/** N3b · checks taken out of the daily run until their labels are defined. Their open findings are closed by the next run with this
+ *  reason, and an open one never holds a story (`findingsOn`). Keys end with the suffix. */
+export const WITHDRAWN_CHECKS = [
+  { suffix: ":theme-palette", reason: "Check withdrawn: theme against palette is off until the theme and palette labels are defined (proposal filed); this finding is not evidence." },
+] as const;
+export const withdrawnReason = (key: string | null | undefined): string | null => (key ? WITHDRAWN_CHECKS.find(w => key.endsWith(w.suffix))?.reason ?? null : null);
+/** The reason a run closes an open finding: its check was withdrawn, or the check no longer finds it on that day. */
+export const closeReason = (key: string, day: string) => withdrawnReason(key) ?? `No longer found by the daily check on ${day}.`;
 /** Open findings that a new run no longer finds are closed by it (with the day), others stay open; new ones are opened. */
 export function reconcile(open: readonly { id: number; key: string; kind: string }[], found: readonly Finding[], ranKinds: ReadonlySet<string>): { open: Finding[]; close: number[] } {
   const keys = new Set(found.map(f => f.key)), had = new Set(open.map(o => o.key));
@@ -127,9 +131,9 @@ export function reconcile(open: readonly { id: number; key: string; kind: string
 }
 
 // THE NINTH CHECKLIST ITEM ---------------------------------------------------------------------------------------------------------------
-export type OpenFinding = { id: number; kind: string; subject: string; measure: string | null; found: string | null };
-/** Open findings on a brand and measure the story cites: exact match of both, nothing looser. */
-export const findingsOn = (open: readonly OpenFinding[], cites: readonly { domain: string; measure: string }[]) => open.filter(f => f.measure && cites.some(c => c.domain === f.subject && c.measure === f.measure));
+export type OpenFinding = { id: number; kind: string; subject: string; measure: string | null; found: string | null; key?: string };
+/** Open findings on a brand and measure the story cites: exact match of both, nothing looser. A withdrawn check's finding never counts. */
+export const findingsOn = (open: readonly OpenFinding[], cites: readonly { domain: string; measure: string }[]) => open.filter(f => f.measure && !withdrawnReason(f.key) && cites.some(c => c.domain === f.subject && c.measure === f.measure));
 /** The measures a stored change cites (its changed fields, named as the product's measures). */
 export function citesOf(events: readonly { domain: string; before?: unknown; after?: unknown }[]): { domain: string; measure: string }[] {
   const o = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v as object) : []);

@@ -1,0 +1,101 @@
+{
+ "note": "Stored answers of graphics fixture calls 36 (No. 42) and 38 (No. 44) from the N3 proof, frozen for N3b tests.",
+ "calls": [
+  {
+   "id": 36,
+   "story_ids": [
+    "breakout:components:logo_wall:consumer-apps:13"
+   ],
+   "answer": {
+    "why": "None of the provided screenshots show a logo wall (a section displaying the logos of partner companies or customers). They all show hero sections or standard footers.",
+    "overall": "no picture shows it",
+    "pictures": [
+     {
+      "ref": "c1",
+      "why": "This is a hero section for Headspace; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c2",
+      "why": "This is a hero section for Readwise; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c3",
+      "why": "This is a hero section for Canva; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a1",
+      "why": "This is a standard text-based footer; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a2",
+      "why": "Duplicate of c3; no logo wall visible.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a3",
+      "why": "Duplicate of c2; no logo wall visible.",
+      "usable": false,
+      "problem": "change not visible"
+     }
+    ]
+   }
+  },
+  {
+   "id": 38,
+   "story_ids": [
+    "breakout:imagery:data_viz:dev-tools:13"
+   ],
+   "answer": {
+    "why": "None of the chosen images show charts or data visualizations on the homepages of these dev tools. The alternates also fail to provide usable examples for the other brands.",
+    "overall": "no picture shows it",
+    "pictures": [
+     {
+      "ref": "c1",
+      "why": "This is a screenshot of the Tailwind CSS homepage, but it does not contain any charts or data visualizations. It shows code and a card component.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c2",
+      "why": "This is the Astro homepage, but it only shows text and a grid of logos, no charts or data visualizations.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c3",
+      "why": "This is the Cloudflare homepage hero section, which is just text on an orange background. No charts are visible.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a1",
+      "why": "This is a call to action section for Cloudflare with icons, but no charts or data visualizations.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a2",
+      "why": "This shows pricing information and a small diagram comparing wall clock vs CPU time, but it's not a clear chart or data visual in the sense of the headline's claim about homepages generally. Even if considered a chart, the other two chosen images are completely missing them, so the set fails.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a3",
+      "why": "Same as c3, no charts visible.",
+      "usable": false,
+      "problem": "change not visible"
+     }
+    ]
+   }
+  }
+ ]
+}

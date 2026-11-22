@@ -183,6 +183,8 @@ export function reviewIO(db: Admin, r: ReviewCtx | null, now: () => number = Dat
       const d = run.decision;
       const res = await io.door("graphics", { action: "picture", id, choice: d.kind, ...(d.kind === "crop" || d.kind === "pair" ? { assets: d.assets } : {}), reason: d.reason.slice(0, 600), verdict: d.verdict, per_picture: d.per_picture, ...(run.call_id ? { call: run.call_id } : {}) });
       if (!res.ok) { const fb = { verdict: "fallback", reason: `The rule's picture stands: the choice was refused (${res.reason ?? res.status}).` }; await io.door("graphics", { action: "picture", id, choice: "rule", reason: fb.reason, verdict: "fallback" }).catch(() => null); return { ...fb, changed: false }; }
+      // N3b · "change not visible" on a set of first screens is the desk's note on the story, never shown to readers.
+      for (const text of d.notes ?? []) await io.door("graphics", { action: "note", subject_kind: "story", subject: id, text }).catch(() => null);
       (await import("../stories/page.server")).forgetPictureChoice(id);
       return { verdict: d.verdict, reason: d.reason, changed: d.kind !== "rule" };
     },
