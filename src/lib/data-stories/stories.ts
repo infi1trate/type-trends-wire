@@ -14,6 +14,7 @@ import { COMPOSITES } from "../composites";
 import { label, sectorName, basis as basisOf } from "../labels";
 import { SECTORS } from "../library";
 import { qIndex } from "../forecast";
+import { multiplesChart } from "../chart/forms"; // L2 · the study builder reads the chart registry
 
 export type Captures = Map<string, CaptureRaw[]>;
 export type Meta = { slug: string; number: number; question: string; deck: string; template: string; collection: Link; related: Link[]; series?: string; seriesTitle?: string };
@@ -36,7 +37,7 @@ const capturesIn = (i: DataInput, sectors: readonly string[] | null) => { const 
 export function softwareStory(i: DataInput, caps: Captures, m: Meta): StoryModel {
   const scope = [...SOFTWARE.sectors], series = compositeSeries(i, scope), qs = usableQuarters(i, scope), b = brandRef(i);
   const panels = series.map(s => ({ id: s.key, label: s.name, href: `${signalHref(s.key)}?sector=${scope[0]}`, points: s.points.map(p => ({ x: p.q, y: p.share })) }));
-  const multiples = multiplesFig({ title: "Twelve composite signals on software homepages", note: `Share of dev tools and enterprise SaaS homepages, per well-covered quarter. AI-estimated signals count AI-tagged captures only.`, unit: "share", chart: "line", panels, xs: qs });
+  const multiples = multiplesFig({ title: "Twelve composite signals on software homepages", note: `Share of dev tools and enterprise SaaS homepages, per well-covered quarter. AI-estimated signals count AI-tagged captures only.`, unit: "share", chart: multiplesChart(qs.length, "line"), panels, xs: qs });
   const moves = panels.map(p => ({ p, fl: firstLast(p) })).filter((x): x is { p: typeof panels[number]; fl: NonNullable<ReturnType<typeof firstLast>> } => !!x.fl);
   const risers = [...moves].sort((a, c) => c.fl.change - a.fl.change || a.p.id.localeCompare(c.p.id));
   const fallers = [...moves].sort((a, c) => a.fl.change - c.fl.change || a.p.id.localeCompare(c.p.id));
@@ -175,7 +176,7 @@ export function sectorMindsStory(i: DataInput, caps: Captures, m: Meta): StoryMo
   const panels = rates.map(r => ({ id: r.s, label: sectorName(r.s), href: sectorHref(r.s), ...(isRanked(r.s) ? {} : { note: UNRANKED_NOTE }),
     points: years.map(y => ({ x: y, y: i.events.filter(e => secOf(e.domain) === r.s && e.at.startsWith(y)).length })),
     marks: years.map(y => ({ x: y, y: i.rebrands.filter(x => secOf(x.domain) === r.s && x.at.startsWith(y)).length })) }));
-  const figures: Record<string, Figure> = { multiples: multiplesFig({ title: "Measured homepage changes by sector and year", note: "Bars: measured changes (type, palette, theme, layout, navigation, stack, redesign). Ticks: confirmed rebrands. Same axis in every panel.", unit: "count", chart: "bars", panels, xs: years }) };
+  const figures: Record<string, Figure> = { multiples: multiplesFig({ title: "Measured homepage changes by sector and year", note: "Bars: measured changes (type, palette, theme, layout, navigation, stack, redesign). Ticks: confirmed rebrands. Same axis in every panel.", unit: "count", chart: multiplesChart(years.length, "bars"), panels, xs: years }) };
   const steps: Step[] = [];
   const total = i.events.length, firstAt = [...i.events].sort((x, y) => x.at.localeCompare(y.at))[0]?.at;
   if (firstAt) steps.push(step("intro", cap`${cnt(total, "/terminal?panel=library")} measured changes on ${cnt(i.sites.filter(s => s.active).length, "/brands")} homepages, the earliest first seen in ${qN(quarterOf(firstAt))}, and ${cnt(i.rebrands.length, "/terminal?panel=rebrands")} confirmed rebrands.`, { figure: "multiples", highlight: [] }));

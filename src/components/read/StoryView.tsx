@@ -149,8 +149,9 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
         {/* W1d · a story with nothing to list leaves the section out; it never prints an empty line. */}
         {s.facts.length > 0 && <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : s.facts.some(f => f.kind === "before" || f.kind === "after") ? "The change" : "The numbers"} kicker="Each line links to its receipt.">
           <ul className="ledger" data-story-changes="">{s.facts.map((f, i) => <li key={i} className="ledger-row px-2 py-3">
-            <span className="ed-small">{f.href ? <Receipt href={f.href} drawer {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>
+            <span className="ed-small">{f.href ? <Receipt href={f.href} drawer {...pr(f.href)}>{f.text}</Receipt> : f.text}{f.asOf && <span data-as-of="">{` · ${f.asOf}`}</span>}</span>
           </li>)}</ul>
+          {s.numbersUpdate && <p className="ed-small mt-3 px-2" data-numbers-update="">{s.numbersUpdate}</p>}
         </BlockPart>}
       </>,
       "so-what": null,

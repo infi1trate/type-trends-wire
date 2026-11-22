@@ -125,7 +125,7 @@ export const withTimeout = <T>(p: Promise<T>, ms: number, what: string): Promise
   Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error(`${what} took over ${ms / 1000} s`)), ms))]);
 
 // STUDY CHART FORMS --------------------------------------------------------------------------------------------------------------------
-export type ChartRun = { checked: number; calls: number; choices: { study: string; figure: string; form: string; basis: string; reason: string }[]; proposals: number; errors: string[] };
+export type ChartRun = { checked: number; calls: number; choices: { study: string; figure: string; form: string; basis: string; reason: string }[]; proposals: number; errors: string[]; /** L2 · figures waiting on a proposed (or missing) form */ wanting: { study: string; figure: string; form: string | null; text: string }[] };
 type ChartBudget = { left: number; allowCall: () => boolean; callMs: number; fixture: boolean; seen: Set<string> };
 /** One study's figures from its stored record. `done` is false when a figure waits for a call this pass cannot fit (it resumes next pass). */
 export async function chartStudy(db: Admin, slug: string, page: StoredStudy, b: ChartBudget, out: ChartRun): Promise<{ done: boolean; written: number }> {
@@ -150,9 +150,12 @@ export async function chartStudy(db: Admin, slug: string, page: StoredStudy, b: 
     out.choices.push({ study: slug, figure, form: d.form, basis: d.basis, reason: d.reason });
     b.seen.add(`${slug}|${figure}|${shape}`);
     if (!b.fixture) { const { error } = await db.from("chart_choices").insert({ study: slug, figure, shape, form: d.form, basis: d.basis, reason: d.reason.slice(0, 400), call_id: callId }); if (error) out.errors.push(`chart ${slug}: ${error.message.slice(0, 60)}`); else written++; }
-    if (answer?.missing && !b.fixture && out.proposals < 2) {
+    // L2 · a figure no live form shows whole files `propose` naming the registry's proposed form that would fit (or a missing one).
+    const prop = g.chartProposal({ kind: f.kind, title: f.title, xs: f.xs ?? [], panels: f.panels?.length ?? 0 }, slug, answer?.missing ?? "", d.form);
+    if (prop) out.wanting.push({ study: slug, figure, form: prop.form?.id ?? null, text: prop.text });
+    if (prop && !b.fixture && out.proposals < 2) {
       const { deskDoor } = await import("../stories/desk.server");
-      const r = await deskDoor("graphics", { action: "propose", kind: "format", text: `A chart form the kit does not have, for “${f.title}” in ${slug}: ${answer.missing}. Filed by the graphics desk; nothing new is drawn until it is accepted.`.slice(0, 600), subject: slug });
+      const r = await deskDoor("graphics", { action: "propose", kind: "format", text: prop.text, subject: slug });
       if (r.status < 300) out.proposals++;
     }
   }
@@ -171,7 +174,7 @@ export async function chartBudget(db: Admin, slugs: string[], now: number, fixtu
  * scheduled pass (passes.server.ts). Never throws.
  */
 export async function chartDesk(db: Admin, o: { now?: number; fixture?: boolean; slugs?: string[] } = {}): Promise<ChartRun> {
-  const out: ChartRun = { checked: 0, calls: 0, choices: [], proposals: 0, errors: [] }, now = o.now ?? Date.now();
+  const out: ChartRun = { checked: 0, calls: 0, choices: [], proposals: 0, errors: [], wanting: [] }, now = o.now ?? Date.now();
   try {
     const slugs = o.slugs ?? (await storedLiveStudies()) ?? [];
     const bud = await chartBudget(db, slugs, now, o.fixture);

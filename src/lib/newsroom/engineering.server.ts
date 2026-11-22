@@ -10,7 +10,7 @@ type MoveRow = { id: number; at: string; item_id: number; status: string; actor:
 export type QueueItem = ItemRow & { status: q.QueueStatus; open: boolean; moves: q.QueueMove[]; proposal: "open" | "accepted" | "declined" | null; gate: { id: number; at: string; pass: boolean; commit_sha: string } | null; credits: number };
 const COLS = "id,at,title,why,desk,kind,expects,source_kind,source_ref,proposal_log_id,ikey,move,test";
 
-async function proposalStatuses(db: Admin, ids: number[]): Promise<Map<number, "open" | "accepted" | "declined">> {
+export async function proposalStatuses(db: Admin, ids: number[]): Promise<Map<number, "open" | "accepted" | "declined">> {
   const out = new Map<number, "open" | "accepted" | "declined">();
   if (!ids.length) return out;
   const { data, error } = await db.from("proposal_statuses").select("log_id,status").in("log_id", ids).order("id", { ascending: false });
@@ -44,7 +44,7 @@ export async function loadQueueItems(db: Admin, o: { ids?: number[]; limit?: num
 const itemOf = async (db: Admin, id: number) => (await loadQueueItems(db, { ids: [id] }))[0] ?? null;
 
 /** The door's store for `queue_add`: a stable key is not filed twice while its item is open; a proposal source must be a proposal. */
-export async function insertQueueItem(db: Admin, r: { title: string; why: string; desk: string; kind: string; expects: string; source_kind: string; source_ref: string | null; proposal_log_id: number | null; ikey: string | null; move: unknown; test: boolean }): Promise<{ id: number; existing: boolean } | { refused: string }> {
+export async function insertQueueItem(db: Admin, r: { title: string; why: string; desk: string; kind: string; expects: string; source_kind: string; source_ref: string | null; proposal_log_id: number | null; ikey: string | null; move: unknown; test: boolean; phase?: string }): Promise<{ id: number; existing: boolean } | { refused: string }> {
   if (r.proposal_log_id != null) {
     const { data, error } = await db.from("desk_log").select("id").eq("id", r.proposal_log_id).eq("action", "propose").eq("decision", "proposed").maybeSingle();
     if (error) throw new Error("proposal_lookup_failed");
@@ -56,7 +56,10 @@ export async function insertQueueItem(db: Admin, r: { title: string; why: string
     const open = (data?.length ? await loadQueueItems(db, { ids: data.map(x => x.id) }) : []).find(x => x.open);
     if (open) return { id: open.id, existing: true };
   }
-  const { data, error } = await db.from("build_queue").insert({ title: r.title, why: r.why, desk: r.desk, kind: r.kind, expects: r.expects, source_kind: r.source_kind, source_ref: r.source_ref, proposal_log_id: r.proposal_log_id, ikey: r.ikey, move: (r.move ?? null) as never, test: r.test }).select("id").single();
+  const { data, error } = await db.from("build_queue").insert({ title: r.title, why: r.why, desk: r.desk, kind: r.kind, expects: r.expects, source_kind: r.source_kind, source_ref: r.source_ref, proposal_log_id: r.proposal_log_id, ikey: r.ikey, move: (r.move ?? null) as never, test: r.test, ...(r.phase ? { phase: r.phase } : {}) } as never).select("id").single();
+  // L2 · kind `phase` needs the queue's stored kind list widened and a phase column (owner's approval pending): until then the store
+  // refuses it plainly rather than failing the door.
+  if (error && r.kind === "phase" && (error.code === "23514" || error.code === "42703" || error.code === "PGRST204")) return { refused: "The build queue does not take phase items yet: its database change is waiting for the owner's approval." };
   if (error || !data) throw new Error("queue_insert_failed");
   const m = await db.from("build_queue_moves").insert({ item_id: data.id, status: "queued", actor: r.desk, reason: "filed" });
   if (m.error) throw new Error("queue_move_insert_failed");

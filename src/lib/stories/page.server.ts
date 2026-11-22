@@ -10,15 +10,35 @@ const realRunsOnce = memoBy(10 * 60_000, async (_: string) => {
   const [{ supabaseAnon }, { fetchRealRuns }] = await Promise.all([import("../mcp/supabase"), import("../real-runs")]);
   return fetchRealRuns(supabaseAnon() as never, { limit: 12 });
 }, { key: () => "runs", max: 1 });
+/** The forecast run a story's numbers count from (its own, else the latest real run at its text's time), or null. */
+async function storyRunOf(s: StoryRecord): Promise<number | null> {
+  const { storyRunId } = await import("./sheet");
+  const own = storyRunId(s.source_ids);
+  if (own != null) return own;
+  const at = s.written?.at ?? new Date().toISOString(), runs = await realRunsOnce("runs");
+  return [...runs].sort((a, b) => a.id - b.id).filter(r => r.at <= at).at(-1)?.id ?? null;
+}
+/** L2 · when the story's numbers were true (its run's date, else its own capture date) and the one dated update line, if a later run
+ *  changed a cited signal's stage within 14 days of the story (as-of.ts). Never throws. */
+export async function storyDating(s: StoryRecord, now = Date.now()): Promise<{ asOf: string | null; update: string | null }> {
+  try {
+    if (s.id.startsWith("census:")) return { asOf: null, update: null };
+    const runId = s.signal_keys.length ? await storyRunOf(s) : null;
+    if (runId == null) return { asOf: s.happened_at ?? null, update: null };
+    const runs = await realRunsOnce("runs"), run = runs.find(r => r.id === runId) ?? null, newest = [...runs].sort((a, b) => b.id - a.id)[0] ?? null;
+    if (!run) return { asOf: s.happened_at ?? null, update: null };
+    if (!newest || newest.id <= run.id) return { asOf: run.at, update: null };
+    const [{ forecastRunRows }, { stageUpdate }] = await Promise.all([import("../forecast-rows.server"), import("./as-of")]);
+    const [a, b] = await Promise.all([forecastRunRows(run.id), forecastRunRows(newest.id)]);
+    const map = (rows: import("../signals").SignalRow[]) => { const m = new Map(rows.map(r => [`${r.dimension}:${r.value}|${r.scope}`, r])); return (k: string, scope: string) => m.get(`${k}|${scope}`); };
+    return { asOf: run.at, update: stageUpdate({ publishedAt: s.happened_at, now, storyRun: run, newest, keys: s.signal_keys, sector: s.sector ?? null, then: map(a), latest: map(b) }) };
+  } catch { return { asOf: null, update: null }; }
+}
 export async function storyNumbers(s: StoryRecord): Promise<import("./sheet").SheetNumber[] | null> {
   if (!s.signal_keys.length || s.id.startsWith("census:")) return null;
   try {
-    const [{ forecastRunRows }, { sheetNumbers, storyRunId }] = await Promise.all([import("../forecast-rows.server"), import("./sheet")]);
-    let runId = storyRunId(s.source_ids);
-    if (runId == null) {
-      const at = s.written?.at ?? new Date().toISOString(), runs = await realRunsOnce("runs");
-      runId = [...runs].sort((a, b) => a.id - b.id).filter(r => r.at <= at).at(-1)?.id ?? null;
-    }
+    const [{ forecastRunRows }, { sheetNumbers }] = await Promise.all([import("../forecast-rows.server"), import("./sheet")]);
+    const runId = await storyRunOf(s);
     if (runId == null) return null;
     const rows = await forecastRunRows(runId), by = new Map(rows.map(r => [`${r.dimension}:${r.value}|${r.scope}`, r]));
     return sheetNumbers((k, scope) => by.get(`${k}|${scope}`), s.signal_keys, s.sector);
@@ -39,7 +59,7 @@ export async function loadStory(id: string) {
   const byKey = new Map(signals.map(x => [x.key, x])), key = s.signal_keys[0];
   const type = isKind(s.type) ? s.type : "news";
   const earlier = storiesAbout(all, { signals: s.signal_keys, domain: s.domains.length === 1 ? s.domains[0] : undefined, exclude: s.id, limit: 6 }).filter(x => x.at <= s.happened_at || s.type === "white_space");
-  const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }), numbers: await storyNumbers(s), colourEvents: await colourEventsOf(s).catch(() => []) });
+  const page = storyPage(s, { earlier, patterns: s.signal_keys.filter(k => { const x = byKey.get(k); return x ? isPatternSignal(x) : false; }), numbers: await storyNumbers(s), colourEvents: await colourEventsOf(s).catch(() => []), dating: await storyDating(s) });
   const { pickThumb } = await import("../thumbs");
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
   const crops = await evidenceOf(s, type);
@@ -63,15 +83,16 @@ export async function loadStoryLead(id: string, o: { asOf?: string } = {}) {
   const type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0], d = s.domains[0];
   const [{ quarterSeries }, { wellCovered }, { pickThumb }, { supabaseAnon }] = await Promise.all([import("../front/front.server"), import("../kit"), import("../thumbs"), import("../mcp/supabase")]);
   const wantThumb = (type === "move" || type === "rebrand" || type === "counter_move") && !!d;
-  const [series, thumbs, crops, frames, numbers, colourEvents] = await Promise.all([
+  const [series, thumbs, crops, frames, numbers, colourEvents, dating] = await Promise.all([
     key ? quarterSeries().then(all => all.find(x => x.key === key)?.quarters.filter(wellCovered).map(p => p.s as number) ?? []).catch(() => []) : Promise.resolve([] as number[]),
     wantThumb ? supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", d!).order("captured_at", { ascending: false }).limit(8).then(r => r.data ?? []) : Promise.resolve([]),
     evidenceOf(s, type),
     framesOf(s, type).catch(() => null),
     storyNumbers(s),
     colourEventsOf(s).catch(() => []),
+    storyDating(s),
   ]);
-  const page = storyPage(s, { earlier: [], patterns: [], numbers, colourEvents });
+  const page = storyPage(s, { earlier: [], patterns: [], numbers, colourEvents, dating });
   // I1: a single-brand story carries the brand's icon on its subject line, and its drawn captures can reveal the real hero crop.
   const [{ picsFor }, { revealOf }] = await Promise.all([import("../pictures.server"), import("../pictures")]);
   const pics = d ? await picsFor(d) : null, reveal = d ? revealOf(d, pics?.hero) : null;

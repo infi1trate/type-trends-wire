@@ -73,7 +73,8 @@ export const deskBody = z.discriminatedUnion("action", [
     .refine(b => pathOk(b.page, b.path), { message: "the path is not this page's address", path: ["path"] }),
   z.object({ action: z.literal("queue_add"), title: z.string().trim().min(3).max(140).refine(noDollar), why: z.string().trim().min(3).max(600).refine(noDollar), kind: z.enum(QUEUE_KINDS), expects: z.enum(EXPECTS),
     source: z.object({ kind: z.enum(SOURCE_KINDS), log: z.number().int().min(1).optional(), ref: z.string().trim().min(1).max(200).optional() }).strict().optional(),
-    key: z.string().trim().min(3).max(200).optional(), move: z.object({ setting: z.string().min(1).max(40), from: z.unknown().optional(), to: z.unknown() }).strict().optional(), test: z.boolean().optional() }).strict()
+    key: z.string().trim().min(3).max(200).optional(), move: z.object({ setting: z.string().min(1).max(40), from: z.unknown().optional(), to: z.unknown() }).strict().optional(), test: z.boolean().optional(),
+    /** L2 · kind `phase` only: the roadmap phase it ships (2 to 12 characters). */ phase: z.string().trim().min(1).max(40).optional() }).strict()
     .refine(b => (b.source?.kind === "proposal") === (b.source?.log !== undefined), { message: "a proposal source names its desk-log id (log), and only a proposal source does", path: ["source"] })
     .refine(b => b.kind === "design move" || b.move === undefined, { message: "only a design move names a setting move", path: ["move"] }),
   z.object({ action: z.literal("queue_move"), item: z.number().int().min(1), to: z.enum(QUEUE_STATUSES), reason: z.string().trim().min(3).max(600).optional() }).strict(),

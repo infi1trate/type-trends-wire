@@ -11,6 +11,10 @@ import { SYSTEM } from "@/lib/theme";
 import { longDay } from "@/lib/pictures";
 import { DataTable } from "@/components/dataview/DataTable";
 import { Sparkline } from "@/components/chartkit";
+import { formsByEdition } from "@/lib/chart/forms";
+
+/** L2 · chart forms by the edition in which they went live (proposed forms are never listed). */
+const FORMS_BY_EDITION = new Map(formsByEdition().map(x => [x.edition, x.forms]));
 
 const ms = (x: string) => x.replace(/ms$/, " ms");
 const SPARK = [0.12, 0.14, 0.13, 0.17, 0.21, 0.24];
@@ -49,6 +53,7 @@ export function ColophonRead() {
       <h2 id="col-editions" className="ed-kicker ed-rule pt-3">Editions, newest first</h2>
       <ol className="mt-3">{data.editions.map(e => { const l = editionLine(e); return <li key={e.number} className="ed-hair py-3" data-edition={e.number}>
         <p className="ed-h3">{l.title} · {l.status}</p><p className="ed-caption mt-1">{l.when}</p><p className="ed-small mt-1 max-w-[68ch]">{l.what}</p>
+        {FORMS_BY_EDITION.get(e.number) && <p className="ed-caption mt-1" data-edition-forms="">Chart forms in use from this edition: {FORMS_BY_EDITION.get(e.number)!.join(", ")}.</p>}
       </li>; })}</ol>
     </section>
     <section aria-labelledby="col-next" className="mt-[var(--sys-gap-section)]" data-dry-run="">

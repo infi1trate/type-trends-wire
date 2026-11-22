@@ -105,6 +105,7 @@ import { Route as EmbedTraitKeyRouteImport } from './routes/embed.trait.$key'
 import { Route as StoriesNoNumberRouteImport } from './routes/stories.no.$number'
 import { Route as ApiPublicJobsDeskPassesRouteImport } from './routes/api/public/jobs/desk-passes'
 import { Route as ApiPublicJobsReviewPassesRouteImport } from './routes/api/public/jobs/review-passes'
+import { Route as ApiPublicJobsWireFollowupsRouteImport } from './routes/api/public/jobs/wire-followups'
 import { Route as ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport } from './routes/api/public/watch-feed.{$token}[.]xml'
 
 const IndexRoute = IndexRouteImport.update({
@@ -596,6 +597,12 @@ const ApiPublicJobsReviewPassesRoute =
     path: '/api/public/jobs/review-passes',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicJobsWireFollowupsRoute =
+  ApiPublicJobsWireFollowupsRouteImport.update({
+    id: '/api/public/jobs/wire-followups',
+    path: '/api/public/jobs/wire-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWatchFeedChar123tokenChar125DotxmlRoute =
   ApiPublicWatchFeedChar123tokenChar125DotxmlRouteImport.update({
     id: '/api/public/watch-feed/{$token}.xml',
@@ -700,6 +707,7 @@ export interface FileRoutesByFullPath {
   '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/jobs/desk-passes': typeof ApiPublicJobsDeskPassesRoute
   '/api/public/jobs/review-passes': typeof ApiPublicJobsReviewPassesRoute
+  '/api/public/jobs/wire-followups': typeof ApiPublicJobsWireFollowupsRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesByTo {
@@ -799,6 +807,7 @@ export interface FileRoutesByTo {
   '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/jobs/desk-passes': typeof ApiPublicJobsDeskPassesRoute
   '/api/public/jobs/review-passes': typeof ApiPublicJobsReviewPassesRoute
+  '/api/public/jobs/wire-followups': typeof ApiPublicJobsWireFollowupsRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRoutesById {
@@ -899,6 +908,7 @@ export interface FileRoutesById {
   '/stories/no/$number': typeof StoriesNoNumberRoute
   '/api/public/jobs/desk-passes': typeof ApiPublicJobsDeskPassesRoute
   '/api/public/jobs/review-passes': typeof ApiPublicJobsReviewPassesRoute
+  '/api/public/jobs/wire-followups': typeof ApiPublicJobsWireFollowupsRoute
   '/api/public/watch-feed/{$token}.xml': typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 export interface FileRouteTypes {
@@ -1000,6 +1010,7 @@ export interface FileRouteTypes {
     | '/stories/no/$number'
     | '/api/public/jobs/desk-passes'
     | '/api/public/jobs/review-passes'
+    | '/api/public/jobs/wire-followups'
     | '/api/public/watch-feed/{$token}.xml'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1099,6 +1110,7 @@ export interface FileRouteTypes {
     | '/stories/no/$number'
     | '/api/public/jobs/desk-passes'
     | '/api/public/jobs/review-passes'
+    | '/api/public/jobs/wire-followups'
     | '/api/public/watch-feed/{$token}.xml'
   id:
     | '__root__'
@@ -1198,6 +1210,7 @@ export interface FileRouteTypes {
     | '/stories/no/$number'
     | '/api/public/jobs/desk-passes'
     | '/api/public/jobs/review-passes'
+    | '/api/public/jobs/wire-followups'
     | '/api/public/watch-feed/{$token}.xml'
   fileRoutesById: FileRoutesById
 }
@@ -1298,6 +1311,7 @@ export interface RootRouteChildren {
   StoriesNoNumberRoute: typeof StoriesNoNumberRoute
   ApiPublicJobsDeskPassesRoute: typeof ApiPublicJobsDeskPassesRoute
   ApiPublicJobsReviewPassesRoute: typeof ApiPublicJobsReviewPassesRoute
+  ApiPublicJobsWireFollowupsRoute: typeof ApiPublicJobsWireFollowupsRoute
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute: typeof ApiPublicWatchFeedChar123tokenChar125DotxmlRoute
 }
 
@@ -1975,6 +1989,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsReviewPassesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/wire-followups': {
+      id: '/api/public/jobs/wire-followups'
+      path: '/api/public/jobs/wire-followups'
+      fullPath: '/api/public/jobs/wire-followups'
+      preLoaderRoute: typeof ApiPublicJobsWireFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/watch-feed/{$token}.xml': {
       id: '/api/public/watch-feed/{$token}.xml'
       path: '/api/public/watch-feed/{$token}.xml'
@@ -2082,6 +2103,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoriesNoNumberRoute: StoriesNoNumberRoute,
   ApiPublicJobsDeskPassesRoute: ApiPublicJobsDeskPassesRoute,
   ApiPublicJobsReviewPassesRoute: ApiPublicJobsReviewPassesRoute,
+  ApiPublicJobsWireFollowupsRoute: ApiPublicJobsWireFollowupsRoute,
   ApiPublicWatchFeedChar123tokenChar125DotxmlRoute:
     ApiPublicWatchFeedChar123tokenChar125DotxmlRoute,
 }

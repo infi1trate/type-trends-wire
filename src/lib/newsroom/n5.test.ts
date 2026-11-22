@@ -225,7 +225,7 @@ describe("B1 · the publisher's package check and drafts", () => {
     expect(pub.packagePassed(items)).toBe(true);
   });
   it("names what fails: 600 words, two pictures, an old first item, a broken link, a malformed feed", () => {
-    const items = pub.packageChecks(input({ issue: { ...issue, words: 600, rows: issue.rows.map((r, i) => ({ ...r, picture: i < 2 })) }, digestRss: rss("https://slug.global/digest/2026-W45"), morningRss: { status: 200, body: "<rss><channel><item></channel></rss>" }, links: [{ path: "/what-we-show", status: 404 }] }));
+    const items = pub.packageChecks(input({ issue: { ...issue, words: 600, rows: issue.rows.map((r, i) => ({ ...r, picture: i < 2 })), picturesAvailable: 5 }, digestRss: rss("https://slug.global/digest/2026-W45"), morningRss: { status: 200, body: "<rss><channel><item></channel></rss>" }, links: [{ path: "/what-we-show", status: 404 }] }));
     expect(items.filter(i => !i.ok).map(i => i.id)).toEqual(["words", "pictures", "digest_rss", "morning_rss", "links"]);
   });
   it("issueLinks lists the issue's internal links once each", () => {

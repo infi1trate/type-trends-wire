@@ -19,6 +19,7 @@ import { CANDIDATES_KEPT_MAX, CANDIDATES_RETURNED_MAX, REPROPOSE_DAYS, SCOUT_DAY
 import { REGISTER } from "./register";
 import { COPY_RUN_MAX, LINE_MAX, NEWS_LIMIT_MS, NEWS_WHY_EVERY_MS, NEWS_MAX_CANDIDATES, NEWS_MIN_NEW, NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, PITCH_WINDOW_DAYS, WIRE_BLOCK_HOURS } from "./news";
 import { ALTERNATES_MAX } from "./graphics";
+import { FORMS } from "../chart/forms";
 import { BUDGET_GROWTH, BUDGET_RULES, PROPOSALS_PER_WEEK, REVIEW_PAGES, REVIEW_WIDTHS, REVIEW_KINDS, MEASURE_IDS } from "./design-review";
 import { GATE_CHECKS, NO_WORSE, VISIBLE_LIMITS } from "./build-gate";
 import { EXPECTS, NEXT, QUEUE_KINDS, QUEUE_STATUSES, SHIPS_ALONE_KINDS } from "./queue";
@@ -106,6 +107,15 @@ export function beatsDoc(): string {
 
 export const DESKS_START = "<!-- desks:start (written by scripts/newsroom-docs.ts from the code; do not edit by hand) -->";
 export const DESKS_END = "<!-- desks:end -->";
+/** L2 · the chart registry from code: live forms the desk may choose, proposed forms it may only name in a proposal. */
+export function chartFormsBlock(): string[] {
+  const live = FORMS.filter(f => f.status === "live"), proposed = FORMS.filter(f => f.status === "proposed");
+  return [
+    "### Chart forms", "",
+    `One registry (src/lib/chart/forms.ts) lists every form the product can draw; the desk's choice and the study builder read it. Live: ${live.map(f => f.name).join(", ")}.`, "",
+    `Proposed, shown only as specimens on /brand/system: ${proposed.map(f => `${f.name} (${f.fits.map(x => x.shape).join("; ")}; ${f.least})`).join(", ")}. A figure no live form shows whole is filed with \`propose\` naming the proposed form that would fit; only the owner accepts, an accepted form goes on the build queue as a feature, and it becomes live only in a build that passed the gate.`, "",
+  ];
+}
 /** N3 · the order of work, every desk's daily model-call limit, and the news, graphics and data desks' jobs, from the constants. */
 export function desksBlock(): string[] {
   const n3 = REGISTER.filter(a => a.since === "N3");
@@ -119,6 +129,7 @@ export function desksBlock(): string[] {
     `Picks at most ${NEWS_PICKS_PER_DAY} links a day from the wire's publications (outlet items only, published in the last ${NEWS_WINDOW_HOURS} hours, never picked before, one per story keeping the earliest; at most ${NEWS_MAX_CANDIDATES} shown to the model, and only when at least ${NEWS_MIN_NEW} are new since its last call). Each line is checked in code: at most ${LINE_MAX} characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than ${COPY_RUN_MAX} words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within ${PITCH_WINDOW_DAYS} days either side files a pitch for the editor in chief. Readers see the picks of the last ${WIRE_BLOCK_HOURS} hours as THE WIRE on the front page, after THE TAPE.`, "",
     "## The graphics desk", "",
     `Checks each story's picture before standards: the rule's choice and up to ${ALTERNATES_MAX} ranked alternates that pass the quality gate. Only a stored crop that passes the gate can be chosen; a before-and-after pair may become its after-crop alone, never mixed across dates; the caption is rebuilt by rule and no text changes. “No picture shows it” fails checklist item 3 for a type that needs a picture. For study figures it chooses a form only where more than one chart-kit form fits the data, and checks every published story, study and Digest share image daily (code).`, "",
+    ...chartFormsBlock(),
     "## The data desk", "",
     `Daily checks (code) record findings of these kinds: ${FINDING_KINDS.join(", ")}. The detector sample re-derives ${DETECTOR_SAMPLE} measured events a day under today's rules; coverage flags active brands with no good capture for ${COVERAGE_DAYS} days and sectors under ${SECTOR_MIN} measured homepages. An open finding on a brand and measure a story cites holds it (checklist item 9). Weekly, after the forecast, it scores the forecast made ${BACKTEST_DAYS} days earlier against what the measurements show, then makes one call that files at most ${PROPOSAL_MAX_STUDIES} study pitches and ${PROPOSAL_MAX_SIGNALS} signal ideas; code drops any that name a measure the product does not hold.`, "",
     "## Door actions added in N3", "",

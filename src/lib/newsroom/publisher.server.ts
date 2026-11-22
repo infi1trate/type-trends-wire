@@ -21,10 +21,10 @@ async function pooled<T, R>(xs: readonly T[], f: (x: T) => Promise<R>): Promise<
 export type PackageRun = { row: number | null; week: string | null; number: number | null; pass: boolean; items: p.PackageItem[]; queue: number | null; redirects: number; why: string };
 /** The package check on the newest published Digest issue (or a named week). `base` is the site to fetch (the live site by default).
  *  `test` stores the row as a test and files nothing. */
-export async function runPackageCheck(db: Admin, o: { week?: string; base?: string; test?: boolean; now?: number; signal?: AbortSignal } = {}): Promise<PackageRun> {
+export async function runPackageCheck(db: Admin, o: { week?: string; base?: string; test?: boolean; now?: number; signal?: AbortSignal; /** L2 proof: the issue as this build computes it, not the stored record */ fresh?: boolean } = {}): Promise<PackageRun> {
   const now = o.now ?? Date.now(), base = (o.base ?? SITE_URL).replace(/\/$/, "");
-  const [{ loadIssue, finishedWeek }, { storyRaw }, { morningArchive }] = await Promise.all([import("../digest/digest.server"), import("../stories/read.server"), import("../editions/morning")]);
-  const e = await loadIssue(o.week ?? null);
+  const [{ loadIssue, computeIssue, finishedWeek }, { storyRaw }, { morningArchive }] = await Promise.all([import("../digest/digest.server"), import("../stories/read.server"), import("../editions/morning")]);
+  const e = o.fresh && o.week ? await computeIssue(o.week) : await loadIssue(o.week ?? null);
   if (!e) return { row: null, week: o.week ?? null, number: null, pass: false, items: [], queue: null, redirects: 0, why: "no published Digest issue" };
   const links = p.issueLinks({ week: e.week, cover: e.cover, rows: e.rows, chart: e.chart ? { storyId: e.chart.storyId, number: e.chart.number } : null, numbers: e.numbers, corrections: e.corrections, keep: e.keep });
   const coverHref = e.cover.number != null ? `/stories/no/${e.cover.number}` : `/stories/${encodeURIComponent(e.cover.id)}`;
@@ -36,7 +36,7 @@ export async function runPackageCheck(db: Admin, o: { week?: string; base?: stri
   const cover = checked.find(l => l.path === coverHref) ?? null;
   const items = p.packageChecks({
     now, closed: finishedWeek(e.week, now),
-    issue: { week: e.week, number: e.number, words: e.words, rows: e.rows.map(r => ({ href: r.href, picture: !!r.picture })), chart: e.chart ? { href: e.chart.number != null ? `/stories/no/${e.chart.number}` : `/stories/${encodeURIComponent(e.chart.storyId)}` } : null, cover: { id: e.cover.id, href: coverHref, subject: e.cover.subject }, links },
+    issue: { week: e.week, number: e.number, words: e.words, rows: e.rows.map(r => ({ href: r.href, picture: !!r.picture })), picturesAvailable: e.picturesAvailable ?? null, chart: e.chart ? { href: e.chart.number != null ? `/stories/no/${e.chart.number}` : `/stories/${encodeURIComponent(e.chart.storyId)}` } : null, cover: { id: e.cover.id, href: coverHref, subject: e.cover.subject }, links },
     share, cover: cover ? { status: cover.status } : null, digestRss, morningRss, morningNewest,
     links: checked.map(l => ({ path: l.path, status: l.status === 200 && new URL(l.final).origin === new URL(base).origin ? 200 : l.status === 200 ? 0 : l.status })),
   });

@@ -8,6 +8,7 @@ export const RUN_JOBS = {
   "ingest-wire": { name: "Wire ingest (scheduled)", limitMs: 60_000 },
   "wire-sampler": { name: "Wire sampler (crawler)", limitMs: 60_000 },
   "story-build": { name: "Story build (job tail)", limitMs: 60_000 },
+  "wire-followups": { name: "Wire follow-ups (story build, records sweep)", limitMs: 60_000 },
   "records-refresh": { name: "Records refresh", limitMs: 60_000 },
   "ai-worker": { name: "AI worker", limitMs: 60_000 },
   "follow-up": { name: "Forecast follow-up step", limitMs: 60_000 },

@@ -40,7 +40,9 @@ export type Newsroom = {
 type N3 = {
   limits: { desk: string; what: string; cap: number; used: number }[];
   news: { picks: { id: number; at: string; subject: string; line: string; domain: string | null; title: string; url: string; outlet: string; dropped: string | null }[]; drops: { id: number; at: string; pick_id: number; actor: string; reason: string }[]; pitches: { at: string; reason: string | null }[] };
-  graphics: { changed: Pic[]; none: Pic[]; fallbacks: number; kept: number; share: { at: string; checked: number; rebuilt: number; failures: unknown } | null };
+  graphics: { changed: Pic[]; none: Pic[]; fallbacks: number; kept: number; share: { at: string; checked: number; rebuilt: number; failures: unknown } | null;
+    /** L2 · the chart registry, figures waiting on a proposed form and each form's proposals */
+    forms?: { registry: { id: string; name: string; status: string; shapes: string[]; least: string; proposals: { log: number; status: string }[] }[]; waiting: { log: number; at: string; study: string | null; form: string | null; text: string; status: string }[] } | null };
   data: { byKind: Record<string, number>; open: number; newest: { id: number; kind: string; subject: string; text: string; at: string }[]; backtest: { line: string; at: string } | null; running: { calls: number; right: number } | null; proposals: { at: string; action: string; reason: string | null }[] };
   tests: string[];
 };
@@ -222,6 +224,14 @@ function DeskN3({ n }: { n: N3 }) {
       </Table> : null}
       <p className="ed-small mt-4">{n.graphics.share ? `Share images, last check ${storyTime(n.graphics.share.at)}: ${n.graphics.share.checked} checked, ${n.graphics.share.rebuilt} rebuilt, ${fails.length} failing.` : voiced("read.deskNewsroom.share")}</p>
       {fails.length ? <ul className="ed-data mt-2 space-y-1">{fails.map(f => <li key={`${f.kind}|${f.id}`}><span className="ed-kicker">{f.kind} · {f.id}</span> {f.why}</li>)}</ul> : null}
+      {n.graphics.forms && <>
+        <h3 className="ed-h3 mt-8">Chart forms</h3>
+        <Table caption="The chart registry: every form, its status and its proposals" head={["Form", "Status", "Fits", "Least data", "Proposals"]} min={640}>
+          {n.graphics.forms.registry.map(f => <tr key={f.id} className="ed-hair" data-desk-form={f.id}><th scope="row" className={`${td} text-left font-normal`}>{f.name}</th><td className={td}>{f.status === "proposed" ? "Proposed, not in use" : "Live"}</td><td className={td}>{f.shapes.join("; ")}</td><td className={td}>{f.least}</td><td className={td}>{f.proposals.length ? f.proposals.map(p => `log ${p.log}: ${p.status}`).join(", ") : "—"}</td></tr>)}
+        </Table>
+        <p className="ed-small mt-3">{n.graphics.forms.waiting.length ? `${n.graphics.forms.waiting.length} figure${n.graphics.forms.waiting.length === 1 ? "" : "s"} waiting on a form:` : "No figure is waiting on a proposed form."}</p>
+        {n.graphics.forms.waiting.length ? <ul className="ed-small mt-2 space-y-1">{n.graphics.forms.waiting.map(w => <li key={w.log}><span className="ed-kicker">log {w.log} · {w.status}</span> {w.text}</li>)}</ul> : null}
+      </>}
     </section>
 
     <section aria-labelledby="desk-data" className="ed-wrap mt-12" data-desk-data="">

@@ -47,9 +47,11 @@ export type NewsroomStore = {
   findingClose?: (r: { finding_id: number; actor: string; reason: string }) => Promise<{ id: number } | null>;
   note?: (r: { actor: string; subject_kind: string; subject_id: string; text: string }) => Promise<unknown>;
   proposalStatus?: (r: { log_id: number; status: string; reason: string | null }) => Promise<unknown | null>;
+  /** L2 · a proposal's desk and text (to link an accepted chart form to the build queue). */
+  proposalOf?: (log_id: number) => Promise<{ desk: string; text: string } | null>;
   /** N4 · page reviews, the build queue, gate results, and whether a queue item exists (for spend). */
   review?: (r: { run: string; kind: import("../newsroom/design-review").ReviewKind; page: import("../newsroom/design-review").ReviewPageId; path: string; width: number; against: string | null; measures: import("../newsroom/design-review").Measures; picture: string | null; actor: string }) => Promise<{ id: number; picture: string | null } | { refused: string }>;
-  queueAdd?: (r: { title: string; why: string; desk: string; kind: string; expects: string; source_kind: string; source_ref: string | null; proposal_log_id: number | null; ikey: string | null; move: unknown; test: boolean }) => Promise<{ id: number; existing: boolean } | { refused: string }>;
+  queueAdd?: (r: { title: string; why: string; desk: string; kind: string; expects: string; source_kind: string; source_ref: string | null; proposal_log_id: number | null; ikey: string | null; move: unknown; test: boolean; phase?: string }) => Promise<{ id: number; existing: boolean } | { refused: string }>;
   queueMove?: (r: { item: number; to: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
   gateResult?: (r: { item: number; commit: string; tests: { passed: number; failed: number; skipped: number }; before_run: string; after_run: string; actor: string }) => Promise<{ id: number; pass: boolean; checks: unknown[] } | { refused: string } | null>;
   queueItemExists?: (id: number) => Promise<boolean>;
@@ -211,9 +213,11 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
   if (b.action === "queue_add") {
     if (!d.store.queueAdd) return missing;
     const src = b.source ?? { kind: "none" as const };
-    const r = await d.store.queueAdd({ title: b.title, why: b.why, desk: actor, kind: b.kind, expects: b.expects, source_kind: src.kind, source_ref: src.ref ?? (src.log != null ? `log:${src.log}` : null), proposal_log_id: src.kind === "proposal" ? src.log ?? null : null, ikey: b.key ?? null, move: b.move ?? null, test: b.test ?? false });
+    const phaseWhy = (await import("../newsroom/queue")).phaseProblem(b.kind, b.phase);
+    if (phaseWhy) return { status: 409, body: { error: "refused", reason: phaseWhy }, decision: "refused", reason: phaseWhy };
+    const r = await d.store.queueAdd({ title: b.title, why: b.why, desk: actor, kind: b.kind, expects: b.expects, source_kind: src.kind, source_ref: src.ref ?? (src.log != null ? `log:${src.log}` : null), proposal_log_id: src.kind === "proposal" ? src.log ?? null : null, ikey: b.key ?? null, move: b.move ?? null, test: b.test ?? false, ...(b.kind === "phase" ? { phase: b.phase!.trim() } : {}) });
     if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
-    return { status: r.existing ? 200 : 201, body: { ok: true, item: r.id, existing: r.existing }, decision: "done", reason: `${b.kind} · ${b.title}${b.test ? " (test)" : ""}`.slice(0, 600), detail: { item: r.id, existing: r.existing, kind: b.kind, expects: b.expects, test: b.test ?? false } };
+    return { status: r.existing ? 200 : 201, body: { ok: true, item: r.id, existing: r.existing }, decision: "done", reason: `${b.kind}${b.kind === "phase" ? ` ${b.phase!.trim()}` : ""} · ${b.title}${b.test ? " (test)" : ""}`.slice(0, 600), detail: { item: r.id, existing: r.existing, kind: b.kind, expects: b.expects, test: b.test ?? false, ...(b.kind === "phase" ? { phase: b.phase!.trim() } : {}) } };
   }
   if (b.action === "queue_move") {
     if (!d.store.queueMove) return missing;
@@ -271,7 +275,18 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
   if (b.action === "proposal_status") {
     if (!d.store.proposalStatus) return missing;
     const r = await d.store.proposalStatus({ log_id: b.log, status: b.status, reason: b.reason ?? null });
-    return r ? { status: 201, body: { ok: true, status: r }, decision: "done", reason: b.reason ?? b.status } : { ...missing, reason: "No such proposal." };
+    if (!r) return { ...missing, reason: "No such proposal." };
+    // L2 · an accepted chart-form proposal goes on the build queue as a `feature` linked to it; the form becomes live in the registry
+    // only in a build that passed the gate.
+    if (b.status === "accepted" && d.store.proposalOf && d.store.queueAdd) {
+      const p = await d.store.proposalOf(b.log), { chartFormOfProposal } = await import("../chart/forms");
+      const f = p ? chartFormOfProposal(p.text) : null;
+      if (f) {
+        const q = await d.store.queueAdd({ title: `Make the chart form “${f.name}” live`.slice(0, 200), why: p!.text.slice(0, 600), desk: "graphics", kind: "feature", expects: `The registry marks “${f.id}” live in a build that passed the gate; /brand/system shows it without the proposed label and the colophon lists it under that edition.`, source_kind: "proposal", source_ref: `log:${b.log}`, proposal_log_id: b.log, ikey: `chart-form:${f.id}`, move: null, test: false });
+        return { status: 201, body: { ok: true, status: r, ...("id" in q ? { queue_item: q.id } : { queue_refused: q.refused }) }, decision: "done", reason: b.reason ?? b.status, detail: { chart_form: f.id, ...("id" in q ? { queue_item: q.id } : {}) } };
+      }
+    }
+    return { status: 201, body: { ok: true, status: r }, decision: "done", reason: b.reason ?? b.status };
   }
   if (!(await d.store.exists(b.id))) return { ...missing, reason: "No such story." };
   // N2 · the release rule: a story waiting for review runs only when the editor in chief places it (after standards passed it) or the
@@ -355,6 +370,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       holdOf: async id => (await import("../newsroom/newsroom.server")).holdOf(db, id),
       note: async r => (await import("../newsroom/newsroom.server")).insertNote(db, r),
       proposalStatus: async r => (await import("../newsroom/newsroom.server")).insertProposalStatus(db, r),
+      proposalOf: async id => { const { data } = await db.from("desk_log").select("actor,reason,detail").eq("id", id).eq("action", "propose").maybeSingle(); const t = (data?.detail as { text?: string } | null)?.text ?? data?.reason ?? null; return data && t ? { desk: data.actor, text: t } : null; },
       overrule: async r => (await import("../newsroom/newsroom.server")).insertOverrule(db, r),
       wirePick: async (r, now) => (await import("../newsroom/news.server")).insertPick(db, r, now),
       wireDrop: async r => (await import("../newsroom/news.server")).insertDrop(db, r),

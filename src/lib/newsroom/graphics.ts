@@ -5,6 +5,7 @@
 // by the caption rule, no story text changes, and a before-and-after pair may be reduced to its after crop but never mixed across dates.
 import type { Crop } from "../crops";
 import type { LeadItem, LeadPlan } from "../lead-picture";
+import { FIGURE_SHAPE, SHAPE_FORMS, formOfDesk, proposedFor, proposedForms, type ChartForm } from "../chart/forms";
 
 export const ALTERNATES_MAX = 3;
 export const PROBLEMS = ["blank", "loading state", "cookie or consent banner", "login wall", "error page", "change not visible", "none"] as const;
@@ -155,17 +156,9 @@ export function decidePicture(answer: GraphicsAnswer | null, g: Pick<GraphicsInp
 export const needsPicture = (id: string) => id.startsWith("quiet:");
 
 // STUDY FIGURES ---------------------------------------------------------------------------------------------------------------------
-/** Each figure's data shape and the chart-kit forms that can show it. Only shapes listed here are drawn; nothing new is drawn in N3. */
-export const SHAPE_FORMS = {
-  "series per panel": ["line", "bars"],
-  "share over quarters": ["quarter line"],
-  "brands on two axes": ["scatter"],
-  "bands over quarters": ["bands"],
-  "two captures": ["before and after"],
-  "frames in time": ["strip"],
-} as const;
+// L2 · the figure table is the chart registry's (src/lib/chart/forms.ts): one table, not two. Only live forms are offered.
+export { FIGURE_SHAPE, SHAPE_FORMS };
 export type Shape = keyof typeof SHAPE_FORMS;
-export const FIGURE_SHAPE: Record<string, Shape> = { multiples: "series per panel", adoption: "share over quarters", field: "brands on two axes", drift: "bands over quarters", "before-after": "two captures", strip: "frames in time" };
 /** Whether a form fits this figure's data: a line needs at least three ordered points per panel; bars need at most twelve categories. */
 export function formFits(form: string, fig: { kind: string; xs?: readonly string[] }): boolean {
   const shape = FIGURE_SHAPE[fig.kind];
@@ -174,6 +167,27 @@ export function formFits(form: string, fig: { kind: string; xs?: readonly string
   return true;
 }
 export const formsFor = (fig: { kind: string; xs?: readonly string[] }) => { const s = FIGURE_SHAPE[fig.kind]; return s ? (SHAPE_FORMS[s] as readonly string[]).filter(f => formFits(f, fig)) : []; };
+/** Whether a live form shows the figure only by dropping part of its data (more rows than the form draws). */
+export function dropsData(form: string, fig: { kind: string; xs?: readonly string[]; panels?: number }): boolean {
+  const f = formOfDesk(form, FIGURE_SHAPE[fig.kind]);
+  return !!f && f.most != null && (fig.panels ?? 0) > f.most;
+}
+/** L2 · the proposal the graphics desk files for a figure no live form fits whole: it names the registry's proposed form that would
+ *  fit (the model's `missing` matched by name or desk name, else the first proposed form for the shape), or describes a missing one. */
+export function chartProposal(fig: { kind: string; title: string; xs?: readonly string[]; panels?: number }, study: string, missing: string, chosen: string): { form: ChartForm | null; text: string } | null {
+  const shape = FIGURE_SHAPE[fig.kind] ?? null, fits = formsFor(fig), whole = fits.filter(f => !dropsData(f, fig));
+  const m = missing.trim().toLowerCase();
+  const named = m ? (formOfDesk(m) ?? proposedForRegistryName(m)) : null;
+  if (whole.length && !m) return null;
+  const proposed = named && named.status === "proposed" ? named : shape && !whole.length ? proposedFor(shape)[0] ?? null : null;
+  const why = !fits.length ? "no live form fits it" : !whole.length ? `“${chosen}” shows it only by dropping part of its data` : "the desk asked for a form the registry does not have live";
+  if (proposed) return { form: proposed, text: `“${fig.title}” in ${study}: ${why}. The registry's proposed form “${proposed.name}” (${proposed.id}) would fit. Filed by the graphics desk; nothing is drawn with it until the owner accepts and a gated build makes it live.`.slice(0, 600) };
+  if (!m) return null;
+  if (named) return null; // the desk named a live form: no proposal
+  return { form: null, text: `“${fig.title}” in ${study}: ${why}. A chart form the registry does not list: ${missing.trim()}. Filed by the graphics desk; nothing new is drawn until it is accepted.`.slice(0, 600) };
+}
+/** A proposed form named by the desk's own words ("slope chart", "dot with range", "slope"). */
+const proposedForRegistryName = (m: string) => proposedForms().find(f => f.name.toLowerCase() === m || f.id === m || m.includes(f.fits[0]!.desk)) ?? null;
 export const CHART_SYSTEM = [
   "You are the graphics desk of slug. A study figure can be drawn with more than one chart form. Choose the one that lets a reader see the figure's point fastest.",
   "Use only a form in FORMS. If the figure needs a form that is not in FORMS, say so in `missing` (a short name) and still choose the best listed form.",

@@ -29,7 +29,14 @@ export type EditionStory = {
 };
 /** A published story since retired with its change withdrawn on a second look (withdrawn.ts), with when the editor retired it. */
 export type RetiredStory = { id: string; number: number | null; domains: string[]; happened_at: string; retired_at: string | null };
-export type Picture = { kind: "pair"; before: Crop; after: Crop } | { kind: "one"; crop: Crop };
+export type Picture = { kind: "pair"; before: Crop; after: Crop } | { kind: "one"; crop: Crop }
+  /** L2 · a story with no capture of its own change (a signal story) brings the lead picture its own page shows, credits and all. */
+  | { kind: "lead"; plan: import("../lead-picture").LeadPlan };
+/** L2 · the lead picture kinds that are pictures of brands' pages (not words, swatches, marks or a chart). */
+export const DIGEST_LEAD_KINDS = ["pair", "single", "mosaic"] as const;
+/** A story's lead plan as a Digest picture, or null when it is not a picture of pages or has no item. */
+export const leadAsPicture = (plan: import("../lead-picture").LeadPlan | null | undefined): Picture | null =>
+  plan && (DIGEST_LEAD_KINDS as readonly string[]).includes(plan.kind) && plan.items.length > 0 ? { kind: "lead", plan } : null;
 export type SeriesPoint = { q: string; s: number; n: number };
 export type DigestTextRow = { week: string; facts_hash: string; headline: string; deck: string; argument: unknown; changes: unknown; chart_caption: string | null; use_text: string | null; model: string; passed: boolean; checked_at: string | null; created_at: string };
 export type EditionRows = {
@@ -225,6 +232,8 @@ export type Edition = {
   cover: { id: string; number: number | null; subject: string; terms: string[]; why: string };
   chart: (Chart & { caption: string }) | null;
   rows: EditionRow[]; quiet: string | null;
+  /** L2 · how many of the issue's rows have a picture it could carry (at most three are carried); absent on records written before L2. */
+  picturesAvailable?: number;
   numbers: NumberPart[];
   corrections: Corrections | null;
   /** How many of the stored brief's cited brands have no published story in the week (the terminal's weekly brief line); 0 without a brief. */
@@ -263,6 +272,7 @@ export function editionParts(r: EditionRows): EditionParts | null {
     chart: chart ? { ...chart, caption: chartCaption(chart) } : null,
     rows: rows.map(s => ({ id: s.id, number: s.number, subject: subjectOf(s).name, kind: s.kicker.split(" · ")[0] ?? s.kicker, headline: s.headline, href: storyHref(s), sentence: "", when: whenOf(s), picture: pics.get(s.id) ?? null })),
     quiet: quietLine(mine.length, r.numbers.confirmed),
+    picturesAvailable: rows.filter(s => !!r.pictures[s.id]).length,
     numbers: numbersLine(r.numbers),
     corrections: corrections(withdrawn, rebuiltOn),
     briefWithdrawn: r.briefDomains?.length ? withdrawnCited(r.briefDomains, withdrawnBrands({ briefDomains: r.briefDomains, retired, published: mine })) : 0,

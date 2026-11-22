@@ -59,8 +59,9 @@ describe("ingest-wire endpoint", () => {
   it("keeps the scheduled RSS/HN poll on the cron credential with an empty body", async () => {
     const res = await handleIngestWire(post({}, { authorization: "Bearer test-only-cron" }));
     expect(await res.json()).toEqual({ ok: true, polled: true });
-    expect(afterJob).toHaveBeenCalledWith("wire", expect.any(Number));
-    expect(refreshAfterJob).toHaveBeenCalledWith("wire", expect.any(Number)); // the 15-minute poll is the records sweeper (P1)
+    // L2 · the story build and the records sweep moved to the wire follow-ups pass: the poll itself runs neither.
+    expect(afterJob).not.toHaveBeenCalled();
+    expect(refreshAfterJob).not.toHaveBeenCalled();
     expect((await handleIngestWire(post({ kind: "items" }, { authorization: "Bearer test-only-cron" }))).status).toBe(400);
   });
   it("accepts x-crawl-secret too and caps the body at 256 KB", async () => {

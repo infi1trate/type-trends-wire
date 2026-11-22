@@ -158,3 +158,17 @@
 - [x] B2 scout: sources register, source_note, candidates call, candidate_status, /desk panel, memory
 - [x] job_runs test-row note
 - [x] Proof 1–7, report, commit
+
+# Phase L2 · Chart library + six leftovers
+- [x] A1 numbers lines dated; stage-change update line (no model); tests No. 45 / run 16
+- [ ] A2 No. 43 deck rewrite; drop from golden known failures — blocked: story-writer limit used today (13 of 12); next UTC day
+- [x] A3 Digest pictures fix; package check thresholds; preview Digest No. 2
+- [x] A4 terminal first byte < 500 ms warm
+- [x] A5 wire job < 25 s (move deferrable work to its own pass)
+- [ ] A6 queue kind `phase` — code + tests done; stored kind list and phase column need the owner's yes (existing table)
+- [x] B1 chart forms registry + test
+- [x] B2 /brand/system registry page
+- [x] B3 slope chart + dot-with-range specimens (proposed)
+- [x] B4 propose names registry forms; accepted → feature queue item; colophon by edition
+- [x] B5 /desk Graphics panel + memory; regen docs
+- [x] Proof 1–8, report, commit

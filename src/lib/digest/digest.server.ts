@@ -37,11 +37,18 @@ export const retiredOf = (s: Rec): RetiredStory | null => (s.state === "killed" 
 async function pictureOf(s: EditionStory & { source_ids: string[] }): Promise<Picture | null> {
   const { evidenceOf } = await import("../stories/page.server");
   const ev = await evidenceOf(s, s.type).catch(() => null);
-  if (!ev) return null;
+  if (!ev) return leadPictureOf(s.id);
   if (ev.compare) return { kind: "pair", before: ev.compare.before, after: ev.compare.after };
   if (ev.after) return { kind: "one", crop: ev.after };
   const g = ev.grid?.find(x => x.crop)?.crop;
-  return g ? { kind: "one", crop: g } : null;
+  return g ? { kind: "one", crop: g } : leadPictureOf(s.id);
+}
+/** L2 · why Digest No. 1 had no pictures: its three stories were breakouts (signal stories) with no capture of their own change, and the
+ *  issue only read captures. They do have a lead picture on their pages (a mosaic of brands' first screens), so the issue carries that. */
+async function leadPictureOf(id: string): Promise<Picture | null> {
+  const [{ loadStoryLead }, { leadAsPicture }] = await Promise.all([import("../stories/page.server"), import("./edition")]);
+  const l = await loadStoryLead(id).catch(() => null);
+  return leadAsPicture((l as { lead?: import("../lead-picture").LeadPlan | null } | null)?.lead ?? null);
 }
 /** The week's live changes split by the integrity rule: confirmed (passed) and seen once (still unconfirmed). */
 async function weekCounts(db: Db, startIso: string, endIso: string): Promise<{ confirmed: number; unconfirmed: number }> {

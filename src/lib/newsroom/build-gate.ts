@@ -93,7 +93,8 @@ export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[] 
   add("no_worse", [...noAfter, ...(b.why ? [b.why] : []), ...worse], { measures: NO_WORSE });
   const lim = VISIBLE_LIMITS[g.item.expects];
   add("visible", lim ? [...noAfter, ...(b.why ? [b.why] : []), ...vis] : [], { expects: g.item.expects, limit_share: lim?.share ?? null, limit_height_px: lim?.heightPx ?? null, limit_height_share: lim?.heightShare ?? null, max_share: maxShare, max_height_change_px: maxHeight });
-  const wantsProposal = g.item.expects === "layout" || needsProposal(g.item.kind);
+  // L2 · a phase item needs no proposal (the owner's brief approved it), whatever it expects readers to see.
+  const wantsProposal = g.item.kind !== "phase" && (g.item.expects === "layout" || needsProposal(g.item.kind));
   add("proposal", g.proposal === "accepted" ? [] : [`The owner has not accepted the item's proposal (${g.proposal ?? "none linked"}).`], { proposal: g.proposal }, wantsProposal);
   if (g.item.kind === "design move") {
     const mv = g.item.move;

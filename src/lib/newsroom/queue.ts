@@ -1,7 +1,7 @@
 // N4 · THE BUILD QUEUE's rules (pure): one list for every product change, each item's status history, and the order an item may move
 // in. The door enforces these for `queue_move` and `gate_result`: only the listed order; `briefed` and `live` for anything but a bug or a
 // label need the linked proposal accepted by the owner; `live` needs the newest gate result to be a pass; a decline needs a reason.
-export const QUEUE_KINDS = ["bug", "label", "design move", "layout", "feature"] as const;
+export const QUEUE_KINDS = ["bug", "label", "design move", "layout", "feature", "phase"] as const;
 export type QueueKind = (typeof QUEUE_KINDS)[number];
 /** What a reader should see when the item ships; the gate holds the item to it. */
 export const EXPECTS = ["no visible change", "small", "layout"] as const;
@@ -12,7 +12,18 @@ export const QUEUE_STATUSES = ["queued", "briefed", "built", "gate passed", "gat
 export type QueueStatus = (typeof QUEUE_STATUSES)[number];
 /** Bug fixes and label fixes ship alone (N1 levels); every other kind needs the owner's accepted proposal before it is briefed or live. */
 export const SHIPS_ALONE_KINDS: readonly QueueKind[] = ["bug", "label"];
-export const needsProposal = (k: string) => !(SHIPS_ALONE_KINDS as readonly string[]).includes(k);
+/** L2 · a roadmap phase the owner approved in a brief is its own kind: it needs no proposal (the brief is the approval), it names its
+ *  phase, and it passes the gate like any other item. */
+export const NO_PROPOSAL_KINDS: readonly QueueKind[] = [...SHIPS_ALONE_KINDS, "phase"];
+export const needsProposal = (k: string) => !(NO_PROPOSAL_KINDS as readonly string[]).includes(k);
+export const PHASE_MIN = 2, PHASE_MAX = 12;
+/** Why a queue_add's kind and phase do not go together, or null: a phase item names its phase (2 to 12 characters, e.g. "L2"); no
+ *  other kind carries one. */
+export function phaseProblem(kind: string, phase: string | null | undefined): string | null {
+  const p = phase?.trim() ?? "";
+  if (kind === "phase") return p.length < PHASE_MIN || p.length > PHASE_MAX ? `A phase item names its phase in ${PHASE_MIN} to ${PHASE_MAX} characters (for example "L2").` : null;
+  return p ? `Only a phase item names a phase (this one is ${kind}).` : null;
+}
 /** The order. `gate passed` and `gate failed` are set only by a gate result; a failed gate goes back to a new build. */
 export const NEXT: Readonly<Record<QueueStatus, readonly QueueStatus[]>> = {
   queued: ["briefed"], briefed: ["built"], built: [], "gate failed": ["built"], "gate passed": ["live"], live: [], declined: [],

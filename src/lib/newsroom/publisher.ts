@@ -28,9 +28,9 @@ export const draftStatusOf = (rows: readonly { status: string }[]): DraftStatus 
 export const PACKAGE_ITEMS = [
   { id: "closed_week", name: "The issue is for a closed ISO week" },
   { id: "words", name: "Under 600 words" },
-  { id: "pictures", name: "Three pictures" },
+  { id: "pictures", name: "Its pictures (up to three)" },
   { id: "chart", name: "One chart" },
-  { id: "changes", name: "Five changes" },
+  { id: "changes", name: "Three to five changes" },
   { id: "cover", name: "The cover builds" },
   { id: "share_image", name: "The share image builds" },
   { id: "digest_rss", name: "The Digest RSS is well-formed and carries the newest issue" },
@@ -40,7 +40,8 @@ export const PACKAGE_ITEMS = [
 export type PackageItemId = (typeof PACKAGE_ITEMS)[number]["id"];
 export type PackageItem = { id: PackageItemId; name: string; ok: boolean; detail: string };
 export type Fetched = { status: number; type?: string | null; bytes?: number; body?: string };
-export type PackageIssue = { week: string; number: number; words: number; rows: { href: string; picture: boolean }[]; chart: { href: string } | null; cover: { id: string; href: string; subject: string } | null; links: string[] };
+export type PackageIssue = { week: string; number: number; words: number; rows: { href: string; picture: boolean }[];
+  /** L2 · how many of the issue's rows have a picture it could carry; null when the stored issue predates the count. */ picturesAvailable?: number | null; chart: { href: string } | null; cover: { id: string; href: string; subject: string } | null; links: string[] };
 export type PackageInput = { now: number; closed: boolean; issue: PackageIssue; share: Fetched; cover: Fetched | null; digestRss: Fetched; morningRss: Fetched; morningNewest: string | null; links: { path: string; status: number }[] };
 
 /** Every internal path an issue links to (the cover, the five rows, the chart's story, the numbers line, corrections, keep reading, its
@@ -89,6 +90,17 @@ const feedItem = (id: "digest_rss" | "morning_rss", f: Fetched, want: string | n
   if (want && !first.includes(want)) return { id, name, ok: false, detail: `the first item is ${first}, not the newest (${want})` };
   return { id, name, ok: true, detail: `well-formed; first item ${first}` };
 };
+/** L2 · the issue carries up to three pictures from its rows' stories. No picture when a row had one fails; fewer than three because the
+ *  rows had fewer is recorded, not failed. An issue stored before the count is held to "at least one picture". */
+export const PICTURES_WANTED = 3, CHANGES_MIN = 3, CHANGES_MAX = 5;
+export function picturesItem(name: string, pics: number, available: number | null): PackageItem {
+  const word = (k: number) => `${k} ${k === 1 ? "picture" : "pictures"}`;
+  if (available == null) return { id: "pictures", name, ok: pics > 0, detail: pics >= PICTURES_WANTED ? word(pics) : `${word(pics)} (the stored issue does not say how many its stories had)` };
+  const want = Math.min(PICTURES_WANTED, available);
+  if (pics < want) return { id: "pictures", name, ok: false, detail: `${word(pics)}, though ${available} of its stories ${available === 1 ? "has" : "have"} one` };
+  if (pics < PICTURES_WANTED) return { id: "pictures", name, ok: true, detail: `${word(pics)}: recorded, the week had ${available === 0 ? "no story" : available === 1 ? "one story" : `${available} stories`} with a picture` };
+  return { id: "pictures", name, ok: true, detail: word(pics) };
+}
 /** Every item of the package check, in order (code only). */
 export function packageChecks(i: PackageInput): PackageItem[] {
   const n = (id: PackageItemId) => PACKAGE_ITEMS.find(x => x.id === id)!.name, x = i.issue;
@@ -98,9 +110,9 @@ export function packageChecks(i: PackageInput): PackageItem[] {
   return [
     { id: "closed_week", name: n("closed_week"), ok: i.closed, detail: i.closed ? `${x.week} has closed` : `${x.week} has not closed` },
     { id: "words", name: n("words"), ok: x.words < 600, detail: `${x.words} words` },
-    { id: "pictures", name: n("pictures"), ok: pics === 3, detail: `${pics} ${pics === 1 ? "picture" : "pictures"}` },
+    picturesItem(n("pictures"), pics, x.picturesAvailable ?? null),
     { id: "chart", name: n("chart"), ok: !!x.chart, detail: x.chart ? `chart from ${x.chart.href}` : "no chart" },
-    { id: "changes", name: n("changes"), ok: x.rows.length === 5, detail: `${x.rows.length} ${x.rows.length === 1 ? "change" : "changes"}` },
+    { id: "changes", name: n("changes"), ok: x.rows.length >= CHANGES_MIN && x.rows.length <= CHANGES_MAX, detail: `${x.rows.length} ${x.rows.length === 1 ? "change" : "changes"}${x.rows.length < CHANGES_MIN ? ` (under ${CHANGES_MIN})` : ""}` },
     { id: "cover", name: n("cover"), ok: !coverWhy, detail: coverWhy ?? `${x.cover!.subject}: ${x.cover!.href} answers 200` },
     { id: "share_image", name: n("share_image"), ok: !shareWhy, detail: shareWhy ?? `/digest/${x.week}.png, ${i.share.type}, ${Math.round((i.share.bytes ?? 0) / 1024)} KB` },
     feedItem("digest_rss", i.digestRss, `/digest/${x.week}`),

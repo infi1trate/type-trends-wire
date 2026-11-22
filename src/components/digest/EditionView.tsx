@@ -6,6 +6,7 @@ import type { Edition, EditionRow } from "@/lib/digest/edition";
 import { DigestShell, DigestFooter, SectionHead, pr } from "./Editorial";
 import { StoryCover } from "@/components/read/Covers";
 import { BeforeAfter, CropFigure } from "@/components/read/Evidence";
+import { LeadPicture } from "@/components/read/LeadPicture";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { StoryNo } from "@/components/brand/Ledger";
 import { Receipt } from "@/components/read/StoryCard";
@@ -26,7 +27,7 @@ function Row({ r }: { r: EditionRow }) {
         <p className="mt-3"><Link to={r.href as "/"} className="ed-tap inline-flex min-h-[44px] items-center" {...pr(r.href)}>Read the story →</Link></p>
       </div>
       {pic && <div className="min-w-0" data-digest-picture="">
-        {pic.kind === "pair" ? <BeforeAfter before={pic.before} after={pic.after} sizes="(min-width: 1024px) 30vw, 100vw" /> : <CropFigure crop={pic.crop} sizes="(min-width: 1024px) 55vw, 100vw" />}
+        {pic.kind === "pair" ? <BeforeAfter before={pic.before} after={pic.after} sizes="(min-width: 1024px) 30vw, 100vw" /> : pic.kind === "lead" ? <LeadPicture plan={pic.plan} eager={false} compact tileSizes="(min-width: 1024px) 14vw, 50vw" /> : <CropFigure crop={pic.crop} sizes="(min-width: 1024px) 55vw, 100vw" />}
       </div>}
     </div>
   </li>;

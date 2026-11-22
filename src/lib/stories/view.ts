@@ -20,6 +20,7 @@ export const soWhatOf = (p: { type: StoryKind; signalKeys: string[]; stage?: str
 };
 
 import { sheetFacts, type SheetNumber } from "./sheet";
+import { datedFacts } from "./as-of";
 import { recolour, type ColourEvent } from "./recolour";
 export type StoryRecord = Shown<StoredStory> & { written?: Written | null; template?: { headline: string; deck: string | null } };
 export const storyPath = (id: string) => `/stories/${encodeURIComponent(id)}`;
@@ -145,7 +146,7 @@ export function censusLines(facts: Fact[]): { name: string; line: string; href: 
 export const dataFacts = (facts: Fact[]) => facts.filter(f => f.kind === "source" || f.kind === "date");
 /** The story page (Read side, E2b): kicker (kind · sector), headline, deck, the picture, the written body, one how-we-know line, the changes
  *  with receipts, then a way on. Score, threshold and why it ran stay in the Data view and on the desk; stored why lines are not shown. */
-export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[]; numbers?: SheetNumber[] | null; colourEvents?: ColourEvent[] | null }) {
+export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns: string[]; numbers?: SheetNumber[] | null; colourEvents?: ColourEvent[] | null; /** L2 · when the numbers were true, and one dated update line (as-of.ts) */ dating?: { asOf: string | null; update: string | null } | null }) {
   const type = isKind(s.type) ? s.type : "news", def = STORY_TYPE_DEFS[type], census = s.id.startsWith("census:");
   const stored = related.colourEvents && s.domains.length === 1 ? recolour(asFacts(s.facts), related.colourEvents) : asFacts(s.facts);
   // U2b · one list: with the run's numbers known, the list is the writer's sheet (stored lines it kept, then its numbers), so every count
@@ -161,7 +162,8 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
     // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and
     // under "The lines".
     // N2 · copy desk: the Numbers list reads in Read-side wording (no run numbers, stage words in lower case mid-sentence).
-    facts: (census ? facts.filter(f => f.kind === "member") : readList(facts)).map(f => ({ ...f, text: readWording(noDid(deLegacy(f.text))) })), beforeAfter: before && after ? { before, after } : null,
+    facts: datedFacts((census ? facts.filter(f => f.kind === "member") : readList(facts)).map(f => ({ ...f, text: readWording(noDid(deLegacy(f.text))) })), census ? null : related.dating?.asOf ?? null), beforeAfter: before && after ? { before, after } : null,
+    numbersUpdate: census ? null : related.dating?.update ?? null,
     census: census ? { lines: censusLines(facts), sectors: facts.find(f => f.kind === "count" && /^By sector: /.test(f.text))?.text.replace(/^By sector: /, "") ?? null } : null,
     // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
     evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : e.label === "Library record" ? "Brand data" : noDid(deLegacy(e.label)) })),

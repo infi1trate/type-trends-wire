@@ -108,7 +108,7 @@ export async function runDeskPass(db: Admin, o: { now?: () => number; only?: p.P
       } else {
         const bud = await g.chartBudget(db, items, t0);
         let calls = 0;
-        const run: import("./graphics.server").ChartRun = { checked: 0, calls: 0, choices: [], proposals: 0, errors: [] };
+        const run: import("./graphics.server").ChartRun = { checked: 0, calls: 0, choices: [], proposals: 0, errors: [], wanting: [] };
         const b = { ...bud, fixture: false, callMs: p.CHART_CALL_MS, allowCall: () => calls === 0 && clock() - t0 < p.CHART_CALL_START_BY_MS && (calls++, true) };
         for (const slug of items) {
           if (clock() - t0 > p.PASS_START_BY_MS) break;

@@ -29,14 +29,12 @@ export async function handleIngestWire(request: Request): Promise<Response> {
         const ingestMs = Date.now() - started;
         let news = "";
         if (res.ok) {
-          // N4b · the news desk's turn comes first, with its own limit, so the story build's tail never starves it.
+          // N4b · the news desk's turn comes first, with its own limit.
           const [{ newsTurn }, { CALL_BUDGET_MS }] = await Promise.all([import("./newsroom/news.server"), import("./jobs/steps")]);
           const t = Date.now(); await newsTurn(started, CALL_BUDGET_MS); news = ` · news ${Math.round((Date.now() - t) / 100) / 10} s`;
-          await (await import("./stories/build.server")).afterJob("wire", started);
         }
-        // The 15-minute wire call is the records sweeper (records/refresh.server.ts): whatever time the call has left rewrites due records.
-        // (History is the scheduled database job's, U2c: the poll no longer refreshes it.)
-        await (await import("./records/refresh.server")).refreshAfterJob("wire", started);
+        // L2 · the story build (with its desk-job tail) and the records sweep now run in their own pass a minute later
+        // (jobs/wire-followups.ts, /api/public/jobs/wire-followups), so this call ends after the ingest and the news desk's turn.
         await run.finish(res.ok, `ingest ${res.ok ? "ok" : "failed"} in ${Math.round(ingestMs / 100) / 10} s${news}`);
         return res;
       } catch (e) { await run.finish(false, e instanceof Error ? e.message.slice(0, 120) : "error"); throw e; }

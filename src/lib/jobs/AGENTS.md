@@ -1,0 +1,1 @@
+- The 15-minute wire job only ingests and gives the news desk its turn; the story build and records sweep run in the separate `wire-followups` pass a minute later (start/finish rows, one pass at a time, the sweep gets its own budget inside the pass end), so neither job runs near its time limit.

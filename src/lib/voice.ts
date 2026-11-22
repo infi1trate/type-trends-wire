@@ -284,6 +284,9 @@ export const VOICE = {
   "data.week.none": empty("Week Data view with no stored brief", "No weekly brief was stored for this week."),
   "receipt.loading": loading("Receipt drawer, while the receipt loads", "Loading the receipt…"),
   "receipt.loadingRows": loading("Receipt drawer skeleton rows (screen-reader label)", "Loading"),
+  "brand.system.specimens": loading("/brand/system chart registry, while the proposed specimens' data loads", "Loading the specimens…"),
+  "chartkit.slope.empty": { kind: "empty", where: "Proposed slope chart, Data look, with no rows", text: "No rows.", next: [] },
+  "desk.graphics.noneWaiting": { kind: "empty", where: "/desk Graphics panel, figures waiting on a proposed form", text: "No figure is waiting on a proposed form.", next: [] },
 } as const satisfies Record<string, Said>;
 
 export type VoiceId = keyof typeof VOICE;

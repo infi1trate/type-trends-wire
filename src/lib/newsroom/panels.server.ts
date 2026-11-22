@@ -10,6 +10,17 @@ export async function testRefs(db: Admin): Promise<string[]> {
   const { data } = await db.from("desk_log").select("subject_id").eq("action", "test_mark").limit(200);
   return (data ?? []).flatMap(x => (x.subject_id ? [x.subject_id] : []));
 }
+/** L2 · the chart registry with status, the figures waiting on a proposed (or missing) form from the graphics desk's proposals, and
+ *  each proposal's owner status (the same facts for /desk and the memory). */
+export async function chartForms(db: Admin) {
+  const [{ registryRows, chartFormOfProposal }, { proposalStatuses }] = await Promise.all([import("../chart/forms"), import("./engineering.server")]);
+  const { data, error } = await db.from("desk_log").select("id,at,reason,subject_id,detail").eq("actor", "graphics").eq("action", "propose").eq("decision", "proposed").order("id", { ascending: false }).limit(40);
+  if (error) throw error;
+  const rows = (data ?? []).map(r => ({ id: r.id, at: r.at, study: r.subject_id, text: (r.detail as { text?: string } | null)?.text ?? r.reason ?? "" })).filter(r => /chart form|registry/i.test(r.text));
+  const st = await proposalStatuses(db, rows.map(r => r.id));
+  const waiting = rows.map(r => ({ log: r.id, at: r.at, study: r.study, form: chartFormOfProposal(r.text)?.id ?? null, text: r.text, status: st.get(r.id) ?? "open" }));
+  return { registry: registryRows().map(f => ({ ...f, proposals: waiting.filter(w => w.form === f.id).map(w => ({ log: w.log, status: w.status })) })), waiting: waiting.filter(w => w.status !== "declined") };
+}
 export async function n3Panels(db: Admin, now = Date.now()) {
   const today = dayStart(now), week = new Date(now - 7 * 864e5).toISOString();
   const [calls, picks, drops, pictures, share, backtests, proposals, pitches, findings, tests] = await Promise.all([
@@ -36,10 +47,11 @@ export async function n3Panels(db: Admin, now = Date.now()) {
   const pics = (pictures.data ?? []).map(p => ({ ...p, headline: head.get(p.story_id)?.headline ?? p.story_id, number: null as number | null }));
   const byKind: Record<string, number> = {}; for (const f of findings) byKind[f.kind] = (byKind[f.kind] ?? 0) + 1;
   const bt = backtests.data ?? [];
+  const forms = await chartForms(db).catch(() => null);
   return {
     limits,
     news: { picks: (picks.data ?? []).map(p => ({ ...p, title: byItem.get(p.item_id)?.title ?? "", url: byItem.get(p.item_id)?.url ?? "", outlet: byItem.get(p.item_id)?.source ?? "", dropped: dropped.get(p.id)?.reason ?? null })), drops: drops.data ?? [], pitches: pitches.data ?? [] },
-    graphics: { changed: pics.filter(p => p.verdict === "alternate" || (p.actor !== "graphics" && p.kind !== "rule")), none: pics.filter(p => p.kind === "none"), fallbacks: pics.filter(p => p.verdict === "fallback").length, kept: pics.filter(p => p.verdict === "keep").length, share: share.data?.[0] ?? null },
+    graphics: { changed: pics.filter(p => p.verdict === "alternate" || (p.actor !== "graphics" && p.kind !== "rule")), none: pics.filter(p => p.kind === "none"), fallbacks: pics.filter(p => p.verdict === "fallback").length, kept: pics.filter(p => p.verdict === "keep").length, share: share.data?.[0] ?? null, forms },
     data: { byKind, newest: findings.slice(0, 10).map(f => ({ id: f.id, at: f.at, kind: f.kind, subject: f.subject, text: [f.measure, f.expected ? `expected ${f.expected}` : null, f.found ? `found ${f.found}` : null].filter(Boolean).join(" · ") })), open: findings.length, backtest: bt[0] ? { ...bt[0], line: `${bt[0].right_calls} of ${bt[0].calls} calls right on forecast run ${bt[0].scored_run_id} (${Math.round(Number(bt[0].days))} days), mean miss ${bt[0].mean_miss == null ? "–" : Number(bt[0].mean_miss).toFixed(2)} points` } : null, running: bt.length ? { calls: bt.reduce((s, b) => s + b.calls, 0), right: bt.reduce((s, b) => s + b.right_calls, 0) } : null, proposals: proposals.data ?? [] },
     tests,
   };

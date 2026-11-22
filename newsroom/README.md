@@ -70,6 +70,12 @@ Picks at most 5 links a day from the wire's publications (outlet items only, pub
 
 Checks each story's picture before standards: the rule's choice and up to 3 ranked alternates that pass the quality gate. Only a stored crop that passes the gate can be chosen; a before-and-after pair may become its after-crop alone, never mixed across dates; the caption is rebuilt by rule and no text changes. “No picture shows it” fails checklist item 3 for a type that needs a picture. For study figures it chooses a form only where more than one chart-kit form fits the data, and checks every published story, study and Digest share image daily (code).
 
+### Chart forms
+
+One registry (src/lib/chart/forms.ts) lists every form the product can draw; the desk's choice and the study builder read it. Live: Quarter line, Small multiples, Bars, Sparkline, Before-and-after strip, Two-axis scatter, Donut, Bands over quarters, Whitespace scatter, Vibe map, Library history, Font-rank flow, Palette strip, Score bars.
+
+Proposed, shown only as specimens on /brand/system: Slope chart (two points per row; 2 rows at both points), Dot with range (value with range per row; 2 rows with a range). A figure no live form shows whole is filed with `propose` naming the proposed form that would fit; only the owner accepts, an accepted form goes on the build queue as a feature, and it becomes live only in a build that passed the gate.
+
 ### The data desk
 
 Daily checks (code) record findings of these kinds: contradiction, detector, impossible, coverage, wrong website. The detector sample re-derives 25 measured events a day under today's rules; coverage flags active brands with no good capture for 3 days and sectors under 15 measured homepages. An open finding on a brand and measure a story cites holds it (checklist item 9). Weekly, after the forecast, it scores the forecast made 28 days earlier against what the measurements show, then makes one call that files at most 3 study pitches and 2 signal ideas; code drops any that name a measure the product does not hold.
@@ -99,7 +105,7 @@ Daily, code only, no model: files or declines bug items by stable key for a sche
 
 ### The build queue
 
-One list for every product change. Kinds: bug, label, design move, layout, feature. What readers should see: no visible change, small, layout. Statuses: queued, briefed, built, gate passed, gate failed, live, declined. The order: queued → briefed; briefed → built; gate failed → built; gate passed → live; built → gate passed or gate failed only through `gate_result`; declined at any open point with a reason. Briefed and live for anything but bug and label need the owner's accepted proposal; live needs the newest gate result to be a pass.
+One list for every product change. Kinds: bug, label, design move, layout, feature, phase. What readers should see: no visible change, small, layout. Statuses: queued, briefed, built, gate passed, gate failed, live, declined. The order: queued → briefed; briefed → built; gate failed → built; gate passed → live; built → gate passed or gate failed only through `gate_result`; declined at any open point with a reason. Briefed and live for anything but bug and label need the owner's accepted proposal; live needs the newest gate result to be a pass.
 
 ### The gate
 
@@ -135,7 +141,7 @@ Visible change: no visible change allows at most 1% of pixels changed and height
 
 ### The publisher
 
-Mondays, after the Digest's week closes, in the desk jobs after the story build. First the package check (code, no model) on the newest published issue: the issue is for a closed iso week; under 600 words; three pictures; one chart; five changes; the cover builds; the share image builds; the digest rss is well-formed and carries the newest issue; the morning line rss is well-formed and carries the newest morning; every internal link in the issue answers 200. One stored row per check; a failure files a bug item (key `package:<week>`). Only after that issue's check passed, one drafts call (2 a day at most): up to 6 drafts, 3 for the Digest's argument and up to 3 for the week's stories the editor in chief led with. Code drops a draft over 280 characters with its slug.global link, with more than one sentence or one number, a number not on its target's facts, an emoji, more than 1 hashtag, a question or exclamation, or a line the shared check or the copy desk refuses. Drafts are drafts: draft → approved or declined; approved → posted or declined, set only by the owner (`draft_status`). There is no posting code. Audience numbers come once a week from the publisher's outside session (`audience`): counts only, at most 20 paths and 10 sources; no tracker, cookie or per-person data is added to the site.
+Mondays, after the Digest's week closes, in the desk jobs after the story build. First the package check (code, no model) on the newest published issue: the issue is for a closed iso week; under 600 words; its pictures (up to three); one chart; three to five changes; the cover builds; the share image builds; the digest rss is well-formed and carries the newest issue; the morning line rss is well-formed and carries the newest morning; every internal link in the issue answers 200. One stored row per check; a failure files a bug item (key `package:<week>`). Only after that issue's check passed, one drafts call (2 a day at most): up to 6 drafts, 3 for the Digest's argument and up to 3 for the week's stories the editor in chief led with. Code drops a draft over 280 characters with its slug.global link, with more than one sentence or one number, a number not on its target's facts, an emoji, more than 1 hashtag, a question or exclamation, or a line the shared check or the copy desk refuses. Drafts are drafts: draft → approved or declined; approved → posted or declined, set only by the owner (`draft_status`). There is no posting code. Audience numbers come once a week from the publisher's outside session (`audience`): counts only, at most 20 paths and 10 sources; no tracker, cookie or per-person data is added to the site.
 
 ### The scout
 

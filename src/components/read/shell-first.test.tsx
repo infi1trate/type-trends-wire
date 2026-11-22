@@ -60,6 +60,15 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
       expect(c.started.length, path).toBe(1);
     }
   });
+  it("L2 · the terminal awaits nothing: the signal snapshot and the panel's reads stream behind the shell", async () => {
+    const { Route } = await import("@/routes/terminal");
+    for (const [panel, want] of [["today", ["signals", "today", "story-queue"]], ["library", ["signals", "library"]], ["overview", ["signals"]]] as const) {
+      const c = client(() => null);
+      await within(Promise.resolve(loaderOf(Route)({ context: c, deps: { panel, sector: "all" } })));
+      expect(c.awaited, panel).toEqual([]);
+      expect(c.started.slice(0, want.length), panel).toEqual([...want]);
+    }
+  });
   it("an unknown brand or story is a 404 from the critical read", async () => {
     const b = client(() => null);
     await expect(Promise.resolve(loaderOf((await import("@/routes/brands.$domain")).Route)({ context: b, params: { domain: "nope.example" }, deps: { data: false } }))).rejects.toMatchObject({ isNotFound: true });

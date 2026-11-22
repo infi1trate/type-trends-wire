@@ -43,20 +43,27 @@ export const Route = createFileRoute("/terminal")({
   // U1: an object's terminal view (a story, a signal or a pattern) has moved to that object's one address, in its Data view.
   beforeLoad: ({ location }) => { const href = terminalObjectHref(location.search as Record<string, unknown>); if (href) throw redirect({ href, statusCode: 301 }); },
   loaderDeps: ({ search }) => ({ panel: resolveView(search.panel), sector: resolveSector(search.sector) }),
-  // Every panel filters by tier, so the signal snapshot loads with the page (SSR and client then render the same headline set).
+  // L2 · shell first, as the Read pages: every panel's reads (the signal snapshot included) are started here but never awaited, and the
+  // whole panel area sits in one Suspense boundary, so the first byte no longer waits on the slowest read; the streamed HTML is the same.
   loader: ({ context, deps }) => {
     const q = context.queryClient, v = deps.panel;
-    const extra: Promise<unknown>[] =
-      v === "today" ? [q.ensureQueryData(todayQuery()), q.ensureQueryData(storyQueueQuery(null)).catch(() => null)] : v === "library" ? [q.ensureQueryData(libraryQuery())] : v === "history" ? [q.ensureQueryData(libraryHistoryQuery())]
-      : v === "brief" ? [q.ensureQueryData(forecastQuery()), q.ensureQueryData(chartCardQuery(null))] : v === "vibe" ? [q.ensureQueryData(vibeQuery())]
-      : v === "rebrands" ? [q.ensureQueryData(rebrandsQuery({ sector: "all", limit: 20 }))] : v === "patterns" ? [q.ensureQueryData(patternsQuery(deps.sector))] : v === "studies" ? [q.ensureQueryData(dataIndexQuery())] : [];
-    return Promise.all([q.ensureQueryData(signalsQuery()).catch(() => null), ...extra]).then(() => undefined);
+    for (const o of terminalReads(v, deps.sector, typeof window === "undefined")) void q.prefetchQuery(o as never);
   },
   errorComponent: () => <div role="alert" className="p-3">{sayState("terminal.failed").title} · {sayState("terminal.failed").text} · <Link to="/" className="underline">LIVE FRONT PAGE</Link></div>,
   notFoundComponent: () => <div className="p-3">{sayState("terminal.notFound").title} · {sayState("terminal.notFound").text}</div>,
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: () => <CrawlScopeProvider><Terminal /></CrawlScopeProvider>,
 });
+
+/** The reads a panel starts before the shell (the signal snapshot first: every panel filters by tier). On the server the story queue
+ *  (a list of every published, held and taken-down story, ~470 KB) is not started: its panel reads it after hydration, as it already
+ *  does on a cold client, so the server render no longer waits on it. */
+export function terminalReads(v: ViewId, sector: string, server = false): { queryKey: readonly unknown[] }[] {
+  const extra = v === "today" ? [todayQuery(), ...(server ? [] : [storyQueueQuery(null)])] : v === "library" ? [libraryQuery()] : v === "history" ? [libraryHistoryQuery()]
+    : v === "brief" ? [forecastQuery(), chartCardQuery(null)] : v === "vibe" ? [vibeQuery()]
+    : v === "rebrands" ? [rebrandsQuery({ sector: "all", limit: 20 })] : v === "patterns" ? [patternsQuery(sector)] : v === "studies" ? [dataIndexQuery()] : [];
+  return [signalsQuery(), ...extra];
+}
 
 const Wait = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<div className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></div>}>{children}</Suspense>;
 
@@ -133,6 +140,7 @@ function Terminal() {
         <Ticker />
       </div>
       <main id="tk-main" tabIndex={-1} className="flex min-h-0 flex-1 flex-col focus:outline-none" aria-label={`${sectionById(section).label} section`}>
+        <Wait>
         {view === "today" && <Wait><Today go={setPanel} onTour={startTour} onGlossary={() => setOverlay("glossary")} focus={search.story} /></Wait>}
         {view === "wire" && <Wire freshIds={fresh} />}
         {view === "overview" && <Overview go={setPanel} freshIds={fresh} />}
@@ -157,6 +165,7 @@ function Terminal() {
         {view === "audit" && <AuditTab />}
         {view === "ledger" && <LedgerTab />}
         {view === "console" && <ConsoleTab onRun={c => openConsole(c)} />}
+        </Wait>
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · <span className="normal-case">{BRAND_NAME}</span> CRAWLER · DESIGN RSS · HACKER NEWS</span>

@@ -119,6 +119,11 @@ export const getKit = createServerFn({ method: "GET" }).handler(async () => {
   const { loadKit } = await import("./kit.server");
   return loadKit();
 });
+/** L2 · /brand/system: real rows for the proposed chart forms' specimens (anonymous reads). */
+export const getChartSpecimens = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadSpecimens } = await import("./chart/specimens.server");
+  return loadSpecimens();
+});
 
 // Pattern gallery and collections (gallery.ts + collections/registry.ts over stored captures; no AI).
 const gallerySearchInput = z.object({ sector: z.string().max(40).optional(), pattern: z.string().max(80).optional(), period: z.string().max(10).optional(), basis: z.string().max(10).optional(), section: z.string().max(10).optional(), page: z.number().int().min(1).max(999).optional() });

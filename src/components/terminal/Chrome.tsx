@@ -2,6 +2,7 @@ import { line as voiced } from "@/lib/voice";
 import { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { TickerTrack } from "@/components/kit/TickerTrack";
 import { useQuery } from "@tanstack/react-query";
+import { useHydrated } from "@tanstack/react-router";
 import { lastIngestQuery, typeIndexQuery, typeSnapshotQuery } from "@/lib/data";
 import { type PanelId } from "./panels";
 import { SECTIONS, sectionById, sectionOf, tabOf, tabsIn } from "@/lib/ia";
@@ -102,6 +103,7 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
 }
 
 export function Ticker() {
+  const hydrated = useHydrated();
   const { data } = useQuery(typeIndexQuery());
   const items = useMemo(() => {
     if (!data || data.rows.length === 0) return null;
@@ -136,7 +138,8 @@ export function Ticker() {
       <TickerTrack className="label h-7" duration="50s">
         {content}
         <SpreadTicker/>
-        <Suspense fallback={null}><LibraryTicker/></Suspense>
+        {/* L2 · the library events join the ticker after hydration: the server render no longer waits on the whole library read. */}
+        {hydrated && <Suspense fallback={null}><LibraryTicker/></Suspense>}
         {!items && content}
         {!items && content}
       </TickerTrack>
