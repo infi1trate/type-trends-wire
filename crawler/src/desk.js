@@ -6,7 +6,7 @@
 
 export const DESKS = ["editor in chief", "copy desk", "standards", "news", "data", "graphics", "design review", "engineering", "publisher", "scout"];
 /** Actions a desk may send through this workflow. Reads (queue, memory, newsroom, staff) and owner actions are left out on purpose. */
-export const CARRIED = ["check", "pin", "hold", "kill", "correct", "restore", "note", "pitch", "assign", "spend", "propose", "wire_pick", "wire_drop", "picture", "finding", "finding_close"];
+export const CARRIED = ["check", "pin", "hold", "kill", "correct", "restore", "note", "pitch", "assign", "spend", "propose", "wire_pick", "wire_drop", "picture", "finding", "finding_close", "data_run"];
 
 /** Pure: the request to send, or the reason it is refused here before anything leaves the runner. */
 export function prepare(actor, bodyText) {
