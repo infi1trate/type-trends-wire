@@ -15,6 +15,9 @@ test("desk carrier: desks only, carried actions only, the actor comes from the i
     assert.ok(!CARRIED.includes(a));
   }
   assert.match(prepare("standards", '{"action":"kill","id":"x"}').error, /needs a reason/);
+  assert.match(prepare("standards", '{"action":"hold","id":"x"}').error, /a hold needs a reason/);
+  assert.equal(prepare("standards", '{"action":"hold","id":"x","reason":"Thin"}').send.action, "hold");
+  assert.equal(prepare("news", '{"action":"note","subject":"brand:x.com","text":"t"}').send.action, "note");
   assert.match(prepare("standards", "kill it").error, /not JSON/);
   assert.match(prepare("standards", "[1]").error, /one JSON object/);
   assert.ok(DESKS.includes("copy desk") && !DESKS.includes("owner"));
