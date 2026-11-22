@@ -6,7 +6,7 @@
 
 export const DESKS = ["editor in chief", "copy desk", "standards", "news", "data", "graphics", "design review", "engineering", "publisher", "scout"];
 /** Actions a desk may send through this workflow. Reads (queue, memory, newsroom, staff) and owner actions are left out on purpose. */
-export const CARRIED = ["check", "pin", "hold", "kill", "correct", "restore", "note", "pitch", "assign", "spend", "propose", "wire_pick", "wire_drop", "picture", "finding", "finding_close", "data_run", "queue_add", "queue_move", "gate_result", "job_hold", "job_release", "audience", "source_note", "candidate_status"];
+export const CARRIED = ["check", "pin", "hold", "kill", "correct", "restore", "note", "pitch", "assign", "spend", "propose", "wire_pick", "wire_drop", "picture", "finding", "finding_close", "data_run", "queue_add", "queue_move", "gate_result", "job_hold", "job_release", "audience", "source_note", "candidate_status", "rewrite"];
 
 /** Pure: the request to send, or the reason it is refused here before anything leaves the runner. */
 export function prepare(actor, bodyText) {
@@ -16,7 +16,7 @@ export function prepare(actor, bodyText) {
   try { body = JSON.parse(bodyText); } catch { return { error: "the body is not JSON" }; }
   if (!body || typeof body !== "object" || Array.isArray(body)) return { error: "the body must be one JSON object" };
   if (!CARRIED.includes(body.action)) return { error: `"${body.action}" is not carried from here (carried: ${CARRIED.join(", ")})` };
-  if (["kill", "hold", "wire_drop", "picture", "finding_close", "job_hold", "job_release"].includes(body.action) && !String(body.reason ?? "").trim()) return { error: `a ${body.action} needs a reason` };
+  if (["kill", "hold", "wire_drop", "picture", "finding_close", "job_hold", "job_release", "rewrite"].includes(body.action) && !String(body.reason ?? "").trim()) return { error: `a ${body.action} needs a reason` };
   const { confirm: _confirm, actor: _actor, ...rest } = body; // a confirmation phrase is the owner's alone; the actor comes from the input
   return { send: { ...rest, actor: name } };
 }
