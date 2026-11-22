@@ -138,13 +138,15 @@ function measureDocument() {
     headings: document.querySelectorAll("h1,h2,h3,h4").length,
   };
 }
+/** The browser name every load of the review uses: a reader's browser, with the review named at the end. */
+export const BROWSER_NAME = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 slug-review/1";
 const OBSERVE = `(() => { window.__cls = 0; try {
   new PerformanceObserver(l => { for (const e of l.getEntries()) window.__lcp = e.startTime; }).observe({ type: "largest-contentful-paint", buffered: true });
   new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; }).observe({ type: "layout-shift", buffered: true });
 } catch {} })();`;
 
 async function shoot(browser, base, p, width) {
-  const ctx = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1, ignoreHTTPSErrors: process.env.REVIEW_INSECURE === "1", userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 slug-review/1" });
+  const ctx = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1, ignoreHTTPSErrors: process.env.REVIEW_INSECURE === "1", userAgent: BROWSER_NAME });
   await ctx.addInitScript(OBSERVE);
   const page = await ctx.newPage();
   let consoleErrors = 0, failed = 0;
@@ -167,7 +169,9 @@ async function shoot(browser, base, p, width) {
 }
 /** A bare load of the page that reads only its first byte (request sent to first response byte), in a fresh context. */
 async function firstByte(browser, base, p, width) {
-  const ctx = await browser.newContext({ viewport: { width, height: 900 }, ignoreHTTPSErrors: process.env.REVIEW_INSECURE === "1" });
+  // The same browser name as the measured load. Without one the browser calls itself headless, the site takes it for a
+  // crawler and sends the whole page at once, which is slower to its first byte than what a reader's browser gets.
+  const ctx = await browser.newContext({ viewport: { width, height: 900 }, ignoreHTTPSErrors: process.env.REVIEW_INSECURE === "1", userAgent: BROWSER_NAME });
   try {
     const page = await ctx.newPage();
     await page.goto(base + p.path, { waitUntil: "commit", timeout: 30_000 });

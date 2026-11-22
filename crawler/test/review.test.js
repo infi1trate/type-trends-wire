@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isoWeek, settings, storyPath, changedShare, measuresOf, verdict, middle, PAGES, WIDTHS } from "../src/review.js";
+import { isoWeek, settings, storyPath, changedShare, measuresOf, verdict, middle, PAGES, WIDTHS, BROWSER_NAME } from "../src/review.js";
 
 test("the weekly run is named for its ISO week", () => {
   assert.equal(isoWeek(new Date("2026-11-22T10:00:00Z")), "2026-W47");
@@ -56,4 +56,10 @@ test("first byte is the middle of the loads that were measured", () => {
   assert.equal(middle([NaN, 310, 420]), 310);
   assert.equal(middle([1100]), 1100);
   assert.ok(Number.isNaN(middle([NaN, NaN])));
+});
+
+test("every load names a reader's browser, never a headless one (the site sends crawlers the whole page at once)", () => {
+  assert.match(BROWSER_NAME, /Chrome\/\d+/);
+  assert.doesNotMatch(BROWSER_NAME, /headless|bot|crawl|spider/i);
+  assert.match(BROWSER_NAME, /slug-review\/1$/);
 });
