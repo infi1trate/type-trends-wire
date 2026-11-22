@@ -102,10 +102,12 @@ One list for every product change. Kinds: bug, label, design move, layout, featu
 2. Every page and width of the review list is in the after run.
 3. No page scrolls sideways at any width.
 4. First byte within 800 ms on every page and width.
-5. Console errors, failed requests, small tap targets and low-contrast text not above the before run.
-6. Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit).
-7. A layout change has the owner's accepted proposal.
-8. A design move passes the living-design gate.
+5. Layout shift within 0.05 on every page and width (unless the before run was already above it and the after run is not higher).
+6. Largest paint within 2500 ms on every page and width (unless the before run was already above it and the after run is not higher).
+7. Console errors, failed requests, small tap targets and low-contrast text not above the before run.
+8. Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit).
+9. A layout change has the owner's accepted proposal.
+10. A design move passes the living-design gate.
 
 Visible change: no visible change allows at most 1% of pixels changed and height within 20 px; small allows at most 10% of pixels changed and height within 8%; layout has no pixel limit, but the owner's accepted proposal. Not above the before run: console errors, failed requests, small targets, low contrast. A design move also passes the living-design gate (its checks except the edition's move count).
 

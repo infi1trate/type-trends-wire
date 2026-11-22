@@ -115,8 +115,10 @@ function mode(m: Mode, type: Record<TypeRoleName, TypeRole>, o: { accent: [strin
 
 const D = K.density, M = K.motion, SH = K.shape;
 /** Each brand family is followed by a metric-matched local fallback (the @font-face rules in styles.css, FONT_FALLBACKS), so the page is
- * drawn at once in the fallback and the swap to the web font barely moves it. */
-export const FONT_FALLBACKS = { display: "slug Display Fallback", text: "slug Text Fallback", mono: "slug Mono Fallback" } as const;
+ * drawn at once in the fallback and the swap to the web font barely moves it.
+ * L2b · one face per local font with its own size match (a narrow sans and Georgia where they exist, else Arial-metric and Times-metric
+ * faces such as Liberation on Linux), because one size match cannot fit fonts of different widths. */
+export const FONT_FALLBACKS = { display: ["slug Display Fallback", "slug Display Fallback Wide"], text: ["slug Text Fallback", "slug Text Fallback Times"], mono: "slug Mono Fallback" } as const;
 const sharedOf = (v: LivingValues): Shared => ({
   fonts: {
     mono: K.font.mono.replace(/'/g, '"'), display: K.font.display.replace(/'/g, '"'), text: K.font.text.replace(/'/g, '"'), fallback: FONT_FALLBACKS,

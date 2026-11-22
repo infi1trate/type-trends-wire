@@ -94,9 +94,9 @@ export function TopBar({ active, onSelect }: { active: PanelId; onSelect: (p: Pa
         </span>
         <Clock />
         <span className="hidden text-g500 2xl:inline">
-          LAST WIRE INGEST <span className="text-ink">{ingestStr}</span>
+          LAST WIRE INGEST <span className="inline-block min-w-[9ch] text-ink">{ingestStr}</span>
         </span>
-        <span className="hidden text-g500 2xl:inline">TYPE SNAPSHOT <span className="text-ink">{snapshot ?? "—"}</span></span>
+        <span className="hidden text-g500 2xl:inline">TYPE SNAPSHOT <span className="inline-block min-w-[10ch] text-ink">{snapshot ?? "—"}</span></span>
       </div>
     </header>
   );

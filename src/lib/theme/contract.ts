@@ -62,7 +62,7 @@ export type Shared = {
   fonts: { mono: string; display: string; text: string; /** Stylesheets that load the faces; the only place font URLs live. */ base: string; editorial: string; preconnect: readonly string[];
     /** Optional metric-matched local fallback per family (declared by @font-face in styles.css), inserted after the web font in the CSS
      * variables only, so pages draw at once and the swap barely moves them; SVG and PNG drawers keep the plain stacks. */
-    fallback?: { mono: string; display: string; text: string } };
+    fallback?: { mono: string | readonly string[]; display: string | readonly string[]; text: string | readonly string[] } };
   root: { size: string; leading: string };
   radius: { none: string; sm: string; md: string; pill: string; /** Round things only: stickers, gumballs. */ sticker: string; icon: string };
   border: { hairline: string; strong: string };
@@ -93,7 +93,8 @@ export function flatten(theme: Theme, mode: Mode): Record<string, string> {
   for (const [role, t] of Object.entries(type)) out[`--tk-type-${role}-family`] = `var(--tk-font-${t.family})`;
   const { fonts, image: _image, print, square: _square, ...rest } = theme.shared;
   put("--tk", rest); put("--tk-print", print);
-  const fb = (stack: string, name: string | undefined) => { if (!name) return stack; const [first, ...rest] = stack.split(","); return [first!.trim(), `"${name}"`, ...rest.map(x => x.trim())].join(", "); };
+  // L2b · a family may have one fallback face per local font (each with its own size match), tried in order: the first one present draws.
+  const fb = (stack: string, name: string | readonly string[] | undefined) => { if (!name) return stack; const names = typeof name === "string" ? [name] : name; const [first, ...rest] = stack.split(","); return [first!.trim(), ...names.map(n => `"${n}"`), ...rest.map(x => x.trim())].join(", "); };
   out["--tk-font-mono"] = fb(fonts.mono, fonts.fallback?.mono); out["--tk-font-display"] = fb(fonts.display, fonts.fallback?.display); out["--tk-font-text"] = fb(fonts.text, fonts.fallback?.text);
   return out;
 }

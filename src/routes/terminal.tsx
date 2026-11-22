@@ -32,6 +32,7 @@ import { resolveSector } from "@/lib/sector-lens";
 import { useModeToggle, useSectorLens } from "@/components/read/lens";
 import { BRAND_NAME } from "@/lib/brand";
 import { useStaffKey } from "@/lib/staff-key";
+import { Placeholder, ROW } from "@/components/read/Later";
 
 const TITLE = `Terminal — ${BRAND_NAME}`;
 const DESC = `The dense, keyboard-first view of ${BRAND_NAME}: seven sections (Today, Signals, Brands, Patterns, Studies, Digest, Tools) with every number's receipts.`;
@@ -65,7 +66,9 @@ export function terminalReads(v: ViewId, sector: string, server = false): { quer
   return [signalsQuery(), ...extra];
 }
 
-const Wait = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<div className="p-3">{voiced("busy.terminal")} <span aria-hidden="true">▍</span></div>}>{children}</Suspense>;
+// L2b · while a panel's data is on its way its slot holds at least a screen's height of glisten placeholder (the footer stays where it
+// will be), so the panel landing moves nothing below it.
+const Wait = ({ children }: { children: React.ReactNode }) => <Suspense fallback={<div className="flex min-h-dvh flex-1 flex-col md:min-h-0" aria-busy="true"><span className="sr-only">{voiced("busy.terminal")}</span><Placeholder shapes={[{ kind: "rows", n: 24, height: ROW.compact }]} className="min-h-0 flex-1 overflow-hidden" /></div>}>{children}</Suspense>;
 
 function Terminal() {
   const search = Route.useSearch(), navigate = Route.useNavigate(), router = useRouter();

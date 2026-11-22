@@ -57,9 +57,8 @@ export async function insertQueueItem(db: Admin, r: { title: string; why: string
     if (open) return { id: open.id, existing: true };
   }
   const { data, error } = await db.from("build_queue").insert({ title: r.title, why: r.why, desk: r.desk, kind: r.kind, expects: r.expects, source_kind: r.source_kind, source_ref: r.source_ref, proposal_log_id: r.proposal_log_id, ikey: r.ikey, move: (r.move ?? null) as never, test: r.test, ...(r.phase ? { phase: r.phase } : {}) } as never).select("id").single();
-  // L2 · kind `phase` needs the queue's stored kind list widened and a phase column (owner's approval pending): until then the store
-  // refuses it plainly rather than failing the door.
-  if (error && r.kind === "phase" && (error.code === "23514" || error.code === "42703" || error.code === "PGRST204")) return { refused: "The build queue does not take phase items yet: its database change is waiting for the owner's approval." };
+  // L2 · kind `phase` (widened kind list and phase column added in L2b); a database without them refuses it plainly.
+  if (error && r.kind === "phase" && (error.code === "23514" || error.code === "42703" || error.code === "PGRST204")) return { refused: "The build queue does not take phase items on this database." };
   if (error || !data) throw new Error("queue_insert_failed");
   const m = await db.from("build_queue_moves").insert({ item_id: data.id, status: "queued", actor: r.desk, reason: "filed" });
   if (m.error) throw new Error("queue_move_insert_failed");

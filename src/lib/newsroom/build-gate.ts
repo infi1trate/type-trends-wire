@@ -17,12 +17,31 @@ export const VISIBLE_LIMITS = {
 } as const;
 /** Measures that may not rise above the before run on any page and width. */
 export const NO_WORSE = ["console_errors", "failed_requests", "small_targets", "low_contrast"] as const;
+/** L2b · one speed target over the after run: a page and width above the target fails unless the before run was already above it and
+ *  the after run is not higher; a missing measure is "not measured" and fails neither way. */
+export function speedProblems(after: Iterable<ReviewRow>, before: ReadonlyMap<string, ReviewRow>, measure: "cls" | "lcp_ms", target: number) {
+  const problems: string[] = [], notMeasured: string[] = [], allowed: string[] = [];
+  const fmt = (x: number) => (measure === "cls" ? String(Math.round(x * 1000) / 1000) : `${Math.round(x)} ms`), what = measure === "cls" ? "layout shift" : "largest paint";
+  let worst = 0;
+  for (const r of after) {
+    const y = r.measures[measure];
+    if (typeof y !== "number") { notMeasured.push(where(r)); continue; }
+    worst = Math.max(worst, y);
+    if (y <= target) continue;
+    const x = before.get(`${r.page}@${r.width}`)?.measures[measure];
+    if (typeof x === "number" && x > target && y <= x) { allowed.push(`${where(r)}: ${fmt(x)} → ${fmt(y)}`); continue; }
+    problems.push(`${where(r)}: ${what} ${typeof x === "number" ? `${fmt(x)} → ` : ""}${fmt(y)}, over ${fmt(target)}.`);
+  }
+  return { problems, numbers: { target, worst: measure === "cls" ? Math.round(worst * 1000) / 1000 : Math.round(worst), not_measured: notMeasured, allowed } };
+}
 /** The gate's checks, in the order they are run and shown. */
 export const GATE_CHECKS = [
   { id: "tests", name: "No failed tests" },
   { id: "complete", name: "Every page and width of the review list is in the after run" },
   { id: "overflow", name: "No page scrolls sideways at any width" },
   { id: "first_byte", name: `First byte within ${SPEED_TARGETS.firstMs} ms on every page and width` },
+  { id: "layout_shift", name: `Layout shift within ${SPEED_TARGETS.cls} on every page and width (unless the before run was already above it and the after run is not higher)` },
+  { id: "largest_paint", name: `Largest paint within ${SPEED_TARGETS.lcpMs} ms on every page and width (unless the before run was already above it and the after run is not higher)` },
   { id: "no_worse", name: "Console errors, failed requests, small tap targets and low-contrast text not above the before run" },
   { id: "visible", name: "Visible change within what the item said to expect (no visible change: at most 1% of pixels and 20 px of height; small: 10% and 8%; layout: no pixel limit)" },
   { id: "proposal", name: "A layout change has the owner's accepted proposal" },
@@ -90,6 +109,9 @@ export function gateVerdict(g: GateInput): { pass: boolean; checks: GateCheck[] 
   const noAfter = a.why ? [a.why] : [];
   add("overflow", [...noAfter, ...ov], { sideways });
   add("first_byte", [...noAfter, ...fb], { target_ms: SPEED_TARGETS.firstMs, slowest_ms: Math.round(slowest) });
+  const cls = speedProblems(after.values(), before, "cls", SPEED_TARGETS.cls), lcp = speedProblems(after.values(), before, "lcp_ms", SPEED_TARGETS.lcpMs);
+  add("layout_shift", [...noAfter, ...cls.problems], cls.numbers);
+  add("largest_paint", [...noAfter, ...lcp.problems], lcp.numbers);
   add("no_worse", [...noAfter, ...(b.why ? [b.why] : []), ...worse], { measures: NO_WORSE });
   const lim = VISIBLE_LIMITS[g.item.expects];
   add("visible", lim ? [...noAfter, ...(b.why ? [b.why] : []), ...vis] : [], { expects: g.item.expects, limit_share: lim?.share ?? null, limit_height_px: lim?.heightPx ?? null, limit_height_share: lim?.heightShare ?? null, max_share: maxShare, max_height_change_px: maxHeight });

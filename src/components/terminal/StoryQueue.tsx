@@ -5,6 +5,11 @@ import { FORMAT_LABEL, shows, storyFormat, type FormatFilter } from "@/lib/front
 import { useQuery } from "@tanstack/react-query";
 import { storyQueueQuery } from "@/lib/data";
 import { AppLink } from "./AppLink";
+import { Placeholder, ROW } from "@/components/read/Later";
+
+/** L2b · the queue arrives after hydration, so its list sits in a box of fixed height per width (rows scroll inside it) with the
+ *  glisten placeholder until the data is in: nothing below it moves when it lands (layout shift target, perf/speed.ts). */
+export const QUEUE_BOX = "h-[336px] md:h-[280px]";
 
 const hm = (iso: string) => `${iso.slice(5, 10)} ${iso.slice(11, 16)}`;
 const TABS: FormatFilter[] = ["all", "live", "updating", "explore", "read"];
@@ -23,7 +28,7 @@ function FormatTabs({ value, onChange, counts }: { value: FormatFilter; onChange
     {TABS.map((f, i) => <button key={f} ref={el => { refs.current[i] = el; }} type="button" role="tab" id={`sq-tab-${f}`} aria-controls="sq-panel" aria-selected={value === f} tabIndex={value === f ? 0 : -1}
       onClick={() => onChange(f)} onKeyDown={e => key(e, i)}
       className={`label min-h-11 border-r border-rule px-3 ${value === f ? "bg-g900 text-highlight" : "text-g500 hover:text-ink"}`}>
-      {FORMAT_LABEL[f].toUpperCase()}{counts ? <span className="num"> {counts[f]}</span> : null}
+      {FORMAT_LABEL[f].toUpperCase()}<span className="num ml-1 inline-block min-w-[2ch] text-left" data-reserved="">{counts ? counts[f] : ""}</span>
     </button>)}
   </div>;
 }
@@ -39,15 +44,15 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
   const counts = data ? Object.fromEntries(TABS.map(f => [f, all.filter(s => shows(f, storyFormat(s.type))).length])) as Record<FormatFilter, number> : null;
   return <section aria-label="Stories" className="border-b border-rule">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule p-3">
-      <h2 className="label font-semibold text-ink">STORIES · LAST 7 DAYS{data ? <span className="num text-g500"> · {data.published.length} RAN · {data.held.length} HELD</span> : null}</h2>
+      <h2 className="label basis-full font-semibold text-ink sm:basis-auto">STORIES · LAST 7 DAYS{data ? <span className="num text-g500"> · {data.published.length} RAN · {data.held.length} HELD</span> : null}</h2>
       <span className="flex items-center gap-3">
         <button type="button" aria-pressed={held} onClick={() => setHeld(h => !h)} className={`label min-h-11 border px-3 ${held ? "border-highlight text-highlight" : "border-rule text-g500"}`}>HELD {held ? "ON" : "OFF"}</button>
         <AppLink href="/desk" className="label text-g500 underline underline-offset-2">DESK →</AppLink>
       </span>
     </div>
     <FormatTabs value={format} onChange={setFormat} counts={counts} />
-    <div role="tabpanel" id="sq-panel" aria-labelledby={`sq-tab-${format}`}>
-    {isPending ? <p className="p-3 text-g500">{voiced("busy.stories")}</p> : isError ? <p className="p-3 text-g500">{voiced("terminal.stories.failed")}</p>
+    <div role="tabpanel" id="sq-panel" aria-labelledby={`sq-tab-${format}`} aria-busy={isPending || undefined} className={`${QUEUE_BOX} overflow-y-auto overscroll-contain`} data-queue-box="">
+    {isPending ? <><span className="sr-only">{voiced("busy.stories")}</span><Placeholder shapes={[{ kind: "rows", n: 8, height: ROW.compact }]} className="h-full overflow-hidden" /></> : isError ? <p className="p-3 text-g500">{voiced("terminal.stories.failed")}</p>
       : !rows.length ? <p className="p-3 text-g500">{format === "all" ? "NO STORY HAS RUN IN THE LAST 7 DAYS." : format === "explore" ? "EXPLORE IS FOR PATTERN AND BRAND PAGES; NO STORY TYPE IS IN THIS FORMAT. SEE F4 PATTERNS AND F3 BRANDS." : `NO ${FORMAT_LABEL[format].toUpperCase()} STORY IN THE LAST 7 DAYS.`}</p>
       : <ol className="flex flex-col">{rows.map(s => <li key={s.id} id={`story-${s.id}`} className={`border-b border-rule last:border-b-0 ${s.id === focus ? "border-l-2 border-l-highlight bg-g900" : ""}`}>
         <AppLink href={s.evidence} className="group grid min-h-11 grid-cols-[4ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[4ch_8ch_14ch_1fr_auto]">

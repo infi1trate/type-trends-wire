@@ -6,6 +6,8 @@ import type { Mode } from "@/lib/ia";
 export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?: Mode }) {
   const [steps, setSteps] = useState<TourStep[] | null>(null), [i, setI] = useState(0);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null), [mobile, setMobile] = useState(false);
+  // L2b · the box stays hidden until it has its settled place (after the target's scroll), so its first placement never moves on screen.
+  const [shown, setShown] = useState(false);
   const box = useRef<HTMLDivElement>(null), next = useRef<HTMLButtonElement>(null);
   // E4 · where every scroll container stood before the tour first scrolled it, so ending the tour by any route (Esc, Skip, Done) puts the
   // panel back where the visitor left it (at its top on a first visit) instead of a few pixels down, under the ticker.
@@ -34,11 +36,12 @@ export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?:
       const left = Math.max(8, Math.min(r.left, vw - w - 8)), below = r.bottom + 8;
       setPos({ left, top: below + h <= vh - 8 ? below : Math.max(8, r.top - 8 - h) });
     };
-    place(); const t = setTimeout(place, 350);
+    place(); const t = setTimeout(() => { place(); setShown(true); }, 350);
     window.addEventListener("resize", place); window.addEventListener("scroll", place, true);
     next.current?.focus({ preventScroll: true });
     return () => { clearTimeout(t); el.classList.remove("tour-target"); window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true); };
   }, [step, advance]);
+  useEffect(() => { if (shown) next.current?.focus({ preventScroll: true }); }, [shown]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(); }
@@ -49,7 +52,7 @@ export function Tour({ onDone, mode = "terminal" }: { onDone: () => void; mode?:
   if (!step || !steps) return null;
   return (
     <div ref={box} role="dialog" aria-modal="false" aria-label={`Tour step ${i + 1} of ${steps.length}`} aria-live="polite"
-      style={mobile ? undefined : { left: pos?.left ?? 8, top: pos?.top ?? 8, width: 320 }}
+      style={{ ...(mobile ? {} : { left: pos?.left ?? 8, top: pos?.top ?? 8, width: 320 }), ...(shown ? {} : { visibility: "hidden" as const }) }}
       className={`fixed z-[60] border border-ink bg-void p-3 ${mobile ? "inset-x-0 bottom-10 border-x-0" : ""}`}>
       <p className="label text-g500">TOUR · {i + 1} / {steps.length}</p>
       <p className="t-say mt-1 text-ink">{step.caption}</p>

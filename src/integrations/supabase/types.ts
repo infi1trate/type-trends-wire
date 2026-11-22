@@ -307,6 +307,7 @@ export type Database = {
           ikey: string | null
           kind: string
           move: Json | null
+          phase: string | null
           proposal_log_id: number | null
           source_kind: string
           source_ref: string | null
@@ -322,6 +323,7 @@ export type Database = {
           ikey?: string | null
           kind: string
           move?: Json | null
+          phase?: string | null
           proposal_log_id?: number | null
           source_kind?: string
           source_ref?: string | null
@@ -337,6 +339,7 @@ export type Database = {
           ikey?: string | null
           kind?: string
           move?: Json | null
+          phase?: string | null
           proposal_log_id?: number | null
           source_kind?: string
           source_ref?: string | null
@@ -3164,6 +3167,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rewrite_requests: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          reason: string
+          story_id: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          reason: string
+          story_id: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          reason?: string
+          story_id?: string
+        }
+        Relationships: []
       }
       share_checks: {
         Row: {

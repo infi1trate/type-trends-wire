@@ -46,7 +46,7 @@ export function Today({ go, onTour, onGlossary, focus }: { go: (p: PanelId) => v
       <section className="shrink-0 bg-paper p-3 text-void" aria-label="Weekly brief">
         <h2 className="label font-semibold">WEEKLY BRIEF{brief ? ` · ${brief.week}` : ""} · AI</h2>
         <BriefWithdrawn week={brief?.week} className="mt-1" />
-        {brief ? <p className="mt-1 flex flex-wrap items-baseline gap-x-3"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2 max-md:min-h-11" onClick={() => go("brief")}>OPEN FORECAST →</button></p> : <p className="mt-1">{voiced("terminal.today.1")}</p>}
+        {brief ? <p className="mt-1 flex min-h-[3lh] flex-wrap items-baseline gap-x-3 md:min-h-[2lh]"><span>{untick(brief.headline)}</span><button type="button" className="label underline underline-offset-2 max-md:min-h-11" onClick={() => go("brief")}>OPEN FORECAST →</button></p> : <p className="mt-1 min-h-[3lh] md:min-h-[2lh]">{voiced("terminal.today.1")}</p>}
       </section>
     </section>
   );

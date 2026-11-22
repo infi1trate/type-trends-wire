@@ -63,6 +63,8 @@ export type NewsroomStore = {
   audience?: (r: import("../newsroom/publisher").AudienceInput & { actor: string }) => Promise<{ id: number; replaces: number | null }>;
   sourceNote?: (r: { source: string; status: string; read_on: string | null; link: string | null; note: string; actor: string }) => Promise<{ id: number }>;
   candidateStatus?: (r: { candidate: number; status: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
+  /** L2b · a rewrite request for a published story (refused while one for the same story is still open). */
+  rewrite?: (r: { story_id: string; actor: string; reason: string }) => Promise<{ id: number } | { refused: string }>;
 };
 export type DeskStore = NewsroomStore & { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
 export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
@@ -181,6 +183,15 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
   const { N3_ACTORS, OVERRULE_MIN } = await import("./desk");
   const allowed = N3_ACTORS[b.action];
   if (allowed && !allowed.includes(actor)) return { status: 403, body: { error: "refused", reason: `${b.action} is taken by ${allowed.join(", ")}.` }, decision: "refused", reason: `${actor} cannot take ${b.action}.` };
+  if (b.action === "rewrite") {
+    if (!d.store.rewrite) return missing;
+    if (!(await d.store.exists(b.id))) return { ...missing, reason: "No such story." };
+    const h = d.store.holdOf ? await d.store.holdOf(b.id) : null;
+    if (h && h.state !== "published") return { status: 409, body: { error: "refused", reason: "Only a published story is rewritten; this one is not published." }, decision: "refused", reason: "Only a published story is rewritten." };
+    const r = await d.store.rewrite({ story_id: b.id, actor, reason: b.reason });
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, request: r.id }, decision: "done", reason: b.reason, detail: { request: r.id } };
+  }
   if (b.action === "wire_pick") {
     if (!d.store.wirePick) return missing;
     const r = await d.store.wirePick({ item_id: b.item, subject: b.subject, line: b.line, domain: b.domain ?? null, call_id: b.call ?? null, actor }, d.now());
@@ -388,6 +399,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       audience: async r => (await import("../newsroom/publisher.server")).insertAudience(db, r),
       sourceNote: async r => (await import("../newsroom/scout.server")).insertSourceNote(db, r),
       candidateStatus: async r => (await import("../newsroom/scout.server")).insertCandidateStatus(db, r),
+      rewrite: async r => (await import("./rewrite.server")).insertRewriteRequest(db, r),
       living: {
         records: async () => (await import("../living/living.server")).loadEditions(db),
         insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },

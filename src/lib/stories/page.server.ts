@@ -28,12 +28,26 @@ export async function storyDating(s: StoryRecord, now = Date.now()): Promise<{ a
     const runs = await realRunsOnce("runs"), run = runs.find(r => r.id === runId) ?? null, newest = [...runs].sort((a, b) => b.id - a.id)[0] ?? null;
     if (!run) return { asOf: s.happened_at ?? null, update: null };
     if (!newest || newest.id <= run.id) return { asOf: run.at, update: null };
-    const [{ forecastRunRows }, { stageUpdate }] = await Promise.all([import("../forecast-rows.server"), import("./as-of")]);
-    const [a, b] = await Promise.all([forecastRunRows(run.id), forecastRunRows(newest.id)]);
-    const map = (rows: import("../signals").SignalRow[]) => { const m = new Map(rows.map(r => [`${r.dimension}:${r.value}|${r.scope}`, r])); return (k: string, scope: string) => m.get(`${k}|${scope}`); };
-    return { asOf: run.at, update: stageUpdate({ publishedAt: s.happened_at, now, storyRun: run, newest, keys: s.signal_keys, sector: s.sector ?? null, then: map(a), latest: map(b) }) };
+    const [{ stageUpdate, UPDATE_DAYS }, { canonical }] = await Promise.all([import("./as-of"), import("../labels")]);
+    if (now - Date.parse(s.happened_at) > UPDATE_DAYS * 864e5) return { asOf: run.at, update: null };
+    // L2b · only the cited signals' rows in the two runs (one small read), not both runs whole: a newer run no longer costs this page
+    // a full run's rows.
+    const rows = await citedStages({ runs: [run.id, newest.id], keys: s.signal_keys.slice(0, 3).map(canonical), scopes: ["all", ...(s.sector ? [s.sector] : [])] });
+    const map = (id: number) => { const m = new Map(rows.filter(r => r.run_id === id).map(r => [`${r.dimension}:${r.value}|${r.scope}`, r])); return (k: string, scope: string) => m.get(`${k}|${scope}`) as never; };
+    return { asOf: run.at, update: stageUpdate({ publishedAt: s.happened_at, now, storyRun: run, newest, keys: s.signal_keys, sector: s.sector ?? null, then: map(run.id), latest: map(newest.id) }) };
   } catch { return { asOf: null, update: null }; }
 }
+type CitedStage = { run_id: number; dimension: string; value: string; scope: string; stage: string | null; current_share: number | null };
+/** The stage and share of a few signals in a few runs (anonymous read; a stored run's rows do not change, so it is kept ten minutes). */
+const citedStages = memoBy(10 * 60_000, async (q: { runs: number[]; keys: string[]; scopes: string[] }): Promise<CitedStage[]> => {
+  const values = [...new Set(q.keys.map(k => k.slice(k.indexOf(":") + 1)))];
+  if (!values.length) return [];
+  const { supabaseAnon } = await import("../mcp/supabase");
+  const { data, error } = await supabaseAnon().from("forecasts").select("run_id,dimension,value,scope,stage,current_share").in("run_id", q.runs).in("value", values).in("scope", q.scopes).limit(200);
+  if (error) throw new Error("cited_stages_read_failed");
+  const want = new Set(q.keys);
+  return ((data ?? []) as CitedStage[]).filter(r => want.has(`${r.dimension}:${r.value}`));
+}, { max: 200 });
 export async function storyNumbers(s: StoryRecord): Promise<import("./sheet").SheetNumber[] | null> {
   if (!s.signal_keys.length || s.id.startsWith("census:")) return null;
   try {

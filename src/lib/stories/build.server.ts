@@ -408,6 +408,10 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const since = new Date(Date.now() - BUILD_DAYS * 864e5).toISOString();
   const cols = "id,type,status,reason,score,components,why_ran,kicker,headline,deck,facts,why_line,why_model,why_at,sector,signal_keys,domains,evidence,source_ids,basis,happened_at,created_at";
   const rows = await pages<import("./edits").StoredStory>((f, t) => admin.from("stories").select(cols).gte("happened_at", since).neq("type", "launch").order("id").range(f, t) as never, 1000);
+  // L2b · stories a desk asked to have rewritten (`rewrite` through the door) are read whatever their age; a failed read asks for none.
+  const asks = await import("./rewrite.server").then(m => m.rewriteRequests(admin)).catch(() => [] as { story_id: string; at: string }[]);
+  const extra = [...new Set(asks.map(a => a.story_id))].filter(x => !rows.some(r => r.id === x));
+  if (extra.length) { const { data } = await admin.from("stories").select(cols).in("id", extra.slice(0, 50)).neq("type", "launch"); rows.push(...((data ?? []) as unknown as import("./edits").StoredStory[])); }
   if (!rows.length) return [];
   type Last = { created_at: string; model: string; attempts: number; checked: boolean; headline: string; deck: string; body: string[] | null; how_we_know: string };
   const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, Last>();
@@ -424,10 +428,12 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const { foldedIds } = await import("./edits"), folded = foldedIds(shown);
   // Owed: no version since the last correction, the newest one never reached the writer (made while the writer was out of calls), or (E2c)
   // the newest checked version puts a share beside a base it was not counted on (today's check would refuse it).
-  const { followFailures, shareBaseFailures, textOf, writePriority } = await import("./writer");
+  const { followFailures, shareBaseFailures, textOf, writePriority } = await import("./writer"), { openRewrites, requestedFirst } = await import("./rewrite");
+  const published = new Set(shown.filter(x => x.state === "published").map(x => x.id));
+  const requested = new Map([...openRewrites(asks, last)].filter(([k]) => published.has(k) && !folded.has(k)));
   // N2: the newest checked version leaves out the line a page that followed its homepage added (W1c's promise; No. 85).
   const followMissing = (s: (typeof shown)[number], l: Last) => l.checked && followFailures(textOf(l), { lines: (Array.isArray(s.facts) ? s.facts as { text?: unknown }[] : []).map(f => ({ text: String(f.text ?? ""), basis: null })) }).length > 0;
-  const owed = shown.filter(s => { if (folded.has(s.id)) return false; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)) || (l.checked && shareBaseFailures(textOf(l)).length > 0) || followMissing(s, l); });
+  const owed = shown.filter(s => { if (folded.has(s.id)) return false; if (requested.has(s.id)) return true; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)) || (l.checked && shareBaseFailures(textOf(l)).length > 0) || followMissing(s, l); });
   // E3b: the front page's lead first, then the census pieces, then the rest by the front page's rank. `fresh` (this build's stories)
   // are already among the owed ones and take their place by rank.
   void fresh;
@@ -435,7 +441,7 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const stream = shown.filter(s => !folded.has(s.id)), leadId = pickLead(stream, "all", Date.now())?.story.id ?? null;
   // W1b: a correction that hid checked written text puts the story first in the queue, as soon as calls are available.
   const corrected = new Set(owed.filter(s => { const l = last.get(s.id); return !!l && l.checked && ((s.correctedAt != null && s.correctedAt > l.created_at) || followMissing(s, l)); }).map(s => s.id));
-  return writePriority(owed, { leadId, rank: rankScores(stream), corrected }).slice(0, limit)
+  return requestedFirst(writePriority(owed, { leadId, rank: rankScores(stream), corrected }), requested).slice(0, limit)
     .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker }));
 }
 

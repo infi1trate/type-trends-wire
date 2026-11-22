@@ -45,6 +45,8 @@ export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   // N5 · the publisher enters the week's audience numbers; the scout appends terms readings; a brand candidate's status is the owner's,
   // except `added`, which the engineering desk marks once the crawler's seed list carries it (the store enforces which status).
   audience: ["publisher", "owner"], source_note: ["scout", "owner"], candidate_status: ["engineering", "owner"],
+  // L2b · a desk asks for a published story's rewrite at the writer's next allowance.
+  rewrite: ["standards", "copy desk", "editor in chief", "owner"],
 };
 /** N3 · the reason standards gives when it releases a story only its second reader held. */
 export const OVERRULE_MIN = 20;
@@ -99,6 +101,8 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("propose"), kind: z.enum(PROPOSAL_KINDS), subject: z.string().trim().min(1).max(200).optional(), text: z.string().trim().min(3).max(1000) }).strict(),
   // N2 · a desk puts a published or reviewed story back to held (with the reason its page shows), leaves a note for the other desks,
   // and the owner sets a proposal's status.
+  // L2b · a rewrite request (a reason is required); the writer honours it first at its next allowance.
+  z.object({ action: z.literal("rewrite"), id, reason: z.string().trim().min(10).max(300).refine(noDollar) }).strict(),
   z.object({ action: z.literal("hold"), id, reason: z.string().trim().min(3).max(300).refine(noDollar), note }).strict(),
   z.object({ action: z.literal("note"), subject_kind: z.enum(NOTE_SUBJECTS), subject: z.string().trim().min(1).max(200), text: z.string().trim().min(3).max(1000) }).strict(),
   // The copy desk's weekly sweep (inside the product only): one page's failing lines, or the week's closing summary (page "(week)").
