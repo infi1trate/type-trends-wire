@@ -1,0 +1,33 @@
+name: desk
+# Carries one desk action to the site's door (POST /api/public/desk), so that no agent session ever holds the editor key.
+# Desks only: the owner's actions (spend cap, wire only, design editions) are refused here and stay on the desk page.
+# Reads are not carried either: their answers would land in a public run log.
+on:
+  workflow_dispatch:
+    inputs:
+      actor:
+        description: "The desk acting: editor in chief, copy desk, standards, news, data, graphics, design review, engineering, publisher or scout"
+        required: true
+      body:
+        description: 'The action as JSON, without the actor, e.g. {"action":"kill","id":"news:1","reason":"Not about the tracked brand"}'
+        required: true
+      dry_run:
+        description: "1 = check the request and send nothing"
+        default: "0"
+permissions:
+  contents: read
+jobs:
+  act:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Carry the action to the door
+        env:
+          ACTOR: ${{ inputs.actor }}
+          BODY: ${{ inputs.body }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+        run: node crawler/src/desk.js
