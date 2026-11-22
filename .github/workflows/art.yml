@@ -1,0 +1,47 @@
+name: museum-palettes
+# Reads public-domain works from two museums' open-access programmes (The Met and the Art Institute of Chicago), computes each
+# work's palette with the same method as brand homepages, and sends the palette, the museum's credit and link and a small thumbnail
+# to the site. Only works the museum itself marks public domain are sent. Started by hand until the site's endpoint is live; the
+# schedule is added after the first real run.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Works to send in this run (1-400)"
+        default: "120"
+      sources:
+        description: "met, aic or both"
+        default: "met,aic"
+      dry_run:
+        description: "1 = read and print, send nothing"
+        default: "1"
+permissions:
+  contents: read
+concurrency:
+  group: museum-palettes
+  cancel-in-progress: false
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  art:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with: { path: crawler/.cache/art, key: "museum-palettes-${{ github.run_id }}", restore-keys: "museum-palettes-" }
+      - name: Read the works and send their palettes
+        env:
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          ART_LIMIT: ${{ inputs.limit }}
+          ART_SOURCES: ${{ inputs.sources }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node src/art.js
+      - uses: actions/cache/save@v4
+        if: always()
+        with: { path: crawler/.cache/art, key: "museum-palettes-${{ github.run_id }}" }
