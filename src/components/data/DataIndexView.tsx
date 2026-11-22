@@ -36,11 +36,13 @@ function Series({ s }: { s: StudiesHome["series"][number] }) {
 }
 /** P2 · the Studies home in two parts: the heading (fixed copy, drawn with the shell) and the body (the lead, series, shelf and tool,
  *  which read stored study rows and stream in behind the shell). `DataIndexView` draws both at once, as before. */
+// P2 · the heading's measures are the web fonts' 24ch and 60ch written in em (Big Shoulders' "0" is 0.526em, Newsreader's 0.5545em):
+// a ch measure follows whichever font is drawn first, so under the fallback the box was narrower and the heading took a line more.
 export function DataIndexHead() {
   return <header className="ed-wrap pt-8 md:pt-12" data-studies-head="">
       <p className="ed-kicker">Studies</p>
-      <h1 className="ed-h1 mt-3 max-w-[24ch]">{STUDIES_TITLE}</h1>
-      <p className="ed-standfirst mt-4 max-w-[60ch]">{STUDIES_STANDFIRST}</p>
+      <h1 className="ed-h1 mt-3 max-w-[12.62em]">{STUDIES_TITLE}</h1>
+      <p className="ed-standfirst mt-4 max-w-[33.27em]">{STUDIES_STANDFIRST}</p>
     </header>;
 }
 export function DataIndexBody({ home }: { home: StudiesHome }) {

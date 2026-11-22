@@ -1,8 +1,6 @@
 // Phase E2d · the carousel rule widened to colour, the studio rule, and the page a retired story keeps — on the 20 Nov data where it applies.
 import { readFileSync } from "node:fs";
-import { describe, expect, it, vi } from "vitest";
-// P2 · these tests build whole story days from fixtures (1.5 to 4 s alone); under the full suite's load they ran past vitest's 5 s default.
-vi.setConfig({ testTimeout: 30_000 });
+import { describe, expect, it } from "vitest";
 import day20 from "./golden/__fixtures__/day-2026-11-20.json";
 import { runGolden } from "./golden/run";
 import type { BuildInput } from "./candidates";

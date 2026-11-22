@@ -1,6 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-// P2 · these tests build whole story days from fixtures (1.5 to 4 s alone); under the full suite's load they ran past vitest's 5 s default.
-vi.setConfig({ testTimeout: 30_000 });
+import { describe, expect, it } from "vitest";
 import { label } from "../labels";
 import type { EventRow } from "../agency/changes";
 import type { SignalRow } from "../signals";
