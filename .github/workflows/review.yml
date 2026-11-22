@@ -1,0 +1,56 @@
+name: page-review
+# Opens slug's own pages in a browser at three widths, measures them and sends each measurement with a small picture through the
+# site's door (the product cannot look at its own pages). The weekly run feeds the design review desk and the budgets; a "before" and
+# an "after" run around a deploy feed the release gate. It measures the live site only. Nothing here changes a page.
+on:
+  schedule:
+    - cron: "37 9 * * 1" # Mondays 09:37 UTC, after the weekly forecast and the Digest
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "weekly, before, after or test"
+        default: "test"
+      run:
+        description: "Name of this run (1-40 characters). A weekly run with no name takes its ISO week."
+        default: ""
+      against:
+        description: "Name of an earlier run to compare pictures with (optional)"
+        default: ""
+      actor:
+        description: "design review (weekly, test) or engineering (before, after); empty picks by kind"
+        default: ""
+      dry_run:
+        description: "1 = measure and send nothing"
+        default: "0"
+permissions:
+  contents: read
+concurrency:
+  group: page-review
+  cancel-in-progress: false
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/cache/restore@v4
+        with: { path: crawler/.cache/review, key: "page-review-${{ github.run_id }}", restore-keys: "page-review-" }
+      - name: Measure the pages and send the review
+        env:
+          KIND: ${{ inputs.kind || 'weekly' }}
+          RUN: ${{ inputs.run }}
+          AGAINST: ${{ inputs.against }}
+          ACTOR: ${{ inputs.actor }}
+          DRY_RUN: ${{ inputs.dry_run || '0' }}
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+        run: node src/review.js
+      - if: always()
+        uses: actions/cache/save@v4
+        with: { path: crawler/.cache/review, key: "page-review-${{ github.run_id }}" }
