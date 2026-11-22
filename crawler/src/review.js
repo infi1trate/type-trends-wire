@@ -160,8 +160,13 @@ async function shoot(browser, base, p, width) {
     // Walk the whole page once so every lazy picture loads, then return to the top and let the network settle.
     await page.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 110)); } window.scrollTo(0, 0); }).catch(() => null);
     await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => null);
-    // Just after a deploy pictures can arrive late; a picture still loading would read as a visible change that is not one.
-    await page.evaluate(() => Promise.all([...document.images].filter(i => !i.complete).map(i => new Promise(r => { i.addEventListener("load", r, { once: true }); i.addEventListener("error", r, { once: true }); setTimeout(r, 6000); })))).catch(() => null);
+    // A lazy picture the walk passed too quickly never starts loading, and the full-page picture then shows an empty box where a
+    // reader would see the picture. Every picture is asked for now and waited for (up to 8 s each), so two runs of the same page
+    // match. This changes nothing a reader sees.
+    await page.evaluate(() => Promise.all([...document.images].map(async i => {
+      if (!(i.complete && i.naturalWidth > 0)) { i.loading = "eager"; await new Promise(r => { i.addEventListener("load", r, { once: true }); i.addEventListener("error", r, { once: true }); setTimeout(r, 8000); if (i.complete) r(); }); }
+      await Promise.race([i.decode().catch(() => null), new Promise(r => setTimeout(r, 4000))]); // loaded is not yet drawn: wait for the decode too
+    }))).catch(() => null);
     await page.waitForTimeout(500);
     await page.evaluate(hideLiveText).catch(() => 0);
     const m = await page.evaluate(measureDocument);
