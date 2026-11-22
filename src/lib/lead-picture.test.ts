@@ -112,11 +112,11 @@ describe("sharedLine (I3b: the front lead's one shared caption line)", () => {
   const it2 = (domain: string, date: string) => ({ role: "after" as const, domain, date, asset: `${domain}-${date}`, url: "u", srcset: "", width: 960, height: 640, live: `https://${domain}`, report: "/r", rotating: false });
   it("adds one capture date between what the pictures are and the rotating-hero note", () => {
     const plan = { kind: "mosaic", items: [it2("a.com", "2026-11-21"), it2("b.com", "2026-11-21")], caption: `Named brands outside the sector · B: ${CAROUSEL_CAPTION}` } as unknown as Parameters<typeof sharedLine>[0];
-    expect(sharedLine(plan)).toBe(`Named brands outside the sector · captured 2026-11-21 · B: ${CAROUSEL_CAPTION}`);
+    expect(sharedLine(plan)).toBe(`Named brands outside the sector · captured 21 Nov 2026 · B: ${CAROUSEL_CAPTION}`);
   });
   it("gives a date range for several capture dates and does not repeat dates the caption already carries", () => {
     const range = { kind: "mosaic", items: [it2("a.com", "2026-11-21"), it2("b.com", "2026-11-19")], caption: "Named brands" } as unknown as Parameters<typeof sharedLine>[0];
-    expect(sharedLine(range)).toBe("Named brands · captured 2026-11-19 to 2026-11-21");
+    expect(sharedLine(range)).toBe("Named brands · captured 19 Nov 2026 to 21 Nov 2026");
     const pair = { kind: "pair", items: [it2("a.com", "2026-11-10"), it2("a.com", "2026-11-21")], caption: "Hero · before 2026-11-10, after 2026-11-21" } as unknown as Parameters<typeof sharedLine>[0];
     expect(sharedLine(pair)).toBe("Hero · before 2026-11-10, after 2026-11-21");
   });

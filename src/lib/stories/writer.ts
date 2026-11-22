@@ -5,6 +5,7 @@ import { AI_MODELS } from "../ai-models";
 import { hasBareDomain } from "../brand-names";
 import { BANNED_PHRASES, SUPERLATIVES } from "./why";
 import { NEWS_NAME_STOPWORDS } from "./types";
+import { followPage } from "./follow";
 
 /** Hard limits on calls to the writer model (the fallback text model runs only after two writer calls failed, so it is bounded too). */
 export const WRITER_PER_DAY = 12, WRITER_PER_BUILD = 6;
@@ -288,6 +289,16 @@ export function colourFailures(free: string, f: WriterFacts, brands: string[]): 
   for (const b of brands) if (b) text = text.replace(new RegExp(`(?<![\\p{L}\\p{N}])${esc(b)}(?![\\p{L}\\p{N}])`, "gu"), " ");
   return [...new Set(colourWordsIn(text).filter(w => !allowed.has(w)))].map(w => `colour word not in the facts: ${w}`);
 }
+/** N2 · numbers written in a text that the facts do not carry (dates and quotations aside): the standards checklist's first item reads
+ *  the writer's own number rule. */
+export const numberFailures = (text: string, f: WriterFacts): number[] => { const nums = factNumbers(f); return [...new Set(numbersIn(stripDates(unquoted(text))).filter(x => !nums.has(x)))]; };
+/** N2 · a page that followed its homepage is one fact on the brand's own story ("The changelog page now uses Systemia too"): a written
+ *  text that leaves that page out drops a fact the sheet carries. */
+export function followFailures(text: string, f: Pick<WriterFacts, "lines">): string[] {
+  const out: string[] = [];
+  for (const l of f.lines) { const page = followPage(l.text); if (page && !new RegExp(`(?<![\\p{L}\\p{N}])${esc(page)}`, "iu").test(text)) out.push(`leaves out a fact on the sheet: the ${page} page`); }
+  return out;
+}
 export function checkText(t: Partial<WrittenText> & { headline: string; deck: string }, f: WriterFacts, known: Known, o: { requireBody?: boolean } = {}): string[] {
   const fail: string[] = [];
   const parts = [t.headline, t.deck, ...(t.body ?? []), t.how_we_know ?? ""].filter(Boolean);
@@ -330,6 +341,8 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
   if (!f.rebrand && rebrandClaim(free)) fail.push("“rebrand” without type, colour and layout changing together");
   // Our read is never stated as measured.
   if (hasOurRead(f) && t.how_we_know != null && !/\bour read\b|\bAI estimate\b|\bestimated by AI\b|\bAI read\b/i.test(t.how_we_know)) fail.push("how_we_know does not say which facts are our read");
+  // N2: a page that followed its homepage is named (W1c's promise: one fact on the brand's own story).
+  if (o.requireBody) fail.push(...followFailures(all, f));
   return [...new Set(fail)];
 }
 

@@ -28,15 +28,19 @@ export const REGISTER: readonly ActionDef[] = [
   A("pin", "ships alone", "story", "Holds a story in the lead until a time (at most seven days). Pinning a held story runs it.", { since: "E2a" }),
   A("kill", "ships alone", "story", "Takes a story down with a reason; its own page says it was taken down and why.", { since: "E2a" }),
   A("correct", "ships alone", "story", "Corrects a story's headline, deck or why line; the story shows “Corrected <date>”.", { since: "E2a" }),
-  A("restore", "ships alone", "story", "Restores a killed story, or runs a held one anyway.", { since: "E2a" }),
+  A("restore", "ships alone", "story", "Restores a killed story, or runs a held one anyway. A story waiting for review runs only when the editor in chief places it after standards passed it (or the owner runs it); a story standards held is released only by the editor in chief or the owner.", { since: "E2a" }),
   A("pitch", "ships alone", "pitch", "Asks the engine about a row; the engine's verdict is recorded. A pitch never publishes.", { since: "U4" }),
   A("assign", "ships alone", "pitch", "Puts a pitch on the board with the desk that holds it and its status.", { since: "N1" }),
   A("spend", "ships alone", "spend", "Records build spend in Lovable credits, with what it was for (the product cannot read its own build costs).", { since: "N1" }),
+  A("hold", "ships alone", "story", "Puts a published or reviewed story back to held with a reason; its page says it is held and why in one line, and the desk shows the reason.", { since: "N2" }),
+  A("copy_sweep", "ships alone", "none", "The copy desk's weekly sweep: records each page's reader-facing lines that fail the copy lints, with the page and the line. It fixes nothing.", { since: "N2" }),
+  A("note", "ships alone", "none", "Leaves a dated note on a story, a study, a brand or a signal for the other desks. Shown on the desk and in the memory; never on a reader's page.", { since: "N2" }),
   A("propose", "ships to preview", "setting", "Proposes something that changes how a page looks or adds a format (a chart type, a study series, a layout, a signal, a design edition). Recorded; nothing live changes.", { since: "N1" }),
   A("living_approve", "needs the owner", "edition", "Approves a proposed design edition after the gate. Going live still means shipping its values in code.", { since: "L1" }),
   A("living_rollback", "needs the owner", "edition", "Rolls an approved or live design edition back to the previous edition's values exactly.", { since: "L1" }),
   A("wire_only", "needs the owner", "switch", "Turns “wire only” on or off: stories leave the front page; the tape, brands, signals, studies and the Digest stay as they are.", { since: "N1" }),
   A("spend_cap", "needs the owner", "spend", "Sets or clears the weekly cap (model dollars, build credits).", { since: "N1" }),
+  A("proposal_status", "needs the owner", "setting", "Sets a proposal's status: open, accepted or declined. Accepting records the owner's yes; the change itself still ships to preview.", { since: "N2" }),
 ];
 export const actionDef = (id: string): ActionDef | null => REGISTER.find(a => a.id === id) ?? null;
 /** The phrase a `needs the owner` call must carry in `confirm`. */

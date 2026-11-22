@@ -61,6 +61,13 @@ export async function writerUsedToday(db: Pick<Admin, "from">): Promise<number> 
   if (error) throw new Error("writer_usage_failed");
   return count ?? 0;
 }
+/** N2 · writer-model calls the desks made today (UTC), every purpose. A failed read counts none, so the desks' calls stay in the story
+ *  writer's count and it never over-spends because a count could not be read. */
+export async function deskWriterCallsToday(db: Pick<Admin, "from">): Promise<number> {
+  const { count, error } = await db.from("desk_calls").select("id", { count: "exact", head: true }).eq("model", AI_MODELS.writer).gte("at", dayStart());
+  if (error) return 0;
+  return count ?? 0;
+}
 export type GatewayRequest = { model: string; system: string; user: string; schema: Record<string, unknown>; schemaName: string; tool: { type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } };
   /** Writer-model output cap; the text model is capped at `textMaxTokens` (default 1500). */ maxTokens: number; textMaxTokens?: number };
 /**
@@ -68,7 +75,7 @@ export type GatewayRequest = { model: string; system: string; user: string; sche
  * purpose, call once (the writer model with a strict JSON schema, the text model with one forced tool call), settle; unknown outcomes are
  * charged in full and never replayed. Null when the call was not made.
  */
-export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: AbortSignal): Promise<{ raw: unknown; cost: number } | null> {
+export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: AbortSignal): Promise<{ raw: unknown; cost: number; usage_id?: number } | null> {
   const { aiClient, markProvider, ProviderError } = await import("../ai-provider.server");
   const { estimateCost } = await import("../ai-budget");
   const ai = aiClient(), provider = ai.provider, m = req.model as typeof AI_MODELS.writer | typeof AI_MODELS.text;
@@ -89,12 +96,12 @@ export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: Abo
     const u = resp.usage, cost = estimateCost({ provider, model: m, input_tokens: u.prompt_tokens, output_tokens: u.completion_tokens });
     const raw = resp.tool_call_args ?? resp.text ?? null;
     await admin.rpc("ai_settle", { p_id: uid, p_input: u.prompt_tokens, p_output: u.completion_tokens, p_cost: cost, p_ok: raw != null, p_error: raw != null ? null as unknown as string : "no_text", p_state: "done" });
-    return { raw, cost };
+    return { raw, cost, usage_id: uid };
   } catch (e) {
-    if (e instanceof ProviderError && e.usage) { const cost = estimateCost({ provider, model: m, input_tokens: e.usage.prompt_tokens, output_tokens: e.usage.completion_tokens }); await admin.rpc("ai_settle", { p_id: uid, p_input: e.usage.prompt_tokens, p_output: e.usage.completion_tokens, p_cost: cost, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "done" }); return { raw: null, cost }; }
+    if (e instanceof ProviderError && e.usage) { const cost = estimateCost({ provider, model: m, input_tokens: e.usage.prompt_tokens, output_tokens: e.usage.completion_tokens }); await admin.rpc("ai_settle", { p_id: uid, p_input: e.usage.prompt_tokens, p_output: e.usage.completion_tokens, p_cost: cost, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "done" }); return { raw: null, cost, usage_id: uid }; }
     if (e instanceof ProviderError && e.outcome === "not_started") { await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: 0, p_ok: false, p_error: `${provider}_${e.code}`, p_state: "rejected" }); return null; }
     await admin.rpc("ai_settle", { p_id: uid, p_input: 0, p_output: 0, p_cost: estimate, p_ok: false, p_error: "writer_unknown_outcome", p_state: "unknown" });
-    return { raw: null, cost: estimate };
+    return { raw: null, cost: estimate, usage_id: uid };
   }
 }
 let capLoggedAt = 0;
@@ -104,7 +111,7 @@ async function capRefused(admin: Admin, schemaName: string): Promise<boolean> {
   if (!(await nr.capReachedNow(admin))) return false;
   if (Date.now() - capLoggedAt > 10 * 60_000) {
     capLoggedAt = Date.now();
-    const actor = schemaName.startsWith("study") ? "study writer" : schemaName.startsWith("digest") ? "digest writer" : "story writer";
+    const actor = schemaName.startsWith("study") ? "study writer" : schemaName.startsWith("digest") ? "digest writer" : schemaName.startsWith("standards") ? "standards" : schemaName.startsWith("chief") ? "editor in chief" : "story writer";
     await nr.insertLog(admin, { actor, action: "write", level: "ships alone", subject_kind: "week", subject_id: null, decision: "refused", reason: "The weekly spend cap is reached; the writer waits until Monday (Eastern time) and the facts-built text stands." }).catch(() => {});
   }
   return true;
@@ -115,7 +122,8 @@ export const providerCanRun = (model: string) => { try { const sel = (process.en
 export function writerIO(admin: Admin): WriterIO {
   return {
     // E4: study calls share the ledger purpose and model, so the study writer's own writer calls today are taken out of the story count.
-    used: async () => { const [all, studies, digests] = await Promise.all([writerUsedToday(admin), import("../data-stories/writer.server").then(m => m.studyWriterCallsToday(admin)).catch(() => 0), import("../digest/writer.server").then(m => m.digestWriterCallsToday(admin)).catch(() => 0)]); return Math.max(0, all - studies - digests); },
+    // N2: the desks' calls on the writer model (standards, editor in chief, fixture runs) share the purpose too and are taken out.
+    used: async () => { const [all, studies, digests, desks] = await Promise.all([writerUsedToday(admin), import("../data-stories/writer.server").then(m => m.studyWriterCallsToday(admin)).catch(() => 0), import("../digest/writer.server").then(m => m.digestWriterCallsToday(admin)).catch(() => 0), deskWriterCallsToday(admin)]); return Math.max(0, all - studies - digests - desks); },
     runs: providerCanRun,
     call: (model, facts, failures, signal) => gatewayCall(admin, { model, system: WRITER_SYSTEM, user: writerUser(facts, failures), schema: WRITER_SCHEMA as unknown as Record<string, unknown>, schemaName: "story_text", tool: WRITER_TOOL, maxTokens: WRITER_MAX_TOKENS }, signal),
     versions: async ids => {

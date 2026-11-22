@@ -547,6 +547,13 @@
       "when": 1795289309712,
       "tag": "0077_n1_newsroom_foundations",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1795323223165,
+      "tag": "0078_n2_desks",
+      "breakpoints": true
     }
   ]
 }

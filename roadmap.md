@@ -106,3 +106,12 @@
 - [x] 2 colour-name boundaries vs 48-colour reference table; renamed colours on published stories listed
 - [x] 3 How we know gives both capture dates (facts-built line + writers' sheet); deck/line agreement test
 - [x] 4 no empty "The numbers" line; fallback list from stored lines or section left out; story types audited
+
+# Phase N2 · Standards, editor in chief, copy desk
+- [x] 1 order of work: engine-run stories wait held for review; published only from reviewed; desk failure/cap falls back with reason; health counts it
+- [x] 2 standards: eight-item checklist (no model) + second reader (one call, fixed structure, versioned); release by editor in chief/owner only
+- [x] 3 editor in chief: one placement call when there is a choice; enforced after the call; holds only; two-day reoffer rule; versioned
+- [x] 4 copy desk lints on every non-written line; No. 45 line fixed; weekly sweep logs; style.md from code
+- [x] 5 hold + note actions; proposals list with owner status; truthful writer meter; No. 85 page-follow fact; /desk review details
+- [x] 6 fixture runs (16 calls): standards 10 + 3 after one tuning, editor in chief 3 days
+- [x] Tests, report, commit

@@ -16,7 +16,7 @@ export const registerView = () => ({
   actions: REGISTER.map(a => ({ ...a, ...(a.level === "needs the owner" ? { confirm: confirmPhrase(a.id) } : {}) })),
 });
 export async function goldenView() {
-  const [{ scoreSet }, set, { VERSIONS, currentVersion, WRITERS }, { GOLDEN_CASES, SKIPPED }] = await Promise.all([
+  const [{ scoreSet }, set, { VERSIONS, currentVersion, WRITERS, DESK_PROMPTS, DESK_VERSIONS, currentDeskVersion, deskPromptHash }, { GOLDEN_CASES, SKIPPED }] = await Promise.all([
     import("./golden/score"), import("./golden/__fixtures__/writing-set.json").then(m => m.default as unknown as import("./golden/score").WritingSet),
     import("./golden/versions"), import("../stories/golden/skipped"),
   ]);
@@ -25,10 +25,12 @@ export async function goldenView() {
     calls: { cases: GOLDEN_CASES, skipped: Object.entries(SKIPPED).map(([name, why]) => ({ name, why })) },
     writing_set: { frozen_at: set.frozen_at, mean: s.mean, passed: s.passed, total: s.total, items: s.items.map(i => ({ number: i.number, id: i.id, score: i.score, failures: i.failures })) },
     versions: WRITERS.map(w => ({ writer: w, current: currentVersion(w)?.version ?? null, recorded: VERSIONS.filter(v => v.writer === w).map(v => ({ version: v.version, prompt_hash: v.prompt_hash, template: v.template, models: v.models, score_file: v.score_file, note: v.note })) })),
+    // N2 · the desks' prompts under the same rule: the recorded versions and whether the live prompt matches one.
+    desks: DESK_PROMPTS.map(d => ({ desk: d, current: currentDeskVersion(d)?.version ?? null, prompt_hash: deskPromptHash(d), recorded: DESK_VERSIONS.filter(v => v.desk === d).map(v => ({ version: v.version, prompt_hash: v.prompt_hash, score_file: v.score_file, note: v.note })) })),
   };
 }
 export async function loadMemory(db: Admin) {
-  const [{ loadBoard, loadHistory, spendStatus, statesFor, wireOnlyOn }, { loadQueue }, { healthPayload }, { loadColophon }, { capLine, capReached, spendSplit }] = await Promise.all([
+  const [{ loadBoard, loadHistory, spendStatus, statesFor, wireOnlyOn, loadNotes, loadProposals, deskCaps, reviewsFor }, { loadQueue }, { healthPayload }, { loadColophon }, { capLine, capReached, spendSplit }] = await Promise.all([
     import("./newsroom.server"), import("../stories/page.server"), import("../health.server"), import("../living/living.server"), import("./spend"),
   ]);
   const today = new Date().toISOString().slice(0, 10);
@@ -37,14 +39,17 @@ export async function loadMemory(db: Admin) {
     goldenView(), healthPayload().catch(() => null), loadColophon().catch(() => null), wireOnlyOn(),
   ]);
   const items = [...q.published, ...q.held, ...q.killed] as unknown as Record<string, unknown>[];
-  const states = await statesFor(db, items.map(i => String(i["id"]))).catch(() => new Map());
+  const ids = items.map(i => String(i["id"]));
+  const [states, notes, proposals, caps, reviews] = await Promise.all([statesFor(db, ids).catch(() => new Map()), loadNotes(db).catch(() => []), loadProposals(db).catch(() => []), deskCaps(db).catch(() => null), reviewsFor(db, ids).catch(() => new Map())]);
   return fitMemory({
     read_at: new Date().toISOString(),
     files: { "newsroom/README.md": readme, "newsroom/style.md": style, "newsroom/beats.md": beats },
     register: registerView(), story_states: STORY_STATES,
     switches: { wire_only: wireOnly },
     board,
-    queue: { day: today, items: items.map(i => ({ ...slimQueueItem(i), states: states.get(String(i["id"])) ?? [] })) },
+    queue: { day: today, items: items.map(i => ({ ...slimQueueItem(i), states: states.get(String(i["id"])) ?? [], review: reviews.get(String(i["id"])) ?? null })) },
+    // N2 · the desks' caps today, their notes (14 days) and the proposals with the owner's status.
+    desks: caps, notes, proposals,
     spend: spend ? { ...spend, split: spendSplit(spend), reached: capReached(spend), line: capLine(spend) } : null,
     golden,
     design: colophon ? { live_edition: colophon.live, editions: colophon.editions.map(e => ({ number: e.number, dated: e.dated, status: e.statuses[e.statuses.length - 1]?.status ?? null, moves: e.moves.length })), dry_run: colophon.dry } : null,

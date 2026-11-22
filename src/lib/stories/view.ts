@@ -155,12 +155,13 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
   const sector = s.sector ? sectorName(s.sector) : null;
   return {
     id: s.id, number: s.state === "published" || s.state === "killed" ? s.number ?? null : null, type, typeName: census ? "Census" : def.kicker, kicker: type === "news" || census ? noDid(s.kicker) : [def.kicker, sector].filter(Boolean).join(" · "), headline: deLegacy(s.headline), deck: deLegacy(s.deck), at: s.happened_at, sector: s.sector, sectorName: sector,
-    basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil, corrections: s.correctionNotes ?? [],
+    basis: asBasis(s.basis), state: s.state, heldReason: s.state === "held" ? s.reason : null, heldByDesk: s.state === "held" && !!(s as { heldAt?: string | null }).heldAt, killReason: s.killReason, correctedAt: s.correctedAt, pinnedUntil: s.pinnedUntil, corrections: s.correctionNotes ?? [],
     // I3 · 0.4: without checked written text the page reads its facts as the body (never an empty section).
     body: s.written?.body?.length ? s.written.body.map(p => deLegacy(p)) : templateBody(census ? [] : readFacts(facts).map(f => ({ text: noDid(deLegacy(f.text)) }))), howWeKnow: noDid(storyHowWeKnow(s)),
     // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and
     // under "The lines".
-    facts: (census ? facts.filter(f => f.kind === "member") : readList(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
+    // N2 · copy desk: the Numbers list reads in Read-side wording (no run numbers, stage words in lower case mid-sentence).
+    facts: (census ? facts.filter(f => f.kind === "member") : readList(facts)).map(f => ({ ...f, text: readWording(noDid(deLegacy(f.text))) })), beforeAfter: before && after ? { before, after } : null,
     census: census ? { lines: censusLines(facts), sectors: facts.find(f => f.kind === "count" && /^By sector: /.test(f.text))?.text.replace(/^By sector: /, "") ?? null } : null,
     // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
     evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : e.label === "Library record" ? "Brand data" : noDid(deLegacy(e.label)) })),

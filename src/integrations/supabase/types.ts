@@ -474,6 +474,51 @@ export type Database = {
         }
         Relationships: []
       }
+      desk_calls: {
+        Row: {
+          answer: Json
+          at: string
+          cost: number
+          desk: string
+          error: string | null
+          id: number
+          model: string
+          ok: boolean
+          prompt_version: string | null
+          purpose: string
+          story_ids: string[]
+          usage_id: number | null
+        }
+        Insert: {
+          answer?: Json
+          at?: string
+          cost?: number
+          desk: string
+          error?: string | null
+          id?: never
+          model: string
+          ok: boolean
+          prompt_version?: string | null
+          purpose: string
+          story_ids?: string[]
+          usage_id?: number | null
+        }
+        Update: {
+          answer?: Json
+          at?: string
+          cost?: number
+          desk?: string
+          error?: string | null
+          id?: never
+          model?: string
+          ok?: boolean
+          prompt_version?: string | null
+          purpose?: string
+          story_ids?: string[]
+          usage_id?: number | null
+        }
+        Relationships: []
+      }
       desk_log: {
         Row: {
           action: string
@@ -513,6 +558,33 @@ export type Database = {
           reason?: string | null
           subject_id?: string | null
           subject_kind?: string | null
+        }
+        Relationships: []
+      }
+      desk_notes: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          subject_id: string
+          subject_kind: string
+          text: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          subject_id: string
+          subject_kind: string
+          text: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          subject_id?: string
+          subject_kind?: string
+          text?: string
         }
         Relationships: []
       }
@@ -2201,6 +2273,41 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_statuses: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          log_id: number
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          log_id: number
+          reason?: string | null
+          status: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          log_id?: number
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_statuses_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "desk_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       read_records: {
         Row: {
           body: Json
@@ -2607,6 +2714,72 @@ export type Database = {
             foreignKeyName: "story_numbers_story_id_fkey"
             columns: ["story_id"]
             isOneToOne: true
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_reviews: {
+        Row: {
+          at: string
+          basis: string
+          call_id: number | null
+          checklist: Json
+          desk: string
+          facts_hash: string
+          id: number
+          placement: number | null
+          problems: Json
+          prompt_version: string | null
+          reason: string | null
+          second_reader: string | null
+          story_id: string
+          verdict: string
+        }
+        Insert: {
+          at?: string
+          basis?: string
+          call_id?: number | null
+          checklist?: Json
+          desk: string
+          facts_hash: string
+          id?: never
+          placement?: number | null
+          problems?: Json
+          prompt_version?: string | null
+          reason?: string | null
+          second_reader?: string | null
+          story_id: string
+          verdict: string
+        }
+        Update: {
+          at?: string
+          basis?: string
+          call_id?: number | null
+          checklist?: Json
+          desk?: string
+          facts_hash?: string
+          id?: never
+          placement?: number | null
+          problems?: Json
+          prompt_version?: string | null
+          reason?: string | null
+          second_reader?: string | null
+          story_id?: string
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_reviews_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "desk_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_reviews_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
             referencedRelation: "stories"
             referencedColumns: ["id"]
           },
@@ -4670,6 +4843,7 @@ export type Database = {
         Args: { p_key: string; p_tool: string }
         Returns: undefined
       }
+      newsroom_call_facts: { Args: never; Returns: Json }
       normalize_currency: { Args: { c: string }; Returns: string }
       outside_series_store: {
         Args: { p_captured_at: string; p_points: Json; p_run_id: string }

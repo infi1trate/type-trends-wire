@@ -1,6 +1,6 @@
 # The newsroom's memory
 
-slug's newsroom is a set of desks (editor in chief, copy desk, standards, news, data, graphics, design review, engineering, publisher, scout). The desks that need judgment run as scheduled agent sessions outside the product. A session starts knowing nothing, so everything the newsroom knows is readable in one call, and everything a desk does goes through one door that enforces the rules. **No desk is switched on yet (N1).**
+slug's newsroom is a set of desks (editor in chief, copy desk, standards, news, data, graphics, design review, engineering, publisher, scout). The desks that need judgment run as scheduled agent sessions outside the product. A session starts knowing nothing, so everything the newsroom knows is readable in one call, and everything a desk does goes through one door that enforces the rules. **Three desks are on (N2): standards, the editor in chief and the copy desk.** Inside the product they review every story before it publishes (see beats.md, “The desks: what runs”); outside it, an editor reading the live site acts through the door with the carrier.
 
 ## The files
 
@@ -29,8 +29,15 @@ slug's newsroom is a set of desks (editor in chief, copy desk, standards, news, 
 
 ## Story states
 
-Each story has a state history beside its stored status: candidate, drafted, checked, reviewed, published, held, killed, retired, each with who and why. The pipeline records them from what it stores (the engine and the three writers are actors in it). `reviewed` is the editor desk's sign-off, used from N2; nothing requires it yet.
+Each story has a state history beside its stored status: candidate, drafted, checked, reviewed, published, held, killed, retired, each with who and why. The pipeline records them from what it stores (the engine and the three writers are actors in it). `reviewed` means standards passed the story and the editor in chief placed it; from N2 a story publishes only from `reviewed`. When a desk's call fails or its daily cap is used, the story takes the engine's path and its reviewed line says so (“reviewed without second reader: cap used”).
 
 ## Writer versions and the golden gate
 
 A writer's version is its prompt (system text and output schema), its models and its template version. `src/lib/newsroom/golden/versions.ts` lists every version; the prompt part is a fingerprint computed from the code, so a changed prompt or model fails the build until a new version is recorded with a score file in `scores/` that passes the gate: a mean at least the baseline's, and no frozen text that passed now failing. The frozen writing set (`src/lib/newsroom/golden/__fixtures__/writing-set.json`) holds the approved texts and the facts each was written from. `bun scripts/golden-score.ts --frozen` scores it without a model; `--live --writer story` is hand-run only and refuses when today's writer allowance or the weekly cap would not cover it.
+
+## Desk actions added in N2
+
+- **`hold`** (ships alone): puts a published or reviewed story back to held with a `reason`; its page says it is held and why in one line, and `/desk` shows the reason. A story the standards desk held is released (`restore`) only by the editor in chief or the owner.
+- **`note`** (ships alone): a dated note on a `story`, `study`, `brand` or `signal` (`subject_kind`, `subject`, `text`). Shown on `/desk` and in the memory, never on a reader's page.
+- **`proposal_status`** (needs the owner): sets a `propose` call's status (`log` is the proposal's desk-log id) to `open`, `accepted` or `declined`.
+- **`copy_sweep`**: written only by the copy desk's weekly sweep inside the product; one row per page with lines that fail the copy lints.

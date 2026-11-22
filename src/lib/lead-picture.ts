@@ -4,7 +4,7 @@
 // never stock, never generated, never a drawn wireframe when a real crop exists, never slug's link-preview image.
 import type { Crop } from "./crops";
 import type { Cover, Pic } from "./pictures";
-import type { Thumb } from "./thumbs";
+import { readDay, type Thumb } from "./thumbs";
 import { LIVE_VALUES } from "./living/editions";
 const coverOn = (k: string) => k === "none" || LIVE_VALUES.covers.includes(k);
 
@@ -68,6 +68,7 @@ export function leadQuality(c: { width: number; height: number; bytes?: number |
 // INPUT -------------------------------------------------------------------------------------------------------------------------------
 export type LeadStoryIn = {
   id: string; type: string; domains: string[]; happened_at: string;
+  /** N2 · the story's sector (null or "all": across sectors), so a mosaic caption does not say "in the sector" for every sector. */ sector?: string | null;
   evidence?: { compare: { before: Crop; after: Crop } | null; after?: Crop | null; grid: { domain: string; crop: Crop | null }[] | null } | null;
   /** Fields the story's changes touch (palette-only changes draw swatches). */ fields?: string[];
   palette?: { before: string[]; after: string[] } | null;
@@ -120,7 +121,7 @@ const plan = (kind: LeadKind, rule: LeadRule, items: LeadItem[], caption: string
 function fallback(s: LeadStoryIn, p: LeadPics): LeadPlan {
   const reportOf = (d: string) => p.card(d)?.report ?? p.hero(d)?.report ?? "/what-we-show#ed-w-images";
   const screens = s.domains.slice(0, MOSAIC_MAX).flatMap(d => { const x = firstScreen(d, p, null, reportOf); return x ? [x] : []; });
-  if (screens.length === 1 && s.domains.length === 1) return plan("single", "fallbackCrops", screens, captionOf(screens, p, `${p.name(screens[0]!.domain)} · first screen · ${screens[0]!.date}`));
+  if (screens.length === 1 && s.domains.length === 1) return plan("single", "fallbackCrops", screens, captionOf(screens, p, `${p.name(screens[0]!.domain)} · first screen · ${readDay(screens[0]!.date)}`));
   if (screens.length >= 2) return plan("mosaic", "fallbackCrops", screens, captionOf(screens, p, "First screens"));
   const card = s.domains[0] ? p.card(s.domains[0]) : null;
   if (card && card.kind === "card") return plan("card", "fallbackCard", [cardItem(card)], card.credit);
@@ -155,17 +156,17 @@ export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
     const item = (x: Pic & { path: string }, role: "before" | "after"): LeadItem => ({ domain: d, section: what, date: day(x.at), src: x.src, srcSet: null, width: x.width, height: x.height,
       asset: `${k === "icon" ? "icon" : k === "card" ? "card" : "crop"}:${x.path}`, credit: `${what} · ${d} · ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, alt: `${role === "before" ? "Earlier" : "New"} ${what.toLowerCase()} of ${d}, ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, live: `https://${d}`, report, role });
     const items = [item(s.assetPair.before, "before"), item(s.assetPair.after, "after")];
-    return plan("pair", "quiet", items, `${what} · before ${items[0]!.date}, after ${items[1]!.date}`);
+    return plan("pair", "quiet", items, `${what} · before ${readDay(items[0]!.date)}, after ${readDay(items[1]!.date)}`);
   }
   if (s.type === "move" || s.type === "rebrand" || s.type === "counter_move") {
     const fields = s.fields ?? [];
     if (s.palette && fields.length && fields.every(f => f === "palette" || f === "accent")) return plan("swatches", "swatches", [], "Measured colours, before and after", { swatches: { domain: s.domains[0] ?? "", ...s.palette } });
     if (ev?.compare && p.okCrop(ev.compare.before) && p.okCrop(ev.compare.after)) {
       const items = [cropItem(ev.compare.before, "before"), cropItem(ev.compare.after, "after")];
-      return plan("pair", "pair", items, captionOf(items, p, `${ev.compare.after.sectionName} · before ${items[0]!.date}, after ${items[1]!.date}`));
+      return plan("pair", "pair", items, captionOf(items, p, `${ev.compare.after.sectionName} · before ${readDay(items[0]!.date)}, after ${readDay(items[1]!.date)}`));
     }
     const after = ev?.after ?? ev?.compare?.after ?? null;
-    if (after && p.okCrop(after)) { const items = [cropItem(after, "after")]; return plan("single", "single", items, captionOf(items, p, `${after.sectionName} · after · ${items[0]!.date}`)); }
+    if (after && p.okCrop(after)) { const items = [cropItem(after, "after")]; return plan("single", "single", items, captionOf(items, p, `${after.sectionName} · after · ${readDay(items[0]!.date)}`)); }
     return fallback(s, p);
   }
   if (s.type === "roundup") {
@@ -181,7 +182,7 @@ export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
   }
   if (s.type === "breakout" || s.type === "first_seen" || s.type === "white_space") {
     const tiles = mosaicOf(s.domains, null);
-    if (tiles.length >= 2) return plan("mosaic", s.type === "white_space" ? "whiteSpace" : "breakout", tiles, captionOf(tiles, p, s.type === "white_space" ? "Named brands outside the sector" : "Named brands in the sector"));
+    if (tiles.length >= 2) return plan("mosaic", s.type === "white_space" ? "whiteSpace" : "breakout", tiles, captionOf(tiles, p, s.type === "white_space" ? "Named brands outside the sector" : s.sector === undefined || (s.sector && s.sector !== "all") ? "Named brands in the sector" : "Named brands"));
     return fallback(s, p);
   }
   if (s.type === "news") {
@@ -200,8 +201,8 @@ export function sharedLine(pl: LeadPlan): string | null {
   const parts = (pl.caption ?? "").split(" · ").filter(Boolean);
   const rotating = parts.filter(x => x.includes(CAROUSEL_CAPTION)), what = parts.filter(x => !x.includes(CAROUSEL_CAPTION));
   const dates = [...new Set(pl.items.map(i => i.date))].sort();
-  const dated = !dates.length || dates.every(d => (pl.caption ?? "").includes(d));
-  const when = dated ? null : dates.length === 1 ? `captured ${dates[0]}` : `captured ${dates[0]} to ${dates[dates.length - 1]}`;
+  const dated = !dates.length || dates.every(d => (pl.caption ?? "").includes(readDay(d)) || (pl.caption ?? "").includes(d));
+  const when = dated ? null : dates.length === 1 ? `captured ${readDay(dates[0]!)}` : `captured ${readDay(dates[0]!)} to ${readDay(dates[dates.length - 1]!)}`;
   const out = [...what, ...(when ? [when] : []), ...rotating].join(" · ");
   return out || null;
 }

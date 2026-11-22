@@ -1,0 +1,297 @@
+{
+ "desk": "editor in chief",
+ "version": "v1",
+ "prompt_hash": "74a028af",
+ "run_at": "2026-11-22T05:28:38.396Z",
+ "cases": 3,
+ "correct": 2,
+ "wrong": [
+  "2026-11-20"
+ ],
+ "days": [
+  {
+   "day": "2026-11-19",
+   "answer": {
+    "lead": "move:3673",
+    "order": [
+     "move:3672",
+     "news:83592"
+    ],
+    "holds": [
+     {
+      "id": "counter:3674:aesthetic:minimal",
+      "why": "The lead shows exactly what disappeared from the Databricks homepage, while the minimalism label depends on an AI reading."
+     },
+     {
+      "id": "move:3676",
+      "why": "The AI reading calls Rippling’s new look more editorial but doesn’t identify a specific design change readers can check."
+     },
+     {
+      "id": "move:3671",
+      "why": "The shift from minimalism to luxury is an AI judgment with no concrete example from the Eight Sleep homepage."
+     },
+     {
+      "id": "news:89411",
+      "why": "Instagram is where the Super Pussycat preview appeared, not the subject of the design news."
+     },
+     {
+      "id": "news:84246",
+      "why": "The piece connects Miami’s identity to GTA 6 but says nothing about Substack’s design."
+     }
+    ]
+   },
+   "enforced": {
+    "lead": "move:3673",
+    "run": [
+     "move:3673",
+     "move:3672",
+     "news:83592"
+    ],
+    "holds": [
+     {
+      "id": "counter:3674:aesthetic:minimal",
+      "why": "The lead shows exactly what disappeared from the Databricks homepage, while the minimalism label depends on an AI reading.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "move:3676",
+      "why": "The AI reading calls Rippling’s new look more editorial but doesn’t identify a specific design change readers can check.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "move:3671",
+      "why": "The shift from minimalism to luxury is an AI judgment with no concrete example from the Eight Sleep homepage.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "news:89411",
+      "why": "Instagram is where the Super Pussycat preview appeared, not the subject of the design news.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "news:84246",
+      "why": "The piece connects Miami’s identity to GTA 6 but says nothing about Substack’s design.",
+      "by": "editor in chief"
+     }
+    ],
+    "ignored": []
+   },
+   "actual": {
+    "lead": "move:3676",
+    "order": [
+     "move:3676",
+     "move:3673",
+     "move:3671",
+     "news:89411",
+     "counter:3674:aesthetic:minimal",
+     "news:84246",
+     "move:3672",
+     "news:83592"
+    ]
+   },
+   "within_rules": true,
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.033688
+  },
+  {
+   "day": "2026-11-20",
+   "answer": {
+    "lead": "census:sale:2026-W47",
+    "order": [
+     "census:agents:2026-W47",
+     "brand:coinbase.com:2026-11-20",
+     "roundup:all:aesthetic:minimal:2026-11-13",
+     "brand:sofi.com:2026-11-20"
+    ],
+    "holds": [
+     {
+      "id": "against:2026-W47",
+      "why": "The roundup names 25 brands but gives no example of what one did differently from its peers."
+     },
+     {
+      "id": "against:2026-W47:measured",
+      "why": "The minimalism roundup gives readers one visible change to compare across brands, while this one groups four brands under a broad label."
+     },
+     {
+      "id": "seasonal:2026-W47",
+      "why": "The sale census gives the promotion story more context by showing how many homepages were checked."
+     },
+     {
+      "id": "roundup:dev-tools:aesthetic:editorial:2026-11-14",
+      "why": "Two recent leads already covered visual trends in dev tools, and this one offers no pictures to show what looks editorial."
+     },
+     {
+      "id": "rebrand:gopro.com:2026-11-20",
+      "why": "The story reports a new font and a redesign without naming the font or showing the new page."
+     },
+     {
+      "id": "rebrand:ragged-edge.com:2026-11-20",
+      "why": "The story reports a palette change without saying which colours replaced which."
+     },
+     {
+      "id": "rebrand:motherlondon.com:2026-11-20",
+      "why": "The switch from amber to indigo is clear, but one accent colour is a small change on its own."
+     },
+     {
+      "id": "rebrand:lucidmotors.com:2026-11-20",
+      "why": "One unnamed font change tells readers little about how Lucid's identity has changed."
+     },
+     {
+      "id": "counter:3684:aesthetic:corporate",
+      "why": "The shift to corporate polish is an AI interpretation with no picture for readers to judge."
+     },
+     {
+      "id": "move:3688",
+      "why": "Garmin swapped one product headline for another, while Coinbase's new wording changes whom it addresses."
+     },
+     {
+      "id": "move:3692",
+      "why": "This repeats the GoPro redesign story without identifying the three changes."
+     },
+     {
+      "id": "rebrand:brooklinen.com:2026-11-20",
+      "why": "Brooklinen's story lists several changes without showing the new colours or quoting the new headline."
+     },
+     {
+      "id": "rebrand:newyorker.com:2026-11-20",
+      "why": "The story names the parts of the page that changed but does not describe what readers would see now."
+     }
+    ]
+   },
+   "enforced": {
+    "lead": null,
+    "run": [
+     "census:agents:2026-W47",
+     "brand:coinbase.com:2026-11-20",
+     "roundup:all:aesthetic:minimal:2026-11-13",
+     "brand:sofi.com:2026-11-20",
+     "census:sale:2026-W47"
+    ],
+    "holds": [
+     {
+      "id": "against:2026-W47",
+      "why": "The roundup names 25 brands but gives no example of what one did differently from its peers.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "against:2026-W47:measured",
+      "why": "The minimalism roundup gives readers one visible change to compare across brands, while this one groups four brands under a broad label.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "seasonal:2026-W47",
+      "why": "The sale census gives the promotion story more context by showing how many homepages were checked.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "roundup:dev-tools:aesthetic:editorial:2026-11-14",
+      "why": "Two recent leads already covered visual trends in dev tools, and this one offers no pictures to show what looks editorial.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "rebrand:gopro.com:2026-11-20",
+      "why": "The story reports a new font and a redesign without naming the font or showing the new page.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "rebrand:ragged-edge.com:2026-11-20",
+      "why": "The story reports a palette change without saying which colours replaced which.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "rebrand:motherlondon.com:2026-11-20",
+      "why": "The switch from amber to indigo is clear, but one accent colour is a small change on its own.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "rebrand:lucidmotors.com:2026-11-20",
+      "why": "One unnamed font change tells readers little about how Lucid's identity has changed.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "counter:3684:aesthetic:corporate",
+      "why": "The shift to corporate polish is an AI interpretation with no picture for readers to judge.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "move:3688",
+      "why": "Garmin swapped one product headline for another, while Coinbase's new wording changes whom it addresses.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "move:3692",
+      "why": "This repeats the GoPro redesign story without identifying the three changes.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "rebrand:brooklinen.com:2026-11-20",
+      "why": "Brooklinen's story lists several changes without showing the new colours or quoting the new headline.",
+      "by": "editor in chief"
+     },
+     {
+      "id": "rebrand:newyorker.com:2026-11-20",
+      "why": "The story names the parts of the page that changed but does not describe what readers would see now.",
+      "by": "editor in chief"
+     }
+    ],
+    "ignored": [
+     "lead census:sale:2026-W47: an AI-read roundup or a weekly piece does not lead",
+     "lead census:sale:2026-W47: it was also held"
+    ]
+   },
+   "actual": {
+    "lead": "brand:coinbase.com:2026-11-20",
+    "order": [
+     "against:2026-W47",
+     "brand:coinbase.com:2026-11-20",
+     "census:sale:2026-W47",
+     "roundup:all:aesthetic:minimal:2026-11-13",
+     "against:2026-W47:measured",
+     "brand:sofi.com:2026-11-20",
+     "seasonal:2026-W47",
+     "roundup:dev-tools:aesthetic:editorial:2026-11-14",
+     "rebrand:gopro.com:2026-11-20",
+     "rebrand:ragged-edge.com:2026-11-20",
+     "rebrand:motherlondon.com:2026-11-20",
+     "rebrand:lucidmotors.com:2026-11-20",
+     "census:agents:2026-W47",
+     "counter:3684:aesthetic:corporate",
+     "move:3688",
+     "move:3692",
+     "rebrand:brooklinen.com:2026-11-20",
+     "rebrand:newyorker.com:2026-11-20"
+    ]
+   },
+   "within_rules": false,
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.061936
+  },
+  {
+   "day": "2026-11-21",
+   "answer": {
+    "lead": "",
+    "order": [
+     "roundup:all:aesthetic:corporate:2026-11-20"
+    ],
+    "holds": []
+   },
+   "enforced": {
+    "lead": null,
+    "run": [
+     "roundup:all:aesthetic:corporate:2026-11-20"
+    ],
+    "holds": [],
+    "ignored": []
+   },
+   "actual": {
+    "lead": null,
+    "order": [
+     "roundup:all:aesthetic:corporate:2026-11-20"
+    ]
+   },
+   "within_rules": true,
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.017512
+  }
+ ]
+}

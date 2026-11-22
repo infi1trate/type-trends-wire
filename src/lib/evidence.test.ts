@@ -94,7 +94,7 @@ describe("pattern header counts and the illustrated rule", () => {
     const p = patternModel("css:subgrid", sites, signals, heroes(["c.com", "d.com", "b.com"]))!;
     expect(p.examples.slice(0, 3).every(e => e.crop)).toBe(true);
     const out = await html(createElement(PatternView, { p }));
-    expect(out).toContain('alt="c.com hero, captured 2026-11-14"');
+    expect(out).toContain('alt="c.com hero, captured 14 Nov 2026"');
     expect(out).toContain("/crops/c.com/hero/2026-11-14-abcdabcd.webp");
   });
 });

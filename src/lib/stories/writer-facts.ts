@@ -9,6 +9,7 @@ import { STORY_TYPE_DEFS, AI_EVENTS, type Fact, type StoryKind } from "./types";
 import type { WriterChange, WriterFacts, WriterNumber, WrittenText } from "./writer";
 import { howWeKnow, quotesOf } from "./writer";
 import { storedCaptureDates } from "./capture-dates";
+import { followPage } from "./follow";
 import { CENSUS_HOW, CENSUS_NAMED_MAX, SALE_KEY, censusKeyOf } from "../census";
 import { oneHeadline, oneHeadlineOf } from "../headline-text";
 
@@ -92,7 +93,9 @@ export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts
   // The confirmation date is machinery (Data view): the writer dates changes by their captures only (E2g).
   // U2b: the run's numbers come first; a stored count or share for the same signal and scope is dropped, so the sheet has one count.
   const sheet = src.numbers?.(s.signal_keys, s.sector, storyRunId(s.source_ids)) ?? [];
-  const lines = uncovered(stored, sheet, s.sector).filter(f => !(f.kind === "member" && changes.length) && f.kind !== "date" && !/^Headline call:/.test(f.text)).map(f => ({ text: f.text.replace(/\s*\((?:forecast )?run \d+\)/gi, ""), basis: f.basis === "ai" || f.basis === "measured" ? f.basis : null }));
+  // N2: a member line made from the changes is dropped (the changes say it), but the line a page that followed its homepage added
+  // ("The changelog page now uses Systemia too") is a fact of its own and goes to the writer (No. 85 was rewritten without it).
+  const lines = uncovered(stored, sheet, s.sector).filter(f => !(f.kind === "member" && changes.length && !followPage(f.text)) && f.kind !== "date" && !/^Headline call:/.test(f.text)).map(f => ({ text: f.text.replace(/\s*\((?:forecast )?run \d+\)/gi, ""), basis: f.basis === "ai" || f.basis === "measured" ? f.basis : null }));
   const lower = new Set(subjects);
   const cited = [...new Set(src.known.filter(n => n.length >= 3 && !lower.has(n) && stored.some(f => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(f.text))))];
   const numbers = sheet.map(n => ({ text: n.text, basis: n.basis }));

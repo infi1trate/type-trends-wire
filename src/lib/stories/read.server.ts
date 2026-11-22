@@ -43,11 +43,12 @@ async function load(): Promise<StoryRecord[]> {
 const index = memo(TTL, load);
 export const storyIndex = (): Promise<StoryRecord[]> => index();
 /** One story by id, fresh (outside the window too). */
-export async function storyById(id: string): Promise<StoryRecord | null> {
+/** `asOf` (N2 fixtures): the story as it stood then — only edits and written texts made before that moment. */
+export async function storyById(id: string, asOf?: string): Promise<StoryRecord | null> {
   const db = supabaseAnon();
   const [s, e, l, n, w] = await Promise.all([db.from("stories").select(COLS).eq("id", id).maybeSingle(), db.from("story_edits").select("id,story_id,action,payload,note,at").eq("story_id", id).order("id"), db.from("story_lines").select("story_id,why_line,why_model,why_at").eq("story_id", id), db.from("story_numbers").select("story_id,number").eq("story_id", id), db.from("story_texts").select(TEXT_COLS).eq("story_id", id)]);
   if (s.error) throw s.error; if (e.error) throw e.error; if (l.error) throw l.error; if (n.error) throw n.error;
-  return s.data ? withTexts(withNumbers(overlay(withLines([s.data as unknown as StoredStory], (l.data ?? []) as LineRow[]), (e.data ?? []) as unknown as EditRow[], Date.now()), (n.data ?? []) as NumberRow[]), w.error ? [] : (w.data ?? []) as unknown as TextRow[])[0]! : null;
+  return s.data ? withTexts(withNumbers(overlay(withLines([s.data as unknown as StoredStory], (l.data ?? []) as LineRow[]), ((e.data ?? []) as unknown as EditRow[]).filter(x => !asOf || x.at < asOf), asOf ? Date.parse(asOf) : Date.now()), (n.data ?? []) as NumberRow[]), w.error ? [] : ((w.data ?? []) as unknown as TextRow[]).filter(x => !asOf || x.created_at < asOf))[0]! : null;
 }
 /** /stories/no/<n>: the story id a number points at while that story is published, or retired (E2d: a retired story keeps its page). */
 export async function storyIdByNumber(n: number): Promise<string | null> {

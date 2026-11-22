@@ -80,7 +80,7 @@ describe("library_check history note", () => {
 describe("E2b · story writer on the health page", () => {
   it("shows today's writer calls against the daily limit and never goes stale", () => {
     const j = job({ ...fresh, story_writer: { calls_today: 3, last_call_at: ago(H), last_checked_at: ago(H) } } as HealthFacts, "story_writer");
-    expect(j.note).toBe("3 of 12 writer calls today (UTC)"); expect(j.stale).toBe(false); expect(j.last_status).toBe("ok");
+    expect(j.note).toBe("3 writer-model calls today (UTC), all writers together"); expect(j.stale).toBe(false); expect(j.last_status).toBe("ok");
   });
   it("unreadable writer facts change nothing else", () => {
     expect(job(fresh, "story_writer").note).toBe("writer facts unavailable");

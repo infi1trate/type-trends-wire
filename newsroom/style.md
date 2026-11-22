@@ -191,6 +191,17 @@ Refused as “a claim about the future without a forecast call”. Source: `FUTU
 
 An arrow (→ or ->) in our own words; a hex code in the text; “rebrand” as a claim unless the facts show type, colour and layout changing together, or a new name or logo.
 
+### The copy desk (lines that are not written text)
+
+Kickers, the Numbers list, picture captions and credits, chart titles and notes, and labels are linted by the copy desk (`COPY_LINTS`, newsroom/copy.ts). A failing line fails the standards checklist; the weekly sweep records failing lines in the desk log under `copy desk` and fixes nothing.
+
+- **No method words or run numbers.** Method words (score, threshold, deterministic) and run numbers (“forecast run 13”, “in run 15”) stay in the Data view. Good: “Lifestyle photography is rising across all sectors”. Not: “Lifestyle photography is Rising across all sectors (forecast run 13)”.
+- **Stage words are ordinary words inside a sentence.** Emerging, Rising, Peaking, Fading, Steady are written in lower case unless they open a line or a label. Good: “Image hero is on 48.7% of tracked homepages (peaking)”. Not: “Image hero is on 48.7% of tracked homepages (Peaking)”.
+- **One date format on the Read side.** Day then month (“20 Nov”, “between 14 and 20 Nov”); never an ISO date, a month-first date or a slashed date. Good: “Confirmed on a second capture, 20 Nov”. Not: “Confirmed 2026-11-20”.
+- **Percentages one way.** A number and the sign together (“48.7%”); never “percent”, “per cent” or a space before the sign. Good: “49% of brands in other sectors show it”. Not: “49 percent of brands in other sectors show it”.
+- **Counts one way.** “k of n” (“1 of 30 tracked dev tools brands”); never “k/n” or “k out of n”. Good: “1 of 30 tracked dev tools brands shows it”. Not: “1/30 tracked dev tools brands show it”.
+- **No internal ids.** No story, source or row ids and no signal keys (“event:4905”, “imagery:photography_lifestyle”); names only. Good: “Names Netlify, a tracked brand”. Not: “Names netlify.com (event:4905)”.
+
 ### Lengths
 
 Story headline 4–9 words; body 2–4 paragraphs, 60–140 words. The Digest stays under 600 words.

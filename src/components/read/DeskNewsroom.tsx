@@ -6,9 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { staffJson } from "@/lib/staff-key";
 import { storyTime } from "@/lib/stories";
 import type { HistoryRow } from "@/lib/newsroom/log";
-import type { ActionDef, Level } from "@/lib/newsroom/register";
+import { confirmPhrase, type ActionDef, type Level } from "@/lib/newsroom/register";
 import type { SpendStatus } from "@/lib/newsroom/spend";
 import { ACTORS, PIPELINE } from "@/lib/newsroom/desks";
+import { CHECKLIST } from "@/lib/newsroom/checklist-names";
+import { staffCall } from "@/lib/staff-key";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type Newsroom = {
   log: HistoryRow[];
@@ -21,7 +24,17 @@ export type Newsroom = {
     versions: { writer: string; current: string | null; recorded: { version: string; prompt_hash: string; template: string; note: string }[] }[];
   };
   switches: { wire_only: boolean };
+  // N2 · the desks at work.
+  desks?: { desks: { desk: string; cap: number; used: number; failed: number; week_usd: number }[]; fixture_calls_today: number; without_second_reader_today: number } | null;
+  notes?: { id: number; at: string; actor: string; subject_kind: string; subject_id: string; text: string }[];
+  proposals?: { id: number; at: string; desk: string; kind: string; subject: string | null; text: string; status: "open" | "accepted" | "declined"; status_at: string | null; status_reason: string | null }[];
+  reviews?: { story_id: string; headline: string; standards: Review | null; chief: Review | null }[];
 };
+type Review = { at: string; verdict: string; reason: string | null; checklist: unknown; problems: unknown; second_reader: string | null; placement: number | null; basis: string };
+type Item = { id: string; result: "pass" | "fail" | "n/a"; detail: string | null };
+type Problem = { kind: string; words: string; severity: "blocker" | "note"; why: string };
+const asItems = (v: unknown): Item[] => (Array.isArray(v) ? v.filter((x): x is Item => !!x && typeof x === "object" && typeof (x as Item).id === "string") : []);
+const asProblems = (v: unknown): Problem[] => (Array.isArray(v) ? v.filter((x): x is Problem => !!x && typeof x === "object" && typeof (x as Problem).why === "string") : []);
 export const newsroomQuery = (desk: string | null) => ({ queryKey: ["desk-newsroom", desk ?? "all"], staleTime: 0, queryFn: () => staffJson<Newsroom>({ action: "newsroom", ...(desk ? { desk } : {}) }) });
 const LOG_SHOWN = 50;
 const usd = (n: number) => `USD ${n.toFixed(2)}`;
@@ -43,6 +56,7 @@ export function DeskNewsroom() {
   if (!data) return <p className="ed-wrap ed-small mt-12" aria-busy="true">{voiced("staff.loading")}</p>;
   const s = data.spend, g = data.golden;
   return <>
+    <DeskDesks data={data} />
     <section aria-labelledby="desk-spend" className="ed-wrap mt-12" data-desk-spend="">
       <h2 id="desk-spend" className="ed-h2 ed-rule pt-3">Spend this week</h2>
       {s ? <>
@@ -86,7 +100,7 @@ export function DeskNewsroom() {
 
     <section aria-labelledby="desk-board" className="ed-wrap mt-12" data-desk-board="">
       <h2 id="desk-board" className="ed-h2 ed-rule pt-3">The board</h2>
-      <p className="ed-small mt-3">Each pitch with the desk that holds it. A desk assigns itself with the assign action; in N1 no desk is switched on.</p>
+      <p className="ed-small mt-3">Each pitch with the desk that holds it. A desk assigns itself with the assign action.</p>
       {data.board?.length ? <Table caption="The board: pitches and the desk that holds each" head={["Pitch", "About", "Held by", "Status"]} min={560}>
         {data.board.map(b => <tr key={b.pitch.id} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{b.pitch.id}</th><td className={td}>{b.pitch.kind} · {b.pitch.ref}<span className="ed-caption block">“{b.pitch.note}”</span></td><td className={td}>{b.assignment?.desk ?? "nobody yet"}</td><td className={td}>{b.assignment ? `${b.assignment.status}${b.assignment.reason ? ` · ${b.assignment.reason}` : ""}` : "open"}</td></tr>)}
       </Table> : <p className="ed-small mt-3">{voiced("read.deskView.5")}</p>}
@@ -102,6 +116,61 @@ export function DeskNewsroom() {
         {g.versions.map(v => <tr key={v.writer} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{v.writer}</th><td className={td}>{v.current ?? "not recorded"}</td><td className={td}>{v.recorded.map(r => `${r.version} (${r.prompt_hash}, template ${r.template}): ${r.note}`).join(" · ")}</td></tr>)}
       </Table>
       <ul className="ed-data mt-4 space-y-2">{g.calls.skipped.map(x => <li key={x.name}><span className="ed-kicker">Skipped · {x.name}</span> <span className="ed-caption block">{x.why}</span></li>)}</ul>
+    </section>
+  </>;
+}
+
+const ITEM_TITLE = new Map<string, string>(CHECKLIST.map(c => [c.id, c.title]));
+/** N2 · the desks today (calls against caps), each recent story's review, the desks' notes and the proposals with the owner's status. */
+function DeskDesks({ data }: { data: Newsroom }) {
+  const qc = useQueryClient(), [msg, setMsg] = useState<string | null>(null);
+  const setStatus = async (log: number, status: "open" | "accepted" | "declined") => {
+    setMsg(null);
+    const r = await staffCall({ action: "proposal_status", log, status, confirm: confirmPhrase("proposal_status") }).catch(() => null);
+    setMsg(r?.ok ? `Proposal ${log} is now ${status}.` : "The status could not be set.");
+    await qc.invalidateQueries({ queryKey: ["desk-newsroom"] });
+  };
+  const d = data.desks;
+  return <>
+    <section aria-labelledby="desk-desks" className="ed-wrap mt-12" data-desk-desks="">
+      <h2 id="desk-desks" className="ed-h2 ed-rule pt-3">The desks today</h2>
+      {d ? <>
+        <p className="ed-small mt-3">Model calls today (UTC) against each desk's daily cap. {d.without_second_reader_today} {d.without_second_reader_today === 1 ? "story was" : "stories were"} reviewed without the second reader today.{d.fixture_calls_today ? ` ${d.fixture_calls_today} fixture calls today are not counted.` : ""}</p>
+        <Table caption="Each desk's model calls today against its cap" head={["Desk", "Calls today", "Failed", "This week"]} min={420}>
+          {d.desks.map(x => <tr key={x.desk} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{x.desk}</th><td className={`${td} num`}>{x.used} of {x.cap}</td><td className={`${td} num`}>{x.failed}</td><td className={`${td} num`}>{usd(x.week_usd)}</td></tr>)}
+        </Table>
+      </> : <p className="ed-small mt-3">The desks' calls could not be read.</p>}
+    </section>
+
+    <section aria-labelledby="desk-reviews" className="ed-wrap mt-12" data-desk-reviews="">
+      <h2 id="desk-reviews" className="ed-h2 ed-rule pt-3">Reviews · last 3 days</h2>
+      {data.reviews?.length ? <ul className="mt-4 space-y-6">{data.reviews.map(r => {
+        const items = asItems(r.standards?.checklist), probs = asProblems(r.standards?.problems);
+        return <li key={r.story_id} className="ed-hair pt-3" data-review={r.story_id}>
+          <p className="ed-data"><a className="ed-link" href={`/stories/${encodeURIComponent(r.story_id)}`}>{r.headline}</a></p>
+          {r.standards ? <p className="ed-small mt-1"><span className="ed-kicker">Standards · {r.standards.verdict}</span> {r.standards.reason ?? ""} <span className="ed-caption">Second reader: {r.standards.second_reader ?? "not run"}.</span></p> : <p className="ed-small mt-1">Not reviewed by standards.</p>}
+          {items.length ? <ul className="ed-data mt-2 grid gap-1 md:grid-cols-2">{items.map(i => <li key={i.id}><span className="ed-kicker">{i.result === "pass" ? "Pass" : i.result === "fail" ? "Fail" : "n/a"}</span> {ITEM_TITLE.get(i.id) ?? i.id}{i.detail ? <span className="ed-caption block">{i.detail}</span> : null}</li>)}</ul> : null}
+          {probs.length ? <ul className="ed-data mt-2 space-y-1">{probs.map((p, k) => <li key={k}><span className="ed-kicker">{p.severity} · {p.kind}</span> {p.why}<span className="ed-caption block">“{p.words}”</span></li>)}</ul> : null}
+          {r.chief ? <p className="ed-small mt-2"><span className="ed-kicker">Editor in chief · {r.chief.verdict}{r.chief.placement ? ` · place ${r.chief.placement}` : ""}</span> {r.chief.reason ?? ""}{r.chief.basis === "engine order" ? <span className="ed-caption"> (engine order)</span> : null}</p> : null}
+        </li>;
+      })}</ul> : <p className="ed-small mt-3">{voiced("read.deskNewsroom.reviews")}</p>}
+    </section>
+
+    <section aria-labelledby="desk-notes" className="ed-wrap mt-12" data-desk-notes="">
+      <h2 id="desk-notes" className="ed-h2 ed-rule pt-3">Desk notes · last 14 days</h2>
+      {data.notes?.length ? <Table caption="Notes the desks left on stories, studies, brands and signals" head={["When", "Desk", "About", "Note"]} min={560}>
+        {data.notes.map(n => <tr key={n.id} className="ed-hair"><td className={td}><time dateTime={n.at}>{storyTime(n.at)}</time></td><td className={td}>{n.actor}</td><td className={td}>{n.subject_kind} · {n.subject_id}</td><td className={td}>{n.text}</td></tr>)}
+      </Table> : <p className="ed-small mt-3">{voiced("read.deskNewsroom.notes")}</p>}
+    </section>
+
+    <section aria-labelledby="desk-proposals" className="ed-wrap mt-12" data-desk-proposals="">
+      <h2 id="desk-proposals" className="ed-h2 ed-rule pt-3">Proposals</h2>
+      <p className="ed-small mt-3">Every propose call, with its status. Only the owner sets a status.</p>
+      {msg ? <p className="ed-small mt-2" role="status">{msg}</p> : null}
+      {data.proposals?.length ? <Table caption="Proposals from the desks with the owner's status" head={["When", "Desk", "Kind", "Proposal", "Status", "Set"]} min={720}>
+        {data.proposals.map(p => <tr key={p.id} className="ed-hair"><td className={td}><time dateTime={p.at}>{storyTime(p.at)}</time></td><td className={td}>{p.desk}</td><td className={td}>{p.kind}{p.subject ? <span className="ed-caption block">{p.subject}</span> : null}</td><td className={td}>{p.text}</td><td className={td}>{p.status}{p.status_reason ? <span className="ed-caption block">{p.status_reason}</span> : null}</td>
+          <td className={td} data-no-csv=""><span className="flex flex-wrap gap-2">{(["accepted", "declined", "open"] as const).filter(x => x !== p.status).map(x => <button key={x} type="button" onClick={() => void setStatus(p.id, x)} className="ed-tap ed-data min-h-[44px] border border-ed-ink px-3">{x === "accepted" ? "Accept" : x === "declined" ? "Decline" : "Reopen"}</button>)}</span></td></tr>)}
+      </Table> : <p className="ed-small mt-3">{voiced("read.deskNewsroom.proposals")}</p>}
     </section>
   </>;
 }

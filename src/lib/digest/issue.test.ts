@@ -86,7 +86,7 @@ describe("issueModel", () => {
     expect(issue.wild!.map(w => w.domain)).toEqual(["tailwindcss.com", "vercel.com", "linear.app"]);
     expect(issue.wild!.every(w => w.thumb === null)).toBe(true);
     const withThumb = issueModel({ ...fixture(), thumbs: [{ domain: "vercel.com", captured_at: "2026-11-14T08:00:00Z", viewport: "desktop", path: "vercel.com/2026-11-14-desktop.webp", width: 1280, height: 800, bytes: 90000, variants: [{ w: 640, h: 400, bytes: 30000, path: "vercel.com/2026-11-14-desktop-640w.webp" }] }] })!;
-    expect(withThumb.wild!.find(w => w.domain === "vercel.com")!.thumb).toMatchObject({ caption: "vercel.com · captured 2026-11-14", alt: "vercel.com homepage, captured 2026-11-14", src: "/thumbs/vercel.com/2026-11-14-desktop.webp" });
+    expect(withThumb.wild!.find(w => w.domain === "vercel.com")!.thumb).toMatchObject({ caption: "vercel.com · captured 14 Nov 2026", alt: "vercel.com homepage, captured 14 Nov 2026", src: "/thumbs/vercel.com/2026-11-14-desktop.webp" });
   });
   it("hides the corrections line while CONTACT_EMAIL is empty", () => { expect(issue.footer.contact).toBeNull(); });
   it("no $TICKER survives anywhere in the model", () => { expect(JSON.stringify(issue)).not.toMatch(TICKER); });

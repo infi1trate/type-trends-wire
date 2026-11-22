@@ -119,7 +119,8 @@ export function StoryFrame({ id, headline, children }: { id: string; headline: s
   </DigestShell>;
 }
 export function StoryView({ s, related, bare = false }: { s: StoryPageData; related?: ReactNode; bare?: boolean }) {
-  const notRun = s.state === "held" ? `This story did not run on the front page: ${s.heldReason}.` : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
+  // N2 · a story waiting for the desks' review, and one a desk held (with its reason), each say so in one line.
+  const notRun = s.state === "held" ? (s.heldReason?.startsWith("awaiting review") ? "This story is waiting for the desk's review." : s.heldByDesk ? `Held by the desk: ${s.heldReason?.replace(/[.\s]+$/, "")}.` : `This story did not run on the front page: ${s.heldReason}.`) : s.state === "killed" ? `Taken down by the editor${s.killReason ? `: ${s.killReason}` : ""}.` : null;
   const seed = s.number ?? s.id, kind = kindOf(s);
   // The cover carries kicker, headline and deck; its object is the signal's trail only when the story has no picture of a page.
   const cover = s.lead

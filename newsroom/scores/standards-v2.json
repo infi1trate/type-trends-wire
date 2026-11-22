@@ -1,0 +1,210 @@
+{
+ "desk": "standards",
+ "version": "v2",
+ "prompt_hash": "d95f228d",
+ "run_at": "2026-11-22T05:29:03.103Z",
+ "cases": 3,
+ "correct": 3,
+ "wrong": [],
+ "items": [
+  {
+   "number": 42,
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "expect": "pass",
+   "verdict": "pass",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "pass",
+   "problems": [
+    {
+     "kind": "other",
+     "words": "8 tracked consumer apps brands",
+     "severity": "note",
+     "why": "The plural “apps” makes it awkward to tell which noun “tracked” modifies.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "In both count lines, “an AI read” is internal shorthand for the imagery assessment described in How we know.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "momentum",
+     "severity": "note",
+     "why": "This label in both count lines makes the quarterly change in share sound like a separate measure.",
+     "found": true
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.0224
+  },
+  {
+   "number": 88,
+   "id": "brand:coinbase.com:2026-11-20",
+   "expect": "pass",
+   "verdict": "pass",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "pass",
+   "problems": [
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "This internal shorthand leaves readers unsure whether the totals count homepages assessed by AI or homepages that mention AI.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "The changes:",
+     "severity": "note",
+     "why": "The heading groups two changes Coinbase made with four figures about tracked sites, without distinguishing the comparison figures from changes to Coinbase itself.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.020688
+  },
+  {
+   "number": 89,
+   "id": "census:agents:2026-W47",
+   "expect": "pass",
+   "verdict": "pass",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "pass",
+   "problems": [],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.025752
+  }
+ ]
+}

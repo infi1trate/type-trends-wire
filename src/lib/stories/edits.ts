@@ -15,6 +15,8 @@ export type State = "published" | "held" | "killed";
 export type Shown<S extends StoredStory = StoredStory> = S & {
   state: State; stored: { status: S["status"]; type: string; kicker: string; headline: string; deck: string | null; why_line: string | null; facts: unknown };
   pinnedUntil: string | null; correctedAt: string | null; killReason: string | null; edits: EditRow[];
+  /** N2 · when a desk put the story back to held (a `hold`: a kill edit marked as a hold); its reason is the story's `reason`. */
+  heldAt?: string | null;
   /** I3b · dated correction lines a reader sees under the deck ("Corrected 21 Nov: …"), oldest first. */
   correctionNotes?: string[];
 };
@@ -25,17 +27,23 @@ const narrowed = (v: unknown, stored: string[] | undefined) => (Array.isArray(st
 /** Types a correct edit may re-label a story to (only ever downward: a rebrand that no longer qualifies becomes a move). */
 const RELABEL_TYPES = new Set(["move"]);
 
+/** N2 · a hold is stored as a kill edit marked as a hold (the stored action list is a fixed check): the story goes back to held, with a
+ *  reason, instead of being taken down. Older engine holds carry only the "Held:" note. */
+export const isHoldEdit = (e: Pick<EditRow, "action" | "payload" | "note">) => e.action === "kill" && (e.payload?.["hold"] === true || !!e.note?.startsWith("Held:"));
+/** Whether a story ever ran: stored as published, or restored or pinned into the stream later (N2: stories wait for review as held). */
+export const everPublished = (s: { stored: { status: string }; edits: Pick<EditRow, "action" | "payload" | "note">[] }) => s.stored.status === "published" || s.edits.some(e => e.action === "restore" || e.action === "pin");
 /** Apply edits in order. Kill hides; restore undoes a kill (or runs a held story anyway); correct replaces text (headline, deck, why line, or the
  * facts list when a maintenance pass rewords them); pin holds the lead until its time. */
 export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: number): Shown<S> {
   const mine = edits.filter(e => e.story_id === s.id).sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
   let state: State = s.status, headline = s.headline, deck = s.deck, why = s.why_line, facts: unknown = s.facts, pinnedUntil: string | null = null, correctedAt: string | null = null, killReason: string | null = null;
-  let type = s.type, kicker = s.kicker, domains = s.domains, sourceIds = s.source_ids, evidence: unknown = s.evidence;
+  let type = s.type, kicker = s.kicker, domains = s.domains, sourceIds = s.source_ids, evidence: unknown = s.evidence, heldReason: string | null = null, heldAt: string | null = null;
   const notes: string[] = [];
   for (const e of mine) {
-    if (e.action === "kill") { state = "killed"; killReason = str(e.payload["reason"]); pinnedUntil = null; }
-    else if (e.action === "restore") { state = "published"; killReason = null; }
-    else if (e.action === "pin") { const u = str(e.payload["until"]); pinnedUntil = u; if (state === "held") state = "published"; }
+    if (e.action === "kill" && isHoldEdit(e)) { state = "held"; heldReason = str(e.payload["reason"]) ?? e.note?.replace(/^Held:\s*/, "") ?? null; heldAt = e.at; killReason = null; pinnedUntil = null; }
+    else if (e.action === "kill") { state = "killed"; killReason = str(e.payload["reason"]); pinnedUntil = null; }
+    else if (e.action === "restore") { state = "published"; killReason = null; heldReason = null; heldAt = null; }
+    else if (e.action === "pin") { const u = str(e.payload["until"]); pinnedUntil = u; if (state === "held") { state = "published"; heldReason = null; heldAt = null; } }
     else if (e.action === "correct") {
       const h = str(e.payload["headline"]), d = str(e.payload["deck"]), w = e.payload["why_line"];
       if (h) headline = h; if (d !== null) deck = d; if (typeof w === "string") why = w || null;
@@ -54,7 +62,7 @@ export function applyEdits<S extends StoredStory>(s: S, edits: EditRow[], now: n
   if (pinnedUntil && (Date.parse(pinnedUntil) <= now || state !== "published")) pinnedUntil = null;
   const namedFacts = Array.isArray(facts) ? facts.map(f => (f && typeof f === "object" && typeof (f as { text?: unknown }).text === "string" ? { ...f, text: nameText((f as { text: string }).text) } : f)) : facts;
   const namedEvidence = Array.isArray(evidence) ? evidence.map(e => (e && typeof e === "object" && typeof (e as { label?: unknown }).label === "string" ? { ...e, label: nameText((e as { label: string }).label) } : e)) : evidence;
-  return { ...s, type, kicker: nameText(kicker), headline: nameText(headline), deck: nameText(deck), why_line: nameText(why), facts: namedFacts, evidence: namedEvidence, domains, source_ids: sourceIds, state, pinnedUntil, correctedAt, killReason, edits: mine, correctionNotes: notes.map(n => nameText(n)), stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
+  return { ...s, ...(state === "held" && heldReason ? { reason: heldReason } : {}), heldAt: state === "held" ? heldAt : null, type, kicker: nameText(kicker), headline: nameText(headline), deck: nameText(deck), why_line: nameText(why), facts: namedFacts, evidence: namedEvidence, domains, source_ids: sourceIds, state, pinnedUntil, correctedAt, killReason, edits: mine, correctionNotes: notes.map(n => nameText(n)), stored: { status: s.status, type: s.type, kicker: s.kicker, headline: s.headline, deck: s.deck, why_line: s.why_line, facts: s.facts } };
 }
 export const overlay = <S extends StoredStory>(stories: S[], edits: EditRow[], now: number) => {
   const by = new Map<string, EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);

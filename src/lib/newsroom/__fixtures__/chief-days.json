@@ -1,0 +1,761 @@
+{
+ "frozen_at": "2026-11-22T05:25:14.028Z",
+ "beats_note": "beats.md is read from the file at run time",
+ "days": [
+  {
+   "day": "2026-11-19",
+   "input": {
+    "now": "2026-11-19T23:59:59Z",
+    "stories": [
+     {
+      "id": "move:3676",
+      "type": "move",
+      "headline": "Rippling shifted its aesthetic (AI estimate)",
+      "deck": "Corporate polish, Luxury → Editorial, Luxury. Confirmed 19 Nov.",
+      "facts": 2,
+      "picture": "single",
+      "basis": "ai",
+      "score": {
+       "size": 13,
+       "brand": 10,
+       "novelty": 18,
+       "relevance": 20,
+       "total": 61
+      },
+      "age_hours": 3,
+      "domains": [
+       "rippling.com"
+      ]
+     },
+     {
+      "id": "move:3673",
+      "type": "move",
+      "headline": "Databricks changed its hero",
+      "deck": "Hero changed from image to no media. Confirmed 19 Nov.",
+      "facts": 1,
+      "picture": "single",
+      "basis": "measured",
+      "score": {
+       "size": 13,
+       "brand": 10,
+       "novelty": 18,
+       "relevance": 20,
+       "total": 61
+      },
+      "age_hours": 12,
+      "domains": [
+       "databricks.com"
+      ]
+     },
+     {
+      "id": "move:3671",
+      "type": "move",
+      "headline": "Eight Sleep shifted its aesthetic (AI estimate)",
+      "deck": "Editorial, Minimalism → Editorial, Luxury. Confirmed 19 Nov.",
+      "facts": 2,
+      "picture": "single",
+      "basis": "ai",
+      "score": {
+       "size": 13,
+       "brand": 10,
+       "novelty": 18,
+       "relevance": 20,
+       "total": 61
+      },
+      "age_hours": 21,
+      "domains": [
+       "eightsleep.com"
+      ]
+     },
+     {
+      "id": "news:89411",
+      "type": "news",
+      "headline": "WAKE UP. FIGHT EVIL. EAT PLASTIC. We have unveiled on our official Instagram page the very FIRST LOOK at the Super Pussycat design with the first NEW SUPER PUS…",
+      "deck": "Names Instagram.",
+      "facts": 1,
+      "picture": "card",
+      "basis": null,
+      "score": {
+       "size": 10,
+       "brand": 20,
+       "novelty": 18,
+       "relevance": 11,
+       "total": 59
+      },
+      "age_hours": 1,
+      "domains": [
+       "instagram.com"
+      ]
+     },
+     {
+      "id": "counter:3674:aesthetic:minimal",
+      "type": "counter_move",
+      "headline": "Databricks adopts minimalism while it fades in enterprise SaaS",
+      "deck": "Databricks shifted its aesthetic (AI estimate): Corporate polish, Swiss grid style → Corporate polish, Minimalism. Confirmed 19 Nov.",
+      "facts": 3,
+      "picture": "single",
+      "basis": "ai",
+      "score": {
+       "size": 15,
+       "brand": 10,
+       "novelty": 2,
+       "relevance": 25,
+       "total": 52
+      },
+      "age_hours": 12,
+      "domains": [
+       "databricks.com"
+      ]
+     },
+     {
+      "id": "news:84246",
+      "type": "news",
+      "headline": "Sport and GTA 6: Where city soft power and place branding collide The Miami Heat and working out have played a central role in Rockstar’s latest product releas…",
+      "deck": "Names Substack.",
+      "facts": 1,
+      "picture": "single",
+      "basis": null,
+      "score": {
+       "size": 10,
+       "brand": 10,
+       "novelty": 18,
+       "relevance": 11,
+       "total": 49
+      },
+      "age_hours": 11,
+      "domains": [
+       "substack.com"
+      ]
+     },
+     {
+      "id": "move:3672",
+      "type": "move",
+      "headline": "The New Yorker changed its hero",
+      "deck": "Hero changed from video to no media. Confirmed 19 Nov.",
+      "facts": 1,
+      "picture": "single",
+      "basis": "measured",
+      "score": {
+       "size": 13,
+       "brand": 10,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 49
+      },
+      "age_hours": 21,
+      "domains": [
+       "newyorker.com"
+      ]
+     },
+     {
+      "id": "news:83592",
+      "type": "news",
+      "headline": "NIKE rethinks air cushioning with digitally printed patterns inside its soles",
+      "deck": "instead of relying on conventional internal supports, the sportswear company uses selective lamination to control underfoot response, with the first running models expected in lat…",
+      "facts": 1,
+      "picture": "card",
+      "basis": null,
+      "score": {
+       "size": 10,
+       "brand": 10,
+       "novelty": 14,
+       "relevance": 11,
+       "total": 45
+      },
+      "age_hours": 12,
+      "domains": [
+       "nike.com"
+      ]
+     }
+    ],
+    "leads": [
+     {
+      "day": "2026-11-18",
+      "headline": "Everlywell changed its hero and headline alignment",
+      "type": "move"
+     },
+     {
+      "day": "2026-11-17",
+      "headline": "Designboom rebranded: new palette",
+      "type": "rebrand"
+     },
+     {
+      "day": "2026-11-16",
+      "headline": "Almost no dev tools brand uses lifestyle photography; it is rising everywhere else",
+      "type": "white_space"
+     },
+     {
+      "day": "2026-11-15",
+      "headline": "Charts and data visuals: breaking out in dev tools",
+      "type": "breakout"
+     },
+     {
+      "day": "2026-11-14",
+      "headline": "Wired adopts type-only visuals while it fades in media",
+      "type": "counter_move"
+     },
+     {
+      "day": "2026-11-13",
+      "headline": "Samsung rebranded: new font and redesign",
+      "type": "rebrand"
+     },
+     {
+      "day": "2026-11-12",
+      "headline": "Ragged Edge rebranded: new palette",
+      "type": "rebrand"
+     }
+    ],
+    "slots": {
+     "all": 5,
+     "news": 3,
+     "single_brand": 3,
+     "ai_roundup": 1
+    },
+    "lead_open": true,
+    "beats": "(beats.md)"
+   },
+   "actual": {
+    "lead": "move:3676",
+    "order": [
+     "move:3676",
+     "move:3673",
+     "move:3671",
+     "news:89411",
+     "counter:3674:aesthetic:minimal",
+     "news:84246",
+     "move:3672",
+     "news:83592"
+    ]
+   }
+  },
+  {
+   "day": "2026-11-20",
+   "input": {
+    "now": "2026-11-20T23:59:59Z",
+    "stories": [
+     {
+      "id": "against:2026-W47",
+      "type": "roundup",
+      "headline": "25 brands moved against the grain",
+      "deck": "Netlify, Pentagram, SoFi, 1Password, Amazon, Anthropic and 19 more, between 13 Nov and 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "ai",
+      "score": {
+       "size": 25,
+       "brand": 25,
+       "novelty": 9,
+       "relevance": 22,
+       "total": 81
+      },
+      "age_hours": 10,
+      "domains": [
+       "netlify.com",
+       "pentagram.com",
+       "sofi.com",
+       "1password.com",
+       "amazon.com",
+       "anthropic.com",
+       "bun.sh",
+       "cloudflare.com",
+       "cohere.com",
+       "cursor.com",
+       "databricks.com",
+       "harvey.ai",
+       "heygen.com",
+       "landor.com",
+       "leica-camera.com",
+       "nintendo.com",
+       "on.com",
+       "replicate.com",
+       "resend.com",
+       "techcrunch.com",
+       "theverge.com",
+       "vuoriclothing.com",
+       "wired.com",
+       "writer.com",
+       "x.ai"
+      ]
+     },
+     {
+      "id": "brand:coinbase.com:2026-11-20",
+      "type": "move",
+      "headline": "Coinbase changed its headline and hero",
+      "deck": "Hero, video to still (between 11 and 14 Nov); headline, “Trusted by millions worldwide” to “The trusted financial account for you and your agents” (between 11 and 14 Nov).",
+      "facts": 6,
+      "picture": "single",
+      "basis": "measured",
+      "score": {
+       "size": 23,
+       "brand": 10,
+       "novelty": 22,
+       "relevance": 25,
+       "total": 80
+      },
+      "age_hours": 10,
+      "domains": [
+       "coinbase.com"
+      ]
+     },
+     {
+      "id": "census:sale:2026-W47",
+      "type": "census",
+      "headline": "Eleven tracked homepages are in sale mode",
+      "deck": "11 of 229 tracked homepages whose headline or buttons we can read show a sale in two captures at least six hours apart: Allbirds, Headspace, Ilia, Equinox, Brooklinen, Casper and five more.",
+      "facts": 11,
+      "picture": "mosaic",
+      "basis": "measured",
+      "score": {
+       "size": 25,
+       "brand": 19,
+       "novelty": 18,
+       "relevance": 17,
+       "total": 79
+      },
+      "age_hours": 7,
+      "domains": [
+       "equinox.com",
+       "brooklinen.com",
+       "casper.com",
+       "gopro.com",
+       "drinkolipop.com",
+       "fromourplace.com",
+       "parachutehome.com",
+       "onepeloton.com"
+      ]
+     },
+     {
+      "id": "roundup:all:aesthetic:minimal:2026-11-13",
+      "type": "roundup",
+      "headline": "Six brands moved to minimalism",
+      "deck": "Databricks, Future, Harvey, HeyGen and 2 more, between 13 Nov and 20 Nov.",
+      "facts": 7,
+      "picture": "mosaic",
+      "basis": "ai",
+      "score": {
+       "size": 25,
+       "brand": 14,
+       "novelty": 18,
+       "relevance": 22,
+       "total": 79
+      },
+      "age_hours": 10,
+      "domains": [
+       "databricks.com",
+       "future.co",
+       "harvey.ai",
+       "heygen.com",
+       "landor.com",
+       "postman.com"
+      ]
+     },
+     {
+      "id": "against:2026-W47:measured",
+      "type": "roundup",
+      "headline": "Four brands moved against the grain",
+      "deck": "Netlify, Venmo, Cohere, On, between 11 and 20 Nov.",
+      "facts": 11,
+      "picture": "mosaic",
+      "basis": "ai",
+      "score": {
+       "size": 25,
+       "brand": 25,
+       "novelty": 6,
+       "relevance": 22,
+       "total": 78
+      },
+      "age_hours": 10,
+      "domains": [
+       "netlify.com",
+       "venmo.com",
+       "on.com",
+       "cohere.com"
+      ]
+     },
+     {
+      "id": "brand:sofi.com:2026-11-20",
+      "type": "move",
+      "headline": "SoFi changed its headline and headline typeface",
+      "deck": "Headline font, TT Norms to Larsseit (20 Nov); headline, “NEW IPO” to “Bank smarter–” (20 Nov).",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 25,
+       "brand": 15,
+       "novelty": 18,
+       "relevance": 20,
+       "total": 78
+      },
+      "age_hours": 13,
+      "domains": [
+       "sofi.com"
+      ]
+     },
+     {
+      "id": "seasonal:2026-W47",
+      "type": "roundup",
+      "headline": "Three brands switched their homepages to seasonal promotions",
+      "deck": "Peloton, GoPro and Brooklinen, between 13 Nov and 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 25,
+       "brand": 25,
+       "novelty": 6,
+       "relevance": 17,
+       "total": 73
+      },
+      "age_hours": 13,
+      "domains": [
+       "onepeloton.com",
+       "brooklinen.com",
+       "gopro.com"
+      ]
+     },
+     {
+      "id": "roundup:dev-tools:aesthetic:editorial:2026-11-14",
+      "type": "roundup",
+      "headline": "Four dev tools brands moved to editorial",
+      "deck": "Netlify, Bun, Cloudflare and Cursor, between 14 Nov and 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "ai",
+      "score": {
+       "size": 25,
+       "brand": 25,
+       "novelty": 2,
+       "relevance": 19,
+       "total": 71
+      },
+      "age_hours": 10,
+      "domains": [
+       "netlify.com",
+       "bun.sh",
+       "cloudflare.com",
+       "cursor.com"
+      ]
+     },
+     {
+      "id": "rebrand:gopro.com:2026-11-20",
+      "type": "rebrand",
+      "headline": "GoPro rebranded: new font and redesign",
+      "deck": "Two identity changes confirmed together on 20 Nov: font and redesign.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 20,
+       "brand": 10,
+       "novelty": 18,
+       "relevance": 20,
+       "total": 68
+      },
+      "age_hours": 21,
+      "domains": [
+       "gopro.com"
+      ]
+     },
+     {
+      "id": "rebrand:ragged-edge.com:2026-11-20",
+      "type": "move",
+      "headline": "Ragged Edge changed its palette",
+      "deck": "Changed its palette and accent. Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 16,
+       "brand": 25,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 67
+      },
+      "age_hours": 18,
+      "domains": [
+       "ragged-edge.com"
+      ]
+     },
+     {
+      "id": "rebrand:motherlondon.com:2026-11-20",
+      "type": "move",
+      "headline": "Mother changed its accent",
+      "deck": "Muted amber → Vivid dark indigo. Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 16,
+       "brand": 25,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 67
+      },
+      "age_hours": 18,
+      "domains": [
+       "motherlondon.com"
+      ]
+     },
+     {
+      "id": "rebrand:lucidmotors.com:2026-11-20",
+      "type": "rebrand",
+      "headline": "Lucid rebranded: new font",
+      "deck": "One identity change confirmed on 20 Nov: font.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 16,
+       "brand": 25,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 67
+      },
+      "age_hours": 21,
+      "domains": [
+       "lucidmotors.com"
+      ]
+     },
+     {
+      "id": "census:agents:2026-W47",
+      "type": "census",
+      "headline": "Sixteen tracked homepages have ‘agents’ in the headline",
+      "deck": "16 of 162 tracked homepages whose headline we can read use ‘agent’, ‘agents’ or ‘agentic’ in the headline: Vercel, Framer, Slack, Linear, 1Password, Coinbase and ten more.",
+      "facts": 16,
+      "picture": "words",
+      "basis": "measured",
+      "score": {
+       "size": 25,
+       "brand": 19,
+       "novelty": 2,
+       "relevance": 17,
+       "total": 63
+      },
+      "age_hours": 7,
+      "domains": [
+       "framer.com",
+       "slack.com",
+       "linear.app",
+       "1password.com",
+       "coinbase.com",
+       "cursor.com",
+       "fly.io",
+       "monday.com",
+       "mongodb.com",
+       "neon.com",
+       "notion.com",
+       "okta.com",
+       "postman.com",
+       "snowflake.com"
+      ]
+     },
+     {
+      "id": "counter:3684:aesthetic:corporate",
+      "type": "counter_move",
+      "headline": "1Password adopts corporate polish while it fades in enterprise SaaS",
+      "deck": "1Password shifted its aesthetic (AI estimate): Dark tech, Editorial → Corporate polish, Minimalism. Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "ai",
+      "score": {
+       "size": 15,
+       "brand": 10,
+       "novelty": 10,
+       "relevance": 25,
+       "total": 60
+      },
+      "age_hours": 21,
+      "domains": [
+       "1password.com"
+      ]
+     },
+     {
+      "id": "move:3688",
+      "type": "move",
+      "headline": "Garmin changed its headline",
+      "deck": "“FĒNIX® 9” → “U.S. ARMED FORCES WATCH FACES”. Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 13,
+       "brand": 20,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 59
+      },
+      "age_hours": 18,
+      "domains": [
+       "garmin.com"
+      ]
+     },
+     {
+      "id": "move:3692",
+      "type": "move",
+      "headline": "GoPro redesigned its homepage (3 measured fields changed at once)",
+      "deck": "Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 25,
+       "brand": 10,
+       "novelty": 2,
+       "relevance": 20,
+       "total": 57
+      },
+      "age_hours": 18,
+      "domains": [
+       "gopro.com"
+      ]
+     },
+     {
+      "id": "rebrand:brooklinen.com:2026-11-20",
+      "type": "move",
+      "headline": "Brooklinen changed its accent and palette",
+      "deck": "Changed its palette, headline, accent and hero and headline alignment. Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 20,
+       "brand": 10,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 56
+      },
+      "age_hours": 21,
+      "domains": [
+       "brooklinen.com"
+      ]
+     },
+     {
+      "id": "rebrand:newyorker.com:2026-11-20",
+      "type": "move",
+      "headline": "The New Yorker changed its accent",
+      "deck": "Changed its palette, hero and accent. Confirmed 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "measured",
+      "score": {
+       "size": 16,
+       "brand": 10,
+       "novelty": 6,
+       "relevance": 20,
+       "total": 52
+      },
+      "age_hours": 18,
+      "domains": [
+       "newyorker.com"
+      ]
+     }
+    ],
+    "leads": [
+     {
+      "day": "2026-11-16",
+      "headline": "Almost no dev tools brand uses lifestyle photography; it is rising everywhere else",
+      "type": "white_space"
+     },
+     {
+      "day": "2026-11-15",
+      "headline": "Charts and data visuals: breaking out in dev tools",
+      "type": "breakout"
+     }
+    ],
+    "slots": {
+     "all": 5,
+     "news": 3,
+     "single_brand": 3,
+     "ai_roundup": 1
+    },
+    "lead_open": true,
+    "beats": "(beats.md)"
+   },
+   "actual": {
+    "lead": "brand:coinbase.com:2026-11-20",
+    "order": [
+     "against:2026-W47",
+     "brand:coinbase.com:2026-11-20",
+     "census:sale:2026-W47",
+     "roundup:all:aesthetic:minimal:2026-11-13",
+     "against:2026-W47:measured",
+     "brand:sofi.com:2026-11-20",
+     "seasonal:2026-W47",
+     "roundup:dev-tools:aesthetic:editorial:2026-11-14",
+     "rebrand:gopro.com:2026-11-20",
+     "rebrand:ragged-edge.com:2026-11-20",
+     "rebrand:motherlondon.com:2026-11-20",
+     "rebrand:lucidmotors.com:2026-11-20",
+     "census:agents:2026-W47",
+     "counter:3684:aesthetic:corporate",
+     "move:3688",
+     "move:3692",
+     "rebrand:brooklinen.com:2026-11-20",
+     "rebrand:newyorker.com:2026-11-20"
+    ]
+   }
+  },
+  {
+   "day": "2026-11-21",
+   "input": {
+    "now": "2026-11-21T23:59:59Z",
+    "stories": [
+     {
+      "id": "roundup:all:aesthetic:corporate:2026-11-20",
+      "type": "roundup",
+      "headline": "Three brands moved to corporate polish",
+      "deck": "1Password, Glean and Together AI, between 14 and 20 Nov.",
+      "facts": 0,
+      "picture": "none",
+      "basis": "ai",
+      "score": {
+       "size": 20,
+       "brand": 12,
+       "novelty": 6,
+       "relevance": 22,
+       "total": 60
+      },
+      "age_hours": 18,
+      "domains": [
+       "1password.com",
+       "glean.com",
+       "together.ai"
+      ]
+     }
+    ],
+    "leads": [
+     {
+      "day": "2026-11-20",
+      "headline": "Coinbase changed its headline and hero",
+      "type": "move"
+     },
+     {
+      "day": "2026-11-16",
+      "headline": "Almost no dev tools brand uses lifestyle photography; it is rising everywhere else",
+      "type": "white_space"
+     },
+     {
+      "day": "2026-11-15",
+      "headline": "Charts and data visuals: breaking out in dev tools",
+      "type": "breakout"
+     }
+    ],
+    "slots": {
+     "all": 5,
+     "news": 3,
+     "single_brand": 3,
+     "ai_roundup": 1
+    },
+    "lead_open": true,
+    "beats": "(beats.md)"
+   },
+   "actual": {
+    "lead": null,
+    "order": [
+     "roundup:all:aesthetic:corporate:2026-11-20"
+    ]
+   }
+  }
+ ]
+}

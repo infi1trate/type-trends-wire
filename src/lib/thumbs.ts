@@ -83,9 +83,11 @@ export function pruneOld<T extends ThumbRow>(rows: T[], keep: number = THUMB_LIM
 // Display
 export type Thumb = { domain: string; captured_at: string; viewport: string; src: string; srcSet: string; width: number; height: number; alt: string; caption: string; live: string; terminal: string };
 export const thumbSrc = (path: string) => `/thumbs/${path}`;
-const day = (iso: string) => iso.slice(0, 10);
-export const thumbCaption = (domain: string, capturedAt: string) => `${domain} · captured ${day(capturedAt)}`;
-export const thumbAlt = (domain: string, capturedAt: string) => `${domain} homepage, captured ${day(capturedAt)}`;
+const READ_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** N2 · copy desk: the one Read-side date format in credits and captions ("21 Nov 2026"), never an ISO date. */
+export const readDay = (iso: string) => { const d = new Date(iso.length === 10 ? `${iso}T00:00:00Z` : iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${READ_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+export const thumbCaption = (domain: string, capturedAt: string) => `${domain} · captured ${readDay(capturedAt)}`;
+export const thumbAlt = (domain: string, capturedAt: string) => `${domain} homepage, captured ${readDay(capturedAt)}`;
 export function toThumb(r: ThumbRow): Thumb {
   const vs = (Array.isArray(r.variants) ? (r.variants as ThumbVariant[]) : []).filter(v => v && typeof v.path === "string" && v.w > 0).sort((a, b) => a.w - b.w);
   return { domain: r.domain, captured_at: r.captured_at, viewport: r.viewport, src: thumbSrc(r.path), srcSet: [...vs.map(v => `${thumbSrc(v.path)} ${v.w}w`), `${thumbSrc(r.path)} ${r.width}w`].join(", "),

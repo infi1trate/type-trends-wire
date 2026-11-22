@@ -24,12 +24,14 @@ async function pages<T>(page: (from: number, to: number) => PromiseLike<{ data: 
 }
 const must = <T,>(r: { data: T; error: unknown }) => { if (r.error) throw r.error; return r.data; };
 
+import { everPublished } from "../stories/edits";
 type Rec = import("../stories/view").StoryRecord;
 const factList = (v: unknown): { text: string; kind: string | null }[] => (Array.isArray(v) ? v.flatMap(f => typeof f === "string" ? [{ text: f, kind: null }] : f && typeof f === "object" && typeof (f as { text?: unknown }).text === "string" ? [{ text: (f as { text: string }).text, kind: typeof (f as { kind?: unknown }).kind === "string" ? (f as { kind: string }).kind : null }] : []) : []);
 export const editionStory = (s: Rec): EditionStory & { source_ids: string[] } => ({ id: s.id, number: s.number ?? null, type: s.type, basis: s.basis, score: s.score, happened_at: s.happened_at, created_at: s.created_at,
   kicker: s.kicker, headline: s.headline, deck: s.deck, body: s.written?.body ?? (s.why_line ? [s.why_line] : []), domains: s.domains, sector: s.sector, signal_keys: s.signal_keys, facts: factList(s.facts), source_ids: s.source_ids });
 /** A story that ran and was later retired with its change withdrawn (withdrawn.ts), with when the editor retired it. */
-export const retiredOf = (s: Rec): RetiredStory | null => (s.state === "killed" && s.stored.status === "published" && withdrewChange(s)
+// N2: a story reviewed by the desks is stored as held and runs through a restore edit, so "ran" reads the edits too.
+export const retiredOf = (s: Rec): RetiredStory | null => (s.state === "killed" && everPublished(s) && withdrewChange(s)
   ? { id: s.id, number: s.number ?? null, domains: s.domains, happened_at: s.happened_at, retired_at: s.edits.filter(e => e.action === "kill").at(-1)?.at ?? null } : null);
 
 async function pictureOf(s: EditionStory & { source_ids: string[] }): Promise<Picture | null> {

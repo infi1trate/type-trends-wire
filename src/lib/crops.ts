@@ -1,7 +1,7 @@
 // Section crops: pure ingest contract, WebP checks, storage paths, the history rule, and selection/display helpers. No I/O.
 // Crops are other companies' pages: every display carries a credit (domain + capture date) and a link to the live site.
 import { z } from "zod";
-import { DOMAIN_RE, decodeB64, sniffImage, webpSize } from "./thumbs";
+import { DOMAIN_RE, decodeB64, readDay, sniffImage, webpSize } from "./thumbs";
 import { CROP_SECTION_NAME } from "./labels";
 import { CONTACT_EMAIL } from "./site";
 import { BOT_NAME, LEGACY_UA_TOKEN } from "./brand";
@@ -126,13 +126,13 @@ export const cropSrc = (path: string) => `/crops/${path}`;
 /** "Report this image": the editor's address when set, else the removal policy (owners ask the editor, who runs the opt-out). */
 export const reportHref = (domain: string) => (CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Remove images of ${domain}`)}` : "/what-we-show#ed-w-images");
 export function toCrop(r: CropRow): Crop {
-  const section = (isCropSection(r.section) ? r.section : "hero") as CropSection, name = sectionName(section), day = utcDay(r.captured_at);
+  const section = (isCropSection(r.section) ? r.section : "hero") as CropSection, name = sectionName(section), day = readDay(r.captured_at);
   return { domain: r.domain, section, sectionName: name, captured_at: r.captured_at, last_seen_at: r.last_seen_at, hash: r.hash, src: cropSrc(r.path), width: r.width, height: r.height,
     alt: `${r.domain} ${name.toLowerCase()}, captured ${day}`, caption: `${name} · ${r.domain} · captured ${day}`, live: `https://${r.domain}`, report: reportHref(r.domain), ...(typeof r.bytes === "number" ? { bytes: r.bytes } : {}) };
 }
 /** E3: a brand's latest hero crop from the pictures index as a credited Crop (for cards that show a first screen). */
 export function heroCrop(domain: string, p: { src: string; width: number; height: number; at: string }): Crop {
-  const name = sectionName("hero"), day = utcDay(p.at);
+  const name = sectionName("hero"), day = readDay(p.at);
   return { domain, section: "hero", sectionName: name, captured_at: p.at, last_seen_at: p.at, hash: "", src: p.src, width: p.width, height: p.height,
     alt: `${domain} ${name.toLowerCase()}, captured ${day}`, caption: `${name} · ${domain} · captured ${day}`, live: `https://${domain}`, report: reportHref(domain) };
 }

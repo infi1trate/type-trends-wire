@@ -87,6 +87,7 @@ function newValue(type: string, after: unknown): string | null {
   if (type === "theme_flip") return str(a["theme"]);
   return null;
 }
+export { FOLLOW_FACT, followPage } from "./follow";
 /** "The changelog page now uses Systemia too, between 13 and 21 Nov" (same new value as the homepage), else what it changed to. */
 export function followFact(e: Pick<EventRow, "type" | "after" | "page_type">, home: readonly HomeChange[], when: string): string {
   const page = FACT_PAGE[e.page_type ?? ""] ?? "other page", Page = `The ${page}`, mine = newValue(e.type, e.after);

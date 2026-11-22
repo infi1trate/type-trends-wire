@@ -57,8 +57,8 @@ export async function loadStoryHead(id: string): Promise<{ headline: string; dec
   const s = await storyOnce(id);
   return s ? { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published", number: s.state === "published" ? s.number ?? null : null } : null;
 }
-export async function loadStoryLead(id: string) {
-  const s = await storyOnce(id); if (!s) return null;
+export async function loadStoryLead(id: string, o: { asOf?: string } = {}) {
+  const s = o.asOf ? await (await import("./read.server")).storyById(id, o.asOf) : await storyOnce(id); if (!s) return null;
   if (s.state === "killed") return retiredLead(s);
   const type = isKind(s.type) ? s.type : "news", key = s.signal_keys[0], d = s.domains[0];
   const [{ quarterSeries }, { wellCovered }, { pickThumb }, { supabaseAnon }] = await Promise.all([import("../front/front.server"), import("../kit"), import("../thumbs"), import("../mcp/supabase")]);
@@ -89,7 +89,7 @@ export async function leadOf(s: StoryRecord, crops: import("./evidence").StoryEv
   const dates = [...new Set(((Array.isArray(s.facts) ? s.facts : []) as { text: string }[]).flatMap(f => String(f.text ?? "").match(/\b\d{4}-\d{2}-\d{2}\b/g) ?? []))];
   const pics = await leadPics(d => o.names?.get(d) ?? d);
   const assetPair = s.id.startsWith("quiet:asset:") ? await quietPair(s.id, s.source_ids).catch(() => null) : s.id.startsWith("quiet:event:") ? await quietPagePair(s.source_ids).catch(() => null) : null;
-  return leadPicture({ kind: "story", story: { assetPair, id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
+  return leadPicture({ kind: "story", story: { assetPair, id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, sector: s.sector ?? null, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
 }
 /** W1b · a quiet icon or card story's old and new stored versions (`asset-from:` / `asset-to:` source ids; brand_assets hides opted-out brands). */
 async function quietPair(id: string, sourceIds: string[]) {

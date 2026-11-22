@@ -2,7 +2,7 @@
 // reads and writes happen only after the desk endpoint verified the editor key (or inside the pipeline); readers get two yes/no facts
 // through public facades (desk_switch_on, spend_facts). The rules themselves are pure modules beside this file.
 import type { SpendStatus } from "./spend";
-import { missingStates, storyStates, type EditIn, type StateRow, type StoryIn, type TextIn } from "./states";
+import { missingStates, storyStates, type EditIn, type ReviewIn, type StateRow, type StoryIn, type TextIn } from "./states";
 import type { HistoryRow, LogRow } from "./log";
 export type { HistoryRow, LogRow } from "./log";
 
@@ -111,15 +111,16 @@ export async function syncStoryStates(db: Admin, o: { days: number; force?: bool
     if (error) throw new Error("stories_read_failed");
     stories.push(...(data ?? [])); if (!data || data.length < 1000) break;
   }
-  const ids = stories.map(s => s.id), texts: TextIn[] = [], edits: EditIn[] = [], have = new Set<string>(), logged = new Map<number, string>();
+  const ids = stories.map(s => s.id), texts: TextIn[] = [], edits: EditIn[] = [], reviews: ReviewIn[] = [], have = new Set<string>(), logged = new Map<number, string>();
   for (const part of chunks(ids, 150)) {
-    const [t, e, s] = await Promise.all([
+    const [t, e, s, r] = await Promise.all([
       db.from("story_texts").select("id,story_id,model,checked,failures,created_at").in("story_id", part),
       db.from("story_edits").select("id,story_id,action,note,payload,at").in("story_id", part),
       db.from("story_states" as never).select("ref").in("story_id", part),
+      db.from("story_reviews").select("id,story_id,desk,verdict,reason,at").eq("desk", "editor in chief").in("story_id", part),
     ]);
-    if (t.error || e.error || s.error) throw new Error("states_inputs_read_failed");
-    texts.push(...((t.data ?? []) as TextIn[])); edits.push(...((e.data ?? []) as unknown as EditIn[]));
+    if (t.error || e.error || s.error || r.error) throw new Error("states_inputs_read_failed");
+    texts.push(...((t.data ?? []) as TextIn[])); edits.push(...((e.data ?? []) as unknown as EditIn[])); reviews.push(...((r.data ?? []) as ReviewIn[]));
     for (const r of (s.data ?? []) as unknown as { ref: string }[]) have.add(r.ref);
   }
   for (const part of chunks(edits.map(e => e.id), 300)) {
@@ -127,7 +128,7 @@ export async function syncStoryStates(db: Admin, o: { days: number; force?: bool
     if (error) throw new Error("desk_log_read_failed");
     for (const r of data ?? []) if (r.edit_id != null) logged.set(r.edit_id, r.actor);
   }
-  const rows: StateRow[] = missingStates(stories.flatMap(s => storyStates(s, texts, edits, logged)), have);
+  const rows: StateRow[] = missingStates(stories.flatMap(s => storyStates(s, texts, edits, logged, reviews)), have);
   let written = 0;
   for (const part of chunks(rows, 500)) {
     const { data, error } = await db.from("story_states" as never).upsert(part as never, { onConflict: "ref", ignoreDuplicates: true }).select("id");
@@ -145,4 +146,101 @@ export async function statesFor(db: Admin, ids: readonly string[]): Promise<Map<
     for (const r of (data ?? []) as unknown as (StateRow & { story_id: string })[]) { const l = out.get(r.story_id) ?? []; l.push({ state: r.state, actor: r.actor, reason: r.reason, at: r.at }); out.set(r.story_id, l); }
   }
   return out;
+}
+
+// N2 · NOTES, PROPOSALS, THE DESKS' CAPS AND REVIEWS ------------------------------------------------------------------------------
+export type Note = { id: number; at: string; actor: string; subject_kind: string; subject_id: string; text: string };
+export async function insertNote(db: Admin, r: Omit<Note, "id" | "at">): Promise<Note> {
+  const { data, error } = await db.from("desk_notes").insert(r).select("id,at,actor,subject_kind,subject_id,text").single();
+  if (error || !data) throw new Error("note_insert_failed");
+  return data as Note;
+}
+export async function loadNotes(db: Admin, days = 14): Promise<Note[]> {
+  const { data, error } = await db.from("desk_notes").select("id,at,actor,subject_kind,subject_id,text").gte("at", new Date(Date.now() - days * 864e5).toISOString()).order("id", { ascending: false }).limit(200);
+  if (error) throw new Error("notes_read_failed");
+  return (data ?? []) as Note[];
+}
+export type Proposal = { id: number; at: string; desk: string; kind: string; subject: string | null; text: string; status: "open" | "accepted" | "declined"; status_at: string | null; status_reason: string | null };
+/** Every `propose` call (the desk log's proposed rows) with the owner's latest status (open until set). */
+export async function loadProposals(db: Admin, limit = 100): Promise<Proposal[]> {
+  const { data, error } = await db.from("desk_log").select("id,at,actor,subject_id,reason,detail").eq("action", "propose").eq("decision", "proposed").order("id", { ascending: false }).limit(limit);
+  if (error) throw new Error("proposals_read_failed");
+  const ids = (data ?? []).map(r => r.id);
+  const st = ids.length ? await db.from("proposal_statuses").select("log_id,status,reason,at").in("log_id", ids).order("id", { ascending: false }) : { data: [], error: null };
+  if (st.error) throw new Error("proposal_statuses_read_failed");
+  const latest = new Map<number, { status: string; reason: string | null; at: string }>();
+  for (const s of st.data ?? []) if (!latest.has(s.log_id)) latest.set(s.log_id, s);
+  return (data ?? []).map(r => { const d = (r.detail ?? {}) as Record<string, unknown>, s = latest.get(r.id); return { id: r.id, at: r.at, desk: r.actor, kind: typeof d["kind"] === "string" ? d["kind"] : "proposal", subject: r.subject_id, text: typeof d["text"] === "string" ? d["text"] : r.reason ?? "", status: (s?.status ?? "open") as Proposal["status"], status_at: s?.at ?? null, status_reason: s?.reason ?? null }; });
+}
+export async function insertProposalStatus(db: Admin, r: { log_id: number; status: string; reason: string | null }) {
+  const { data: p, error: e1 } = await db.from("desk_log").select("id").eq("id", r.log_id).eq("action", "propose").eq("decision", "proposed").maybeSingle();
+  if (e1) throw new Error("proposal_lookup_failed");
+  if (!p) return null;
+  const { error } = await db.from("proposal_statuses").insert({ ...r, actor: "owner" });
+  if (error) throw new Error("proposal_status_insert_failed");
+  return r.status;
+}
+/** Each desk's model calls today (UTC) against its cap, the stories that passed standards today without the second reader, and the
+ *  week's desk spend. Fixture runs are not counted against the caps. */
+export async function deskCaps(db: Admin) {
+  const { DESK_CAPS } = await import("./review");
+  const start = new Date(); start.setUTCHours(0, 0, 0, 0);
+  const { etWeekStart } = await import("./spend");
+  const [today, week, rv] = await Promise.all([
+    db.from("desk_calls").select("desk,purpose,ok").gte("at", start.toISOString()),
+    db.from("desk_calls").select("desk,cost,purpose").gte("at", etWeekStart(Date.now())),
+    db.from("story_reviews").select("id", { count: "exact", head: true }).eq("desk", "standards").eq("verdict", "pass").neq("second_reader", "ran").gte("at", start.toISOString()),
+  ]);
+  if (today.error || week.error) throw new Error("desk_calls_read_failed");
+  const by = (desk: string) => (today.data ?? []).filter(x => x.desk === desk && x.purpose !== "fixture");
+  return {
+    desks: (Object.keys(DESK_CAPS) as (keyof typeof DESK_CAPS)[]).map(d => ({ desk: d, cap: DESK_CAPS[d], used: by(d).length, failed: by(d).filter(x => !x.ok).length, week_usd: Math.round((week.data ?? []).filter(x => x.desk === d).reduce((a, x) => a + Number(x.cost), 0) * 1e4) / 1e4 })),
+    fixture_calls_today: (today.data ?? []).filter(x => x.purpose === "fixture").length,
+    without_second_reader_today: rv.count ?? 0,
+  };
+}
+export type ReviewView = { at: string; desk: string; verdict: string; reason: string | null; checklist: unknown; problems: unknown; second_reader: string | null; placement: number | null; basis: string };
+/** The newest standards review and the newest editor-in-chief decision per story. */
+export async function reviewsFor(db: Admin, ids: readonly string[]): Promise<Map<string, { standards: ReviewView | null; chief: ReviewView | null }>> {
+  const out = new Map<string, { standards: ReviewView | null; chief: ReviewView | null }>();
+  for (const part of chunks(ids, 150)) {
+    const { data, error } = await db.from("story_reviews").select("story_id,at,desk,verdict,reason,checklist,problems,second_reader,placement,basis").in("story_id", part).order("id", { ascending: false });
+    if (error) throw new Error("reviews_read_failed");
+    for (const r of data ?? []) {
+      const cur = out.get(r.story_id) ?? { standards: null, chief: null }, key = r.desk === "standards" ? "standards" : "chief";
+      if (!cur[key]) cur[key] = r as ReviewView;
+      out.set(r.story_id, cur);
+    }
+  }
+  return out;
+}
+/** A standards pass still stands when it is newer than the story's last reader-visible change. Pure. */
+export const standardsPassStands = (pass: { verdict: string; at: string } | null, lastChange: string | null): boolean =>
+  !!pass && pass.verdict === "pass" && (!lastChange || Date.parse(pass.at) >= Date.parse(lastChange));
+/** Where a story stands for the door's release rule. */
+export async function holdOf(db: Admin, id: string) {
+  const [{ applyEdits, isHoldEdit }, { isPending }] = await Promise.all([import("../stories/edits"), import("./review")]);
+  const cols = "id,type,status,reason,score,components,why_ran,kicker,headline,deck,facts,why_line,why_model,why_at,sector,signal_keys,domains,evidence,source_ids,basis,happened_at,created_at";
+  const [st, ed, rv, tx] = await Promise.all([db.from("stories").select(cols).eq("id", id).maybeSingle(), db.from("story_edits").select("id,story_id,action,payload,note,at").eq("story_id", id).order("id"), db.from("story_reviews").select("verdict,facts_hash,at").eq("story_id", id).eq("desk", "standards").order("id", { ascending: false }).limit(1), db.from("story_texts").select("created_at").eq("story_id", id).order("created_at", { ascending: false }).limit(1)]);
+  if (st.error || ed.error || rv.error || tx.error || !st.data) return null;
+  const v = applyEdits(st.data as unknown as import("../stories/edits").StoredStory, (ed.data ?? []) as never, Date.now());
+  const lastHold = [...v.edits].reverse().find(e => isHoldEdit(e));
+  const heldBy = v.state === "held" && lastHold ? (typeof lastHold.payload?.["desk"] === "string" ? String(lastHold.payload["desk"]) : "engine") : null;
+  // Standards passed it: its newest standards review is a pass made after the last thing that changed what a reader sees (a new
+  // written text or a correction). A later change needs a new review before the editor in chief can release the story.
+  const pass = rv.data?.[0], changed = [tx.data?.[0]?.created_at, ...v.edits.filter(e => e.action === "correct").map(e => e.at)].filter((x): x is string => !!x).sort().at(-1);
+  const standardsPassed = standardsPassStands(pass ?? null, changed ?? null);
+  return { state: v.state, pending: isPending(v), heldBy, standardsPassed };
+}
+/** /desk · the last few days' reviewed stories: each story's newest standards review (checklist and second-reader problems) and the
+ *  editor in chief's newest decision, with the story's headline. */
+export async function recentReviews(db: Admin, days = 3) {
+  const { data, error } = await db.from("story_reviews").select("story_id,at,desk,verdict,reason,checklist,problems,second_reader,placement,basis,prompt_version").gte("at", new Date(Date.now() - days * 864e5).toISOString()).order("id", { ascending: false }).limit(400);
+  if (error) throw new Error("reviews_read_failed");
+  const by = new Map<string, { story_id: string; standards: ReviewView | null; chief: ReviewView | null }>();
+  for (const r of data ?? []) { const cur = by.get(r.story_id) ?? { story_id: r.story_id, standards: null, chief: null }, k = r.desk === "standards" ? "standards" : "chief"; if (!cur[k]) cur[k] = r as ReviewView; by.set(r.story_id, cur); }
+  const ids = [...by.keys()];
+  const heads = new Map<string, string>();
+  for (const part of chunks(ids, 150)) { const { data: s } = await db.from("stories").select("id,headline").in("id", part); for (const x of s ?? []) heads.set(x.id, x.headline); }
+  return [...by.values()].map(x => ({ ...x, headline: heads.get(x.story_id) ?? x.story_id }));
 }

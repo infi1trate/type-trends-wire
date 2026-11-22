@@ -19,6 +19,9 @@ export type StaffPage = (typeof STAFF_PAGES)[number];
 export const ASSIGN_STATUSES = ["open", "assigned", "working", "done", "dropped"] as const;
 /** N1 · what a ships-to-preview proposal is about. */
 export const PROPOSAL_KINDS = ["chart", "study_series", "layout", "signal", "format", "design_edition"] as const;
+/** N2 · what a desk note is about, and the statuses the owner sets on a proposal. */
+export const NOTE_SUBJECTS = ["story", "study", "brand", "signal"] as const;
+export const PROPOSAL_STATUSES = ["open", "accepted", "declined"] as const;
 export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("check") }).strict(),
   z.object({ action: z.literal("staff"), page: z.enum(STAFF_PAGES) }).strict(),
@@ -42,6 +45,13 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("spend_cap"), model_usd: z.number().min(0).max(100_000).nullable(), build_credits: z.number().min(0).max(1_000_000).nullable(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("wire_only"), on: z.boolean(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("propose"), kind: z.enum(PROPOSAL_KINDS), subject: z.string().trim().min(1).max(200).optional(), text: z.string().trim().min(3).max(1000) }).strict(),
+  // N2 · a desk puts a published or reviewed story back to held (with the reason its page shows), leaves a note for the other desks,
+  // and the owner sets a proposal's status.
+  z.object({ action: z.literal("hold"), id, reason: z.string().trim().min(3).max(300).refine(noDollar), note }).strict(),
+  z.object({ action: z.literal("note"), subject_kind: z.enum(NOTE_SUBJECTS), subject: z.string().trim().min(1).max(200), text: z.string().trim().min(3).max(1000) }).strict(),
+  // The copy desk's weekly sweep (inside the product only): one page's failing lines, or the week's closing summary (page "(week)").
+  z.object({ action: z.literal("copy_sweep"), page: z.string().trim().min(1).max(200), kind: z.enum(["story", "study", "week"]), lines: z.array(z.object({ lint: z.string().max(40), line: z.string().max(200), where: z.string().max(80) }).strict()).max(15), summary: z.string().trim().min(3).max(300) }).strict(),
+  z.object({ action: z.literal("proposal_status"), log: z.number().int().min(1), status: z.enum(PROPOSAL_STATUSES), reason: z.string().trim().min(3).max(300).optional() }).strict(),
 ]);
 /** N1 · the call envelope every desk call carries beside its action: who is acting, and the owner's confirmation phrase when needed. */
 export const envelopeKeys = ["actor", "confirm"] as const;

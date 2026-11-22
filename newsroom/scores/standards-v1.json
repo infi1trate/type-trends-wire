@@ -1,0 +1,925 @@
+{
+ "desk": "standards",
+ "version": "v1",
+ "prompt_hash": "aff6f787",
+ "run_at": "2026-11-22T05:27:06.070Z",
+ "cases": 10,
+ "correct": 4,
+ "wrong": [
+  "No. 42",
+  "No. 43",
+  "No. 44",
+  "No. 88",
+  "No. 89",
+  "No. 90"
+ ],
+ "items": [
+  {
+   "number": 42,
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "expect": "pass",
+   "verdict": "hold",
+   "right": false,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "not supported by the facts",
+     "words": "Consumer apps are adding logo walls",
+     "severity": "blocker",
+     "why": "The figures show a rising share of tracked homepages with logo walls, but they do not document any site adding one.",
+     "found": true
+    },
+    {
+     "kind": "other",
+     "words": "8 tracked consumer apps brands",
+     "severity": "note",
+     "why": "The plural “apps” makes the phrase awkward to read.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "Both count bullets use internal shorthand for the image analysis already described in the body.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "momentum",
+     "severity": "note",
+     "why": "Both bullets use a metric label where the body makes clear that the number measures a quarterly change in share.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "All three site captions give this capture date, but the facts list only 15 November and give no capture date for any image.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "Named brands in the sector",
+     "severity": "note",
+     "why": "This caption neither names the brands pictured nor tells the reader what the image shows.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.023696
+  },
+  {
+   "number": 43,
+   "id": "breakout:css:scroll_timeline:all:13",
+   "expect": "pass",
+   "verdict": "hold",
+   "right": false,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "not supported by the facts",
+     "words": "That puts it in the top tenth of the patterns we track for momentum.",
+     "severity": "blocker",
+     "why": "The facts give a growth rate but no ranking or rates for other patterns.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "All three domain captions give this capture date, but the facts list only 15 November 2026 and give no capture date for any of the sites.",
+     "found": true
+    },
+    {
+     "kind": "contradiction",
+     "words": "Named brands in the sector",
+     "severity": "blocker",
+     "why": "The caption implies a shared sector, but Netlify, Allbirds and R/GA are each listed in a different one.",
+     "found": false
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "Allbirds: one frame of a rotating hero",
+     "severity": "blocker",
+     "why": "The facts confirm scroll-driven animation on Allbirds’ homepage but do not identify the animated element or say that anything rotates.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.020368
+  },
+  {
+   "number": 44,
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "expect": "pass",
+   "verdict": "hold",
+   "right": false,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "contradiction",
+     "words": "rising",
+     "severity": "blocker",
+     "why": "The dev tools bullet reports the trend as “rising,” but the recorded label is “accelerating,” a claim about the pace of growth, not just its direction.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "All three site captions give this capture date, but the only date in the facts is 15 November 2026, and it is not identified as a capture date.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "emerging, momentum 0.1 points a quarter",
+     "severity": "note",
+     "why": "Both data bullets use internal trend labels and “momentum” for what the body describes plainly as quarterly change in the share of homepages.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "Named brands in the sector",
+     "severity": "note",
+     "why": "The caption does not identify the brands pictured or say what the image shows.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.020952
+  },
+  {
+   "number": 45,
+   "id": "white:dev-tools:2026-W47",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "fail",
+     "detail": "Ragged Edge (ragged-edge.com) is not a tracked brand"
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "wrong brand",
+     "words": "Ragged Edge",
+     "severity": "blocker",
+     "why": "Both mentions use Ragged Edge as an example, but its listed homepage belongs to Ragged Edge Resort & Marina in the Florida Keys, not the studio.",
+     "found": true
+    },
+    {
+     "kind": "contradiction",
+     "words": "Lifestyle photography is rising across all sectors",
+     "severity": "blocker",
+     "why": "The share is rising for the tracked homepages taken together, but the story says it is falling in dev tools, so it is not rising in every sector.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "All three site captions give this capture date, but the only date in the facts is 16 November 2026 and it is not identified as a capture date.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "Lucid: one frame of a rotating hero · Allbirds: one frame of a rotating hero",
+     "severity": "blocker",
+     "why": "The facts identify both sites as examples of lifestyle photography but do not say that either cycles through images.",
+     "found": false
+    },
+    {
+     "kind": "jargon",
+     "words": "White space",
+     "severity": "note",
+     "why": "The kicker uses an internal story label that readers could mistake for a reference to blank space on a page.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "The bullets use internal shorthand for the AI assessment of each homepage’s imagery.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "momentum 0.6 points a quarter",
+     "severity": "note",
+     "why": "Neither momentum figure makes clear whether it measures a change in the share of homepages or a change in how fast that share is moving.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "rotating hero",
+     "severity": "note",
+     "why": "The caption assumes readers know the web-design term for the prominent image area at the top of a homepage.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.03192
+  },
+  {
+   "number": 77,
+   "id": "news:45715",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "fail",
+     "detail": "the item would not run under today's news rule (no name)"
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "wrong brand",
+     "words": "Mother appears in an item from It's Nice That dated 16 November.",
+     "severity": "blocker",
+     "why": "The item names Mother Design, and nothing supplied establishes that it is the tracked studio Mother London.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "It's Nice That named Mother",
+     "severity": "note",
+     "why": "“Named” could mean that the publication selected Mother for something, while the deck describes only a mention.",
+     "found": true
+    },
+    {
+     "kind": "thin",
+     "words": "The link to the homepage beat is the name: Mother is a brand we track.",
+     "severity": "blocker",
+     "why": "The story repeats the mention without telling readers what the item covered: Mother Design’s five typefaces for Major League Baseball.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "homepage beat",
+     "severity": "note",
+     "why": "This is newsroom shorthand for what slug covers, not information about the item.",
+     "found": true
+    },
+    {
+     "kind": "contradiction",
+     "words": "The changes:\n- Names Mother, a tracked brand",
+     "severity": "note",
+     "why": "The list presents a mention as a change even though the body says there is no homepage change to report.",
+     "found": false
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "The supplied facts date the item to 16 November but give no date for a homepage capture.",
+     "found": true
+    },
+    {
+     "kind": "other",
+     "words": "- Hero · motherlondon.com · captured 21 Nov 2026\n- Hero · motherlondon.com · captured 21 Nov 2026",
+     "severity": "note",
+     "why": "The two captions are identical and do not distinguish the pictures.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.025112
+  },
+  {
+   "number": 88,
+   "id": "brand:coinbase.com:2026-11-20",
+   "expect": "pass",
+   "verdict": "hold",
+   "right": false,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "not supported by the facts",
+     "words": "20 Nov 2026",
+     "severity": "blocker",
+     "why": "Both picture captions give this date, but the facts document captures only on 11 and 14 November.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "rising",
+     "severity": "blocker",
+     "why": "The facts describe the AI-feature trend as accelerating, which concerns the rate of change, not simply whether the share is rising.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "The changes:",
+     "severity": "note",
+     "why": "This heading groups four figures about other homepages with the two changes at Coinbase, without explaining how the figures relate to the new headline.",
+     "found": false
+    },
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "A reader cannot tell whether a homepage qualified because AI assessed its copy or because the copy mentioned AI.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "steady, momentum 1.0 points a quarter",
+     "severity": "note",
+     "why": "The story does not explain what “momentum” measures or how a positive value fits with “steady.”",
+     "found": true
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.029328
+  },
+  {
+   "number": 89,
+   "id": "census:agents:2026-W47",
+   "expect": "pass",
+   "verdict": "hold",
+   "right": false,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "not supported by the facts",
+     "words": "Read from each homepage's headline in our newest capture and one at least six hours older.",
+     "severity": "blocker",
+     "why": "The facts document two dated readings for Coinbase and MongoDB, but do not establish that every homepage was checked twice at least six hours apart.",
+     "found": true
+    },
+    {
+     "kind": "other",
+     "words": "The exact headlines, as captured",
+     "severity": "blocker",
+     "why": "This is a picture caption, but there is no picture for it to describe.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.029664
+  },
+  {
+   "number": 90,
+   "id": "census:sale:2026-W47",
+   "expect": "pass",
+   "verdict": "hold",
+   "right": false,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": "the deck dates 20 Nov are not in How we know (“Read from each homepage's headline and buttons in our newest capture and one at least six hours older.”)"
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "not supported by the facts",
+     "words": "our newest capture and one at least six hours older",
+     "severity": "blocker",
+     "why": "The facts give a count for 20 November but do not document a second capture or a six-hour gap.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "All four captions give a capture date of 21 November, but the only date in the facts is 20 November.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "Brooklinen: one frame of a rotating hero · GoPro: one frame of a rotating hero",
+     "severity": "blocker",
+     "why": "The facts identify the sale copy on both sites but do not say that either homepage rotated through images.",
+     "found": false
+    },
+    {
+     "kind": "jargon",
+     "words": "rotating hero",
+     "severity": "note",
+     "why": "“Hero” is web-design shorthand that assumes readers know which part of the page the caption describes.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.027304
+  },
+  {
+   "number": 91,
+   "id": "roundup:all:aesthetic:corporate:2026-11-20",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": "the deck dates 14 Nov, 20 Nov are not in How we know (“Our read of the imagery, an AI estimate.”)"
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "fail",
+     "detail": "3 AI-read changes with no measured change beside them"
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "not supported by the facts",
+     "words": "1Password, Glean and Together AI, between 14 and 20 Nov.",
+     "severity": "blocker",
+     "why": "The facts give no 14 Nov start and do not establish that Glean had changed by 20 Nov.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "between 14 and 19 Nov",
+     "severity": "blocker",
+     "why": "The 1Password record is dated 20 Nov and gives no earlier observation to establish either end of this range.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "Glean · aesthetic (AI estimate), editorial, minimalism to corporate polish, swiss grid style · between 14 and 20 Nov",
+     "severity": "blocker",
+     "why": "The Glean record is dated 21 Nov and gives no earlier observation to establish either end of this range.",
+     "found": true
+    },
+    {
+     "kind": "not supported by the facts",
+     "words": "captured 21 Nov 2026",
+     "severity": "blocker",
+     "why": "The facts date the assessments but do not say when any of the three pictures were captured.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "aesthetic (AI estimate), dark tech, editorial to corporate polish, minimalism",
+     "severity": "blocker",
+     "why": "The roundup lists style labels for each homepage without explaining what a reader would see before and after the change.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "fading, momentum -0.3 points a quarter",
+     "severity": "note",
+     "why": "The direction is clear, but the story does not explain what “momentum” measures or what the points refer to.",
+     "found": true
+    },
+    {
+     "kind": "thin",
+     "words": "The changes:",
+     "severity": "blocker",
+     "why": "All four items repeat the body almost word for word, so the reader gets the same list twice and no further detail.",
+     "found": false
+    },
+    {
+     "kind": "unclear",
+     "words": "After the change",
+     "severity": "note",
+     "why": "With three homepages under discussion, the caption does not identify which one the picture shows.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.033864
+  },
+  {
+   "number": 92,
+   "id": "quiet:event:4905",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "fail",
+     "detail": "a quiet change needs its before and after picture"
+    },
+    {
+     "id": "dates",
+     "result": "fail",
+     "detail": "the deck dates 6 Nov, 21 Nov are not in How we know (“Measured from captures on 13 and 20 November.”)"
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "fail",
+     "detail": "one accent colour on one page is a line on the tape, not a story. (a quiet change needs a confirmed new site icon, a confirmed new social card, or a confirmed change of headline or body typeface on another page at the same address)"
+    },
+    {
+     "id": "sections",
+     "result": "fail",
+     "detail": "the body is empty"
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "contradiction",
+     "words": "Before: Vivid pink",
+     "severity": "blocker",
+     "why": "The change record says “Vivid pink,” but the measured before line says “Vivid red,” so the facts disagree about the starting colour.",
+     "found": true
+    },
+    {
+     "kind": "thin",
+     "words": "Body:\n(empty)",
+     "severity": "blocker",
+     "why": "The story reports a single accent-colour change, with no body explaining which part of the changelog looks different.",
+     "found": false
+    },
+    {
+     "kind": "other",
+     "words": "Measured colours, before and after",
+     "severity": "blocker",
+     "why": "The caption refers to a visual comparison, but there is no picture.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.017176
+  }
+ ]
+}
