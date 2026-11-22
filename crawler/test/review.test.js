@@ -41,3 +41,13 @@ test("only the door's verdict is printed", () => {
   assert.equal(verdict(504, "<html>"), "504");
 });
 test("nine pages at three widths", () => { assert.equal(PAGES.length, 9); assert.deepEqual(WIDTHS, [1440, 768, 390]); });
+test("the picture sent is the top of the page, within 1280 × 1600 and 150 KB", async () => {
+  const { default: sharp } = await import("sharp");
+  const { picture, PICTURE } = await import("../src/review.js");
+  for (const [w, h] of [[1440, 5000], [390, 9000], [768, 900]]) {
+    const png = await sharp({ create: { width: w, height: h, channels: 3, background: "#d8d2c4" } }).png().toBuffer();
+    const meta = await sharp(await picture(png)).metadata();
+    assert.ok(meta.width <= PICTURE.maxWidth && meta.height <= PICTURE.maxHeight, `${w}×${h} → ${meta.width}×${meta.height}`);
+    assert.equal(meta.width, Math.min(w, PICTURE.maxWidth));
+  }
+});

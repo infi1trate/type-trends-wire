@@ -13,7 +13,7 @@ import { pathToFileURL } from "node:url";
 export const WIDTHS = [1440, 768, 390];
 export const KINDS = ["weekly", "before", "after", "test"];
 export const ACTORS = ["design review", "engineering"];
-export const PICTURE = { maxWidth: 1280, maxHeight: 4000, maxBytes: 150_000 };
+export const PICTURE = { maxWidth: 1280, maxHeight: 1600, maxBytes: 150_000 }; // the door takes the top of the page: at most 1280 × 1600 and 150 KB
 export const FIRST_BYTE_RETRY_MS = 800;
 export const COMPARE_WIDTH = 720, COMPARE_MAX_HEIGHT = 12_000, PIXEL_TOLERANCE = 24;
 /** The pages the product reviews; `story` is resolved from the front page's own feed at run time. */
@@ -160,9 +160,12 @@ async function shoot(browser, base, p, width) {
     return { m: { ...m, console_errors: consoleErrors, failed_requests: failed }, png };
   } finally { await ctx.close().catch(() => null); }
 }
-async function picture(png) {
-  for (const width of [PICTURE.maxWidth, 1024, 800, 640]) {
-    const img = sharp(png).resize({ width, height: PICTURE.maxHeight, fit: "cover", position: "top", withoutEnlargement: true });
+export async function picture(png) {
+  const meta = await sharp(png).metadata(), w = meta.width || PICTURE.maxWidth, h = meta.height || PICTURE.maxHeight;
+  for (const width of [Math.min(w, PICTURE.maxWidth), 1024, 800, 640].filter((x, i, a) => x <= w && a.indexOf(x) === i)) {
+    const scale = width / w, height = Math.min(PICTURE.maxHeight, Math.floor(h * scale));
+    // The top of the page, scaled to the width, never taller than the limit.
+    const img = sharp(png).extract({ left: 0, top: 0, width: w, height: Math.min(h, Math.ceil(height / scale)) }).resize({ width, height, fit: "fill" });
     for (const quality of [72, 60, 48, 36]) { const buf = await img.clone().webp({ quality, effort: 4 }).toBuffer(); if (buf.length <= PICTURE.maxBytes) return buf; }
   }
   return null;
