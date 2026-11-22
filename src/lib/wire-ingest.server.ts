@@ -23,7 +23,12 @@ export async function handleIngestWire(request: Request): Promise<Response> {
       let body: unknown = null; try { body = text ? JSON.parse(text) : null; } catch { /* invalid */ }
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) return Response.json({ error: "Expected empty JSON object" }, { status: 400 });
       const { ingestWire } = await import("./ingest.server"), res = await ingestWire();
-      if (res.ok) await (await import("./stories/build.server")).afterJob("wire", started);
+      if (res.ok) {
+        // N4b · the news desk's turn comes first, with its own limit, so the story build's tail never starves it.
+        const [{ newsTurn }, { CALL_BUDGET_MS }] = await Promise.all([import("./newsroom/news.server"), import("./jobs/steps")]);
+        await newsTurn(started, CALL_BUDGET_MS);
+        await (await import("./stories/build.server")).afterJob("wire", started);
+      }
       // The 15-minute wire call is the records sweeper (records/refresh.server.ts): whatever time the call has left rewrites due records.
       // (History is the scheduled database job's, U2c: the poll no longer refreshes it.)
       await (await import("./records/refresh.server")).refreshAfterJob("wire", started);

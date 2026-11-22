@@ -3,6 +3,7 @@
 import type { Admin } from "./review.server";
 import { NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, brandTag, clean, enforcePicks, lineFailures, newsCandidates, newsUser, pitchFor, shouldCall, wireBlock, NEWS_SYSTEM, NEWS_SCHEMA, NEWS_TOOL, parseNews, type NewsAnswer, type PublicPick, type WireRow, type Candidate } from "./news";
 import { isOutletItem } from "../wire-sources";
+import { NEWS_LIMIT_MS, NEWS_WHY_EVERY_MS } from "./news";
 
 const dayStart = (now: number) => { const d = new Date(now); d.setUTCHours(0, 0, 0, 0); return d.toISOString(); };
 
@@ -78,7 +79,15 @@ export async function runNewsDesk(db: Admin, o: { now?: number; fixture?: boolea
     const cands = newsCandidates(items, picked, now);
     out.candidates = cands.length;
     const gate = shouldCall(cands, { lastCallAt: o.fixture ? null : lastQ.data?.[0]?.at ?? null, picksToday });
-    if (!gate.call) { out.why = gate.why; return out; }
+    if (!gate.call) {
+      out.why = gate.why;
+      // N4b · the reason it did not call, recorded at most once an hour, so the desk page shows why instead of nothing.
+      if (!o.fixture) {
+        const { count } = await db.from("desk_log").select("id", { count: "exact", head: true }).eq("actor", "news").eq("action", "data_run").eq("subject_id", "picks").gte("at", new Date(now - NEWS_WHY_EVERY_MS).toISOString());
+        if (!count) await (await import("../stories/desk.server")).deskDoor("news", { action: "data_run", run: "picks", summary: `No call: ${gate.why}.`.slice(0, 600), counts: { candidates: cands.length, picks_today: picksToday } }).catch(() => null);
+      }
+      return out;
+    }
     if (!o.fixture) {
       const { count } = await db.from("desk_calls").select("id", { count: "exact", head: true }).eq("desk", "news").eq("purpose", "picks").gte("at", dayStart(now));
       const { DESK_CAPS } = await import("./caps");
@@ -143,3 +152,21 @@ export async function wirePickMarks(): Promise<{ marks: Record<string, string> }
   return { marks: Object.fromEntries(picks.map(p => [String(p.item_id), p.line])) };
 }
 export type { Candidate };
+
+/**
+ * N4b · the news desk's turn in the wire ingest's own job: straight after the ingest stores its items and before the story build, with
+ * its own 25-second limit (never past the job's own limit, and skipped when a call could not fit). Held (`picks`) means no turn. Never throws.
+ */
+export async function newsTurn(jobStartedAt: number, jobLimitMs: number): Promise<string> {
+  try {
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { isHeld } = await import("./passes.server");
+    if (await isHeld(db, "picks")) return "held";
+    const deadline = Math.min(Date.now() + NEWS_LIMIT_MS, jobStartedAt + jobLimitMs - 10_000);
+    if (deadline - Date.now() < 8000) return "no time left in this job";
+    const r = await Promise.race([runNewsDesk(db, { deadline }), new Promise<null>(res => setTimeout(() => res(null), deadline - Date.now() + 500))]);
+    if (!r) { console.warn("news desk timed out"); return "timed out"; }
+    if (r.ran) console.info("news desk", { candidates: r.candidates, picked: r.picked.length, dropped: r.dropped.length });
+    return r.why || (r.errors[0] ?? "ok");
+  } catch (e) { return e instanceof Error ? e.message.slice(0, 80) : "error"; }
+}

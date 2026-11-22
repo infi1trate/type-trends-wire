@@ -67,7 +67,7 @@ const refOf = (run: string, page: string) => `review:${run}:${page}`.slice(0, 20
  * runs the named pages of any run (a test run in the proof) with fixture calls that do not count against the limit, and files what
  * survives as tests. Never throws.
  */
-export async function runDesignReview(db: Admin, o: { deadline?: number; fixture?: boolean; run?: string; previous?: string; pages?: dr.ReviewPageId[]; live?: LivingValues; now?: number } = {}): Promise<DesignRun> {
+export async function runDesignReview(db: Admin, o: { deadline?: number; fixture?: boolean; run?: string; previous?: string; pages?: dr.ReviewPageId[]; live?: LivingValues; now?: number; gate?: (run: string) => Promise<boolean> } = {}): Promise<DesignRun> {
   const now = o.now ?? Date.now(), out: DesignRun = { run: null, why: "", calls: 0, pages: [], breaches: [], bugItems: [], declined: [], kept: [], dropped: [], filed: [], over: [], errors: [] };
   try {
     const [{ deskDoor }, { LIVE_VALUES }, { capOf }, { currentDeskVersion }, vision] = await Promise.all([import("../stories/desk.server"), import("../living/editions"), import("./caps"), import("./golden/versions"), import("./vision.server")]);
@@ -83,6 +83,8 @@ export async function runDesignReview(db: Admin, o: { deadline?: number; fixture
       if ((count ?? 0) > 0) { out.run = run; out.why = "already reviewed"; return out; }
     }
     out.run = run;
+    // N4b · the day's start record is written before any work (one pass a day; later days pick up the pages still without an answer).
+    if (!o.fixture && o.gate && !(await o.gate(run))) { out.why = "already started today, or held"; return out; }
     const runRows = rows.filter(r => r.run === run), prevRows = prev ? rows.filter(r => r.run === prev) : [];
     if (!runRows.length) { out.why = `no rows for run ${run}`; return out; }
     // 1 · breaches first (code). A test run never counts: no budget, no breach, no queue item.

@@ -93,7 +93,7 @@ Weekly, after a complete weekly run (all 9 pages at 3 widths), once per run. Bre
 
 ### The engineering desk
 
-Daily, code only, no model: files or declines bug items by stable key for a scheduled job whose newest run failed, that has not run within 2 times its usual interval, or whose newest run took more than 3 times its 14-day median (and over 5 s); a crawl or the wire older than the health staleness rules; a page over its speed target in the newest review run; more than 10% of a desk's or the writers' model calls failing over 24 hours; a writer's texts failing the shared check more than 50% of the time over 24 hours; the history refresh taking over 60 s. Job facts are names, run times, durations and success only. An item whose problem is gone is declined “no longer found”; nothing is deleted.
+Daily, code only, no model: files or declines bug items by stable key for a scheduled job whose newest run failed, that has not run within 2 times its usual interval, or whose newest run took more than 3 times its 14-day median (and over 5 s); a crawl or the wire older than the health staleness rules; a page over its speed target in the newest review run; more than 10% of a desk's or the writers' model calls failing over 24 hours; a writer's texts failing the shared check more than 50% of the time over 24 hours; the history refresh taking over 60 s (it records a run only when captures arrived, so it is never called late: library-history-refresh). Job facts are names, run times, durations and success only. An item whose problem is gone is declined “no longer found”; nothing is deleted.
 
 ### The build queue
 
@@ -118,5 +118,17 @@ Visible change: no visible change allows at most 1% of pixels changed and height
 - **`queue_add`** (ships alone): Files a product change on the build queue: title, why, kind, what readers should see, its source and a stable key (the same key is not filed twice while open).
 - **`queue_move`** (ships alone): Moves a queue item along (engineering; the owner may decline): queued, briefed, built, then a gate result, then live; or declined with a reason. Briefed and live for anything but a bug or a label need the owner's accepted proposal; live needs the newest gate result to be a pass.
 - **`gate_result`** (ships alone): Records a build's gate (engineering): the commit, the test numbers and the before and after review runs. Code works out every check and the verdict; the door takes no verdict.
+
+### When the desk jobs run
+
+- **News desk:** in the wire ingest's own job, straight after the ingest stores its items and before the story build, with its own 25-second limit. When it decides not to call, it records why at most once every 60 minutes (`data_run`, run `picks`).
+- **Share-image and study-chart checks (graphics):** once a UTC day in their own scheduled passes (schedule “desk-passes”, `7-57/10 1-3 * * *` UTC): at most 5 items a pass, one pass per 10-minute slot, each under 20 s, resuming where the last pass stopped. A pass reads stored records only; an image that cannot be built from them in 5 s is recorded as failing and not retried that day. A start row is written before any work; one with no finish row after 2 minutes is a failed pass, and 2 failed passes stop the check for the day and file a bug item. Never two passes at once, and never while ingest-wire (every 15 min), library-ai-worker (every 5 min), library-history-refresh (every 10 min) is inside its time limit.
+- **Data desk checks, backtest, health run and design review:** after the story build when time is left, each behind its once-a-day (proposal: once-a-week; design review: one pass a day per weekly run) record, written before the work starts, so a run that is cut off is not retried by the next job.
+- **Holds:** `job_hold` (engineering or owner) holds any of share, chart, picks, checks, health, design review, backtest, proposal until a time at most 7 days ahead; a held job does not start. `job_release` ends a hold early. Both carry a reason; /desk and the memory show every hold.
+
+### Door actions added in N4b
+
+- **`job_hold`** (ships alone): Holds a scheduled desk job (share, chart, picks, checks, health, design review, backtest or proposal) until a time at most seven days ahead, with a reason (engineering or the owner). A held job does not start; /desk shows who, why and until when.
+- **`job_release`** (ships alone): Releases a held scheduled desk job before its time, with a reason (engineering or the owner).
 
 <!-- desks:end -->

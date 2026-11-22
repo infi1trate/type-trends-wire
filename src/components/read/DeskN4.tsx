@@ -23,6 +23,8 @@ export type N4 = {
     by_status: Record<string, number>; items: Item[];
     gate: { id: number; at: string; item_id: number; item_title: string | null; commit_sha: string; tests: { passed: number; failed: number; skipped: number }; before_run: string; after_run: string; pass: boolean; checks: Check[] } | null;
     checks: readonly { id: string; name: string }[]; health: Item[]; health_run: { at: string; reason: string | null } | null; credits: { id: number; title: string; credits: number }[];
+    holds?: { job: string; actor: string; reason: string | null; until: string; at: string }[];
+    passes?: { schedule: { name: string; cron: string }; limits: { items: number; slot_min: number; pass_ms: number }; today: { check: string; status: string; planned: number; done: number; failing: { id: string; error: string }[]; passes: number; failed_passes: number }[] } | null;
   };
 };
 const th = "py-2 pr-3 text-left font-normal ed-kicker align-bottom";
@@ -100,6 +102,15 @@ export function DeskN4({ n }: { n: N4 }) {
       <h3 className="ed-h3 mt-6">Health run</h3>
       <p className="ed-small mt-3">{e.health_run ? `${storyTime(e.health_run.at)}: ${e.health_run.reason ?? ""}` : voiced("read.deskN4.noHealthRun")}</p>
       {e.health.length ? <ul className="ed-data mt-3 space-y-2">{e.health.map(i => <li key={i.id}><span className="ed-kicker">Item {i.id} · {i.status}</span> {i.title}<span className="ed-caption block">{i.why}</span></li>)}</ul> : null}
+      <h3 className="ed-h3 mt-6">Held jobs</h3>
+      {e.holds?.length ? <ul className="ed-data mt-3 space-y-2">{e.holds.map(h => <li key={h.job}><span className="ed-kicker">{h.job}</span> held by {h.actor} until <time dateTime={h.until}>{storyTime(h.until)}</time><span className="ed-caption block">{h.reason ?? ""}</span></li>)}</ul> : <p className="ed-small mt-3">{voiced("read.deskN4.noHolds")}</p>}
+      {e.passes ? <>
+        <h3 className="ed-h3 mt-6">Share and chart passes today</h3>
+        <p className="ed-small mt-3">At most {e.passes.limits.items} items a pass, one pass per {e.passes.limits.slot_min} minutes, each under {e.passes.limits.pass_ms / 1000} s, stored records only. Schedule “{e.passes.schedule.name}”: {e.passes.schedule.cron} (UTC).</p>
+        <Table caption="Today's share-image and study-chart passes" head={["Check", "Status", "Planned", "Done", "Failing", "Passes", "Failed passes"]} min={640}>
+          {e.passes.today.map(t => <tr key={t.check} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{t.check}</th><td className={td}>{t.status}</td><td className={`${td} num`}>{t.planned}</td><td className={`${td} num`}>{t.done}</td><td className={td}>{t.failing.length ? t.failing.slice(0, 4).map(f => `${f.id}: ${f.error}`).join(" · ") : "0"}</td><td className={`${td} num`}>{t.passes}</td><td className={`${td} num`}>{t.failed_passes}</td></tr>)}
+        </Table>
+      </> : null}
       {e.credits.length ? <><h3 className="ed-h3 mt-6">Credits per item</h3><ul className="ed-data mt-3 space-y-1">{e.credits.map(c => <li key={c.id}><span className="num">{c.credits}</span> credits · item {c.id} · {c.title}</li>)}</ul></> : null}
     </section>
   </>;

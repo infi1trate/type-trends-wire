@@ -15,12 +15,13 @@ import { COPY_LINTS } from "./copy";
 import { CHECKLIST, NAME_ALLOW } from "./standards";
 import { DESK_CAPS, DESK_LIMITS } from "./caps";
 import { REGISTER } from "./register";
-import { COPY_RUN_MAX, LINE_MAX, NEWS_MAX_CANDIDATES, NEWS_MIN_NEW, NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, PITCH_WINDOW_DAYS, WIRE_BLOCK_HOURS } from "./news";
+import { COPY_RUN_MAX, LINE_MAX, NEWS_LIMIT_MS, NEWS_WHY_EVERY_MS, NEWS_MAX_CANDIDATES, NEWS_MIN_NEW, NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, PITCH_WINDOW_DAYS, WIRE_BLOCK_HOURS } from "./news";
 import { ALTERNATES_MAX } from "./graphics";
 import { BUDGET_GROWTH, BUDGET_RULES, PROPOSALS_PER_WEEK, REVIEW_PAGES, REVIEW_WIDTHS, REVIEW_KINDS, MEASURE_IDS } from "./design-review";
 import { GATE_CHECKS, NO_WORSE, VISIBLE_LIMITS } from "./build-gate";
 import { EXPECTS, NEXT, QUEUE_KINDS, QUEUE_STATUSES, SHIPS_ALONE_KINDS } from "./queue";
-import { CALL_FAIL_SHARE, CHECK_FAIL_SHARE, HISTORY_MAX_MS, LATE_FACTOR, SLOW_FACTOR, SLOW_FLOOR_MS } from "./engineering";
+import { CALL_FAIL_SHARE, CHECK_FAIL_SHARE, HISTORY_MAX_MS, LATE_FACTOR, NO_LATE_JOBS, SLOW_FACTOR, SLOW_FLOOR_MS } from "./engineering";
+import { HOLD_ACTORS, HOLD_JOBS, HOLD_MAX_DAYS, ITEM_LIMIT_MS, JOB_WINDOWS, PASS_FAILS_STOP, PASS_ITEMS_MAX, PASS_LIMIT_MS, PASS_SCHEDULE, PASS_SLOT_MIN, PASS_STALE_MS } from "./passes";
 import { BACKTEST_DAYS, COVERAGE_DAYS, DETECTOR_SAMPLE, FINDING_KINDS, PROPOSAL_MAX_SIGNALS, PROPOSAL_MAX_STUDIES, SECTOR_MIN } from "./datadesk";
 
 export const LISTS_START = "<!-- lists:start (written by scripts/newsroom-docs.ts from the code; do not edit by hand) -->";
@@ -131,14 +132,28 @@ export function productLoopBlock(): string[] {
     "## The design review desk", "",
     `Weekly, after a complete weekly run (all ${REVIEW_PAGES.length} pages at ${REVIEW_WIDTHS.length} widths), once per run. Breaches first, in code: overflow, contrast, tap targets, errors and speed become bug items on the queue; height, words, links and image weight become proposals. Then one vision call per page (limit ${DESK_LIMITS.find(l => l.desk === "design review")?.cap ?? 0} a day) sees the page's three pictures, its measures with last week's and the register of design settings with their ranges, and returns at most two observations about density, hierarchy and access, each with one move. Code keeps a setting move only when it names a register setting and a value inside its range; anything else is a layout move that needs the owner; a move that touches the name, the wordmark, the brand direction, the type families, the navigation or a page's structure is dropped. At most ${PROPOSALS_PER_WEEK} proposals a week, the ones tied to a breach first, each filed with \`propose\` and a queue item linked to it. Nothing live changes. Setting moves the owner accepts wait for the next monthly design edition.`, "",
     "## The engineering desk", "",
-    `Daily, code only, no model: files or declines bug items by stable key for a scheduled job whose newest run failed, that has not run within ${LATE_FACTOR} times its usual interval, or whose newest run took more than ${SLOW_FACTOR} times its 14-day median (and over ${SLOW_FLOOR_MS / 1000} s); a crawl or the wire older than the health staleness rules; a page over its speed target in the newest review run; more than ${pct(CALL_FAIL_SHARE)} of a desk's or the writers' model calls failing over 24 hours; a writer's texts failing the shared check more than ${pct(CHECK_FAIL_SHARE)} of the time over 24 hours; the history refresh taking over ${HISTORY_MAX_MS / 1000} s. Job facts are names, run times, durations and success only. An item whose problem is gone is declined “no longer found”; nothing is deleted.`, "",
+    `Daily, code only, no model: files or declines bug items by stable key for a scheduled job whose newest run failed, that has not run within ${LATE_FACTOR} times its usual interval, or whose newest run took more than ${SLOW_FACTOR} times its 14-day median (and over ${SLOW_FLOOR_MS / 1000} s); a crawl or the wire older than the health staleness rules; a page over its speed target in the newest review run; more than ${pct(CALL_FAIL_SHARE)} of a desk's or the writers' model calls failing over 24 hours; a writer's texts failing the shared check more than ${pct(CHECK_FAIL_SHARE)} of the time over 24 hours; the history refresh taking over ${HISTORY_MAX_MS / 1000} s (it records a run only when captures arrived, so it is never called late: ${NO_LATE_JOBS.join(", ")}). Job facts are names, run times, durations and success only. An item whose problem is gone is declined “no longer found”; nothing is deleted.`, "",
     "## The build queue", "",
     `One list for every product change. Kinds: ${QUEUE_KINDS.join(", ")}. What readers should see: ${EXPECTS.join(", ")}. Statuses: ${QUEUE_STATUSES.join(", ")}. The order: ${Object.entries(NEXT).filter(([, v]) => v.length).map(([k, v]) => `${k} → ${v.join(" or ")}`).join("; ")}; built → gate passed or gate failed only through \`gate_result\`; declined at any open point with a reason. Briefed and live for anything but ${SHIPS_ALONE_KINDS.join(" and ")} need the owner's accepted proposal; live needs the newest gate result to be a pass.`, "",
     "## The gate", "",
     ...GATE_CHECKS.map((c, i) => `${i + 1}. ${c.name}.`), "",
     `Visible change: no visible change allows ${lim("no visible change")}; small allows ${lim("small")}; layout has ${lim("layout")}. Not above the before run: ${NO_WORSE.map(m => m.replace(/_/g, " ")).join(", ")}. A design move also passes the living-design gate (its checks except the edition's move count).`, "",
     "## Door actions added in N4", "",
-    ...n4.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
+    ...n4.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`), "",
+    ...scheduleBlock(),
+  ];
+}
+/** N4b · when each desk job runs, its limits, and the hold switch, from the constants. */
+export function scheduleBlock(): string[] {
+  const n4b = REGISTER.filter(a => a.since === "N4b");
+  return [
+    "## When the desk jobs run", "",
+    `- **News desk:** in the wire ingest's own job, straight after the ingest stores its items and before the story build, with its own ${NEWS_LIMIT_MS / 1000}-second limit. When it decides not to call, it records why at most once every ${NEWS_WHY_EVERY_MS / 60_000} minutes (\`data_run\`, run \`picks\`).`,
+    `- **Share-image and study-chart checks (graphics):** once a UTC day in their own scheduled passes (schedule “${PASS_SCHEDULE.name}”, \`${PASS_SCHEDULE.cron}\` UTC): at most ${PASS_ITEMS_MAX} items a pass, one pass per ${PASS_SLOT_MIN}-minute slot, each under ${PASS_LIMIT_MS / 1000} s, resuming where the last pass stopped. A pass reads stored records only; an image that cannot be built from them in ${ITEM_LIMIT_MS / 1000} s is recorded as failing and not retried that day. A start row is written before any work; one with no finish row after ${PASS_STALE_MS / 60_000} minutes is a failed pass, and ${PASS_FAILS_STOP} failed passes stop the check for the day and file a bug item. Never two passes at once, and never while ${JOB_WINDOWS.map(w => `${w.job} (every ${w.everyMin} min)`).join(", ")} is inside its time limit.`,
+    "- **Data desk checks, backtest, health run and design review:** after the story build when time is left, each behind its once-a-day (proposal: once-a-week; design review: one pass a day per weekly run) record, written before the work starts, so a run that is cut off is not retried by the next job.",
+    `- **Holds:** \`job_hold\` (${HOLD_ACTORS.join(" or ")}) holds any of ${HOLD_JOBS.join(", ")} until a time at most ${HOLD_MAX_DAYS} days ahead; a held job does not start. \`job_release\` ends a hold early. Both carry a reason; /desk and the memory show every hold.`, "",
+    "## Door actions added in N4b", "",
+    ...n4b.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
   ];
 }
 /** The block between the desks markers in README.md, or null. */

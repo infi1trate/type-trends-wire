@@ -22,12 +22,15 @@ const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b), n = 
 const secs = (ms: number) => (ms < 120_000 ? `${Math.round(ms / 100) / 10} s` : ms < 7_200_000 ? `${Math.round(ms / 60_000)} min` : `${Math.round(ms / 3_600_000)} h`);
 /** One scheduled job's problems from its own run records over 14 days: the newest run failed; nothing ran within twice its usual
  *  interval (the median gap between starts); the newest run took more than three times its median duration. */
+/** N4b · jobs whose run records are written only when there was work (the history refresh records a run only after captures arrive),
+ *  so a gap between records is not a missed run and is never called late. */
+export const NO_LATE_JOBS = ["library-history-refresh"] as const;
 export function jobProblems(name: string, runs: readonly JobRun[], now: number): Problem[] {
   const rs = [...runs].filter(r => Number.isFinite(Date.parse(r.started_at))).sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
   const newest = rs[0]; if (!newest) return [];
   const out: Problem[] = [];
   if (newest.ok === false) out.push({ key: `${HEALTH_PREFIX}job-failed:${name}`, title: `Scheduled job ${name} failed`, why: `Its newest run (${newest.started_at.slice(0, 16).replace("T", " ")} UTC) did not succeed${newest.error ? `: ${newest.error.slice(0, 160)}` : ""}.` });
-  if (rs.length >= MIN_RUNS_FOR_INTERVAL) {
+  if (rs.length >= MIN_RUNS_FOR_INTERVAL && !(NO_LATE_JOBS as readonly string[]).includes(name)) {
     const gaps = rs.slice(0, -1).map((r, i) => Date.parse(r.started_at) - Date.parse(rs[i + 1]!.started_at)).filter(g => g > 0);
     const every = median(gaps), since = now - Date.parse(newest.started_at);
     if (every && since > LATE_FACTOR * every) out.push({ key: `${HEALTH_PREFIX}job-late:${name}`, title: `Scheduled job ${name} has not run`, why: `It usually runs every ${secs(every)}; the last run started ${secs(since)} ago (more than ${LATE_FACTOR} times its interval).` });

@@ -5,6 +5,7 @@ import { pitchBody } from "./pitch";
 import { ACTORS, DESKS } from "../newsroom/desks";
 import { PICTURE_B64_MAX, REVIEW_KINDS, REVIEW_PAGE_IDS, RUN_MAX, measuresSchema, pathOk } from "../newsroom/design-review";
 import { EXPECTS, QUEUE_KINDS, QUEUE_STATUSES, SOURCE_KINDS } from "../newsroom/queue";
+import { HOLD_ACTORS, HOLD_JOBS } from "../newsroom/passes";
 
 export const DESK_BODY_LIMIT = 8 * 1024;
 /** N4 · a `review` call may carry one picture (at most 150 KB as WebP, about 200 KB as base64); every other action keeps 8 KB. */
@@ -37,6 +38,8 @@ export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   // N4 · page reviews come from the design review and engineering desks' outside sessions; any desk files a queue item; the engineering
   // desk moves items along and records gate results (the owner may decline an item).
   review: ["design review", "engineering"], queue_add: ACTORS, queue_move: ["engineering", "owner"], gate_result: ["engineering"],
+  // N4b · a hold switch for any scheduled desk job (engineering or the owner).
+  job_hold: HOLD_ACTORS, job_release: HOLD_ACTORS,
 };
 /** N3 · the reason standards gives when it releases a story only its second reader held. */
 export const OVERRULE_MIN = 20;
@@ -71,6 +74,9 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("queue_move"), item: z.number().int().min(1), to: z.enum(QUEUE_STATUSES), reason: z.string().trim().min(3).max(600).optional() }).strict(),
   z.object({ action: z.literal("gate_result"), item: z.number().int().min(1), commit: z.string().trim().regex(/^[0-9a-fA-F]{7,40}$/, "a commit sha"), tests: z.object({ passed: z.number().int().min(0), failed: z.number().int().min(0), skipped: z.number().int().min(0) }).strict(),
     before_run: z.string().trim().min(1).max(RUN_MAX), after_run: z.string().trim().min(1).max(RUN_MAX) }).strict(),
+  // N4b · hold a scheduled desk job until a time (at most seven days ahead), or release it; both carry a reason.
+  z.object({ action: z.literal("job_hold"), job: z.enum(HOLD_JOBS), until: z.string().datetime({ offset: true }), reason: z.string().trim().min(3).max(300) }).strict(),
+  z.object({ action: z.literal("job_release"), job: z.enum(HOLD_JOBS), reason: z.string().trim().min(3).max(300) }).strict(),
   // U4 · a pitch asks the engine; it never edits a story.
   pitchBody,
   // L1 · approve a proposed design edition (after the gate) or roll one back; each appends one living_edition_status row.

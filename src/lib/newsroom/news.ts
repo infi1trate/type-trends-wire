@@ -173,3 +173,8 @@ export function wireBlock(picks: readonly PublicPick[], now: number, o: { active
 }
 export const WIRE_TITLE = "The wire", WIRE_SUB = "Links a designer should see, picked from the publications we read";
 export const WIRE_DATA_HREF = "/terminal?panel=wire";
+
+/** N4b · a news desk pass that does not call says why at most this often (data_run, run `picks`). */
+export const NEWS_WHY_EVERY_MS = 3_600_000;
+/** N4b · the news desk's own time limit inside the wire ingest's job. */
+export const NEWS_LIMIT_MS = 25_000;

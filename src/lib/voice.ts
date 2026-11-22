@@ -171,6 +171,7 @@ export const VOICE = {
   "read.deskN4.noProposals": { kind: "empty", where: "Read · DeskN4 · Design review", text: "No design proposals this week.", next: [] },
   "read.deskN4.noItems": { kind: "empty", where: "Read · DeskN4 · Engineering", text: "Nothing on the build queue.", next: [] },
   "read.deskN4.noGate": { kind: "empty", where: "Read · DeskN4 · Engineering", text: "No gate result yet.", next: [] },
+  "read.deskN4.noHolds": { kind: "empty", where: "Read · DeskN4 · Engineering", text: "No scheduled desk job is held.", next: [] },
   "read.deskN4.noHealthRun": { kind: "empty", where: "Read · DeskN4 · Engineering", text: "The health run has not run yet.", next: [] },
   "read.deskView.5": { kind: "empty", where: "Read · DeskView · Pitched", text: "Nothing pitched yet. With the editor key open, rows in the terminal and Data views show a Pitch link.", next: [] },
   "read.editionsViews.1": { kind: "empty", where: "Read · EditionsViews", text: "No lead today.", next: [] },

@@ -86,6 +86,9 @@ export async function n4Panels(db: Admin, now = Date.now()) {
       health: items.filter(i => i.open && i.desk === "engineering" && i.ikey?.startsWith(HEALTH_PREFIX)).map(slim),
       health_run: health.data?.[0] ?? null,
       credits: items.filter(i => i.credits > 0).map(i => ({ id: i.id, title: i.title, credits: i.credits })),
+      // N4b · the job holds in force (who, why, until when) and today's share and chart passes.
+      holds: await import("./passes.server").then(m => m.heldJobs(db, now)).catch(() => []),
+      passes: await import("./passes.server").then(m => m.passesPanel(db, now)).catch(() => null),
     },
   };
 }

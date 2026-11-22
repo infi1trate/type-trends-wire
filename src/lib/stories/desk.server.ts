@@ -53,6 +53,8 @@ export type NewsroomStore = {
   queueMove?: (r: { item: number; to: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
   gateResult?: (r: { item: number; commit: string; tests: { passed: number; failed: number; skipped: number }; before_run: string; after_run: string; actor: string }) => Promise<{ id: number; pass: boolean; checks: unknown[] } | { refused: string } | null>;
   queueItemExists?: (id: number) => Promise<boolean>;
+  /** N4b · the job holds in force. */
+  jobHolds?: () => Promise<import("../newsroom/passes").Hold[]>;
 };
 export type DeskStore = NewsroomStore & { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
 export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
@@ -64,7 +66,7 @@ const subjectOf = (b: DeskBody): string | null =>
     : b.action === "wire_only" ? "wire_only" : b.action === "propose" ? (b.subject ?? b.kind) : b.action === "queue" ? (b.day ?? null) : b.action === "staff" ? b.page
     : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
     : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? (b.ref ?? b.run)
-    : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : null;
+    : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : b.action === "job_hold" || b.action === "job_release" ? `job:${b.job}` : null;
 
 /**
  * N1 · THE DOOR. Every authenticated call is logged in the desk log (allowed, proposed, refused or failed) with its actor, level,
@@ -220,6 +222,19 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
     if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
     return { status: 201, body: { ok: true, gate: r.id, pass: r.pass, checks: r.checks }, decision: "done", reason: `Gate ${r.pass ? "passed" : "failed"} for item ${b.item} at ${b.commit.slice(0, 12)}`, detail: { item: b.item, gate: r.id, pass: r.pass } };
   }
+  // N4b · the hold switch: the hold's end must be in the future and at most seven days ahead; a release needs a hold in force.
+  if (b.action === "job_hold") {
+    const { holdUntilProblem } = await import("../newsroom/passes");
+    const why = holdUntilProblem(b.until, d.now());
+    if (why) return { status: 400, body: { error: "invalid_input", issues: [{ path: "until", message: why }] }, decision: "refused", reason: `Hold refused: ${why}.` };
+    const until = new Date(b.until).toISOString();
+    return { status: 201, body: { ok: true, job: b.job, until }, decision: "done", reason: b.reason, detail: { job: b.job, until } };
+  }
+  if (b.action === "job_release") {
+    if (!d.store.jobHolds) return missing;
+    if (!(await d.store.jobHolds()).some(h => h.job === b.job)) return { status: 409, body: { error: "refused", reason: `No hold on ${b.job} is in force.` }, decision: "refused", reason: `No hold on ${b.job} is in force.` };
+    return { status: 201, body: { ok: true, job: b.job, released: true }, decision: "done", reason: b.reason, detail: { job: b.job } };
+  }
   if (b.action === "proposal_status") {
     if (!d.store.proposalStatus) return missing;
     const r = await d.store.proposalStatus({ log_id: b.log, status: b.status, reason: b.reason ?? null });
@@ -310,6 +325,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       queueMove: async r => (await import("../newsroom/engineering.server")).moveQueueItem(db, r),
       gateResult: async r => (await import("../newsroom/engineering.server")).recordGate(db, r),
       queueItemExists: async id => (await import("../newsroom/engineering.server")).queueItemExists(db, id),
+      jobHolds: async () => (await import("../newsroom/passes.server")).heldJobs(db),
       living: {
         records: async () => (await import("../living/living.server")).loadEditions(db),
         insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },

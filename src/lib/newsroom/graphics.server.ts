@@ -99,82 +99,144 @@ export async function insertChoice(db: Admin, r: { story_id: string; actor: stri
   return { id: data.id };
 }
 
+// STORED RECORDS ONLY (N4b) -------------------------------------------------------------------------------------------------------------
+// The checks never build a study or an issue from raw history: a study or Digest issue without a current stored record fails the check
+// for the day instead (computing one reads about 6 MB of capture history per study).
+export const NO_RECORD = "no current stored record (the check never builds from raw history)";
+type StoredStudy = Extract<import("../data-stories/page.server").DataStoryPage, { kind: "live" }>;
+/** A live study's stored page, or why not. */
+export async function storedStudy(slug: string): Promise<{ page: StoredStudy } | { error: string }> {
+  const [{ readRecord }, { pageKey, usable }] = await Promise.all([import("../records/store.server"), import("../records/records")]);
+  const r = await readRecord<import("../data-stories/page.server").DataStoryPage>(pageKey("data-story", slug));
+  if (!r || !usable(r, Date.now())) return { error: NO_RECORD };
+  if (r.body.kind !== "live") return { error: "not live" };
+  if ((r.body.story as { v?: number }).v !== 4) return { error: NO_RECORD };
+  return { page: r.body };
+}
+/** The live studies named by the stored Studies home (never computed). */
+export async function storedLiveStudies(): Promise<string[] | null> {
+  const [{ readRecord }, { pageKey, usable }] = await Promise.all([import("../records/store.server"), import("../records/records")]);
+  const r = await readRecord<{ v?: number; home?: { lead?: { slug: string } | null; series: { studies: { slug: string }[] }[] } }>(pageKey("data-index"));
+  if (!r || !usable(r, Date.now()) || r.body.v !== 4 || !r.body.home) return null;
+  const h = r.body.home;
+  return [...new Set([...(h.lead ? [h.lead.slug] : []), ...h.series.flatMap(x => x.studies.map(y => y.slug))])];
+}
+export const withTimeout = <T>(p: Promise<T>, ms: number, what: string): Promise<T> =>
+  Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error(`${what} took over ${ms / 1000} s`)), ms))]);
+
 // STUDY CHART FORMS --------------------------------------------------------------------------------------------------------------------
 export type ChartRun = { checked: number; calls: number; choices: { study: string; figure: string; form: string; basis: string; reason: string }[]; proposals: number; errors: string[] };
+type ChartBudget = { left: number; allowCall: () => boolean; callMs: number; fixture: boolean; seen: Set<string> };
+/** One study's figures from its stored record. `done` is false when a figure waits for a call this pass cannot fit (it resumes next pass). */
+export async function chartStudy(db: Admin, slug: string, page: StoredStudy, b: ChartBudget, out: ChartRun): Promise<{ done: boolean; written: number }> {
+  const g = await import("./graphics");
+  let done = true, written = 0;
+  const figs = Object.entries(page.story.figures) as [string, { kind: string; title: string; note: string; xs?: string[]; chart?: string; panels?: unknown[] }][];
+  for (const [figure, f] of figs) {
+    const shape = g.FIGURE_SHAPE[f.kind]; if (!shape) continue;
+    const current = f.kind === "multiples" ? (f.chart ?? "line") : (g.SHAPE_FORMS[shape][0] as string);
+    out.checked++;
+    if (b.seen.has(`${slug}|${figure}|${shape}`)) continue;
+    const fits = g.formsFor(f);
+    let answer = null as { form: string; why: string; missing: string } | null, callId: number | null = null;
+    if (fits.length > 1 && b.left > 0) {
+      if (!b.allowCall()) { done = false; continue; } // no time for a call in this pass: the study resumes in the next one
+      b.left--; out.calls++;
+      const { deskCall } = await import("./review.server");
+      const c = await deskCall(db, "graphics", b.fixture ? "fixture" : "chart", { system: g.CHART_SYSTEM, user: g.chartUser({ study: slug, title: f.title, note: f.note, kind: f.kind, xs: f.xs ?? [], panels: f.panels?.length ?? 0 }, fits), schema: g.CHART_SCHEMA as unknown as Record<string, unknown>, schemaName: "graphics_chart", tool: g.CHART_TOOL, maxTokens: 400 }, g.parseChart, [], AbortSignal.timeout(b.callMs), "graphics chart");
+      answer = (c?.parsed as typeof answer) ?? null; callId = c?.call_id ?? null;
+    } else if (fits.length > 1) continue; // the limit is used: the figure waits for tomorrow with its own form
+    const d = g.decideChart(answer, f, current);
+    out.choices.push({ study: slug, figure, form: d.form, basis: d.basis, reason: d.reason });
+    b.seen.add(`${slug}|${figure}|${shape}`);
+    if (!b.fixture) { const { error } = await db.from("chart_choices").insert({ study: slug, figure, shape, form: d.form, basis: d.basis, reason: d.reason.slice(0, 400), call_id: callId }); if (error) out.errors.push(`chart ${slug}: ${error.message.slice(0, 60)}`); else written++; }
+    if (answer?.missing && !b.fixture && out.proposals < 2) {
+      const { deskDoor } = await import("../stories/desk.server");
+      const r = await deskDoor("graphics", { action: "propose", kind: "format", text: `A chart form the kit does not have, for “${f.title}” in ${slug}: ${answer.missing}. Filed by the graphics desk; nothing new is drawn until it is accepted.`.slice(0, 600), subject: slug });
+      if (r.status < 300) out.proposals++;
+    }
+  }
+  return { done, written };
+}
+/** The figures already chosen (study, figure, shape), and the chart calls left today. */
+export async function chartBudget(db: Admin, slugs: string[], now: number, fixture = false) {
+  const { data: had } = await db.from("chart_choices").select("study,figure,shape").in("study", slugs).order("id", { ascending: false }).limit(500);
+  const { count } = await db.from("desk_calls").select("id", { count: "exact", head: true }).eq("desk", "graphics").eq("purpose", "chart").gte("at", dayStart(now));
+  return { seen: new Set((had ?? []).map(x => `${x.study}|${x.figure}|${x.shape}`)), left: fixture ? 2 : Math.max(0, capOf("graphics", "chart") - (count ?? 0)) };
+}
 /**
- * Each live or drafted study's figures: the table in graphics.ts says which forms fit; where only one fits it is recorded as such, where
- * more fit one call chooses (limit two a day) and code refuses a form the data does not fit. A form that does not exist is filed with
- * `propose`. A figure whose shape and current form already have a choice is skipped. Never throws.
+ * Each live study's figures (stored records only): the table in graphics.ts says which forms fit; where only one fits it is recorded as
+ * such, where more fit one call chooses (limit two a day) and code refuses a form the data does not fit. A form that does not exist is
+ * filed with `propose`. A figure whose shape already has a choice is skipped. Used by scripts and fixtures; the daily run is the
+ * scheduled pass (passes.server.ts). Never throws.
  */
 export async function chartDesk(db: Admin, o: { now?: number; fixture?: boolean; slugs?: string[] } = {}): Promise<ChartRun> {
   const out: ChartRun = { checked: 0, calls: 0, choices: [], proposals: 0, errors: [] }, now = o.now ?? Date.now();
   try {
-    const g = await import("./graphics");
-    const [{ DATA_STORIES }, { loadDataStory }] = await Promise.all([import("../data-stories/registry"), import("../data-stories/page.server")]);
-    const slugs = o.slugs ?? DATA_STORIES.map(s => s.slug);
-    const { data: had } = await db.from("chart_choices").select("study,figure,shape,form,basis").in("study", slugs).order("id", { ascending: false }).limit(500);
-    const seen = new Set((had ?? []).map(x => `${x.study}|${x.figure}|${x.shape}`));
-    const { count } = await db.from("desk_calls").select("id", { count: "exact", head: true }).eq("desk", "graphics").eq("purpose", "chart").gte("at", dayStart(now));
-    let left = o.fixture ? 2 : Math.max(0, capOf("graphics", "chart") - (count ?? 0));
+    const slugs = o.slugs ?? (await storedLiveStudies()) ?? [];
+    const bud = await chartBudget(db, slugs, now, o.fixture);
+    const b: ChartBudget = { ...bud, allowCall: () => true, callMs: 25_000, fixture: !!o.fixture };
     for (const slug of slugs) {
-      const rec = await loadDataStory(slug).catch(() => null);
-      if (!rec || rec.kind !== "live") continue;
-      const figs = Object.entries(rec.story.figures) as [string, { kind: string; title: string; note: string; xs?: string[]; chart?: string; panels?: unknown[] }][];
-      for (const [figure, f] of figs) {
-        const shape = g.FIGURE_SHAPE[f.kind]; if (!shape) continue;
-        const current = f.kind === "multiples" ? (f.chart ?? "line") : (g.SHAPE_FORMS[shape][0] as string);
-        out.checked++;
-        if (seen.has(`${slug}|${figure}|${shape}`)) continue;
-        const fits = g.formsFor(f);
-        let answer = null as { form: string; why: string; missing: string } | null, callId: number | null = null;
-        if (fits.length > 1 && left > 0) {
-          left--; out.calls++;
-          const { deskCall } = await import("./review.server");
-          const c = await deskCall(db, "graphics", o.fixture ? "fixture" : "chart", { system: g.CHART_SYSTEM, user: g.chartUser({ study: slug, title: f.title, note: f.note, kind: f.kind, xs: f.xs ?? [], panels: f.panels?.length ?? 0 }, fits), schema: g.CHART_SCHEMA as unknown as Record<string, unknown>, schemaName: "graphics_chart", tool: g.CHART_TOOL, maxTokens: 400 }, g.parseChart, [], AbortSignal.timeout(25_000), "graphics chart");
-          answer = (c?.parsed as typeof answer) ?? null; callId = c?.call_id ?? null;
-        } else if (fits.length > 1) continue; // the limit is used: the figure waits for tomorrow with its own form
-        const d = g.decideChart(answer, f, current);
-        out.choices.push({ study: slug, figure, form: d.form, basis: d.basis, reason: d.reason });
-        if (!o.fixture) { const { error } = await db.from("chart_choices").insert({ study: slug, figure, shape, form: d.form, basis: d.basis, reason: d.reason.slice(0, 400), call_id: callId }); if (error) out.errors.push(`chart ${slug}: ${error.message.slice(0, 60)}`); }
-        if (answer?.missing && !o.fixture && out.proposals < 2) {
-          const { deskDoor } = await import("../stories/desk.server");
-          const r = await deskDoor("graphics", { action: "propose", kind: "format", text: `A chart form the kit does not have, for “${f.title}” in ${slug}: ${answer.missing}. Filed by the graphics desk; nothing new is drawn until it is accepted.`.slice(0, 600), subject: slug });
-          if (r.status < 300) out.proposals++;
-        }
-      }
+      const r = await withTimeout(storedStudy(slug), 5000, "the stored study").catch(e => ({ error: e instanceof Error ? e.message : "error" }));
+      if ("error" in r) { if (r.error !== "not live") out.errors.push(`chart ${slug}: ${r.error}`); continue; }
+      await chartStudy(db, slug, r.page, b, out);
     }
   } catch (e) { out.errors.push(e instanceof Error ? e.message.slice(0, 120) : "error"); }
   return out;
 }
 
 // SHARE IMAGES --------------------------------------------------------------------------------------------------------------------------
-/** Every published story, live study and Digest issue: its share image must build (rendered as the share routes render it). A failure is
- *  built once more (a rebuild); what still fails is stored and listed on /desk. Code only, no model. Never throws. */
+/** Every published story, live study (from the stored Studies home) and closed Digest issue: the day's plan. Read once a day. */
+export async function shareTargets(): Promise<import("./graphics").ShareTarget[]> {
+  const [{ storyIndex }, { streamOf }, digest] = await Promise.all([import("../stories/read.server"), import("../stories/view"), import("../digest/digest.server")]);
+  const out: import("./graphics").ShareTarget[] = [];
+  for (const s of streamOf(await storyIndex())) out.push({ kind: "story", id: s.id, path: `/share/story/${s.id}.png` });
+  for (const slug of (await storedLiveStudies()) ?? []) out.push({ kind: "study", id: slug, path: `/data/${slug}.png` });
+  for (const w of await digest.latestIssueWeeks(60).catch(() => [] as string[])) out.push({ kind: "digest", id: w, path: `/digest/${w}.png` });
+  return out;
+}
+export const targetKey = (t: Pick<import("./graphics").ShareTarget, "kind" | "id">) => `${t.kind}:${t.id}`;
+export function targetOf(key: string): import("./graphics").ShareTarget | null {
+  const m = /^(story|study|digest):(.+)$/.exec(key); if (!m) return null;
+  const kind = m[1] as "story" | "study" | "digest", id = m[2]!;
+  return { kind, id, path: kind === "story" ? `/share/story/${id}.png` : kind === "study" ? `/data/${id}.png` : `/digest/${id}.png` };
+}
+/** One share image built as the share routes draw it, from stored rows and records only (a story's own rows; a study's or issue's
+ *  record). Throws with the reason when it cannot be built. Returns the PNG's size. */
+export async function buildShareStored(t: import("./graphics").ShareTarget): Promise<number> {
+  const { respond } = await import("../digest/og.server");
+  let res: Response;
+  if (t.kind === "story") {
+    const [{ storyById }, { storyCardOf }, { shareScene }] = await Promise.all([import("../stories/read.server"), import("../share/share.server"), import("../share/scene")]);
+    const s = await storyById(t.id);
+    if (!s || s.state !== "published") throw new Error("not published now");
+    const c = storyCardOf(s);
+    res = await respond(shareScene(c), "png", `${c.kicker}: ${c.title}`);
+  } else if (t.kind === "study") {
+    const r = await storedStudy(t.id);
+    if ("error" in r) throw new Error(r.error);
+    const { dataStoryOgScene } = await import("../data-stories/og");
+    res = await respond(dataStoryOgScene({ ...r.page.story, headline: r.page.story.text.headline }), "png", r.page.story.text.headline);
+  } else {
+    const [{ readRecord }, { pageKey, usable }, { editionOgScene }, { ISSUE_V }] = await Promise.all([import("../records/store.server"), import("../records/records"), import("../digest/og"), import("../digest/digest.server")]);
+    const r = await readRecord<import("../digest/edition").Edition & { v?: number }>(pageKey("digest", t.id));
+    if (!r || !usable(r, Date.now()) || r.body?.v !== ISSUE_V) throw new Error(NO_RECORD);
+    res = await respond(editionOgScene(r.body), "png", r.body.text.headline);
+  }
+  if (res.status !== 200) throw new Error(`status ${res.status}`);
+  const b = new Uint8Array(await res.arrayBuffer());
+  if (b.length < 1000) throw new Error("empty image");
+  return b.length;
+}
+/** Every target at once (scripts only; the daily run is the scheduled pass). Stored records only, five seconds an image. Never throws. */
 export async function shareCheck(db: Admin, o: { write?: boolean; deadline?: number } = {}) {
   const g = await import("./graphics");
-  const targets: import("./graphics").ShareTarget[] = [];
   const results: import("./graphics").ShareResult[] = [];
   try {
-    const [{ storyIndex }, { streamOf }, { loadDataIndex }, digest] = await Promise.all([import("../stories/read.server"), import("../stories/view"), import("../data-stories/page.server"), import("../digest/digest.server")]);
-    for (const s of streamOf(await storyIndex())) targets.push({ kind: "story", id: s.id, path: `/share/story/${s.id}.png` });
-    const home = await loadDataIndex().catch(() => null);
-    const live = home ? [...new Map([...(home.home.lead ? [home.home.lead] : []), ...home.home.series.flatMap(x => x.studies)].map(x => [x.slug, x])).values()] : [];
-    for (const s of live) targets.push({ kind: "study", id: s.slug, path: `/data/${s.slug}.png` });
-    const weeks = await digest.latestIssueWeeks(60).catch(() => [] as string[]);
-    for (const w of weeks) targets.push({ kind: "digest", id: w, path: `/digest/${w}.png` });
-    const build = async (t: import("./graphics").ShareTarget) => {
-      const r = t.kind === "story" ? await (await import("../share/share.server")).shareImage("story", t.id, "png")
-        : t.kind === "study" ? await (await import("../data-stories/share.server")).dataStoryImage(t.id)
-        : await (await import("../digest/og.server")).issueImage(`${t.id}.png`);
-      if (r.status !== 200) throw new Error(`status ${r.status}`);
-      const b = new Uint8Array(await r.arrayBuffer());
-      if (b.length < 1000) throw new Error("empty image");
-    };
-    for (const [n, t] of targets.entries()) {
-      // A run that would outlast the job stops and says how many it did not reach; tomorrow's run starts again from the top.
-      if (o.deadline && Date.now() > o.deadline) { results.push({ kind: "story", id: "(time)", path: "", ok: false, rebuilt: false, error: `${targets.length - n} not checked: time ran out` }); break; }
-      try { await build(t); results.push({ ...t, ok: true, rebuilt: false, error: null }); }
-      catch (e1) { try { await build(t); results.push({ ...t, ok: true, rebuilt: true, error: null }); } catch (e2) { results.push({ ...t, ok: false, rebuilt: false, error: (e2 instanceof Error ? e2.message : String(e2 ?? e1)).slice(0, 120) }); } }
+    for (const [n, t] of (await shareTargets()).entries()) {
+      if (o.deadline && Date.now() > o.deadline) { results.push({ kind: "story", id: "(time)", path: "", ok: false, rebuilt: false, error: `${n} checked, the rest not reached: time ran out` }); break; }
+      try { await withTimeout(buildShareStored(t), 5000, "the image"); results.push({ ...t, ok: true, rebuilt: false, error: null }); }
+      catch (e) { results.push({ ...t, ok: false, rebuilt: false, error: (e instanceof Error ? e.message : "error").slice(0, 120) }); }
     }
   } catch (e) { results.push({ kind: "story", id: "(list)", path: "", ok: false, rebuilt: false, error: e instanceof Error ? e.message.slice(0, 120) : "error" }); }
   const sum = g.shareSummary(results);

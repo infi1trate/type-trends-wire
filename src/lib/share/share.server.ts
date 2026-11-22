@@ -7,6 +7,10 @@ import type { ShareCard, ShareKind } from "./scene";
 import { sharePath } from "./scene";
 import { noDid } from "../stories/reader";
 
+/** A story's share card from its record (the share route and the graphics desk's stored-only check draw the same card). */
+export function storyCardOf(s: Pick<import("../stories/view").StoryRecord, "id" | "kicker" | "sector" | "happened_at" | "headline" | "deck">): ShareCard {
+  return { kicker: `${noDid(s.kicker) || "Story"}${s.sector && !(s.kicker || "").includes(sectorName(s.sector)) ? ` · ${sectorName(s.sector)}` : ""} · ${dayText(s.happened_at)}`, title: s.headline, deck: s.deck, path: `/stories/${s.id}` };
+}
 export async function shareCard(kind: ShareKind, id: string): Promise<ShareCard | null> {
   switch (kind) {
     case "front": {
@@ -17,7 +21,7 @@ export async function shareCard(kind: ShareKind, id: string): Promise<ShareCard 
     case "story": {
       const [{ storyIndex }, { streamOf }] = await Promise.all([import("../stories/read.server"), import("../stories/view")]);
       const s = streamOf(await storyIndex()).find(x => x.id === id);
-      return s ? { kicker: `${noDid(s.kicker) || "Story"}${s.sector && !(s.kicker || "").includes(sectorName(s.sector)) ? ` · ${sectorName(s.sector)}` : ""} · ${dayText(s.happened_at)}`, title: s.headline, deck: s.deck, path: `/stories/${s.id}` } : null;
+      return s ? storyCardOf(s) : null;
     }
     case "brand": {
       const { loadBrand } = await import("../read.server");

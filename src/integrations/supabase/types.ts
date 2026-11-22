@@ -782,6 +782,80 @@ export type Database = {
         }
         Relationships: []
       }
+      desk_pass_ends: {
+        Row: {
+          at: string
+          error: string | null
+          id: number
+          ms: number
+          ok: boolean
+          pass_id: number
+          results: Json
+          rows_written: number
+        }
+        Insert: {
+          at?: string
+          error?: string | null
+          id?: never
+          ms: number
+          ok: boolean
+          pass_id: number
+          results: Json
+          rows_written?: number
+        }
+        Update: {
+          at?: string
+          error?: string | null
+          id?: never
+          ms?: number
+          ok?: boolean
+          pass_id?: number
+          results?: Json
+          rows_written?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desk_pass_ends_pass_id_fkey"
+            columns: ["pass_id"]
+            isOneToOne: true
+            referencedRelation: "desk_passes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      desk_passes: {
+        Row: {
+          actor: string
+          at: string
+          check_name: string
+          day: string
+          id: number
+          items: Json
+          plan: Json | null
+          slot: string
+        }
+        Insert: {
+          actor?: string
+          at?: string
+          check_name: string
+          day: string
+          id?: never
+          items: Json
+          plan?: Json | null
+          slot: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          check_name?: string
+          day?: string
+          id?: never
+          items?: Json
+          plan?: Json | null
+          slot?: string
+        }
+        Relationships: []
+      }
       desk_switches: {
         Row: {
           actor: string
