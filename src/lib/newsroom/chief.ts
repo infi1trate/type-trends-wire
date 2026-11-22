@@ -97,7 +97,11 @@ export function enforceChief(answer: ChiefAnswer | null, eligible: readonly (Pic
   return { lead, run, holds: out, ignored, leadBy, refused };
 }
 
-/** A story the editor in chief held on two different days with the same facts is not offered a third time (until its facts change). */
-export function offerAgain(holds: readonly { day: string; facts_hash: string }[], hash: string): boolean {
-  return new Set(holds.filter(h => h.facts_hash === hash).map(h => h.day)).size < 2;
+/** N5 · a hold made in the editor in chief's own call stands until the next UTC day (never offered again the day it was made); it is
+ *  offered again once on each of the next two days, and a story held on three different days with the same facts stays held until its
+ *  facts change. `today` (UTC date) is the pass's day; without it only the three-days rule applies. */
+export const CHIEF_HOLD_DAYS = 3;
+export function offerAgain(holds: readonly { day: string; facts_hash: string }[], hash: string, today?: string): boolean {
+  if (today && holds.some(h => h.day >= today)) return false;
+  return new Set(holds.filter(h => h.facts_hash === hash).map(h => h.day)).size < CHIEF_HOLD_DAYS;
 }

@@ -76,13 +76,16 @@ export type BuildDeps = {
   /** N4c · the review pass's facts sheets: the build stores the sheet it has for each story waiting for review (only when it changed);
    *  the reviews themselves run in their own scheduled pass. Returns how many sheets it wrote. */
   sheets?: (r: { input: BuildInput; ctx: Ctx }, deadline: number) => Promise<number>;
+  /** N5 · store the facts sheet each new written text was written from (review_sheets), so a published story is later checked against
+   *  the facts it was written with, never today's live counts. Never fails the build. */
+  writtenSheets?: (rows: { story_id: string; sheet: unknown }[]) => Promise<number>;
   /** N2 · store the stories the engine would run as held, awaiting review (the real store, with or without model calls). */
   awaitReview?: boolean;
 };
 export type BuildOptions = { dev?: boolean; days?: number; allRuns?: boolean; budgetMs?: number; aiPerBuild?: number; realRunIds?: number[]; now?: () => number;
   /** U4 · the desk asking now: a run that writes nothing, whose pitch answers say "would run" instead of "ran". */ pitchDry?: boolean;
   /** When the writer must stop starting calls (absolute ms); default the build's own budget. */ writeDeadline?: number; writerPerBuild?: number; writeLimit?: number };
-export type BuildResult = { ok: true; desks?: ReviewSummary; sheets?: number; checks_recorded?: number; retired_reread?: number; pitched?: number; skipped?: "dev"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
+export type BuildResult = { ok: true; desks?: ReviewSummary; sheets?: number; checks_recorded?: number; retired_reread?: number; pitched?: number; skipped?: "dev" | "held"; kept_crops?: number; retired_reversed?: number; folded?: number; considered: number; inserted: number; published: number; held: number; why_lines: number; timed_out: boolean; news_kept: number; news_dropped: number; news_drops?: import("./candidates").NewsDrops; numbered?: number; plan?: Planned[]; texts?: Pick<WriteResult, "written" | "checked" | "calls" | "skipped"> & { rows?: WriteResult["rows"] } };
 
 /** N2 · a story the engine would run is stored held, awaiting review: standards, then the editor in chief, release it through the door.
  *  Launches (shown only in New on the scene, never ranked) are stored as before. */
@@ -175,8 +178,10 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       const keys = [...new Set(stories.flatMap(st => st.signal_keys.slice(0, 3).map(canonical)))], scopes = [...new Set(["all", ...stories.map(st => st.sector).filter((x): x is string => !!x)])];
       const bases = ctx.cur && keys.length && deps.bases ? await deps.bases(ctx.cur.id, keys, scopes).catch(() => new Map<string, ShareBase>()) : new Map<string, ShareBase>();
       const src = factSource(input, ctx, bases);
-      const r = await writeStories(stories.map(st => ({ story: st, ...writerFacts(st, src) })), deps.writer, { names: src.known }, { deadline: o.writeDeadline ?? start + budget, now: clock, ...(o.writerPerBuild != null ? { perBuild: o.writerPerBuild } : {}) });
+      const jobs = stories.map(st => ({ story: st, ...writerFacts(st, src) }));
+      const r = await writeStories(jobs, deps.writer, { names: src.known }, { deadline: o.writeDeadline ?? start + budget, now: clock, ...(o.writerPerBuild != null ? { perBuild: o.writerPerBuild } : {}) });
       texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
+      if (r.written && deps.writtenSheets) await deps.writtenSheets(r.rows.flatMap(x => { const j = jobs.find(y => y.story.id === x.story_id); return j ? [{ story_id: x.story_id, sheet: j.facts }] : []; })).catch(() => 0);
     } catch { texts = { written: 0, checked: 0, calls: 0, skipped: 0 }; }
   }
   return { ok: true, ...(desks ? { desks } : {}), ...(sheets != null ? { sheets } : {}), checks_recorded: checksRecorded, numbered: numbered + numberedAfter, ...(deps.pitches ? { pitched } : {}), kept_crops: kept + keptAfter, ...(texts ? { texts } : {}), retired_reversed: retired, ...(deps.retireRereads ? { retired_reread: reread } : {}), folded, considered: candidates.length, inserted, published: plan.filter(p => p.status === "published").length, held: plan.filter(p => p.status === "held").length, why_lines: lines.size + linesLater, timed_out: timedOut || clock() - start > budget, news_kept: newsKept, news_dropped: newsDropped, news_drops: newsDrops, plan };
@@ -370,6 +375,12 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
     awaitReview: true,
     // N4c · the job tail no longer reviews: it stores the facts sheets the review pass reads (no model call).
     ...(withAi ? { sheets: async (r: { input: BuildInput; ctx: Ctx }, deadline: number) => (await import("../newsroom/review-pass.server")).storeSheets(admin, { ...r, bases: shareBases }, deadline) } : {}),
+    writtenSheets: async rows => {
+      const { fnv } = await import("../newsroom/golden/versions");
+      const { error } = await admin.from("review_sheets").insert(rows.map(x => ({ story_id: x.story_id, hash: fnv(JSON.stringify(x.sheet)), sheet: x.sheet as never })));
+      if (error) { console.error("written sheets insert failed", error.code); return 0; }
+      return rows.length;
+    },
     insertLines: async rows => { const { data, error } = await admin.from("story_lines").upsert(rows, { onConflict: "story_id", ignoreDuplicates: true }).select("story_id"); if (error) throw new Error("line_insert_failed"); return data?.length ?? 0; },
   };
 }
@@ -477,6 +488,9 @@ export async function retireReversedStories(admin: Admin, eventIds: number[], id
 export async function buildStories(o: BuildOptions & { withAi?: boolean } = {}): Promise<BuildResult> {
   if (o.dev) return runBuild({ load: async () => { throw new Error("unreachable"); }, existing: async () => [], insert: async () => 0 }, o);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // N5 · a job hold on `stories` stops the build's publishing step (new stories, folds, retirements, numbers, written texts) so the
+  // front page cannot change around a gated deploy; nothing is written and the next build after the release catches up.
+  if (await (await import("../newsroom/passes.server")).isHeld(supabaseAdmin, "stories")) return { ok: true, skipped: "held", considered: 0, inserted: 0, published: 0, held: 0, why_lines: 0, timed_out: false, news_kept: 0, news_dropped: 0 };
   return runBuild(dbDeps(supabaseAdmin, o.withAi !== false), o);
 }
 
@@ -495,9 +509,9 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     const r = await Promise.race([buildStories({ ...extra, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
     if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
     else console.warn("story build timed out", job);
-    await run.finish(!!r, r ? `${job} · ${r.inserted} new, ${r.published} published, ${r.held} held${r.sheets != null ? `, ${r.sheets} sheets` : ""}` : `${job} · timed out after ${Math.round((Date.now() - now) / 1000)} s (${Math.round(budgetMs / 1000)} s left when it started)`);
+    await run.finish(!!r, r?.skipped === "held" ? `${job} · held: job_hold on stories` : r ? `${job} · ${r.inserted} new, ${r.published} published, ${r.held} held${r.sheets != null ? `, ${r.sheets} sheets` : ""}` : `${job} · timed out after ${Math.round((Date.now() - now) / 1000)} s (${Math.round(budgetMs / 1000)} s left when it started)`);
     // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
-    if (r) await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + JOB_LIMIT_MS - 5000);
+    if (r && r.skipped !== "held") await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + JOB_LIMIT_MS - 5000);
     // N1 · the state history: what this build and its writers stored, recorded as states (at most every five minutes; never fails the job).
     if (r && JOB_LIMIT_MS - (Date.now() - jobStartedAt) > 15_000) await (await import("../newsroom/newsroom.server")).syncStoryStates((await import("@/integrations/supabase/client.server")).supabaseAdmin, { days: 14 }).catch(e => console.error("story states failed", e instanceof Error ? e.message.slice(0, 60) : "UnknownError"));
     await studies(job, jobStartedAt);

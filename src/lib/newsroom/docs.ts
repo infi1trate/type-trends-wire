@@ -1,6 +1,6 @@
 // N1 · the parts of newsroom/style.md and newsroom/beats.md that come from the code, so the memory cannot drift from what the checks
 // enforce. `bun scripts/newsroom-docs.ts` writes them; style.test.ts fails when a file and the code disagree. Pure.
-import { ADVICE, BODY_MAX_PARAS, BODY_MAX_WORDS, BODY_MIN_PARAS, BODY_MIN_WORDS, HEADLINE_MAX_WORDS, HEADLINE_MIN_WORDS, INTENT_CLAIMS, METHOD_RUN_USES, METHOD_WORDS, STOCK_ENDINGS, TREND_SPEAK, WRITER_PER_DAY } from "../stories/writer";
+import { FLAT_BAD_EXAMPLE, FLAT_MOMENTUM_MIN, FLAT_WORDS, ADVICE, BODY_MAX_PARAS, BODY_MAX_WORDS, BODY_MIN_PARAS, BODY_MIN_WORDS, HEADLINE_MAX_WORDS, HEADLINE_MIN_WORDS, INTENT_CLAIMS, METHOD_RUN_USES, METHOD_WORDS, STOCK_ENDINGS, TREND_SPEAK, WRITER_PER_DAY } from "../stories/writer";
 import { BANNED_PHRASES, SUPERLATIVES } from "../stories/why";
 import { CAUSAL, RANKING_WORDS, RANK_BOTTOM, RANK_TOP, STUDY_BANNED, STUDY_PER_DAY } from "../data-stories/writer";
 import { DIGEST_BANNED, DIGEST_PER_DAY, FUTURE } from "../digest/writer";
@@ -13,7 +13,9 @@ import { AI_ROUNDUP_DAILY_CAP, DAILY_CAP, DEDUPE_DAYS, NEWS_DAILY_CAP, PUBLISH_M
 import { AGAINST_MIN, SEASONAL_STORY_MIN } from "../stories/editor";
 import { COPY_LINTS } from "./copy";
 import { CHECKLIST, NAME_ALLOW } from "./standards";
-import { DESK_CAPS, DESK_LIMITS } from "./caps";
+import { DESK_CAPS, DESK_LIMITS, WEEKLY_LIMITS } from "./caps";
+import { AUDIENCE_PATHS_MAX, AUDIENCE_SOURCES_MAX, DIGEST_DRAFTS, DRAFT_CHARS, DRAFT_NEXT, DRAFTS_MAX, HASHTAGS_MAX, PACKAGE_ITEMS, STORY_DRAFTS } from "./publisher";
+import { CANDIDATES_KEPT_MAX, CANDIDATES_RETURNED_MAX, REPROPOSE_DAYS, SCOUT_DAYS, SOURCE_STATUSES, SOURCES } from "./scout";
 import { REGISTER } from "./register";
 import { COPY_RUN_MAX, LINE_MAX, NEWS_LIMIT_MS, NEWS_WHY_EVERY_MS, NEWS_MAX_CANDIDATES, NEWS_MIN_NEW, NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, PITCH_WINDOW_DAYS, WIRE_BLOCK_HOURS } from "./news";
 import { ALTERNATES_MAX } from "./graphics";
@@ -50,6 +52,8 @@ export function styleListsBlock(): string {
     ...STYLE_LISTS.flatMap(l => [`### ${l.title}`, "", `Refused as “${l.check}”. Source: \`${l.source}\`.`, "", q(l.items), ""]),
     "### Also refused by the shared check", "",
     "An arrow (→ or ->) in our own words; a hex code in the text; “rebrand” as a claim unless the facts show type, colour and layout changing together, or a new name or logo.", "",
+    "### Steady is not flat", "",
+    `A sentence may not call a share ${FLAT_WORDS.map(w => `“${w}”`).join(", ").replace(/, (“[^”]+”)$/, " or $1")} when the facts sheet gives that share's momentum as ${FLAT_MOMENTUM_MIN} points a quarter or more, in either direction (the story, study and Digest writers share the check; the sectors a sentence names pick the figure). A stage word such as “Steady” is not a flat share. Not: “${FLAT_BAD_EXAMPLE}” (No. 94, whose own numbers gave fintech's momentum as 1.6 points a quarter).`, "",
     "### The copy desk (lines that are not written text)", "",
     "Kickers, the Numbers list, picture captions and credits, chart titles and notes, and labels are linted by the copy desk (`COPY_LINTS`, newsroom/copy.ts). A failing line fails the standards checklist; the weekly sweep records failing lines in the desk log under `copy desk` and fixes nothing.", "",
     ...COPY_LINTS.flatMap(l => [`- **${l.title}.** ${l.rule} Good: “${l.good}”. Not: “${l.bad}”.`]), "",
@@ -109,7 +113,8 @@ export function desksBlock(): string[] {
     "## The order of work", "",
     "candidate → drafted → checked → picture checked (graphics) → standards (the checklist, then the second reader) → editor in chief → published. When a desk's call fails or its limit is used, the pipeline carries on by rule and the story's state history says so.", "",
     "## Daily model-call limits (UTC day; fixture calls are not counted)", "",
-    ...DESK_LIMITS.map(l => `- **${l.desk}**, ${l.what}: ${l.cap} a day.`), "",
+    ...DESK_LIMITS.map(l => `- **${l.desk}**, ${l.what}: ${l.cap} a day.`),
+    ...WEEKLY_LIMITS.map(l => `- **${l.desk}**, ${l.what}: ${l.cap} a day (one call a week).`), "",
     "## The news desk", "",
     `Picks at most ${NEWS_PICKS_PER_DAY} links a day from the wire's publications (outlet items only, published in the last ${NEWS_WINDOW_HOURS} hours, never picked before, one per story keeping the earliest; at most ${NEWS_MAX_CANDIDATES} shown to the model, and only when at least ${NEWS_MIN_NEW} are new since its last call). Each line is checked in code: at most ${LINE_MAX} characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than ${COPY_RUN_MAX} words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within ${PITCH_WINDOW_DAYS} days either side files a pitch for the editor in chief. Readers see the picks of the last ${WIRE_BLOCK_HOURS} hours as THE WIRE on the front page, after THE TAPE.`, "",
     "## The graphics desk", "",
@@ -153,7 +158,20 @@ export function scheduleBlock(): string[] {
     "- **Data desk checks, backtest, health run and design review:** after the story build when time is left, each behind its once-a-day (proposal: once-a-week; design review: one pass a day per weekly run) record, written before the work starts, so a run that is cut off is not retried by the next job.",
     `- **Holds:** \`job_hold\` (${HOLD_ACTORS.join(" or ")}) holds any of ${HOLD_JOBS.join(", ")} until a time at most ${HOLD_MAX_DAYS} days ahead; a held job does not start. \`job_release\` ends a hold early. Both carry a reason; /desk and the memory show every hold.`, "",
     "## Door actions added in N4b", "",
-    ...n4b.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
+    ...n4b.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`), "",
+    ...weeklyDesksBlock(),
+  ];
+}
+/** N5 · the publisher and the scout, from the constants. */
+export function weeklyDesksBlock(): string[] {
+  const n5 = REGISTER.filter(a => a.since === "N5");
+  return [
+    "## The publisher", "",
+    `Mondays, after the Digest's week closes, in the desk jobs after the story build. First the package check (code, no model) on the newest published issue: ${PACKAGE_ITEMS.map(i => i.name.toLowerCase()).join("; ")}. One stored row per check; a failure files a bug item (key \`package:<week>\`). Only after that issue's check passed, one drafts call (${WEEKLY_LIMITS.find(l => l.desk === "publisher")!.cap} a day at most): up to ${DRAFTS_MAX} drafts, ${DIGEST_DRAFTS} for the Digest's argument and up to ${STORY_DRAFTS} for the week's stories the editor in chief led with. Code drops a draft over ${DRAFT_CHARS} characters with its slug.global link, with more than one sentence or one number, a number not on its target's facts, an emoji, more than ${HASHTAGS_MAX} hashtag, a question or exclamation, or a line the shared check or the copy desk refuses. Drafts are drafts: ${Object.entries(DRAFT_NEXT).filter(([, v]) => v.length).map(([k, v]) => `${k} → ${v.join(" or ")}`).join("; ")}, set only by the owner (\`draft_status\`). There is no posting code. Audience numbers come once a week from the publisher's outside session (\`audience\`): counts only, at most ${AUDIENCE_PATHS_MAX} paths and ${AUDIENCE_SOURCES_MAX} sources; no tracker, cookie or per-person data is added to the site.`, "",
+    "## The scout", "",
+    `Keeps the sources register (${SOURCES.length} sources: ${SOURCE_STATUSES.map(st => `${SOURCES.filter(x => x.status === st).length} ${st}`).join(", ")}); \`source_note\` appends a terms reading and changes only what the register shows. Reading a new source still needs the owner. Mondays, one candidates call (${WEEKLY_LIMITS.find(l => l.desk === "scout")!.cap} a day at most) over the last ${SCOUT_DAYS} days of outlet wire items, stored Product Hunt launches and names in news items the matcher could not tie to a tracked brand. Up to ${CANDIDATES_RETURNED_MAX} come back; code keeps at most ${CANDIDATES_KEPT_MAX} whose website is a well-formed domain that is not tracked (active or not), not opted out, not proposed in the last ${REPROPOSE_DAYS} days and not a publication, store or social profile, whose sector is one of slug's ten and whose name appears in the item it cites. Each kept candidate is stored and filed with \`propose\`. Statuses: proposed → accepted or declined (the owner) → added (engineering, once the crawler's seed list carries it). Nothing is added to the library by the product.`, "",
+    "## Door actions added in N5", "",
+    ...n5.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
   ];
 }
 /** The block between the desks markers in README.md, or null. */

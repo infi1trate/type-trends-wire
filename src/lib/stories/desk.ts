@@ -6,6 +6,8 @@ import { ACTORS, DESKS } from "../newsroom/desks";
 import { PICTURE_B64_MAX, REVIEW_KINDS, REVIEW_PAGE_IDS, RUN_MAX, measuresSchema, pathOk } from "../newsroom/design-review";
 import { EXPECTS, QUEUE_KINDS, QUEUE_STATUSES, SOURCE_KINDS } from "../newsroom/queue";
 import { HOLD_ACTORS, HOLD_JOBS } from "../newsroom/passes";
+import { audienceBody } from "../newsroom/publisher";
+import { sourceNoteBody } from "../newsroom/scout";
 
 export const DESK_BODY_LIMIT = 8 * 1024;
 /** N4 · a `review` call may carry one picture (at most 150 KB as WebP, about 200 KB as base64); every other action keeps 8 KB. */
@@ -23,7 +25,7 @@ export type StaffPage = (typeof STAFF_PAGES)[number];
 /** N1 · a pitch on the board: which desk holds it and how far it got. */
 export const ASSIGN_STATUSES = ["open", "assigned", "working", "done", "dropped"] as const;
 /** N1 · what a ships-to-preview proposal is about. */
-export const PROPOSAL_KINDS = ["chart", "study_series", "layout", "signal", "format", "design_edition"] as const;
+export const PROPOSAL_KINDS = ["chart", "study_series", "layout", "signal", "format", "design_edition", "brand"] as const;
 /** N2 · what a desk note is about, and the statuses the owner sets on a proposal. */
 export const NOTE_SUBJECTS = ["story", "study", "brand", "signal"] as const;
 export const PROPOSAL_STATUSES = ["open", "accepted", "declined"] as const;
@@ -34,12 +36,15 @@ export const FINDING_KINDS = ["contradiction", "detector", "impossible", "covera
 /** Who may take each N3 action (enforced at the door, after the register's level). */
 export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   wire_pick: ["news", "owner"], wire_drop: ["news", "standards", "editor in chief", "owner"], picture: ["graphics", "owner"],
-  finding: ["data", "owner"], finding_close: ["data", "standards", "editor in chief", "owner"], data_run: ["data", "graphics", "news", "engineering", "design review", "owner"],
+  finding: ["data", "owner"], finding_close: ["data", "standards", "editor in chief", "owner"], data_run: ["data", "graphics", "news", "engineering", "design review", "publisher", "scout", "owner"],
   // N4 · page reviews come from the design review and engineering desks' outside sessions; any desk files a queue item; the engineering
   // desk moves items along and records gate results (the owner may decline an item).
   review: ["design review", "engineering"], queue_add: ACTORS, queue_move: ["engineering", "owner"], gate_result: ["engineering"],
   // N4b · a hold switch for any scheduled desk job (engineering or the owner).
   job_hold: HOLD_ACTORS, job_release: HOLD_ACTORS,
+  // N5 · the publisher enters the week's audience numbers; the scout appends terms readings; a brand candidate's status is the owner's,
+  // except `added`, which the engineering desk marks once the crawler's seed list carries it (the store enforces which status).
+  audience: ["publisher", "owner"], source_note: ["scout", "owner"], candidate_status: ["engineering", "owner"],
 };
 /** N3 · the reason standards gives when it releases a story only its second reader held. */
 export const OVERRULE_MIN = 20;
@@ -60,7 +65,7 @@ export const deskBody = z.discriminatedUnion("action", [
     .refine(b => b.choice !== "pair" || b.assets?.length === 2, { message: "a pair is two crops: before, then after", path: ["assets"] }),
   z.object({ action: z.literal("finding"), kind: z.enum(FINDING_KINDS), key: z.string().trim().min(3).max(300), subject: z.string().trim().min(1).max(300), measure: z.string().trim().max(120).optional(), expected: z.string().max(600).optional(), found: z.string().max(600).optional(), receipt: z.record(z.string(), z.unknown()).optional() }).strict(),
   z.object({ action: z.literal("finding_close"), finding: z.number().int().min(1), reason: z.string().trim().min(3).max(600) }).strict(),
-  z.object({ action: z.literal("data_run"), run: z.enum(["checks", "backtest", "share", "proposal", "chart", "picks", "health", "design review"]), ref: z.string().trim().min(3).max(200).optional(), summary: z.string().trim().min(3).max(600), counts: z.record(z.string().max(40), z.number().int().min(0)).optional() }).strict(),
+  z.object({ action: z.literal("data_run"), run: z.enum(["checks", "backtest", "share", "proposal", "chart", "picks", "health", "design review", "package", "drafts", "candidates"]), ref: z.string().trim().min(3).max(200).optional(), summary: z.string().trim().min(3).max(600), counts: z.record(z.string().max(40), z.number().int().min(0)).optional() }).strict(),
   // N4 · one page at one width from a review run (the outside browser job); the build queue: file, move, and a gate result.
   z.object({ action: z.literal("review"), run: z.string().trim().min(1).max(RUN_MAX).regex(/^[A-Za-z0-9][A-Za-z0-9 ._:-]*$/, "letters, digits, spaces and . _ : -"), kind: z.enum(REVIEW_KINDS), page: z.enum(REVIEW_PAGE_IDS), path: z.string().trim().min(1).max(300),
     width: z.union([z.literal(1440), z.literal(768), z.literal(390)]), against: z.string().trim().min(1).max(RUN_MAX).optional(), measures: measuresSchema,
@@ -98,6 +103,12 @@ export const deskBody = z.discriminatedUnion("action", [
   // The copy desk's weekly sweep (inside the product only): one page's failing lines, or the week's closing summary (page "(week)").
   z.object({ action: z.literal("copy_sweep"), page: z.string().trim().min(1).max(200), kind: z.enum(["story", "study", "week"]), lines: z.array(z.object({ lint: z.string().max(40), line: z.string().max(200), where: z.string().max(80) }).strict()).max(15), summary: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("proposal_status"), log: z.number().int().min(1), status: z.enum(PROPOSAL_STATUSES), reason: z.string().trim().min(3).max(300).optional() }).strict(),
+  // N5 · the publisher's drafts (the owner sets every status; nothing posts), the week's audience numbers (counts only), the scout's
+  // terms readings and the brand candidates' statuses.
+  z.object({ action: z.literal("draft_status"), draft: z.number().int().min(1), status: z.enum(["approved", "posted", "declined"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),
+  audienceBody.extend({ action: z.literal("audience") }).strict(),
+  sourceNoteBody.extend({ action: z.literal("source_note") }).strict(),
+  z.object({ action: z.literal("candidate_status"), candidate: z.number().int().min(1), status: z.enum(["accepted", "declined", "added"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),
 ]);
 /** N1 · the call envelope every desk call carries beside its action: who is acting, and the owner's confirmation phrase when needed. */
 export const envelopeKeys = ["actor", "confirm"] as const;

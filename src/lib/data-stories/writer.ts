@@ -5,7 +5,7 @@
 import { AI_MODELS } from "../ai-models";
 import { SECTORS } from "../library";
 import { sectorName } from "../labels";
-import { VOICE_RULES, bannedFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
+import { VOICE_RULES, bannedFailures, flatShareFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
 import { capText, isNum, isRef } from "./text";
 import type { StoryModel, StudyScene, StudyText } from "./types";
 
@@ -192,6 +192,8 @@ export function checkStudyText(t: StudyWritten, f: FactsSheet, known: Known): st
   if (/(?<![\p{L}])(you|your|yours|you're)(?![\p{L}])/iu.test(free)) fail.push("second person");
   for (const p of STUDY_BANNED) if (has(free, p)) fail.push(`banned phrase: ${p}`);
   fail.push(...bannedFailures(free));
+  // N5 · a moving share is never called flat.
+  fail.push(...flatShareFailures(free, strings));
   return [...new Set(fail)];
 }
 

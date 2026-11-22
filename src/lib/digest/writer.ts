@@ -2,7 +2,7 @@
 // change, the chart caption, what to do with it) from the issue's facts sheet only; a code check decides whether it may be shown. Pure:
 // sheet, fingerprint, prompt, schema, parse, check. It reuses the story writer's voice rules, readers, banned lists and brand check and the
 // study writer's number, quarter, sector, cause and ranking checks (stories/writer.ts, data-stories/writer.ts); I/O is in writer.server.ts.
-import { VOICE_RULES, bannedFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
+import { VOICE_RULES, bannedFailures, flatShareFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
 import { CAUSAL, RANKING_WORDS, SPELLED_FREE, STUDY_BANNED, factsHash, plain, quartersIn, sectorsNamed, spelledNumbers } from "../data-stories/writer";
 import { brandName } from "../brand-names";
 import { sectorName } from "../labels";
@@ -174,6 +174,8 @@ export function checkDigestText(t: DigestWritten, f: DigestSheet, subject: reado
   if (/\?/.test(free)) fail.push("a question in the text");
   for (const p of DIGEST_BANNED) if (has(free, p)) fail.push(`banned phrase: ${p}`);
   fail.push(...bannedFailures(free));
+  // N5 · a moving share is never called flat.
+  fail.push(...flatShareFailures(free, strings));
   return [...new Set(fail)];
 }
 

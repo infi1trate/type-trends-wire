@@ -235,6 +235,50 @@ export function bannedFailures(free: string): string[] {
   if (HEX.test(free)) fail.push("a hex code in the text"); HEX.lastIndex = 0;
   return fail;
 }
+// N5 · "STEADY" IS NOT "FLAT" ---------------------------------------------------------------------------------------------------
+/** A share called flat, unchanged, stable or level (the claim the momentum rule checks). */
+export const FLAT_WORDS = ["flat", "unchanged", "stable", "level"] as const;
+/** At or above this many points a quarter, in either direction, a share is moving: it may not be called flat. */
+export const FLAT_MOMENTUM_MIN = 0.5;
+/** No. 94's sentence (22 Nov 2026), the style guide's bad example: its own numbers gave fintech's momentum as 1.6 points a quarter. */
+export const FLAT_BAD_EXAMPLE = "In fintech it’s more common, but its share is flat.";
+const FLAT_RE = new RegExp(`\\bshares?\\b[^.;!?]{0,40}?\\b(?:is|was|are|were|has been|have been|stays?|stayed|remains?|remained|holds?|held|sits?|sat|looks?|looked|kept|keeps|stood|stands?)?\\s*(?:largely\\s+|roughly\\s+|about\\s+|essentially\\s+|mostly\\s+)?(${FLAT_WORDS.join("|")})\\b(?=\\s*(?:[,;:.!?)]|$|\\b(?:at|since|for|over|across|in|on|this|last|through|from|among|while|but|and|so|there|here)\\b))|\\b(${FLAT_WORDS.join("|")})\\s+shares?\\b`, "i");
+const ALL_SCOPE = /\b(?:all|every|across)\b[^.;!?]{0,30}\btracked\b|\bfull set\b|\boverall\b/i;
+// "AI" alone is not the sector: the facts say "with an AI read" and "an AI estimate".
+const SECTOR_WORDS: Readonly<Record<string, readonly string[]>> = { ai: ["ai brands", "ai brand", "ai companies", "ai company", "ai homepages", "ai sector", "ai products", "ai labs", "ai startups"], "dev-tools": ["dev tools", "developer tools"], fintech: ["fintech"], "consumer-apps": ["consumer apps", "consumer app"], "commerce-dtc": ["commerce", "dtc", "direct-to-consumer"], media: ["media"], studios: ["studios", "studio"], hardware: ["hardware"], health: ["health"], "enterprise-saas": ["enterprise saas", "enterprise software", "saas"] };
+const sectorsIn = (t: string) => Object.entries(SECTOR_WORDS).filter(([, ws]) => ws.some(w => new RegExp(`(?<![\\p{L}\\p{N}])${w.replace(/[-]/g, "[- ]")}(?![\\p{L}\\p{N}])`, "iu").test(t))).map(([k]) => k);
+/** The momentum figures a sheet gives ("momentum 1.6 points a quarter", "Momentum +1.6 points a quarter"), each with the sectors its own
+ *  line names (none: every tracked homepage). */
+export function sheetMomentum(lines: readonly string[]): { value: number; sectors: string[]; line: string }[] {
+  const out: { value: number; sectors: string[]; line: string }[] = [];
+  for (const l of lines) for (const m of l.matchAll(/momentum\s+(?:of\s+)?([+\-−]?\d+(?:\.\d+)?)\s+(?:percentage\s+)?points?\s+a\s+quarter/gi)) out.push({ value: Math.abs(Number(m[1]!.replace("−", "-"))), sectors: sectorsIn(l), line: l });
+  return out;
+}
+/** A sentence that calls a share flat, unchanged, stable or level when the facts give that share's momentum as 0.5 points a quarter or
+ *  more, in either direction. The sentence's own sector words pick the figure (a sentence naming fintech reads fintech's); a sentence
+ *  naming no sector reads every figure on the sheet. Shared by the story, study and Digest writers. Pure. */
+export function flatShareFailures(free: string, sheetLines: readonly string[]): string[] {
+  const moves = sheetMomentum(sheetLines);
+  if (!moves.length) return [];
+  const out: string[] = [];
+  for (const sentence of free.split(/(?<=[.!?])\s+|\n+/)) {
+    const m = FLAT_RE.exec(sentence); if (!m) continue;
+    const word = (m[1] ?? m[2] ?? "flat").toLowerCase();
+    // The share's scope: the clause that calls it flat first ("…, while their share across tracked homepages is roughly flat"), then
+    // the whole sentence ("In fintech it's more common, but its share is flat"): the sectors it names; else every tracked homepage when
+    // it says so; else every figure on the sheet.
+    const clause = sentence.slice(0, m.index + m[0].length).split(/[,;:]\s+|\s+(?:while|but|whereas|although|though)\s+/i).at(-1) ?? sentence;
+    const scopeOf = (t: string) => { const named = sectorsIn(t), all = !named.length && ALL_SCOPE.test(t); return named.length ? moves.filter(x => x.sectors.some(s => named.includes(s))) : all ? moves.filter(x => !x.sectors.length && /homepages/i.test(x.line)) : []; };
+    const c = scopeOf(clause), sc = c.length ? c : scopeOf(sentence), scoped = sc.length ? sc : moves;
+    // A facts line's stage key "flat" (shown to readers as "Steady") is not a share that stands still: the momentum decides.
+    const hit = scoped.find(x => x.value >= FLAT_MOMENTUM_MIN);
+    if (hit) out.push(`a moving share called ${word}: the facts give its momentum as ${hit.value.toFixed(1)} points a quarter`);
+  }
+  return [...new Set(out)];
+}
+/** Every line of a story's facts sheet as text (what the momentum rule reads). */
+export const sheetLinesOf = (f: Pick<WriterFacts, "numbers" | "lines" | "changes">) => [...f.numbers.map(n => n.text), ...f.lines.map(l => l.text), ...f.changes.map(c => `${c.what} ${c.from} ${c.to}`)];
+
 /** Tracked brand names written in `free` that are not among `mine` (an ordinary-word name at a sentence start is a word, not the brand). */
 export function unknownBrands(free: string, mine: readonly string[], known: Known): string[] {
   const out: string[] = [];
@@ -338,6 +382,8 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
   fail.push(...colourFailures(free, f, mine));
   // Banned words and phrases (outside quoted homepage copy).
   fail.push(...bannedFailures(free));
+  // N5 · a moving share is never called flat.
+  fail.push(...flatShareFailures(free, sheetLinesOf(f)));
   if (!f.rebrand && rebrandClaim(free)) fail.push("“rebrand” without type, colour and layout changing together");
   // Our read is never stated as measured.
   if (hasOurRead(f) && t.how_we_know != null && !/\bour read\b|\bAI estimate\b|\bestimated by AI\b|\bAI read\b/i.test(t.how_we_know)) fail.push("how_we_know does not say which facts are our read");

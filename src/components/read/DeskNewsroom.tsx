@@ -13,6 +13,7 @@ import { CHECKLIST } from "@/lib/newsroom/checklist-names";
 import { staffCall } from "@/lib/staff-key";
 import { useQueryClient } from "@tanstack/react-query";
 import { DeskN4, type N4 } from "./DeskN4";
+import { DeskN5, type N5 } from "./DeskN5";
 
 export type Newsroom = {
   log: HistoryRow[];
@@ -34,6 +35,7 @@ export type Newsroom = {
   n3?: N3 | null;
   // N4 · the design review and engineering desks.
   n4?: N4 | null;
+  n5?: N5 | null;
 };
 type N3 = {
   limits: { desk: string; what: string; cap: number; used: number }[];
@@ -72,6 +74,7 @@ export function DeskNewsroom() {
     <DeskDesks data={data} />
     {data.n3 ? <DeskN3 n={data.n3} /> : null}
     {data.n4 ? <DeskN4 n={data.n4} /> : null}
+    {data.n5 ? <DeskN5 n={data.n5} /> : null}
     <section aria-labelledby="desk-spend" className="ed-wrap mt-12" data-desk-spend="">
       <h2 id="desk-spend" className="ed-h2 ed-rule pt-3">Spend this week</h2>
       {s ? <>

@@ -6,7 +6,7 @@
 // page has its answer). A held job (job_hold) does not start. Each step is skipped when too little time is left; none ever fails the job.
 import type { Admin } from "./review.server";
 const dayStart = (now: number) => { const d = new Date(now); d.setUTCHours(0, 0, 0, 0); return d.toISOString(); };
-const ACTOR = { checks: "data", backtest: "data", proposal: "data", health: "engineering", "design review": "design review" } as const;
+const ACTOR = { checks: "data", backtest: "data", proposal: "data", health: "engineering", "design review": "design review", package: "publisher", drafts: "publisher", candidates: "scout" } as const;
 type Job = keyof typeof ACTOR;
 
 export async function runDeskJobs(deadline: number): Promise<Record<string, string>> {
@@ -18,7 +18,7 @@ export async function runDeskJobs(deadline: number): Promise<Record<string, stri
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const [{ deskDoor }, { heldJobs }] = await Promise.all([import("../stories/desk.server"), import("./passes.server")]);
     const held = new Set((await heldJobs(db, now).catch(() => [])).map(h => h.job));
-    const ranSince = async (subject: string, since: string) => { const { count, error } = await db.from("desk_log").select("id", { count: "exact", head: true }).in("actor", ["data", "graphics", "engineering", "design review", "owner"]).eq("action", "data_run").eq("subject_id", subject).gte("at", since); if (error) throw new Error("desk_log_read_failed"); return (count ?? 0) > 0; };
+    const ranSince = async (subject: string, since: string) => { const { count, error } = await db.from("desk_log").select("id", { count: "exact", head: true }).in("actor", ["data", "graphics", "engineering", "design review", "publisher", "scout", "owner"]).eq("action", "data_run").eq("subject_id", subject).gte("at", since); if (error) throw new Error("desk_log_read_failed"); return (count ?? 0) > 0; };
     /** The once-a-day (or once-a-week) record, written before the work. False when it already exists or cannot be written. */
     const begin = async (job: Job, since: string, ref?: string): Promise<boolean> => {
       if (held.has(job)) { out[job] = "held"; return false; }
@@ -31,6 +31,24 @@ export async function runDeskJobs(deadline: number): Promise<Record<string, stri
     if (left() > 15_000 && await begin("backtest", today)) { const b = await (await import("./datadesk.server")).runBacktest(db, { write: true }).catch(e => ({ scored: false as const, why: e instanceof Error ? e.message : "error", runs: 0 })); out["backtest"] = b.scored ? `scored ${b.calls}` : b.why; }
     if (left() > 25_000 && new Date(now).getUTCDay() === 1 && await begin("proposal", new Date(now - 7 * 864e5 + 3600_000).toISOString())) { const p = await (await import("./datadesk.server")).runProposal(db); out["proposal"] = p.why; }
     if (left() > 15_000 && await begin("health", today)) { const h = await withRun("health", async () => (await import("./engineering.server")).runHealth(db, { write: true, force: true }), x => ({ ok: !x.errors.length, note: x.why || x.errors[0] || "ok" })); out["health"] = h.why || (h.errors[0] ?? "ok"); }
+    // N5 · the publisher (Mondays, after the Digest's week closes): the package check on the newest issue, then the drafts call only
+    // after that issue's check passed (a later job may make it); the scout's candidates call (Mondays, once a week).
+    const weekAgo = new Date(now - 7 * 864e5 + 3600_000).toISOString(), monday = new Date(now).getUTCDay() === 1;
+    if (monday && left() > 20_000 && await begin("package", weekAgo)) {
+      const r = await (await import("./publisher.server")).runPackageCheck(db, { signal: AbortSignal.timeout(Math.max(5000, left() - 8000)) }).catch(e => ({ why: e instanceof Error ? e.message : "error", row: null, week: null, pass: false, items: [] as { ok: boolean }[] }));
+      out["package"] = r.why;
+      await deskDoor("publisher", { action: "data_run", run: "package", ...(r.week ? { ref: `package:${r.week}` } : {}), summary: `Package check ${r.week ?? ""}: ${r.why}${r.row ? ` (row ${r.row})` : ""}.`.slice(0, 600), counts: { items: r.items.length, failed: r.items.filter(x => !x.ok).length } }).catch(() => null);
+    }
+    if (monday && left() > 30_000 && !held.has("drafts")) {
+      const { data: chk } = await db.from("package_checks").select("id,week,pass").eq("test", false).gte("at", weekAgo).order("id", { ascending: false }).limit(1);
+      const c = chk?.[0];
+      if (c?.pass && await begin("drafts", weekAgo)) { const r = await (await import("./publisher.server")).runDrafts(db, { week: c.week, checkId: c.id, signal: AbortSignal.timeout(Math.max(5000, left() - 5000)) }); out["drafts"] = r.why; await deskDoor("publisher", { action: "data_run", run: "drafts", ref: `drafts:${c.week}`, summary: `Drafts for ${c.week}: ${r.why}.`.slice(0, 600), counts: { kept: r.kept.length, dropped: r.dropped.length } }).catch(() => null); }
+    }
+    if (monday && left() > 35_000 && await begin("candidates", weekAgo)) {
+      const r = await (await import("./scout.server")).runCandidates(db, { signal: AbortSignal.timeout(Math.max(5000, left() - 5000)) });
+      out["candidates"] = r.why;
+      await deskDoor("scout", { action: "data_run", run: "candidates", summary: `Brand candidates: ${r.why} (${r.returned} returned from ${r.items} items).`.slice(0, 600), counts: { returned: r.returned, kept: r.kept.length, dropped: r.dropped.length } }).catch(() => null);
+    }
     if (left() > 35_000 && !held.has("design review")) {
       const r = await (await import("./design-review.server")).runDesignReview(db, { deadline: deadline - 5000, gate: run => begin("design review", today, `design review:${run}:${today.slice(0, 10)}`) });
       out["design review"] = r.why || (r.errors[0] ?? "ok");

@@ -12,7 +12,7 @@ export async function heldJobs(db: Admin, now = Date.now()): Promise<p.Hold[]> {
   return p.activeHolds((data ?? []).map(r => { const d = (r.detail ?? {}) as { job?: string; until?: string }; return { id: r.id, at: r.at, actor: r.actor, action: r.action as "job_hold" | "job_release", job: d.job ?? "", until: d.until ?? null, reason: r.reason }; }).filter(r => r.job), now);
 }
 /** Whether a job is held now (a failed read counts as not held: holds are a switch, not a lock). */
-export const isHeld = async (db: Admin, job: p.HoldJob) => (await heldJobs(db).catch(() => [])).some(h => h.job === job);
+export const isHeld = async (db: Admin, job: p.HoldJob) => (await heldJobs(db).catch(() => [])).some(h => p.holdNames(job).includes(h.job));
 
 export async function dayRows(db: Admin, day: string): Promise<{ starts: p.PassStart[]; ends: p.PassEnd[] }> {
   const s = await db.from("desk_passes").select("id,at,check_name,day,slot,items,plan").eq("day", day).order("id").limit(200);

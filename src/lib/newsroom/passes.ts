@@ -73,7 +73,13 @@ export function checkDay(check: PassCheck, starts: readonly PassStart[], ends: r
 }
 
 // JOB HOLDS -----------------------------------------------------------------------------------------------------------------------------
-export const HOLD_JOBS = ["share", "chart", "picks", "checks", "health", "design review", "backtest", "proposal", "reviews"] as const;
+// N5 · `review` (the review passes; `reviews` is its N4b name and holds the same passes) and `stories` (the story build's publishing
+// step) let the engineering desk stop content changing for the fifteen minutes around a gated deploy. `package`, `drafts` and
+// `candidates` are the publisher's and the scout's weekly jobs.
+export const HOLD_JOBS = ["share", "chart", "picks", "checks", "health", "design review", "backtest", "proposal", "reviews", "review", "stories", "package", "drafts", "candidates"] as const;
+/** The hold names that stop one job (a hold on either name holds it). */
+export const HOLD_ALIASES: Readonly<Record<string, readonly string[]>> = { review: ["review", "reviews"], reviews: ["review", "reviews"] };
+export const holdNames = (job: string) => HOLD_ALIASES[job] ?? [job];
 export type HoldJob = (typeof HOLD_JOBS)[number];
 export const HOLD_MAX_DAYS = 7;
 export const HOLD_ACTORS = ["engineering", "owner"] as const;

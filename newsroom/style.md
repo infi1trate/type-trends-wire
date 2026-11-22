@@ -191,6 +191,10 @@ Refused as “a claim about the future without a forecast call”. Source: `FUTU
 
 An arrow (→ or ->) in our own words; a hex code in the text; “rebrand” as a claim unless the facts show type, colour and layout changing together, or a new name or logo.
 
+### Steady is not flat
+
+A sentence may not call a share “flat”, “unchanged”, “stable” or “level” when the facts sheet gives that share's momentum as 0.5 points a quarter or more, in either direction (the story, study and Digest writers share the check; the sectors a sentence names pick the figure). A stage word such as “Steady” is not a flat share. Not: “In fintech it’s more common, but its share is flat.” (No. 94, whose own numbers gave fintech's momentum as 1.6 points a quarter).
+
 ### The copy desk (lines that are not written text)
 
 Kickers, the Numbers list, picture captions and credits, chart titles and notes, and labels are linted by the copy desk (`COPY_LINTS`, newsroom/copy.ts). A failing line fails the standards checklist; the weekly sweep records failing lines in the desk log under `copy desk` and fixes nothing.

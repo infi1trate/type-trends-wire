@@ -12,6 +12,8 @@ import { NEWS_SCHEMA, NEWS_SYSTEM } from "../news";
 import { CHART_SCHEMA, CHART_SYSTEM, GRAPHICS_SCHEMA, GRAPHICS_SYSTEM } from "../graphics";
 import { PROPOSAL_SCHEMA, PROPOSAL_SYSTEM } from "../datadesk";
 import { DESIGN_SCHEMA, DESIGN_SYSTEM } from "../design-review";
+import { PUBLISHER_SCHEMA, PUBLISHER_SYSTEM } from "../publisher";
+import { SCOUT_SCHEMA, SCOUT_SYSTEM } from "../scout";
 
 export const WRITERS = ["story", "study", "digest"] as const;
 export type Writer = (typeof WRITERS)[number];
@@ -47,14 +49,15 @@ export const currentVersion = (w: Writer) => {
 // result is no worse than the baseline's (deskGatePasses).
 // N3 adds the news desk's picks, the graphics desk's picture check (the AI reads' vision model) and chart choice, and the data desk's
 // weekly proposal, under the same rule.
-// N4 adds the design review desk's weekly page review (the vision model).
-export const DESK_PROMPTS = ["standards", "editor in chief", "news", "graphics", "graphics chart", "data", "design review"] as const;
+// N4 adds the design review desk's weekly page review (the vision model); N5 the publisher's social drafts and the scout's candidates.
+export const DESK_PROMPTS = ["standards", "editor in chief", "news", "graphics", "graphics chart", "data", "design review", "publisher", "scout"] as const;
 export type DeskPrompt = (typeof DESK_PROMPTS)[number];
 const DESK_PARTS: Record<DeskPrompt, { system: string; schema: unknown; models?: () => string[] }> = {
   standards: { system: STANDARDS_SYSTEM, schema: STANDARDS_SCHEMA }, "editor in chief": { system: CHIEF_SYSTEM, schema: CHIEF_SCHEMA },
   news: { system: NEWS_SYSTEM, schema: NEWS_SCHEMA }, graphics: { system: GRAPHICS_SYSTEM, schema: GRAPHICS_SCHEMA, models: () => [AI_MODELS.vision] },
   "graphics chart": { system: CHART_SYSTEM, schema: CHART_SCHEMA }, data: { system: PROPOSAL_SYSTEM, schema: PROPOSAL_SCHEMA },
   "design review": { system: DESIGN_SYSTEM, schema: DESIGN_SCHEMA, models: () => [AI_MODELS.vision] },
+  publisher: { system: PUBLISHER_SYSTEM, schema: PUBLISHER_SCHEMA }, scout: { system: SCOUT_SYSTEM, schema: SCOUT_SCHEMA },
 };
 export const deskModels = (d: DeskPrompt) => DESK_PARTS[d].models?.() ?? writerModels();
 export const deskPromptHash = (d: DeskPrompt) => fnv(JSON.stringify([DESK_PARTS[d].system, DESK_PARTS[d].schema, deskModels(d)]));
@@ -70,6 +73,8 @@ export const DESK_VERSIONS: readonly DeskVersion[] = [
   { desk: "graphics chart", version: "v1", prompt_hash: "0811aa29", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/graphics-chart-v1.json", note: "Baseline, not yet run (see the score file)." },
   { desk: "design review", version: "v1", prompt_hash: "2161424a", models: ["google/gemini-3-flash-preview"], score_file: "newsroom/scores/design-review-v1.json", note: "Baseline (N4 proof): three pages (front, story, brand) of the second test review run, as fixture calls; what code kept and dropped is in the score file." },
   { desk: "data", version: "v1", prompt_hash: "43d08926", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/data-v1.json", note: "Baseline, not yet run (see the score file)." },
+  { desk: "publisher", version: "v1", prompt_hash: "82e9010a", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/publisher-v1.json", note: "Baseline (N5 proof): one fixture drafts call on Digest No. 1; three Digest drafts kept, none dropped." },
+  { desk: "scout", version: "v1", prompt_hash: "61622a61", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/scout-v1.json", note: "Baseline (N5 proof): one fixture candidates call on the seven days to 22 Nov; nine kept, one dropped (already tracked)." },
 ];
 export const currentDeskVersion = (d: DeskPrompt) => DESK_VERSIONS.find(v => v.desk === d && v.prompt_hash === deskPromptHash(d)) ?? null;
 /** A desk score file's cases: for standards, whether each frozen story got its expected verdict (the checklist and the second reader

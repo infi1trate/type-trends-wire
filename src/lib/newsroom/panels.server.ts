@@ -95,3 +95,12 @@ export async function n4Panels(db: Admin, now = Date.now()) {
     },
   };
 }
+
+/** N5 · /desk's Publisher and Scout panels (staff only); the memory returns the same facts. */
+export async function n5Panels(db: Admin, now = Date.now()) {
+  const [publisher, scout] = await Promise.all([
+    import("./publisher.server").then(m => m.publisherPanel(db, now)).catch(() => null),
+    import("./scout.server").then(m => m.scoutPanel(db, now)).catch(() => null),
+  ]);
+  return { publisher, scout };
+}

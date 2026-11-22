@@ -66,7 +66,11 @@ export async function reviewInput(id: string, r: ReviewCtx | null, o: { asOf?: s
   const evIds = s.source_ids.flatMap(x => /^event:(\d+)$/.exec(x) ? [Number(x.slice(6))] : []).slice(0, 60);
   let cites: { domain: string; measure: string }[] = [];
   if (evIds.length) { const [{ supabaseAnon }, { citesOf }] = await Promise.all([import("../mcp/supabase"), import("./datadesk")]); const { data } = await supabaseAnon().from("library_events").select("domain,before,after").in("id", evIds); cites = citesOf((data ?? []) as { domain: string; before: unknown; after: unknown }[]); }
+  // N5 · a published story's newest written text and the sheet stored at or before it (what checklist item 1 compares it with).
+  let asWritten: NonNullable<ReviewInput["asWritten"]> | null = null;
+  if (s.state === "published") asWritten = (await writtenWith(id).catch(() => null)) ?? null;
   return {
+    state: s.state, asWritten,
     id: s.id, number: s.number ?? null, type: s.type, basis: s.basis, kicker: page.kicker, headline: page.headline, deck: page.deck ?? null, body: page.body, howWeKnow: page.howWeKnow,
     numbers: page.census ? page.census.lines.map(l => `${l.name}${l.line ? ` · ${l.line}` : ""}`) : page.facts.map(f => f.text),
     picture: lead ? { kind: lead.kind, items: lead.items.map(x => ({ domain: x.domain, credit: x.credit })), caption: lead.caption } : null,
@@ -154,15 +158,16 @@ export function reviewIO(db: Admin, r: ReviewCtx | null, now: () => number = Dat
       return out;
     },
     reoffers: async () => {
-      const { applyEdits } = await import("../stories/edits");
+      const [{ applyEdits }, { passHeldBy }] = await Promise.all([import("../stories/edits"), import("./holds")]);
       const { data } = await db.from("story_reviews").select("story_id").eq("desk", "editor in chief").eq("verdict", "hold").gte("at", new Date(now() - 3 * 864e5).toISOString()).limit(100);
       const ids = [...new Set((data ?? []).map(x => x.story_id))];
       if (!ids.length) return [];
-      const [st, ed] = await Promise.all([db.from("stories").select(COLS).in("id", ids), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids).order("id")]);
+      const [st, ed, holds] = await Promise.all([db.from("stories").select(COLS).in("id", ids), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids).order("id"), holdReviews(db, ids)]);
       if (st.error || ed.error) return [];
-      // Still held, by the editor in chief's own hold (its last edit), and not about a day already past the week.
+      // Still held, and the hold in force is the editor in chief's own placement call (N5: never a hold made through the door from a
+      // desk session or by the owner), and not about a day already past the week.
       return (st.data ?? []).map(x => applyEdits(x as unknown as Stored, (ed.data ?? []) as never, now()))
-        .filter(x => x.state === "held" && (x.edits.at(-1)?.payload?.["desk"] === "editor in chief") && now() - Date.parse(x.happened_at) < 3 * 864e5).map(x => toPending(x, true));
+        .filter(x => x.state === "held" && passHeldBy(x.edits, holds.get(x.id) ?? [], "editor in chief") && now() - Date.parse(x.happened_at) < 3 * 864e5).map(x => toPending(x, true));
     },
     record: async rows => {
       if (!rows.length) return;
@@ -185,15 +190,16 @@ export function reviewIO(db: Admin, r: ReviewCtx | null, now: () => number = Dat
       const fpOf = new Map((fps ?? []).map(x => [x.review_id, x.fingerprint]));
       const due = recheckDue((rv ?? []).map(x => ({ id: x.id, story_id: x.story_id, verdict: x.verdict, second_reader: x.second_reader, at: x.at, reason: x.reason, fingerprint: fpOf.get(x.id) ?? null })), CHECKLIST_FINGERPRINT);
       if (!due.length) return [];
-      const [st, ed] = await Promise.all([db.from("stories").select(COLS).in("id", due), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", due).order("id")]);
+      const [st, ed, holds, { passHeldBy }] = await Promise.all([db.from("stories").select(COLS).in("id", due), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", due).order("id"), holdReviews(db, due), import("./holds")]);
       if (st.error || ed.error) throw new Error("recheck_read_failed");
-      // Still held, and by the standards desk (its last hold edit).
+      // Still held, by the standards desk's own review (N5: a hold made through the door is never offered to a pass).
       return (st.data ?? []).map(x => applyEdits(x as unknown as Stored, (ed.data ?? []) as never, now()))
-        .filter(x => x.state === "held" && x.edits.filter(e => e.action === "kill").at(-1)?.payload?.["desk"] === "standards").map(x => toPending(x, true));
+        .filter(x => x.state === "held" && passHeldBy(x.edits, holds.get(x.id) ?? [], "standards")).map(x => toPending(x, true));
     },
     door: async (actor, body) => {
       const { deskDoor } = await import("../stories/desk.server");
-      const res = await deskDoor(actor, body);
+      // N5 · a hold the pass makes carries the pass's marker, so a hold made through the door from outside is told apart.
+      const res = await deskDoor(actor, body, { pass: true });
       const b = (res.body ?? {}) as { reason?: string; error?: string };
       return { ok: res.status < 300, status: res.status, ...(res.status >= 300 ? { reason: b.reason ?? b.error ?? "refused" } : {}) };
     },
@@ -225,14 +231,40 @@ export function reviewIO(db: Admin, r: ReviewCtx | null, now: () => number = Dat
       const { data } = await db.from("story_reviews").select("story_id,at,second_reader").eq("desk", "standards").eq("second_reader", "overruled").gte("at", new Date(now() - 3 * 864e5).toISOString()).limit(50);
       const ids = [...new Set((data ?? []).map(x => x.story_id))];
       if (!ids.length) return [];
-      const [st, ed, placed] = await Promise.all([db.from("stories").select(COLS).in("id", ids), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids).order("id"), db.from("story_reviews").select("story_id,at").eq("desk", "editor in chief").in("story_id", ids)]);
+      const [st, ed, placed, holds, { doorHeld }] = await Promise.all([db.from("stories").select(COLS).in("id", ids), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids).order("id"), db.from("story_reviews").select("story_id,at").eq("desk", "editor in chief").in("story_id", ids), holdReviews(db, ids), import("./holds")]);
       if (st.error || ed.error || placed.error) return [];
       const overAt = new Map<string, string>(); for (const x of data ?? []) if ((overAt.get(x.story_id) ?? "") < x.at) overAt.set(x.story_id, x.at);
       const lastPlaced = new Map<string, string>(); for (const x of placed.data ?? []) if ((lastPlaced.get(x.story_id) ?? "") < x.at) lastPlaced.set(x.story_id, x.at);
-      return (st.data ?? []).map(x => applyEdits(x as unknown as Stored, (ed.data ?? []) as never, now())).filter(x => x.state === "held" && (lastPlaced.get(x.id) ?? "") < (overAt.get(x.id) ?? "")).map(x => toPending(x, true));
+      return (st.data ?? []).map(x => applyEdits(x as unknown as Stored, (ed.data ?? []) as never, now())).filter(x => x.state === "held" && !doorHeld(x.edits, holds.get(x.id) ?? []) && (lastPlaced.get(x.id) ?? "") < (overAt.get(x.id) ?? "")).map(x => toPending(x, true));
     },
+    // N5 · how many earlier review passes left each story waiting for time, since its newest standards review (the finish rows' list).
+    waits: async ids => waitCounts(db, ids, now()),
   };
   return io;
+}
+/** N5 · the hold reviews (both desks) of these stories: what tells a review pass's own hold edit from one made through the door. */
+async function holdReviews(db: Admin, ids: string[]): Promise<Map<string, { desk: string; verdict: string; at: string }[]>> {
+  const out = new Map<string, { desk: string; verdict: string; at: string }[]>();
+  if (!ids.length) return out;
+  const { data } = await db.from("story_reviews").select("story_id,desk,verdict,at").eq("verdict", "hold").in("story_id", ids.slice(0, 200)).order("id", { ascending: false }).limit(1000);
+  for (const x of data ?? []) out.set(x.story_id, [...(out.get(x.story_id) ?? []), { desk: x.desk, verdict: x.verdict, at: x.at }]);
+  return out;
+}
+/** N5 · review-pass finish rows of the last two days that list each story as waiting, after the story's newest standards review. */
+export async function waitCounts(db: Admin, ids: string[], now: number): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (!ids.length) return out;
+  const [{ waitsOf }, fin, rv] = await Promise.all([import("./holds"),
+    db.from("job_runs").select("at,detail").eq("job", "review-passes").eq("phase", "finish").gte("at", new Date(now - 2 * 864e5).toISOString()).order("id", { ascending: false }).limit(1200),
+    db.from("story_reviews").select("story_id,at,desk").in("story_id", ids.slice(0, 200)).order("id", { ascending: false }).limit(1000)]);
+  const rows = (fin.data ?? []).map(r => ({ at: r.at, waiting: Array.isArray((r.detail as { waiting?: unknown } | null)?.waiting) ? ((r.detail as { waiting: unknown[] }).waiting.filter((x): x is string => typeof x === "string")) : [] }));
+  for (const id of ids) {
+    // A standards review that passed already: its later waits are for the editor in chief; counting starts from the story's newest
+    // review of any desk, so a new verdict starts the count again.
+    const since = (rv.data ?? []).find(x => x.story_id === id)?.at ?? null;
+    out.set(id, waitsOf(rows, id, since));
+  }
+  return out;
 }
 const DESK_CALL_MS = 12_000;
 /** N4c · the picture check's call takes at most this long, and leaves this much of the pass for standards and the editor in chief. */
@@ -271,6 +303,14 @@ export async function sheetOf(id: string, r: ReviewCtx): Promise<ReviewInput["sh
   const keys = [...new Set(s.signal_keys.slice(0, 3).map(canonical))], scopes = [...new Set(["all", ...(s.sector ? [s.sector] : [])])];
   const bases = r.ctx.cur && keys.length && r.bases ? await r.bases(r.ctx.cur.id, keys, scopes).catch(() => new Map<string, ShareBase>()) : new Map<string, ShareBase>();
   return writerFacts(fs, factSource(r.input, r.ctx, bases)).facts;
+}
+/** N5 · a published story's newest written text with the facts sheet stored at or before it was written (service reads). */
+export async function writtenWith(id: string): Promise<ReviewInput["asWritten"]> {
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+  const { data: t } = await db.from("story_texts").select("created_at,checked,headline,deck,body").eq("story_id", id).order("version", { ascending: false }).limit(1);
+  const text = t?.[0]; if (!text) return null;
+  const { data: sh } = await db.from("review_sheets").select("sheet").eq("story_id", id).lte("at", new Date(Date.parse(text.created_at) + 5_000).toISOString()).order("id", { ascending: false }).limit(1);
+  return { at: text.created_at, checked: !!text.checked, sheet: (sh?.[0]?.sheet ?? null) as ReviewInput["sheet"], text: { headline: text.headline, deck: text.deck, body: text.body ?? [] } };
 }
 /** The newest stored sheet for a story (null: none stored; the checklist then reads the story's stored facts). */
 export async function storedSheet(db: Admin, id: string): Promise<ReviewInput["sheet"]> {

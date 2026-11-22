@@ -43,5 +43,8 @@ export async function loadRunRows(db: Admin, o: { days: number; now?: number }):
     out.push(...((data ?? []) as RunRow[]));
     if ((data ?? []).length < 1000) break;
   }
-  return out;
+  // N5 · rows a note marks as tests (the N4c test suite's three fake forecast runs) are left out of every reading; they stay stored.
+  const { data: notes } = await db.from("job_run_notes").select("run_id").eq("test", true).limit(1000);
+  const tests = new Set((notes ?? []).map(n => n.run_id));
+  return tests.size ? out.filter(r => !tests.has(r.id)) : out;
 }

@@ -193,8 +193,11 @@ describe("N1 · the golden gate", () => {
   it("every frozen approved text passes the shared check against its frozen facts", () => {
     const s = scoreSet(ws);
     expect(s.total).toBeGreaterThan(0);
-    expect(s.items.filter(i => i.failures.length)).toEqual([]);
-    expect(s.mean).toBe(100);
+    // N5 · the owner's “steady is not flat” rule (22 Nov) refuses one frozen text: No. 43's deck “Its share was flat.” beside momentum
+    // 1.3 points a quarter. That is the rule working, not a writer change; every other frozen text passes and nothing else may fail.
+    const failing = s.items.filter(i => i.failures.length);
+    expect(failing.map(i => ({ number: i.number, failures: i.failures }))).toEqual([{ number: 43, failures: ["a moving share called flat: the facts give its momentum as 1.3 points a quarter"] }]);
+    expect(s.passed).toBe(s.total - 1);
   });
   it("a writer change that breaks a text that passed fails the gate", () => {
     const base = scoreSet(ws), first = ws.items[0]!;

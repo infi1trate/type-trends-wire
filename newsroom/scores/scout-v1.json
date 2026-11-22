@@ -1,0 +1,109 @@
+{
+ "desk": "scout",
+ "version": "v1",
+ "prompt_hash": "61622a61",
+ "run_at": "2026-11-22T14:12:00Z",
+ "cases": 1,
+ "run": "N5-proof",
+ "against": null,
+ "note": "Baseline (N5 proof): one fixture candidates call on the seven days to 22 Nov; nothing stored or filed.",
+ "call_id": 2,
+ "returned": 10,
+ "kept": [
+  {
+   "name": "Major League Baseball",
+   "domain": "mlb.com",
+   "sector": "media",
+   "why": "Mother Design created five bespoke typefaces for the league, giving slug a specific change to watch for in scores, headlines and team coverage.",
+   "cites": "wire:45715",
+   "id": -1,
+   "log": null
+  },
+  {
+   "name": "The Sainsbury Museum and Art Centre",
+   "domain": "sainsburycentre.ac.uk",
+   "sector": "media",
+   "why": "North Design drew the centre’s new geometric mark from Norman Foster’s original building plans.",
+   "cites": "wire:58642",
+   "id": -2,
+   "log": null
+  },
+  {
+   "name": "Programa",
+   "domain": "programa.design",
+   "sector": "enterprise-saas",
+   "why": "Programa’s software redesign gives slug a reason to watch how it explains the less visible work of interior design, from tracking dimensions to tallying materials.",
+   "cites": "wire:80469",
+   "id": -3,
+   "log": null
+  },
+  {
+   "name": "Framery",
+   "domain": "frameryacoustics.com",
+   "sector": "hardware",
+   "why": "Framery pitches its office pods as a subscription, shifting the sales message from furnishing a room to avoiding waste when a company moves.",
+   "cites": "wire:93016",
+   "id": -4,
+   "log": null
+  },
+  {
+   "name": "Xinú",
+   "domain": "xinuperfumes.com",
+   "sector": "commerce-dtc",
+   "why": "The perfume brand’s angular black-timber displays in Tokyo offer a concrete point of comparison for how it presents scent online.",
+   "cites": "wire:57837",
+   "id": -5,
+   "log": null
+  },
+  {
+   "name": "cadillac",
+   "domain": "cadillac.com",
+   "sector": "hardware",
+   "why": "The Las Vegas F1 livery borrows iridescent circuitry from translucent Y2K electronics, a visual reference to watch for in the brand’s digital work.",
+   "cites": "wire:75051",
+   "id": -6,
+   "log": null
+  },
+  {
+   "name": "Chipotle",
+   "domain": "chipotle.com",
+   "sector": "commerce-dtc",
+   "why": "A hoodie with a concealed burrito pocket turns the chain’s sense of humor into a product and gives its campaign copy a clear hook.",
+   "cites": "wire:70756",
+   "id": -7,
+   "log": null
+  },
+  {
+   "name": "Tiffany & Co.",
+   "domain": "tiffany.com",
+   "sector": "commerce-dtc",
+   "why": "The Nature Adorned exhibition traces a century of nature motifs in Tiffany jewelry, from an Arkansas diamond to orchid brooches.",
+   "cites": "wire:85332",
+   "id": -8,
+   "log": null
+  },
+  {
+   "name": "Klafs",
+   "domain": "klafs.com",
+   "sector": "health",
+   "why": "Retractable saunas and immersive ice rooms give Klafs two very different engineering stories to tell under one wellness brand.",
+   "cites": "wire:88351",
+   "id": -9,
+   "log": null
+  }
+ ],
+ "dropped": [
+  {
+   "name": "Nike",
+   "website": "nike.com",
+   "sector": "commerce-dtc",
+   "cites": "wire:47729",
+   "reasons": [
+    "nike.com is already in the library (tracked or inactive)"
+   ]
+  }
+ ],
+ "items": 170,
+ "names": 80,
+ "cost": 0.163512
+}

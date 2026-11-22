@@ -55,6 +55,12 @@ export type NewsroomStore = {
   queueItemExists?: (id: number) => Promise<boolean>;
   /** N4b · the job holds in force. */
   jobHolds?: () => Promise<import("../newsroom/passes").Hold[]>;
+  /** N5 · the publisher's draft statuses and audience weeks, the scout's terms readings and candidate statuses (each store checks the
+   *  move against its current status). */
+  draftStatus?: (r: { draft: number; status: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
+  audience?: (r: import("../newsroom/publisher").AudienceInput & { actor: string }) => Promise<{ id: number; replaces: number | null }>;
+  sourceNote?: (r: { source: string; status: string; read_on: string | null; link: string | null; note: string; actor: string }) => Promise<{ id: number }>;
+  candidateStatus?: (r: { candidate: number; status: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
 };
 export type DeskStore = NewsroomStore & { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
 export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
@@ -66,7 +72,8 @@ const subjectOf = (b: DeskBody): string | null =>
     : b.action === "wire_only" ? "wire_only" : b.action === "propose" ? (b.subject ?? b.kind) : b.action === "queue" ? (b.day ?? null) : b.action === "staff" ? b.page
     : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
     : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? (b.ref ?? b.run)
-    : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : b.action === "job_hold" || b.action === "job_release" ? `job:${b.job}` : null;
+    : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : b.action === "job_hold" || b.action === "job_release" ? `job:${b.job}`
+    : b.action === "draft_status" ? `draft:${b.draft}` : b.action === "audience" ? b.week : b.action === "source_note" ? `source:${b.source}` : b.action === "candidate_status" ? `candidate:${b.candidate}` : null;
 
 /**
  * N1 · THE DOOR. Every authenticated call is logged in the desk log (allowed, proposed, refused or failed) with its actor, level,
@@ -99,7 +106,7 @@ async function refuse(d: DeskDeps, status: number, actor: string, action: string
  * N2 · the door's own code path, after the key: the HTTP endpoint and the desks inside the product (standards and the editor in chief
  * on every story build) both call it, so every desk decision is decided by the same register and lands in the desk log with its actor.
  */
-export async function doorCall(d: DeskDeps, obj: Record<string, unknown>): Promise<{ status: number; body: unknown }> {
+export async function doorCall(d: DeskDeps, obj: Record<string, unknown>, inner: { pass?: boolean } = {}): Promise<{ status: number; body: unknown }> {
   const [{ ACTORS, isActor }, { actionDef }, { decide }] = await Promise.all([import("../newsroom/desks"), import("../newsroom/register"), import("../newsroom/door")]);
   const log = logWith(d);
   const refused = async (status: number, actor: string, action: string, reason: string, body: Record<string, unknown>) => { const res = await refuse(d, status, actor, action, reason, body); return { status: res.status, body }; };
@@ -122,7 +129,7 @@ export async function doorCall(d: DeskDeps, obj: Record<string, unknown>): Promi
     return { status: 202, body: { ok: true, proposed: true, level: def.level, note: "Recorded as a proposal; nothing live changed.", ...(id != null ? { log: id } : {}) } };
   }
   let out: Outcome;
-  try { out = await run(b, actor, d); }
+  try { out = await run(b, actor, d, inner); }
   catch (e) { await log({ ...base, decision: "failed", reason: (e instanceof Error ? e.message : "error").slice(0, 200) }); throw e; }
   await log({ ...base, decision: out.decision, reason: out.reason ?? null, edit_id: out.edit_id ?? null, ...(out.detail ? { detail: out.detail } : {}) });
   if (out.edit_id != null && d.store.afterEdit && "id" in b) await d.store.afterEdit(b.id).catch(() => {});
@@ -130,13 +137,13 @@ export async function doorCall(d: DeskDeps, obj: Record<string, unknown>): Promi
 }
 /** N2 · the desks inside the product call the door as themselves (no HTTP, no key: they run inside the server). */
 let inside: Promise<DeskDeps> | null = null;
-export async function deskDoor(actor: string, body: Record<string, unknown>): Promise<{ status: number; body: unknown }> {
+export async function deskDoor(actor: string, body: Record<string, unknown>, inner: { /** N5 · a review pass's own verdict */ pass?: boolean } = {}): Promise<{ status: number; body: unknown }> {
   // The build records the state rows once at its end, so the inside door skips the after-edit refresh (one per edit would be heavy).
   inside ??= prodDeps().then(d => { const { afterEdit: _skip, ...store } = d.store; void _skip; return { ...d, store }; });
-  return doorCall(await inside!, { actor, ...body });
+  return doorCall(await inside!, { actor, ...body }, inner);
 }
 
-async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
+async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: boolean } = {}): Promise<Outcome> {
   const read = (body: unknown): Outcome => ({ status: 200, body, decision: "read" });
   const missing: Outcome = { status: 404, body: { error: "not_found" }, decision: "refused", reason: "Not available here." };
   if (b.action === "check") return read({ ok: true });
@@ -235,6 +242,32 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
     if (!(await d.store.jobHolds()).some(h => h.job === b.job)) return { status: 409, body: { error: "refused", reason: `No hold on ${b.job} is in force.` }, decision: "refused", reason: `No hold on ${b.job} is in force.` };
     return { status: 201, body: { ok: true, job: b.job, released: true }, decision: "done", reason: b.reason, detail: { job: b.job } };
   }
+  // N5 · the publisher's and scout's records. Every status move is checked against the current status by its store.
+  if (b.action === "draft_status") {
+    if (!d.store.draftStatus) return missing;
+    const r = await d.store.draftStatus({ draft: b.draft, status: b.status, reason: b.reason ?? null });
+    if (!r) return { ...missing, reason: "No such draft." };
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, draft: b.draft, status: r.status }, decision: "done", reason: `${b.status}${b.reason ? `: ${b.reason}` : ""}`.slice(0, 600), detail: { draft: b.draft, status: b.status } };
+  }
+  if (b.action === "audience") {
+    if (!d.store.audience) return missing;
+    const { action: _a, ...a } = b; void _a;
+    const r = await d.store.audience({ ...a, test: a.test ?? false, actor });
+    return { status: 201, body: { ok: true, audience: r.id, replaces: r.replaces }, decision: "done", reason: `${b.week}: ${b.visitors} visitors, ${b.pageviews} pageviews${b.test ? " (test)" : ""}`, detail: { week: b.week, row: r.id, replaces: r.replaces, paths: b.top.length, sources: b.sources.length, test: b.test ?? false } };
+  }
+  if (b.action === "source_note") {
+    if (!d.store.sourceNote) return missing;
+    const r = await d.store.sourceNote({ source: b.source, status: b.status, read_on: b.read_on ?? null, link: b.link ?? null, note: b.note, actor });
+    return { status: 201, body: { ok: true, note: r.id }, decision: "done", reason: `${b.source}: ${b.status} · ${b.note}`.slice(0, 600), detail: { source: b.source, status: b.status, read_on: b.read_on ?? null } };
+  }
+  if (b.action === "candidate_status") {
+    if (!d.store.candidateStatus) return missing;
+    const r = await d.store.candidateStatus({ candidate: b.candidate, status: b.status, actor, reason: b.reason ?? null });
+    if (!r) return { ...missing, reason: "No such candidate." };
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, candidate: b.candidate, status: r.status }, decision: "done", reason: `${b.status}${b.reason ? `: ${b.reason}` : ""}`.slice(0, 600), detail: { candidate: b.candidate, status: b.status } };
+  }
   if (b.action === "proposal_status") {
     if (!d.store.proposalStatus) return missing;
     const r = await d.store.proposalStatus({ log_id: b.log, status: b.status, reason: b.reason ?? null });
@@ -265,13 +298,18 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
     if (h && b.action !== "hold" && actor !== "owner") {
       if (h.pending && (actor !== "editor in chief" || !h.standardsPassed)) return { status: 403, body: { error: "refused", reason: "A story waiting for review runs only when standards passed it and the editor in chief places it." }, decision: "refused", reason: `${actor} cannot run a story waiting for review.` };
       if (h.state === "held" && h.heldBy === "standards" && actor !== "editor in chief") return { status: 403, body: { error: "refused", reason: "A story the standards desk held is released only by the editor in chief or the owner." }, decision: "refused", reason: `${actor} cannot release a story standards held.` };
+      // N5 · a hold by any desk is released only by a restore from the editor in chief or the owner (standards for a hold of its own,
+      // through its release over the second reader above).
+      if (h.state === "held" && h.heldBy && h.heldBy !== "engine" && actor !== "editor in chief") return { status: 403, body: { error: "refused", reason: "A held story is released only by the editor in chief or the owner." }, decision: "refused", reason: `${actor} cannot release a story ${h.heldBy} held.` };
       // N4c · the editor in chief releases a story standards held only after standards passed it since (a re-check after a checklist fix,
       // or a pass over its second reader); a checklist hold standing is released only by the owner.
       if (b.action === "restore" && h.state === "held" && h.heldBy === "standards" && actor === "editor in chief" && !h.standardsPassed) return { status: 403, body: { error: "refused", reason: "A story standards held runs only after standards passed it again; a checklist hold is released only by the owner." }, decision: "refused", reason: "editor in chief cannot release a story standards still holds." };
     }
   }
   if (b.action === "hold") {
-    const edit = await d.store.insertEdit({ story_id: b.id, action: "kill", payload: { reason: b.reason, hold: true, desk: actor }, note: `Held: ${b.reason}`.slice(0, 500) });
+    // N5 · a hold a review pass makes from its own verdict is marked as the pass's; any other hold (a desk session, the owner) is a
+    // hold through the door, which no review pass ever offers again: only a restore releases it.
+    const edit = await d.store.insertEdit({ story_id: b.id, action: "kill", payload: { reason: b.reason, hold: true, desk: actor, ...(inner.pass ? { pass: (await import("../newsroom/holds")).PASS_HOLD } : {}) }, note: `Held: ${b.reason}`.slice(0, 500) });
     return { status: 201, body: { ok: true, edit }, decision: "done", reason: b.reason, edit_id: edit.id };
   }
   if (b.action === "pin" && !pinOk(b.until, d.now())) return { status: 400, body: { error: "invalid_input", issues: [{ path: "until", message: "must be in the future and within 7 days" }] }, decision: "refused", reason: "A pin must end in the future and within seven days." };
@@ -304,7 +342,8 @@ export async function prodDeps(): Promise<DeskDeps> {
         const [log, spend, board, golden, wire, desks, notes, proposals, reviews, n3] = await Promise.all([nr.loadHistory(db, { days: 14, actor: desk, limit: 300 }), nr.spendStatus(db).catch(() => null), nr.loadBoard(db).catch(() => null), mem.goldenView(), nr.wireOnlyOn(),
           nr.deskCaps(db).catch(() => null), nr.loadNotes(db).catch(() => []), nr.loadProposals(db).catch(() => []), nr.recentReviews(db).catch(() => []), import("../newsroom/panels.server").then(m => m.n3Panels(db)).catch(() => null)]);
         const n4 = await import("../newsroom/panels.server").then(m => m.n4Panels(db)).catch(() => null);
-        return { log, spend: spend ? { ...spend, split: sp.spendSplit(spend), reached: sp.capReached(spend), line: sp.capLine(spend) } : null, register: mem.registerView(), board, golden, switches: { wire_only: wire }, desks, notes, proposals, reviews, n3, n4 };
+        const n5 = await import("../newsroom/panels.server").then(m => m.n5Panels(db)).catch(() => null);
+        return { n5, log, spend: spend ? { ...spend, split: sp.spendSplit(spend), reached: sp.capReached(spend), line: sp.capLine(spend) } : null, register: mem.registerView(), board, golden, switches: { wire_only: wire }, desks, notes, proposals, reviews, n3, n4 };
       },
       assign: async r => (await import("../newsroom/newsroom.server")).insertAssignment(db, r),
       spend: async r => (await import("../newsroom/newsroom.server")).insertSpend(db, r),
@@ -329,6 +368,10 @@ export async function prodDeps(): Promise<DeskDeps> {
       gateResult: async r => (await import("../newsroom/engineering.server")).recordGate(db, r),
       queueItemExists: async id => (await import("../newsroom/engineering.server")).queueItemExists(db, id),
       jobHolds: async () => (await import("../newsroom/passes.server")).heldJobs(db),
+      draftStatus: async r => (await import("../newsroom/publisher.server")).insertDraftStatus(db, r),
+      audience: async r => (await import("../newsroom/publisher.server")).insertAudience(db, r),
+      sourceNote: async r => (await import("../newsroom/scout.server")).insertSourceNote(db, r),
+      candidateStatus: async r => (await import("../newsroom/scout.server")).insertCandidateStatus(db, r),
       living: {
         records: async () => (await import("../living/living.server")).loadEditions(db),
         insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },

@@ -43,6 +43,7 @@ export async function loadMemory(db: Admin) {
   const [states, notes, proposals, caps, reviews, n3] = await Promise.all([statesFor(db, ids).catch(() => new Map()), loadNotes(db).catch(() => []), loadProposals(db).catch(() => []), deskCaps(db).catch(() => null), reviewsFor(db, ids).catch(() => new Map()),
     import("./panels.server").then(m => m.n3Panels(db)).catch(() => null)]);
   const n4 = await import("./panels.server").then(m => m.n4Panels(db)).catch(() => null);
+  const n5 = await import("./panels.server").then(m => m.n5Panels(db)).catch(() => null);
   return fitMemory({
     read_at: new Date().toISOString(),
     files: { "newsroom/README.md": readme, "newsroom/style.md": style, "newsroom/beats.md": beats },
@@ -59,6 +60,9 @@ export async function loadMemory(db: Admin) {
     // and how many accepted setting moves wait for the next monthly design edition.
     product_loop: n4 ? { ...n4, design: { ...n4.design, newest: n4.design.newest ? { ...n4.design.newest, rows: undefined } : null, tests: n4.design.tests ? { ...n4.design.tests, newest: { ...n4.design.tests.newest, rows: undefined } } : null },
       edition_waiting: `${n4.design.waiting_moves} accepted setting ${n4.design.waiting_moves === 1 ? "move waits" : "moves wait"} for the next monthly design edition.` } : null,
+    // N5 · the publisher and scout: the newest package check, the drafts with status, the audience weeks, the sources register,
+    // this week's candidates and the calls used (the same facts /desk shows).
+    publisher: n5?.publisher ?? null, scout: n5?.scout ?? null,
     spend: spend ? { ...spend, split: spendSplit(spend), reached: capReached(spend), line: capLine(spend) } : null,
     golden,
     design: colophon ? { live_edition: colophon.live, editions: colophon.editions.map(e => ({ number: e.number, dated: e.dated, status: e.statuses[e.statuses.length - 1]?.status ?? null, moves: e.moves.length })), dry_run: colophon.dry } : null,

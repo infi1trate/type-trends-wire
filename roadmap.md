@@ -147,3 +147,14 @@
 - [ ] N4c open: an editor in chief hold is re-offered by the next pass and runs in engine order when it is the only story (no decision to make); owner to decide
 - [ ] N4c open: the story build still times out in the :00 and :30 wire jobs (ingest ~20 s there); it completes on :15 and :45 and in the library jobs
 - [ ] N4c open: three test-suite forecast rows in job_runs at 12:07 UTC 22 Nov (append-only; owner to decide)
+
+# Phase N5 · Publisher and scout desks + five review fixes
+- [x] A1 door holds never offered; EIC hold day rule; no "no decision" for EIC-held; tests
+- [x] A2 out of time waits up to six passes
+- [x] A3 job_hold review/stories; health build stamp
+- [x] A4 steady≠flat shared check + style.md; No. 94 rewrite
+- [x] A5 item 1 for published vs stored facts; sweep
+- [x] B1 publisher: package check, drafts call, draft_status, audience, /desk panel, memory
+- [x] B2 scout: sources register, source_note, candidates call, candidate_status, /desk panel, memory
+- [x] job_runs test-row note
+- [x] Proof 1–7, report, commit

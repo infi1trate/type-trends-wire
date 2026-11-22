@@ -15,3 +15,9 @@ export const DESK_LIMITS = [
 ] as const;
 export type DeskPurpose = (typeof DESK_LIMITS)[number]["purpose"];
 export const capOf = (desk: string, purpose: string) => DESK_LIMITS.find(l => l.desk === desk && l.purpose === purpose)?.cap ?? 0;
+// N5 · the publisher's and scout's weekly calls (one a week each; the daily limit bounds a retry). Their records are in
+// desk_calls_weekly, so they are listed apart from the daily desks above.
+export const WEEKLY_LIMITS = [
+  { desk: "publisher", purpose: "drafts", cap: 2, what: "social drafts" },
+  { desk: "scout", purpose: "candidates", cap: 1, what: "brand candidates" },
+] as const;

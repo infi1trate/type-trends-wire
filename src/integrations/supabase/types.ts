@@ -129,6 +129,42 @@ export type Database = {
         }
         Relationships: []
       }
+      audience_weeks: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          pageviews: number
+          sources: Json
+          test: boolean
+          top: Json
+          visitors: number
+          week: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          pageviews: number
+          sources?: Json
+          test?: boolean
+          top?: Json
+          visitors: number
+          week: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          pageviews?: number
+          sources?: Json
+          test?: boolean
+          top?: Json
+          visitors?: number
+          week?: string
+        }
+        Relationships: []
+      }
       brand_assets: {
         Row: {
           bytes: number
@@ -176,6 +212,91 @@ export type Database = {
           width?: number
         }
         Relationships: []
+      }
+      brand_candidate_statuses: {
+        Row: {
+          actor: string
+          at: string
+          candidate_id: number
+          id: number
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          candidate_id: number
+          id?: never
+          reason?: string | null
+          status: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          candidate_id?: number
+          id?: never
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_candidate_statuses_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "brand_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_candidates: {
+        Row: {
+          at: string
+          call_id: number | null
+          cites: string
+          domain: string
+          id: number
+          log_id: number | null
+          name: string
+          sector: string
+          test: boolean
+          week: string
+          why: string
+        }
+        Insert: {
+          at?: string
+          call_id?: number | null
+          cites: string
+          domain: string
+          id?: never
+          log_id?: number | null
+          name: string
+          sector: string
+          test?: boolean
+          week: string
+          why: string
+        }
+        Update: {
+          at?: string
+          call_id?: number | null
+          cites?: string
+          domain?: string
+          id?: never
+          log_id?: number | null
+          name?: string
+          sector?: string
+          test?: boolean
+          week?: string
+          why?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_candidates_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "desk_calls_weekly"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       build_queue: {
         Row: {
@@ -710,6 +831,51 @@ export type Database = {
           purpose?: string
           story_ids?: string[]
           usage_id?: number | null
+        }
+        Relationships: []
+      }
+      desk_calls_weekly: {
+        Row: {
+          answer: Json
+          at: string
+          cost: number
+          desk: string
+          error: string | null
+          id: number
+          model: string
+          ok: boolean
+          prompt_version: string | null
+          purpose: string
+          usage_id: number | null
+          week: string | null
+        }
+        Insert: {
+          answer?: Json
+          at?: string
+          cost?: number
+          desk: string
+          error?: string | null
+          id?: never
+          model: string
+          ok: boolean
+          prompt_version?: string | null
+          purpose: string
+          usage_id?: number | null
+          week?: string | null
+        }
+        Update: {
+          answer?: Json
+          at?: string
+          cost?: number
+          desk?: string
+          error?: string | null
+          id?: never
+          model?: string
+          ok?: boolean
+          prompt_version?: string | null
+          purpose?: string
+          usage_id?: number | null
+          week?: string | null
         }
         Relationships: []
       }
@@ -1468,6 +1634,41 @@ export type Database = {
           started_at?: string
         }
         Relationships: []
+      }
+      job_run_notes: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          note: string
+          run_id: number
+          test: boolean
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          note: string
+          run_id: number
+          test?: boolean
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          note?: string
+          run_id?: number
+          test?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_run_notes_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "job_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_runs: {
         Row: {
@@ -2576,6 +2777,36 @@ export type Database = {
         }
         Relationships: []
       }
+      package_checks: {
+        Row: {
+          at: string
+          checks: Json
+          id: number
+          issue: number | null
+          pass: boolean
+          test: boolean
+          week: string
+        }
+        Insert: {
+          at?: string
+          checks: Json
+          id?: never
+          issue?: number | null
+          pass: boolean
+          test?: boolean
+          week: string
+        }
+        Update: {
+          at?: string
+          checks?: Json
+          id?: never
+          issue?: number | null
+          pass?: boolean
+          test?: boolean
+          week?: string
+        }
+        Relationships: []
+      }
       page_reviews: {
         Row: {
           actor: string
@@ -3054,6 +3285,95 @@ export type Database = {
         }
         Relationships: []
       }
+      social_draft_statuses: {
+        Row: {
+          actor: string
+          at: string
+          draft_id: number
+          id: number
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          draft_id: number
+          id?: never
+          reason?: string | null
+          status: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          draft_id?: number
+          id?: never
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_draft_statuses_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "social_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_drafts: {
+        Row: {
+          at: string
+          body: string
+          call_id: number | null
+          check_id: number
+          id: number
+          link: string
+          story_id: string | null
+          target: string
+          test: boolean
+          week: string
+        }
+        Insert: {
+          at?: string
+          body: string
+          call_id?: number | null
+          check_id: number
+          id?: never
+          link: string
+          story_id?: string | null
+          target: string
+          test?: boolean
+          week: string
+        }
+        Update: {
+          at?: string
+          body?: string
+          call_id?: number | null
+          check_id?: number
+          id?: never
+          link?: string
+          story_id?: string | null
+          target?: string
+          test?: boolean
+          week?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_drafts_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "desk_calls_weekly"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_drafts_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "package_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       source_cursors: {
         Row: {
           etag: string | null
@@ -3075,6 +3395,39 @@ export type Database = {
           last_modified?: string | null
           state?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      source_notes: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          link: string | null
+          note: string
+          read_on: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          link?: string | null
+          note: string
+          read_on?: string | null
+          source: string
+          status: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          link?: string | null
+          note?: string
+          read_on?: string | null
+          source?: string
+          status?: string
         }
         Relationships: []
       }

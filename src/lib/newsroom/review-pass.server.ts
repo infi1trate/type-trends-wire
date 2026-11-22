@@ -38,7 +38,13 @@ export async function runReviewPass(db: Admin, o: { now?: () => number; byHand?:
     const busy = rp.reviewBusy(t0);
     if (busy && !o.byHand) { out.why = `not now: ${busy}`; return out; }
     const { isHeld } = await import("./passes.server");
-    if (await isHeld(db, "reviews")) { out.why = "reviews are held"; return out; }
+    // N5 · a hold on `review` (or its N4b name `reviews`) stops the pass; the pass records "held" in a start and finish row.
+    if (await isHeld(db, "review")) {
+      out.why = "held";
+      const { startRun } = await import("../jobs/runs.server");
+      const h = await startRun("review-passes", { db, note: "held" }); await h.finish(true, "held: job_hold on review");
+      return out;
+    }
     const open = await db.from("job_runs").select("id,at").eq("job", "review-passes").eq("phase", "start").gte("at", new Date(t0 - rp.REVIEW_STALE_MS).toISOString()).order("id", { ascending: false }).limit(3);
     if (open.data?.length) {
       const fin = await db.from("job_runs").select("start_id").eq("phase", "finish").in("start_id", open.data.map(x => x.id));
@@ -68,7 +74,7 @@ export async function runReviewPass(db: Admin, o: { now?: () => number; byHand?:
     const s = summary;
     out.why = !s ? "the pass hit its time limit" : !out.items.length ? "nothing waiting" : [`${s.checked} checked`, s.pictures ? `${s.pictures.checked} pictures` : null, s.held.length ? `${s.held.length} held` : null, s.released.length ? `${s.released.length} released` : null, s.waiting?.length ? `${s.waiting.length} wait` : null, s.chief !== "none" ? `chief: ${s.chief}` : null, s.errors.length ? `${s.errors.length} errors` : null].filter(Boolean).join(", ");
     const r = run as Awaited<ReturnType<typeof startRun>> | null;
-    if (r && !r.slotTaken) await r.finish(!!s && !s.errors.length, out.why, s ? { held: s.held, released: s.released, passed: s.passed, waiting: s.waiting ?? [], lead: s.lead, chief: s.chief, pictures: s.pictures ?? null, errors: s.errors.slice(0, 6) } : null);
+    if (r && !r.slotTaken) await r.finish(!!s && !s.errors.length, out.why, s ? { held: s.held, released: s.released, passed: s.passed, waiting: s.waiting ?? [], kept: s.kept ?? [], lead: s.lead, chief: s.chief, pictures: s.pictures ?? null, errors: s.errors.slice(0, 6) } : null);
     else if (!out.why) out.why = "another pass took this slot";
   } catch (e) { out.why = `failed: ${e instanceof Error ? e.message.slice(0, 120) : "error"}`; }
   return out;

@@ -56,7 +56,9 @@ export function sheetNumbers(row: RowOf, keys: string[], sector: string | null, 
       const r = row(ck, scope); if (r?.current_share == null) return [];
       const base = runBase(r) ?? bases.get(`${ck}|${scope}`) ?? null;
       const line = (stage: string | null) => shareLine({ name: n, share: r.current_share!, where, basis: b, base, stage, momentum: r.momentum ?? null });
-      return [{ text: line(r.stage ?? null), basis: b, key: ck, scope, shown: line(stageName(r.stage) ?? r.stage ?? null) }];
+      // N5 · the writer reads the stage key, except "flat", which it read as a share that stands still (No. 94: "its share is flat"
+      // beside momentum 1.6 points a quarter); it reads the reader's word "steady" instead, as the page's own list says.
+      return [{ text: line(r.stage === "flat" ? "steady" : r.stage ?? null), basis: b, key: ck, scope, shown: line(stageName(r.stage) ?? r.stage ?? null) }];
     };
     return [...one("all", ""), ...(sector ? one(sector, `${sectorName(sector)} `) : [])];
   });

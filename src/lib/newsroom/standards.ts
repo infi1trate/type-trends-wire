@@ -40,6 +40,10 @@ export type ReviewInput = {
   /** N3 · open data findings, and the brands and measures this story cites (its changes' fields). */
   findings?: readonly OpenFinding[];
   cites?: readonly { domain: string; measure: string }[];
+  /** N5 · where the story stands now, and for a published story what its newest written text was written with: the facts sheet stored
+   *  at or before that text (null when none was stored) and whether the writer's shared check passed the text then. */
+  state?: string;
+  asWritten?: { at: string; checked: boolean; sheet: WriterFacts | null; text: { headline: string; deck: string; body: string[] } } | null;
 };
 
 import { findingsOn, type OpenFinding } from "./datadesk";
@@ -81,9 +85,15 @@ export function checklist(i: ReviewInput): ItemResult[] {
     // N4c · the story's own stored facts count too: the writer's sheet replaces a stored share line with its own number for that signal
     // ("Media: 8.3% in run 13 → 17.9% in run 16" becomes "5 of 28 … (17.9%)"), which drops the earlier run's share the deck cites.
     const stored = i.facts.map(f => ({ text: f.text, basis: null }));
-    const sheet: WriterFacts = i.sheet ? { ...i.sheet, lines: [...i.sheet.lines, ...stored] } : { type: i.type, kind: i.type, sector: null, brands: [], changes: [], copy: [], headline_call: null, numbers: [], lines: stored, dates: [], rebrand: false };
+    // N5 · a published story is checked against the facts it was written with, never against today's live counts (its page carries
+    // its date): the sheet stored when its text was written, its stored facts, and the numbers of a text the writer's shared check
+    // passed then. Corrections made since are still checked against those facts.
+    const published = i.state === "published" && !!i.asWritten;
+    const base = published ? i.asWritten!.sheet : i.sheet;
+    const extra = published && i.asWritten!.checked ? [i.asWritten!.text.headline, i.asWritten!.text.deck, ...i.asWritten!.text.body].map(text => ({ text, basis: null })) : [];
+    const sheet: WriterFacts = base ? { ...base, lines: [...base.lines, ...stored, ...extra] } : { type: i.type, kind: i.type, sector: null, brands: [], changes: [], copy: [], headline_call: null, numbers: [], lines: [...stored, ...extra], dates: [], rebrand: false };
     const bad = numberFailures([i.headline, i.deck ?? "", ...i.body].join("\n"), sheet);
-    out.push(r("numbers", bad.length ? "fail" : "pass", bad.length ? `not on the facts sheet: ${bad.slice(0, 6).join(", ")}` : null));
+    out.push(r("numbers", bad.length ? "fail" : "pass", bad.length ? `not on the facts ${published ? "it was written with" : "sheet"}: ${bad.slice(0, 6).join(", ")}` : null));
   }
   // 2 · brands: tracked now, and the brand's name in its own homepage title or headline (or on the allow-list with the same title).
   {

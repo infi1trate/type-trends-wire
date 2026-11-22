@@ -48,6 +48,8 @@ candidate → drafted → checked → picture checked (graphics) → standards (
 - **graphics**, study chart: 2 a day.
 - **data**, weekly proposal: 1 a day.
 - **design review**, page review: 9 a day.
+- **publisher**, social drafts: 2 a day (one call a week).
+- **scout**, brand candidates: 1 a day (one call a week).
 
 ## The news desk
 
@@ -113,12 +115,27 @@ Visible change: no visible change allows at most 1% of pixels changed and height
 - **News desk:** in the wire ingest's own job, straight after the ingest stores its items and before the story build, with its own 25-second limit. When it decides not to call, it records why at most once every 60 minutes (`data_run`, run `picks`).
 - **Share-image and study-chart checks (graphics):** once a UTC day in their own scheduled passes (schedule “desk-passes”, `7-57/10 1-3 * * *` UTC): at most 5 items a pass, one pass per 10-minute slot, each under 20 s, resuming where the last pass stopped. A pass reads stored records only; an image that cannot be built from them in 5 s is recorded as failing and not retried that day. A start row is written before any work; one with no finish row after 2 minutes is a failed pass, and 2 failed passes stop the check for the day and file a bug item. Never two passes at once, and never while ingest-wire (every 15 min), library-ai-worker (every 5 min), library-history-refresh (every 10 min) is inside its time limit.
 - **Data desk checks, backtest, health run and design review:** after the story build when time is left, each behind its once-a-day (proposal: once-a-week; design review: one pass a day per weekly run) record, written before the work starts, so a run that is cut off is not retried by the next job.
-- **Holds:** `job_hold` (engineering or owner) holds any of share, chart, picks, checks, health, design review, backtest, proposal, reviews until a time at most 7 days ahead; a held job does not start. `job_release` ends a hold early. Both carry a reason; /desk and the memory show every hold.
+- **Holds:** `job_hold` (engineering or owner) holds any of share, chart, picks, checks, health, design review, backtest, proposal, reviews, review, stories, package, drafts, candidates until a time at most 7 days ahead; a held job does not start. `job_release` ends a hold early. Both carry a reason; /desk and the memory show every hold.
 
 ## Door actions added in N4b
 
-- **`job_hold`** (ships alone): Holds a scheduled desk job (share, chart, picks, checks, health, design review, backtest or proposal) until a time at most seven days ahead, with a reason (engineering or the owner). A held job does not start; /desk shows who, why and until when.
+- **`job_hold`** (ships alone): Holds a scheduled desk job (share, chart, picks, checks, health, design review, backtest or proposal) until a time at most seven days ahead, with a reason (engineering or the owner). A held job does not start; /desk shows who, why and until when. N5: also `review` (the review passes) and `stories` (the story build's publishing step), so content can be frozen around a gated deploy, and the publisher's and scout's weekly jobs (`package`, `drafts`, `candidates`).
 - **`job_release`** (ships alone): Releases a held scheduled desk job before its time, with a reason (engineering or the owner).
+
+## The publisher
+
+Mondays, after the Digest's week closes, in the desk jobs after the story build. First the package check (code, no model) on the newest published issue: the issue is for a closed iso week; under 600 words; three pictures; one chart; five changes; the cover builds; the share image builds; the digest rss is well-formed and carries the newest issue; the morning line rss is well-formed and carries the newest morning; every internal link in the issue answers 200. One stored row per check; a failure files a bug item (key `package:<week>`). Only after that issue's check passed, one drafts call (2 a day at most): up to 6 drafts, 3 for the Digest's argument and up to 3 for the week's stories the editor in chief led with. Code drops a draft over 280 characters with its slug.global link, with more than one sentence or one number, a number not on its target's facts, an emoji, more than 1 hashtag, a question or exclamation, or a line the shared check or the copy desk refuses. Drafts are drafts: draft → approved or declined; approved → posted or declined, set only by the owner (`draft_status`). There is no posting code. Audience numbers come once a week from the publisher's outside session (`audience`): counts only, at most 20 paths and 10 sources; no tracker, cookie or per-person data is added to the site.
+
+## The scout
+
+Keeps the sources register (28 sources: 16 read, 0 needs permission, 11 closed by its terms, 1 off); `source_note` appends a terms reading and changes only what the register shows. Reading a new source still needs the owner. Mondays, one candidates call (1 a day at most) over the last 7 days of outlet wire items, stored Product Hunt launches and names in news items the matcher could not tie to a tracked brand. Up to 15 come back; code keeps at most 10 whose website is a well-formed domain that is not tracked (active or not), not opted out, not proposed in the last 90 days and not a publication, store or social profile, whose sector is one of slug's ten and whose name appears in the item it cites. Each kept candidate is stored and filed with `propose`. Statuses: proposed → accepted or declined (the owner) → added (engineering, once the crawler's seed list carries it). Nothing is added to the library by the product.
+
+## Door actions added in N5
+
+- **`audience`** (ships alone): The week's audience numbers from the host's own analytics (the publisher's outside session, once a week): visitors, pageviews, at most 20 paths and 10 sources, counts only. A later entry for the same week replaces what is shown; the earlier one stays stored.
+- **`source_note`** (ships alone): Appends a terms reading to a source in the sources register (the scout): status, date read, link, one line. It changes what the register shows and nothing else; reading a new source still needs the owner.
+- **`candidate_status`** (ships alone): Moves a brand candidate: accepted or declined (the owner only), then added (engineering, once the crawler's seed list carries it, or the owner). Nothing is added to the library by the product.
+- **`draft_status`** (needs the owner): Sets a social draft's status: approved, posted or declined (from draft: approved or declined; from approved: posted or declined). There is no posting code: outbound posts stay the owner's.
 
 ## The census
 

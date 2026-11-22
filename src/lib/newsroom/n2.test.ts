@@ -83,11 +83,12 @@ describe("editor in chief", () => {
     expect(d.lead).toBeNull();
     expect(d.refused?.id).toBe("roundup:x");
   });
-  it("a story held two days running is offered again only when its facts change", () => {
-    const held = [{ day: "2026-11-20", facts_hash: "h1" }, { day: "2026-11-21", facts_hash: "h1" }];
+  // N5 changed this rule: an editor's hold is offered again on each of the next two days; held on three days it stays held (n5.test.ts).
+  it("a story held on three days with the same facts is offered again only when its facts change", () => {
+    const held = [{ day: "2026-11-20", facts_hash: "h1" }, { day: "2026-11-21", facts_hash: "h1" }, { day: "2026-11-22", facts_hash: "h1" }];
     expect(offerAgain(held, "h1")).toBe(false);
     expect(offerAgain(held, "h2")).toBe(true);
-    expect(offerAgain(held.slice(0, 1), "h1")).toBe(true);
+    expect(offerAgain(held.slice(0, 2), "h1")).toBe(true);
   });
 });
 
