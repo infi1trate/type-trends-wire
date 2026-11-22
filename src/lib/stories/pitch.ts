@@ -8,7 +8,8 @@ import { canonical } from "../labels";
 import type { SiteKind } from "../brand-names";
 import type { Planned } from "./score";
 
-export const PITCH_KINDS = ["change", "signal", "brand", "census", "receipt"] as const;
+/** N3 adds `study`: the data desk's study pitches (the story engine does not build studies; they wait on the board). */
+export const PITCH_KINDS = ["change", "signal", "brand", "census", "receipt", "study"] as const;
 export type PitchKind = (typeof PITCH_KINDS)[number];
 export const PITCH_NOTE_MAX = 140;
 /** Who pitched: the label of the key that unlocked the desk (there is one editor key). */
@@ -79,7 +80,9 @@ export function matches(s: Subject, c: Matchable): boolean {
 const no = (n: number | null) => (n == null ? "an unnumbered story" : `No. ${n}`);
 /** The engine's verdict on one pitch. Order: already a story → in this plan (ran / would run, or held with the engine's reason) →
  *  refused by a rule (integrity, carousel, showcase) → no candidate under the rules. */
+export const STUDY_PITCH_TEXT = "A study pitch: the story engine does not build studies, so it waits on the board for the editor in chief and the study writer.";
 export function pitchVerdict(p: Pick<Pitch, "kind" | "ref">, v: EngineView): Verdict {
+  if (p.kind === "study") return { status: "refused", rule: "none", text: STUDY_PITCH_TEXT };
   const s = subjectOf(p);
   const before = v.stories.filter(x => matches(s, x));
   // A published or retired story answers the pitch; a story stored as held is asked again below, against this build's plan.

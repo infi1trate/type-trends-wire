@@ -27,6 +27,10 @@ export const getFrontRest = createServerFn({ method: "GET" }).inputValidator(z.o
 // E3 · the front page's two new deferred modules: Also today's pictures and the tape.
 export const getFrontAlso = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontAlso(data.sector, data.format));
 export const getFrontTape = createServerFn({ method: "GET" }).handler(async () => (await import("./front/tape.server")).loadFrontTape());
+/** N3 · THE WIRE block: the news desk's picks from the last 24 hours (anonymous public facade). */
+export const getFrontWire = createServerFn({ method: "GET" }).handler(async () => (await import("./newsroom/news.server")).loadFrontWire());
+/** N3 · the terminal wire view's picked marks: item id → the pick's line (last eight days). */
+export const getWirePicks = createServerFn({ method: "GET" }).handler(async () => (await import("./newsroom/news.server")).wirePickMarks());
 export const getStoryHead = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryHead(data.id));
 export const getStoryLead = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryLead(data.id));
 export const getStoryRelated = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryRelated(data.id));

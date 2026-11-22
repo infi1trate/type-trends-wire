@@ -33,7 +33,18 @@ export type NewsroomStore = {
   afterEdit?: (storyId: string) => Promise<void>;
   /** N2 · where a story stands for the door's release rule: its state, whether it awaits review, which desk held it, and whether
    *  standards passed what it shows now. */
-  holdOf?: (id: string) => Promise<{ state: string; pending: boolean; heldBy: string | null; standardsPassed: boolean } | null>;
+  holdOf?: (id: string) => Promise<{ state: string; pending: boolean; heldBy: string | null; standardsPassed: boolean; secondReaderOnly?: boolean } | null>;
+  /** N3 · standards releases a story only its second reader held: a pass "over its second reader", then the editor in chief places it. */
+  overrule?: (r: { story_id: string; reason: string }) => Promise<boolean>;
+  /** N3 · the news desk's picks (five a day at most, outlet items only, never twice) and drops. */
+  wirePick?: (r: { item_id: number; subject: string; line: string; domain: string | null; call_id: number | null; actor: string }, now: number) => Promise<{ id: number } | { refused: string }>;
+  wireDrop?: (r: { pick_id: number; actor: string; reason: string }) => Promise<{ id: number } | null>;
+  /** N3 · the graphics desk's picture choice: checked against the stored crops and the quality gate before it is recorded. */
+  pictureCheck?: (r: { story_id: string; kind: string; assets: string[] }) => Promise<string | null>;
+  picture?: (r: { story_id: string; actor: string; kind: string; assets: string[]; verdict: string; reason: string; per_picture: unknown[]; call_id: number | null }) => Promise<{ id: number }>;
+  /** N3 · the data desk's findings: an open finding with the same key is not opened twice. */
+  finding?: (r: { kind: string; fkey: string; subject: string; measure: string | null; expected: string | null; found: string | null; receipt: Record<string, unknown>; actor: string }) => Promise<{ id: number; existing: boolean }>;
+  findingClose?: (r: { finding_id: number; actor: string; reason: string }) => Promise<{ id: number } | null>;
   note?: (r: { actor: string; subject_kind: string; subject_id: string; text: string }) => Promise<unknown>;
   proposalStatus?: (r: { log_id: number; status: string; reason: string | null }) => Promise<unknown | null>;
 };
@@ -45,7 +56,8 @@ type Outcome = { status: number; body: unknown; decision: LogRow["decision"]; re
 const subjectOf = (b: DeskBody): string | null =>
   "id" in b ? b.id : b.action === "pitch" ? b.ref : b.action === "assign" ? String(b.pitch) : b.action === "living_approve" || b.action === "living_rollback" ? String(b.edition)
     : b.action === "wire_only" ? "wire_only" : b.action === "propose" ? (b.subject ?? b.kind) : b.action === "queue" ? (b.day ?? null) : b.action === "staff" ? b.page
-    : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page : null;
+    : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
+    : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? b.run : null;
 
 /**
  * N1 · THE DOOR. Every authenticated call is logged in the desk log (allowed, proposed, refused or failed) with its actor, level,
@@ -137,6 +149,32 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
   }
   if (b.action === "note") { if (!d.store.note) return missing; const n = await d.store.note({ actor, subject_kind: b.subject_kind, subject_id: b.subject, text: b.text }); return { status: 201, body: { ok: true, note: n }, decision: "done", reason: b.text.slice(0, 600) }; }
   if (b.action === "copy_sweep") return { status: 201, body: { ok: true }, decision: "done", reason: b.summary, detail: { page: b.page, lines: b.lines } };
+  // N3 · who may take the new actions (the register says the level; this says the desk).
+  const { N3_ACTORS, OVERRULE_MIN } = await import("./desk");
+  const allowed = N3_ACTORS[b.action];
+  if (allowed && !allowed.includes(actor)) return { status: 403, body: { error: "refused", reason: `${b.action} is taken by ${allowed.join(", ")}.` }, decision: "refused", reason: `${actor} cannot take ${b.action}.` };
+  if (b.action === "wire_pick") {
+    if (!d.store.wirePick) return missing;
+    const r = await d.store.wirePick({ item_id: b.item, subject: b.subject, line: b.line, domain: b.domain ?? null, call_id: b.call ?? null, actor }, d.now());
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, pick: r.id }, decision: "done", reason: b.line, detail: { item: b.item, subject: b.subject, domain: b.domain ?? null, pick: r.id } };
+  }
+  if (b.action === "wire_drop") {
+    if (!d.store.wireDrop) return missing;
+    const r = await d.store.wireDrop({ pick_id: b.pick, actor, reason: b.reason });
+    return r ? { status: 201, body: { ok: true, drop: r.id }, decision: "done", reason: b.reason } : { ...missing, reason: "No such pick, or it was dropped already." };
+  }
+  if (b.action === "finding") {
+    if (!d.store.finding) return missing;
+    const r = await d.store.finding({ kind: b.kind, fkey: b.key, subject: b.subject, measure: b.measure ?? null, expected: b.expected ?? null, found: b.found ?? null, receipt: b.receipt ?? {}, actor });
+    return { status: r.existing ? 200 : 201, body: { ok: true, finding: r.id, existing: r.existing }, decision: "done", reason: `${b.kind}: ${b.subject}${b.found ? ` · ${b.found}` : ""}`.slice(0, 600), detail: { finding: r.id, existing: r.existing } };
+  }
+  if (b.action === "finding_close") {
+    if (!d.store.findingClose) return missing;
+    const r = await d.store.findingClose({ finding_id: b.finding, actor, reason: b.reason });
+    return r ? { status: 201, body: { ok: true, close: r.id }, decision: "done", reason: b.reason } : { ...missing, reason: "No such open finding." };
+  }
+  if (b.action === "data_run") return { status: 201, body: { ok: true }, decision: "done", reason: b.summary, detail: { run: b.run, counts: b.counts ?? {} } };
   if (b.action === "proposal_status") {
     if (!d.store.proposalStatus) return missing;
     const r = await d.store.proposalStatus({ log_id: b.log, status: b.status, reason: b.reason ?? null });
@@ -145,8 +183,24 @@ async function run(b: DeskBody, actor: string, d: DeskDeps): Promise<Outcome> {
   if (!(await d.store.exists(b.id))) return { ...missing, reason: "No such story." };
   // N2 · the release rule: a story waiting for review runs only when the editor in chief places it (after standards passed it) or the
   // owner runs it; a story the standards desk held is released only by the editor in chief or the owner.
-  if (b.action === "restore" || b.action === "pin" || b.action === "hold") {
+  if (b.action === "restore" || b.action === "pin" || b.action === "hold" || b.action === "picture") {
     const h = d.store.holdOf ? await d.store.holdOf(b.id) : null;
+    // N3 · standards may release a story only its second reader held: every checklist item passed. It records a pass over the second
+    // reader with the reason and sends the story to the editor in chief (no edit: the editor in chief places it). Never a checklist failure.
+    if (b.action === "restore" && actor === "standards") {
+      if (!h || h.state !== "held" || h.heldBy !== "standards" || !h.secondReaderOnly) return { status: 403, body: { error: "refused", reason: "Standards releases only a story its second reader alone held; a checklist failure is released only by the owner." }, decision: "refused", reason: "standards cannot release this story: not held by its second reader alone." };
+      if ((b.note ?? "").trim().length < OVERRULE_MIN) return { status: 400, body: { error: "invalid_input", issues: [{ path: "note", message: `a reason of at least ${OVERRULE_MIN} characters` }] }, decision: "refused", reason: `A release over the second reader needs a reason of at least ${OVERRULE_MIN} characters.` };
+      if (!d.store.overrule || !(await d.store.overrule({ story_id: b.id, reason: b.note!.trim() }))) return { ...missing, reason: "The pass could not be recorded." };
+      return { status: 201, body: { ok: true, sent_to: "editor in chief" }, decision: "done", reason: `Passed over its second reader: ${b.note!.trim()}`.slice(0, 600) };
+    }
+    if (b.action === "picture") {
+      if (!d.store.picture) return missing;
+      const assets = b.assets ?? [];
+      const bad = d.store.pictureCheck ? await d.store.pictureCheck({ story_id: b.id, kind: b.choice, assets }) : null;
+      if (bad) return { status: 409, body: { error: "refused", reason: bad }, decision: "refused", reason: bad };
+      const r = await d.store.picture({ story_id: b.id, actor, kind: b.choice, assets, verdict: b.verdict ?? "door", reason: b.reason, per_picture: b.per_picture ?? [], call_id: b.call ?? null });
+      return { status: 201, body: { ok: true, choice: r.id }, decision: "done", reason: b.reason, detail: { choice: b.choice, assets } };
+    }
     if (h && b.action === "hold" && h.state === "killed") return { status: 409, body: { error: "refused", reason: "A story that was taken down cannot be held; restore it first." }, decision: "refused", reason: "Only a published, reviewed or held story can be held." };
     if (h && b.action !== "hold" && actor !== "owner") {
       if (h.pending && (actor !== "editor in chief" || !h.standardsPassed)) return { status: 403, body: { error: "refused", reason: "A story waiting for review runs only when standards passed it and the editor in chief places it." }, decision: "refused", reason: `${actor} cannot run a story waiting for review.` };
@@ -184,9 +238,9 @@ export async function prodDeps(): Promise<DeskDeps> {
       memory: async () => (await import("../newsroom/memory.server")).loadMemory(db),
       newsroom: async desk => {
         const [nr, mem, sp] = await Promise.all([import("../newsroom/newsroom.server"), import("../newsroom/memory.server"), import("../newsroom/spend")]);
-        const [log, spend, board, golden, wire, desks, notes, proposals, reviews] = await Promise.all([nr.loadHistory(db, { days: 14, actor: desk, limit: 300 }), nr.spendStatus(db).catch(() => null), nr.loadBoard(db).catch(() => null), mem.goldenView(), nr.wireOnlyOn(),
-          nr.deskCaps(db).catch(() => null), nr.loadNotes(db).catch(() => []), nr.loadProposals(db).catch(() => []), nr.recentReviews(db).catch(() => [])]);
-        return { log, spend: spend ? { ...spend, split: sp.spendSplit(spend), reached: sp.capReached(spend), line: sp.capLine(spend) } : null, register: mem.registerView(), board, golden, switches: { wire_only: wire }, desks, notes, proposals, reviews };
+        const [log, spend, board, golden, wire, desks, notes, proposals, reviews, n3] = await Promise.all([nr.loadHistory(db, { days: 14, actor: desk, limit: 300 }), nr.spendStatus(db).catch(() => null), nr.loadBoard(db).catch(() => null), mem.goldenView(), nr.wireOnlyOn(),
+          nr.deskCaps(db).catch(() => null), nr.loadNotes(db).catch(() => []), nr.loadProposals(db).catch(() => []), nr.recentReviews(db).catch(() => []), import("../newsroom/panels.server").then(m => m.n3Panels(db)).catch(() => null)]);
+        return { log, spend: spend ? { ...spend, split: sp.spendSplit(spend), reached: sp.capReached(spend), line: sp.capLine(spend) } : null, register: mem.registerView(), board, golden, switches: { wire_only: wire }, desks, notes, proposals, reviews, n3 };
       },
       assign: async r => (await import("../newsroom/newsroom.server")).insertAssignment(db, r),
       spend: async r => (await import("../newsroom/newsroom.server")).insertSpend(db, r),
@@ -198,6 +252,13 @@ export async function prodDeps(): Promise<DeskDeps> {
       holdOf: async id => (await import("../newsroom/newsroom.server")).holdOf(db, id),
       note: async r => (await import("../newsroom/newsroom.server")).insertNote(db, r),
       proposalStatus: async r => (await import("../newsroom/newsroom.server")).insertProposalStatus(db, r),
+      overrule: async r => (await import("../newsroom/newsroom.server")).insertOverrule(db, r),
+      wirePick: async (r, now) => (await import("../newsroom/news.server")).insertPick(db, r, now),
+      wireDrop: async r => (await import("../newsroom/news.server")).insertDrop(db, r),
+      pictureCheck: async r => (await import("../newsroom/graphics.server")).checkChoice(r),
+      picture: async r => (await import("../newsroom/graphics.server")).insertChoice(db, r),
+      finding: async r => (await import("../newsroom/datadesk.server")).insertFinding(db, r),
+      findingClose: async r => (await import("../newsroom/datadesk.server")).closeFinding(db, r),
       living: {
         records: async () => (await import("../living/living.server")).loadEditions(db),
         insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },

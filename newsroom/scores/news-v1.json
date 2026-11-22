@@ -1,0 +1,65 @@
+{
+ "desk": "news",
+ "version": "v1",
+ "prompt_hash": "34175f15",
+ "run_at": "2026-11-22T07:00:12.380Z",
+ "days": [
+  {
+   "day": "2026-11-19",
+   "candidates": 40,
+   "why": "1 picked, 0 dropped by the line check",
+   "call_id": 29,
+   "picks": [
+    {
+     "item": 75051,
+     "outlet": "designboom",
+     "title": "translucent Y2K electronics inspire iridescent skin of cadillac’s F1 race car",
+     "subject": "brand",
+     "line": "Cadillac’s Las Vegas F1 livery uses iridescent circuit patterns drawn from see-through Y2K electronics.",
+     "brand": null
+    }
+   ],
+   "dropped": [],
+   "mother": [],
+   "within_rules": true
+  },
+  {
+   "day": "2026-11-20",
+   "candidates": 40,
+   "why": "1 picked, 0 dropped by the line check",
+   "call_id": 30,
+   "picks": [
+    {
+     "item": 101035,
+     "outlet": "Nielsen Norman Group",
+     "title": "Can AI Generate Good Designs from Raw User Data?",
+     "subject": "web",
+     "line": "In a study, AI produced better designs from research summaries and recommendations than from raw user comments alone.",
+     "brand": null
+    }
+   ],
+   "dropped": [],
+   "mother": [],
+   "within_rules": true
+  },
+  {
+   "day": "2026-11-21",
+   "candidates": 20,
+   "why": "1 picked, 0 dropped by the line check",
+   "call_id": 31,
+   "picks": [
+    {
+     "item": 101035,
+     "outlet": "Nielsen Norman Group",
+     "title": "Can AI Generate Good Designs from Raw User Data?",
+     "subject": "web",
+     "line": "In a study, AI produced better designs from research summaries and recommendations than from user comments alone.",
+     "brand": null
+    }
+   ],
+   "dropped": [],
+   "mother": [],
+   "within_rules": true
+  }
+ ]
+}

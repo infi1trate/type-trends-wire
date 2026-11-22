@@ -1,0 +1,401 @@
+{
+ "desk": "standards",
+ "version": "v3",
+ "prompt_hash": "b14b95c3",
+ "run_at": "2026-11-22T07:22:01.302Z",
+ "cases": 5,
+ "correct": 5,
+ "wrong": [],
+ "items": [
+  {
+   "number": 43,
+   "id": "breakout:css:scroll_timeline:all:13",
+   "expect": "pass",
+   "verdict": "pass",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "pass",
+   "second_reader": "pass",
+   "problems": [],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.011944
+  },
+  {
+   "number": 45,
+   "id": "white:dev-tools:2026-W47",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "fail",
+     "detail": "Ragged Edge (ragged-edge.com) is not a tracked brand"
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "wrong brand",
+     "words": "Ragged Edge",
+     "severity": "blocker",
+     "why": "Both mentions use Ragged Edge as a studio example, but the homepage belongs to Ragged Edge Resort & Marina in the Florida Keys, not the studio.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "Lifestyle photography is rising across all sectors",
+     "severity": "note",
+     "why": "This can read as a rise in every sector, but the rise is for the tracked homepages taken together, and the story reports a decline in dev tools.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "with an AI read",
+     "severity": "note",
+     "why": "Both count bullets use internal shorthand for homepages whose imagery was assessed by AI.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "momentum 0.6 points a quarter",
+     "severity": "note",
+     "why": "Neither momentum figure tells readers whether the points measure a change in the share of homepages or a change in how fast that share is moving.",
+     "found": true
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.024096
+  },
+  {
+   "number": 77,
+   "id": "news:45715",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "news",
+     "result": "fail",
+     "detail": "the item would not run under today's news rule (no tracked name in the title)"
+    },
+    {
+     "id": "minimums",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "wrong brand",
+     "words": "It's Nice That named Mother",
+     "severity": "blocker",
+     "why": "The item names Mother Design for its typefaces for Major League Baseball, not the tracked studio Mother London.",
+     "found": true
+    },
+    {
+     "kind": "thin",
+     "words": "The link to the homepage beat is the name: Mother is a brand we track.",
+     "severity": "blocker",
+     "why": "The story offers only a name match and tells readers neither what the item is about nor what changed on a homepage.",
+     "found": true
+    },
+    {
+     "kind": "unclear",
+     "words": "The changes:\n- Names Mother, a tracked brand",
+     "severity": "note",
+     "why": "The heading presents a mention as a change even though the body distinguishes the two.",
+     "found": false
+    },
+    {
+     "kind": "other",
+     "words": "- Hero · motherlondon.com · captured 21 Nov 2026\n- Hero · motherlondon.com · captured 21 Nov 2026",
+     "severity": "note",
+     "why": "The same caption appears twice under a heading that specifies one capture.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.019816
+  },
+  {
+   "number": 91,
+   "id": "roundup:all:aesthetic:corporate:2026-11-20",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "dates",
+     "result": "n/a",
+     "detail": "the deck dates 14 Nov, 20 Nov are not in How we know (“Our read of the imagery, an AI estimate.”)"
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "fail",
+     "detail": "3 AI-read changes with no measured change beside them"
+    },
+    {
+     "id": "sections",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "pass",
+   "problems": [
+    {
+     "kind": "jargon",
+     "words": "Three brands moved to corporate polish",
+     "severity": "note",
+     "why": "“Corporate polish” is slug’s label for a look, but the story never tells readers what visual feature the three homepages now share.",
+     "found": true
+    },
+    {
+     "kind": "jargon",
+     "words": "momentum -0.3 points a quarter",
+     "severity": "note",
+     "why": "Readers cannot tell whether the 13.5% share is falling by 0.3 percentage points per quarter or whether “momentum” measures something else.",
+     "found": true
+    },
+    {
+     "kind": "other",
+     "words": "The changes:",
+     "severity": "note",
+     "why": "All four entries repeat the body almost word for word, so readers get the same rundown twice.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.02416
+  },
+  {
+   "number": 92,
+   "id": "quiet:event:4905",
+   "expect": "hold",
+   "verdict": "hold",
+   "right": true,
+   "checklist": [
+    {
+     "id": "numbers",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "brands",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "picture",
+     "result": "fail",
+     "detail": "a quiet change needs its before and after picture"
+    },
+    {
+     "id": "dates",
+     "result": "fail",
+     "detail": "the deck dates 6 Nov, 21 Nov are not in How we know (“Measured from captures on 13 and 20 November.”)"
+    },
+    {
+     "id": "news",
+     "result": "n/a",
+     "detail": null
+    },
+    {
+     "id": "minimums",
+     "result": "fail",
+     "detail": "one accent colour on one page is a line on the tape, not a story. (a quiet change needs a confirmed new site icon, a confirmed new social card, or a confirmed change of headline or body typeface on another page at the same address)"
+    },
+    {
+     "id": "sections",
+     "result": "fail",
+     "detail": "the body is empty"
+    },
+    {
+     "id": "copy",
+     "result": "pass",
+     "detail": null
+    },
+    {
+     "id": "findings",
+     "result": "n/a",
+     "detail": null
+    }
+   ],
+   "checklist_verdict": "hold",
+   "second_reader": "hold",
+   "problems": [
+    {
+     "kind": "contradiction",
+     "words": "Before: Vivid pink",
+     "severity": "blocker",
+     "why": "The change record says “Vivid pink,” but the measured facts line says “Before: Vivid red,” so the records disagree about the original colour.",
+     "found": true
+    },
+    {
+     "kind": "thin",
+     "words": "(empty)",
+     "severity": "blocker",
+     "why": "The body is empty, leaving a single accent-colour change on one page as the whole story.",
+     "found": false
+    }
+   ],
+   "model": "openai/gpt-6.2-astra",
+   "cost": 0.016328
+  }
+ ]
+}

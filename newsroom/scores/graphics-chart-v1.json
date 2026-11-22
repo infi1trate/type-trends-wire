@@ -1,0 +1,9 @@
+{
+ "desk": "graphics chart",
+ "version": "v1",
+ "prompt_hash": "0811aa29",
+ "run_at": "2026-11-22T07:04:54.967165Z",
+ "cases": 0,
+ "items": [],
+ "note": "Not run in N3: the proof's call budget went to the picture check. The first live chart calls are this version's baseline."
+}

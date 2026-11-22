@@ -3,7 +3,7 @@ import { line as voiced } from "@/lib/voice";
 // refresh from /front.json without a reload. Composition A (brand/README.md, "Layout moves"), Steady density: a date and state line
 // pinned left and right; ONE pink Plate for the lead; Moving now as a rule box; the live column as a Ledger; chart of the day in a Card;
 // the sector strip, editions and data stories as rule boxes. Nothing else is filled with colour.
-import { useCallback, useState, type ReactNode } from "react";
+import { Component, Suspense, useCallback, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { BRAND_NAME } from "@/lib/brand";
 import type { FrontModel, FrontRest, FrontStory, FrontTop, FrontUpdates } from "@/lib/front/front";
@@ -11,7 +11,9 @@ import type { Crop } from "@/lib/crops";
 import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape, type TapePair } from "@/lib/front/tape-block";
 import { MarkedName } from "./BrandMark";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
+import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery, frontWireQuery } from "@/lib/data";
+import { WIRE_DATA_HREF, WIRE_SUB, WIRE_TITLE, type WireBlockRow } from "@/lib/newsroom/news";
+import { shortDay } from "@/lib/labels";
 import { Later, ROW } from "./Later";
 import { FORMAT_LABEL, FORMAT_NOTE, FORMATS, frontSearch, type FormatFilter } from "@/lib/front/formats";
 import { numberLabel } from "@/lib/stories/numbers";
@@ -172,6 +174,29 @@ export function TapeBlock({ t }: { t: FrontTape }) {
   </section>;
 }
 function TapeLater() { const { data } = useSuspenseQuery(frontTapeQuery()); return <TapeBlock t={data} />; }
+// N3 · THE WIRE: up to five links the news desk picked from the publications on the wire in the last 24 hours, built from the tape's own
+// rows and type steps: the outlet, the line (the outlet's page, in a new tab), the date, and the tracked brand it names. No block when empty.
+export function WireBlock({ rows }: { rows: WireBlockRow[] }) {
+  if (!rows.length) return null;
+  // Height budget (N3): at most 280 px added at 1440 and 380 px at 390, so the heading is a kicker line carrying the closing link, and
+  // phones show the three newest rows (the rest are one tap away on the wire).
+  return <section aria-labelledby="front-wire" data-front-wire="" className="front-wire">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+      <h2 id="front-wire" className="ed-kicker">{WIRE_TITLE}<span className="sr-only">: {WIRE_SUB}</span></h2>
+      <a href={WIRE_DATA_HREF} className="ed-tap ed-data">The whole wire →</a>
+    </div>
+    <Ledger className="ledger-wire mt-2" small label={WIRE_TITLE} rows={rows.map(r => ({ key: String(r.id), href: r.url, external: true, title: r.line, tags: [r.outlet], time: shortDay(r.date),
+      ...(r.brand ? { after: <Link to="/brands/$domain" params={{ domain: r.brand.domain }} className="ledger-brand ed-data">{r.brand.name}</Link> } : {}) }))} />
+  </section>;
+}
+function WireRows() { const { data } = useSuspenseQuery(frontWireQuery()); return <WireBlock rows={data.rows} />; }
+/** THE WIRE never holds up or takes down THE TAPE: it waits silently and, if its read fails, the block is simply not shown. */
+class WireQuiet extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  override render() { return this.state.failed ? null : this.props.children; }
+}
+function WireLater() { return <WireQuiet><Suspense fallback={null}><WireRows /></Suspense></WireQuiet>; }
 
 type Slots = { archive: ReactNode; aside: ReactNode; lower: ReactNode; also: ReactNode; tape: ReactNode };
 const exploreRow = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
@@ -237,7 +262,7 @@ function laterSlots(m: FrontTop): Slots {
     aside: <Later id="front-aside-later" shapes={[{ kind: "block", height: 380 }, { kind: "rows", n: 4, height: ROW.compact }]}><RestAside m={m} /></Later>,
     lower: m.sections.editions || m.sections.dataStories ? <Later id="front-lower-later" shapes={[{ kind: "rows", n: 4, height: ROW.compact }]}><RestLower m={m} /></Later> : null,
     also: m.sections.also ? <Later id="front-also-later" shapes={[{ kind: "block", height: 28 }, { kind: "block", height: 420 }]}><AlsoLater m={m} /></Later> : null,
-    tape: <Later id="front-tape-later" shapes={[{ kind: "block", height: 64 }, { kind: "rows", n: 8, height: ROW.compact }, { kind: "text", lines: 2 }]}><TapeLater /></Later>,
+    tape: <Later id="front-tape-later" className="d-stack" shapes={[{ kind: "block", height: 64 }, { kind: "rows", n: 8, height: ROW.compact }, { kind: "text", lines: 2 }]}><TapeLater /><WireLater /></Later>,
   };
 }
 /** E3b · shell first: the page frame (bar, status line, footer) goes out before any read; the ticker, lead and live column stream into

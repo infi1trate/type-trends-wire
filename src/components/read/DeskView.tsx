@@ -41,7 +41,7 @@ function Actions({ s, send }: { s: Item; send: (body: Record<string, unknown>) =
 function Row({ s, send }: { s: Item; send: ((body: Record<string, unknown>) => Promise<string>) | null }) {
   return <li className="ed-hair pt-3">
     <p className="ed-kicker flex flex-wrap gap-x-3"><span>{s.kicker}</span><span className="ed-muted">Score {s.score}</span><time dateTime={s.at} className="ed-muted">{storyTime(s.at)}</time>{s.pinnedUntil && <span>Pinned until {s.pinnedUntil.slice(0, 16).replace("T", " ")}</span>}{s.corrected && <span>Corrected {day(s.corrected)}</span>}</p>
-    <h3 className="ed-h3 mt-1"><Link to="/stories/$id" params={{ id: s.id }} className="no-underline hover:underline">{s.headline}</Link></h3>
+    <h3 className="ed-h3 mt-1 break-words"><Link to="/stories/$id" params={{ id: s.id }} className="no-underline hover:underline">{s.headline}</Link></h3>
     {s.state !== "published" && <p className="ed-small mt-1">{s.state === "killed" ? `Killed: ${s.killReason ?? "by the editor"}` : `Held: ${s.reason}`}</p>}
     {s.written && <p className="ed-data mt-1">Template · {s.template.headline}{s.template.deck ? ` — ${s.template.deck}` : ""}</p>}
     <p className="ed-caption mt-1">{s.written ? `Written by ${s.written.model}, version ${s.written.version}, ${day(s.written.at)}` : "Template text (no checked written version yet)"}</p>

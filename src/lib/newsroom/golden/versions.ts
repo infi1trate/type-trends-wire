@@ -8,6 +8,9 @@ import { STUDY_SCHEMA, STUDY_SYSTEM } from "../../data-stories/writer";
 import { DIGEST_SCHEMA, DIGEST_SYSTEM } from "../../digest/writer";
 import { STANDARDS_SCHEMA, STANDARDS_SYSTEM } from "../standards";
 import { CHIEF_SCHEMA, CHIEF_SYSTEM } from "../chief";
+import { NEWS_SCHEMA, NEWS_SYSTEM } from "../news";
+import { CHART_SCHEMA, CHART_SYSTEM, GRAPHICS_SCHEMA, GRAPHICS_SYSTEM } from "../graphics";
+import { PROPOSAL_SCHEMA, PROPOSAL_SYSTEM } from "../datadesk";
 
 export const WRITERS = ["story", "study", "digest"] as const;
 export type Writer = (typeof WRITERS)[number];
@@ -41,15 +44,27 @@ export const currentVersion = (w: Writer) => {
 // (system text and output schema) and its models; its score file is the Part 6 fixture run (must-hold cases held, must-pass cases
 // passed, the editor's three replayed days). A changed prompt fails the build until a new version is recorded with a score file whose
 // result is no worse than the baseline's (deskGatePasses).
-export const DESK_PROMPTS = ["standards", "editor in chief"] as const;
+// N3 adds the news desk's picks, the graphics desk's picture check (the AI reads' vision model) and chart choice, and the data desk's
+// weekly proposal, under the same rule.
+export const DESK_PROMPTS = ["standards", "editor in chief", "news", "graphics", "graphics chart", "data"] as const;
 export type DeskPrompt = (typeof DESK_PROMPTS)[number];
-const DESK_PARTS: Record<DeskPrompt, { system: string; schema: unknown }> = { standards: { system: STANDARDS_SYSTEM, schema: STANDARDS_SCHEMA }, "editor in chief": { system: CHIEF_SYSTEM, schema: CHIEF_SCHEMA } };
-export const deskPromptHash = (d: DeskPrompt) => fnv(JSON.stringify([DESK_PARTS[d].system, DESK_PARTS[d].schema, writerModels()]));
+const DESK_PARTS: Record<DeskPrompt, { system: string; schema: unknown; models?: () => string[] }> = {
+  standards: { system: STANDARDS_SYSTEM, schema: STANDARDS_SCHEMA }, "editor in chief": { system: CHIEF_SYSTEM, schema: CHIEF_SCHEMA },
+  news: { system: NEWS_SYSTEM, schema: NEWS_SCHEMA }, graphics: { system: GRAPHICS_SYSTEM, schema: GRAPHICS_SCHEMA, models: () => [AI_MODELS.vision] },
+  "graphics chart": { system: CHART_SYSTEM, schema: CHART_SCHEMA }, data: { system: PROPOSAL_SYSTEM, schema: PROPOSAL_SCHEMA },
+};
+export const deskModels = (d: DeskPrompt) => DESK_PARTS[d].models?.() ?? writerModels();
+export const deskPromptHash = (d: DeskPrompt) => fnv(JSON.stringify([DESK_PARTS[d].system, DESK_PARTS[d].schema, deskModels(d)]));
 export type DeskVersion = { desk: DeskPrompt; version: string; prompt_hash: string; models: string[]; score_file: string; note: string };
 export const DESK_VERSIONS: readonly DeskVersion[] = [
   { desk: "standards", version: "v1", prompt_hash: "aff6f787", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v1.json", note: "Baseline (N2 Part 6): held the four must-hold stories, but also blocked all six must-pass stories, mostly on picture capture dates, How we know and stage words." },
   { desk: "standards", version: "v2", prompt_hash: "d95f228d", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v2.json", note: "Tuned once: captions, How we know and stage words are records, and a blocker is defined. Run on Nos. 42, 88 and 89 (all passed) within the 16-call ceiling; not re-run on the other seven." },
+  { desk: "standards", version: "v3", prompt_hash: "b14b95c3", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v3.json", note: "N3: v2 re-run on the seven cases held No. 43 (must pass) on a ranking its stored facts carry. Tuned once (a claim a FACTS line states is supported) and the stored facts now go with the sheet; run on Nos. 43, 77, 45 and 92 (all right; 77, 45 and 92 before the stored-facts change). Not re-run on the other six within the 30-call proof ceiling." },
   { desk: "editor in chief", version: "v1", prompt_hash: "74a028af", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/chief-v1.json", note: "Baseline (N2 Part 6): replayed 19, 20 and 21 Nov; on 20 Nov it chose a weekly piece to lead, which the rules refused." },
+  { desk: "news", version: "v1", prompt_hash: "34175f15", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/news-v1.json", note: "Baseline (N3 proof): replayed 19, 20 and 21 Nov, one pick a day, none dropped by the line check; the Mother Design item stays untagged." },
+  { desk: "graphics", version: "v1", prompt_hash: "800fb210", models: ["google/gemini-3-flash-preview"], score_file: "newsroom/scores/graphics-v1.json", note: "Baseline (N3 proof): the ten N2 golden stories and five failed-gate crops in one call; no failed crop came back usable." },
+  { desk: "graphics chart", version: "v1", prompt_hash: "0811aa29", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/graphics-chart-v1.json", note: "Baseline, not yet run (see the score file)." },
+  { desk: "data", version: "v1", prompt_hash: "43d08926", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/data-v1.json", note: "Baseline, not yet run (see the score file)." },
 ];
 export const currentDeskVersion = (d: DeskPrompt) => DESK_VERSIONS.find(v => v.desk === d && v.prompt_hash === deskPromptHash(d)) ?? null;
 /** A desk score file's cases: for standards, whether each frozen story got its expected verdict (the checklist and the second reader

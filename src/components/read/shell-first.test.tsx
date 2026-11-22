@@ -38,7 +38,7 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
     const c = client(() => ({}));
     await within(Promise.resolve(loaderOf(Route)({ context: c, deps: { sector: "all", format: "all" } })));
     expect(c.awaited).toEqual([]);
-    expect(c.started).toEqual(["front-top", "front-rest", "front-also", "front-tape"]);
+    expect(c.started).toEqual(["front-top", "front-rest", "front-also", "front-tape", "front-wire"]);
   });
   it("signal, pattern and sector pages await their head only", async () => {
     const sig = client(() => ({ key: "aesthetic:brutalist", name: "Brutalist" }));

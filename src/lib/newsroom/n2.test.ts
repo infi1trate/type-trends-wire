@@ -67,13 +67,21 @@ describe("editor in chief", () => {
   it("cannot run an id it was not offered, holds instead of killing, and the caps decide last", () => {
     const eligible = [s("move:1"), s("move:2", "move", "measured", ["b.com"]), s("move:3", "move", "measured", ["c.com"]), s("move:4", "move", "measured", ["d.com"])];
     const d = enforceChief({ lead: "news:9", order: ["news:9", "move:2", "move:1"], holds: [{ id: "move:4", why: "Thin." }] }, eligible, ["move:1", "move:2", "move:3", "move:4"], { all: 5, news: 3, single_brand: 2, ai_roundup: 1 });
-    expect(d.run).toEqual(["move:2", "move:1"]);
+    // N3 · the refused lead (news:9 was never offered) falls back to the engine's lead; the desk's order follows.
+    expect(d.run).toEqual(["move:1", "move:2"]);
+    expect(d).toMatchObject({ lead: "move:1", leadBy: "engine", refused: { id: "news:9", why: "not an eligible story" } });
     expect(d.holds).toEqual(expect.arrayContaining([{ id: "move:4", why: "Thin.", by: "editor in chief" }, expect.objectContaining({ id: "move:3", by: "cap" })]));
     expect(d.ignored.join(" ")).toContain("news:9");
   });
   it("an AI-read roundup or a weekly piece never leads", () => {
     const d = enforceChief({ lead: "roundup:x", order: [], holds: [] }, [s("roundup:x", "roundup", "ai", ["a.com", "b.com", "c.com"]), s("move:1")], ["move:1", "roundup:x"], slotsFor([]));
+    // N3 · the refusal is recorded and the engine's lead among the stories that may lead stands in.
+    expect(d).toMatchObject({ lead: "move:1", leadBy: "engine", refused: { id: "roundup:x" } });
+  });
+  it("a refused lead with nothing that may lead leaves the lead open", () => {
+    const d = enforceChief({ lead: "roundup:x", order: [], holds: [] }, [s("roundup:x", "roundup", "ai", ["a.com", "b.com", "c.com"])], ["roundup:x"], slotsFor([]));
     expect(d.lead).toBeNull();
+    expect(d.refused?.id).toBe("roundup:x");
   });
   it("a story held two days running is offered again only when its facts change", () => {
     const held = [{ day: "2026-11-20", facts_hash: "h1" }, { day: "2026-11-21", facts_hash: "h1" }];

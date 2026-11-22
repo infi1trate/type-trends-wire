@@ -554,6 +554,13 @@
       "when": 1795323223165,
       "tag": "0078_n2_desks",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1795328548815,
+      "tag": "0079_n3_news_graphics_data_desks",
+      "breakpoints": true
     }
   ]
 }

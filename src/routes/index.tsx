@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery } from "@/lib/data";
+import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontWireQuery, frontTopQuery } from "@/lib/data";
 import { legacyTerminalSearch, terminalObjectHref } from "@/lib/ia";
 import { resolveSector } from "@/lib/sector-lens";
 import { resolveFormat, type Format } from "@/lib/front/formats";
@@ -34,6 +34,7 @@ export const Route = createFileRoute("/")({
     void context.queryClient.prefetchQuery(frontRestQuery(deps.sector, deps.format));
     void context.queryClient.prefetchQuery(frontAlsoQuery(deps.sector, deps.format));
     void context.queryClient.prefetchQuery(frontTapeQuery());
+    void context.queryClient.prefetchQuery(frontWireQuery());
   },
   head: () => ({
     meta: withShare(shareImageFor("front", "today"), [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: SITE_URL }, { name: "twitter:card", content: "summary_large_image" }]),

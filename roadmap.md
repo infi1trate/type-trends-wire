@@ -115,3 +115,14 @@
 - [x] 5 hold + note actions; proposals list with owner status; truthful writer meter; No. 85 page-follow fact; /desk review details
 - [x] 6 fixture runs (16 calls): standards 10 + 3 after one tuning, editor in chief 3 days
 - [x] Tests, report, commit
+
+# Phase N3 · News, graphics, data desks + N2 fixes
+- [x] 0 migration: desk_calls checks wider; wire_picks, picture_choices, data_findings, backtest rows (append-only, service role)
+- [x] 1 news desk: candidates, picks call, line check, brand tag, wire_pick/wire_drop, pitch, THE WIRE front block, terminal mark
+- [x] 2 graphics desk: picture check before standards, picture action, Data view who chose, study chart form table + call, share-image check
+- [x] 3 data desk: daily checks → findings, finding/finding_close, ninth checklist item, label source fix, backtest, weekly proposal
+- [x] 4 N2 fixes: second-reader 7 re-runs, EIC refused lead fallback, standards release over second reader, No. 85 rewrite, /desk 390/1280 + test rows note
+- [x] 5 /desk panels News/Graphics/Data, memory, beats/README regenerated, writer meter
+- [x] 6 proof runs (<30 calls) + report + commit
+- [ ] N3 open: second reader alone passed No. 91 on the final prompt; the brief's "tune once more and re-run all ten" needs ~10 more fixture calls beyond the 30-call ceiling (owner)
+- [ ] N3 open: backtest waits for a forecast run at least 28 days old

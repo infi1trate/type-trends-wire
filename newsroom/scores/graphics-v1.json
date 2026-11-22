@@ -1,0 +1,645 @@
+{
+ "desk": "graphics",
+ "version": "v1",
+ "prompt_hash": "800fb210",
+ "run_at": "2026-11-22T07:01:31.420Z",
+ "items": [
+  {
+   "number": 77,
+   "id": "news:45715",
+   "called": true,
+   "plan": "single",
+   "chosen": [
+    "Hero · motherlondon.com · 2026-11-21"
+   ],
+   "alternates": [
+    "Hero · motherlondon.com · 2026-11-20"
+   ],
+   "decision": {
+    "kind": "rule",
+    "assets": [
+     "crop:motherlondon.com/hero/2026-11-21-f83ff03f.webp"
+    ],
+    "verdict": "keep",
+    "reason": "Kept the rule's picture: The chosen image correctly shows the Mother London website hero page as requested by the caption.",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "The image shows the Mother London website as described. Although the specific 'It's Nice That' mention isn't immediately obvious in the small text, the page is the correct hero view for the brand.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a1",
+      "why": "This is a similar view of the same website from a day earlier.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 32,
+   "overall": "keep"
+  },
+  {
+   "number": 92,
+   "id": "quiet:event:4905",
+   "called": true,
+   "plan": "swatches",
+   "chosen": [],
+   "alternates": [
+    "Navigation · gitlab.com · 2026-11-21",
+    "Hero · gitlab.com · 2026-11-21",
+    "Footer · gitlab.com · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "none",
+    "assets": [],
+    "verdict": "none",
+    "reason": "No picture shows it: None of the provided images show the changelog or the specific accent color change mentioned in the headline and caption. The caption specifically calls for 'Measured colours, before and after', which is not present in any of the screenshots.",
+    "per_picture": [
+     {
+      "ref": "a1",
+      "why": "This is a navigation bar and does not show the changelog or the accent color change mentioned in the headline.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a2",
+      "why": "This is a hero section of the homepage. While it shows a 'What's new' box, it does not show the changelog itself or a 'before and after' comparison of accent colors as described.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a3",
+      "why": "This is a footer and does not show the changelog or the accent color change.",
+      "usable": false,
+      "problem": "change not visible"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 33,
+   "overall": "no picture shows it"
+  },
+  {
+   "number": 91,
+   "id": "roundup:all:aesthetic:corporate:2026-11-20",
+   "called": true,
+   "plan": "mosaic",
+   "chosen": [
+    "after · First screen · 1password.com · 2026-11-21",
+    "after · First screen · glean.com · 2026-11-21",
+    "after · First screen · together.ai · 2026-11-21"
+   ],
+   "alternates": [
+    "Hero · 1password.com · 2026-11-21",
+    "Hero · together.ai · 2026-11-21",
+    "Footer · glean.com · 2026-11-20"
+   ],
+   "decision": {
+    "kind": "crop",
+    "assets": [
+     "thumb:glean.com/2026-11-21-desktop.webp",
+     "thumb:together.ai/2026-11-21-desktop.webp"
+    ],
+    "verdict": "alternate",
+    "reason": "The mosaic keeps its usable pictures (c1 not usable): The chosen set is the best available despite the cookie banner on the 1Password screenshot (c1/a1). The alternates for the other brands (a2, a3) don't offer a significant improvement over the chosen ones (c2, c3) for showing the overall 'corporate polish' aesthetic. Since all versions of the 1Passwo",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "A large cookie consent banner covers the bottom half of the hero section, including part of the main text and the primary call-to-action area.",
+      "usable": false,
+      "problem": "cookie or consent banner"
+     },
+     {
+      "ref": "c2",
+      "why": "Shows the new corporate aesthetic for Glean.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c3",
+      "why": "Shows the new corporate aesthetic for Together AI.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a1",
+      "why": "Same as c1, the cookie banner is present.",
+      "usable": false,
+      "problem": "cookie or consent banner"
+     },
+     {
+      "ref": "a2",
+      "why": "Shows the new corporate aesthetic for Together AI.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a3",
+      "why": "Shows the footer of the new Glean site.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 34,
+   "overall": "keep"
+  },
+  {
+   "number": 45,
+   "id": "white:dev-tools:2026-W47",
+   "called": true,
+   "plan": "mosaic",
+   "chosen": [
+    "after · First screen · lucidmotors.com · 2026-11-21",
+    "after · First screen · allbirds.com · 2026-11-21",
+    "after · First screen · basicagency.com · 2026-11-21"
+   ],
+   "alternates": [
+    "Navigation · basicagency.com · 2026-11-21",
+    "Hero · basicagency.com · 2026-11-21",
+    "Hero · basicagency.com · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "rule",
+    "assets": [
+     "thumb:lucidmotors.com/2026-11-21-desktop.webp",
+     "thumb:allbirds.com/2026-11-21-desktop.webp",
+     "thumb:basicagency.com/2026-11-21-desktop.webp"
+    ],
+    "verdict": "keep",
+    "reason": "Kept the rule's picture: The chosen pictures correctly illustrate the caption's examples of lifestyle photography in other sectors (Lucid and Allbirds) compared to a brand that doesn't use it (Basic Agency).",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "Shows lifestyle photography (people in a car) on the Lucid homepage.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c2",
+      "why": "Shows lifestyle photography (people on a sofa) on the Allbirds homepage.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c3",
+      "why": "Shows a product shot (not lifestyle photography) on the Basic Agency homepage, which is consistent with the story's contrast between sectors.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a1",
+      "why": "Cropped navigation view.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a2",
+      "why": "Product shot of a bike.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a3",
+      "why": "Product shot of an app/food.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 35,
+   "overall": "keep"
+  },
+  {
+   "number": 42,
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "called": true,
+   "plan": "mosaic",
+   "chosen": [
+    "after · First screen · headspace.com · 2026-11-21",
+    "after · First screen · readwise.io · 2026-11-21",
+    "after · First screen · canva.com · 2026-11-21"
+   ],
+   "alternates": [
+    "Footer · headspace.com · 2026-11-21",
+    "Hero · canva.com · 2026-11-21",
+    "Hero · readwise.io · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "none",
+    "assets": [],
+    "verdict": "none",
+    "reason": "No picture shows it: None of the provided screenshots show a logo wall (a section displaying the logos of partner companies or customers). They all show hero sections or standard footers.",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "This is a hero section for Headspace; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c2",
+      "why": "This is a hero section for Readwise; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c3",
+      "why": "This is a hero section for Canva; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a1",
+      "why": "This is a standard text-based footer; it does not contain a logo wall.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a2",
+      "why": "Duplicate of c3; no logo wall visible.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a3",
+      "why": "Duplicate of c2; no logo wall visible.",
+      "usable": false,
+      "problem": "change not visible"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 36,
+   "overall": "no picture shows it"
+  },
+  {
+   "number": 43,
+   "id": "breakout:css:scroll_timeline:all:13",
+   "called": true,
+   "plan": "mosaic",
+   "chosen": [
+    "after · First screen · netlify.com · 2026-11-21",
+    "after · First screen · allbirds.com · 2026-11-21",
+    "after · First screen · rga.com · 2026-11-21"
+   ],
+   "alternates": [
+    "Navigation · rga.com · 2026-11-21",
+    "Hero · rga.com · 2026-11-21",
+    "Navigation · rga.com · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "rule",
+    "assets": [
+     "thumb:netlify.com/2026-11-21-desktop.webp",
+     "thumb:allbirds.com/2026-11-21-desktop.webp",
+     "thumb:rga.com/2026-11-21-desktop.webp"
+    ],
+    "verdict": "keep",
+    "reason": "Kept the rule's picture: The chosen pictures correctly show the brands mentioned in the story and caption. c2 specifically shows the Allbirds hero mentioned in the caption.",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "Shows the Netlify homepage as part of the general trend mentioned in the deck.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c2",
+      "why": "Shows the Allbirds homepage hero as described in the caption.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c3",
+      "why": "Shows the R/GA homepage as part of the general trend.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a1",
+      "why": "A crop of the R/GA navigation.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a2",
+      "why": "A crop of the R/GA hero.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a3",
+      "why": "A crop of the R/GA navigation.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 37,
+   "overall": "keep"
+  },
+  {
+   "number": 44,
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "called": true,
+   "plan": "mosaic",
+   "chosen": [
+    "after · First screen · tailwindcss.com · 2026-11-21",
+    "after · First screen · astro.build · 2026-11-21",
+    "after · First screen · cloudflare.com · 2026-11-21"
+   ],
+   "alternates": [
+    "Call to action · cloudflare.com · 2026-11-21",
+    "Pricing · cloudflare.com · 2026-11-21",
+    "Hero · cloudflare.com · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "none",
+    "assets": [],
+    "verdict": "none",
+    "reason": "No picture shows it: None of the chosen images show charts or data visualizations on the homepages of these dev tools. The alternates also fail to provide usable examples for the other brands.",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "This is a screenshot of the Tailwind CSS homepage, but it does not contain any charts or data visualizations. It shows code and a card component.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c2",
+      "why": "This is the Astro homepage, but it only shows text and a grid of logos, no charts or data visualizations.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "c3",
+      "why": "This is the Cloudflare homepage hero section, which is just text on an orange background. No charts are visible.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a1",
+      "why": "This is a call to action section for Cloudflare with icons, but no charts or data visualizations.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a2",
+      "why": "This shows pricing information and a small diagram comparing wall clock vs CPU time, but it's not a clear chart or data visual in the sense of the headline's claim about homepages generally. Even if considered a chart, the other two chosen images are completely missing them, so the set fails.",
+      "usable": false,
+      "problem": "change not visible"
+     },
+     {
+      "ref": "a3",
+      "why": "Same as c3, no charts visible.",
+      "usable": false,
+      "problem": "change not visible"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 38,
+   "overall": "no picture shows it"
+  },
+  {
+   "number": 88,
+   "id": "brand:coinbase.com:2026-11-20",
+   "called": true,
+   "plan": "single",
+   "chosen": [
+    "after · Hero · coinbase.com · 2026-11-20"
+   ],
+   "alternates": [
+    "Footer · coinbase.com · 2026-11-20",
+    "Call to action · coinbase.com · 2026-11-20",
+    "Navigation · coinbase.com · 2026-11-20"
+   ],
+   "decision": {
+    "kind": "rule",
+    "assets": [
+     "crop:coinbase.com/hero/2026-11-20-ffff01ff.webp"
+    ],
+    "verdict": "keep",
+    "reason": "Kept the rule's picture: The chosen picture c1 perfectly illustrates the headline change and the switch to a still image mentioned in the deck.",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "The picture clearly shows the new headline \"The trusted financial account for you and your agents\" and the still image in the hero section.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a1",
+      "why": "This shows the footer, which includes an \"AgentKit\" link under Developers, but doesn't show the headline change.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a2",
+      "why": "This shows a different section of the page, not the hero headline.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a3",
+      "why": "This shows the navigation bar which now includes an \"Agents\" tab, supporting the story but less central than the headline.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 39,
+   "overall": "keep"
+  },
+  {
+   "number": 89,
+   "id": "census:agents:2026-W47",
+   "called": true,
+   "plan": "words",
+   "chosen": [],
+   "alternates": [
+    "Footer · mongodb.com · 2026-11-21",
+    "Call to action · mongodb.com · 2026-11-21",
+    "Hero · mongodb.com · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "crop",
+    "assets": [
+     "crop:mongodb.com/hero/2026-11-21-ffff07c7.webp"
+    ],
+    "verdict": "alternate",
+    "reason": "Alternate 3 instead of the rule's picture: Alternate 3 shows the main hero headline of the homepage featuring the word 'AGENT', which is the subject of the story.",
+    "per_picture": [
+     {
+      "ref": "a1",
+      "why": "This is a footer and does not contain the headline mentioned in the story.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a2",
+      "why": "This shows a headline with the word 'agents', but it is a secondary call to action, not the main hero headline.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a3",
+      "why": "This shows the main hero headline 'EVERY SCALE. EVERY AGENT. ONE PLATFORM' which perfectly matches the story's focus on agents appearing in headlines.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 40,
+   "overall": "use alternate 3"
+  },
+  {
+   "number": 90,
+   "id": "census:sale:2026-W47",
+   "called": true,
+   "plan": "mosaic",
+   "chosen": [
+    "after · First screen · equinox.com · 2026-11-21",
+    "after · First screen · brooklinen.com · 2026-11-21",
+    "after · First screen · casper.com · 2026-11-21",
+    "after · First screen · gopro.com · 2026-11-21"
+   ],
+   "alternates": [
+    "Footer · onepeloton.com · 2026-11-21",
+    "Footer · fromourplace.com · 2026-11-21",
+    "Hero · fromourplace.com · 2026-11-21"
+   ],
+   "decision": {
+    "kind": "crop",
+    "assets": [
+     "thumb:equinox.com/2026-11-21-desktop.webp",
+     "thumb:brooklinen.com/2026-11-21-desktop.webp",
+     "thumb:casper.com/2026-11-21-desktop.webp"
+    ],
+    "verdict": "alternate",
+    "reason": "The mosaic keeps its usable pictures (c4 not usable): The chosen set (c1, c2, c3) successfully demonstrates the headline's claim that sale copy is appearing on headlines and buttons. c1 shows it in the headline, while c2 and c3 show it on both buttons and headlines. c4 is unusable due to blurriness, but the first three are sufficient. Alternate a3 is a",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "why": "The button 'JOIN TODAY' in the top right is a standard button, but the hero section has 'FIND A CLUB'. The headline 'BLACK FRIDAY EARLY ACCESS' is visible. However, the story is about sale copy on buttons. This image doesn't clearly show sale copy on a button, just a sale headline. Wait, looking clo",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c2",
+      "why": "Shows 'Shop the Sale' on a button and 'Black Friday Sale' in the headline.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c3",
+      "why": "Shows 'Shop sale' on a button and 'Black Friday Sale' in the headline.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "c4",
+      "why": "The image is extremely blurry, likely a loading state or a very low-resolution placeholder. Content is not readable.",
+      "usable": false,
+      "problem": "loading state"
+     },
+     {
+      "ref": "a1",
+      "why": "This is a footer and does not show sale copy on buttons or headlines.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a2",
+      "why": "This is a footer and does not show sale copy on buttons or headlines.",
+      "usable": true,
+      "problem": "none"
+     },
+     {
+      "ref": "a3",
+      "why": "Shows 'SHOP SALE' on a button and 'Black Friday Sale' in the headline. This is a good example.",
+      "usable": true,
+      "problem": "none"
+     }
+    ],
+    "ignored": []
+   },
+   "right": true,
+   "call_id": 41,
+   "overall": "keep"
+  },
+  {
+   "number": 0,
+   "id": "fixture:failed-crops",
+   "called": true,
+   "crops": [
+    "vercel.com/footer/2026-11-20-00000000.webp",
+    "instagram.com/footer/2026-11-20-ffffc003.webp",
+    "cerebras.ai/cta/2026-11-20-ffff8001.webp",
+    "rga.com/nav/2026-11-20-e000e000.webp",
+    "are.na/nav/2026-11-20-ffffffff.webp"
+   ],
+   "decision": {
+    "kind": "none",
+    "assets": [],
+    "verdict": "none",
+    "reason": "No picture shows it: Most of the chosen images are blank or nearly blank, failing to show the homepages as described in the headline and deck. Only two images show any content at all, and they are just small fragments (a footer and a login button).",
+    "per_picture": [
+     {
+      "ref": "c1",
+      "usable": false,
+      "problem": "blank",
+      "why": "The image is entirely blank white."
+     },
+     {
+      "ref": "c2",
+      "usable": true,
+      "problem": "none",
+      "why": "Shows the footer of Instagram."
+     },
+     {
+      "ref": "c3",
+      "usable": false,
+      "problem": "blank",
+      "why": "The image is a solid dark grey block with no visible content."
+     },
+     {
+      "ref": "c4",
+      "usable": false,
+      "problem": "blank",
+      "why": "The image is almost entirely black with only a tiny sliver of red at the top left, showing no meaningful content."
+     },
+     {
+      "ref": "c5",
+      "usable": true,
+      "problem": "none",
+      "why": "Shows a 'Log in' button from the navigation."
+     }
+    ],
+    "ignored": [
+     "c2 does not pass the quality gate, so it is not usable whatever the check says",
+     "c5 does not pass the quality gate, so it is not usable whatever the check says"
+    ]
+   },
+   "right": true
+  }
+ ]
+}

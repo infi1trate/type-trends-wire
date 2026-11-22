@@ -22,6 +22,17 @@ export const PROPOSAL_KINDS = ["chart", "study_series", "layout", "signal", "for
 /** N2 · what a desk note is about, and the statuses the owner sets on a proposal. */
 export const NOTE_SUBJECTS = ["story", "study", "brand", "signal"] as const;
 export const PROPOSAL_STATUSES = ["open", "accepted", "declined"] as const;
+/** N3 · a wire pick's subject, the graphics desk's picture choices and the data desk's finding kinds. */
+export const WIRE_SUBJECTS = ["brand", "web", "type"] as const;
+export const PICTURE_CHOICES = ["rule", "none", "crop", "pair"] as const;
+export const FINDING_KINDS = ["contradiction", "detector", "impossible", "coverage", "wrong website"] as const;
+/** Who may take each N3 action (enforced at the door, after the register's level). */
+export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
+  wire_pick: ["news", "owner"], wire_drop: ["news", "standards", "editor in chief", "owner"], picture: ["graphics", "owner"],
+  finding: ["data", "owner"], finding_close: ["data", "standards", "editor in chief", "owner"], data_run: ["data", "graphics", "news", "owner"],
+};
+/** N3 · the reason standards gives when it releases a story only its second reader held. */
+export const OVERRULE_MIN = 20;
 export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("check") }).strict(),
   z.object({ action: z.literal("staff"), page: z.enum(STAFF_PAGES) }).strict(),
@@ -31,6 +42,15 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("correct"), id, headline: z.string().min(3).max(200).refine(noDollar).optional(), deck: z.string().max(400).refine(noDollar).optional(), why_line: z.string().max(WHY_MAX_CHARS).refine(noDollar).optional(), note })
     .strict().refine(b => b.headline !== undefined || b.deck !== undefined || b.why_line !== undefined, { message: "nothing to correct" }),
   z.object({ action: z.literal("restore"), id, note }).strict(),
+  // N3 · the news desk's wire picks and drops, the graphics desk's picture choice, and the data desk's findings.
+  z.object({ action: z.literal("wire_pick"), item: z.number().int().min(1), subject: z.enum(WIRE_SUBJECTS), line: z.string().trim().min(3).max(120).refine(noDollar), domain: z.string().trim().max(253).optional(), call: z.number().int().min(1).optional() }).strict(),
+  z.object({ action: z.literal("wire_drop"), pick: z.number().int().min(1), reason: z.string().trim().min(3).max(300) }).strict(),
+  z.object({ action: z.literal("picture"), id, choice: z.enum(PICTURE_CHOICES), assets: z.array(z.string().trim().min(3).max(300)).max(4).optional(), reason: z.string().trim().min(3).max(600), verdict: z.enum(["keep", "alternate", "none", "fallback"]).optional(), call: z.number().int().min(1).optional(), per_picture: z.array(z.object({ asset: z.string().max(300), usable: z.boolean(), why: z.string().max(300) }).strict()).max(8).optional() }).strict()
+    .refine(b => (b.choice === "crop" || b.choice === "pair") === !!b.assets?.length, { message: "a crop or pair names its stored crops; rule and none name none", path: ["assets"] })
+    .refine(b => b.choice !== "pair" || b.assets?.length === 2, { message: "a pair is two crops: before, then after", path: ["assets"] }),
+  z.object({ action: z.literal("finding"), kind: z.enum(FINDING_KINDS), key: z.string().trim().min(3).max(300), subject: z.string().trim().min(1).max(300), measure: z.string().trim().max(120).optional(), expected: z.string().max(600).optional(), found: z.string().max(600).optional(), receipt: z.record(z.string(), z.unknown()).optional() }).strict(),
+  z.object({ action: z.literal("finding_close"), finding: z.number().int().min(1), reason: z.string().trim().min(3).max(600) }).strict(),
+  z.object({ action: z.literal("data_run"), run: z.enum(["checks", "backtest", "share", "proposal", "chart", "picks"]), summary: z.string().trim().min(3).max(600), counts: z.record(z.string().max(40), z.number().int().min(0)).optional() }).strict(),
   // U4 · a pitch asks the engine; it never edits a story.
   pitchBody,
   // L1 · approve a proposed design edition (after the gate) or roll one back; each appends one living_edition_status row.

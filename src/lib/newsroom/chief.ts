@@ -13,7 +13,8 @@ export type ChiefStory = {
 export type Slots = { all: number; news: number; single_brand: number; ai_roundup: number };
 export type ChiefInput = { now: string; stories: ChiefStory[]; leads: { day: string; headline: string; type: string }[]; slots: Slots; lead_open: boolean; beats: string };
 export type ChiefAnswer = { lead: string; order: string[]; holds: { id: string; why: string }[] };
-export type ChiefDecision = { lead: string | null; run: string[]; holds: { id: string; why: string; by: "editor in chief" | "cap" }[]; ignored: string[] };
+/** `leadBy` says whose lead stands; `refused` records the editor's lead the code refused and why (N3: then the engine's lead stands). */
+export type ChiefDecision = { lead: string | null; run: string[]; holds: { id: string; why: string; by: "editor in chief" | "cap" }[]; ignored: string[]; leadBy?: "desk" | "engine"; refused?: { id: string; why: string } | null };
 
 export const CHIEF_SYSTEM = [
   "You are the editor in chief of slug, a newsroom that watches how brands' websites look and sound. You place the stories that passed the standards desk on today's front page.",
@@ -77,10 +78,13 @@ export function enforceChief(answer: ChiefAnswer | null, eligible: readonly (Pic
   const order: string[] = [];
   for (const id of answer?.order ?? []) { if (!ids.has(id)) { ignored.push(`order: ${id} is not an eligible story`); continue; } if (!holds.has(id) && !order.includes(id)) order.push(id); }
   for (const id of engineOrder) if (ids.has(id) && !holds.has(id) && !order.includes(id)) order.push(id);
-  let lead: string | null = answer?.lead && ids.has(answer.lead) && !holds.has(answer.lead) ? answer.lead : null;
+  let lead: string | null = answer?.lead && ids.has(answer.lead) && !holds.has(answer.lead) ? answer.lead : null, refused: { id: string; why: string } | null = null;
   // The front page's own rule: an AI-read roundup or a weekly piece never leads.
-  if (lead && (isAiRoundup(byId.get(lead)!) || isWeekly(byId.get(lead)!))) { ignored.push(`lead ${lead}: an AI-read roundup or a weekly piece does not lead`); lead = null; }
-  if (answer?.lead && !lead) ignored.push(`lead ${answer.lead}: ${ids.has(answer.lead) ? "it was also held" : "not an eligible story"}`);
+  if (lead && (isAiRoundup(byId.get(lead)!) || isWeekly(byId.get(lead)!))) { refused = { id: lead, why: "an AI-read roundup or a weekly piece does not lead" }; ignored.push(`lead ${lead}: ${refused.why}`); lead = null; }
+  if (answer?.lead && !lead && !refused) { refused = { id: answer.lead, why: ids.has(answer.lead) ? "it was also held" : "not an eligible story" }; ignored.push(`lead ${answer.lead}: ${refused.why}`); }
+  // N3 · a refused lead falls back to the engine's lead among the stories that may lead (not held, not a roundup or weekly piece).
+  let leadBy: "desk" | "engine" = "desk";
+  if (refused) { lead = engineOrder.find(id => ids.has(id) && !holds.has(id) && !isAiRoundup(byId.get(id)!) && !isWeekly(byId.get(id)!)) ?? null; leadBy = "engine"; }
   if (lead) order.splice(order.indexOf(lead), 1), order.unshift(lead);
   // Caps count per UTC day of the story (the engine's rule); a story of a day with no stated slots uses the first stated day's.
   const byDay = new Map<string, Slots>(), base = "all" in slots ? slots as Slots : null;
@@ -88,8 +92,9 @@ export function enforceChief(answer: ChiefAnswer | null, eligible: readonly (Pic
   const run: string[] = [], out: ChiefDecision["holds"] = [...holds].map(([id, why]) => ({ id, why, by: "editor in chief" as const }));
   for (const id of order) { const s = byId.get(id)!, left = leftOf(s), why = capWhy(s, left); if (why) { out.push({ id, why, by: "cap" }); if (lead === id) lead = null; continue; } take(s, left); run.push(id); }
   // With no answer the engine's order stands and the lead is left to the front page's own rule, unless it is open.
-  if (!answer) lead = o.leadOpen && run[0] ? run[0] : null;
-  return { lead, run, holds: out, ignored };
+  if (!answer) { lead = o.leadOpen && run[0] ? run[0] : null; leadBy = "engine"; }
+  else if (refused && lead && run[0] !== lead) lead = null;
+  return { lead, run, holds: out, ignored, leadBy, refused };
 }
 
 /** A story the editor in chief held on two different days with the same facts is not offered a third time (until its facts change). */

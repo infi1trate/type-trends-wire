@@ -2,7 +2,7 @@ import { line as voiced } from "@/lib/voice";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { wireQuery, type WireItem } from "@/lib/data";
+import { wireQuery, wirePicksQuery, type WireItem } from "@/lib/data";
 import { decodeEntities } from "@/lib/entities";
 import { alertDisplayTitle } from "@/lib/labels";
 import { Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
@@ -41,6 +41,8 @@ export function useWireRealtime(onNew: (id: number) => void) {
 
 export function Wire({ compact = false, freshIds }: { compact?: boolean; freshIds: Set<number> }) {
   const { data, isLoading, error } = useQuery(wireQuery());
+  // N3 · items the news desk picked carry a small "picked" mark and the desk's line.
+  const picks = useQuery(wirePicksQuery()).data?.marks ?? {};
   const [tag, setTag] = useState<(typeof TAGS)[number]>("ALL");
   const [kind, setKind] = useState<(typeof KINDS)[number]>("ALL");
   const [source, setSource] = useState("ALL");
@@ -113,6 +115,7 @@ export function Wire({ compact = false, freshIds }: { compact?: boolean; freshId
                   <a href={r.link} target="_blank" rel="noopener noreferrer" className="label ml-2 text-g500 hover:text-ink">↗ {(() => { try { return new URL(r.link).hostname.replace(/^www\./, ""); } catch { return "LINK"; } })()}</a>
                 )}
                 <span className="label ml-2 text-g500 sm:hidden">{r.source.toUpperCase()}</span>
+                {picks[String(r.id)] && <span className="block text-g500" data-wire-picked=""><span className="label mr-2 text-highlight">PICKED</span>{picks[String(r.id)]}</span>}
                 {r.tags.filter((t) => t !== "alert").length > 0 && (
                   <span className="label ml-2 text-g500">{r.tags.filter((t) => t !== "alert").map((t) => `[${t.toLowerCase().replace(/_/g, " ")}]`).join(" ")}</span>
                 )}

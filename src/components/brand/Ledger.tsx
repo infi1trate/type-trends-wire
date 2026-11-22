@@ -23,17 +23,22 @@ export type LedgerRow = {
   receipt?: string | undefined;
   /** A row that has just arrived (the live column): it drops in and settles once. */
   drop?: boolean;
+  /** N3 · a link to another site: opens in a new tab (rel="noopener"); the row says so to screen readers. */
+  external?: boolean;
+  /** N3 · a second link beside the row's own (never nested inside it), e.g. the brand a wire pick names. */
+  after?: ReactNode;
 };
 /** "No. 45": the figure in Big Shoulders 900 with "No." as a small label; never wraps (the column is sized for four digits). */
 export const StoryNo = ({ n }: { n: number | string }) => <span data-story-number="" className="ledger-no"><span className="ledger-no-label">No.</span>{" "}<span className="ledger-no-fig">{n}</span></span>;
 const NO = /^No\.\s?(\d+)$/;
 const numberOf = (n: ReactNode) => { if (typeof n !== "string") return n; const m = NO.exec(n); return m ? <StoryNo n={m[1]!} /> : n; };
 function LinkOf({ r, children }: { r: LedgerRow; children: ReactNode }) {
+  if (r.external) return <a href={r.href} className="ledger-link" target="_blank" rel="noopener">{children}<span className="sr-only"> (opens in a new tab)</span></a>;
   return r.plain ? <a href={r.href} className="ledger-link">{children}</a> : <Receipt href={r.href} receipt={r.receipt} className="ledger-link">{children}</Receipt>;
 }
 export function LedgerItem({ r, small }: { r: LedgerRow; small?: boolean }) {
   const [first, ...more] = r.facts ?? [];
-  return <li className="ledger-row" id={r.id} data-ledger-row="" data-drop={r.drop ? "" : undefined}>
+  return <li className={r.after ? "ledger-row ledger-row-split" : "ledger-row"} id={r.id} data-ledger-row="" data-drop={r.drop ? "" : undefined}>
     <LinkOf r={r}>
       <span className={`ledger-num ${small ? "ledger-num-sm" : ""}`.trim()} data-ledger-number="">{numberOf(r.number ?? "")}</span>
       <span className="ledger-title">{r.tags && r.tags.length > 0 && <span className="mr-2 inline-flex gap-1 align-middle max-md:hidden">{r.tags.map(t => <span key={t} className="ledger-tag">{t}</span>)}</span>}{r.title}{r.line && <span className="ledger-line">{r.line}</span>}</span>
@@ -44,6 +49,7 @@ export function LedgerItem({ r, small }: { r: LedgerRow; small?: boolean }) {
         {r.time && <span className="ledger-time ledger-muted">{r.time}</span>}
       </span>}
     </LinkOf>
+    {r.after && <span className="ledger-after">{r.after}</span>}
   </li>;
 }
 /** A ledger, optionally with a caption heading read by screen readers as the list's name. */

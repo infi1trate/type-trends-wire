@@ -6,7 +6,7 @@ import { historyNote } from "./history-refresh";
 import { WRITER_PER_DAY } from "./stories/writer";
 import { STUDY_PER_DAY } from "./data-stories/writer";
 import { DIGEST_PER_DAY } from "./digest/writer";
-import { DESK_CAPS } from "./newsroom/caps";
+import { DESK_CAPS, DESK_LIMITS } from "./newsroom/caps";
 
 export type Every = "15m" | "6h" | "1d" | "7d";
 export const EVERY_MS: Record<Every, number> = { "15m": 15 * 60_000, "6h": 6 * 3_600_000, "1d": 86_400_000, "7d": 7 * 86_400_000 };
@@ -60,6 +60,8 @@ export const healthFactsSchema = z.object({
   // N2 · the writer model's calls today split by who made them (story writer, study writer, Digest writer, the desks), the desks'
   // calls against their caps, and stories that passed standards today without the second reader, from newsroom_call_facts().
   newsroom_calls: z.object({ writer_model_calls: num, story: num, study: num, digest: num, desks_writer_model: num, standards: num, chief: num, without_second_reader: num }).nullable().optional(),
+  // N3 · every desk's model calls today keyed "desk:purpose" (fixtures excluded), from newsroom_desk_facts().
+  desk_calls: z.record(z.string(), num).nullable().optional(),
   brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),
   // Optional cron-introspection flags (job name → has callback timeout). Not available on managed Cloud.
   timeouts: z.array(z.object({ job: z.string(), has_timeout: z.boolean() })).nullable().optional().transform(v => v ?? []),
@@ -95,7 +97,7 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
     // Never stale: a quiet news day writes nothing. The count is the hard daily limit's meter.
     const w = f.story_writer;
     jobs.push({ job: "story_writer", last_ok_at: w?.last_checked_at ?? null, last_run_at: w?.last_call_at ?? null, last_status: w ? (w.last_call_at ? "ok" : "never") : "unknown", expected_every: "1d", stale: false, consecutive_failures: 0,
-      note: f.newsroom_calls ? callsLine(f.newsroom_calls) : w ? `${w.calls_today} writer-model calls today (UTC), all writers together` : "writer facts unavailable" });
+      note: f.newsroom_calls ? callsLine(f.newsroom_calls, f.desk_calls ?? null) : w ? `${w.calls_today} writer-model calls today (UTC), all writers together` : "writer facts unavailable" });
   }
   jobs.push({ job: "library_full", last_ok_at: f.library_full_at, last_run_at: f.library_full_at, last_status: f.library_full_at ? "ok" : "never", expected_every: "7d", stale: isStale(f.library_full_at, "7d", t), consecutive_failures: 0, note: "newest Saturday full capture" });
   {
@@ -159,6 +161,8 @@ export function unavailableHealth(now: Date): HealthPayload { return { status: "
 /** N2 · what the writer meter counts, said plainly: each writer's calls against its own daily limit (UTC day), the desks' calls against
  *  theirs, and the stories that passed standards today without the second reader. (Before N2 one number counted every writer's calls
  *  against the story writer's limit, so it could read "18 of 12".) */
-export function callsLine(c: { story: number; study: number; digest: number; standards: number; chief: number; without_second_reader: number }): string {
-  return `story writer ${c.story} of ${WRITER_PER_DAY}, study writer ${c.study} of ${STUDY_PER_DAY}, Digest writer ${c.digest} of ${DIGEST_PER_DAY}, standards ${c.standards} of ${DESK_CAPS.standards}, editor in chief ${c.chief} of ${DESK_CAPS["editor in chief"]} model calls today (UTC); ${c.without_second_reader} ${c.without_second_reader === 1 ? "story" : "stories"} reviewed without second reader today`;
+export function callsLine(c: { story: number; study: number; digest: number; standards: number; chief: number; without_second_reader: number }, desks?: Readonly<Record<string, number>> | null): string {
+  // N3 · the news, graphics and data desks, each against its own limit (graphics has two: pictures and study charts).
+  const n3 = DESK_LIMITS.filter(l => l.desk !== "standards" && l.desk !== "editor in chief").map(l => `${l.desk} ${l.what} ${desks?.[`${l.desk}:${l.purpose}`] ?? 0} of ${l.cap}`);
+  return `story writer ${c.story} of ${WRITER_PER_DAY}, study writer ${c.study} of ${STUDY_PER_DAY}, Digest writer ${c.digest} of ${DIGEST_PER_DAY}, standards ${c.standards} of ${DESK_CAPS.standards}, editor in chief ${c.chief} of ${DESK_CAPS["editor in chief"]}${desks ? `, ${n3.join(", ")}` : ""} model calls today (UTC); ${c.without_second_reader} ${c.without_second_reader === 1 ? "story" : "stories"} reviewed without second reader today`;
 }

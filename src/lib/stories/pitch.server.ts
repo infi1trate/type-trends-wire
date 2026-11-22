@@ -51,6 +51,8 @@ export async function pitchNow(db: Admin, p: PitchInput): Promise<PitchedItem> {
   const { data, error } = await db.from("pitches").insert({ kind: p.kind, ref: p.ref, facts: p.facts, note: p.note, pitched_by: PITCH_BY }).select("id,kind,ref,facts,note,pitched_by,created_at").single();
   if (error || !data) throw new Error("pitch_insert_failed");
   const pitch = toPitch(data as unknown as PitchRow);
+  // N3 · a study pitch asks no story build (the engine does not build studies); it waits on the board.
+  if (p.kind === "study") return { pitch, verdict: null, answeredAt: null, source: null };
   const { runBuild, dbDeps } = await import("./build.server");
   const d = dbDeps(db, false);
   // Only load, existing and the pitch answer: no insert, no checks, no calls, no numbers, no writer.

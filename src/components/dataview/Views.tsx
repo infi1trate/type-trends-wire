@@ -65,9 +65,9 @@ function StoryDataBody({ id }: { id: string }) {
     </Band>
     <Band title={`PICTURES · ${s.pictures?.rows.length ?? 0}`}>
       {s.pictures ? <>
-        <p className="label p-3 text-compare-muted">LEAD {s.pictures.kind.toUpperCase()} · {s.pictures.rule}{s.pictures.caption ? ` · ${s.pictures.caption}` : ""}</p>
-        {s.pictures.rows.length > 0 && <DataTable caption="The lead picture's pictures, each the brand's own published page" head={["Brand", "Section", "Captured", "Role", "Stored object", "Record"]}
-          rows={s.pictures.rows.map(r => [r.brand, r.section, r.captured, r.role ? r.role.toUpperCase() : "–", <a key="o" href={r.src} className="text-ink underline underline-offset-2">{r.asset}</a>, <Lnk key="r" href={brandDataPath(r.brand)}>RECEIPT →</Lnk>])} />}
+        <p className="label p-3 text-compare-muted">LEAD {s.pictures.kind.toUpperCase()} · {s.pictures.rule}{s.pictures.caption ? ` · ${s.pictures.caption}` : ""} · CHOSEN BY {s.pictures.chosen ? `${s.pictures.chosen.by.toUpperCase()}: ${s.pictures.chosen.reason}` : "THE RULE"}</p>
+        {s.pictures.rows.length > 0 && <DataTable caption="The lead picture's pictures, each the brand's own published page" head={["Brand", "Section", "Captured", "Role", "Stored object", "Chosen by", "Record"]}
+          rows={s.pictures.rows.map(r => [r.brand, r.section, r.captured, r.role ? r.role.toUpperCase() : "–", <a key="o" href={r.src} className="text-ink underline underline-offset-2">{r.asset}</a>, r.chosen_by, <Lnk key="r" href={brandDataPath(r.brand)}>RECEIPT →</Lnk>])} />}
       </> : <P>The picture lookup failed; the Read view shows its fallback.</P>}
     </Band>
     <Band title={`EDITOR'S LOG · ${s.edits.length}`}>

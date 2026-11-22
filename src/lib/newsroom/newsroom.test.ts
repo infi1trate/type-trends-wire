@@ -1,5 +1,6 @@
 // N1 · the newsroom's rules: the door and its levels, the desk log through the endpoint, story states, the week and cap, the
 // memory's size, the wire-only switch, the memory files against the code, and the golden gate.
+import { desksBlockOf, desksReadmeBlock } from "./docs";
 import { readFileSync, existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { decide } from "./door";
@@ -177,6 +178,13 @@ describe("N1 · the memory files agree with the code", () => {
   it("beats.md is written from the constants, and the README exists", () => {
     expect(readFileSync("newsroom/beats.md", "utf8")).toBe(beatsDoc());
     expect(existsSync("newsroom/README.md")).toBe(true);
+  });
+  it("N3 · the README's desks block is written from the code: limits, the three new desks and their actions", () => {
+    const md = readFileSync("newsroom/README.md", "utf8");
+    expect(desksBlockOf(md)).toBe(desksReadmeBlock());
+    for (const a of ["wire_pick", "wire_drop", "picture", "finding", "finding_close"]) expect(md).toContain(`\`${a}\``);
+    expect(md).toContain("**news**, wire picks: 4 a day.");
+    expect(md).toContain("**graphics**, picture check: 8 a day.");
   });
 });
 

@@ -264,6 +264,50 @@ export type Database = {
         }
         Relationships: []
       }
+      chart_choices: {
+        Row: {
+          at: string
+          basis: string
+          call_id: number | null
+          figure: string
+          form: string
+          id: number
+          reason: string | null
+          shape: string
+          study: string
+        }
+        Insert: {
+          at?: string
+          basis: string
+          call_id?: number | null
+          figure: string
+          form: string
+          id?: never
+          reason?: string | null
+          shape: string
+          study: string
+        }
+        Update: {
+          at?: string
+          basis?: string
+          call_id?: number | null
+          figure?: string
+          form?: string
+          id?: never
+          reason?: string | null
+          shape?: string
+          study?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_choices_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "desk_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       color_tickers: {
         Row: {
           data: Json
@@ -473,6 +517,62 @@ export type Database = {
           top_share?: number | null
         }
         Relationships: []
+      }
+      data_findings: {
+        Row: {
+          actor: string
+          at: string
+          expected: string | null
+          finding_id: number | null
+          fkey: string | null
+          found: string | null
+          id: number
+          kind: string | null
+          measure: string | null
+          op: string
+          reason: string | null
+          receipt: Json
+          subject: string | null
+        }
+        Insert: {
+          actor: string
+          at?: string
+          expected?: string | null
+          finding_id?: number | null
+          fkey?: string | null
+          found?: string | null
+          id?: never
+          kind?: string | null
+          measure?: string | null
+          op: string
+          reason?: string | null
+          receipt?: Json
+          subject?: string | null
+        }
+        Update: {
+          actor?: string
+          at?: string
+          expected?: string | null
+          finding_id?: number | null
+          fkey?: string | null
+          found?: string | null
+          id?: never
+          kind?: string | null
+          measure?: string | null
+          op?: string
+          reason?: string | null
+          receipt?: Json
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_findings_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "data_findings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       desk_calls: {
         Row: {
@@ -779,6 +879,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      forecast_backtests: {
+        Row: {
+          at: string
+          calls: number
+          days: number
+          detail: Json
+          id: number
+          mean_miss: number | null
+          right_calls: number
+          run_id: number
+          scored_run_id: number
+        }
+        Insert: {
+          at?: string
+          calls: number
+          days: number
+          detail?: Json
+          id?: never
+          mean_miss?: number | null
+          right_calls: number
+          run_id: number
+          scored_run_id: number
+        }
+        Update: {
+          at?: string
+          calls?: number
+          days?: number
+          detail?: Json
+          id?: never
+          mean_miss?: number | null
+          right_calls?: number
+          run_id?: number
+          scored_run_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_backtests_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "forecast_backtests_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forecast_backtests_scored_run_id_fkey"
+            columns: ["scored_run_id"]
+            isOneToOne: true
+            referencedRelation: "forecast_model_card"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "forecast_backtests_scored_run_id_fkey"
+            columns: ["scored_run_id"]
+            isOneToOne: true
+            referencedRelation: "forecast_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       forecast_calls: {
         Row: {
@@ -2164,6 +2329,60 @@ export type Database = {
         }
         Relationships: []
       }
+      picture_choices: {
+        Row: {
+          actor: string
+          assets: string[]
+          at: string
+          call_id: number | null
+          id: number
+          kind: string
+          per_picture: Json
+          reason: string
+          story_id: string
+          verdict: string
+        }
+        Insert: {
+          actor: string
+          assets?: string[]
+          at?: string
+          call_id?: number | null
+          id?: never
+          kind: string
+          per_picture?: Json
+          reason: string
+          story_id: string
+          verdict: string
+        }
+        Update: {
+          actor?: string
+          assets?: string[]
+          at?: string
+          call_id?: number | null
+          id?: never
+          kind?: string
+          per_picture?: Json
+          reason?: string
+          story_id?: string
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "picture_choices_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "desk_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "picture_choices_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pitch_assignments: {
         Row: {
           actor: string
@@ -2332,6 +2551,30 @@ export type Database = {
           key?: string
           kind?: string
           source?: string
+        }
+        Relationships: []
+      }
+      share_checks: {
+        Row: {
+          at: string
+          checked: number
+          failures: Json
+          id: number
+          rebuilt: number
+        }
+        Insert: {
+          at?: string
+          checked: number
+          failures?: Json
+          id?: never
+          rebuilt?: number
+        }
+        Update: {
+          at?: string
+          checked?: number
+          failures?: Json
+          id?: never
+          rebuilt?: number
         }
         Relationships: []
       }
@@ -3277,6 +3520,86 @@ export type Database = {
           url?: string
         }
         Relationships: []
+      }
+      wire_pick_drops: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          pick_id: number
+          reason: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          pick_id: number
+          reason: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          pick_id?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wire_pick_drops_pick_id_fkey"
+            columns: ["pick_id"]
+            isOneToOne: false
+            referencedRelation: "wire_picks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wire_picks: {
+        Row: {
+          actor: string
+          at: string
+          call_id: number | null
+          domain: string | null
+          id: number
+          item_id: number
+          line: string
+          subject: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          call_id?: number | null
+          domain?: string | null
+          id?: never
+          item_id: number
+          line: string
+          subject: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          call_id?: number | null
+          domain?: string | null
+          id?: never
+          item_id?: number
+          line?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wire_picks_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "desk_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wire_picks_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "wire_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -4844,6 +5167,7 @@ export type Database = {
         Returns: undefined
       }
       newsroom_call_facts: { Args: never; Returns: Json }
+      newsroom_desk_facts: { Args: never; Returns: Json }
       normalize_currency: { Args: { c: string }; Returns: string }
       outside_series_store: {
         Args: { p_captured_at: string; p_points: Json; p_run_id: string }
@@ -4863,7 +5187,34 @@ export type Database = {
       }
       spend_facts: { Args: never; Returns: Json }
       spend_status: { Args: never; Returns: Json }
+      story_picture_choices: {
+        Args: { p_ids: string[] }
+        Returns: {
+          actor: string
+          assets: string[]
+          at: string
+          kind: string
+          reason: string
+          story_id: string
+          verdict: string
+        }[]
+      }
       story_writer_facts: { Args: never; Returns: Json }
+      wire_picks_public: {
+        Args: { p_since: string }
+        Returns: {
+          at: string
+          domain: string
+          item_id: number
+          line: string
+          pick_id: number
+          published_at: string
+          source: string
+          subject: string
+          title: string
+          url: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

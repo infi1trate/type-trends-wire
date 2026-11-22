@@ -40,7 +40,8 @@ export async function loadMemory(db: Admin) {
   ]);
   const items = [...q.published, ...q.held, ...q.killed] as unknown as Record<string, unknown>[];
   const ids = items.map(i => String(i["id"]));
-  const [states, notes, proposals, caps, reviews] = await Promise.all([statesFor(db, ids).catch(() => new Map()), loadNotes(db).catch(() => []), loadProposals(db).catch(() => []), deskCaps(db).catch(() => null), reviewsFor(db, ids).catch(() => new Map())]);
+  const [states, notes, proposals, caps, reviews, n3] = await Promise.all([statesFor(db, ids).catch(() => new Map()), loadNotes(db).catch(() => []), loadProposals(db).catch(() => []), deskCaps(db).catch(() => null), reviewsFor(db, ids).catch(() => new Map()),
+    import("./panels.server").then(m => m.n3Panels(db)).catch(() => null)]);
   return fitMemory({
     read_at: new Date().toISOString(),
     files: { "newsroom/README.md": readme, "newsroom/style.md": style, "newsroom/beats.md": beats },
@@ -50,6 +51,9 @@ export async function loadMemory(db: Admin) {
     queue: { day: today, items: items.map(i => ({ ...slimQueueItem(i), states: states.get(String(i["id"])) ?? [], review: reviews.get(String(i["id"])) ?? null })) },
     // N2 · the desks' caps today, their notes (14 days) and the proposals with the owner's status.
     desks: caps, notes, proposals,
+    // N3 · the news, graphics and data desks: the same facts /desk shows (picks, drops, picture changes, share failures, findings,
+    // backtest, proposals, calls against limits, and which log rows are tests).
+    newsroom_desks: n3,
     spend: spend ? { ...spend, split: spendSplit(spend), reached: capReached(spend), line: capLine(spend) } : null,
     golden,
     design: colophon ? { live_edition: colophon.live, editions: colophon.editions.map(e => ({ number: e.number, dated: e.dated, status: e.statuses[e.statuses.length - 1]?.status ?? null, moves: e.moves.length })), dry_run: colophon.dry } : null,

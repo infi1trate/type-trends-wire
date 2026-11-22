@@ -79,7 +79,7 @@ async function storyPictures(s: NonNullable<Awaited<ReturnType<typeof storyById>
   const type = isKind(s.type) ? s.type : "news", page = sp(s, { earlier: [], patterns: [] });
   const [crops, colourEvents] = await Promise.all([evidenceOf(s, type), colourEventsOf(s).catch(() => [])]);
   const plan = await leadOf(s, crops, { colourEvents, census: page.census?.lines ?? null, names: new Map(page.brands.map(b => [b.domain, b.name])) });
-  return { kind: plan.kind, rule: LEAD_RULES[plan.rule], caption: plan.caption, rows: pictureRows(plan).map((r, i) => ({ ...r, src: plan.items[i]!.src })) };
+  return { kind: plan.kind, rule: LEAD_RULES[plan.rule], caption: plan.caption, chosen: plan.chosen ?? null, rows: pictureRows(plan).map((r, i) => ({ ...r, src: plan.items[i]!.src })) };
 }
 
 // RECEIPTS (U2) -------------------------------------------------------------------------------------------------------------------

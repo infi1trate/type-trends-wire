@@ -29,7 +29,17 @@ export type Newsroom = {
   notes?: { id: number; at: string; actor: string; subject_kind: string; subject_id: string; text: string }[];
   proposals?: { id: number; at: string; desk: string; kind: string; subject: string | null; text: string; status: "open" | "accepted" | "declined"; status_at: string | null; status_reason: string | null }[];
   reviews?: { story_id: string; headline: string; standards: Review | null; chief: Review | null }[];
+  // N3 · the news, graphics and data desks.
+  n3?: N3 | null;
 };
+type N3 = {
+  limits: { desk: string; what: string; cap: number; used: number }[];
+  news: { picks: { id: number; at: string; subject: string; line: string; domain: string | null; title: string; url: string; outlet: string; dropped: string | null }[]; drops: { id: number; at: string; pick_id: number; actor: string; reason: string }[]; pitches: { at: string; reason: string | null }[] };
+  graphics: { changed: Pic[]; none: Pic[]; fallbacks: number; kept: number; share: { at: string; checked: number; rebuilt: number; failures: unknown } | null };
+  data: { byKind: Record<string, number>; open: number; newest: { id: number; kind: string; subject: string; text: string; at: string }[]; backtest: { line: string; at: string } | null; running: { calls: number; right: number } | null; proposals: { at: string; action: string; reason: string | null }[] };
+  tests: string[];
+};
+type Pic = { id: number; at: string; story_id: string; actor: string; kind: string; verdict: string; reason: string | null; headline: string; number: number | null };
 type Review = { at: string; verdict: string; reason: string | null; checklist: unknown; problems: unknown; second_reader: string | null; placement: number | null; basis: string };
 type Item = { id: string; result: "pass" | "fail" | "n/a"; detail: string | null };
 type Problem = { kind: string; words: string; severity: "blocker" | "note"; why: string };
@@ -42,7 +52,7 @@ const th = "py-2 pr-3 text-left font-normal ed-kicker align-bottom";
 const td = "py-2 pr-3 align-top";
 
 function Table({ caption, head, children, min = 560 }: { caption: string; head: string[]; children: React.ReactNode; min?: number }) {
-  return <div className="mt-4 overflow-x-auto"><table className="ed-data ruled-table w-full border-collapse" style={{ minWidth: min }}>
+  return <div className="mt-4 overflow-x-auto" role="region" aria-label={caption} tabIndex={0}><table className="ed-data ruled-table w-full border-collapse" style={{ minWidth: min }}>
     <caption className="sr-only">{caption}</caption>
     <thead><tr className="ed-hair">{head.map(h => <th key={h} scope="col" className={th}>{h}</th>)}</tr></thead>
     <tbody>{children}</tbody>
@@ -57,6 +67,7 @@ export function DeskNewsroom() {
   const s = data.spend, g = data.golden;
   return <>
     <DeskDesks data={data} />
+    {data.n3 ? <DeskN3 n={data.n3} /> : null}
     <section aria-labelledby="desk-spend" className="ed-wrap mt-12" data-desk-spend="">
       <h2 id="desk-spend" className="ed-h2 ed-rule pt-3">Spend this week</h2>
       {s ? <>
@@ -92,7 +103,7 @@ export function DeskNewsroom() {
         </select>
       </label>
       {data.log.length ? <Table caption="Desk log: every call through the desk and every story edit" head={["When", "Who", "Action", "Subject", "Decision", "Reason"]} min={720}>
-        {(all ? data.log : data.log.slice(0, LOG_SHOWN)).map(r => <tr key={r.ref} className="ed-hair"><td className={td}><time dateTime={r.at}>{r.at.slice(0, 16).replace("T", " ")}</time></td><td className={td}>{r.actor}</td><td className={td}>{r.action}{r.level ? <span className="ed-caption block">{r.level}</span> : null}</td><td className={`${td} break-all`}>{r.subject_id ?? "—"}</td><td className={td}>{r.decision}</td><td className={td}>{r.reason ?? "—"}</td></tr>)}
+        {(all ? data.log : data.log.slice(0, LOG_SHOWN)).map(r => <tr key={r.ref} className="ed-hair"><td className={td}><time dateTime={r.at}>{r.at.slice(0, 16).replace("T", " ")}</time>{data.n3?.tests.includes(r.ref) ? <span className="ed-kicker block" data-test-row="">Test</span> : null}</td><td className={td}>{r.actor}</td><td className={td}>{r.action}{r.level ? <span className="ed-caption block">{r.level}</span> : null}</td><td className={`${td} break-all`}>{r.subject_id ?? "—"}</td><td className={td}>{r.decision}</td><td className={td}>{r.reason ?? "—"}</td></tr>)}
       </Table> : null}
       {data.log.length > LOG_SHOWN && <button type="button" onClick={() => setAll(v => !v)} className="ed-tap ed-data mt-3 min-h-[44px] border border-ed-ink px-3">{all ? `Show the newest ${LOG_SHOWN}` : `Show all ${data.log.length}`}</button>}
       {data.log.length ? null : <p className="ed-small mt-3">Nothing logged{desk ? ` for ${desk}` : ""} in the last 14 days.</p>}
@@ -171,6 +182,49 @@ function DeskDesks({ data }: { data: Newsroom }) {
         {data.proposals.map(p => <tr key={p.id} className="ed-hair"><td className={td}><time dateTime={p.at}>{storyTime(p.at)}</time></td><td className={td}>{p.desk}</td><td className={td}>{p.kind}{p.subject ? <span className="ed-caption block">{p.subject}</span> : null}</td><td className={td}>{p.text}</td><td className={td}>{p.status}{p.status_reason ? <span className="ed-caption block">{p.status_reason}</span> : null}</td>
           <td className={td} data-no-csv=""><span className="flex flex-wrap gap-2">{(["accepted", "declined", "open"] as const).filter(x => x !== p.status).map(x => <button key={x} type="button" onClick={() => void setStatus(p.id, x)} className="ed-tap ed-data min-h-[44px] border border-ed-ink px-3">{x === "accepted" ? "Accept" : x === "declined" ? "Decline" : "Reopen"}</button>)}</span></td></tr>)}
       </Table> : <p className="ed-small mt-3">{voiced("read.deskNewsroom.proposals")}</p>}
+    </section>
+  </>;
+}
+
+const shareFailures = (v: unknown): { kind: string; id: string; why: string }[] => (Array.isArray(v) ? v.filter((x): x is { kind: string; id: string; why: string } => !!x && typeof x === "object" && typeof (x as { id?: unknown }).id === "string") : []);
+/** N3 · the news desk's picks and drops, the graphics desk's picture changes and share checks, the data desk's findings and backtest. */
+function DeskN3({ n }: { n: N3 }) {
+  const fails = shareFailures(n.graphics.share?.failures);
+  return <>
+    <section aria-labelledby="desk-n3-limits" className="ed-wrap mt-12" data-desk-n3-limits="">
+      <h2 id="desk-n3-limits" className="ed-h2 ed-rule pt-3">News, graphics and data · calls today</h2>
+      <Table caption="The news, graphics and data desks' model calls today against their limits" head={["Desk", "What one call is", "Calls today"]} min={420}>
+        {n.limits.map(l => <tr key={`${l.desk}|${l.what}`} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{l.desk}</th><td className={td}>{l.what}</td><td className={`${td} num`}>{l.used} of {l.cap}</td></tr>)}
+      </Table>
+    </section>
+
+    <section aria-labelledby="desk-news" className="ed-wrap mt-12" data-desk-news="">
+      <h2 id="desk-news" className="ed-h2 ed-rule pt-3">News desk · today's picks</h2>
+      {n.news.picks.length ? <Table caption="The news desk's picks today, with any drop" head={["When", "Outlet", "Line", "Subject", "Brand", "Status"]} min={720}>
+        {n.news.picks.map(p => <tr key={p.id} className="ed-hair"><td className={td}><time dateTime={p.at}>{p.at.slice(11, 16)}</time></td><td className={td}>{p.outlet}</td><td className={td}><a className="ed-link" href={p.url} target="_blank" rel="noopener">{p.line}</a><span className="ed-caption block">{p.title}</span></td><td className={td}>{p.subject}</td><td className={td}>{p.domain ?? "—"}</td><td className={td}>{p.dropped ? `dropped · ${p.dropped}` : "shown"}</td></tr>)}
+      </Table> : <p className="ed-small mt-3">{voiced("read.deskNewsroom.picks")}</p>}
+      {n.news.drops.length ? <ul className="ed-data mt-4 space-y-1">{n.news.drops.map(d => <li key={d.id}><span className="ed-kicker">Dropped pick {d.pick_id} · {d.actor}</span> {d.reason}</li>)}</ul> : null}
+      {n.news.pitches.length ? <ul className="ed-data mt-4 space-y-1">{n.news.pitches.map((x, i) => <li key={i}><span className="ed-kicker">Pitch · {storyTime(x.at)}</span> {x.reason ?? ""}</li>)}</ul> : null}
+    </section>
+
+    <section aria-labelledby="desk-graphics" className="ed-wrap mt-12" data-desk-graphics="">
+      <h2 id="desk-graphics" className="ed-h2 ed-rule pt-3">Graphics desk · last 7 days</h2>
+      <p className="ed-small mt-3">{n.graphics.kept} pictures kept as the rule chose, {n.graphics.changed.length} changed, {n.graphics.none.length} stories with no usable picture, {n.graphics.fallbacks} decided by rule because the check could not run.</p>
+      {n.graphics.changed.length + n.graphics.none.length ? <Table caption="Pictures the graphics desk changed and stories with no usable picture" head={["Story", "Choice", "Reason"]} min={560}>
+        {[...n.graphics.changed, ...n.graphics.none].map(p => <tr key={p.id} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}><a className="ed-link" href={`/stories/${encodeURIComponent(p.story_id)}`}>{p.number ? `No. ${p.number} · ` : ""}{p.headline}</a></th><td className={td}>{p.kind} · {p.verdict}</td><td className={td}>{p.reason ?? "—"}</td></tr>)}
+      </Table> : null}
+      <p className="ed-small mt-4">{n.graphics.share ? `Share images, last check ${storyTime(n.graphics.share.at)}: ${n.graphics.share.checked} checked, ${n.graphics.share.rebuilt} rebuilt, ${fails.length} failing.` : voiced("read.deskNewsroom.share")}</p>
+      {fails.length ? <ul className="ed-data mt-2 space-y-1">{fails.map(f => <li key={`${f.kind}|${f.id}`}><span className="ed-kicker">{f.kind} · {f.id}</span> {f.why}</li>)}</ul> : null}
+    </section>
+
+    <section aria-labelledby="desk-data" className="ed-wrap mt-12" data-desk-data="">
+      <h2 id="desk-data" className="ed-h2 ed-rule pt-3">Data desk</h2>
+      <p className="ed-small mt-3">{n.data.open} open findings{Object.keys(n.data.byKind).length ? `: ${Object.entries(n.data.byKind).map(([k, v]) => `${v} ${k}`).join(", ")}` : ""}.</p>
+      {n.data.newest.length ? <Table caption="The newest open findings" head={["When", "Kind", "About", "Finding"]} min={640}>
+        {n.data.newest.map(f => <tr key={f.id} className="ed-hair"><td className={td}><time dateTime={f.at}>{storyTime(f.at)}</time></td><td className={td}>{f.kind}</td><td className={`${td} break-all`}>{f.subject}</td><td className={td}>{f.text}</td></tr>)}
+      </Table> : null}
+      <p className="ed-small mt-4">{n.data.backtest ? `Backtest: ${n.data.backtest.line}.${n.data.running ? ` Running record: ${n.data.running.right} of ${n.data.running.calls}.` : ""}` : voiced("read.deskNewsroom.backtest")}</p>
+      {n.data.proposals.length ? <ul className="ed-data mt-2 space-y-1">{n.data.proposals.map((p, i) => <li key={i}><span className="ed-kicker">{p.action} · {storyTime(p.at)}</span> {p.reason ?? ""}</li>)}</ul> : <p className="ed-small mt-2">{voiced("read.deskNewsroom.dataProposals")}</p>}
     </section>
   </>;
 }

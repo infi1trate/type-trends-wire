@@ -30,7 +30,12 @@ export async function computeBrandCard(domain: string): Promise<BrandCard | null
   const [{ auditRows }, read, { latestSignals }] = await Promise.all([import("./agency/audit.server"), import("./read.server"), import("./signals.server")]);
   const [audit, events, index, { tiers }, similar] = await Promise.all([auditRows([domain], null), eventsOf(domain), read.siteTraitIndex(), latestSignals("all"), brandSimilar(domain)]);
   const own = index.find(s => s.domain === domain);
-  return cardOf(brandModel({ domain, audit, events, peers: own ? [{ domain: own.domain, name: own.name, sector: own.sector, traits: own.traits }] : [], tiers: [...tiers.values()].map(t => [t.key, t.tier]), similar }));
+  const card = cardOf(brandModel({ domain, audit, events, peers: own ? [{ domain: own.domain, name: own.name, sector: own.sector, traits: own.traits }] : [], tiers: [...tiers.values()].map(t => [t.key, t.tier]), similar }));
+  // N3 · the card's hero media and theme from the newest value two consecutive captures agree on: the change log's own measurement.
+  const [{ settledValue }, { settleCard }] = await Promise.all([import("./newsroom/datadesk"), import("./brand-page")]);
+  const { data: recent } = await supabaseAnon().from("library_snapshots").select("hero:signals->layout->>hero_media,theme:signals->color->>theme").eq("domain", domain).eq("page_type", "home").eq("viewport", "desktop").eq("source", "live").order("captured_at", { ascending: false }).limit(8);
+  const rows = (recent ?? []) as unknown as { hero: string | null; theme: string | null }[];
+  return settleCard(card, { hero: settledValue(rows.map(r => r.hero)), theme: settledValue(rows.map(r => r.theme)) });
 }
 /** Similar brands for one domain, computed from the shared trait index and signal tiers. */
 export async function computeBrandSimilar(domain: string): Promise<SimilarResult> {

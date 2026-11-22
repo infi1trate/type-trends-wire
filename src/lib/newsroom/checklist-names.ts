@@ -8,4 +8,6 @@ export const CHECKLIST = [
   { id: "minimums", title: "The story meets its type's minimums" },
   { id: "sections", title: "No section is empty" },
   { id: "copy", title: "Every reader-facing line passes the copy desk" },
+  // N3 · the data desk's findings.
+  { id: "findings", title: "No open data finding on a brand and measure this story cites" },
 ] as const;

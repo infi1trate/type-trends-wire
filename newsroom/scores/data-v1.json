@@ -1,0 +1,9 @@
+{
+ "desk": "data",
+ "version": "v1",
+ "prompt_hash": "43d08926",
+ "run_at": "2026-11-22T07:04:54.967165Z",
+ "cases": 0,
+ "items": [],
+ "note": "Not run in N3: the weekly proposal waits for its first Monday after the backtest. The first live call is this version's baseline."
+}

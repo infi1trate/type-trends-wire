@@ -180,3 +180,12 @@ export function brandModel(r: BrandRows): BrandPage {
     blocks: OBJECT_BLOCKS,
   };
 }
+
+/** N3 · the card's measured layout facts from the newest value two consecutive captures agree on (datadesk.settledValue), so the card
+ *  shows the same newest measurement the change log confirms rather than one unconfirmed capture. A null value keeps the card's own. */
+export function settleCard<C extends Pick<BrandCard, "identity">>(card: C, v: { hero: string | null; theme: string | null }): C {
+  const id = card.identity;
+  const layout = id.layout.map(f => f.id === "hero" && v.hero ? { ...f, value: HERO[v.hero] ?? v.hero.replace(/_/g, " ") } : f.id === "theme" && v.theme ? { ...f, value: label(`theme:${v.theme}`).name } : f);
+  if (v.hero && !layout.some(f => f.id === "hero")) layout.splice(layout.some(f => f.id === "theme") ? 1 : 0, 0, { id: "hero" as const, label: "Hero media", value: HERO[v.hero] ?? v.hero.replace(/_/g, " ") });
+  return { ...card, identity: { ...id, theme: v.theme ?? id.theme, layout } };
+}

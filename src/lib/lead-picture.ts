@@ -18,6 +18,8 @@ export type LeadWords = { domain: string | null; name: string; line: string; hre
 export type LeadPlan = {
   kind: LeadKind; items: LeadItem[]; rule: LeadRule; caption: string | null;
   words?: LeadWords[]; swatches?: { domain: string; before: string[]; after: string[] }; marks?: { domain: string; name: string; icon: Pic }[];
+  /** N3 · set when the graphics desk changed the rule's picture: who chose and why (the story's Data view Pictures table shows it). */
+  chosen?: { by: string; reason: string; at: string } | null;
 };
 export const LEAD_RULES = {
   pair: "A single-brand change with stored captures of the changed section either side of it: before and after.",
@@ -37,6 +39,7 @@ export const LEAD_RULES = {
   fallbackChart: "No picture of a page: the signal's trail.",
   fallbackMarks: "No picture and no trail: the brands' marks.",
   none: "Nothing to show.",
+  desk: "The graphics desk checked the rule's picture and chose another stored capture that passes the quality gate, or none.",
 } as const;
 export type LeadRule = keyof typeof LEAD_RULES;
 /** W1d · the quiet page pictures' kinds (surface crop sections) and their names. */
@@ -209,4 +212,35 @@ export function sharedLine(pl: LeadPlan): string | null {
 /** The plan's first real picture (cards and rows show one), or null. */
 export const leadThumb = (pl: LeadPlan): LeadItem | null => pl.items.find(i => i.role !== "before") ?? pl.items[0] ?? null;
 /** The Data view's "Pictures" rows: what each item is and where it came from. */
-export const pictureRows = (pl: LeadPlan) => pl.items.map(i => ({ brand: i.domain, section: i.section, captured: i.date, role: i.role ?? "", asset: i.asset, rule: LEAD_RULES[pl.rule], live: i.live }));
+export const pictureRows = (pl: LeadPlan) => pl.items.map(i => ({ brand: i.domain, section: i.section, captured: i.date, role: i.role ?? "", asset: i.asset, rule: LEAD_RULES[pl.rule], live: i.live, chosen_by: pl.chosen ? `${pl.chosen.by}: ${pl.chosen.reason}` : "the rule" }));
+
+/** N3 · the graphics desk's newest choice for a story, as stored (picture_choices through the public facade). */
+export type PictureChoice = { kind: string; assets: string[]; actor: string; reason: string; at: string };
+/**
+ * The rule's plan with the graphics desk's choice applied. Only a stored crop that passes the quality gate can replace the picture; its
+ * caption is rebuilt by the caption rule; a "pair" stands only when it is the rule's own pair (never mixed across dates); "none" leaves
+ * the story without a lead picture. Anything that does not hold falls back to the rule's plan. Pure.
+ */
+export function applyChoice(rule: LeadPlan, choice: PictureChoice | null, crops: readonly Crop[], p: Pick<LeadPics, "okCrop" | "carousel" | "name">, happened_at: string): LeadPlan {
+  if (!choice || choice.kind === "rule") return rule;
+  const chosen = { by: choice.actor, reason: choice.reason, at: choice.at };
+  if (choice.kind === "none") return plan("none", "desk", [], null, { chosen });
+  if (choice.kind === "pair") return rule.kind === "pair" && rule.items.map(i => i.asset).join("|") === choice.assets.join("|") ? { ...rule, chosen } : rule;
+  // N3 · a mosaic with a tile that is not usable keeps its usable tiles (each a stored crop of the story's brands that passes the gate),
+  // with the rule's own caption lead rebuilt over the tiles that remain.
+  if (choice.kind === "crop" && choice.assets.length >= 2 && rule.kind === "mosaic") {
+    const tiles = choice.assets.map(a => crops.find(x => `crop:${pathOf(x.src)}` === a)).filter((c): c is Crop => !!c && p.okCrop(c));
+    if (tiles.length !== choice.assets.length || tiles.length < 2) return rule;
+    const items = tiles.map(c => { const own = rule.items.find(i => i.asset === `crop:${pathOf(c.src)}`); return own ?? cropItem(c, day(c.captured_at) >= day(happened_at) ? "after" : null); });
+    const lead = (rule.caption ?? "First screens").split(" · ")[0] ?? "First screens";
+    return plan("mosaic", "desk", items, captionOf(items, p as LeadPics, lead), { chosen });
+  }
+  if (choice.kind !== "crop" || choice.assets.length !== 1) return rule;
+  // The after crop of the rule's own pair keeps its role; any other stored crop of the story's brands is after the change when captured on or after it.
+  const own = rule.items.find(i => i.asset === choice.assets[0]);
+  const c = crops.find(x => `crop:${pathOf(x.src)}` === choice.assets[0]);
+  if (!c || !p.okCrop(c)) return rule;
+  const role: LeadItem["role"] = own?.role === "after" || day(c.captured_at) >= day(happened_at) ? "after" : null;
+  const items = [cropItem(c, role)];
+  return plan("single", "desk", items, captionOf(items, p as LeadPics, `${c.sectionName} · ${role === "after" ? "after · " : ""}${readDay(items[0]!.date)}`), { chosen });
+}

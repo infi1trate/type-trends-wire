@@ -9,7 +9,7 @@ import type { ReviewInput, ReviewBrand } from "./standards";
 import { currentDeskVersion } from "./golden/versions";
 type Stored = import("../stories/edits").StoredStory;
 
-type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
+export type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 export type ReviewCtx = { input: BuildInput; ctx: Ctx; bases?: (runId: number, keys: string[], scopes: string[]) => Promise<Map<string, ShareBase>> };
 /** Published stories are checked again only for edits made after the desks were switched on. */
 export const STANDARDS_SINCE = "2026-11-22T06:00:00Z";
@@ -60,24 +60,28 @@ export async function reviewInput(id: string, r: ReviewCtx | null, o: { asOf?: s
   const qe = /^quiet:event:(\d+)$/.exec(s.id);
   if (qe) { const { supabaseAnon } = await import("../mcp/supabase"); quietEvent = (await supabaseAnon().from("library_events").select("type").eq("id", Number(qe[1])).maybeSingle()).data?.type ?? null; }
   const lead = "lead" in page ? page.lead : null;
+  // N3 · the brands and measures the story cites: its source changes' fields (the ninth checklist item matches open findings on them).
+  const evIds = s.source_ids.flatMap(x => /^event:(\d+)$/.exec(x) ? [Number(x.slice(6))] : []).slice(0, 60);
+  let cites: { domain: string; measure: string }[] = [];
+  if (evIds.length) { const [{ supabaseAnon }, { citesOf }] = await Promise.all([import("../mcp/supabase"), import("./datadesk")]); const { data } = await supabaseAnon().from("library_events").select("domain,before,after").in("id", evIds); cites = citesOf((data ?? []) as { domain: string; before: unknown; after: unknown }[]); }
   return {
     id: s.id, number: s.number ?? null, type: s.type, basis: s.basis, kicker: page.kicker, headline: page.headline, deck: page.deck ?? null, body: page.body, howWeKnow: page.howWeKnow,
     numbers: page.census ? page.census.lines.map(l => `${l.name}${l.line ? ` · ${l.line}` : ""}`) : page.facts.map(f => f.text),
     picture: lead ? { kind: lead.kind, items: lead.items.map(x => ({ domain: x.domain, credit: x.credit })), caption: lead.caption } : null,
-    facts: rf, sheet, domains: s.domains, brands: await brandsFor(s.domains), news, quietEvent, sourceIds: s.source_ids, written: !!s.written,
+    facts: rf, sheet, domains: s.domains, brands: await brandsFor(s.domains), news, quietEvent, sourceIds: s.source_ids, written: !!s.written, cites,
   };
 }
 
 /** The desk's model call on the story writer's gateway path and cost ledger, recorded in desk_calls (only when a call was made). */
-export async function deskCall(db: Admin, desk: DeskName, purpose: "review" | "placement" | "fixture", req: { system: string; user: string; schema: Record<string, unknown>; schemaName: string; tool: import("../stories/writer.server").GatewayRequest["tool"]; maxTokens: number },
-  parse: (raw: unknown) => unknown | null, storyIds: string[], signal: AbortSignal): Promise<{ parsed: unknown; call_id: number | null; model: string; cost: number } | null> {
+export async function deskCall(db: Admin, desk: DeskName, purpose: "review" | "placement" | "fixture" | "picks" | "chart" | "proposal", req: { system: string; user: string; schema: Record<string, unknown>; schemaName: string; tool: import("../stories/writer.server").GatewayRequest["tool"]; maxTokens: number },
+  parse: (raw: unknown) => unknown | null, storyIds: string[], signal: AbortSignal, prompt: import("./golden/versions").DeskPrompt = desk as import("./golden/versions").DeskPrompt): Promise<{ parsed: unknown; call_id: number | null; model: string; cost: number } | null> {
   const [{ gatewayCall, providerCanRun }, { AI_MODELS }] = await Promise.all([import("../stories/writer.server"), import("../ai-models")]);
   // The story writer's models: the writer model, or the text model where the provider cannot run it (as the writer falls back).
   const model = providerCanRun(AI_MODELS.writer) ? AI_MODELS.writer : AI_MODELS.text;
   const r = await gatewayCall(db, { model, ...req, textMaxTokens: Math.min(req.maxTokens, 2000) }, signal);
   if (!r) return null;
   const parsed = r.raw != null ? parse(r.raw) : null;
-  const { data } = await db.from("desk_calls").insert({ desk, purpose, model, usage_id: r.usage_id ?? null, ok: parsed != null, cost: Math.round(r.cost * 1e6) / 1e6, prompt_version: currentDeskVersion(desk)?.version ?? null, story_ids: storyIds.slice(0, 60),
+  const { data } = await db.from("desk_calls").insert({ desk, purpose, model, usage_id: r.usage_id ?? null, ok: parsed != null, cost: Math.round(r.cost * 1e6) / 1e6, prompt_version: currentDeskVersion(prompt)?.version ?? null, story_ids: storyIds.slice(0, 60),
     answer: (parsed ?? {}) as never, error: parsed == null ? (r.raw == null ? "no answer" : "not the fixed structure") : null }).select("id").single();
   return { parsed, call_id: (data?.id as number | undefined) ?? null, model, cost: r.cost };
 }
@@ -170,10 +174,35 @@ export function reviewIO(db: Admin, r: ReviewCtx | null, now: () => number = Dat
       return { ok: res.status < 300, status: res.status, ...(res.status >= 300 ? { reason: b.reason ?? b.error ?? "refused" } : {}) };
     },
     promptVersion: desk => deskVersionNow(desk),
+    // N3 · the graphics desk: one picture check per story waiting for review (a recorded choice is reused), through the door.
+    picture: async (id, _i, o) => {
+      const { data: had } = await db.from("picture_choices").select("kind,verdict,reason").eq("story_id", id).eq("actor", "graphics").order("id", { ascending: false }).limit(1);
+      if (had?.[0]) return { verdict: had[0].verdict, reason: had[0].reason, changed: false };
+      const g = await import("./graphics.server");
+      const run = o.msLeft < DESK_CALL_MS ? { decision: (await import("./graphics")).decidePicture(null, { chosen: [], alternates: [] }, "time ran out before the picture check"), call_id: null, called: false } : await g.pictureCheck(db, id, { now: now(), signal: AbortSignal.timeout(Math.min(30_000, Math.max(5000, o.msLeft - 8000))) });
+      const d = run.decision;
+      const res = await io.door("graphics", { action: "picture", id, choice: d.kind, ...(d.kind === "crop" || d.kind === "pair" ? { assets: d.assets } : {}), reason: d.reason.slice(0, 600), verdict: d.verdict, per_picture: d.per_picture, ...(run.call_id ? { call: run.call_id } : {}) });
+      if (!res.ok) { const fb = { verdict: "fallback", reason: `The rule's picture stands: the choice was refused (${res.reason ?? res.status}).` }; await io.door("graphics", { action: "picture", id, choice: "rule", reason: fb.reason, verdict: "fallback" }).catch(() => null); return { ...fb, changed: false }; }
+      (await import("../stories/page.server")).forgetPictureChoice(id);
+      return { verdict: d.verdict, reason: d.reason, changed: d.kind !== "rule" };
+    },
+    openFindings: async () => (await import("./datadesk.server")).openFindings(db),
+    overruled: async () => {
+      const { applyEdits } = await import("../stories/edits");
+      const { data } = await db.from("story_reviews").select("story_id,at,second_reader").eq("desk", "standards").eq("second_reader", "overruled").gte("at", new Date(now() - 3 * 864e5).toISOString()).limit(50);
+      const ids = [...new Set((data ?? []).map(x => x.story_id))];
+      if (!ids.length) return [];
+      const [st, ed, placed] = await Promise.all([db.from("stories").select(COLS).in("id", ids), db.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids).order("id"), db.from("story_reviews").select("story_id,at").eq("desk", "editor in chief").in("story_id", ids)]);
+      if (st.error || ed.error || placed.error) return [];
+      const overAt = new Map<string, string>(); for (const x of data ?? []) if ((overAt.get(x.story_id) ?? "") < x.at) overAt.set(x.story_id, x.at);
+      const lastPlaced = new Map<string, string>(); for (const x of placed.data ?? []) if ((lastPlaced.get(x.story_id) ?? "") < x.at) lastPlaced.set(x.story_id, x.at);
+      return (st.data ?? []).map(x => applyEdits(x as unknown as Stored, (ed.data ?? []) as never, now())).filter(x => x.state === "held" && (lastPlaced.get(x.id) ?? "") < (overAt.get(x.id) ?? "")).map(x => toPending(x, true));
+    },
   };
   return io;
 }
-const deskVersionNow = (desk: DeskName) => currentDeskVersion(desk)?.version ?? null;
+const DESK_CALL_MS = 12_000;
+const deskVersionNow = (desk: DeskName) => currentDeskVersion(desk as import("./golden/versions").DeskPrompt)?.version ?? null;
 
 function toPending(x: { id: string; type: string; basis: string | null; score: number; components: unknown; happened_at: string; created_at: string; domains: string[] }, drafted: boolean): PendingStory {
   return { id: x.id, type: x.type, basis: x.basis, score: x.score, components: parts(x.components), happened_at: x.happened_at, created_at: x.created_at, domains: x.domains, drafted };

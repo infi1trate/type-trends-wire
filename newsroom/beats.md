@@ -29,10 +29,45 @@ The standards checklist (code, no model); a failed item holds the story with the
 6. The story meets its type's minimums.
 7. No section is empty.
 8. Every reader-facing line passes the copy desk.
+9. No open data finding on a brand and measure this story cites.
 
 Brands whose homepage title does not carry their name and are known to be the right website: Hinge Health, Mercury, MVSM, N26, Pitch, Postman, Substack.
 
 The second reader (one model call) reads what a reader will see with the facts sheet and each brand's title and sector, and lists problems; any blocker holds the story with the model's own sentence. The editor in chief (one call per build, only with a decision to make) picks the lead and order and may hold; it never kills, changes text, exceeds the caps or runs a held story. A story it held two days running is not offered again unless its facts change.
+
+## The order of work
+
+candidate → drafted → checked → picture checked (graphics) → standards (the checklist, then the second reader) → editor in chief → published. When a desk's call fails or its limit is used, the pipeline carries on by rule and the story's state history says so.
+
+## Daily model-call limits (UTC day; fixture calls are not counted)
+
+- **standards**, second reader: 12 a day.
+- **editor in chief**, placement: 6 a day.
+- **news**, wire picks: 4 a day.
+- **graphics**, picture check: 8 a day.
+- **graphics**, study chart: 2 a day.
+- **data**, weekly proposal: 1 a day.
+
+## The news desk
+
+Picks at most 5 links a day from the wire's publications (outlet items only, published in the last 36 hours, never picked before, one per story keeping the earliest; at most 40 shown to the model, and only when at least 3 are new since its last call). Each line is checked in code: at most 120 characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than 6 words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within 14 days either side files a pitch for the editor in chief. Readers see the picks of the last 24 hours as THE WIRE on the front page, after THE TAPE.
+
+## The graphics desk
+
+Checks each story's picture before standards: the rule's choice and up to 3 ranked alternates that pass the quality gate. Only a stored crop that passes the gate can be chosen; a before-and-after pair may become its after-crop alone, never mixed across dates; the caption is rebuilt by rule and no text changes. “No picture shows it” fails checklist item 3 for a type that needs a picture. For study figures it chooses a form only where more than one chart-kit form fits the data, and checks every published story, study and Digest share image daily (code).
+
+## The data desk
+
+Daily checks (code) record findings of these kinds: contradiction, detector, impossible, coverage, wrong website. The detector sample re-derives 25 measured events a day under today's rules; coverage flags active brands with no good capture for 3 days and sectors under 15 measured homepages. An open finding on a brand and measure a story cites holds it (checklist item 9). Weekly, after the forecast, it scores the forecast made 28 days earlier against what the measurements show, then makes one call that files at most 3 study pitches and 2 signal ideas; code drops any that name a measure the product does not hold.
+
+## Door actions added in N3
+
+- **`wire_pick`** (ships alone): The news desk picks one outlet item from the wire with its subject (brand, web or type) and one line saying what it reports; at most five picks a day. Shown on the front page's THE WIRE block for 24 hours.
+- **`wire_drop`** (ships alone): Drops a wire pick with a reason (news, standards or the editor in chief); it leaves the front page and stays in the log.
+- **`picture`** (ships alone): The graphics desk chooses a story's lead picture: a stored crop or before-and-after pair that passes the quality gate, no picture, or back to the rule's choice, with a reason. The caption is rebuilt by rule; no text changes.
+- **`finding`** (ships alone): The data desk records a finding: wrong or contradictory data, with what was expected, what was found and the receipt. An open finding on a brand and measure holds a story that cites them.
+- **`finding_close`** (ships alone): Closes a data finding with who and why (data, standards or the editor in chief).
+- **`data_run`** (ships alone): The data desk's daily checks, the weekly forecast backtest, the share-image check, the study chart check or one news desk pass: records what the run found (counts by kind). It fixes nothing.
 
 ## The census
 

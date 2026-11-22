@@ -6,7 +6,7 @@
 // The phrase guards against an agent's mistake; it is not a security boundary (there is one editor key). Pure.
 export const LEVELS = ["ships alone", "ships to preview", "needs the owner"] as const;
 export type Level = (typeof LEVELS)[number];
-export type SubjectKind = "story" | "study" | "pitch" | "edition" | "setting" | "switch" | "spend" | "week" | "none";
+export type SubjectKind = "story" | "study" | "pitch" | "edition" | "setting" | "switch" | "spend" | "week" | "none" | "wire" | "finding";
 export type ActionDef = {
   id: string; level: Level; what: string;
   /** Reads change nothing (logged as "read"). */
@@ -28,13 +28,19 @@ export const REGISTER: readonly ActionDef[] = [
   A("pin", "ships alone", "story", "Holds a story in the lead until a time (at most seven days). Pinning a held story runs it.", { since: "E2a" }),
   A("kill", "ships alone", "story", "Takes a story down with a reason; its own page says it was taken down and why.", { since: "E2a" }),
   A("correct", "ships alone", "story", "Corrects a story's headline, deck or why line; the story shows “Corrected <date>”.", { since: "E2a" }),
-  A("restore", "ships alone", "story", "Restores a killed story, or runs a held one anyway. A story waiting for review runs only when the editor in chief places it after standards passed it (or the owner runs it); a story standards held is released only by the editor in chief or the owner.", { since: "E2a" }),
+  A("restore", "ships alone", "story", "Restores a killed story, or runs a held one anyway. A story waiting for review runs only when the editor in chief places it after standards passed it (or the owner runs it); a story standards held is released only by the editor in chief or the owner. N3: when every checklist item passed and only the second reader held it, standards may release it with a reason of at least 20 characters (a pass over its second reader); it then goes to the editor in chief. A checklist failure is released only by the owner.", { since: "E2a" }),
   A("pitch", "ships alone", "pitch", "Asks the engine about a row; the engine's verdict is recorded. A pitch never publishes.", { since: "U4" }),
   A("assign", "ships alone", "pitch", "Puts a pitch on the board with the desk that holds it and its status.", { since: "N1" }),
   A("spend", "ships alone", "spend", "Records build spend in Lovable credits, with what it was for (the product cannot read its own build costs).", { since: "N1" }),
   A("hold", "ships alone", "story", "Puts a published or reviewed story back to held with a reason; its page says it is held and why in one line, and the desk shows the reason.", { since: "N2" }),
   A("copy_sweep", "ships alone", "none", "The copy desk's weekly sweep: records each page's reader-facing lines that fail the copy lints, with the page and the line. It fixes nothing.", { since: "N2" }),
   A("note", "ships alone", "none", "Leaves a dated note on a story, a study, a brand or a signal for the other desks. Shown on the desk and in the memory; never on a reader's page.", { since: "N2" }),
+  A("wire_pick", "ships alone", "wire", "The news desk picks one outlet item from the wire with its subject (brand, web or type) and one line saying what it reports; at most five picks a day. Shown on the front page's THE WIRE block for 24 hours.", { since: "N3" }),
+  A("wire_drop", "ships alone", "wire", "Drops a wire pick with a reason (news, standards or the editor in chief); it leaves the front page and stays in the log.", { since: "N3" }),
+  A("picture", "ships alone", "story", "The graphics desk chooses a story's lead picture: a stored crop or before-and-after pair that passes the quality gate, no picture, or back to the rule's choice, with a reason. The caption is rebuilt by rule; no text changes.", { since: "N3" }),
+  A("finding", "ships alone", "finding", "The data desk records a finding: wrong or contradictory data, with what was expected, what was found and the receipt. An open finding on a brand and measure holds a story that cites them.", { since: "N3" }),
+  A("finding_close", "ships alone", "finding", "Closes a data finding with who and why (data, standards or the editor in chief).", { since: "N3" }),
+  A("data_run", "ships alone", "none", "The data desk's daily checks, the weekly forecast backtest, the share-image check, the study chart check or one news desk pass: records what the run found (counts by kind). It fixes nothing.", { since: "N3" }),
   A("propose", "ships to preview", "setting", "Proposes something that changes how a page looks or adds a format (a chart type, a study series, a layout, a signal, a design edition). Recorded; nothing live changes.", { since: "N1" }),
   A("living_approve", "needs the owner", "edition", "Approves a proposed design edition after the gate. Going live still means shipping its values in code.", { since: "L1" }),
   A("living_rollback", "needs the owner", "edition", "Rolls an approved or live design edition back to the previous edition's values exactly.", { since: "L1" }),

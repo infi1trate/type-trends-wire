@@ -454,6 +454,21 @@
   /* The ledger: the ruled index (components/brand/Ledger.tsx). Continuous 1.5 px rules; number, title, facts, tags, time. */
   .ledger { border-top: var(--tk-border-hairline) solid var(--sys-color-rule); }
   .ledger-row { border-bottom: var(--tk-border-hairline) solid var(--sys-color-rule); }
+  /* N3 · a row with a second link beside its own (THE WIRE's brand): side by side from 768 px, the second under the first below it. */
+  .ledger-row-split { display: flex; flex-wrap: wrap; align-items: stretch; }
+  .ledger-row-split > .ledger-link { flex: 1 1 100%; min-width: 0; }
+  .ledger-after { display: flex; align-items: center; padding: 0 var(--tk-space-2) var(--tk-space-1) calc(4.5ch + var(--tk-space-3) + var(--tk-space-2)); }
+  .ledger-after a { display: inline-flex; align-items: center; min-height: var(--tk-layout-tap); }
+  @media (min-width: 768px) { .ledger-row-split { flex-wrap: nowrap; } .ledger-row-split > .ledger-link { flex: 1 1 auto; } .ledger-after { padding: 0 var(--tk-space-2); } }
+  /* N3 · THE WIRE: no number column, the tape's gap halved above it, and three rows on phones (its height budget). */
+  .d-stack > * + .front-wire, .d-stack > .front-wire { margin-top: var(--tk-space-4); }
+  .ledger-wire .ledger-num { display: none; }
+  .ledger-wire .ledger-link { grid-template-columns: minmax(0, 1fr) auto; }
+  .ledger-wire .ledger-rest { grid-column: 1 / -1; }
+  .ledger-wire .ledger-after { padding-left: var(--tk-space-2); }
+  .ledger-brand { display: inline-flex; align-items: center; min-height: var(--tk-layout-tap); text-decoration: underline; text-underline-offset: .2em; }
+  @media (max-width: 767px) { .ledger-wire > li:nth-child(n + 4) { display: none; } .ledger-wire .ledger-row-split { position: relative; } .ledger-wire .ledger-after { position: absolute; right: 0; bottom: 0; padding: 0 var(--tk-space-2); } .ledger-wire .ledger-row-split .ledger-rest { padding-right: 12ch; } }
+  @media (min-width: 768px) { .ledger-wire .ledger-link { grid-template-columns: minmax(0, 1fr) auto auto; } .ledger-wire .ledger-rest { grid-column: auto; } }
   .ledger-link { display: grid; grid-template-columns: 4.5ch minmax(0, 1fr) auto; column-gap: var(--tk-space-3); row-gap: var(--tk-space-1); align-items: baseline; min-height: var(--tk-layout-tap);
     padding: var(--tk-space-2) var(--tk-space-2); color: var(--sys-color-ink); text-decoration: none !important; }
   .ledger-link:hover, .ledger-link:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }

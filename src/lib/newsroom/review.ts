@@ -1,9 +1,12 @@
 // N2 · THE ORDER OF WORK for a story: candidate → drafted → checked → reviewed → published (held, killed, retired as before).
+// N3: candidate → drafted → checked → picture checked (graphics) → standards (nine items, then the second reader) → editor in chief →
+// published. If the graphics call fails or its limit is used, the rule's picture stands and the history says so.
 // `reviewed` means standards passed it and the editor in chief placed it; a story is published only from reviewed. The engine stores a
 // story it would run as held, "awaiting review"; the desks release it through the door (a restore by the editor in chief). When a
 // desk's call fails or its daily cap is used, the story takes today's path (engine order, no second reader) and the state says so.
 // A failing desk never stops the day's stories. Orchestration with injected I/O (review.server.ts is the real one); pure otherwise.
 import { blockerReason, blockers, checklist, checklistReason, failed, type ItemResult, type Problem, type ReviewInput } from "./standards";
+import type { OpenFinding } from "./datadesk";
 import { enforceChief, offerAgain, slotsFor, type ChiefAnswer, type ChiefInput, type ChiefStory, type Slots } from "./chief";
 import { fnv } from "./golden/versions";
 
@@ -29,9 +32,13 @@ export const DESK_CALL_MIN_MS = 12_000;
 export const DESK_CONCURRENCY = 3;
 
 export type Fallback = "cap used" | "call failed" | "time ran out";
-export const reviewedLine = (o: { secondReader: Fallback | "ran"; chief: "placed" | "no decision" | Fallback; place: number; of: number; lead: boolean }) => {
-  const sr = o.secondReader === "ran" ? "standards passed it" : `reviewed without second reader: ${o.secondReader}`;
-  const ch = o.chief === "placed" ? (o.lead ? "the editor in chief led with it" : `the editor in chief placed it ${o.place} of ${o.of}`) : o.chief === "no decision" ? "placed in engine order (no decision to make)" : `placed in engine order without the editor in chief: ${o.chief}`;
+/** How standards passed a story: its second reader ran, standards released it over its second reader (N3), or a fallback. */
+export type SecondReader = "ran" | "overruled" | Fallback;
+export const reviewedLine = (o: { secondReader: SecondReader; chief: "placed" | "no decision" | Fallback; place: number; of: number; lead: boolean; leadBy?: "desk" | "engine"; refused?: { id: string; why: string } | null }) => {
+  const sr = o.secondReader === "ran" ? "standards passed it" : o.secondReader === "overruled" ? "standards passed it over its second reader" : `reviewed without second reader: ${o.secondReader}`;
+  const ch = o.chief === "placed"
+    ? (o.lead ? (o.leadBy === "engine" && o.refused ? `it leads as the engine's lead, because the editor in chief's lead was refused (${o.refused.why})` : "the editor in chief led with it") : `the editor in chief placed it ${o.place} of ${o.of}`)
+    : o.chief === "no decision" ? "placed in engine order (no decision to make)" : `placed in engine order without the editor in chief: ${o.chief}`;
   return `Reviewed: ${sr}; ${ch}.`;
 };
 /** What the reader-facing review covers, as one fingerprint: the story as shown and its facts sheet. A change re-checks a published story. */
@@ -66,8 +73,16 @@ export type ReviewIO = {
   /** One call through the door's own code path (actor, level, desk log). */
   door: (actor: DeskName, body: Record<string, unknown>) => Promise<DoorResult>;
   promptVersion: (desk: DeskName) => string | null;
+  /** N3 · the graphics desk's picture check for a story waiting for review (once per story: a recorded choice is reused). It records the
+   *  choice through the door and says whether the picture changed; the rule's picture stands when the call fails or its limit is used. */
+  picture?: (id: string, i: ReviewInput, o: { msLeft: number }) => Promise<{ verdict: string; reason: string; changed: boolean } | null>;
+  /** N3 · open data findings (the ninth checklist item). */
+  openFindings?: () => Promise<OpenFinding[]>;
+  /** N3 · stories standards released over their second reader and the editor in chief has not placed since. */
+  overruled?: () => Promise<PendingStory[]>;
 };
-export type ReviewSummary = { checked: number; held: string[]; passed: string[]; released: string[]; lead: string | null; second_reader: { ran: number; skipped: Fallback[] }; chief: "called" | "no decision" | Fallback | "none"; rechecked: number; errors: string[] };
+export type ReviewSummary = { checked: number; held: string[]; passed: string[]; released: string[]; lead: string | null; second_reader: { ran: number; skipped: Fallback[] }; chief: "called" | "no decision" | Fallback | "none"; rechecked: number; errors: string[];
+  /** N3 · pictures checked by the graphics desk, and the editor in chief's lead the code refused. */ pictures?: { checked: number; changed: number }; refused?: { id: string; why: string } | null };
 
 const dayOf = (iso: string) => iso.slice(0, 10);
 const chiefStory = (p: PendingStory, i: ReviewInput, now: number, again = false): ChiefStory => ({ id: p.id, type: i.id.startsWith("census:") ? "census" : i.id.startsWith("quiet:") ? "quiet change" : p.type, headline: i.headline, deck: i.deck, facts: i.numbers.length, picture: i.picture?.kind ?? "none",
@@ -81,15 +96,28 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
     const [pending, rechecks, writerOut] = await Promise.all([io.pending(), io.rechecks().catch(e => (err(e, "rechecks"), [])), io.writerOut().catch(() => true)]);
     const ready = pending.filter(p => readyForReview(p, { now: io.now(), writerOut }));
     const todo = [...ready.map(p => ({ p, published: false })), ...rechecks.filter(r => !ready.some(x => x.id === r.id)).map(p => ({ p, published: true }))];
-    if (!todo.length && !(await io.reoffers().catch(() => [])).length) return sum;
+    const overruled = io.overruled ? await io.overruled().catch(e => (err(e, "overruled"), [] as PendingStory[])) : [];
+    if (!todo.length && !overruled.length && !(await io.reoffers().catch(() => [])).length) return sum;
+    const findings = todo.length && io.openFindings ? await io.openFindings().catch(e => (err(e, "findings"), [] as OpenFinding[])) : [];
+    sum.pictures = { checked: 0, changed: 0 };
     const last = await io.lastStandards(todo.map(t => t.p.id)).catch(() => new Map());
     // A · the checklist, then the second reader for what passed it.
-    const inputs = new Map<string, ReviewInput>(), hashes = new Map<string, string>(), passed: { p: PendingStory; published: boolean; secondReader: "ran" | Fallback }[] = [], toRead: { p: PendingStory; published: boolean; i: ReviewInput; hash: string }[] = [];
+    const inputs = new Map<string, ReviewInput>(), hashes = new Map<string, string>(), passed: { p: PendingStory; published: boolean; secondReader: SecondReader }[] = [], toRead: { p: PendingStory; published: boolean; i: ReviewInput; hash: string }[] = [];
     for (const t of todo) {
-      const i = await io.input(t.p.id).catch(e => (err(e, `input ${t.p.id}`), null)); if (!i) continue;
+      let i = await io.input(t.p.id).catch(e => (err(e, `input ${t.p.id}`), null)); if (!i) continue;
+      // N3 · the graphics desk checks the picture first, so the checklist judges the final picture (a story waiting for review only).
+      if (!t.published && io.picture) {
+        const g = await io.picture(t.p.id, i, { msLeft: left() }).catch(e => (err(e, `picture ${t.p.id}`), null));
+        if (g) {
+          sum.pictures!.checked++;
+          if (g.changed) { sum.pictures!.changed++; i = (await io.input(t.p.id).catch(() => null)) ?? i; }
+          i = { ...i, graphics: { verdict: g.verdict, why: g.reason } };
+        }
+      }
+      i = { ...i, findings };
       const hash = factsHash(i); inputs.set(t.p.id, i); hashes.set(t.p.id, hash);
       const prev = last.get(t.p.id);
-      if (prev && prev.facts_hash === hash && prev.verdict === "pass") { if (!t.published) passed.push({ p: t.p, published: false, secondReader: (prev.second_reader as Fallback | "ran" | null) ?? "ran" }); continue; }
+      if (prev && prev.facts_hash === hash && prev.verdict === "pass") { if (!t.published) passed.push({ p: t.p, published: false, secondReader: (prev.second_reader as SecondReader | null) ?? "ran" }); continue; }
       if (t.published && prev && prev.facts_hash === hash) continue;
       sum.checked++; if (t.published) sum.rechecked++;
       const items = checklist(i);
@@ -134,7 +162,13 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
     // B · the editor in chief places what passed, plus stories it held before that may be offered again.
     const again = await io.reoffers().catch(() => [] as PendingStory[]);
     const pastHolds = await io.chiefHolds(again.map(a => a.id)).catch(() => new Map());
-    const offered: { p: PendingStory; i: ReviewInput; again: boolean; secondReader: "ran" | Fallback }[] = passed.flatMap(x => { const i = inputs.get(x.p.id); return i ? [{ p: x.p, i, again: false, secondReader: x.secondReader }] : []; });
+    const offered: { p: PendingStory; i: ReviewInput; again: boolean; secondReader: SecondReader }[] = passed.flatMap(x => { const i = inputs.get(x.p.id); return i ? [{ p: x.p, i, again: false, secondReader: x.secondReader }] : []; });
+    // N3 · a story standards released over its second reader goes on to the editor in chief.
+    for (const a of overruled) {
+      if (offered.some(x => x.p.id === a.id)) continue;
+      const i = await io.input(a.id).catch(() => null); if (!i) continue;
+      offered.push({ p: a, i, again: false, secondReader: "overruled" });
+    }
     for (const a of again) {
       if (offered.some(x => x.p.id === a.id)) continue;
       const i = await io.input(a.id).catch(() => null); if (!i) continue;
@@ -166,6 +200,7 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
     const slots = new Map(day.slots); for (const x of offered) { const k = dayOf(x.p.happened_at); if (!slots.has(k)) slots.set(k, slotsFor([])); }
     const d = enforceChief(answer, offered.map(x => ({ id: x.p.id, type: x.p.type, basis: x.p.basis as "ai" | "measured" | null, domains: x.p.domains, day: dayOf(x.p.happened_at) })), engineOrder, slots, { leadOpen: day.leadOpen, today });
     const hashOf = (id: string) => hashes.get(id) ?? factsHash(offered.find(x => x.p.id === id)!.i);
+    sum.refused = d.refused ?? null;
     for (const h of d.holds) {
       const reason = h.by === "cap" ? `Held: ${h.why}` : `Editor in chief: ${h.why}`;
       await io.record([{ story_id: h.id, desk: "editor in chief", verdict: "hold", reason, facts_hash: hashOf(h.id), basis: answer ? "desk" : "engine order", call_id: callId, prompt_version: io.promptVersion("editor in chief") }]);
@@ -174,13 +209,15 @@ export async function runDesks(io: ReviewIO, o: { deadline: number }): Promise<R
     }
     for (const [n, id] of d.run.entries()) {
       const x = offered.find(y => y.p.id === id)!, lead = d.lead === id;
-      const note = reviewedLine({ secondReader: x.secondReader, chief: chiefWhy, place: n + 1, of: d.run.length, lead });
+      const note = reviewedLine({ secondReader: x.secondReader, chief: chiefWhy, place: n + 1, of: d.run.length, lead, leadBy: d.leadBy ?? "desk", refused: d.refused ?? null })
+        + (d.refused && d.refused.id === id && !lead ? ` The editor in chief chose it to lead; the code refused: ${d.refused.why}.` : "");
       await io.record([{ story_id: id, desk: "editor in chief", verdict: lead ? "lead" : "run", reason: note, facts_hash: hashOf(id), placement: n + 1, basis: answer ? "desk" : "engine order", call_id: callId, prompt_version: io.promptVersion("editor in chief") }]);
       const r = await io.door("editor in chief", { action: "restore", id, note });
       if (!r.ok) { sum.errors.push(`release ${id}: ${r.reason ?? r.status}`); continue; }
       sum.released.push(id);
       // Only the editor's own choice is pinned (24 hours); with no answer the front page's rule picks the lead as before.
-      if (lead && answer) { const p = await io.door("editor in chief", { action: "pin", id, until: new Date(io.now() + LEAD_PIN_HOURS * 36e5).toISOString(), note: "The editor in chief's lead." }); if (p.ok) sum.lead = id; }
+      if (lead && answer && d.leadBy !== "engine") { const p = await io.door("editor in chief", { action: "pin", id, until: new Date(io.now() + LEAD_PIN_HOURS * 36e5).toISOString(), note: "The editor in chief's lead." }); if (p.ok) sum.lead = id; }
+      else if (lead && d.refused) sum.lead = id;
     }
   } catch (e) { err(e, "desks"); }
   return sum;

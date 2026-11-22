@@ -13,7 +13,11 @@ import { AI_ROUNDUP_DAILY_CAP, DAILY_CAP, DEDUPE_DAYS, NEWS_DAILY_CAP, PUBLISH_M
 import { AGAINST_MIN, SEASONAL_STORY_MIN } from "../stories/editor";
 import { COPY_LINTS } from "./copy";
 import { CHECKLIST, NAME_ALLOW } from "./standards";
-import { DESK_CAPS } from "./caps";
+import { DESK_CAPS, DESK_LIMITS } from "./caps";
+import { REGISTER } from "./register";
+import { COPY_RUN_MAX, LINE_MAX, NEWS_MAX_CANDIDATES, NEWS_MIN_NEW, NEWS_PICKS_PER_DAY, NEWS_WINDOW_HOURS, PITCH_WINDOW_DAYS, WIRE_BLOCK_HOURS } from "./news";
+import { ALTERNATES_MAX } from "./graphics";
+import { BACKTEST_DAYS, COVERAGE_DAYS, DETECTOR_SAMPLE, FINDING_KINDS, PROPOSAL_MAX_SIGNALS, PROPOSAL_MAX_STUDIES, SECTOR_MIN } from "./datadesk";
 
 export const LISTS_START = "<!-- lists:start (written by scripts/newsroom-docs.ts from the code; do not edit by hand) -->";
 export const LISTS_END = "<!-- lists:end -->";
@@ -78,6 +82,7 @@ export function beatsDoc(): string {
     ...CHECKLIST.map((c, i) => `${i + 1}. ${c.title}.`), "",
     `Brands whose homepage title does not carry their name and are known to be the right website: ${Object.values(NAME_ALLOW).map(a => a.name).join(", ")}.`, "",
     "The second reader (one model call) reads what a reader will see with the facts sheet and each brand's title and sector, and lists problems; any blocker holds the story with the model's own sentence. The editor in chief (one call per build, only with a decision to make) picks the lead and order and may hold; it never kills, changes text, exceeds the caps or runs a held story. A story it held two days running is not offered again unless its facts change.", "",
+    ...desksBlock(), "",
     "## The census", "",
     `A census counts what homepages say now: a brand counts when its newest capture and one at least ${CENSUS_SPAN_HOURS} hours older are both inside the last ${CENSUS_DAYS} days. It runs with at least ${CENSUS_MIN} members and names at most ${CENSUS_NAMED_MAX}.`, "",
     ...WATCH_LIST.map(w => `- **Words in headlines: ${w.word}** (${w.forms.join(", ")}).`),
@@ -89,3 +94,30 @@ export function beatsDoc(): string {
     `One argument a week, under ${DIGEST_WORDS} words, from published stories only: ${PICTURES_MAX} pictures, one chart and the ${ROWS_MAX} changes that mattered. The week is a closed ISO week.`, "",
   ].join("\n");
 }
+
+export const DESKS_START = "<!-- desks:start (written by scripts/newsroom-docs.ts from the code; do not edit by hand) -->";
+export const DESKS_END = "<!-- desks:end -->";
+/** N3 · the order of work, every desk's daily model-call limit, and the news, graphics and data desks' jobs, from the constants. */
+export function desksBlock(): string[] {
+  const n3 = REGISTER.filter(a => a.since === "N3");
+  return [
+    "## The order of work", "",
+    "candidate → drafted → checked → picture checked (graphics) → standards (the checklist, then the second reader) → editor in chief → published. When a desk's call fails or its limit is used, the pipeline carries on by rule and the story's state history says so.", "",
+    "## Daily model-call limits (UTC day; fixture calls are not counted)", "",
+    ...DESK_LIMITS.map(l => `- **${l.desk}**, ${l.what}: ${l.cap} a day.`), "",
+    "## The news desk", "",
+    `Picks at most ${NEWS_PICKS_PER_DAY} links a day from the wire's publications (outlet items only, published in the last ${NEWS_WINDOW_HOURS} hours, never picked before, one per story keeping the earliest; at most ${NEWS_MAX_CANDIDATES} shown to the model, and only when at least ${NEWS_MIN_NEW} are new since its last call). Each line is checked in code: at most ${LINE_MAX} characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than ${COPY_RUN_MAX} words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within ${PITCH_WINDOW_DAYS} days either side files a pitch for the editor in chief. Readers see the picks of the last ${WIRE_BLOCK_HOURS} hours as THE WIRE on the front page, after THE TAPE.`, "",
+    "## The graphics desk", "",
+    `Checks each story's picture before standards: the rule's choice and up to ${ALTERNATES_MAX} ranked alternates that pass the quality gate. Only a stored crop that passes the gate can be chosen; a before-and-after pair may become its after-crop alone, never mixed across dates; the caption is rebuilt by rule and no text changes. “No picture shows it” fails checklist item 3 for a type that needs a picture. For study figures it chooses a form only where more than one chart-kit form fits the data, and checks every published story, study and Digest share image daily (code).`, "",
+    "## The data desk", "",
+    `Daily checks (code) record findings of these kinds: ${FINDING_KINDS.join(", ")}. The detector sample re-derives ${DETECTOR_SAMPLE} measured events a day under today's rules; coverage flags active brands with no good capture for ${COVERAGE_DAYS} days and sectors under ${SECTOR_MIN} measured homepages. An open finding on a brand and measure a story cites holds it (checklist item 9). Weekly, after the forecast, it scores the forecast made ${BACKTEST_DAYS} days earlier against what the measurements show, then makes one call that files at most ${PROPOSAL_MAX_STUDIES} study pitches and ${PROPOSAL_MAX_SIGNALS} signal ideas; code drops any that name a measure the product does not hold.`, "",
+    "## Door actions added in N3", "",
+    ...n3.map(a => `- **\`${a.id}\`** (${a.level}): ${a.what}`),
+  ];
+}
+/** The block between the desks markers in README.md, or null. */
+export function desksBlockOf(md: string): string | null {
+  const a = md.indexOf(DESKS_START), b = md.indexOf(DESKS_END);
+  return a < 0 || b < a ? null : md.slice(a, b + DESKS_END.length);
+}
+export const desksReadmeBlock = () => [DESKS_START, "", ...desksBlock().map(l => l.replace(/^## /, "### ")), "", DESKS_END].join("\n");

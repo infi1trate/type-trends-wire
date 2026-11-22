@@ -80,7 +80,7 @@ export async function loadStoryLead(id: string, o: { asOf?: string } = {}) {
   return { ...page, lead, eventIds: sourceEventIds(s.source_ids), retired: null as Retired | null, icon: s.domains.length === 1 ? pics?.icon ?? null : null, thumb: wantThumb ? pickThumb(thumbs as never, d!, s.happened_at) : null, crops, frames: drawn, series: key ? { key, name: page.signals[0]?.name ?? key, points: series } : null };
 }
 /** I3 · the story's lead picture, by rule (lead-picture.ts), from what the page already loaded plus the one cached picture lookup. */
-export async function leadOf(s: StoryRecord, crops: import("./evidence").StoryEvidence | null, o: { colourEvents?: import("./recolour").ColourEvent[]; census?: { name: string; line: string; href: string | null }[] | null; chart?: boolean; names?: ReadonlyMap<string, string | null> } = {}) {
+export async function leadOf(s: StoryRecord, crops: import("./evidence").StoryEvidence | null, o: { colourEvents?: import("./recolour").ColourEvent[]; census?: { name: string; line: string; href: string | null }[] | null; chart?: boolean; names?: ReadonlyMap<string, string | null>; /** N3 · the rule's own plan, before the graphics desk's choice. */ rule?: boolean } = {}) {
   const [{ leadPicture }, { leadPics }] = await Promise.all([import("../lead-picture"), import("../lead-picture.server")]);
   const ids = sourceEventIds(s.source_ids), colour = o.colourEvents ?? [];
   const hexes = (v: unknown) => { const r = (v && typeof v === "object" ? v : {}) as Record<string, unknown>; return [...(Array.isArray(r["palette"]) ? (r["palette"] as unknown[]) : []), r["accent"]].filter((x): x is string => typeof x === "string" && /^#[0-9a-f]{3,8}$/i.test(x)); };
@@ -89,7 +89,30 @@ export async function leadOf(s: StoryRecord, crops: import("./evidence").StoryEv
   const dates = [...new Set(((Array.isArray(s.facts) ? s.facts : []) as { text: string }[]).flatMap(f => String(f.text ?? "").match(/\b\d{4}-\d{2}-\d{2}\b/g) ?? []))];
   const pics = await leadPics(d => o.names?.get(d) ?? d);
   const assetPair = s.id.startsWith("quiet:asset:") ? await quietPair(s.id, s.source_ids).catch(() => null) : s.id.startsWith("quiet:event:") ? await quietPagePair(s.source_ids).catch(() => null) : null;
-  return leadPicture({ kind: "story", story: { assetPair, id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, sector: s.sector ?? null, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
+  const rule = leadPicture({ kind: "story", story: { assetPair, id: s.id, type: s.type, domains: s.domains, happened_at: s.happened_at, sector: s.sector ?? null, evidence: crops, fields: paletteOnly ? ["palette"] : [], palette: one ? { before: hexes(one.before), after: hexes(one.after) } : null, census: o.census ?? null, dates: dates.length ? dates : [s.happened_at.slice(0, 10)], chart: !!o.chart } }, pics);
+  if (o.rule) return rule;
+  // N3 · the graphics desk's newest choice, applied by rule (only a stored crop that passes the quality gate; else the rule's plan).
+  const choice = await pictureChoiceOf(s.id).catch(() => null);
+  if (!choice || choice.kind === "rule") return rule;
+  const [{ applyChoice }, { toCrop }, { cropsFor }] = await Promise.all([import("../lead-picture"), import("../crops"), import("../read.server")]);
+  const pool = choice.kind === "crop" ? (await cropsFor(s.domains).catch(() => [])).map(toCrop) : [];
+  return applyChoice(rule, choice, pool, pics, s.happened_at);
+}
+/** N3 · one story's newest picture choice through the public facade (short-lived per instance, so a page never waits long on it). */
+const choiceCache = new Map<string, { at: number; v: import("../lead-picture").PictureChoice | null }>();
+/** Drop one story's cached choice (the graphics desk just recorded a new one in this instance). */
+export const forgetPictureChoice = (id: string) => { choiceCache.delete(id); };
+export async function pictureChoiceOf(id: string): Promise<import("../lead-picture").PictureChoice | null> {
+  const hit = choiceCache.get(id);
+  if (hit && Date.now() - hit.at < 60_000) return hit.v;
+  const { supabaseAnon } = await import("../mcp/supabase");
+  const { data, error } = await supabaseAnon().rpc("story_picture_choices", { p_ids: [id] });
+  if (error) throw new Error("picture_choice_read_failed");
+  const r = (data ?? [])[0];
+  const v = r ? { kind: r.kind, assets: r.assets ?? [], actor: r.actor, reason: r.reason, at: r.at } : null;
+  if (choiceCache.size > 500) choiceCache.clear();
+  choiceCache.set(id, { at: Date.now(), v });
+  return v;
 }
 /** W1b · a quiet icon or card story's old and new stored versions (`asset-from:` / `asset-to:` source ids; brand_assets hides opted-out brands). */
 async function quietPair(id: string, sourceIds: string[]) {

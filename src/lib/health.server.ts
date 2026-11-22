@@ -10,7 +10,7 @@ export async function healthPayload(): Promise<HealthPayload> {
   let value: HealthPayload;
   try {
     const db = supabaseAnon();
-    const [{ data, error }, pause, indicators, history, writer, calls] = await Promise.all([healthFactsResult(), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null),
+    const [{ data, error }, pause, indicators, history, writer, calls, deskFacts] = await Promise.all([healthFactsResult(), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null),
       // W2: the newest leading-indicator run; unreadable reads as not started rather than failing health.
       import("./indicators/read.server").then(m => m.indicatorsHealthFacts()).catch(() => null),
       // When the library history series last finished refreshing; unreadable leaves the library_check note as before.
@@ -18,9 +18,11 @@ export async function healthPayload(): Promise<HealthPayload> {
       // E2b: the story writer's calls today; unreadable shows "writer facts unavailable" and changes nothing else.
       db.rpc("story_writer_facts").then(r => (r.error ? null : r.data), () => null),
       // N2: each writer's and desk's calls today against its own limit; unreadable falls back to the single count.
-      db.rpc("newsroom_call_facts").then(r => (r.error ? null : r.data), () => null)]);
+      db.rpc("newsroom_call_facts").then(r => (r.error ? null : r.data), () => null),
+      // N3: every desk's calls today keyed desk:purpose; unreadable leaves the meter without the new desks.
+      db.rpc("newsroom_desk_facts" as never).then(r => (r.error ? null : r.data), () => null)]);
     // The pause reason and probe times only add to the library_ai note; when they can't be read the job reads as before.
-    value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(calls && typeof calls === "object" ? { newsroom_calls: calls } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}) } as never, new Date(now));
+    value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(calls && typeof calls === "object" ? { newsroom_calls: calls } : {}), ...(deskFacts && typeof deskFacts === "object" ? { desk_calls: deskFacts } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}) } as never, new Date(now));
   } catch { value = unavailableHealth(new Date(now)); }
   // I3b: the brand-name check is a fact beside the jobs; unreadable reads as null and never changes the status.
   const names = await import("./name-check.server").then(m => m.brandNameCheck()).catch(() => null);

@@ -505,5 +505,7 @@ async function studies(job: string, jobStartedAt: number) {
   await (await import("../digest/writer.server")).runDigestWriter(job, jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
   // N2 · the copy desk's weekly sweep, when time is left (resumes in a later build; never fails the job).
   if (jobStartedAt + JOB_LIMIT_MS - Date.now() > 20_000) await (await import("../newsroom/sweep.server")).runCopySweep((await import("@/integrations/supabase/client.server")).supabaseAdmin, jobStartedAt + JOB_LIMIT_MS - 8000).catch(() => null);
+  // N3 · the news, graphics and data desks' scheduled work, when time is left (never fails the job).
+  if (jobStartedAt + JOB_LIMIT_MS - Date.now() > 20_000) await (await import("../newsroom/desks-run.server")).runDeskJobs(jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
 }
 export const storyLabel = (k: string) => label(k).name;
