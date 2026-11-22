@@ -145,10 +145,11 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
             <span className="ed-small min-w-0 break-words">{l.line}{l.isNew && <span className="ed-kicker ml-2 whitespace-nowrap" data-census-new="">{CENSUS_NEW_MARK}</span>}</span>
           </li>)}</ul>
         </BlockPart>}
-        {(!s.census || s.facts.length > 0) && <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : "The numbers"} kicker="Each line links to its receipt.">
-          {s.facts.length ? <ul className="ledger" data-story-changes="">{s.facts.map((f, i) => <li key={i} className="ledger-row px-2 py-3">
+        {/* W1d · a story with nothing to list leaves the section out; it never prints an empty line. */}
+        {s.facts.length > 0 && <BlockPart title={s.facts.some(f => f.kind === "member") ? "The changes" : s.facts.some(f => f.kind === "before" || f.kind === "after") ? "The change" : "The numbers"} kicker="Each line links to its receipt.">
+          <ul className="ledger" data-story-changes="">{s.facts.map((f, i) => <li key={i} className="ledger-row px-2 py-3">
             <span className="ed-small">{f.href ? <Receipt href={f.href} drawer {...pr(f.href)}>{f.text}</Receipt> : f.text}</span>
-          </li>)}</ul> : <p className="ed-small">{voiced("read.storyView.1")}</p>}
+          </li>)}</ul>
         </BlockPart>}
       </>,
       "so-what": null,

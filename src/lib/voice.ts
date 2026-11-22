@@ -186,7 +186,6 @@ export const VOICE = {
   "read.signalView.1": { kind: "empty", where: "Read · SignalView", text: "No calls recorded for this signal yet. The ledger records the signals the weekly brief names, every alert and the top 20 next-wave scores.", next: [] },
   "read.signalView.2": { kind: "empty", where: "Read · SignalView", text: "No tracked brand shows it on its current homepage.", next: [] },
   "read.signalView.3": { kind: "empty", where: "Read · SignalView", text: "No story has named this signal yet.", next: [] },
-  "read.storyView.1": { kind: "empty", where: "Read · StoryView", text: "No facts were stored with this story.", next: [] },
   "read.storyView.2": { kind: "empty", where: "Read · StoryView", text: "No earlier story on this signal or brand.", next: [] },
   "read.toolsViews.2": { kind: "failed", where: "Read · ToolsViews", text: "Job health couldn't be read right now.", next: [RETRY] },
   "staff.loading": loading("Staff pages after the editor key", "Opening with the editor key…"),

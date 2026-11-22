@@ -13,7 +13,7 @@ The standing questions slug answers, and the series a reader learns to expect. E
 - **White space.** A signal on at most 5% of a sector's homepages while at least 15% elsewhere, in a sector with at least 15 measured homepages.
 - **Breakouts.** A forecast alert that a signal reached the Breakout stage (stage words in `labels.ts`, alert rules in `alerts.ts`).
 - **Outside news.** An item from the wire's publications that names a tracked brand (names of at least 4 letters, strict matching) and is about design; the story says what the item says, about that brand.
-- **Quiet change.** An icon, social card or other-page identity change with no mention in the wire's publications within 14 days either side. A page that follows a confirmed homepage change of the same kind within 30 days is not quiet: it becomes a fact on the brand's own story.
+- **Quiet change.** Needs a confirmed new site icon, a confirmed new social card, or a confirmed change of headline or body typeface on another page at the same address, with no mention in the wire's publications within 14 days either side. Never alone: an accent, palette or theme change alone on another page stays a line on the tape. It needs a picture to lead with: the old and new icon or card, or the page's first screen before and after; with no picture it does not run. A page that follows a confirmed homepage change of the same kind within 30 days is not quiet: it becomes a fact on the brand's own story.
 
 ## The census
 

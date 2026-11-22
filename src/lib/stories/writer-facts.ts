@@ -8,6 +8,7 @@ import { label, sectorName } from "../labels";
 import { STORY_TYPE_DEFS, AI_EVENTS, type Fact, type StoryKind } from "./types";
 import type { WriterChange, WriterFacts, WriterNumber, WrittenText } from "./writer";
 import { howWeKnow, quotesOf } from "./writer";
+import { storedCaptureDates } from "./capture-dates";
 import { CENSUS_HOW, CENSUS_NAMED_MAX, SALE_KEY, censusKeyOf } from "../census";
 import { oneHeadline, oneHeadlineOf } from "../headline-text";
 
@@ -95,7 +96,9 @@ export function writerFacts(s: FactStory, src: FactSource): { facts: WriterFacts
   const lower = new Set(subjects);
   const cited = [...new Set(src.known.filter(n => n.length >= 3 && !lower.has(n) && stored.some(f => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(f.text))))];
   const numbers = sheet.map(n => ({ text: n.text, basis: n.basis }));
-  const dates = [...new Set((events.length ? events.flatMap(e => (e.seen ? [e.seen.before, e.seen.after] : [e.detected_at])) : [s.happened_at]).map(d => d.slice(0, 10)))].sort();
+  // W1d: both capture dates of each change; without capture dates on the loaded events, the dates the story's own lines and deck state.
+  const stated = events.some(e => e.seen) ? [] : storedCaptureDates(s);
+  const dates = stated.length ? stated : [...new Set((events.length ? events.flatMap(e => (e.seen ? [e.seen.before, e.seen.after] : [e.detected_at])) : [s.happened_at]).map(d => d.slice(0, 10)))].sort();
   const facts: WriterFacts = {
     type, kind: s.id.startsWith("against:") ? "Against the grain (weekly piece)" : s.id.startsWith("seasonal:") ? "Seasonal (weekly piece)" : STORY_TYPE_DEFS[type].kicker, sector: s.sector ? sectorName(s.sector) : null,
     brands: [...subjects.map(name => ({ name, role: "subject" as const })), ...cited.map(name => ({ name, role: "cited" as const }))],

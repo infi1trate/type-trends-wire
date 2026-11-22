@@ -104,6 +104,14 @@ export const readFacts = (facts: Fact[]) => {
   // "Changed: accent" only summarises the change lines; with the lines themselves present it is noise.
   return [...members, ...facts.filter(f => f.kind !== "member" && f.kind !== "line" && f.kind !== "source" && f.kind !== "date" && f.kind !== "before" && f.kind !== "after" && !(members.length && !f.kind && /^Changed: /.test(f.text)))];
 };
+/** W1d · a story that stores no change or number lines (a single change's before and after, a quiet change) lists what it does store:
+ *  its before and after lines, the page it was measured on, its capture-dated "Changed between …" line and the outside-news count.
+ *  Never the headline call, an alert or a confirmation line. Empty means the section is left out, never an empty sentence. */
+export const readFallback = (facts: Fact[]) => facts.filter(f => f.kind === "before" || f.kind === "after"
+  || (f.kind === "date" && /^Changed between /.test(f.text))
+  || (f.kind === "source" && (/^Page: /.test(f.text) || /^We found no mention /.test(f.text))));
+/** The Read list: the change and number lines, else what the story does store (`readFallback`). */
+export const readList = (facts: Fact[]) => { const r = readFacts(facts); return r.length ? r : readFallback(facts); };
 const STAGE_RE = new RegExp(`(?<![.!?:]\\s|^)\\b(${STAGES.join("|")})\\b`, "g");
 /** W1b · a fact line in Read-side wording, for the facts-built body: no forecast run numbers ("(forecast run 13)", "in run 15") and stage
  *  names as ordinary lower-case words inside a sentence ("is rising across all sectors"). Text inside quotation marks is left as captured. */
@@ -152,7 +160,7 @@ export function storyPage(s: StoryRecord, related: { earlier: Story[]; patterns:
     body: s.written?.body?.length ? s.written.body.map(p => deLegacy(p)) : templateBody(census ? [] : readFacts(facts).map(f => ({ text: noDid(deLegacy(f.text)) }))), howWeKnow: noDid(storyHowWeKnow(s)),
     // E2g: a census shows "The changes" only for members whose confirmed change added the word; its count lines live in the deck and
     // under "The lines".
-    facts: (census ? facts.filter(f => f.kind === "member") : readFacts(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
+    facts: (census ? facts.filter(f => f.kind === "member") : readList(facts)).map(f => ({ ...f, text: noDid(deLegacy(f.text)) })), beforeAfter: before && after ? { before, after } : null,
     census: census ? { lines: censusLines(facts), sectors: facts.find(f => f.kind === "count" && /^By sector: /.test(f.text))?.text.replace(/^By sector: /, "") ?? null } : null,
     // A story that is not a rebrand never says "rebrand", even in a stored receipt label.
     evidence: asLinks(s.evidence).map(e => ({ ...e, label: type !== "rebrand" && e.label === "Rebrand desk" ? "Identity changes" : e.label === "Library record" ? "Brand data" : noDid(deLegacy(e.label)) })),

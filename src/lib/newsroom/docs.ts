@@ -7,7 +7,7 @@ import { DIGEST_BANNED, DIGEST_PER_DAY, FUTURE } from "../digest/writer";
 import { DIGEST_WORDS, PICTURES_MAX, ROWS_MAX } from "../digest/edition";
 import { DATA_STORIES, SERIES } from "../data-stories/registry";
 import { CENSUS_DAYS, CENSUS_MIN, CENSUS_NAMED_MAX, CENSUS_SPAN_HOURS, PRODUCT_CENSUS_SECTORS, SALE_KEY, WATCH_LIST } from "../census";
-import { HOME_FOLLOW_DAYS, QUIET_WINDOW_DAYS } from "../stories/quiet";
+import { HOME_FOLLOW_DAYS, QUIET_NEEDS, QUIET_WINDOW_DAYS } from "../stories/quiet";
 import { ROUNDUP_MIN, ROUNDUP_WINDOW_DAYS, WHITE_SPACE_MAX_SHARE, WHITE_SPACE_MIN_ELSEWHERE, WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MIN_BRANDS, FIRST_SEEN_MAX_BRANDS, NEWS_NAME_MIN } from "../stories/types";
 import { AI_ROUNDUP_DAILY_CAP, DAILY_CAP, DEDUPE_DAYS, NEWS_DAILY_CAP, PUBLISH_MIN, SINGLE_BRAND_DAILY_CAP } from "../stories/score";
 import { AGAINST_MIN, SEASONAL_STORY_MIN } from "../stories/editor";
@@ -65,7 +65,7 @@ export function beatsDoc(): string {
     `- **White space.** A signal on at most ${pct(WHITE_SPACE_MAX_SHARE)} of a sector's homepages while at least ${pct(WHITE_SPACE_MIN_ELSEWHERE)} elsewhere, in a sector with at least ${WHITE_SPACE_MIN_SECTOR_SITES} measured homepages.`,
     `- **Breakouts.** A forecast alert that a signal reached the Breakout stage (stage words in \`labels.ts\`, alert rules in \`alerts.ts\`).`,
     `- **Outside news.** An item from the wire's publications that names a tracked brand (names of at least ${NEWS_NAME_MIN} letters, strict matching) and is about design; the story says what the item says, about that brand.`,
-    `- **Quiet change.** An icon, social card or other-page identity change with no mention in the wire's publications within ${QUIET_WINDOW_DAYS} days either side. A page that follows a confirmed homepage change of the same kind within ${HOME_FOLLOW_DAYS} days is not quiet: it becomes a fact on the brand's own story.`, "",
+    `- **Quiet change.** Needs ${QUIET_NEEDS.what}, with no mention in the wire's publications within ${QUIET_WINDOW_DAYS} days either side. Never alone: ${QUIET_NEEDS.notAlone}. It needs a picture to lead with: ${QUIET_NEEDS.picture}. A page that follows a confirmed homepage change of the same kind within ${HOME_FOLLOW_DAYS} days is not quiet: it becomes a fact on the brand's own story.`, "",
     "## The census", "",
     `A census counts what homepages say now: a brand counts when its newest capture and one at least ${CENSUS_SPAN_HOURS} hours older are both inside the last ${CENSUS_DAYS} days. It runs with at least ${CENSUS_MIN} members and names at most ${CENSUS_NAMED_MAX}.`, "",
     ...WATCH_LIST.map(w => `- **Words in headlines: ${w.word}** (${w.forms.join(", ")}).`),

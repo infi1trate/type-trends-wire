@@ -266,7 +266,17 @@ async function quietInput(db: ReturnType<typeof import("../mcp/supabase").supaba
     pages<WireIn>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", new Date(now - (days + QUIET_WINDOW_DAYS) * 864e5).toISOString()).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
   ]);
   const home = await homeChanges(db, [...new Set([...others.map(e => e.domain), ...assets.filter(a => a.confirmed_at).map(a => a.domain)])], now, days, rebrands);
-  return { assets: assets.map(a => ({ domain: a.domain, kind: a.kind, from: { path: a.from.path, last_seen_at: a.from.last_seen_at }, to: { path: a.to.path, first_seen_at: a.to.first_seen_at }, between: a.between, confirmed_at: a.confirmed_at })), urls, wire, home };
+  const shots = await pageShots(db, [...new Set(others.filter(e => e.type === "type_change").map(e => e.domain))]).catch(() => []);
+  return { assets: assets.map(a => ({ domain: a.domain, kind: a.kind, from: { path: a.from.path, last_seen_at: a.from.last_seen_at }, to: { path: a.to.path, first_seen_at: a.to.first_seen_at }, between: a.between, confirmed_at: a.confirmed_at })), urls, wire, home, shots };
+}
+/** W1d · the stored desktop first screens of these brands' other pages (surface crops; opted-out brands are hidden by policy), keyed by
+ *  the quiet page names. Stored section values map through SURFACE_COLUMN; homepage section crops are never read here. */
+async function pageShots(db: ReturnType<typeof import("../mcp/supabase").supabaseAnon>, domains: string[]): Promise<import("./quiet").PageShot[]> {
+  if (!domains.length) return [];
+  const [{ SURFACE_COLUMN }, { SURFACE_CROP }] = await Promise.all([import("../crops"), import("../surfaces")]);
+  const page = new Map<string, string>(Object.entries(SURFACE_CROP).map(([pg, sec]) => [SURFACE_COLUMN[sec as keyof typeof SURFACE_COLUMN] as string, pg]));
+  const rows = await pages<{ domain: string; section: string; path: string; first_seen_at: string; last_seen_at: string }>((f, t) => db.from("surface_crops").select("domain,section,path,first_seen_at,last_seen_at").eq("viewport", "desktop").in("domain", domains.slice(0, 200)).order("id").range(f, t) as never);
+  return rows.flatMap(r => { const pg = page.get(r.section); return pg ? [{ domain: r.domain, page: pg, path: r.path, first_seen_at: r.first_seen_at, last_seen_at: r.last_seen_at }] : []; });
 }
 /** W1c · the confirmed homepage identity changes (typeface, palette or accent, theme) of the given brands from 30 days before the
  *  window to now: live desktop changes that pass the integrity check (only their confirmed part counts), plus confirmed rebrands. */

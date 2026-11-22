@@ -10,7 +10,9 @@ const m = newsMatcher([...sites.values()], []);
 const wire = (o: Partial<WireIn>): WireIn => ({ id: 1, title: "Something else entirely", url: "https://x", source: "designboom", source_kind: "rss", published_at: "2026-11-18T00:00:00Z", excerpt: null, ...o });
 const asset = { domain: "acme.com", kind: "icon", from: { path: "a/old.png", last_seen_at: "2026-11-15T06:00:00Z" }, to: { path: "a/new.png", first_seen_at: "2026-11-16T06:00:00Z" }, between: { old_last: "2026-11-15T06:00:00Z", new_first: "2026-11-16T06:00:00Z" }, confirmed_at: "2026-11-16T18:00:00Z" };
 const ev = (o: Partial<EventRow>): EventRow => ({ id: 7, domain: "acme.com", type: "type_change", before: { h1_family: "Canela" }, after: { h1_family: "Inter" }, detected_at: "2026-11-17T06:00:00Z", page_type: "product", source: "live", viewport: "desktop", snapshot_id: 2, prev_snapshot_id: 1, ...o } as EventRow);
-const input = (o: Partial<QuietInput> = {}): QuietInput => ({ assets: [], urls: { 1: "https://acme.com/products/a", 2: "https://acme.com/products/a" }, wire: [wire({ source: "designboom" }), wire({ id: 2, source: "Dezeen" })], ...o });
+// W1d · a quiet page change needs the page's first screen before and after.
+const shotsFor = (domain: string, page: string) => [{ domain, page, path: `${domain}/page-${page}/2026-11-01-aaaaaaaa.webp`, first_seen_at: "2026-11-01T06:00:00Z", last_seen_at: "2026-11-16T06:00:00Z" }, { domain, page, path: `${domain}/page-${page}/2026-11-21-bbbbbbbb.webp`, first_seen_at: "2026-11-21T07:00:00Z", last_seen_at: "2026-11-21T07:00:00Z" }];
+const input = (o: Partial<QuietInput> = {}): QuietInput => ({ assets: [], urls: { 1: "https://acme.com/products/a", 2: "https://acme.com/products/a" }, wire: [wire({ source: "designboom" }), wire({ id: 2, source: "Dezeen" })], shots: [...shotsFor("acme.com", "product"), ...shotsFor("acme.com", "changelog")], ...o });
 
 describe("W1b · the quiet change", () => {
   it("a confirmed new icon nobody we read mentioned is a candidate, counting the outlets read", () => {
@@ -34,7 +36,8 @@ describe("W1b · the quiet change", () => {
       ev({ id: 10, type: "palette_shift", page_type: "about", before: { palette: ["#151B1C"] }, after: { palette: ["#67707B"] } })], quiet: input({ assets: [{ ...asset, confirmed_at: null }], urls: { 1: "u", 2: "u" } }), matcher: m, sites });
     expect([r.candidates.length, r.verdicts.map(v => v.outcome)]).toEqual([0, ["colour follows content", "colour follows content", "colour follows content"]]);
     const ok = quietCandidates({ now: NOW, events: [ev({ id: 11, domain: "acme.com", type: "palette_shift", page_type: "about", ...accent })], quiet: input({ urls: { 1: "u", 2: "u" } }), matcher: m, sites: new Map([["acme.com", { domain: "acme.com", name: "Acmecorp", sector: "dev-tools", kind: "standard" }]]) });
-    expect(ok.candidates.map(c => c.headline)).toEqual(["Acmecorp has a new accent colour on its about page"]);
+    // W1d · an accent change alone on another page stays a line on the tape, even on a standard site's about page.
+    expect([ok.candidates.length, ok.verdicts[0]!.outcome]).toEqual([0, "tape line"]);
   });
   it("claims about intent are refused in written text; the no-mention sentence is allowed", () => {
     for (const t of ["Acmecorp secretly changed its icon.", "It quietly dropped the serif.", "They did it without telling anyone.", "No one announced it.", "The change was unannounced."]) expect(bannedFailures(t).some(f => f.startsWith("claim about intent"))).toBe(true);

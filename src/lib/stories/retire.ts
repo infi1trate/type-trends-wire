@@ -329,3 +329,18 @@ export function rereadRetire(s: Pick<RetireStory, "id" | "type" | "source_ids"> 
   const note = `${head}${rr}${ff}`;
   return note.length <= 200 ? note : `${head}${rr}`.slice(0, 200);
 }
+
+// PHASE W1d · WHAT A QUIET CHANGE NEEDS ------------------------------------------------------------------------------------------------
+// A published quiet change the W1d rule would not run is retired with a visible line; it keeps its number and its page, and its change
+// stays on the tape. Pure: the script supplies the story and the library event it tells.
+export const W1D_RETIRE = {
+  accent: "Retired: one accent colour on one page is a line on the tape, not a story.",
+  theme: "Retired: one theme change on one page is a line on the tape, not a story.",
+  picture: "Retired: a quiet change runs only with a picture of the page before and after.",
+} as const;
+export function quietRetire(s: { id: string; source_ids: string[] }, event: Pick<EventRow, "type"> | null): keyof typeof W1D_RETIRE | null {
+  if (!s.id.startsWith("quiet:event:") || !event) return null;
+  if (event.type === "palette_shift") return "accent";
+  if (event.type === "theme_flip") return "theme";
+  return s.source_ids.some(x => x.startsWith("page-from:")) && s.source_ids.some(x => x.startsWith("page-to:")) ? null : "picture";
+}

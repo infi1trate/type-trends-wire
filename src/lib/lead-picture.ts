@@ -29,7 +29,7 @@ export const LEAD_RULES = {
   breakout: "A breakout: up to four of the named sector brands' first screens.",
   whiteSpace: "A white space: up to four of the named brands outside the sector that use it.",
   news: "Outside news: the subject brand's own social card, else its hero crop.",
-  quiet: "A quiet change to a site icon or social card: the old and new versions side by side.",
+  quiet: "A quiet change: the old and new site icon or social card, or the page's first screen before and after, side by side.",
   study: "A study leads with its chart.",
   digest: "The Digest keeps the cover its edition chose.",
   fallbackCrops: "No picture by type: the subject brands' latest first screens.",
@@ -39,6 +39,8 @@ export const LEAD_RULES = {
   none: "Nothing to show.",
 } as const;
 export type LeadRule = keyof typeof LEAD_RULES;
+/** W1d · the quiet page pictures' kinds (surface crop sections) and their names. */
+export const QUIET_PAGE_NAME: Record<string, string> = { "page-product": "Product page", "page-about": "About page", "page-pricing": "Pricing page" };
 export const CAROUSEL_CAPTION = "one frame of a rotating hero";
 export const MOSAIC_MAX = 4, WORDS_MAX = 6, LEAD_MIN_WIDTH = 480;
 
@@ -72,7 +74,7 @@ export type LeadStoryIn = {
   census?: { name: string; line: string; href: string | null }[] | null;
   /** Dates the story cites (YYYY-MM-DD), for seasonal and sale pieces. */ dates?: string[];
   chart?: boolean;
-  /** W1b · a quiet icon or card change: the stored old and new versions. */
+  /** W1b · a quiet icon or card change: the stored old and new versions; W1d · a quiet page change: `kind` is the page's crop section. */
   assetPair?: { kind: string; before: Pic & { path: string }; after: Pic & { path: string } } | null;
 };
 export type LeadPics = {
@@ -147,10 +149,11 @@ export function leadPicture(subject: LeadSubject, p: LeadPics): LeadPlan {
     if (tiles.length >= 2) return plan("mosaic", "seasonal", tiles, captionOf(tiles, p, "First screens from the cited dates"));
     return fallback(s, p);
   }
-  if (id.startsWith("quiet:asset:") && s.assetPair) {
-    const d = s.domains[0] ?? "", what = s.assetPair.kind === "icon" ? "Site icon" : "Social card", report = reportOf(d);
+  if ((id.startsWith("quiet:asset:") || id.startsWith("quiet:event:")) && s.assetPair) {
+    // W1d · a quiet page change leads with the page's stored first screen before and after (surface crops), named by its page.
+    const k = s.assetPair.kind, d = s.domains[0] ?? "", what = k === "icon" ? "Site icon" : k === "card" ? "Social card" : `${QUIET_PAGE_NAME[k] ?? "Page"} · first screen`, report = reportOf(d);
     const item = (x: Pic & { path: string }, role: "before" | "after"): LeadItem => ({ domain: d, section: what, date: day(x.at), src: x.src, srcSet: null, width: x.width, height: x.height,
-      asset: `${s.assetPair!.kind === "icon" ? "icon" : "card"}:${x.path}`, credit: `${what} · ${d} · ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, alt: `${role === "before" ? "Earlier" : "New"} ${what.toLowerCase()} of ${d}, ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, live: `https://${d}`, report, role });
+      asset: `${k === "icon" ? "icon" : k === "card" ? "card" : "crop"}:${x.path}`, credit: `${what} · ${d} · ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, alt: `${role === "before" ? "Earlier" : "New"} ${what.toLowerCase()} of ${d}, ${role === "before" ? "last seen" : "first seen"} ${day(x.at)}`, live: `https://${d}`, report, role });
     const items = [item(s.assetPair.before, "before"), item(s.assetPair.after, "after")];
     return plan("pair", "quiet", items, `${what} · before ${items[0]!.date}, after ${items[1]!.date}`);
   }

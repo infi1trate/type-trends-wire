@@ -17,6 +17,10 @@
 // (typeface, palette or accent, theme) within 30 days either side, the other page's change is the redesign reaching it, and becomes one
 // fact on the brand's own move or rebrand story instead ("The changelog page now uses Systemia too"). An icon or card change is judged
 // against any confirmed homepage identity change (or a confirmed rebrand) in the same window.
+// W1d · what a quiet change needs: a confirmed new site icon, a confirmed new social card, or a confirmed change of the headline or body
+// typeface on another page at the same address. An accent, palette or theme change alone on another page never qualifies; it stays a
+// line on the tape (it can still become a fact on the brand's own story, W1c). And a picture to lead with: the old and new icon or card,
+// or the page's first screen before and after (surface crops). With no picture it does not run.
 // Stored as a `move` row (the stored type list is a fixed check), told apart by its `quiet:` id and its "Quiet change" kicker.
 import { brandName } from "../brand-names";
 import { isShowcaseSector } from "../carousel";
@@ -39,9 +43,28 @@ export type QuietAsset = { domain: string; kind: "icon" | "card" | string; from:
 /** W1c · a confirmed measured homepage identity change (live, desktop, passed the integrity check), or a confirmed rebrand (`type: "rebrand"`). */
 export type HomeChange = { id: number | null; domain: string; type: "type_change" | "palette_shift" | "theme_flip" | "rebrand" | string; at: string; after?: unknown };
 export type QuietInput = { assets: QuietAsset[]; /** Address of each capture the changes cite (snapshot id → url). */ urls: Record<number, string | null>; /** Wire items from 14 days before the window to now. */ wire: WireIn[];
-  /** W1c · confirmed homepage identity changes from 30 days before the window to now (absent = none known). */ home?: HomeChange[] };
+  /** W1c · confirmed homepage identity changes from 30 days before the window to now (absent = none known). */ home?: HomeChange[];
+  /** W1d · stored first screens of the brands' other pages (surface crops), for the before-and-after picture (absent = none). */ shots?: PageShot[] };
+/** W1d · one stored first screen of another page: `page` is the QUIET_PAGES key (product, about, pricing). */
+export type PageShot = { domain: string; page: string; path: string; first_seen_at: string; last_seen_at: string };
+/** W1d · the event types that can make a quiet change on another page: a headline or body typeface change. Colour and theme stay on the tape. */
+export const QUIET_STORY_TYPES = ["type_change"] as const;
+/** W1d · the typeface fields a qualifying change touches (headline or body). */
+const TYPEFACE_FIELDS = ["h1", "h1_family", "body", "body_family"];
+export const QUIET_NEEDS = {
+  what: "a confirmed new site icon, a confirmed new social card, or a confirmed change of headline or body typeface on another page at the same address",
+  notAlone: "an accent, palette or theme change alone on another page stays a line on the tape",
+  picture: "the old and new icon or card, or the page's first screen before and after; with no picture it does not run",
+} as const;
+/** W1d · the page's stored first screens either side of a change: the latest first seen at or before the last old capture, and the
+ *  earliest first seen after it, when they are different pictures. Null when either is missing. */
+export function pagePair(shots: readonly PageShot[] | undefined, domain: string, page: string, before: string | null, after: string): { before: PageShot; after: PageShot } | null {
+  const mine = (shots ?? []).filter(x => x.domain === domain && x.page === page).sort((a, b) => a.first_seen_at.localeCompare(b.first_seen_at));
+  const cut = before ?? after, old = [...mine].reverse().find(x => x.first_seen_at <= cut), next = mine.find(x => x.first_seen_at > cut && x.first_seen_at <= new Date(Date.parse(after) + 7 * DAY).toISOString());
+  return old && next && old.path !== next.path ? { before: old, after: next } : null;
+}
 export type QuietSite = { domain: string; name: string | null; sector: string | null; /** Site kind (brand-names.ts siteKind): standard, merchandised, editorial. */ kind?: string | null };
-export type QuietVerdict = { id: string; domain: string; what: string; when: string; outcome: "candidate" | "mentioned" | "different address" | "colour follows content" | "follows homepage" | "no outlets read"; detail: string | null };
+export type QuietVerdict = { id: string; domain: string; what: string; when: string; outcome: "candidate" | "mentioned" | "different address" | "colour follows content" | "follows homepage" | "no outlets read" | "tape line" | "no picture"; detail: string | null };
 /** W1c · a non-home change that follows the homepage: the fact it adds to the brand's own story, and the homepage changes it follows. */
 export type QuietFollow = { domain: string; at: string; home: HomeChange[]; fact: Fact };
 export const HOME_FOLLOW_DAYS = 30;
@@ -104,7 +127,7 @@ export function quietCandidates(o: { now: string; events: readonly EventRow[]; q
   const homeText = (hs: HomeChange[]) => hs.map(h => `homepage ${h.type === "rebrand" ? "rebrand" : QUIET_EVENT_TYPES[h.type] ?? h.type}${h.id != null ? ` (change ${h.id})` : ""}, ${shortDay(h.at)}`).join("; ");
   const site = (d: string) => o.sites.get(d) ?? null, name = (d: string) => brandName(d, site(d)?.name ?? null);
   for (const a of o.quiet.assets) {
-    if (!site(a.domain) || !a.confirmed_at) continue;
+    if (!site(a.domain) || !a.confirmed_at || !a.from.path || !a.to.path) continue;
     const what = a.kind === "icon" ? "a new site icon" : "a new social card", when = betweenDays(a.between.old_last, a.between.new_first), id = `quiet:asset:${a.domain}:${a.kind}:${a.between.new_first.slice(0, 10)}`;
     const followed = homeFollowed(o.quiet.home, a.domain, a.between.new_first, ANY_IDENTITY);
     if (followed.length) {
@@ -136,6 +159,11 @@ export function quietCandidates(o: { now: string; events: readonly EventRow[]; q
       follows.push({ domain: e.domain, at, home: followed, fact: { text: followFact(e, followed, when), href: b, basis: "measured", kind: "member" } });
       continue;
     }
+    // W1d · only a headline or body typeface change can be a quiet change on another page; colour and theme stay on the tape.
+    const typeface = (QUIET_STORY_TYPES as readonly string[]).includes(e.type) && TYPEFACE_FIELDS.some(k => k in after);
+    if (!typeface) { verdicts.push({ id, domain: e.domain, what, when, outcome: "tape line", detail: QUIET_NEEDS.notAlone }); continue; }
+    const pair = pagePair(o.quiet.shots, e.domain, e.page_type ?? "", e.seen?.before ?? null, at);
+    if (!pair) { verdicts.push({ id, domain: e.domain, what, when, outcome: "no picture", detail: `no stored first screen of the ${page} either side of the change` }); continue; }
     const check = mentionCheck(o.matcher, o.quiet.wire, e.domain, at, o.now);
     if (check.mention) { verdicts.push({ id, domain: e.domain, what, when, outcome: "mentioned", detail: `${check.mention.source}, ${shortDay(check.mention.published_at)}: ${check.mention.title}` }); continue; }
     if (!check.outlets) { verdicts.push({ id, domain: e.domain, what, when, outcome: "no outlets read", detail: null }); continue; }
@@ -144,7 +172,7 @@ export function quietCandidates(o: { now: string; events: readonly EventRow[]; q
     out.push(quietCandidate({ id, domain: e.domain, name: name(e.domain), sector: site(e.domain)?.sector ?? e.sector ?? null, what, at, when, check,
       headline: `${name(e.domain)} has ${what}`,
       facts: [{ text: `Page: ${b}, the same address in both captures`, href: b, basis: "measured", kind: "source" }, ...eventFacts(e)],
-      sourceIds: [`event:${e.id}`], magnitude: Math.max(1, fields) }));
+      sourceIds: [`event:${e.id}`, `page-from:${pair.before.path}`, `page-to:${pair.after.path}`], magnitude: Math.max(1, fields) }));
   }
   return { candidates: out, verdicts, follows };
 }

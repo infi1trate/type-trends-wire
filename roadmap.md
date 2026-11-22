@@ -100,3 +100,9 @@
 - [x] 5 golden counts; writing set fixtures; scorer + suite; hand-run live script (refuses when allowance used, not run); version stamps + score files test; README rule
 - [x] 6 /desk: queue with state history, desk log with desk filter, spend vs cap, register, golden scores; responsive 7 widths
 - [x] Tests, report, commit
+
+# Phase W1d · Quiet-change fixes
+- [x] 1 quiet change needs icon/card/typeface + picture; accent/palette/theme alone stays tape; retire No. 92; beats.md + tests
+- [x] 2 colour-name boundaries vs 48-colour reference table; renamed colours on published stories listed
+- [x] 3 How we know gives both capture dates (facts-built line + writers' sheet); deck/line agreement test
+- [x] 4 no empty "The numbers" line; fallback list from stored lines or section left out; story types audited
