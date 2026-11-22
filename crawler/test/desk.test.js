@@ -16,6 +16,10 @@ test("desk carrier: desks only, carried actions only, the actor comes from the i
   }
   assert.match(prepare("standards", '{"action":"kill","id":"x"}').error, /needs a reason/);
   assert.match(prepare("standards", '{"action":"hold","id":"x"}').error, /a hold needs a reason/);
+  assert.match(prepare("news", '{"action":"wire_drop","pick":3}').error, /a wire_drop needs a reason/);
+  assert.match(prepare("data", '{"action":"finding_close","finding":9}').error, /needs a reason/);
+  assert.deepEqual(prepare("data", '{"action":"finding_close","finding":9,"reason":"Checked by hand: the label is right"}'),
+    { send: { action: "finding_close", finding: 9, reason: "Checked by hand: the label is right", actor: "data" } });
   assert.equal(prepare("standards", '{"action":"hold","id":"x","reason":"Thin"}').send.action, "hold");
   assert.equal(prepare("news", '{"action":"note","subject":"brand:x.com","text":"t"}').send.action, "note");
   assert.match(prepare("standards", "kill it").error, /not JSON/);
