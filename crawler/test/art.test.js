@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import { ART_LIMITS, AIC_SLICES, MET_SLICES, aicWork, metWork, aicSearchUrl, metSearchUrl, movementOf, kindOf, readPicture, workBody, nextBatch, makeArtSender } from "../src/art.js";
+import { pickColours, traditionOf, ART_LIMITS, AIC_SLICES, MET_SLICES, aicWork, metWork, aicSearchUrl, metSearchUrl, movementOf, kindOf, readPicture, workBody, nextBatch, makeArtSender } from "../src/art.js";
 
 const aic = { id: 16568, title: "Water Lilies", artist_title: "Claude Monet", date_start: 1906, date_end: 1906, date_display: "1906", style_title: "Impressionism", artwork_type_title: "Painting",
   department_title: "Painting and Sculpture of Europe", image_id: "3c27b499-af56-f0d5-93b5-a7f2f1ad5813", credit_line: "Mr. and Mrs. Martin A. Ryerson Collection", is_public_domain: true };
@@ -77,4 +77,29 @@ test("the sender keeps to twenty works a request, counts what the site says, and
   const dry = makeArtSender({ endpoint: "https://slug.global/api/public/ingest-crawl", dry: true, fetchImpl: async () => { throw new Error("a dry run sends nothing"); } });
   dry.add({ source: "met", source_id: "1", webp_base64: "AAAA" }); await dry.flush();
   assert.equal(dry.totals.stored, 1);
+});
+
+test("the same tradition has one name in both museums, for paintings only", () => {
+  assert.equal(traditionOf("Painting and Sculpture of Europe", "painting"), "European paintings");
+  assert.equal(traditionOf("Arts of the Americas", "painting"), "American paintings");
+  assert.equal(traditionOf("Arts of the Americas", "textile"), "Arts of the Americas");
+  assert.equal(traditionOf("Arts of Asia", "painting"), "Arts of Asia");
+  assert.equal(aicWork({ id: 1, title: "T", date_start: 1650, date_end: 1650, artwork_type_title: "Painting", department_title: "Painting and Sculpture of Europe", image_id: "x", is_public_domain: true }).tradition, "European paintings");
+});
+
+test("a small vivid area is kept beside the large dull ones; shares are not rescaled", async () => {
+  const c = (hex, share, chroma) => ({ hex, share, chroma });
+  const dull = ["#3A2A1C", "#4B3828", "#5C4634", "#6D5440", "#7E624C", "#8F7058", "#A07E64", "#B18C70", "#C29A7C"].map((h, i) => c(h, 0.2 - i * 0.02, 0.15));
+  const kept = pickColours([...dull, c("#1F4E9A", 0.03, 0.48), c("#C8102E", 0.016, 0.72), c("#00A86B", 0.01, 0.66)]);
+  assert.equal(kept.length, 8);
+  assert.ok(kept.some(x => x.hex === "#1F4E9A") && kept.some(x => x.hex === "#C8102E"));
+  assert.ok(!kept.some(x => x.hex === "#00A86B")); // under 1.5% of the picture: not kept
+  assert.equal(kept.find(x => x.hex === "#1F4E9A").share, 0.03);
+  assert.deepEqual(kept.map(x => x.share), [...kept.map(x => x.share)].sort((a, b) => b - a));
+  // A real picture: a brown field with a blue patch of about 3%.
+  const buf = await sharp({ create: { width: 1000, height: 1000, channels: 3, background: { r: 92, g: 66, b: 44 } } }).composite([
+    { input: { create: { width: 700, height: 500, channels: 3, background: { r: 60, g: 44, b: 30 } } }, left: 0, top: 0 },
+    { input: { create: { width: 170, height: 180, channels: 3, background: { r: 30, g: 80, b: 170 } } }, left: 800, top: 800 }]).jpeg({ quality: 95 }).toBuffer();
+  const pic = await readPicture(buf);
+  assert.ok(pic.palette.some(x => { const b = parseInt(x.hex.slice(5), 16), r = parseInt(x.hex.slice(1, 3), 16); return b > 140 && r < 70 && x.share > 0.02 && x.share < 0.05; }));
 });

@@ -4,6 +4,8 @@
 //   The Met, Open Access: works the museum marks public domain are CC0. https://www.metmuseum.org/policies/terms-and-conditions
 //   Art Institute of Chicago: images and data marked public domain are CC0; the API's `description` field is CC-BY and is never
 //   requested here. https://www.artic.edu/terms · https://api.artic.edu/docs (asks for an AIC-User-Agent header; sent below)
+// A work's eight colours keep its small vivid areas (see pickColours), because the question asked of a work is whether a brand's one
+// signature colour holds real space in it, not whether the two whole palettes look alike (that comparison found paper and varnish).
 // Only works the museum itself marks public domain are sent, and the site refuses anything else. A small thumbnail (≤240 px wide,
 // ≤20 KB) goes with each work; the site credits and links it and removes it on request.
 // Contract (POST /api/public/ingest-art, x-crawl-secret):
@@ -37,6 +39,10 @@ export const MET_SLICES = [
 ];
 
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+/** One name per tradition across the two museums, so the same paintings of the same years fall in one group whichever museum holds
+ *  them (the Art Institute's department names differ from the Met slices' names). Paintings only; other kinds keep the museum's name. */
+export const TRADITIONS = { "Painting and Sculpture of Europe": "European paintings", "Arts of the Americas": "American paintings" };
+export const traditionOf = (department, kind) => (kind === "painting" && TRADITIONS[department]) || department;
 export const kindOf = s => { const x = String(s ?? "").toLowerCase(); return /print|woodblock|etching|lithograph|engraving/.test(x) ? "print" : /paint/.test(x) ? "painting" : /draw|watercolor|pastel/.test(x) ? "drawing" : /textile|tapestry/.test(x) ? "textile" : "other"; };
 
 /** An AIC search hit as a work, or null when the museum does not mark it public domain or it has no picture. */
@@ -44,7 +50,7 @@ export function aicWork(d) {
   if (!d || d.is_public_domain !== true || !d.image_id || !d.id || !d.title) return null;
   if (!Number.isInteger(d.date_start) || !Number.isInteger(d.date_end) || d.date_end < d.date_start) return null;
   return { source: "aic", source_id: String(d.id), title: clip(d.title, 300), artist: clip(d.artist_title, 200) || null, date_display: clip(d.date_display || d.date_start, 120),
-    year_start: d.date_start, year_end: d.date_end, tradition: clip(d.department_title || d.place_of_origin || "Art Institute of Chicago", 80), movement: movementOf(d.style_title),
+    year_start: d.date_start, year_end: d.date_end, tradition: clip(traditionOf(d.department_title || d.place_of_origin || "Art Institute of Chicago", kindOf(d.artwork_type_title)), 80), movement: movementOf(d.style_title),
     kind: kindOf(d.artwork_type_title), credit_line: clip(`The Art Institute of Chicago. ${d.credit_line ?? ""}`, 400), link: `https://www.artic.edu/artworks/${d.id}`, licence: "CC0",
     image: `https://www.artic.edu/iiif/2/${d.image_id}/full/843,/0/default.jpg` };
 }
@@ -74,13 +80,23 @@ export const movementOf = s => { const x = clip(s, 80); return !x || /century/i.
 /** The Met's search (version 1.1; version 1 was retired on 1 Oct 2026): object numbers only, a page at a time. */
 export const metSearchUrl = (s, limit = ART_LIMITS.perPlan * 2, offset = 0) => `https://collectionapi.metmuseum.org/public/collection/v1.1/search?hasImages=true&departmentId=${s.department}&dateBegin=${s.from}&dateEnd=${s.to}&q=${encodeURIComponent(s.q)}&limit=${limit}&offset=${offset}`;
 
+/** Which eight colours of a picture are kept. A painting's largest areas are often ground, varnish or paper, and the colour a viewer
+ *  remembers (a robe, a sky, a wave) can be a small part of it. So: the four largest colours, then up to four vivid ones that hold at
+ *  least VIVID_MIN_SHARE of the picture, then the next largest until there are eight. Shares are the measured shares, never rescaled. */
+export const VIVID_MIN_CHROMA = 0.25, VIVID_MIN_SHARE = 0.015, PALETTE_SIZE = 8;
+export function pickColours(palette) {
+  const all = [...palette].sort((a, b) => b.share - a.share), keep = all.slice(0, 4);
+  const vivid = all.filter(c => !keep.includes(c) && c.chroma >= VIVID_MIN_CHROMA && c.share >= VIVID_MIN_SHARE).slice(0, 4);
+  const rest = all.filter(c => !keep.includes(c) && !vivid.includes(c));
+  return [...keep, ...vivid, ...rest].slice(0, PALETTE_SIZE).sort((a, b) => b.share - a.share);
+}
 /** The palette (the homepage method) and a small thumbnail of one picture. Null when the picture cannot be read or made small enough. */
 export async function readPicture(buf) {
   const meta = await sharp(buf).metadata().catch(() => null);
   if (!meta?.width || !meta?.height) return null;
   const png = await sharp(buf).removeAlpha().png().toBuffer();
-  const { palette } = await paletteFromScreenshot(png, null, 8);
-  const colours = palette.map(c => ({ hex: c.hex, share: c.share })).filter(c => /^#[0-9A-F]{6}$/.test(c.hex) && c.share > 0);
+  const { palette } = await paletteFromScreenshot(png, null, 24);
+  const colours = pickColours(palette).map(c => ({ hex: c.hex, share: c.share })).filter(c => /^#[0-9A-F]{6}$/.test(c.hex) && c.share > 0);
   if (!colours.length) return null;
   for (const width of [ART_LIMITS.thumbWidth, 200, 160]) {
     const img = sharp(buf).resize({ width, height: ART_LIMITS.thumbHeight, fit: "inside", withoutEnlargement: true });
@@ -150,7 +166,7 @@ async function main() {
   if (!secret && !dry) { console.error("CRAWL_SECRET is not set"); process.exit(2); }
   const limit = Math.max(1, Math.min(400, Number(process.env.ART_LIMIT) || ART_LIMITS.perRun));
   const sources = String(process.env.ART_SOURCES || "met,aic").split(",").map(s => s.trim()).filter(Boolean);
-  const dir = path.join(".cache", "art"), file = path.join(dir, "sent.json");
+  const dir = path.join(".cache", "art"), file = path.join(dir, "sent-3.json") /* a new name sends every work once more: tradition names are one per tradition, and small vivid colours are kept */;
   fs.mkdirSync(dir, { recursive: true });
   const sent = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : [];
   const slices = [];
