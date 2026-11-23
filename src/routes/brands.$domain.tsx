@@ -31,7 +31,9 @@ export const Route = createFileRoute("/brands/$domain")({
     if (deps.data) {
       if (!name) { const b = await q.ensureQueryData(brandCardQuery(d)); if (!b) throw notFound(); } else void q.prefetchQuery(brandCardQuery(d));
       void q.prefetchQuery(librarySiteQuery(d)); void q.prefetchQuery(siteCropsQuery(d)); void q.prefetchQuery(siteThumbQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d));
-      return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: true, first: null };
+      // W3d Part 5 · the Data view (where /library/<domain> lands) leads with the homepage thumbnail: announced the same way.
+      const first = await firstPaint("brand-data", d);
+      return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: true, first: first.picture };
     }
     // C1 · every part starts first, the card with them; it streams into its slot (waiting for it before the first byte was measured:
     // it held the first byte to 0.75–0.85 s on a cold server and the card still missed the first HTML).
@@ -51,14 +53,14 @@ export const Route = createFileRoute("/brands/$domain")({
     const title = `${loaderData?.name ?? params.domain} — brand · ${BRAND_NAME}`, desc = loaderData ? `${loaderData.name}: identity, every confirmed move and how it sits against its sector, on ${BRAND_NAME}.` : `Brand record for ${params.domain}.`;
     return { meta: withShare(shareImageFor("brand", params.domain), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/brands/${params.domain}` }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: `${SITE_URL}/brands/${params.domain}` }, ...fontLinks()] };
   },
-  headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return loaderData?.data ? DATA_VIEW_HEADERS : link ? { Link: link } : undefined; },
+  headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return loaderData?.data ? (link ? { ...DATA_VIEW_HEADERS, Link: link } : DATA_VIEW_HEADERS) : link ? { Link: link } : undefined; },
   component: Brand,
   notFoundComponent: () => <DigestNotFound v="brand.notFound" section="brands" kicker="Brands" />,
   errorComponent: () => <DigestNotFound v="brand.failed" section="brands" kicker="Brands" />,
 });
 function Brand() {
   const { domain } = Route.useParams(), { name, data, first } = Route.useLoaderData(), d = domain.toLowerCase();
-  if (data) return <DataShell object={{ type: "brand", id: d }} name={name}><BrandData domain={d} /></DataShell>;
+  if (data) return <><AnnounceFirst p={first} /><DataShell object={{ type: "brand", id: d }} name={name}><BrandData domain={d} /></DataShell></>;
   return <BrandFrame name={name} domain={d}>
     <AnnounceFirst p={first} />
     {/* C1 · a card that fails twice leaves one line in its place and the parts that don't need it (never just the frame). */}

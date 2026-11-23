@@ -15,6 +15,9 @@ import { dataViewHead, DATA_VIEW_HEADERS } from "@/lib/views/head";
 import { patternsQuery } from "@/lib/data";
 import { DataShell } from "@/components/dataview/DataShell";
 import { PatternData } from "@/components/dataview/Views";
+import { firstPaint } from "@/lib/first-paint.iso";
+import { NO_FIRST, linkHeader } from "@/lib/first-paint";
+import { AnnounceFirst } from "@/components/read/FirstPicture";
 
 export const Route = createFileRoute("/patterns/$key")({
   staticData: { views: true },
@@ -23,9 +26,10 @@ export const Route = createFileRoute("/patterns/$key")({
   // P1 · shell first: name and count (from the shared records) decide the head and the 404; examples and crops stream in.
   loader: async ({ context, params, deps }) => {
     if (deps.data) void context.queryClient.prefetchQuery(patternsQuery(deps.sector)); else void context.queryClient.prefetchQuery(patternQuery(params.key, deps.sector));
-    const p = await context.queryClient.ensureQueryData(patternHeadQuery(params.key, deps.sector));
+    // W3d Part 5 · without a lens the first example's crop is the page's largest picture: announced in the first flush (first-paint.ts).
+    const [p, first] = await Promise.all([context.queryClient.ensureQueryData(patternHeadQuery(params.key, deps.sector)), deps.data || deps.sector !== "all" ? Promise.resolve(NO_FIRST) : firstPaint("pattern", params.key)]);
     if (!p) throw notFound();
-    return { name: p.name, total: p.total, dimension: p.dimension, data: deps.data };
+    return { name: p.name, total: p.total, dimension: p.dimension, data: deps.data, first: first.picture };
   },
   head: ({ params, loaderData }) => {
     if (loaderData?.data) return dataViewHead({ type: "pattern", id: params.key }, loaderData.name);
@@ -33,7 +37,7 @@ export const Route = createFileRoute("/patterns/$key")({
     const url = `${SITE_URL}/patterns/${encodeURIComponent(params.key)}`;
     return { meta: withShare(shareImageFor("pattern", params.key), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
-  headers: ({ loaderData }) => (loaderData?.data ? DATA_VIEW_HEADERS : undefined),
+  headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return loaderData?.data ? DATA_VIEW_HEADERS : link ? { Link: link } : undefined; },
   component: Pattern,
   notFoundComponent: () => <DigestNotFound v="pattern.notFound" />,
   errorComponent: () => <DigestNotFound v="pattern.failed" />,
@@ -43,6 +47,7 @@ function Pattern() {
   const h = Route.useLoaderData();
   if (h.data) return <DataShell object={{ type: "pattern", id: key }} name={h.name} kicker={h.dimension}><PatternData k={key} sector={resolveSector(sector)} /></DataShell>;
   return <DigestShell label={`${h.name} pattern`} section="patterns" lens>
+    <AnnounceFirst p={h.first} />
     <Later id="pattern-later" before={<TitleBlock h1="ed-h1" kicker={`Pattern · ${h.dimension}`} title={h.name} deck={null} />}
       shapes={[{ kind: "rows", n: 2, height: ROW.compact }, { kind: "picture", ratio: 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 6, height: ROW.ledger }]}>
       <Full k={key} sector={resolveSector(sector)} />

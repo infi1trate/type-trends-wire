@@ -59,7 +59,12 @@ describe("C1b · the Link header and which requests announce", () => {
     expect(firstOf("/", q("sector=fintech"))).toBeNull();
     expect(firstOf("/", q("format=video"))).toBeNull();
     expect(firstOf("/brands/netlify.com", q())).toEqual({ kind: "brand", id: "netlify.com" });
-    expect(firstOf("/brands/netlify.com", q("view=data"))).toBeNull();
+    expect(firstOf("/brands/netlify.com", q("view=data"))).toEqual({ kind: "brand-data", id: "netlify.com" });
+    expect(firstOf("/brands/netlify.com", q("view=read"))).toBeNull();
+    expect(firstOf("/brands/netlify.com", q("view=data&sector=fintech"))).toBeNull();
+    expect(firstOf("/patterns/combo%3Aai_forward", q())).toEqual({ kind: "pattern", id: "combo:ai_forward" });
+    expect(firstOf("/patterns/combo%3Aai_forward", q("sector=fintech"))).toBeNull();
+    expect(firstOf("/patterns/combo%3Aai_forward", q("view=data"))).toBeNull();
     expect(firstOf("/stories/brand%3Anetlify.com%3A2026-11-20", q())).toEqual({ kind: "story", id: "brand:netlify.com:2026-11-20" });
     expect(firstOf("/stories/%E0%A4%A", q())).toBeNull();
     expect(firstOf("/signals", q())).toBeNull();
@@ -77,5 +82,27 @@ describe("C1b · how long the first flush waits for its picture address", () => 
     expect(firstWaitMs(5_000)).toBe(50);
     expect(firstWaitMs(-20)).toBe(650);
     expect(firstWaitMs(null)).toBe(FIRST_PAINT_WAIT_MS);
+  });
+});
+
+describe("W3d Part 5 · the brand Data view, a pattern, a collection and the directory", () => {
+  it("each announces the picture it paints largest, at the widths where it is largest", async () => {
+    const { thumbPicture, patternPicture, patternFirstIndex, wallPicture, brandsPicture, NARROW_PICTURE_MEDIA } = await import("./first-paint");
+    expect(NARROW_PICTURE_MEDIA).toBe("(max-width: 767px)");
+    const t = { src: "/thumbs/vercel.com/2026-11-23-desktop-320w.webp", srcSet: "/thumbs/vercel.com/2026-11-23-desktop-320w.webp 320w, /thumbs/vercel.com/2026-11-23-desktop-640w.webp 640w" };
+    expect(thumbPicture(t)).toEqual({ href: t.src, srcSet: t.srcSet, sizes: "320px", media: null });
+    expect(thumbPicture(null)).toBeNull();
+    const ex = [{ crop: null }, { crop: { src: "/crops/slack.com/hero/a.webp" } }, { crop: { src: "/crops/b.com/hero/b.webp" } }];
+    expect(patternPicture({ examples: ex })).toEqual({ href: "/crops/slack.com/hero/a.webp", srcSet: null, sizes: null, media: null });
+    expect(patternFirstIndex(ex)).toBe(1);
+    expect(patternPicture({ examples: [{ crop: null }] })).toBeNull();
+    expect(wallPicture([{ crop: null }, { crop: { src: "/crops/wise.com/hero/w.webp" } }])).toEqual({ href: "/crops/wise.com/hero/w.webp", srcSet: null, sizes: null, media: "(max-width: 767px)" });
+    const moved = ["a.com", "b.com", "c.com"].map(d => ({ domain: d, hero: { src: `/crops/${d}/hero/x.webp` } }));
+    const sites = [{ domain: "a.com", sector: "fintech" }, { domain: "b.com", sector: "ai" }, { domain: "c.com", sector: "ai" }];
+    expect(brandsPicture({ moved, sites }, { tab: "directory", sector: "all" })?.href).toBe("/crops/a.com/hero/x.webp");
+    expect(brandsPicture({ moved, sites }, { tab: "moves", sector: "all" })).toBeNull();
+    // The band shows only with three cards in the lens; two in "ai" draws no band, so nothing is announced.
+    expect(brandsPicture({ moved, sites }, { tab: "directory", sector: "ai" })).toBeNull();
+    expect(linkHeader(wallPicture([{ crop: { src: "/crops/w.webp" } }]))).toBe('</crops/w.webp>; rel=preload; as=image; fetchpriority=high; media="(max-width: 767px)"');
   });
 });

@@ -14,12 +14,13 @@ import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { useSectorLens } from "./lens";
 import { CropFallback, CropFigure } from "./Evidence";
+import { patternFirstIndex } from "@/lib/first-paint";
 import type { PatternExample } from "@/lib/patterns";
 
 /** One example brand: its section crop when current, else the typographic card with the honest line. */
-function Example({ e, section }: { e: PatternExample; section: string }) {
+function Example({ e, section, first = false }: { e: PatternExample; section: string; first?: boolean }) {
   return <article className="flex flex-col gap-2">
-    {e.crop ? <CropFigure crop={e.crop} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw" /> : <CropFallback domain={e.domain} section={section} />}
+    {e.crop ? <CropFigure crop={e.crop} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw" priority={first} /> : <CropFallback domain={e.domain} section={section} />}
     <h3 className="ed-small font-medium">{e.name ?? e.domain}</h3>
     <p className="ed-caption">{e.sectorName} · {e.crop ? `captured ${e.crop.captured_at.slice(0, 10)}` : e.captured ? `measured ${e.captured.slice(0, 10)}` : "capture date unknown"}</p>
     <p className="ed-data flex flex-wrap gap-x-3"><Link to="/brands/$domain" params={{ domain: e.domain }} className="ed-tap" {...pr(`/brands/${e.domain}`)}>Brand page →</Link><a href={`https://${e.domain}`} target="_blank" rel="noopener" className="ed-tap" {...pr(`https://${e.domain}`)}>Live site ↗</a></p>
@@ -49,7 +50,7 @@ export function PatternView({ p }: { p: PatternPage & { stories?: Story[] } }) {
           {p.sectors.map(s => <button key={s.sector} type="button" onClick={() => setSector(s.sector)} className={`ed-tap cursor-pointer ${p.sector === s.sector ? "font-semibold underline" : ""}`}>{s.name}<span className="ed-muted ml-1.5">{s.count}</span></button>)}
         </nav>
         {p.note && <p className="ed-caption mt-3">{p.note}</p>}
-        {p.examples.length ? <ul className="tile-wall mt-6" data-tile-wall="">{p.examples.map((e, i) => <li key={e.domain} className={i === 0 ? "tile-lg" : "tile-sm"}><Example e={e} section={p.sectionName} /></li>)}</ul>
+        {p.examples.length ? <ul className="tile-wall mt-6" data-tile-wall="">{p.examples.map((e, i) => <li key={e.domain} className={i === 0 ? "tile-lg" : "tile-sm"}><Example e={e} section={p.sectionName} first={i === patternFirstIndex(p.examples)} /></li>)}</ul>
           : <p className="ed-body mt-6">No brand in {sectorName(p.sector)} shows it yet.</p>}
         {p.total > p.examples.length && <p className="ed-caption mt-4">Showing {p.examples.length} of {p.total}, brands with captures first, then latest measurement.</p>}
       </>,

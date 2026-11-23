@@ -9,7 +9,7 @@
 import { memoBy } from "./memo";
 import { restRows } from "./plain-rest.server";
 import { usable } from "./records/records";
-import { NO_FIRST, firstOf, firstWaitMs, planPicture, type FirstKind, type FirstPaint } from "./first-paint";
+import { NO_FIRST, firstOf, firstWaitMs, patternPicture, planPicture, thumbPicture, type FirstKind, type FirstPaint } from "./first-paint";
 
 /** One stored record by key through a plain read (no database library loads before the page's first flush), when still usable. */
 const record = memoBy(60_000, async (key: string): Promise<unknown> => {
@@ -28,6 +28,13 @@ const load = async ({ kind, id }: { kind: FirstKind; id: string }): Promise<Firs
     const cover = coverOf(id, await picsFor(id));
     return { picture: cover ? { href: cover.src, srcSet: null, sizes: null, media: null } : null };
   }
+  // W3d Part 5 · a brand's Data view: its newest homepage thumbnail (the rows SiteThumb reads, anonymous, plain request).
+  if (kind === "brand-data") {
+    const [rows, { pickThumb }] = await Promise.all([restRows("public", "site_thumbs", `select=domain,captured_at,viewport,path,width,height,bytes,variants&domain=eq.${encodeURIComponent(id)}&order=captured_at.desc&limit=4`), import("./thumbs")]);
+    return { picture: thumbPicture(pickThumb(rows as never, id)) };
+  }
+  // A pattern without a lens: the first example with a crop, from the same model the page streams (its reads are shared in flight).
+  if (kind === "pattern") return { picture: patternPicture(await (await import("./read.server")).loadPattern(id, "all")) };
   const leads = (await record("front-leads")) as Record<string, { plan?: import("./lead-picture").LeadPlan | null } | null> | null;
   return { picture: planPicture(leads?.[id]?.plan ?? null, "story") };
 };

@@ -10,6 +10,8 @@ import { DigestShell } from "@/components/digest/Editorial";
 import { Later, ROW, TitleBlock } from "@/components/read/Later";
 import { sectorName } from "@/lib/labels";
 import { resolveSector } from "@/lib/sector-lens";
+import { brandsPicture, linkHeader } from "@/lib/first-paint";
+import { AnnounceFirst } from "@/components/read/FirstPicture";
 
 
 const TITLE = `Brands — who is doing it · ${BRAND_NAME}`;
@@ -19,17 +21,23 @@ export const Route = createFileRoute("/brands/")({
   // P2c · the directory comes from a stored record (about a second on a fresh instance), so the first response waits for it, up to
   // BRANDS_FIRST_WAIT_MS, and carries the whole page: no placeholder to swap. Slower than that (the record too old, a live build), the
   // title goes out first and the directory streams in as before.
-  loader: async ({ context }) => {
+  loaderDeps: ({ search }) => { const v = parseBrandsSearch(search); return { tab: v.tab, sector: resolveSector(v.sector) }; },
+  loader: async ({ context, deps }) => {
     await Promise.race([context.queryClient.ensureQueryData(brandsQuery()).catch(() => null), new Promise(r => setTimeout(r, BRANDS_FIRST_WAIT_MS))]);
+    // W3d Part 5 · on a phone the "Moved this week" band's first crop is the largest picture: announced when the directory came in time.
+    const d = context.queryClient.getQueryData(brandsQuery().queryKey) as Parameters<typeof brandsPicture>[0] | undefined;
+    return { first: brandsPicture(d, deps) };
   },
+  headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return link ? { Link: link } : undefined; },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/brands` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/brands` }, ...fontLinks()] }),
   component: Brands,
   errorComponent: () => <DigestNotFound v="brands.failed" />,
 });
 function Brands() {
   const search = Route.useSearch();
-  const v = parseBrandsSearch(search);
+  const v = parseBrandsSearch(search), { first } = Route.useLoaderData();
   return <DigestShell label="Brands" section="brands" lens>
+    <AnnounceFirst p={first} />
     <Later id="brands-later" reserve="100dvh" before={<TitleBlock kicker={`Brands · ${sectorName(resolveSector(v.sector))}`} title="Who is doing it" deck={null} />} shapes={[{ kind: "block", height: 96 }, { kind: "rows", n: 12, height: ROW.compact }]}>
       <BrandsIndexView v={v} all={search.all === "1"} />
     </Later>
