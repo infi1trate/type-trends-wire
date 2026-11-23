@@ -65,6 +65,11 @@ export function changedShare(a, b, width, tolerance = PIXEL_TOLERANCE) {
   for (let i = 0, n = rows * width * 3; i < n; i += 3) if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > tolerance) diff++;
   return (diff + (most - rows) * width) / (most * width);
 }
+/** Pure: the answering instance's age in whole seconds from a response's headers, or null when the site did not send one. */
+export function instanceAgeOf(headers) {
+  const v = headers && typeof headers === "object" ? headers["x-instance-age"] : undefined, n = typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+}
 /** Pure: the measures the door accepts, from what the browser reported (a value that was not measured is left out, never sent as zero). */
 export function measuresOf(m, extra = {}) {
   const out = {}, int = k => { if (Number.isFinite(m[k])) out[k] = Math.max(0, Math.round(m[k])); }, num = (k, dp) => { if (Number.isFinite(m[k])) out[k] = Math.round(m[k] * 10 ** dp) / 10 ** dp; };
@@ -155,7 +160,10 @@ async function shoot(browser, base, p, width) {
   page.on("requestfailed", () => { failed++; });
   page.on("response", r => { if (r.status() >= 400) failed++; });
   try {
-    await page.goto(base + p.path, { waitUntil: "networkidle", timeout: 60_000 }).catch(() => page.waitForLoadState("load", { timeout: 20_000 }).catch(() => null));
+    // C1: the site says how old the answering server instance is (x-instance-age, seconds). Kept for the run log only, so a slow
+    // measure can be read as cold or warm; the door takes named measures and this is not one of them.
+    const first = await page.goto(base + p.path, { waitUntil: "networkidle", timeout: 60_000 }).catch(() => page.waitForLoadState("load", { timeout: 20_000 }).catch(() => null));
+    const instanceAge = instanceAgeOf(first && typeof first.headers === "function" ? first.headers() : null);
     await page.waitForTimeout(1500);
     // Walk the whole page once so every lazy picture loads, then return to the top and let the network settle.
     await page.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 110)); } window.scrollTo(0, 0); }).catch(() => null);
@@ -171,7 +179,7 @@ async function shoot(browser, base, p, width) {
     await page.evaluate(hideLiveText).catch(() => 0);
     const m = await page.evaluate(measureDocument);
     const png = await page.screenshot({ fullPage: true, animations: "disabled", caret: "hide" });
-    return { m: { ...m, console_errors: consoleErrors, failed_requests: failed }, png };
+    return { m: { ...m, console_errors: consoleErrors, failed_requests: failed }, png, instanceAge };
   } finally { await ctx.close().catch(() => null); }
 }
 /** A bare load of the page that reads only its first byte (request sent to first response byte), in a fresh context. */
@@ -237,7 +245,7 @@ async function main() {
         if (theirs && fs.existsSync(path.join(theirs, file))) share = changedShare(await sharp(path.join(theirs, file)).removeAlpha().raw().toBuffer(), raw, COMPARE_WIDTH);
         const webp = await picture(shot.png);
         const body = { actor: s.actor, action: "review", run: s.run, kind: s.kind, page: p.page, path: p.path, width, ...(s.against && Number.isFinite(share) ? { against: s.against } : {}), measures: measuresOf(shot.m, { changed_share: share }), ...(webp ? { picture: webp.toString("base64") } : {}) };
-        const line = `${p.page} ${width}: ${body.measures.height_px} px, ${body.measures.words} words, first byte ${body.measures.first_byte_ms ?? "?"} ms${Number.isFinite(share) ? `, ${(share * 100).toFixed(2)}% changed` : ""}`;
+        const line = `${p.page} ${width}: ${body.measures.height_px} px, ${body.measures.words} words, first byte ${body.measures.first_byte_ms ?? "?"} ms, largest paint ${body.measures.lcp_ms ?? "?"} ms, instance ${shot.instanceAge === null ? "age not sent" : `${shot.instanceAge} s old`}${Number.isFinite(share) ? `, ${(share * 100).toFixed(2)}% changed` : ""}`;
         if (s.dry) { console.log(`${line} (dry run, not sent)`); continue; }
         const res = await fetch(`${s.base}/api/public/desk`, { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(60_000) }).catch(e => ({ ok: false, status: 0, text: async () => String(e?.message ?? e) }));
         const text = await res.text();

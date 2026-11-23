@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isoWeek, settings, storyPath, changedShare, measuresOf, verdict, middle, PAGES, WIDTHS, BROWSER_NAME } from "../src/review.js";
+import { isoWeek, settings, storyPath, changedShare, measuresOf, instanceAgeOf, verdict, middle, PAGES, WIDTHS, BROWSER_NAME } from "../src/review.js";
 
 test("the weekly run is named for its ISO week", () => {
   assert.equal(isoWeek(new Date("2026-11-22T10:00:00Z")), "2026-W47");
@@ -62,4 +62,14 @@ test("every load names a reader's browser, never a headless one (the site sends 
   assert.match(BROWSER_NAME, /Chrome\/\d+/);
   assert.doesNotMatch(BROWSER_NAME, /headless|bot|crawl|spider/i);
   assert.match(BROWSER_NAME, /slug-review\/1$/);
+});
+
+test("the instance age is read from the site's header, and is null when it was not sent or is not a number", () => {
+  assert.equal(instanceAgeOf({ "x-instance-age": "7" }), 7);
+  assert.equal(instanceAgeOf({ "x-instance-age": "312.6" }), 313);
+  assert.equal(instanceAgeOf({ "x-instance-age": "" }), null);
+  assert.equal(instanceAgeOf({ "x-instance-age": "soon" }), null);
+  assert.equal(instanceAgeOf({ "x-instance-age": "-1" }), null);
+  assert.equal(instanceAgeOf({}), null);
+  assert.equal(instanceAgeOf(null), null);
 });
