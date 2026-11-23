@@ -4,7 +4,7 @@
 // under the same cost-ledger purpose. The plan is the shared one (writer, writer again with its failures, text model) carried across
 // days for one sheet; one insert-only version per attempt. Injected I/O so tests run in memory; nothing here ever throws into a job.
 import { AI_MODELS } from "../ai-models";
-import { retryGuard } from "../ai-retries";
+import { retryGuard, structuredAttempts } from "../ai-retries";
 import { WRITER_PLAN, tryModels, type Attempt, type Known } from "../stories/writer";
 import { gatewayCall, providerCanRun } from "../stories/writer.server";
 import { DIGEST_PER_DAY, DIGEST_SCHEMA, DIGEST_SYSTEM, DIGEST_TOOL, REWRITE_DAYS, checkDigestText, digestUser, parseDigest, type DigestSheet, type DigestWritten } from "./writer";
@@ -25,7 +25,12 @@ const logOf = (m: DigestMeta): Attempt[] => (Array.isArray(m.log) ? (m.log as At
 export const callsOn = (metas: readonly DigestMeta[], day: string) => metas.filter(m => dayOf(m.created_at) === day).reduce((a, m) => a + (m.attempts ?? 0), 0);
 export const writerCallsOn = (metas: readonly DigestMeta[], day: string) => metas.filter(m => dayOf(m.created_at) === day).reduce((a, m) => a + logOf(m).filter(x => x.model === AI_MODELS.writer).length, 0);
 /** Calls already spent on this sheet (every stored attempt for this week and fingerprint). */
-export const spentOn = (metas: readonly DigestMeta[], week: string, hash: string) => metas.filter(m => m.week === week && m.facts_hash === hash).reduce((a, m) => a + (m.attempts ?? 0), 0);
+export const spentOn = (metas: readonly DigestMeta[], week: string, hash: string) => {
+  const mine = metas.filter(m => m.week === week && m.facts_hash === hash);
+  // T2 · D: answers not in the fixed shape count against RETRIES.writer across runs too; once spent, nothing more is called for this sheet.
+  const unusable = mine.reduce((a, m) => a + logOf(m).filter(x => Array.isArray(x.failures) && x.failures.includes("no usable answer")).length, 0);
+  return unusable >= structuredAttempts("writer") ? WRITER_PLAN.length : mine.reduce((a, m) => a + (m.attempts ?? 0), 0);
+};
 /** The rest of the shared plan for this sheet: the writer, the writer again with its failures, then the text model; nothing after that. */
 export const planFor = (spent: number): readonly string[] => WRITER_PLAN.slice(Math.min(spent, WRITER_PLAN.length));
 /** Owed a text: the week has closed and is still within REWRITE_DAYS of its end, no version passed from this sheet, and the plan for

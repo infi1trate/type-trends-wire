@@ -19,7 +19,9 @@ export type WriterIO = {
 export type WriteJob = { story: FactStory; facts: WriterFacts; template: WrittenText };
 export type WriteResult = { written: number; checked: number; calls: number; rows: (TextInsert & { log: { model: string; failures: string[] }[] })[]; skipped: number };
 /** A stored version tried the writer when the writer made it or the writer failed twice before the fallback (three calls). */
-export const triedWriter = (row: { model: string; attempts: number }) => row.model === AI_MODELS.writer || row.attempts >= 3;
+// T2 · D: a template stored after the writers gave no usable answer (the one structured retry spent, or a refusal) has been tried too,
+// so the next build does not call again for the same facts; a correction or a rewrite request still makes it owed.
+export const triedWriter = (row: { model: string; attempts: number; failures?: string[] | null }) => row.model === AI_MODELS.writer || row.attempts >= 3 || (row.model === "template" && (row.failures ?? []).includes("no usable answer"));
 /** Leave this long before the deadline unused: a call is not started without it. */
 export const WRITER_CALL_MIN_MS = 15_000;
 export const WRITER_CONCURRENCY = 2;

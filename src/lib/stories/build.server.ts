@@ -434,10 +434,10 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const extra = [...new Set(asks.map(a => a.story_id))].filter(x => !rows.some(r => r.id === x));
   if (extra.length) { const { data } = await admin.from("stories").select(cols).in("id", extra.slice(0, 50)).neq("type", "launch"); rows.push(...((data ?? []) as unknown as import("./edits").StoredStory[])); }
   if (!rows.length) return [];
-  type Last = { created_at: string; model: string; attempts: number; checked: boolean; headline: string; deck: string; body: string[] | null; how_we_know: string };
+  type Last = { created_at: string; model: string; attempts: number; failures: string[] | null; checked: boolean; headline: string; deck: string; body: string[] | null; how_we_know: string };
   const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, Last>();
   for (let i = 0; i < ids.length; i += 200) {
-    const [e, t] = await Promise.all([admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids.slice(i, i + 200)).order("id"), admin.from("story_texts").select("story_id,created_at,model,attempts,checked,headline,deck,body,how_we_know").in("story_id", ids.slice(i, i + 200))]);
+    const [e, t] = await Promise.all([admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids.slice(i, i + 200)).order("id"), admin.from("story_texts").select("story_id,created_at,model,attempts,failures,checked,headline,deck,body,how_we_know").in("story_id", ids.slice(i, i + 200))]);
     if (e.error || t.error) throw new Error("to_write_read_failed");
     edits.push(...((e.data ?? []) as unknown as import("./edits").EditRow[]));
     for (const x of (t.data ?? []) as unknown as (Last & { story_id: string })[]) if ((last.get(x.story_id)?.created_at ?? "") < x.created_at) last.set(x.story_id, x);

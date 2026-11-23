@@ -8,8 +8,6 @@ import { etWeekStart } from "./spend";
 export const CREDIT_USD = 0.3;
 export const CREDIT_PRICE_READ = "2026-11-22";
 export const LEDGER_WEEKS = 8;
-/** Model call kinds that write or review stories (the writers' shared purpose); the desks' calls are recorded beside them by usage id. */
-export const STORY_CALL_KINDS: ReadonlySet<string> = new Set(["story_why"]);
 /** The kind whose calls read captures (the vision model). */
 export const CAPTURE_READ_KIND = "vision";
 /** The desks whose calls count towards a published story's cost, beside the writer's own calls. */
@@ -61,11 +59,11 @@ export const usd = (x: number) => `$${x < 0.1 && x > 0 ? x.toFixed(3) : x.toFixe
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** A unit cost with its count and base; a zero base says so in words and never divides. */
-export function unitCost(count: number, base: number, o: { unit: "usd" | "credits"; noBase: string; of: string }): UnitCost {
+export function unitCost(count: number, base: number, o: { unit: "usd" | "credits"; noBase: string; of: string; one?: string }): UnitCost {
   const c = o.unit === "usd" ? r4(count) : r2(count);
   if (base <= 0) return { value: null, count: c, base: 0, line: o.noBase };
   const v = count / base, shown = o.unit === "usd" ? usd(v) : `${r2(v)} credits`;
-  return { value: o.unit === "usd" ? r4(v) : r2(v), count: c, base, line: `${shown} (${o.unit === "usd" ? usd(count) : `${r2(count)} credits`} over ${o.of.replace("{n}", String(base))})` };
+  return { value: o.unit === "usd" ? r4(v) : r2(v), count: c, base, line: `${shown} (${o.unit === "usd" ? usd(count) : `${r2(count)} credits`} over ${(base === 1 && o.one ? o.one : o.of).replace("{n}", base.toLocaleString("en-US"))})` };
 }
 
 /** Items that shipped in a week: a move to live in the week, or a passing gate result in the week for an item already live then
@@ -112,9 +110,9 @@ export function buildLedger(i: LedgerInput, now: number, n = LEDGER_WEEKS): Ledg
       agent: { recorded: agents.length > 0, usd: r2(agentUsd), entries: agents.length, line: agents.length ? `${usd(agentUsd)} recorded by hand (${plural(agents.length, "session")})` : "not recorded" },
       total_usd: r2(total),
       cap: capFor(i.cap, modelUsd, credits),
-      per_story: unitCost(pub.reduce((s, id) => s + (storyUsd.get(id) ?? 0), 0), pub.length, { unit: "usd", noBase: "no stories published", of: "{n} published stories" }),
-      per_capture: unitCost(vision.reduce((s, c) => s + (Number(c.usd) || 0), 0), read.size, { unit: "usd", noBase: "no captures read", of: "{n} captures read" }),
-      per_change: unitCost(credits, shipped.length, { unit: "credits", noBase: "no changes shipped", of: "{n} shipped changes" }),
+      per_story: unitCost(pub.reduce((s, id) => s + (storyUsd.get(id) ?? 0), 0), pub.length, { unit: "usd", noBase: "no stories published", of: "{n} published stories", one: "{n} published story" }),
+      per_capture: unitCost(vision.reduce((s, c) => s + (Number(c.usd) || 0), 0), read.size, { unit: "usd", noBase: "no captures read", of: "{n} captures read", one: "{n} capture read" }),
+      per_change: unitCost(credits, shipped.length, { unit: "credits", noBase: "no changes shipped", of: "{n} shipped changes", one: "{n} shipped change" }),
     };
   });
 }

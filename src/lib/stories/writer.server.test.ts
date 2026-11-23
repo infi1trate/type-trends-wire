@@ -14,12 +14,18 @@ const io = (o: { used?: number; ok?: boolean } = {}) => {
 const later = () => Date.now() + 600_000;
 
 describe("writer orchestration", () => {
-  it("writer fails twice, the text model once, then the template is stored unchecked as the next version", async () => {
+  it("T2 · an answer not in the fixed shape gets one retry, then the template is stored unchecked as the next version", async () => {
     const m = io(), r = await writeStories([job("a")], m.x, { names: ["DocuSign"] }, { deadline: later() });
-    expect(m.calls).toEqual([AI_MODELS.writer, AI_MODELS.writer, AI_MODELS.text]);
+    expect(m.calls).toEqual([AI_MODELS.writer, AI_MODELS.writer]);
     expect(m.rows).toHaveLength(1);
-    expect(m.rows[0]).toMatchObject({ story_id: "a", version: 3, model: "template", checked: false, attempts: 3, headline: "DocuSign changed its accent" });
-    expect(r.calls).toBe(3);
+    expect(m.rows[0]).toMatchObject({ story_id: "a", version: 3, model: "template", checked: false, attempts: 2, headline: "DocuSign changed its accent" });
+    expect(r.calls).toBe(2);
+  });
+  it("T2 · a refused call is not retried: one call, the template stands", async () => {
+    const m = io(); m.x.call = async (model: string) => { m.calls.push(model); return { raw: null, cost: 0.01, refused: true }; };
+    await writeStories([job("a")], m.x, { names: ["DocuSign"] }, { deadline: later() });
+    expect(m.calls).toEqual([AI_MODELS.writer]);
+    expect(m.rows[0]).toMatchObject({ model: "template", attempts: 1 });
   });
   it("the 13th writer call of a day is not made: the story waits, no text-model fallback, no row", async () => {
     const m = io({ used: WRITER_PER_DAY }), r = await writeStories([job("a"), job("b")], m.x, { names: ["DocuSign"] }, { deadline: later() });
@@ -41,5 +47,7 @@ describe("writer orchestration", () => {
     expect(triedWriter({ model: AI_MODELS.text, attempts: 1 })).toBe(false);
     expect(triedWriter({ model: "template", attempts: 3 })).toBe(true);
     expect(triedWriter({ model: AI_MODELS.writer, attempts: 1 })).toBe(true);
+    expect(triedWriter({ model: "template", attempts: 2, failures: ["no usable answer"] })).toBe(true);
+    expect(triedWriter({ model: "template", attempts: 1, failures: [] })).toBe(false);
   });
 });

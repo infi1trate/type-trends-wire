@@ -17,7 +17,7 @@ function Kinds({ w, title }: { w: LedgerWeek; title: string }) {
     <h4 className="ed-kicker">{title} · week of {w.label}</h4>
     {w.model.by_kind.length ? <ul className="ed-data mt-2 space-y-1">{w.model.by_kind.map(k => <li key={`${k.kind}:${k.model}`} className="break-words">
       <span className="font-semibold">{k.kind}</span> · {k.model}: {n(k.calls)} calls{k.failed ? `, ${n(k.failed)} failed` : ""}, {n(k.tokens_in)} tokens in, {n(k.tokens_out)} out, {usd(k.usd)}
-    </li>)}</ul> : <p className="ed-small mt-2">No model calls.</p>}
+    </li>)}</ul> : <p className="ed-small mt-2">No model calls that week.</p>}
   </div>;
 }
 
