@@ -8,7 +8,7 @@ import { fxInput, fxCapture } from "@/lib/data-stories/fixtures";
 import { bigTypeStory, whereYouSit, type Meta } from "@/lib/data-stories/stories";
 import { beforeAfter, strip } from "@/lib/data-stories/templates/frames";
 import { capText } from "@/lib/data-stories/text";
-import { EMBED_UTILITIES } from "@/lib/data-stories/embed";
+import { EMBED_UTILITIES, RESPONSIVE } from "@/lib/data-stories/embed";
 import { readFileSync } from "node:fs";
 import type { CropRow } from "@/lib/crops";
 
@@ -117,7 +117,7 @@ describe("embed", () => {
   it("covers every utility class the figures use", () => {
     const src = ["src/components/data/Figures.tsx", "src/components/chartkit/Frame.tsx", "src/components/chartkit/Multiples.tsx", "src/components/chartkit/BeforeAfter.tsx"].map(f => readFileSync(f, "utf8")).join("\n");
     const classes = [...src.matchAll(/className=(?:\{`([^`]*)`|"([^"]*)")/g)].flatMap(m => (m[1] ?? m[2] ?? "").replace(/\$\{[^}]*\}/g, " ").split(/\s+/)).filter(c => c && !/^(tk-|ed-)/.test(c) && /^[a-z]/.test(c) && !c.includes("?"));
-    const known = new Set([...Object.keys(EMBED_UTILITIES), "sm:grid-cols-2", "sm:grid-cols-3", "xl:grid-cols-4", "hover:underline", "strip-current"]);
+    const known = new Set([...Object.keys(EMBED_UTILITIES), ...Object.keys(RESPONSIVE), "strip-current"]);
     expect([...new Set(classes)].filter(c => !known.has(c))).toEqual([]);
   });
 });

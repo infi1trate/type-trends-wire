@@ -4,7 +4,7 @@
 import type { CheckId } from "./checks";
 import type { Link } from "./types";
 import { compositeKey } from "../composites";
-import { MUSEUM_SHOWN } from "../site";
+import { ICONS_SHOWN, MUSEUM_SHOWN } from "../site";
 
 export const TEMPLATES = {
   adoption: "Adoption timeline",
@@ -21,6 +21,8 @@ export const SERIES = [
   { id: "first-movers", title: "Who moved first", description: "One signal, every brand that took it up, in the order the archive shows it." },
   { id: "long-view", title: "The long view", description: "Five years of one sector or one signal, read quarter by quarter." },
   { id: "sector-v-sector", title: "Sector against sector", description: "The same measure across all ten sectors, side by side." },
+  // W3d · studies whose second half is not a brand homepage: museum works (No. 7) and App Store icons (No. 8).
+  { id: "beyond-homepage", title: "Beyond the homepage", description: "Brand colours read against what sits outside the homepage: museum works, app icons." },
 ] as const;
 export type SeriesId = (typeof SERIES)[number]["id"];
 export const seriesOf = (id: string) => SERIES.find(x => x.id === id) ?? null;
@@ -48,6 +50,8 @@ export const MUSEUM_STUDY_SLUG = "nearest-in-the-museum";
 export const MUSEUM_ACCENT_SLUG = "colours-the-museum-does-not-hold";
 /** W3c · every museum study: one editor switch (MUSEUM_SHOWN) withholds them all. */
 export const MUSEUM_SLUGS: readonly string[] = [MUSEUM_STUDY_SLUG, MUSEUM_ACCENT_SLUG];
+/** W3d · the App Store icon study's address; withheld while ICONS_SHOWN is false. */
+export const ICONS_SLUG = "the-colour-app-icons-sit-on";
 export const DATA_STORIES: readonly Entry[] = [
   { slug: "software-homepage-five-years", number: 1, series: "long-view", question: "What happened to the software homepage in five years?",
     deck: "Twelve composite signals across dev tools and enterprise SaaS, then the two brands with the longest stored history, capture by capture.",
@@ -77,10 +81,17 @@ export const DATA_STORIES: readonly Entry[] = [
   // W3c · one colour at a time: each brand's vivid accent against the colours the stored works hold (art/accent.ts). Hidden until 150
   // brands have a vivid accent and 500 works are stored, and withheld while MUSEUM_SHOWN is false. `recorded` is the stored data on
   // 23 Nov 2026 (172 vivid accents, 798 works, headline matches); a hidden study's status is still decided at read time.
-  { slug: MUSEUM_ACCENT_SLUG, number: 7, series: "sector-v-sector", question: "Which brand colours do the museum's works hold?",
+  { slug: MUSEUM_ACCENT_SLUG, number: 7, series: "beyond-homepage", question: "Which brand colours do the museum's works hold?",
     deck: "Each tracked brand's accent colour, one at a time, against the colours public-domain museum works hold, by measured distance.",
     templates: ["drift"], params: { sectors: null, period: "Newest capture" },
     collection: { label: "All brands", href: "/brands" }, status: "live", reason: null, check: "museum-accent", recorded: { vivid: 172, works: 798, headline: 1 }, hidden: true },
+  // W3d · the colour under each App Store category's top 100 free icons, measured colours only (no icon picture is stored). Hidden until
+  // the newest week holds 12 categories of 80 apps or more, and withheld while ICONS_SHOWN is false. Nothing was stored when it was added
+  // (23 Nov 2026), so `recorded` is zero; a hidden study's status is decided at read time.
+  { slug: ICONS_SLUG, number: 8, series: "beyond-homepage", question: "What colour do app icons sit on?",
+    deck: "The colour holding most of each top free app's icon, category by category, in the US App Store.",
+    templates: ["drift"], params: { sectors: null, period: "Newest week" },
+    collection: { label: "All studies", href: "/data" }, status: "live", reason: null, check: "app-icons", recorded: { categories: 0, headline: 0 }, hidden: true },
 ];
 /** E4 · "Where does your brand sit?" (/data/where-you-sit) is a tool, not a study: no number (its old 5 is retired), no series. */
 export const WHERE_YOU_SIT = { slug: "where-you-sit", kind: "tool" as const, question: "Where does your brand sit?", deck: "Pick a tracked brand: where it sits in its sector, its homepage through time, and the signals that set it apart.", templates: ["field", "strip"] as TemplateId[] } as const;
@@ -88,7 +99,8 @@ export const WHERE_YOU_SIT = { slug: "where-you-sit", kind: "tool" as const, que
 export const entryOf = (slug: string) => DATA_STORIES.find(e => e.slug === slug) ?? null;
 export const templateName = (e: { templates: readonly TemplateId[] }) => e.templates.map(t => TEMPLATES[t]).join(" + ");
 /** W3b · withheld by the editor: the museum studies do not exist for readers while MUSEUM_SHOWN is false, whatever their checks say. */
-export const withheld = (e: { slug: string }) => MUSEUM_SLUGS.includes(e.slug) && !MUSEUM_SHOWN;
+/** W3d · and the App Store icon study while ICONS_SHOWN is false. */
+export const withheld = (e: { slug: string }) => (MUSEUM_SLUGS.includes(e.slug) && !MUSEUM_SHOWN) || (e.slug === ICONS_SLUG && !ICONS_SHOWN);
 /** Live in the registry and not hidden (a hidden study joins only through `liveNow`, when its check passes on stored data). */
 export const liveEntries = () => DATA_STORIES.filter(e => e.status === "live" && !e.hidden);
 /** A study's way on: the other live studies in its series, its collection, then all studies (never itself, never unrelated studies). */

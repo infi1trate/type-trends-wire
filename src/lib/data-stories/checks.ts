@@ -9,6 +9,8 @@ import { museumFigures, museumVerdictText, type MuseumFigures } from "./museum";
 import { SHOW_MIN_GROUPS, SHOW_MIN_WORKS, STUDY_MIN_SECTORS } from "../art/palette";
 import { STUDY_MIN_ACCENTS, STUDY_MIN_WORKS } from "../art/accent";
 import { accentStudyFigures, type AccentStudyFigures } from "./museum-accent";
+import { iconStudyFigures, type IconStudyFigures } from "./app-icons";
+import { STUDY_MIN_CATEGORIES, CATEGORY_MIN_APPS } from "../icons/measure";
 
 export const SOFTWARE = { sectors: ["dev-tools", "enterprise-saas"] as const, movePts: 0.05, minMoved: 3, minCaptures: 6, minBrands: 2 } as const;
 export const BIG_TYPE = { key: compositeKey("big_type"), minEntries: 25 } as const;
@@ -83,6 +85,7 @@ export function waitOf(id: CheckId, i: DataInput): Wait {
     case "fintech-colour": { const f = fintechFigures(i); return { have: f.quarters, need: FINTECH_COLOUR.minQuarters, text: `Has ${f.quarters} well-covered quarters of fintech palettes, needs ${FINTECH_COLOUR.minQuarters}.`, perQuarter: true }; }
     case "museum": { const f = museumFigures(i); return f.ready ? { have: f.sectors, need: STUDY_MIN_SECTORS, text: museumVerdictText(f), perQuarter: false } : { have: f.works, need: SHOW_MIN_WORKS, text: museumVerdictText(f), perQuarter: false }; }
     case "museum-accent": { const f = accentStudyFigures(i); return f.vivid < STUDY_MIN_ACCENTS ? { have: f.vivid, need: STUDY_MIN_ACCENTS, text: accentWaitText(f), perQuarter: false } : { have: f.works, need: STUDY_MIN_WORKS, text: accentWaitText(f), perQuarter: false }; }
+    case "app-icons": { const f = iconStudyFigures(i); return { have: f.categories, need: STUDY_MIN_CATEGORIES, text: iconWaitText(f), perQuarter: false }; }
     case "sector-minds": { const f = sectorMindsFigures(i); return { have: f.sectors, need: SECTOR_MINDS.minSectors, text: `Has ${f.sectors} sectors with ${SECTOR_MINDS.minEvents} dated changes, needs ${SECTOR_MINDS.minSectors}.`, perQuarter: false }; }
   }
 }
@@ -93,7 +96,15 @@ export const CHECKS = {
   "sector-minds": (i: DataInput) => sectorMindsVerdict(sectorMindsFigures(i)),
   museum: (i: DataInput) => museumVerdict(museumFigures(i)),
   "museum-accent": (i: DataInput) => museumAccentVerdict(accentStudyFigures(i)),
+  "app-icons": (i: DataInput) => appIconsVerdict(iconStudyFigures(i)),
 } as const;
+// W3d · the colour app icons sit on: enough categories of a full chart in the newest stored week, and the headline's and deck's claims
+// read back against counts recomputed from the stored rows.
+export const appIconsVerdict = (f: Pick<IconStudyFigures, "categories" | "headline">) => verdict([
+  { id: "categories", label: `App Store categories with ${CATEGORY_MIN_APPS} or more apps stored for the newest week`, value: f.categories, need: STUDY_MIN_CATEGORIES },
+  { id: "headline", label: "Headline numbers are the stored numbers", value: f.headline, need: 1 },
+], x => (x.id === "categories" ? `Only ${x.value} App Store categories have ${CATEGORY_MIN_APPS}+ apps stored for the newest week (needs ${x.need}).` : "The headline's numbers are not the stored numbers."));
+export const iconWaitText = (f: Pick<IconStudyFigures, "categories" | "apps">) => `Has ${f.categories} App Store categories of ${CATEGORY_MIN_APPS}+ apps for the newest week (needs ${STUDY_MIN_CATEGORIES}), ${f.apps} apps in all.`;
 // W3c · brand colours the museum works hold: enough vivid accents and enough stored works, and the headline's numbers recomputed from
 // stored data must be the numbers the rule writes (a headline that does not match the stored counts fails the study).
 export const museumAccentVerdict = (f: Pick<AccentStudyFigures, "vivid" | "works" | "headline">) => verdict([

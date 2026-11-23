@@ -23,6 +23,8 @@ export type DataInput = {
   headline: HeadlineSignal[]; crops: CropRow[]; runId: number | null;
   /** W3a · museum works and brand palettes (the museum study only); absent reads as none stored. */
   art?: import("./museum").ArtInput;
+  /** W3d · the newest stored week of App Store icon colours (not removed); loaded only while ICONS_SHOWN is on. */
+  icons?: import("../icons/measure").IconIn[];
 };
 
 /**

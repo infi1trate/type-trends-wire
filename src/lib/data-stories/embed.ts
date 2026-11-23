@@ -11,7 +11,7 @@ export const EMBED_UTILITIES: Record<string, string> = {
   absolute: "position:absolute", relative: "position:relative", block: "display:block", inline: "display:inline", "inline-block": "display:inline-block", "inline-flex": "display:inline-flex", flex: "display:flex", grid: "display:grid",
   "flex-1": "flex:1 1 0%", "flex-wrap": "flex-wrap:wrap", "items-center": "align-items:center", "justify-between": "justify-content:space-between",
   "gap-1": "gap:4px", "gap-2": "gap:8px", "gap-4": "gap:16px", "grid-cols-1": "grid-template-columns:repeat(1,minmax(0,1fr))", "m-0": "margin:0", "gap-x-4": "column-gap:16px", "gap-y-5": "row-gap:20px",
-  "grid-cols-2": "grid-template-columns:repeat(2,minmax(0,1fr))", "grid-cols-[9ch_1fr]": "grid-template-columns:9ch 1fr",
+  "grid-cols-2": "grid-template-columns:repeat(2,minmax(0,1fr))", "grid-cols-[9ch_1fr]": "grid-template-columns:9ch 1fr", "grid-cols-[repeat(25,minmax(0,1fr))]": "grid-template-columns:repeat(25,minmax(0,1fr))",
   border: "border-width:1px;border-style:solid", "border-b-2": "border-bottom-width:2px;border-bottom-style:solid", "border-t": "border-top-width:1px;border-top-style:solid", "border-collapse": "border-collapse:collapse",
   "cursor-pointer": "cursor:pointer", "font-normal": "font-weight:400", "font-semibold": "font-weight:600",
   "h-2": "height:8px", "h-3": "height:12px", "h-8": "height:32px", "h-auto": "height:auto", "w-0.5": "width:2px", "w-2": "width:8px", "w-3": "width:12px", "w-full": "width:100%",
@@ -22,8 +22,8 @@ export const EMBED_UTILITIES: Record<string, string> = {
   "sr-only": "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0",
   "no-print": "", "ed-swatch": "",
 };
-const RESPONSIVE: Record<string, [string, string]> = { "sm:grid-cols-2": ["640px", "grid-template-columns:repeat(2,minmax(0,1fr))"], "sm:grid-cols-3": ["640px", "grid-template-columns:repeat(3,minmax(0,1fr))"], "xl:grid-cols-4": ["1280px", "grid-template-columns:repeat(4,minmax(0,1fr))"], "hover:underline": ["", "text-decoration:underline"] };
-const escCls = (c: string) => c.replace(/([[\]_.:])/g, "\\$1");
+export const RESPONSIVE: Record<string, [string, string]> = { "sm:grid-cols-2": ["640px", "grid-template-columns:repeat(2,minmax(0,1fr))"], "sm:grid-cols-3": ["640px", "grid-template-columns:repeat(3,minmax(0,1fr))"], "xl:grid-cols-4": ["1280px", "grid-template-columns:repeat(4,minmax(0,1fr))"], "sm:grid-cols-[repeat(100,minmax(0,1fr))]": ["640px", "grid-template-columns:repeat(100,minmax(0,1fr))"], "sm:h-8": ["640px", "height:32px"], "hover:underline": ["", "text-decoration:underline"] };
+const escCls = (c: string) => c.replace(/([[\]_.:(),])/g, "\\$1");
 const TK = `.tk-chart{color:var(--tk-text-primary);font-variant-numeric:tabular-nums}.tk-svg{display:block;width:100%;height:auto;overflow:visible}.tk-svg-text{font-family:var(--tk-type-data-family);font-size:11px;fill:currentColor}.tk-svg-muted{fill:var(--tk-text-muted)}.tk-svg-axis{stroke:var(--tk-rule-strong);stroke-width:1}.tk-svg-grid{stroke:var(--tk-rule-hairline);stroke-width:1}.tk-svg-dot{stroke:var(--tk-surface-page);stroke-width:1.5}.tk-tip{opacity:0}.tk-c-muted{color:var(--tk-text-muted)}.tk-c-secondary{color:var(--tk-text-secondary)}.tk-chip{border-width:1px;border-style:solid}.tk-tap{display:inline-flex;align-items:center}.tk-chart-empty{border:1px dashed var(--tk-rule-hairline);padding:16px;color:var(--tk-text-muted)}a{color:inherit}`;
 export function utilityCss() {
   const base = Object.entries(EMBED_UTILITIES).filter(([, v]) => v).map(([k, v]) => `.${escCls(k)}{${v}}`).join("");

@@ -1,5 +1,5 @@
 // E4 · THE STUDIES HOME — which study leads, the series in order, the "In the works" shelf and the front page's three rows. Pure.
-import { SERIES, studyLabel } from "./registry";
+import { DATA_STORIES, SERIES, studyLabel, withheld } from "./registry";
 import { addQuarters, quarterOf, qText } from "./text";
 import type { CoverTrail } from "./cover";
 import type { StoryModel } from "./types";
@@ -38,9 +38,11 @@ export const leadOf = (studies: readonly HomeStudy[]): HomeStudy | null =>
 export type HomeSeries = { id: string; title: string; description: string; studies: HomeStudy[] };
 export type StudiesHome = { lead: HomeStudy | null; series: HomeSeries[]; shelf: ShelfRow[]; tool: { question: string; line: string; href: string } };
 export const TOOL_LINE = "Pick a tracked brand and see where it sits in its sector, and how its homepage has changed.";
+/** W3d · a series every one of whose studies is withheld by the editor is not listed (Beyond the homepage while both switches are off). */
+const shownSeries = () => SERIES.filter(s => DATA_STORIES.some(e => e.series === s.id && !withheld(e)));
 export function studiesHome(live: readonly HomeStudy[], shelf: readonly ShelfRow[]): StudiesHome {
   const sorted = [...live].sort((a, b) => a.number - b.number);
-  return { lead: leadOf(sorted), series: SERIES.map(s => ({ id: s.id, title: s.title, description: s.description, studies: sorted.filter(x => x.series === s.id) })), shelf: [...shelf],
+  return { lead: leadOf(sorted), series: shownSeries().map(s => ({ id: s.id, title: s.title, description: s.description, studies: sorted.filter(x => x.series === s.id) })), shelf: [...shelf],
     tool: { question: "Where does your brand sit?", line: TOOL_LINE, href: "/data/where-you-sit" } };
 }
 /** The front page's Studies list: the lead study first, then the rest by number, at most three. */

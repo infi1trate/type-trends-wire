@@ -9,7 +9,8 @@ import type { CaptureRaw } from "./templates/frames";
 import type { StoryModel } from "./types";
 import { MUSEUM_SLUG, museumStory } from "./museum";
 import { accentStory } from "./museum-accent";
-import { MUSEUM_ACCENT_SLUG } from "./registry";
+import { ICONS_SLUG, MUSEUM_ACCENT_SLUG } from "./registry";
+import { iconsStory } from "./app-icons";
 
 type Builder = { domains: (i: DataInput) => string[]; build: (i: DataInput, caps: Captures, m: Meta) => StoryModel };
 export const BUILDERS: Record<string, Builder> = {
@@ -18,6 +19,7 @@ export const BUILDERS: Record<string, Builder> = {
   "which-sector-changes-its-mind": { domains: i => { const d = mindsBrand(i); return d ? [d] : []; }, build: sectorMindsStory },
   [MUSEUM_SLUG]: { domains: () => [], build: museumStory },
   [MUSEUM_ACCENT_SLUG]: { domains: () => [], build: accentStory },
+  [ICONS_SLUG]: { domains: () => [], build: iconsStory },
 };
 export type Status = { status: "live" | "draft"; reason: string | null };
 /** The registry status, re-checked on current data: a live story whose check no longer passes, or that has no builder, reads as a draft. */

@@ -45,8 +45,9 @@ export async function computeDataIndex(): Promise<DataIndex> {
     const p = studyPage(m, texts);
     return [{ slug: e.slug, number: e.number, label: studyLabel(e.number), series: e.series, seriesTitle: seriesOf(e.series)?.title ?? "", headline: p.text.headline, deck: p.text.deck, question: e.question, dataThrough: m.dataThrough, href: `/data/${e.slug}`, key: m.key, cover: coverTrail(m), changedAt: changedAt(texts, e.slug, p.hash, now), written: p.text.source !== "fallback" }];
   });
-  // W3b · a hidden study whose works clear the intake line, and that the editor shows, waits on In the works with its counts.
-  const drafts = DATA_STORIES.filter(e => (!e.hidden || (i && !withheld(e) && ((e.check === "museum" && museumFigures(i).ready) || e.check === "museum-accent"))) && !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
+  // W3b · a hidden study whose works clear the intake line, and that the editor shows, waits on In the works with its counts (W3c, W3d:
+  // the one-colour museum study and the icon study wait there with their counts whenever their switch is on).
+  const drafts = DATA_STORIES.filter(e => (!e.hidden || (i && !withheld(e) && ((e.check === "museum" && museumFigures(i).ready) || e.check === "museum-accent" || e.check === "app-icons"))) && !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
   const cands = i ? i.headline.filter(h => h.key !== BIG_TYPE.key).map(h => ({ key: h.key, name: h.name, entries: adoptionEntries(i, h.key, h.name) })) : [];
   return { rows, home: studiesHome(studies, [...drafts, ...candidateRows(cands, BIG_TYPE.minEntries)]), v: 4 };
 }

@@ -21,3 +21,7 @@ export const BRAND_PUBLIC = false;
  *  works are stored. The works, their intake, credits, removal, the health line and the desk's list are unaffected. Turned on only after
  *  the editor has looked at the W3b Part 2 proof. */
 export const MUSEUM_SHOWN = false;
+/** W3d · While false, readers see nothing of the App Store icon study (/data/the-colour-app-icons-sit-on: not on /data, not on the
+ *  shelf, Today or the Digest; its page, share image and embed answer 404), however many weeks are stored. The intake, removal and the
+ *  health line are unaffected. Turned on only by the owner, after he has seen the W3d proof on real data. */
+export const ICONS_SHOWN = false;

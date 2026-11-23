@@ -82,17 +82,26 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
 // PALETTE DRIFT ------------------------------------------------------------------------------------
 function Drift({ f, v }: { f: DriftFig; v: View }) {
   const on = new Set(v.highlight), any = on.size > 0;
-  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} isEmpty={!f.bands.length} table={{ columns: [f.rowHead ?? "Quarter", f.rowHead ? "Count" : "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, [b.swatches.map(s => s.label ?? `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; "), b.note ?? "", ...(b.pairs ?? []).map(pairText)].filter(Boolean).join(". ")]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} isEmpty={!f.bands.length} table={{ columns: [f.rowHead ?? "Quarter", f.rowHead ? "Count" : "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, [b.swatches.map(s => s.label ?? `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; "), b.note ?? "", ...(b.links?.length ? [b.links.map(l => l.label).join(", ")] : []), ...(b.pairs ?? []).map(pairText)].filter(Boolean).join(". ")]) }}>
     {() => <ol className="grid gap-2" data-figure="drift">{f.bands.map(b => { const total = b.swatches.reduce((a, s) => a + s.w, 0) || 1, hot = v.focus === b.q;
       return <li key={b.q} className={f.rowHead ? "grid grid-cols-1 items-center gap-1 sm:grid-cols-[16rem_1fr] sm:gap-2" : "grid grid-cols-[9ch_1fr] items-center gap-2"}>
         <span className="tk-t-data" style={hot ? hlText : undefined}>{qText(b.q)}</span>
-        <span className="flex h-8 w-full overflow-hidden border" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true">
+        {b.cells ? <DriftCells cells={b.cells} lit={b.lit} hot={hot} />
+          : <span className="flex h-8 w-full overflow-hidden border" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true">
           {b.swatches.map(s => <span key={s.id} title={s.label ?? `${familyName(s.id)} ${s.hex} · ${pctText(s.w)}`} className={fade} style={{ width: `${(100 * s.w) / total}%`, background: s.hex, opacity: any && !on.has(s.id) ? 0.25 : 1, outline: on.has(s.id) ? `2px solid ${INK}` : undefined, outlineOffset: -2 }} />)}
-        </span>
+        </span>}
         {b.note && <p className="tk-t-caption tk-c-muted" style={{ gridColumn: "1 / -1" }} data-band-note="">{b.note}</p>}
+        {b.links?.length ? <p className="tk-t-caption" style={{ gridColumn: "1 / -1" }} data-band-links="">{b.links.map((l, k) => <span key={l.href}>{k ? " · " : ""}<a href={l.href} target="_blank" rel="noopener" className="underline underline-offset-2" style={{ color: INK }}>{l.label}</a></span>)}</p> : null}
         {b.pairs?.length ? <DriftPairs pairs={b.pairs} /> : null}
       </li>; })}</ol>}
   </ChartFrame>;
+}
+/** W3d · the strip as equal cells, one per item in its own measured hex (the icon wall): one row of 100 from 640 px, rows of 25 below;
+ *  `lit` keeps cells [from, to) at full strength and fades the rest, as a highlighted swatch does. */
+function DriftCells({ cells, lit, hot }: { cells: string[]; lit?: [number, number] | undefined; hot: boolean }) {
+  return <span className="grid w-full overflow-hidden border grid-cols-[repeat(25,minmax(0,1fr))] sm:grid-cols-[repeat(100,minmax(0,1fr))]" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true" data-cells={cells.length}>
+    {cells.map((hex, k) => <span key={k} className={`block h-3 sm:h-8 ${fade}`} style={{ background: hex, opacity: lit && (k < lit[0] || k >= lit[1]) ? 0.25 : 1 }} />)}
+  </span>;
 }
 /** W3c · a brand's accent beside the work that holds it: the two swatches, the share, the thumbnail (inside 64 px, sized before it
  *  loads) and the full credit, the title the only link to the museum's own page. */

@@ -47,8 +47,8 @@ async function load(): Promise<DataInput> {
   // I3b: a study counts changes of brands tracked now only.
   const tracked = new Set(sites.filter(s => s.active).map(s => s.domain));
   const ev: EventRow[] = await truthful(db, raw.filter(e => tracked.has(e.domain)), sites);
-  const art = await museumInput(sites).catch(() => undefined);
-  return { ...(art ? { art } : {}), now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,
+  const [art, icons] = await Promise.all([museumInput(sites).catch(() => undefined), iconsInput().catch(() => undefined)]);
+  return { ...(art ? { art } : {}), ...(icons?.length ? { icons } : {}), now: Date.now(), sites, history, snaps, captures: stamps.map(c => ({ domain: c.domain, at: c.captured_at, source: c.source })), events: ev, rebrands, crops, runId: typeof runId === "number" && runId >= 0 ? runId : null,
     headline: (signals?.signals ?? []).filter(s => s.tier === "headline").map(s => ({ key: s.key, name: s.name })) };
 }
 /** E4 · the changes a study may count (truth.ts), with the carousel flags and integrity verdicts read anonymously. */
@@ -69,6 +69,13 @@ async function museumInput(sites: SiteInfo[]): Promise<import("./museum").ArtInp
   if (!a.works.length) return undefined;
   const through = (await supabaseAnon().from("art_works").select("last_seen").order("last_seen", { ascending: false }).limit(1)).data?.[0]?.last_seen ?? null;
   return { works: a.works, brands: a.ready ? await allBrandPalettes(sites) : [], through };
+}
+/** W3d · the icon study's input: the newest stored week (removed apps left out), read only while ICONS_SHOWN is on, because the study
+ *  does not exist for readers otherwise and the table is service-role only. */
+async function iconsInput(): Promise<import("../icons/measure").IconIn[] | undefined> {
+  const { ICONS_SHOWN } = await import("../site");
+  if (!ICONS_SHOWN) return undefined;
+  return (await import("../icons/read.server")).newestIconWeek();
 }
 const TTL = 10 * 60_000;
 const input = memo(TTL, load);
