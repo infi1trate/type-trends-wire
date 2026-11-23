@@ -28,6 +28,8 @@ export type RefreshDeps = {
   sector: (sites: Site[]) => Promise<Row[]>;
   pageKeys: () => Promise<string[]>;
   page: (key: string) => Promise<unknown>;
+  /** W3d-c · copies written by another build that go first, as if missing (records.ts `copiesOfOldBuild`); none when unreadable. */
+  oldBuild?: () => Promise<string[]>;
 };
 const short = (e: unknown) => (e instanceof Error ? e.message : String(e)).replace(/\s+/g, " ").slice(0, 120);
 
@@ -91,6 +93,7 @@ const DEFAULT_DEPS: RefreshDeps = {
   },
   pageKeys,
   page: pageBody,
+  oldBuild: async () => { const [{ oldBuildCopies }, { BUILD }] = await Promise.all([import("./store.server"), import("../build-stamp")]); return oldBuildCopies(BUILD); },
 };
 
 /** Fixed starting estimates (ms) per step, used until this instance has timed the step once. Generous on purpose.
@@ -178,6 +181,13 @@ export async function refreshRecords(o: RefreshOptions): Promise<RefreshResult> 
     if (r === TIMED_OUT) { out.timed_out = true; out.errors.push("checks: cut off at the deadline"); return out; }
     [checks, signalsChanged] = r;
   } catch (e) { out.errors.push(`checks: ${short(e)}`); }
+  // W3d-c · a copy from another build that must not outlive it is treated as missing: due and urgent on this pass.
+  try {
+    // Injected deps (tests) name their own list or none; only the real store reads it.
+    const oldBuild = o.deps ? o.deps.oldBuild : DEFAULT_DEPS.oldBuild;
+    const r = oldBuild ? await within(left(), oldBuild()) : [];
+    if (r !== TIMED_OUT) for (const k of r) { metas.delete(k); checks.delete(k); }
+  } catch (e) { out.errors.push(`old-build: ${short(e)}`); }
   const lookOf = (key: string) => { const at = lastLook(metas.get(key), checks.get(key)); return at ? { key, computed_at: at } : undefined; };
 
   // D1b · one queue for the shared inputs, the page models and the two per-brand sets, in this order: what is past the age a page

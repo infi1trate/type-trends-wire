@@ -29,14 +29,16 @@ export const Route = createFileRoute("/data/$slug")({
   loader: async ({ context, params, deps }) => {
     if (deps.data) void context.queryClient.prefetchQuery(studyDataQuery(params.slug)); else void context.queryClient.prefetchQuery(studyRelatedQuery(params.slug));
     const d = await context.queryClient.ensureQueryData(dataStoryQuery(params.slug));
-    return d.kind === "live" ? { headline: d.story.text.headline, deck: d.story.text.deck, data: deps.data } : null;
+    // W3d-c · "being prepared" is never kept as a page copy, so the study shows as soon as its stored copy is written.
+    return d.kind === "live" ? { headline: d.story.text.headline, deck: d.story.text.deck, data: deps.data } : d.kind === "preparing" ? { preparing: true as const } : null;
   },
   head: ({ params, loaderData }) => {
-    if (loaderData?.data) return dataViewHead({ type: "study", id: params.slug }, `${studyLabel(entryOf(params.slug)?.number ?? 0)}: ${loaderData.headline}`);
-    const e = entryOf(params.slug), title = e ? `${studyLabel(e.number)}: ${loaderData?.headline ?? e.question} · ${BRAND_NAME}` : `Study unavailable · ${BRAND_NAME}`, desc = loaderData?.deck ?? e?.deck ?? "This study does not exist.";
+    if (loaderData && "data" in loaderData && loaderData.data) return dataViewHead({ type: "study", id: params.slug }, `${studyLabel(entryOf(params.slug)?.number ?? 0)}: ${loaderData.headline}`);
+    const live = loaderData && "headline" in loaderData ? loaderData : null;
+    const e = entryOf(params.slug), title = e ? `${studyLabel(e.number)}: ${live?.headline ?? e.question} · ${BRAND_NAME}` : `Study unavailable · ${BRAND_NAME}`, desc = live?.deck ?? e?.deck ?? "This study does not exist.";
     return { meta: withShare(`/data/${encodeURIComponent(params.slug)}.png`, [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { name: "twitter:card", content: "summary_large_image" }, { name: "robots", content: "noindex" }]), links: fontLinks() };
   },
-  headers: ({ loaderData }) => (loaderData?.data ? DATA_VIEW_HEADERS : undefined),
+  headers: ({ loaderData }) => (loaderData && "preparing" in loaderData ? { "Cache-Control": "no-store" } : loaderData?.data ? DATA_VIEW_HEADERS : undefined),
   component: DataStory,
   notFoundComponent: () => <DigestNotFound v="dataStory.notFound" />,
   errorComponent: () => <DigestNotFound v="dataStory.failed" />,
@@ -47,7 +49,8 @@ function DataStory() {
   const [k, setK] = useState(() => (data.kind === "live" ? sceneFromParam(data.story, step) : 0));
   const onScene = useCallback((j: number) => { setK(j); if (data.kind === "live") void nav({ search: prev => ({ ...prev, step: paramOfScene(data.story, j) }), replace: true, resetScroll: false }); }, [nav, data]);
   if (data.kind === "missing") return <DigestNotFound v="dataStory.notFound" />;
-  if (head?.data && data.kind === "live") return <DataShell object={{ type: "study", id: slug }} name={data.story.text.headline} number={data.story.number} kicker={studyLabel(data.story.number)}><StudyData slug={slug} /></DataShell>;
+  if (data.kind === "preparing") return <DigestNotFound v="dataStory.preparing" kicker={studyLabel(data.number)} />;
+  if (head && "data" in head && head.data && data.kind === "live") return <DataShell object={{ type: "study", id: slug }} name={data.story.text.headline} number={data.story.number} kicker={studyLabel(data.story.number)}><StudyData slug={slug} /></DataShell>;
   if (data.kind === "draft") return <DraftView d={data} />;
   return <DataStoryView s={data.story} scene={k} onScene={onScene} allFigures={figures === "all"}
     related={<Later id="study-related-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }, { kind: "text", lines: 2 }]}><Related slug={slug} /></Later>} />;

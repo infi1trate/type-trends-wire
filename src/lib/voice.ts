@@ -72,6 +72,8 @@ export const VOICE = {
   "collection.notFound": missing("/collections/<slug> with an unknown slug", "No such collection", "There's no collection at this address. Every collection is on the collections page.", go("Collections", "/collections")),
   "data.failed": failed("/data", "Studies didn't load", "The stored data behind them"),
   "dataStory.failed": failed("/data/<slug>", "This study didn't load", "The stored data behind it", go("All studies", "/data")),
+  "dataStory.preparing": { kind: "loading", where: "/data/<slug> for a study whose stored copy is not written yet (the first minutes after a deploy)", title: "This study is being prepared",
+    text: "Back in a few minutes.", next: [go("All studies", "/data")] },
   "dataStory.notFound": missing("/data/<slug> with an unknown slug", "No such study", "That study doesn't exist. Every study is on the Studies page.", go("All studies", "/data")),
   "whereYouSit.failed": failed("/data/where-you-sit", "This page didn't load", "The stored data behind it", go("All studies", "/data")),
   "digest.failed": failed("/digest and /digest/<week>", "This issue didn't load", "The issue's data", go("All issues", "/digest/archive")),

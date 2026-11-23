@@ -16,6 +16,7 @@ export default defineTool({ name: "data_stories", title: "Studies", description:
     }
     const p = await loadDataStory(slug);
     if (p.kind === "missing") throw new ToolError(`No study "${slug}". Call data_stories without a slug for the list.`);
+    if (p.kind === "preparing") throw new ToolError(`Study "${slug}" is being prepared; try again in a few minutes.`);
     if (p.kind === "draft") return json({ number: p.number, slug, question: p.question, status: "draft", draft_reason: p.reason });
     const s = p.story;
     return json({

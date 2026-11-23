@@ -37,6 +37,8 @@ export function liveOrOld<T>(compute: () => Promise<T>, old: () => T, what: stri
 /** D1 · readers only (readerNow): a stored copy past its age limit is sent at once and rebuilt behind the reader (the rebuild's value
  *  serves the next readers on this server for `ttl`). Jobs never come here: for them a stale copy is always rebuilt (`run`). */
 const readerRows = memoBy(60_000, async (key: string) => readRecord<unknown>(key).catch(() => null), { key: (k: string) => k, max: 800 });
+/** W3d-c · the stored copy as a reader's page reads it (the same per-instance minute memo; null when unreadable). */
+export const readerRecord = (key: string) => readerRows(key);
 const rebuilt = new Map<string, { at: number; v: unknown }>();
 async function readerFirst<T>(key: string, decode: (b: never) => T, run: () => Promise<T>, ttl: number): Promise<T> {
   if (!readerNow()) return run();
@@ -142,4 +144,12 @@ export async function trackedDomains(): Promise<Set<string>> {
   const { data, error } = await supabaseAnon().from("library_sites").select("domain").eq("active", true).limit(5000);
   if (error) throw error;
   return new Set((data ?? []).map(r => String(r.domain).toLowerCase()));
+}
+/** W3d-c · the studies' copies written by another build that the sweep rebuilds first (records.ts `copiesOfOldBuild`): two small JSON
+ *  fields per row, no bodies. Jobs only. */
+export async function oldBuildCopies(build: string): Promise<string[]> {
+  const { copiesOfOldBuild } = await import("./records");
+  const { data, error } = await supabaseAnon().from("read_records").select("key,k:body->>kind,b:body->>build").in("kind", ["data-story", "data-index"]).limit(500);
+  if (error) throw error;
+  return copiesOfOldBuild((data ?? []) as { key: string; k: string | null; b: string | null }[], build);
 }

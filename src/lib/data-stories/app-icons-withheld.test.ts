@@ -30,7 +30,7 @@ describe("the icon study withheld (W3d)", () => {
     expect(studiesHome([], []).series.map(s => s.id)).toEqual(["first-movers", "long-view", "sector-v-sector"]);
   });
   it("its page answers missing before any read", async () => {
-    expect(await computeDataStory(ICONS_SLUG)).toEqual({ kind: "missing" });
+    expect(await computeDataStory(ICONS_SLUG)).toMatchObject({ kind: "missing" });
     expect(await loadDataStory(ICONS_SLUG)).toEqual({ kind: "missing" });
   });
 });

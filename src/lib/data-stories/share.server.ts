@@ -8,16 +8,20 @@ import { parseStep } from "./stepper";
 import { capText } from "./text";
 
 const nf = () => new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+/** W3d-c · a study whose stored copy is not written yet: try again shortly (never built inside the request, never kept). */
+const preparing = () => new Response("This study is being prepared; back in a few minutes.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "300", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
 export async function dataStoryImage(param: string) {
   const m = /^([a-z0-9-]{1,80})(?:\.(png|svg))?$/.exec(param);
   if (!m) return nf();
   const page = await loadDataStory(m[1]!).catch(() => null);
+  if (page?.kind === "preparing") return preparing();
   if (!page || page.kind !== "live") return nf();
   const { respond } = await import("../digest/og.server");
   return respond(dataStoryOgScene({ ...page.story, headline: page.story.text.headline }), (m[2] as "png" | "svg" | undefined) ?? "png", `Study No. ${page.story.number}: ${page.story.text.headline} ${page.story.key.n} ${page.story.key.label}`);
 }
 export async function dataStoryEmbed(slug: string, rawStep: string | null) {
   const page = await loadDataStory(slug).catch(() => null);
+  if (page?.kind === "preparing") return preparing();
   if (!page || page.kind !== "live") return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex" } });
   const s = page.story, k = parseStep(rawStep, s.steps.length), st = s.steps[k]!, fig = s.figures[st.view.figure];
   const [{ renderToStaticMarkup }, { FigureView }, { activeCss }] = await Promise.all([import("react-dom/server"), import("@/components/data/Figures"), import("../theme")]);

@@ -10,8 +10,10 @@ import { candidateRows, changedAt, draftRow, frontStudies, homeWithout, studiesH
 import { coverTrail } from "./cover";
 import type { StoryModel, StudyPage } from "./types";
 import { memoBy } from "../memo";
-import { storedBy } from "../records/store.server";
-import { pageKey } from "../records/records";
+import { readRecord, readerRecord, storedBy } from "../records/store.server";
+import { pageKey, usable } from "../records/records";
+import { readerNow } from "../reader-context.server";
+import { BUILD } from "../build-stamp";
 import { supabaseAnon } from "../mcp/supabase";
 
 const TTL = 10 * 60_000;
@@ -34,7 +36,9 @@ export function studyPage(s: StoryModel, rows: readonly StudyRow[]): StudyPage {
 }
 
 /** /data reads a precomputed Studies home (records.ts "data-index"); this computes it. `rows` is the plain numbered list (MCP). */
-export type DataIndex = { rows: ReturnType<typeof indexRows>; home: StudiesHome; v: 4 };
+/** W3d-c · `build`: the build that wrote the copy; the sweep rebuilds a copy of another build on its first pass (a switch flipped in code
+ *  lists or hides a study at once, not after the copy's half hour). */
+export type DataIndex = { rows: ReturnType<typeof indexRows>; home: StudiesHome; v: 4; build?: string };
 export async function computeDataIndex(): Promise<DataIndex> {
   const i = await dataInput().catch(() => null), now = Date.now();
   const rows = indexRows(i, i ? through(i) : null);
@@ -49,17 +53,19 @@ export async function computeDataIndex(): Promise<DataIndex> {
   // the one-colour museum study and the icon study wait there with their counts whenever their switch is on).
   const drafts = DATA_STORIES.filter(e => (!e.hidden || (i && !withheld(e) && ((e.check === "museum" && museumFigures(i).ready) || e.check === "museum-accent" || e.check === "app-icons"))) && !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
   const cands = i ? i.headline.filter(h => h.key !== BIG_TYPE.key).map(h => ({ key: h.key, name: h.name, entries: adoptionEntries(i, h.key, h.name) })) : [];
-  return { rows, home: studiesHome(studies, [...drafts, ...candidateRows(cands, BIG_TYPE.minEntries)]), v: 4 };
+  return { rows, home: studiesHome(studies, [...drafts, ...candidateRows(cands, BIG_TYPE.minEntries)]), v: 4, build: BUILD };
 }
-export type DataStoryPage = { kind: "live"; story: StudyPage } | { kind: "draft"; number: number; question: string; deck: string; template: string; reason: string | null; series?: string } | { kind: "missing" };
+/** W3d-c · `missing` carries the build that decided it (a stored "no such study" is dropped when the build changes); `preparing` is a
+ *  study in the registry whose stored copy is not written yet (readers are never made to wait for a fresh build). */
+export type DataStoryPage = { kind: "live"; story: StudyPage } | { kind: "draft"; number: number; question: string; deck: string; template: string; reason: string | null; series?: string } | { kind: "missing"; build?: string } | { kind: "preparing"; number: number; question: string };
 export async function computeDataStory(slug: string): Promise<DataStoryPage> {
   const e = entryOf(slug);
-  if (!e || withheld(e)) return { kind: "missing" };
+  if (!e || withheld(e)) return { kind: "missing", build: BUILD };
   const i = await dataInput();
   const story = await modelOf(slug, i);
   if (story) return { kind: "live", story: studyPage(story, await studyRows([slug])) };
   // W3a · a hidden study that is not live does not exist for readers.
-  if (e.hidden) return { kind: "missing" };
+  if (e.hidden) return { kind: "missing", build: BUILD };
   return { kind: "draft", number: e.number, question: e.question, deck: e.deck, template: templateName(e), reason: statusOf(e, i).reason, series: seriesOf(e.series)?.title ?? "" };
 }
 const dataIndexRecord = storedBy((_: null) => pageKey("data-index"), () => computeDataIndex());
@@ -71,7 +77,28 @@ const isPage = (x: DataStoryPage) => x.kind !== "live" || (x.story as Partial<St
 const isWithheld = (slug: string) => { const e = entryOf(slug); return !!e && withheld(e); };
 export const indexWithout = (x: DataIndex): DataIndex => ({ ...x, rows: x.rows.filter(r => !isWithheld(r.slug)), home: homeWithout(x.home, isWithheld) });
 export const loadDataIndex = async (): Promise<DataIndex> => { const r = await dataIndexRecord(null); return indexWithout(isIndex(r) ? r : await computeDataIndex()); };
-export const loadDataStory = async (slug: string): Promise<DataStoryPage> => { const e = entryOf(slug); if (!e || withheld(e)) return { kind: "missing" }; const r = await dataStoryRecord(slug); return isPage(r) ? r : computeDataStory(slug); };
+/** W3d-c · a stored "no such study" written by another build is not an answer (the switch or the registry may have changed since). */
+export const oldMissing = (x: DataStoryPage, build = BUILD) => x.kind === "missing" && x.build !== build;
+/** W3d-c · a reader is given the stored copy only: never a fresh build inside the reader's time limit. Until the sweep has written a
+ *  copy from this build, a study in the registry answers "being prepared" (re-read every PREPARING_RECHECK_MS, so it turns into the
+ *  study as soon as the copy lands). A copy past its age is still sent at once and rebuilt behind the reader, as for every page. */
+export const PREPARING_RECHECK_MS = 10_000;
+const preparingRows = memoBy(PREPARING_RECHECK_MS, (key: string) => readRecord<DataStoryPage>(key).catch(() => null), { key: k => k, max: 40 });
+const servable = (row: { body: unknown } | null): row is { body: DataStoryPage; key: string; computed_at: string } => { const b = row?.body as DataStoryPage | undefined; return !!b && typeof b === "object" && isPage(b) && !oldMissing(b); };
+async function readerStory(slug: string, e: { number: number; question: string }): Promise<DataStoryPage> {
+  const key = pageKey("data-story", slug);
+  let row = await readerRecord(key) as { key: string; body: unknown; computed_at: string } | null;
+  if (!servable(row)) row = await preparingRows(key);
+  if (!servable(row)) return { kind: "preparing", number: e.number, question: e.question };
+  if (usable(row, Date.now())) return row.body;
+  const r = await dataStoryRecord(slug).catch(() => row!.body as DataStoryPage);
+  return isPage(r) && !oldMissing(r) ? r : row.body;
+}
+export const loadDataStory = async (slug: string): Promise<DataStoryPage> => {
+  const e = entryOf(slug); if (!e || withheld(e)) return { kind: "missing" };
+  if (readerNow()) return readerStory(slug, e);
+  const r = await dataStoryRecord(slug); return isPage(r) && !oldMissing(r) ? r : computeDataStory(slug);
+};
 /** The front page's Studies rows (written headlines, lead first, at most three), from the stored home. */
 export async function loadStudyShelf() { return frontStudies((await loadDataIndex()).home); }
 /** The front page's Studies rows from the stored home only (never computes; null when no current record): the front page adds no slow read. */

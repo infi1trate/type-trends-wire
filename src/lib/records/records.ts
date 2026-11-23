@@ -134,3 +134,10 @@ export function sweepUrgent(metas: readonly Pick<RecordMeta, "key" | "computed_a
   return metas.filter(m => { const k = kindOf(m.key); return (k in SHARED || k in PAGES) && isUrgent(now - Date.parse(m.computed_at), maxAgeOf(m.key)); })
     .sort((a, b) => (maxAgeOf(a.key) - (now - Date.parse(a.computed_at))) - (maxAgeOf(b.key) - (now - Date.parse(b.computed_at))) || a.key.localeCompare(b.key)).map(m => m.key);
 }
+
+/** W3d-c · copies the sweep rebuilds on its first pass after a deploy, whatever their age: a stored "no such study" and the Studies home
+ *  written by another build (a study switched on in code is listed, and its page answers, as soon as the first pass has run). A live
+ *  study's copy is not rebuilt for a new build: it already holds the study. */
+export function copiesOfOldBuild(rows: readonly { key: string; k: string | null; b: string | null }[], build: string): string[] {
+  return rows.filter(r => (r.key === "data-index" || (r.key.startsWith("data-story:") && r.k === "missing")) && r.b !== build).map(r => r.key).sort();
+}

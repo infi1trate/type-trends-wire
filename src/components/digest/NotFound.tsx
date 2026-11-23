@@ -13,5 +13,5 @@ export function DigestNotFound({ v, vars, kicker = BRAND_NAME, section, bare = f
       <p className="ed-standfirst mt-5 max-w-[60ch]">{s.text}</p>
       <StateSteps steps={s.next} />
     </section>;
-  return bare ? body : <DigestShell label={s.kind === "failed" ? "Didn't load" : s.kind === "notFound" ? "Not found" : "Empty"} {...(section ? { section } : {})}>{body}</DigestShell>;
+  return bare ? body : <DigestShell label={s.kind === "failed" ? "Didn't load" : s.kind === "notFound" ? "Not found" : s.kind === "loading" ? "Being prepared" : "Empty"} {...(section ? { section } : {})}>{body}</DigestShell>;
 }
