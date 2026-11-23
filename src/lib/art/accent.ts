@@ -108,15 +108,17 @@ export function accentMatches<W extends WorkIn>(brands: readonly BrandIn[], work
 export type FamilyRow<W extends WorkIn = WorkIn> = { family: HueFamily; accents: BrandMatch<W>[]; held: number; total: number; pairs: BrandMatch<W>[]; closest: BrandMatch<W> | null };
 /** Rule 5 · one row per family with FAMILY_MIN_ACCENTS vivid accents or more (`all` keeps the smaller ones, for the counts), ordered from
  *  most held to least held (share held, then count held, then the strips' hue order), so the empty families sit together at the bottom.
- *  `pairs`: up to PAIRS_PER_FAMILY held accents, nearest first, one per work where the family allows. `closest`: the nearest pair, held or not. */
+ *  `pairs`: up to PAIRS_PER_FAMILY held accents, the largest share of the picture first, one per work where the family allows. `closest`: the nearest pair, held or not. */
 export function familyRows<W extends WorkIn>(matches: readonly BrandMatch<W>[], o: { all?: boolean } = {}): FamilyRow<W>[] {
+  // Examples show the held pairs where the colour covers most of the picture (all are inside the limit); `closest` is the nearest by distance.
+  const larger = (x: BrandMatch<W>, y: BrandMatch<W>) => (y.nearest?.colour.share ?? 0) - (x.nearest?.colour.share ?? 0) || (x.nearest?.distance ?? Infinity) - (y.nearest?.distance ?? Infinity) || x.domain.localeCompare(y.domain);
   const near = (x: BrandMatch<W>, y: BrandMatch<W>) => (x.nearest?.distance ?? Infinity) - (y.nearest?.distance ?? Infinity) || (y.nearest?.colour.share ?? 0) - (x.nearest?.colour.share ?? 0) || x.domain.localeCompare(y.domain);
   return HUE_FAMILIES.map(family => {
     const accents = matches.filter(m => m.accent.family === family).sort((a, b) => a.accent.lab.L - b.accent.lab.L || a.domain.localeCompare(b.domain));
-    const held = accents.filter(m => m.held).sort(near), used = new Set<string>(), pairs: BrandMatch<W>[] = [];
+    const held = accents.filter(m => m.held).sort(larger), used = new Set<string>(), pairs: BrandMatch<W>[] = [];
     for (const m of held) if (pairs.length < PAIRS_PER_FAMILY && !used.has(workKey(m.nearest!.work))) { pairs.push(m); used.add(workKey(m.nearest!.work)); }
     for (const m of held) if (pairs.length < PAIRS_PER_FAMILY && !pairs.includes(m)) pairs.push(m);
-    pairs.sort(near);
+    pairs.sort(larger);
     return { family, accents, held: held.length, total: accents.length, pairs, closest: [...accents].sort(near)[0] ?? null };
   }).filter(r => r.total > 0 && (o.all || r.total >= FAMILY_MIN_ACCENTS))
     .sort((a, b) => b.held / b.total - a.held / a.total || b.held - a.held || HUE_FAMILIES.indexOf(a.family) - HUE_FAMILIES.indexOf(b.family));

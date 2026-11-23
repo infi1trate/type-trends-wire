@@ -100,7 +100,7 @@ const pairText = (p: DriftPair) => `${p.domain} ${p.brandHex} beside ${p.credit}
 const chip = (hex: string) => <span className="inline-block h-3 w-3 border" style={{ background: hex, borderColor: RULE, flexShrink: 0 }} aria-hidden="true" />;
 function DriftPairs({ pairs }: { pairs: DriftPair[] }) {
   return <ul className="grid gap-2 sm:grid-cols-3" style={{ gridColumn: "1 / -1" }} data-pairs="">{pairs.map(p => <li key={p.domain} className="flex min-w-0 gap-2" style={{ alignItems: "flex-start" }}>
-    {p.thumb ? <img src={p.thumb} width={p.width} height={p.height} loading="lazy" decoding="async" alt="" className="block border" style={{ width: p.width, height: p.height, borderColor: RULE, flexShrink: 0 }} /> : null}
+    <span className="block" style={{ width: 64, flexShrink: 0 }}>{p.thumb ? <img src={p.thumb} width={p.width} height={p.height} loading="lazy" decoding="async" alt="" className="block border" style={{ width: p.width, height: p.height, borderColor: RULE }} /> : null}</span>
     <span className="tk-t-caption min-w-0" style={{ overflowWrap: "anywhere" }}>
       <span className="flex items-center gap-1">{chip(p.brandHex)}<Receipt href={p.brandHref} className="tk-tap">{p.domain}</Receipt></span>
       <span className="flex items-center gap-1">{chip(p.workHex)}<span>holds {Math.round(p.share * 100)}% of the picture</span></span>

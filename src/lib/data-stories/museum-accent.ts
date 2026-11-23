@@ -50,11 +50,13 @@ export function accentStory(i: DataInput, _caps: Captures, m: Meta): StoryModel 
   const held = rows.filter(r => r.held > 0), none = rows.filter(r => r.held === 0), half = Math.ceil(held.length / 2);
   const heldA = held.length > 2 ? held.slice(0, half) : held, heldB = held.length > 2 ? held.slice(half) : [];
   const note = `One swatch per tracked brand's accent, darkest first. A work holds an accent when one of its colours over ${Math.round(WORK_MIN_SHARE * 100)}% of the picture is within ${HELD_DISTANCE} of it (OKLab distance).`;
-  const fig = (title: string, rs: FamilyRow<W>[], pairs: boolean): DriftFig => ({ kind: "drift", title, note, scope: "All tracked brands", rowHead: "Colour family", bands: rs.map(r => band(r, pairs)) });
+  // The detail figures carry the rule in one line, so a figure with its pairs still fits a laptop screen beside the text.
+  const short = `Held: a colour over ${Math.round(WORK_MIN_SHARE * 100)}% of the picture within ${HELD_DISTANCE} of the accent (OKLab distance).`;
+  const fig = (title: string, rs: FamilyRow<W>[], pairs: boolean, n = note): DriftFig => ({ kind: "drift", title, note: n, scope: "All tracked brands", rowHead: "Colour family", bands: rs.map(r => band(r, pairs)) });
   const figures: Record<string, DriftFig> = { families: fig("Each colour family's brand accents, most held first", rows, false) };
-  if (heldA.length) figures["held"] = fig(heldB.length ? "The colours the stored works hold most" : "The colours the stored works hold", heldA, true);
-  if (heldB.length) figures["held-less"] = fig("The colours the stored works hold less often", heldB, true);
-  if (none.length) figures["none"] = fig("The colours no stored work holds", none, false);
+  if (heldA.length) figures["held"] = fig(heldB.length ? "The colours the stored works hold most" : "The colours the stored works hold", heldA, true, short);
+  if (heldB.length) figures["held-less"] = fig("The colours the stored works hold less often", heldB, true, short);
+  if (none.length) figures["none"] = fig("The colours no stored work holds", none, false, short);
   const figOf = (r: FamilyRow<W>) => (heldA.includes(r) ? "held" : heldB.includes(r) ? "held-less" : "none");
   const cnt = (v: number, h: string) => num(String(v), v, h);
   const museums = (Object.keys(MUSEUM_NAME) as ArtSource[]).filter(s => works.some(w => w.source === s)).map(s => MUSEUM_NAME[s]);
@@ -65,7 +67,7 @@ export function accentStory(i: DataInput, _caps: Captures, m: Meta): StoryModel 
   for (const r of rows) {
     const fam = ref(familyLabel(r.family), href), base = cap`${fam}: ${cnt(r.held, href)} of ${cnt(r.total, href)} brand accents have a near work.`;
     if (!r.held) { steps.push({ id: `family-${r.family}`, caption: [...base, ` ${NONE_HELD}`], view: { figure: figOf(r), highlight: [], focus: familyLabel(r.family) } }); continue; }
-    const ex: Seg[] = r.pairs.flatMap((p, k) => { const h = p.nearest!; return [k ? "; " : " Nearest: ", ref(p.domain, brandHref(p.domain)), " and ", ref([h.work.artist, h.work.title].filter(Boolean).join(", "), h.work.link), ", where the colour holds ", num(`${Math.round(h.colour.share * 100)}%`, h.colour.share, h.work.link), " of the picture"]; });
+    const ex: Seg[] = r.pairs.flatMap((p, k) => { const h = p.nearest!; return [k ? "; " : " For example: ", ref(p.domain, brandHref(p.domain)), " and ", ref([h.work.artist, h.work.title].filter(Boolean).join(", "), h.work.link), ", where the colour holds ", num(`${Math.round(h.colour.share * 100)}%`, h.colour.share, h.work.link), " of the picture"]; });
     steps.push({ id: `family-${r.family}`, caption: [...base, ...ex, "."], view: { figure: figOf(r), highlight: [], focus: familyLabel(r.family) } });
   }
   steps.push({ id: "caveat", caption: ["Held is a measured distance between two colours, read from photographs of the works. It says nothing about influence, and nothing about painting beyond these stored works."], view: { figure: "families", highlight: [] } });
