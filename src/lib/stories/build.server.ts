@@ -538,11 +538,22 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     const run = await (await import("../jobs/runs.server")).startRun("story-build", { note: job });
     // S1 follow-up · another instance's build started within the last two minutes: this one stands down (its own rows say so).
     if (run.id != null && await otherBuildFirst(run.id)) { await run.finish(true, `${job} · skipped: another story build started first`); return null; }
+    // D1c · the quick check: nothing a story is built from has moved since the last full build (under two hours ago) → done at once.
+    const { supabaseAdmin: qdb } = await import("@/integrations/supabase/client.server");
+    const [{ quickDecision }, qs] = await Promise.all([import("./quick"), import("./quick.server")]);
+    const tq = Date.now(), [print, last] = await Promise.all([qs.buildPrint(qdb), qs.lastFullBuild(qdb)]);
+    const quick = quickDecision(last, print, Date.now());
+    if (quick.skip) {
+      const qnote = `${job} · ${quick.why} (checked in ${Date.now() - tq} ms)`;
+      await run.finish(true, qnote, { print, full: false });
+      await studies(job, jobStartedAt, LIMIT);
+      return qnote;
+    }
     const r = await Promise.race([buildStories({ ...build, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
     if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
     else console.warn("story build timed out", job);
     const note = r?.skipped === "held" ? `${job} · held: job_hold on stories` : r ? `${job} · ${r.inserted} new, ${r.published} published, ${r.held} held${r.sheets != null ? `, ${r.sheets} sheets` : ""}` : `${job} · timed out after ${Math.round((Date.now() - now) / 1000)} s (${Math.round(budgetMs / 1000)} s left when it started)`;
-    await run.finish(!!r, note);
+    await run.finish(!!r, note, r && !r.timed_out && r.skipped !== "held" ? { print, full: true, why: quick.why } : { why: quick.why });
     // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
     if (r && r.skipped !== "held") await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + LIMIT - 5000);
     // N1 · the state history: what this build and its writers stored, recorded as states (at most every five minutes; never fails the job).
