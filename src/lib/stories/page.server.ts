@@ -249,7 +249,9 @@ export async function evidenceOf(s: { id?: string; type: string; domains: string
   return withKept(storyEvidence({ type, domains: s.domains, ...(s.id ? { id: s.id } : {}) }, changes, pivot, crops), kept, crops);
 }
 export async function loadQueue(day: string | null, fresh: boolean) {
-  return queueModel(await (fresh ? deskIndex() : storyIndex()), day, Date.now());
+  const all = await (fresh ? deskIndex() : storyIndex());
+  // PH1 · DEV ONLY proof pictures (`?__launches=1`); the live build drops this.
+  return queueModel(import.meta.env.DEV ? await (await import("../dev-late.server")).devSampleLaunches(all) : all, day, Date.now());
 }
 /** P2 · the terminal list's first view (`queueHead`), from the same cached index as the queue. */
 export async function loadQueueHead() { return queueHead(await loadQueue(null, false)); }

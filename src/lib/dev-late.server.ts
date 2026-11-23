@@ -27,3 +27,26 @@ export async function devDbDown(): Promise<boolean> {
   try { const { getRequest } = await import("@tanstack/react-start/server"); return new URL(getRequest().url).searchParams.get("__dbdown") === "1"; }
   catch { return false; }
 }
+/** PH1 · DEV ONLY: `?__launches=1` on a page address (or the page a server call comes from) adds three invented Product Hunt launches,
+ *  published, to the stories the front page's side column and the Terminal's list read, for proof pictures. Nothing is stored. */
+export const SAMPLE_LAUNCHES = [
+  { name: "Kernwise", tagline: "Spacing and kerning checks for web type", votes: 412 },
+  { name: "Swatchroom", tagline: "Shared colour tokens for design and code", votes: 268 },
+  { name: "Pagecraft", tagline: "A website builder that exports clean HTML", votes: 171 },
+] as const;
+export async function devSampleLaunches<T extends { id: string; state: string }>(all: T[]): Promise<T[]> {
+  if (!import.meta.env.DEV) return all;
+  let on = false;
+  try {
+    const { getRequest } = await import("@tanstack/react-start/server"); const req = getRequest();
+    const ref = req.headers.get("referer");
+    on = new URL(req.url).searchParams.get("__launches") === "1" || (!!ref && new URL(ref).searchParams.get("__launches") === "1");
+  } catch { return all; }
+  const base = all.find(s => s.state === "published");
+  if (!on || !base) return all;
+  const { phDayWindow } = await import("./sources"), w = phDayWindow(Date.now());
+  const at = (i: number) => new Date(Date.parse(w.after) + 60_000 * (1 + i)).toISOString();
+  const rows = SAMPLE_LAUNCHES.map((l, i) => ({ ...base, id: `launch:sample-${i + 1}`, type: "launch", kicker: "Launch · Product Hunt", headline: `${l.name} — ${l.tagline}`, deck: `${l.votes} upvotes`,
+    happened_at: at(i), created_at: at(i), state: "published", status: "published", score: 10, number: 118 + i, domains: [], sector: null, signal_keys: [], source_ids: [], facts: [], basis: null, why_line: null, edits: [], pinnedUntil: null, killReason: null }));
+  return [...(rows as unknown as T[]), ...all];
+}

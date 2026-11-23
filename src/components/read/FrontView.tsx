@@ -234,7 +234,7 @@ function FrontAsideRest({ m, r }: { m: FrontTop; r: FrontRest }) {
     {r.sections.launches && <section aria-labelledby="front-launches"><RuleBox>
       <Kicker id="front-launches">New on the scene</Kicker>
       <p className="ed-caption mt-1">Product Hunt launches. They never rank in the live column.</p>
-      <ul className="ledger mt-2">{r.launches.map(s => <LiveItem digits={ledgerDigits(r.launches.map(x => x.number))} key={s.id} s={s} now={now} />)}</ul>
+      <Ledger className="mt-2" small label="Product Hunt launches" rows={r.launches.map(l => ({ key: l.id, href: l.href, title: l.title, line: [l.votesLine, l.dayLine].filter(Boolean).join(" · ") }))} />
     </RuleBox></section>}
     {r.strip && <Strip s={r.strip} format={m.format} now={now} />}
     {m.format === "all" && m.sections.exploreAside && <section aria-labelledby="front-explore"><RuleBox>

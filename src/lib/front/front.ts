@@ -1,6 +1,7 @@
 // THE FRONT PAGE MODEL (/): one pure function from stored stories, signals and editions to everything the page shows. No I/O, no AI.
 // The page renders this model and nothing else; /front.json serves its changeable parts. Every item shows when it happened: nothing is
 // restamped to look new (an item's `at` is always its stored time).
+import { launchBox } from "../launches";
 import { isKind, soWhatOf, storyPath, streamOf, type StoryRecord } from "../stories/view";
 import { noDid } from "../stories/reader";
 import { lensScore, leadAllowed, rankScores } from "../stories/score";
@@ -294,7 +295,8 @@ export function frontModel(i: FrontInput) {
   const before = i.format === "all" ? inFormat.filter(s => !above.has(s.id) && groupOf(s.happened_at, i.now) === null) : [];
   const dayStart = Date.parse(`${utcDay(i.now)}T00:00:00Z`);
   const chart = surfaceShows(i.format, "chart-of-the-day") ? chartOfDay({ ...i.chart, day: utcDay(i.now), stories: ranked.filter(s => Date.parse(s.happened_at) < dayStart && Date.parse(s.happened_at) >= dayStart - COLUMN_DAYS * DAY).map(s => ({ type: s.type })) }) : null;
-  const launches = surfaceShows(i.format, "new-on-the-scene") ? stream.filter(s => s.type === "launch").slice(0, 6).map(x => frontWith(x, i.icons)) : [];
+  // PH1 · New on the scene: the newest recent launch day's launches over the line, at most three, most votes first; never numbered.
+  const launches = surfaceShows(i.format, "new-on-the-scene") ? launchBox(stream, i.now) : [];
   const explore = shows(i.format, "explore") ? exploreOf(stream, i.now, i.patternKeys, i.brandNames) : [];
   const exploreAside = shows(i.format, "explore") ? exploreSide(stream, i.now, i.patternKeys, i.brandNames) : [];
   const editions = editionLines(i.editions, i.format);

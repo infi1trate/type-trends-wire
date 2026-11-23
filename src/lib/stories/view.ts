@@ -1,4 +1,5 @@
 // Read-time views over stored stories with the editor's overlay applied: cards, the Live stream, the story page. Pure.
+import { launchBox, type LaunchRow } from "../launches";
 import { deLegacy } from "../brand";
 import { STAGES, basis as basisOf, label, sectorName, type Basis } from "../labels";
 import { brandPath, patternPath, signalPath } from "../ia";
@@ -204,6 +205,8 @@ export function queueModel(all: StoryRecord[], day: string | null, now: number) 
     day: pick, today, days: days.map(d => ({ day: d, published: count(d, "published"), held: count(d, "held"), killed: count(d, "killed") })),
     published: rows.filter(s => s.state === "published").map(item), held: rows.filter(s => s.state === "held").map(item), killed: rows.filter(s => s.state === "killed").map(item),
     edits: all.flatMap(s => s.edits.map(e => ({ story: s.id, headline: s.stored.headline, action: e.action, at: e.at, note: e.note }))).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 40),
+    /** PH1 · the Terminal's LAUNCHES group: the same rows as Today's New on the scene box (published only, at most three). */
+    launches: launchBox(all, now),
   };
 }
 export type QueueModel = ReturnType<typeof queueModel>;
@@ -211,6 +214,7 @@ export type QueueModel = ReturnType<typeof queueModel>;
  *  draws, a few kilobytes from the same stored index, so the server sends the list at its final height inside the Today panel and the
  *  full queue (every held and taken-down story, ~470 KB) still loads after hydration. */
 export type QueueHeadRow = Pick<QueueModel["published"][number], "id" | "evidence" | "score" | "number" | "type" | "headline" | "state" | "reason" | "killReason" | "at">;
-export function queueHead(m: QueueModel): { published: QueueHeadRow[]; held: number } {
-  return { published: m.published.map(s => ({ id: s.id, evidence: s.evidence, ...(s.score !== undefined ? { score: s.score } : {}), ...(s.number !== undefined ? { number: s.number } : {}), type: s.type, headline: s.headline, state: s.state, reason: s.reason, killReason: s.killReason, at: s.at })), held: m.held.length };
+export function queueHead(m: QueueModel): { published: QueueHeadRow[]; held: number; launches: LaunchRow[] } {
+  // PH1 · launches are not rows among the stories and are not counted; they come apart, as the LAUNCHES group.
+  return { launches: m.launches, held: m.held.filter(s => s.type !== "launch").length, published: m.published.filter(s => s.type !== "launch").map(s => ({ id: s.id, evidence: s.evidence, ...(s.score !== undefined ? { score: s.score } : {}), ...(s.number !== undefined ? { number: s.number } : {}), type: s.type, headline: s.headline, state: s.state, reason: s.reason, killReason: s.killReason, at: s.at })) };
 }

@@ -47,31 +47,13 @@ export function arenaRows(json: unknown, channel: ArenaChannel, now: number): Wi
 
 // PH1 · Product Hunt is read once a day for the Pacific day that has just ended (its launch day runs midnight to midnight in
 // Los Angeles), ordered by votes, so every count is a finished day's count and never the first minutes of a new day.
-export const PH_TZ = "America/Los_Angeles";
+export { PH_TZ, pacificMidnight, pacificDay, phDayWindow, type PhWindow } from "./launches";
+import type { PhWindow } from "./launches";
 export const PH_FIRST = 20, PH_TOPICS_FIRST = 10;
 const POST_FIELDS = "id name tagline url website votesCount createdAt";
 export const PH_QUERY = `query FinishedDay($after: DateTime!, $before: DateTime!) { posts(order: VOTES, first: ${PH_FIRST}, postedAfter: $after, postedBefore: $before) { edges { node { ${POST_FIELDS} topics(first: ${PH_TOPICS_FIRST}) { edges { node { name slug } } } } } } }`;
 /** The same day without topics, asked only when the API refuses the topics query (its posts then carry topics: null). */
 export const PH_QUERY_NO_TOPICS = `query FinishedDay($after: DateTime!, $before: DateTime!) { posts(order: VOTES, first: ${PH_FIRST}, postedAfter: $after, postedBefore: $before) { edges { node { ${POST_FIELDS} } } } }`;
-const ptParts = (t: number) => {
-  const f = new Intl.DateTimeFormat("en-US", { timeZone: PH_TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t));
-  const g = (k: string) => Number(f.find(x => x.type === k)?.value ?? 0);
-  return { y: g("year"), m: g("month"), d: g("day"), h: g("hour"), mi: g("minute"), s: g("second") };
-};
-const offsetMs = (t: number) => { const p = ptParts(t); return Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s) - Math.floor(t / 1000) * 1000; };
-/** The instant a Pacific calendar day starts (daylight saving handled: 23- and 25-hour days come out right). */
-export function pacificMidnight(y: number, m: number, d: number): number {
-  const t0 = Date.UTC(y, m - 1, d); let t = t0 - offsetMs(t0); t = t0 - offsetMs(t); return t;
-}
-/** The Pacific calendar day an instant falls on, as YYYY-MM-DD. */
-export function pacificDay(t: number): string { const p = ptParts(t); return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`; }
-export type PhWindow = { day: string; after: string; before: string };
-/** The Pacific day before the one `now` falls in: [start of that day, start of today). */
-export function phDayWindow(now: number): PhWindow {
-  const p = ptParts(now), prev = new Date(Date.UTC(p.y, p.m - 1, p.d - 1));
-  const after = pacificMidnight(prev.getUTCFullYear(), prev.getUTCMonth() + 1, prev.getUTCDate()), before = pacificMidnight(p.y, p.m, p.d);
-  return { day: prev.toISOString().slice(0, 10), after: new Date(after).toISOString(), before: new Date(before).toISOString() };
-}
 export type PhTopic = { name: string; slug: string };
 export type PhPost = { name: string; tagline: string; url: string; website: string | null; votes: number; created_at: string;
   /** Topic slugs; null when the answer carried no topics field (topics were not read), [] when the post has none. */ topics: string[] | null; topic_names: string[] };

@@ -43,10 +43,14 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
   const focusHeld = !!focus && !!data?.held.some(s => s.id === focus);
   useEffect(() => { if (focusHeld) setHeld(true); }, [focusHeld]);
   useEffect(() => { if (focus && data) document.getElementById(`story-${focus}`)?.scrollIntoView({ block: "center" }); }, [focus, data, held]);
-  const all: QueueHeadRow[] = data ? (held ? [...data.published, ...data.held, ...data.killed].sort((a, b) => b.at.localeCompare(a.at) || (b.score ?? 0) - (a.score ?? 0)) : data.published) : held ? [] : head.published;
+  // PH1 · launches are not stories here: never a row among them (published, held or taken down) and never counted; the published ones
+  // sit apart under the list as LAUNCHES (head.launches, at most three).
+  const story = (s: QueueHeadRow) => s.type !== "launch";
+  const all: QueueHeadRow[] = (data ? (held ? [...data.published, ...data.held, ...data.killed].sort((a, b) => b.at.localeCompare(a.at) || (b.score ?? 0) - (a.score ?? 0)) : data.published) : held ? [] : head.published).filter(story);
   const rows = all.filter(s => shows(format, storyFormat(s.type)));
   const counts = data || !held ? Object.fromEntries(TABS.map(f => [f, all.filter(s => shows(f, storyFormat(s.type))).length])) as Record<FormatFilter, number> : null;
-  const ran = data ? data.published.length : head.published.length, heldN = data ? data.held.length : head.held;
+  const ran = data ? data.published.filter(story).length : head.published.length, heldN = data ? data.held.filter(story).length : head.held;
+  const launches = head.launches ?? [];
   return <section aria-label="Stories" className="border-b border-rule">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule p-3">
       <h2 className="label font-semibold text-ink">STORIES · LAST 7 DAYS<span className="num text-g500"> · {ran} RAN · {heldN} HELD</span></h2>
@@ -70,5 +74,17 @@ export function StoryQueue({ focus }: { focus?: string | undefined }) {
         </AppLink>
       </li>)}</ol>}
     </div>
+    {launches.length > 0 && <section aria-labelledby="sq-launches" className="border-t border-rule">
+      <h3 id="sq-launches" className="label border-b border-rule p-3 font-semibold text-ink">LAUNCHES<span className="num text-g500"> · PRODUCT HUNT · NOT RANKED</span></h3>
+      <ol className="flex flex-col">{launches.map(l => <li key={l.id} className="border-b border-rule last:border-b-0">
+        <AppLink href={l.href} className="group grid min-h-11 grid-cols-[4ch_1fr] gap-x-2 gap-y-1 p-3 hover:bg-g900 md:grid-cols-[4ch_8ch_14ch_1fr_auto]">
+          <span aria-hidden="true" />
+          <span className="max-md:hidden" aria-hidden="true" />
+          <span className="label text-g500 max-md:hidden">LAUNCH</span>
+          <span className="min-w-0 text-ink"><span className="label text-g500 md:hidden">LAUNCH · </span><span className="group-hover:underline">{l.title}</span></span>
+          <span className="label col-start-2 text-g500 md:col-start-5">{[l.votesLine, l.dayLine].filter(Boolean).join(" · ").toUpperCase()}</span>
+        </AppLink>
+      </li>)}</ol>
+    </section>}
   </section>;
 }

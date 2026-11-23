@@ -136,6 +136,10 @@ async function freshRest(k: Lens): Promise<FrontRest> {
 }
 export async function loadFrontRest(rawSector: unknown, rawFormat: unknown): Promise<FrontRest> {
   const k = { sector: resolveSector(rawSector), format: resolveFormat(rawFormat) }, key = lensKey(k);
+  if (import.meta.env.DEV) { // PH1 · DEV ONLY proof pictures (`?__launches=1`, dev-late.server.ts); the live build drops this.
+    const { devSampleLaunches } = await import("../dev-late.server"), input = await inputs(k), stories = await devSampleLaunches(input.stories);
+    if (stories !== input.stories) return restOf(frontModel({ ...input, stories, editions: editionsIn(lastEditions.v ?? await loadEditionsSafe()) }));
+  }
   const p = freshRest(k).then(r => { lastRest.delete(key); lastRest.set(key, r); while (lastRest.size > 100) lastRest.delete(lastRest.keys().next().value!); return r; });
   const last = lastRest.get(key);
   if (!last) return p;

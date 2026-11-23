@@ -31,3 +31,32 @@ describe("PH1 · the floor and the beat", () => {
     expect(phRunLine({ day: "2026-11-22", fetched: 20, written: 0, updated: 2, topicsRead: false, passed: 1 })).toBe("20 fetched for 22 Nov (Pacific), 1 over the 300-vote floor (topics not readable), 0 new, 2 brought up to the finished day");
   });
 });
+
+import { launchBox, votesOf } from "./launches";
+import { queueHead, queueModel, type StoryRecord } from "./stories/view";
+const NOW = Date.parse("2026-11-23T15:16:00Z");
+const L = (id: string, votes: number | null, at = "2026-11-22T08:01:00Z", state = "published") => ({ id: `launch:${id}`, type: "launch", state, headline: `${id} — a tool`, deck: votes == null ? null : `${votes} upvotes`, happened_at: at });
+describe("PH1 · New on the scene and the Terminal's LAUNCHES", () => {
+  it("at most three, most votes first, with votes and launch day, never a number", () => {
+    const rows = launchBox([L("a", 171), L("b", 1204), L("c", 268), L("d", 150)], NOW);
+    expect(rows.map(r => [r.title, r.votesLine, r.dayLine])).toEqual([["b — a tool", "1,204 upvotes", "Launched 22 Nov"], ["c — a tool", "268 upvotes", "Launched 22 Nov"], ["a — a tool", "171 upvotes", "Launched 22 Nov"]]);
+    expect(rows.every(r => !("number" in r))).toBe(true);
+  });
+  it("a held launch shows nowhere", () => {
+    expect(launchBox([L("held", 900, undefined, "held"), L("killed", 900, undefined, "killed")], NOW)).toEqual([]);
+  });
+  it("only the newest recent launch day; a day with none over the line (or older than two days) has no box", () => {
+    expect(launchBox([L("old", 500, "2026-11-21T08:01:00Z"), L("new", 160)], NOW).map(r => r.id)).toEqual(["launch:new"]);
+    expect(launchBox([L("stale", 500, "2026-11-19T09:00:00Z")], NOW)).toEqual([]);
+    expect(launchBox([], NOW)).toEqual([]);
+  });
+  it("votes are read from the launch deck", () => { expect(votesOf("412 upvotes")).toBe(412); expect(votesOf("Names x")).toBeNull(); });
+  it("the Terminal list neither shows nor counts launches; they come apart", () => {
+    const rec = (s: Record<string, unknown>) => ({ score: 10, kicker: "", reason: "", why_ran: null, components: {}, why_line: null, facts: [], edits: [], stored: { headline: "" }, domains: [], signal_keys: [], sector: null, evidence: "", basis: null, number: null, pinnedUntil: null, killReason: null, created_at: s["happened_at"], ...s }) as unknown as StoryRecord;
+    const all = [rec({ id: "move:1", type: "move", state: "published", headline: "A move", deck: null, happened_at: "2026-11-23T09:00:00Z" }), rec(L("x", 300)), rec(L("h", 300, undefined, "held"))];
+    const head = queueHead(queueModel(all, null, NOW));
+    expect(head.published.map(r => r.id)).toEqual(["move:1"]);
+    expect(head.held).toBe(0);
+    expect(head.launches.map(r => r.id)).toEqual(["launch:x"]);
+  });
+});
