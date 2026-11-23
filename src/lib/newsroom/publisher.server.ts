@@ -109,6 +109,26 @@ export async function draftSheet(db: Admin, week: string): Promise<p.DraftSheet 
 export type DraftsRun = { ran: boolean; why: string; call_id: number | null; kept: (p.KeptDraft & { id: number })[]; dropped: p.DroppedDraft[]; cost: number };
 /** The week's drafts call, only after a passing package check for that issue. `fixture` records the call as a fixture and stores no
  *  drafts (the proof). */
+/** PH1 · the drafts call when it is due: the newest issue's passing package check within the week and no drafts started for the week
+ *  yet, with the room the call needs. Shared by the desk jobs and the review pass (which has the room when nothing waits for review),
+ *  so a re-check that passes after Monday is followed by drafts on the next pass that can make them. Returns what it did, or null. */
+export const DRAFTS_ROOM_MS = 25_000;
+export async function runDraftsIfDue(db: Admin, o: { now?: number; msLeft: number; /** a job hold on drafts, read only once drafts are due */ held?: () => Promise<boolean> }): Promise<string | null> {
+  if (o.msLeft < DRAFTS_ROOM_MS) return null;
+  const now = o.now ?? Date.now(), weekAgo = new Date(now - 7 * 864e5 + 3600_000).toISOString();
+  const { data: chk } = await db.from("package_checks").select("id,week,pass").eq("test", false).gte("at", weekAgo).order("id", { ascending: false }).limit(1);
+  const c = chk?.[0];
+  if (!c?.pass) return null;
+  const { count, error } = await db.from("desk_log").select("id", { count: "exact", head: true }).in("actor", ["publisher", "owner"]).eq("action", "data_run").eq("subject_id", "drafts").gte("at", weekAgo);
+  if (error || (count ?? 0) > 0) return null;
+  if (o.held && await o.held()) return null;
+  const { deskDoor } = await import("../stories/desk.server");
+  const started = await deskDoor("publisher", { action: "data_run", run: "drafts", summary: `Started at ${new Date().toISOString().slice(11, 16)} UTC; the result follows in its own row (none means it was cut off).` });
+  if (started.status >= 300) return null;
+  const r = await runDrafts(db, { week: c.week, checkId: c.id, signal: AbortSignal.timeout(o.msLeft) });
+  await deskDoor("publisher", { action: "data_run", run: "drafts", ref: `drafts:${c.week}`, summary: `Drafts for ${c.week}: ${r.why}.`.slice(0, 600), counts: { kept: r.kept.length, dropped: r.dropped.length } }).catch(() => null);
+  return r.why;
+}
 export async function runDrafts(db: Admin, o: { week: string; checkId: number; fixture?: boolean; signal?: AbortSignal; /** proof only, with fixture: run on a failed check */ anyCheck?: boolean }): Promise<DraftsRun> {
   const out: DraftsRun = { ran: false, why: "", call_id: null, kept: [], dropped: [], cost: 0 };
   const { data: chk } = await db.from("package_checks").select("id,week,pass").eq("id", o.checkId).maybeSingle();

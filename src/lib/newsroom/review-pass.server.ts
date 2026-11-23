@@ -28,7 +28,7 @@ export async function storeSheets(db: Admin, r: ReviewCtx, deadline: number): Pr
   return rows.length;
 }
 
-export type ReviewPassRun = { ran: boolean; why: string; items: string[]; ms: number; summary: import("./review").ReviewSummary | null; numbered: number; kept: number; run_id: number | null };
+export type ReviewPassRun = { ran: boolean; why: string; items: string[]; ms: number; summary: import("./review").ReviewSummary | null; numbered: number; kept: number; run_id: number | null; /** PH1 · the drafts call this quiet pass made */ drafts?: string | null };
 /** One scheduled pass: not when held, when the clock is busy or another pass is open; otherwise the start row (unique five-minute slot,
  *  the chosen stories) before any work, at most two stories, then numbers and kept crops for what was released, then the finish row. */
 export async function runReviewPass(db: Admin, o: { now?: () => number; byHand?: boolean } = {}): Promise<ReviewPassRun> {
@@ -70,9 +70,15 @@ export async function runReviewPass(db: Admin, o: { now?: () => number; byHand?:
       out.numbered = await b.assignStoryNumbers(db as never, { sinceDays: b.NUMBER_LOOKBACK_DAYS }).catch(() => 0);
       out.kept = await (await import("../stories/kept-crops.server")).keepStoryCrops(db as never).catch(() => 0);
     }
+    // PH1 · a quiet pass has the room the publisher's drafts call needs (re-check passed, no pass with 30 s left made them yet).
+    if (summary && !out.items.length && !o.byHand) {
+      const room = rp.REVIEW_PASS_MS - 4000 - (clock() - t0);
+      const { DRAFTS_ROOM_MS, runDraftsIfDue } = await import("./publisher.server");
+      if (room > DRAFTS_ROOM_MS) out.drafts = await runDraftsIfDue(db, { msLeft: room, held: () => import("./passes.server").then(m => m.isHeld(db, "drafts")).catch(() => true) }).catch(() => null);
+    }
     out.ms = clock() - t0;
     const s = summary;
-    out.why = !s ? "the pass hit its time limit" : !out.items.length ? "nothing waiting" : [`${s.checked} checked`, s.pictures ? `${s.pictures.checked} pictures` : null, s.held.length ? `${s.held.length} held` : null, s.released.length ? `${s.released.length} released` : null, s.waiting?.length ? `${s.waiting.length} wait` : null, s.chief !== "none" ? `chief: ${s.chief}` : null, s.errors.length ? `${s.errors.length} errors` : null].filter(Boolean).join(", ");
+    out.why = !s ? "the pass hit its time limit" : !out.items.length ? (out.drafts ? `nothing waiting; drafts: ${out.drafts}` : "nothing waiting") : [`${s.checked} checked`, s.pictures ? `${s.pictures.checked} pictures` : null, s.held.length ? `${s.held.length} held` : null, s.released.length ? `${s.released.length} released` : null, s.waiting?.length ? `${s.waiting.length} wait` : null, s.chief !== "none" ? `chief: ${s.chief}` : null, s.errors.length ? `${s.errors.length} errors` : null].filter(Boolean).join(", ");
     const r = run as Awaited<ReturnType<typeof startRun>> | null;
     if (r && !r.slotTaken) await r.finish(!!s && !s.errors.length, out.why, s ? { held: s.held, released: s.released, passed: s.passed, waiting: s.waiting ?? [], kept: s.kept ?? [], lead: s.lead, chief: s.chief, pictures: s.pictures ?? null, errors: s.errors.slice(0, 6) } : null);
     else if (!out.why) out.why = "another pass took this slot";

@@ -34,7 +34,7 @@ export async function scoutSheet(db: Admin, now = Date.now()): Promise<s.ScoutSh
 }
 export type ScoutRun = { ran: boolean; why: string; call_id: number | null; returned: number; kept: (s.KeptCandidate & { id: number; log: number | null })[]; dropped: s.DroppedCandidate[]; cost: number; items: number; names: number };
 /** The week's candidates call. `fixture` records the call as a fixture, stores no candidate and files nothing. */
-export async function runCandidates(db: Admin, o: { now?: number; fixture?: boolean; signal?: AbortSignal } = {}): Promise<ScoutRun> {
+export async function runCandidates(db: Admin, o: { now?: number; fixture?: boolean; signal?: AbortSignal; /** PH1 · set just before the model call */ mark?: { called: boolean } } = {}): Promise<ScoutRun> {
   const now = o.now ?? Date.now(), out: ScoutRun = { ran: false, why: "", call_id: null, returned: 0, kept: [], dropped: [], cost: 0, items: 0, names: 0 };
   const sheet = await scoutSheet(db, now);
   out.items = sheet.items.length; out.names = sheet.names.length;
@@ -46,6 +46,7 @@ export async function runCandidates(db: Admin, o: { now?: number; fixture?: bool
     import("./weekly-call.server"),
   ]);
   const outlets = new Set(sheet.items.flatMap(i => { try { return i.kind === "outlet" && i.url ? [new URL(i.url).hostname.replace(/^www\./, "")] : []; } catch { return []; } }));
+  if (o.mark) o.mark.called = true;
   const c = await weeklyCall(db, "scout", o.fixture ? "fixture" : "candidates", sheet.week, { system: s.SCOUT_SYSTEM, user: s.scoutUser(sheet), schema: s.SCOUT_SCHEMA as unknown as Record<string, unknown>, schemaName: "brand_candidates", tool: s.SCOUT_TOOL, maxTokens: 2500 }, s.parseScout, o.signal ?? AbortSignal.timeout(45_000), "scout");
   if ("refused" in c) { out.why = c.refused; return out; }
   out.ran = true; out.call_id = c.call_id; out.cost = c.cost;

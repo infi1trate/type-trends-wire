@@ -164,7 +164,7 @@ export async function runBacktest(db: Admin, o: { write?: boolean; minDays?: num
 
 // THE WEEKLY PROPOSAL -------------------------------------------------------------------------------------------------------------------
 /** Once a week (after the backtest): one call that files at most three study pitches and two new-signal ideas through the door. */
-export async function runProposal(db: Admin, o: { now?: number; fixture?: boolean } = {}) {
+export async function runProposal(db: Admin, o: { now?: number; fixture?: boolean; /** PH1 · set just before the model call */ mark?: { called: boolean } } = {}) {
   const now = o.now ?? Date.now(), out = { ran: false, why: "", call_id: null as number | null, studies: [] as dd.ProposalItem[], signals: [] as dd.ProposalItem[], dropped: [] as { item: dd.ProposalItem; why: string }[], filed: 0 };
   if (!o.fixture) {
     const { count } = await db.from("desk_calls").select("id", { count: "exact", head: true }).eq("desk", "data").eq("purpose", "proposal").gte("at", new Date(now - 7 * 864e5 + 3600_000).toISOString());
@@ -177,6 +177,7 @@ export async function runProposal(db: Admin, o: { now?: number; fixture?: boolea
   const home = await loadDataIndex().catch(() => null), live = new Set(home ? [...(home.home.lead ? [home.home.lead.slug] : []), ...home.home.series.flatMap(s => s.studies.map(x => x.slug))] : []);
   const byKind: Record<string, number> = {}; for (const f of open) byKind[f.kind] = (byKind[f.kind] ?? 0) + 1;
   const { deskCall } = await import("./review.server");
+  if (o.mark) o.mark.called = true;
   const c = await deskCall(db, "data", o.fixture ? "fixture" : "proposal", { system: dd.PROPOSAL_SYSTEM, user: dd.proposalUser({ findings: byKind, backtest: bt.data?.length ? bt.data : "no forecast is old enough to score yet", beats, studies: DATA_STORIES.map(s => ({ slug: s.slug, question: s.question, state: live.has(s.slug) ? "live" : "draft" })) }), schema: dd.PROPOSAL_SCHEMA as unknown as Record<string, unknown>, schemaName: "data_proposal", tool: dd.PROPOSAL_TOOL, maxTokens: 1500 }, dd.parseProposal, [], AbortSignal.timeout(40_000));
   out.ran = true; out.call_id = c?.call_id ?? null;
   if (!c?.parsed) { out.why = "call failed"; return out; }
