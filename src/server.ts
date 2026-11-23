@@ -6,6 +6,7 @@ import { gate, GATE_ENABLED } from "./lib/gate";
 import { createPageCache, servePage } from "./lib/page-cache";
 import { retryLater } from "./lib/unavailable";
 import { movedObjectHref } from "./lib/ia";
+import { instanceClock, withInstanceHeaders } from "./lib/instance";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -66,8 +67,16 @@ const pages = createPageCache();
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
+/** C1 Part 1 · this instance's age and request count, sent on every response (instance.ts). */
+const clock = instanceClock();
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const seen = clock.seen();
+    return withInstanceHeaders(await answer(request, env, ctx), seen);
+  },
+};
+async function answer(request: Request, env: unknown, ctx: unknown): Promise<Response> {
     try {
       // Shared-password gate runs before any SSR so locked visitors get no page data or meta.
       const gated = await gate(request);
@@ -123,5 +132,4 @@ export default {
         headers: { "content-type": "text/html; charset=utf-8" },
       });
     }
-  },
-};
+}

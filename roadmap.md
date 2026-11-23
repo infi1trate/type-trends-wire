@@ -265,3 +265,9 @@
 - [x] 4 Today box ≤3 by votes, upvotes + launch day, no number; Terminal LAUNCHES group, not counted; before/after pictures
 - [x] 5a W3c proof pictures into docs/proof/w3c/
 - [x] 5b Retries for daily jobs / weekly model jobs; drafts made by an existing job with room
+
+# C1 · A cold server is as fast as a warm one (owner, 23 Nov 16:44 UTC)
+- [ ] 1 x-instance-age header; cold vs warm table per page (TTFB, LCP element + wait, reads, first connection, code before first byte)
+- [ ] 2 Cold targets (TTFB ≤800 ms, LCP ≤2.5 s, CLS ≤0.05; 5 pages × 390/768/1440): one early stored read, connection while rendering, less code before first byte, LCP picture eager, fonts never hold text; after table
+- [ ] 3 Later retries once after ~1.2 s; brand page never without header facts + stored card (test once/twice failed); every Later page listed; brand Data view shift ≤0.05
+- [ ] 4 Warming after a deploy without a new scheduled job (or write it out)
