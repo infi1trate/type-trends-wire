@@ -31,6 +31,8 @@ export const svgMono = (quote: "'" | '"' = "'") => `${activeTheme.shared.fonts.m
 /** The theme's one font stylesheet (both kinds are the same link in the slug theme; legacy split mono and editorial faces). */
 export function fontLinks(kind: "base" | "editorial" = "editorial") {
   const f = activeTheme.shared.fonts;
+  // C1b · a self-hosted theme's faces come with the page's own stylesheet: nothing to link, no other host to connect to first.
+  if (f.selfHosted) return [];
   return [
     { rel: "preconnect", href: f.preconnect[0]! },
     { rel: "preconnect", href: f.preconnect[1]!, crossOrigin: "anonymous" as const },

@@ -125,6 +125,7 @@ const sharedOf = (v: LivingValues): Shared => ({
     // One font link for every page: Big Shoulders 700/900, Newsreader 400/600/italic, IBM Plex Mono 400/600.
     base: K.font.google, editorial: K.font.google,
     preconnect: ["https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+    selfHosted: true,
   },
   // CHOSEN: the root stays 13 px so rem-based spacing in existing layouts does not shift; every text role sets its own size.
   root: { size: "13px", leading: "20px" },

@@ -62,7 +62,10 @@ export type Shared = {
   fonts: { mono: string; display: string; text: string; /** Stylesheets that load the faces; the only place font URLs live. */ base: string; editorial: string; preconnect: readonly string[];
     /** Optional metric-matched local fallback per family (declared by @font-face in styles.css), inserted after the web font in the CSS
      * variables only, so pages draw at once and the swap barely moves them; SVG and PNG drawers keep the plain stacks. */
-    fallback?: { mono: string | readonly string[]; display: string | readonly string[]; text: string | readonly string[] } };
+    fallback?: { mono: string | readonly string[]; display: string | readonly string[]; text: string | readonly string[] };
+    /** C1b · pages load the faces from the site's own stylesheet (src/fonts.css: the same files `base` serves), so no page links the
+     * font stylesheet or its hosts; standalone SVGs and embeds keep `base`. */
+    selfHosted?: boolean };
   root: { size: string; leading: string };
   radius: { none: string; sm: string; md: string; pill: string; /** Round things only: stickers, gumballs. */ sticker: string; icon: string };
   border: { hairline: string; strong: string };

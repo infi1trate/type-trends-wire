@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./fonts.css";
 
 /* Metric-matched local fallbacks for the three web fonts (theme/slug.ts FONT_FALLBACKS): text draws at once and the swap barely moves it. */
 @font-face { font-family: "slug Display Fallback"; src: local("Arial Narrow"), local("ArialNarrow"), local("Liberation Sans Narrow"); size-adjust: 86%; ascent-override: 104%; descent-override: 26%; line-gap-override: 0%; }
