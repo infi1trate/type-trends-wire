@@ -356,6 +356,14 @@
 .digest .moved-crop img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .digest .moved-crop .brand-plate { position: absolute; left: var(--tk-space-2); bottom: -1.25rem; }
 .digest .moved-card .brand-tile-name { margin-top: 1.75rem; }
+/* S1 · Studies: a study card (kicker, "No. 2" and the title on one baseline, the question on one line, the share picture in a 16:9 box). */
+.digest .study-card { display: flex; flex-direction: column; height: 100%; padding: var(--tk-space-3); color: var(--sys-color-ink); text-decoration: none !important; border-top: var(--tk-border-strong) solid var(--sys-color-rule); }
+.digest .study-card:hover, .digest .study-card:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }
+.digest .study-card-title { display: flex; align-items: baseline; gap: var(--tk-space-3); }
+.digest .study-card-title .ledger-no { flex: none; font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; }
+.digest .study-card-q { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digest .study-card-pic { display: block; aspect-ratio: 16 / 9; overflow: hidden; border: var(--tk-border-hairline) solid var(--sys-color-rule); background: var(--sys-color-page); }
+.digest .study-card-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .digest .lead-box img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .digest [data-lead-item="icon"] .lead-box img { object-fit: scale-down; object-position: center; padding: var(--tk-space-4); }
 .digest .ed-typo { background: var(--sys-color-surface); border: var(--tk-border-strong) solid var(--sys-color-rule); aspect-ratio: 16 / 10; display: flex; flex-direction: column; justify-content: space-between; padding: var(--tk-space-3); }

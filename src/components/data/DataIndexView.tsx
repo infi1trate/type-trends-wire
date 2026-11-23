@@ -1,11 +1,11 @@
-// /data, the Studies home (E4): a heading, the lead study, the series in order with their studies, the "In the works" shelf and the
+// /data, the Studies home (E4; S1 shelf): a heading, the lead study, one "All studies" shelf of cards with the series key, "In the works" and the
 // brand tool, and nothing else. Template names, draft tags and draft reasons stay off this page (the study page's basis carries them).
 import { Link } from "@tanstack/react-router";
 import type { StudiesHome, HomeStudy } from "@/lib/data-stories/shelf";
 import { dayText, pctText } from "@/lib/data-stories/text";
 import { DigestShell } from "@/components/digest/Editorial";
 import { ReadFooter } from "@/components/read/Bits";
-import { Ledger, StoryNo } from "@/components/brand/Ledger";
+import { StoryNo } from "@/components/brand/Ledger";
 import { FiltersScope, Trail } from "@/components/brand/Illustration";
 import { line as voiced } from "@/lib/voice";
 
@@ -25,14 +25,24 @@ function Lead({ s }: { s: HomeStudy }) {
     </div>
   </section>;
 }
-function Series({ s }: { s: StudiesHome["series"][number] }) {
-  return <section aria-labelledby={`series-${s.id}`} className="mt-10 first:mt-0" data-series={s.id}>
-    <h3 id={`series-${s.id}`} className="ed-h2">{s.title}</h3>
-    <p className="ed-small mt-1 max-w-[60ch]">{s.description}</p>
-    {s.studies.length
-      ? <Ledger className="mt-3" label={s.title} rows={s.studies.map(x => ({ key: x.slug, href: x.href, number: <StoryNo n={x.number} />, title: x.headline, line: <><span className="block">{x.question}</span>{x.dataThrough && <span className="ed-data mt-1 block">{`Data through ${dayText(x.dataThrough)}`}</span>}</> }))} />
-      : <p className="ed-small ed-muted mt-3" data-series-empty="">First study in the works.</p>}
-  </section>;
+/** S1 · one study on the "All studies" shelf: series kicker, "No. 2" and the title on one baseline, the question on one line, the study's
+ *  own share picture (fixed 16:9 box, lazy) and its data date. */
+function StudyCard({ x }: { x: HomeStudy & { seriesTitle: string } }) {
+  return <li className="min-w-0" data-study-card={x.slug}>
+    <Link to="/data/$slug" params={{ slug: x.slug }} className="study-card">
+      <span className="ed-kicker block">{x.seriesTitle}</span>
+      <span className="study-card-title mt-2"><StoryNo n={x.number} /><span className="ed-h3">{x.headline}</span></span>
+      <span className="ed-small study-card-q mt-2 block">{x.question}</span>
+      <span className="study-card-pic mt-3"><img src={`/data/${x.slug}.png`} alt="" width={1200} height={630} loading="lazy" decoding="async" /></span>
+      {x.dataThrough && <span className="ed-data mt-2 block">{`Data through ${dayText(x.dataThrough)}`}</span>}
+    </Link>
+  </li>;
+}
+/** The shelf's studies, newest first; the lead is left out unless that would leave fewer than three cards. */
+export function shelfStudies(home: Pick<StudiesHome, "lead" | "series">): HomeStudy[] {
+  const all = home.series.flatMap(s => s.studies).sort((a, b) => b.number - a.number);
+  const rest = home.lead ? all.filter(x => x.slug !== home.lead!.slug) : all;
+  return rest.length >= 3 ? rest : all;
 }
 /** P2 · the Studies home in two parts: the heading (fixed copy, drawn with the shell) and the body (the lead, series, shelf and tool,
  *  which read stored study rows and stream in behind the shell). `DataIndexView` draws both at once, as before. */
@@ -49,19 +59,23 @@ export function DataIndexBody({ home }: { home: StudiesHome }) {
   return <>
     {home.lead && <Lead s={home.lead} />}
     <section aria-labelledby="studies-series" className={`ed-wrap ${GAP}`} data-studies-series="">
-      <h2 id="studies-series" className="sr-only">The series</h2>
-      {home.series.map(s => <Series key={s.id} s={s} />)}
+      <h2 id="studies-series" className="ed-h2">All studies</h2>
+      <ul className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="All studies">{shelfStudies(home).map(x => <StudyCard key={x.slug} x={x} />)}</ul>
+      <dl className="mt-8 grid grid-cols-1 gap-x-8 gap-y-4 border-t border-ed-ink pt-4 md:grid-cols-3" aria-label="The series">{home.series.map(s => <div key={s.id} className="min-w-0" data-series={s.id}>
+        <dt id={`series-${s.id}`} className="ed-kicker">{s.title}</dt>
+        <dd className="ed-small mt-1">{s.description}{s.studies.length ? "" : <span className="ed-muted" data-series-empty=""> First study in the works.</span>}</dd>
+      </div>)}</dl>
     </section>
     {home.shelf.length > 0 && <section aria-labelledby="in-the-works" id="in-the-works-block" className={`ed-wrap ${GAP}`} data-studies-shelf="">
       <h2 id="in-the-works" className="ed-h2">In the works</h2>
       <p className="ed-small mt-1 max-w-[60ch]">Studies the archive and the live crawl are still building, and what each is waiting for.</p>
-      <ul className="ledger mt-3" aria-label="In the works">{home.shelf.map(r => <li key={r.key} className="ledger-row px-2 py-3" data-shelf-row={r.key}>
-        <p className="ed-small font-semibold break-words">{r.question}</p>
-        <p className="ed-caption mt-1">{r.series} · {r.wait}{r.earliest ? ` ${r.earliest}.` : ""}</p>
+      <ul className="mt-3 grid grid-cols-1 gap-x-10 lg:grid-cols-2" aria-label="In the works">{home.shelf.map(r => <li key={r.key} className="border-b border-ed-rule py-3" data-shelf-row={r.key}>
+        <p className="ed-small break-words"><span className="ledger-tag mr-2 align-[0.1em]">{r.ready ? "Ready to write" : "Waiting"}</span><span className="font-semibold">{r.question}</span></p>
+        <p className="ed-caption mt-1">{r.series}{r.ready ? "" : ` · ${r.wait}`}{r.earliest ? ` ${r.earliest}.` : ""}</p>
       </li>)}</ul>
     </section>}
     <section aria-labelledby="studies-tool" className={`ed-wrap ${GAP} mb-4`} data-studies-tool="">
-      <ul className="ledger"><li className="ledger-row flex flex-col gap-1 px-2 py-3 md:flex-row md:items-baseline md:gap-4">
+      <ul className="ledger"><li className="ledger-row flex flex-col gap-1 py-3 md:flex-row md:items-baseline md:gap-4">
         <span className="ed-kicker shrink-0 md:w-24">Tool</span>
         <span className="min-w-0"><span id="studies-tool" className="ed-small font-semibold">{home.tool.question}</span> <span className="ed-small">{home.tool.line}</span></span>
         <Link to="/data/where-you-sit" className="ed-tap ed-data inline-flex min-h-[44px] shrink-0 items-center md:ml-auto">Try it →</Link>
