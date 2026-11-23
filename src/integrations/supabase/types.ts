@@ -6197,6 +6197,7 @@ export type Database = {
         Args: { p_captured_at: string; p_points: Json; p_run_id: string }
         Returns: Json
       }
+      records_sweep_facts: { Args: never; Returns: Json }
       refresh_crawl_aggregates: { Args: never; Returns: undefined }
       refresh_library_history: { Args: never; Returns: undefined }
       replace_taste_data: {

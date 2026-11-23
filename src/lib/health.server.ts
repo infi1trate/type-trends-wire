@@ -4,23 +4,50 @@ import { healthFactsResult } from "./health-facts.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { buildHealth, spendFacts, unavailableHealth, type HealthPayload } from "./health";
 let cache: { at: number; value: HealthPayload } | null = null;
-let inFlight: Promise<HealthPayload> | null = null;
+let inFlight: { at: number; p: Promise<HealthPayload> } | null = null;
+let lastFailure: string | null = null;
 /** S1 · the health answer within HEALTH_DEADLINE_MS. When the database is slower, the answer is the last one this instance had (with
- *  its time) or "down", plus a `database` line saying it did not answer in time; the read keeps going so the next call has it. */
+ *  its time), plus a `database` line saying it did not answer in time; the read keeps going so the next call has it.
+ *  D1b · a server with no facts yet answers "starting" (never "down" on that ground alone); the top-level status follows `topStatus`. */
 type DbBlock = import("./db-health").DbHealth & { safe_mode: { on: boolean; why: string } };
-export async function healthWithin(): Promise<{ body: HealthPayload & { database?: { status: "slow"; note: string; last_answer_at: string | null }; db?: DbBlock }; slow: boolean }> {
+type HealthBody = Omit<HealthPayload, "status"> & { status: import("./health").TopStatus; database?: { status: "slow" | "starting"; note: string; last_answer_at: string | null }; db?: DbBlock };
+export async function healthWithin(): Promise<{ body: HealthBody; slow: boolean }> {
   const { HEALTH_DEADLINE_MS, within } = await import("./deadline");
-  if (!inFlight) inFlight = healthPayload().finally(() => { inFlight = null; });
-  const SLOW = Symbol("slow");
+  const { topStatus } = await import("./health");
+  const t0 = Date.now();
+  // A read another request started is joined only while it is young: on the hosted runtime a promise whose request has ended may
+  // never settle or fails at once, which is how a just-started server said "down" in 0.26 s (23 Nov, 05:54 and 07:04 UTC).
+  const join = () => {
+    if (!inFlight || Date.now() - inFlight.at > HEALTH_DEADLINE_MS) { const p = loadPayload(); const e = { at: Date.now(), p }; inFlight = e; p.then(() => { if (inFlight === e) inFlight = null; }, () => { if (inFlight === e) inFlight = null; }); }
+    return inFlight.p;
+  };
+  const facts = (async () => {
+    try { return await join(); } catch (e) {
+      noteFailure(e);
+      // One fresh read of our own when the joined one failed fast and there is still time.
+      if (HEALTH_DEADLINE_MS - (Date.now() - t0) < 500) throw e;
+      inFlight = null;
+      return await join();
+    }
+  })();
+  const SLOW = Symbol("slow"), FAILED = Symbol("failed");
   // D1 Part 6 · the database lines are worked out beside the facts, from this server's own readings plus the load counts (each cut
   // short), so a slow database is said in time without waiting on it.
-  const [r, db] = await Promise.all([within<HealthPayload | typeof SLOW>(inFlight, HEALTH_DEADLINE_MS, "health", () => SLOW).catch(() => unavailableHealth(new Date())), dbWithin().catch(() => undefined)]);
-  const extra = db ? { db } : {};
-  if (r !== SLOW) return { body: { ...r, ...extra }, slow: false };
+  const [r, db] = await Promise.all([within<HealthPayload | symbol>(facts, HEALTH_DEADLINE_MS, "health", () => SLOW).catch((e): symbol => { noteFailure(e); return FAILED; }), dbWithin().catch(() => undefined)]);
+  const extra = db ? { db } : {}, dbState = db?.state ?? null;
+  if (typeof r === "object") return { body: { ...r, status: topStatus(r.status, dbState), ...extra }, slow: false };
   const last = cache?.value ?? null;
-  return { slow: true, body: { ...(last ?? unavailableHealth(new Date())), ...extra, database: { status: "slow", note: `The database did not answer within ${(HEALTH_DEADLINE_MS / 1000).toFixed(1)} s; ${last ? "these are the last facts this server had" : "no earlier facts on this server"}.`, last_answer_at: last ? new Date(cache!.at).toISOString() : null } } };
+  if (last) return { slow: true, body: { ...last, status: topStatus(last.status, dbState), ...extra, database: { status: "slow", note: `The job facts did not arrive within ${(HEALTH_DEADLINE_MS / 1000).toFixed(1)} s; these are the last facts this server had.`, last_answer_at: new Date(cache!.at).toISOString() } } };
+  return { slow: true, body: { status: topStatus(null, dbState), checked_at: new Date().toISOString(), jobs: [], ...extra,
+    database: { status: dbState === "bad" ? "slow" : "starting", note: dbState === "bad" ? "The database is not answering in time and this server has no earlier job facts." : `This server has just started and its first job facts did not arrive within ${(HEALTH_DEADLINE_MS / 1000).toFixed(1)} s; the database lines above are read and current.`, last_answer_at: null } } };
+}
+/** The reason a facts read failed, logged once per distinct reason (names only, no bodies). */
+function noteFailure(e: unknown) {
+  const why = (e instanceof Error ? `${e.name}: ${e.message}` : String(e)).replace(/\s+/g, " ").slice(0, 120);
+  if (why !== lastFailure) { lastFailure = why; console.warn("health facts failed", why); }
 }
 let load: { at: number; value: import("./db-health").LoadFacts } | null = null;
+let sweep: { at: number; value: import("./db-health").SweepFacts | null } | null = null;
 let loadInFlight: Promise<void> | null = null;
 let warnSince: number | null = null;
 let sentKey: string | null = null;
@@ -28,16 +55,20 @@ let pendingAlert: { level: "warn" | "bad"; key: string; line: string; reading: u
 /** The load counts (anonymous db_load_facts(), counts only), at most once a minute per server; a late read leaves the last one. */
 async function readLoad(): Promise<void> {
   if (load && Date.now() - load.at < 60_000) return;
-  if (!loadInFlight) loadInFlight = Promise.resolve(supabaseAnon().rpc("db_load_facts").abortSignal(AbortSignal.timeout(1_200)))
-    .then(r => { if (!r.error && r.data) load = { at: Date.now(), value: r.data as never }; }, () => undefined).finally(() => { loadInFlight = null; });
+  if (!loadInFlight) loadInFlight = Promise.all([
+    Promise.resolve(supabaseAnon().rpc("db_load_facts").abortSignal(AbortSignal.timeout(1_200))).then(r => { if (!r.error && r.data) load = { at: Date.now(), value: r.data as never }; }, () => undefined),
+    // D1b · the stored-pages sweep's last result (counts and step names only), beside the load counts.
+    Promise.resolve(supabaseAnon().rpc("records_sweep_facts").abortSignal(AbortSignal.timeout(1_200))).then(r => { if (!r.error) sweep = { at: Date.now(), value: (r.data ?? null) as never }; }, () => undefined),
+  ]).then(() => undefined).finally(() => { loadInFlight = null; });
   await Promise.race([loadInFlight, new Promise(res => setTimeout(res, 1_300))]);
 }
+const sweepNow = (now: number) => (sweep && now - sweep.at < 10 * 60_000 ? sweep.value : null);
 /** The database lines within 1.5 s: past that, worked out from this server's readings and the last load counts alone. */
 async function dbWithin(): Promise<DbBlock> {
   const [{ probeHistory }, h, sm] = await Promise.all([import("./db-probe.server"), import("./db-health"), import("./safe-mode.server")]);
   const late = new Promise<DbBlock>(res => setTimeout(() => {
     const now = Date.now();
-    res({ ...h.dbHealth(probeHistory(), load && now - load.at < 10 * 60_000 ? load.value : null, now), safe_mode: { on: sm.safeModeState().on, why: sm.safeModeState().why } });
+    res({ ...h.dbHealth(probeHistory(), load && now - load.at < 10 * 60_000 ? load.value : null, now, sweepNow(now)), safe_mode: { on: sm.safeModeState().on, why: sm.safeModeState().why } });
   }, 1_500));
   return Promise.race([dbBlock(), late]);
 }
@@ -45,7 +76,7 @@ async function dbBlock(): Promise<DbBlock> {
   const [{ probeDb, probeHistory }, h, sm] = await Promise.all([import("./db-probe.server"), import("./db-health"), import("./safe-mode.server")]);
   const [probe] = await Promise.all([probeDb(), readLoad()]);
   const now = Date.now(), facts = load && now - load.at < 10 * 60_000 ? load.value : null;
-  const out = h.dbHealth(probeHistory(), facts, now);
+  const out = h.dbHealth(probeHistory(), facts, now, sweepNow(now));
   const safe = probe.ok ? await Promise.race([sm.safeModeOn(), new Promise<{ on: boolean; why: string }>(res => setTimeout(() => res({ on: sm.safeModeState().on, why: sm.safeModeState().why }), 400))]) : { on: sm.safeModeState().on, why: sm.safeModeState().why };
   warnSince = out.state === "ok" ? null : (warnSince ?? now);
   const due = h.alertDue(out.state, warnSince, now);
@@ -57,11 +88,16 @@ async function dbBlock(): Promise<DbBlock> {
   if (pendingAlert && probe.ok) { const a = pendingAlert; pendingAlert = null; sentKey = a.key; void import("./db-desk.server").then(m => m.writeDbAlert(a)); }
   return { ...out, safe_mode: safe };
 }
+/** The job facts for the status bar, launch and desk readers: never throws (a failed read is "down" with no jobs, and is not kept). */
 export async function healthPayload(): Promise<HealthPayload> {
+  return loadPayload().catch(() => unavailableHealth(new Date()));
+}
+/** D1b · the facts, or a rejection when health_facts() cannot be read (a failure is never cached as an answer). */
+async function loadPayload(): Promise<HealthPayload> {
   const now = Date.now();
   if (cache && now - cache.at < 60_000) return cache.value;
   let value: HealthPayload;
-  try {
+  {
     const db = supabaseAnon();
     const [{ data, error }, pause, indicators, history, writer, calls, deskFacts] = await Promise.all([healthFactsResult(), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null),
       // W2: the newest leading-indicator run; unreadable reads as not started rather than failing health.
@@ -75,8 +111,9 @@ export async function healthPayload(): Promise<HealthPayload> {
       // N3: every desk's calls today keyed desk:purpose; unreadable leaves the meter without the new desks.
       db.rpc("newsroom_desk_facts" as never).then(r => (r.error ? null : r.data), () => null)]);
     // The pause reason and probe times only add to the library_ai note; when they can't be read the job reads as before.
-    value = error ? unavailableHealth(new Date(now)) : buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(calls && typeof calls === "object" ? { newsroom_calls: calls } : {}), ...(deskFacts && typeof deskFacts === "object" ? { desk_calls: deskFacts } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}) } as never, new Date(now));
-  } catch { value = unavailableHealth(new Date(now)); }
+    if (error) throw error instanceof Error ? error : new Error(`health_facts: ${(error as { code?: string; message?: string })?.code ?? ""} ${(error as { message?: string })?.message ?? "unreadable"}`.trim());
+    value = buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(calls && typeof calls === "object" ? { newsroom_calls: calls } : {}), ...(deskFacts && typeof deskFacts === "object" ? { desk_calls: deskFacts } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}) } as never, new Date(now));
+  }
   // I3b: the brand-name check is a fact beside the jobs; unreadable reads as null and never changes the status.
   const names = await import("./name-check.server").then(m => m.brandNameCheck()).catch(() => null);
   // N1: the weekly spend cap (set or not, reached or not; no amounts); unreadable reads as null and never changes the status.

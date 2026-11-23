@@ -159,7 +159,15 @@ export function indicatorsJob(i: { last_run_at: string | null; points: number } 
     note: `${i.points} points in the last run${late ? `; nothing has arrived for ${age(i.last_run_at, now)} (more than 36 hours)` : ""}` };
 }
 
-/** Fallback when the facts cannot be read at all. */
+/** D1b · the top-level status /api/public/health answers. */
+export type TopStatus = HealthStatus | "starting";
+/** D1b · the rule in one sentence: the answer is "down" only when the database lines say "bad" or a job that matters is failing (the
+ *  job facts' own status); a server with no job facts yet says "starting", never "down" on that ground alone. */
+export function topStatus(facts: HealthStatus | null, db: "ok" | "warn" | "bad" | null): TopStatus {
+  if (db === "bad") return "down";
+  return facts ?? "starting";
+}
+/** Fallback when the facts cannot be read at all (the status bar and desk readers; the public answer uses `topStatus`). */
 export function unavailableHealth(now: Date): HealthPayload { return { status: "down", checked_at: now.toISOString(), jobs: [] }; }
 
 /** N2 · what the writer meter counts, said plainly: each writer's calls against its own daily limit (UTC day), the desks' calls against

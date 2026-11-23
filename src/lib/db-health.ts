@@ -39,11 +39,29 @@ export function answerLine(list: readonly Probe[], now: number): DbLine & { medi
   return { state, line, median_ms: a.median_ms, worst_ms: a.worst_ms, readings: a.n, failed: a.failed };
 }
 
+/** D1b · the stored-pages sweep's last finish row (anonymous records_sweep_facts(): counts and step names only). Older rows carry only
+ *  the note ("wire · 6 written, 13 skipped, timed out, 2 errors"), which is read for the same counts. */
+export type SweepFacts = { at: string; ok: boolean | null; ms: number | null; note?: string | null; written?: number | null; retimed?: number | null; skipped?: number | null; timed_out?: boolean | null; error_steps?: string[] | null };
+export type SweepLine = DbLine & { at: string | null; written: number | null; retimed: number | null; errors: number | null; timed_out: boolean | null; error_steps: string[] };
+export const SWEEP_THRESHOLDS = { warn_after_ms: 40 * 60_000, bad_after_ms: 2 * 3_600_000 } as const;
+export function sweepLine(f: SweepFacts | null | undefined, now: number): SweepLine {
+  if (!f?.at) return { state: "warn", line: "The stored-pages sweep's last result could not be read this time.", at: null, written: null, retimed: null, errors: null, timed_out: null, error_steps: [] };
+  const note = f.note ?? "", num = (re: RegExp) => { const m = re.exec(note); return m ? Number(m[1]) : null; };
+  const written = f.written ?? num(/(\d+) written/), retimed = f.retimed ?? num(/(\d+) re-timed/) ?? (f.written != null ? 0 : null);
+  const errors = f.error_steps ? f.error_steps.length : num(/(\d+) errors?\b/) ?? 0, timed_out = f.timed_out ?? /timed out/.test(note);
+  const age = now - Date.parse(f.at), mins = Math.max(0, Math.round(age / 60_000));
+  const state: DbState = !Number.isFinite(age) || age >= SWEEP_THRESHOLDS.bad_after_ms ? "bad" : age >= SWEEP_THRESHOLDS.warn_after_ms || errors > 0 || timed_out ? "warn" : "ok";
+  const parts = [`${written ?? "?"} written`, ...(retimed != null ? [`${retimed} re-timed`] : []), ...(errors ? [`${errors} error${errors === 1 ? "" : "s"}${f.error_steps?.length ? ` (${f.error_steps.join(", ")})` : ""}`] : []), ...(timed_out ? ["ran out of time, rest next pass"] : ["finished"])];
+  return { state, line: `The stored-pages sweep last finished ${mins} min ago in ${f.ms != null ? `${(f.ms / 1000).toFixed(1)} s` : "?"}: ${parts.join(", ")}.`, at: f.at, written, retimed, errors, timed_out, error_steps: f.error_steps ?? [] };
+}
+
 export type DbHealth = { state: DbState; answer: ReturnType<typeof answerLine>; connections: DbLine & { open: number | null; limit: number | null };
   write_log: DbLine & { mb_hour: number | null }; disk_speed: DbLine & { readable: false }; biggest_job: DbLine & { job: string | null; ms: number | null };
-  skipped_slow: DbLine & { count: number | null }; load_read: boolean };
+  skipped_slow: DbLine & { count: number | null }; load_read: boolean;
+  /** D1b · the sweep's own line; its state is not folded into `state` (a stuck sweep is no reason for safe mode or a database alert). */
+  records_sweep?: SweepLine };
 
-export function dbHealth(probes: readonly Probe[], load: LoadFacts | null, now: number): DbHealth {
+export function dbHealth(probes: readonly Probe[], load: LoadFacts | null, now: number, sweep?: SweepFacts | null): DbHealth {
   const answer = answerLine(probes, now);
   const unread = (what: string): DbLine => ({ state: "ok", line: `${what} could not be read this time.` });
   let connections: DbHealth["connections"] = { ...unread("Open connections"), open: null, limit: null };
@@ -72,7 +90,7 @@ export function dbHealth(probes: readonly Probe[], load: LoadFacts | null, now: 
     if (n != null) skipped_slow = { state: n >= T.skipped_bad ? "bad" : n >= T.skipped_warn ? "warn" : "ok", line: n ? `${n} job run${n === 1 ? "" : "s"} stood down for a slow database in the last hour.` : "No job run stood down for a slow database in the last hour.", count: n };
   }
   const disk_speed: DbHealth["disk_speed"] = { state: "ok", readable: false, line: "The disk-speed allowance is kept by the hosting platform and cannot be read from the site; its alerts reach the owner there." };
-  return { state: worst(answer.state, connections.state, write_log.state, biggest_job.state, skipped_slow.state), answer, connections, write_log, disk_speed, biggest_job, skipped_slow, load_read: !!load };
+  return { state: worst(answer.state, connections.state, write_log.state, biggest_job.state, skipped_slow.state), answer, connections, write_log, disk_speed, biggest_job, skipped_slow, load_read: !!load, ...(sweep !== undefined ? { records_sweep: sweepLine(sweep, now) } : {}) };
 }
 
 /** One engineering alert per level per hour (the key's hour is the episode's), for a warn lasting five minutes or any bad. */
