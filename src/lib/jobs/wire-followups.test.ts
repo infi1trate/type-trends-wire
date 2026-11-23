@@ -27,6 +27,9 @@ describe("T1 · the pass answers at once and finishes after the answer", () => {
     expect(PASS_END_MS + FINISH_GRACE_MS).toBeLessThan(HOST_AFTER_ANSWER_MS);
     expect(sweepLimitMs(0, 12_000)).toBe(15_000);
     expect(sweepLimitMs(0, 30_000)).toBe(0);
+    // A sweep that goes first leaves the story build its 15 s.
+    expect(sweepLimitMs(0, 1_000, true)).toBe(11_000);
+    expect(sweepLimitMs(0, 13_000, true)).toBe(0);
   });
   it("takes turns: the :00 and :30 slots build first, the :15 and :45 slots sweep first", () => {
     expect(firstStep(Date.parse("2026-11-22T16:01:00Z"))).toBe("story build");

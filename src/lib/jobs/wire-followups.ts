@@ -7,8 +7,8 @@
 // from 16:16 UTC on 22 Nov every pass was cut off five seconds in. The route now writes the start row, answers at once with the run id
 // and does the work after the answer (the host keeps work handed to it alive for 30 s after a response). Inside that window both steps
 // no longer fit every time (together they took 35 to 51 s), so the slots take turns going first: :00 and :30 slots build first, :15
-// and :45 slots sweep first, and the second step gets whatever the first left (the build needs 15 s, the sweep 6 s, else it waits for its own turn). Each step
-// therefore has the whole window every half hour.
+// and :45 slots sweep first, and the second step gets whatever the first left (the build needs 15 s, the sweep 6 s, else it waits for its own turn). A sweep that
+// goes first leaves the build its 15 s, so stories are still built every fifteen minutes and the sweep has the whole window every half hour.
 import { kindOf } from "../records/records";
 
 export const WIRE_FOLLOWUPS_SCHEDULE = { name: "wire-followups", cron: "1-59/15 * * * *", path: "/api/public/jobs/wire-followups", body: { kind: "wire-followups" } } as const;
@@ -42,8 +42,11 @@ export const followupsNote = (steps: readonly { step: string; ms: number; note?:
 export const PASS_END_MS = 27_000;
 /** A step still running this long after the pass's end is left behind and the finish row says so (still inside the host's window). */
 export const FINISH_GRACE_MS = 1_500;
-/** The records sweep's own limit, from its start: whatever is left before the pass's end (0 when the build used it all). */
-export const sweepLimitMs = (passStart: number, sweepStart: number) => Math.max(0, passStart + PASS_END_MS - sweepStart);
+/** What the story build needs to do useful work (its own minimum); a sweep that goes first leaves at least this much. */
+export const BUILD_ROOM_MS = 15_000;
+/** The records sweep's own limit, from its start: going second, whatever is left before the pass's end (0 when the build used it all);
+ *  going first, whatever is left less BUILD_ROOM_MS, so the story build still runs every fifteen minutes. */
+export const sweepLimitMs = (passStart: number, sweepStart: number, first = false) => Math.max(0, passStart + PASS_END_MS - (first ? BUILD_ROOM_MS : 0) - sweepStart);
 /** What a sweep rewrote, by kind ("brand-card 12, signals 1"), for the finish row. */
 export function writtenByKind(keys: readonly string[]): Record<string, number> {
   const out: Record<string, number> = {};

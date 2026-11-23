@@ -43,8 +43,8 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
             const note = await deps.build("wire", t0, wf.PASS_END_MS);
             r.steps.push({ step, ms: clock() - t, note: note ? note.replace(/^wire · /, "") : "skipped: too little time left" });
           } else {
-            // First or second, the sweep has whatever is left before the pass's end.
-            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t));
+            // Second, the sweep has whatever is left before the pass's end; first, it leaves the build its room.
+            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0]));
             const by = s ? wf.writtenByKind(s.written) : {};
             r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
           }
