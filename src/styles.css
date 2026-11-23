@@ -285,6 +285,15 @@
 .digest .ed-thumb { display: block; width: 100%; height: auto; border: var(--tk-border-strong) solid var(--sys-color-rule); background: var(--sys-color-page); filter: none; }
 /* I3 · lead pictures sit in fixed 3:2 boxes (top of the capture kept), drawn like ed-thumb. */
 .digest .lead-box { aspect-ratio: 3 / 2; overflow: hidden; border: var(--tk-border-strong) solid var(--sys-color-rule); background: var(--sys-color-page); }
+/* S1 · the front lead's stack: two equal pictures below 1024 px; from 1024 px the first spans the column and the second (58%) sits over
+   its lower-left corner, offset down and left, framed the same with the hard shadow. The first caption is set right so it stays clear. */
+.digest .lead-stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tk-space-4); }
+@media (min-width: 1024px) {
+  .digest .lead-stack { display: block; }
+  .digest .lead-stack .lead-box { box-shadow: var(--tk-shadow-raised); }
+  .digest .lead-stack > :first-child [data-lead-compact] { justify-content: flex-end; }
+  .digest .lead-stack > :nth-child(2) { position: relative; z-index: 1; width: 58%; margin-left: calc(-1 * var(--tk-space-5)); margin-top: -16%; }
+}
 .digest .lead-box img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .digest [data-lead-item="icon"] .lead-box img { object-fit: scale-down; object-position: center; padding: var(--tk-space-4); }
 .digest .ed-typo { background: var(--sys-color-surface); border: var(--tk-border-strong) solid var(--sys-color-rule); aspect-ratio: 16 / 10; display: flex; flex-direction: column; justify-content: space-between; padding: var(--tk-space-3); }

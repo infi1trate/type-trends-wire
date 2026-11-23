@@ -29,7 +29,7 @@ import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
 import { LeadFigureCompact, LeadFigureSlot } from "./Covers";
-import { LeadPicture } from "./LeadPicture";
+import { LeadPicture, planDraws } from "./LeadPicture";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLive";
 import { leadFigure, relTime } from "@/lib/front/front";
@@ -64,10 +64,17 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
     <Raised href={`/stories/${encodeURIComponent(l.story.id)}`}>Receipts →</Raised>
     <span className="ed-data"><time dateTime={l.story.at}>{storyTime(l.story.at)}</time> · {relTime(l.story.at, now)}{l.story.corrected && <> · Corrected {l.story.corrected.slice(0, 10)}</>}</span>
   </div>;
+  // S1 · a plan with nothing to draw (a chart or "none" plan) gives the right column to the signal's chart at full size instead.
+  if (l.evidence?.kind === "plan" && !planDraws(l.evidence.plan) && fig) return <section aria-labelledby="front-lead"><Plate className="md:p-10">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-12" data-lead-layout="chart">
+      <div className="min-w-0 lg:col-span-7">{kicker}{headline}{deck}{receipts("mt-8")}</div>
+      <div className="min-w-0 lg:col-span-5 lg:self-center"><LeadFigureSlot f={fig} /></div>
+    </div>
+  </Plate></section>;
   if (l.evidence?.kind === "plan") return <section aria-labelledby="front-lead"><Plate className="md:p-10">
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:grid-rows-[auto_auto_1fr] lg:gap-y-6" data-lead-layout="picture">
       <div className="min-w-0 lg:col-span-7 lg:row-start-1">{kicker}{headline}{deck}</div>
-      <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:row-start-1" data-evidence="plan"><LeadPicture plan={l.evidence.plan} compact tileSizes="(min-width: 1024px) 18vw, 50vw" /></div>
+      <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:row-start-1 lg:self-center" data-evidence="plan"><LeadPicture plan={l.evidence.plan} compact stack tileSizes="(min-width: 1024px) 18vw, 50vw" /></div>
       {receipts("lg:col-span-7 lg:row-start-2")}
       {fig && <div className="min-w-0 lg:col-span-7 lg:row-start-3 lg:self-start"><div className="lg:hidden"><LeadFigureSlot f={fig} /></div><div className="max-lg:hidden"><LeadFigureCompact f={fig} /></div></div>}
     </div>
@@ -198,7 +205,7 @@ class WireQuiet extends Component<{ children: ReactNode }, { failed: boolean }> 
 }
 function WireLater() { return <WireQuiet><Suspense fallback={null}><WireRows /></Suspense></WireQuiet>; }
 
-type Slots = { archive: ReactNode; aside: ReactNode; lower: ReactNode; also: ReactNode; tape: ReactNode };
+type Slots = { archive: ReactNode; aside: ReactNode; asideRest: ReactNode; lower: ReactNode; also: ReactNode; tape: ReactNode };
 const exploreRow = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
 
 function FrontArchive({ r }: { r: Pick<FrontRest, "archive" | "sections"> }) {
@@ -208,10 +215,14 @@ function FrontArchive({ r }: { r: Pick<FrontRest, "archive" | "sections"> }) {
     <Ledger className="mt-2" rows={r.archive.map(a => ({ key: a.id, href: a.href, number: a.number != null ? String(a.number) : "·", title: a.headline, line: a.line, tags: [a.match], time: <time dateTime={a.at}>{a.date}</time> }))} />
   </section>;
 }
-function FrontAside({ m, r }: { m: FrontTop; r: FrontRest }) {
+// S1 · the rail in two parts: Chart of the day on top, then the rest (launches, your sector, explore, collections). Below 1024 px the
+// page is one column and Moving now, Studies and Editions sit between the two parts.
+function FrontAside({ r }: { r: FrontRest }) {
+  return r.chart ? <ChartOfDay c={r.chart} /> : null;
+}
+function FrontAsideRest({ m, r }: { m: FrontTop; r: FrontRest }) {
   const now = useNow(m.now, 30_000);
   return <>
-    {r.chart && <ChartOfDay c={r.chart} />}
     {r.sections.launches && <section aria-labelledby="front-launches"><RuleBox>
       <Kicker id="front-launches">New on the scene</Kicker>
       <p className="ed-caption mt-1">Product Hunt launches. They never rank in the live column.</p>
@@ -231,35 +242,38 @@ function FrontAside({ m, r }: { m: FrontTop; r: FrontRest }) {
     </RuleBox></section>}
   </>;
 }
+// S1 · Studies and Editions sit in the left column under the Morning Line link, as two ledgers under kicker headings (no boxes).
 function FrontLower({ r }: { r: Pick<FrontRest, "editions" | "dataStories" | "sections"> }) {
-  return <>
-    {r.sections.editions && <section aria-labelledby="front-editions"><RuleBox>
-      <Kicker id="front-editions">Editions</Kicker>
-      <Ledger className="mt-3" small rows={r.editions.map(e => ({ key: e.id, href: e.href, title: e.title, time: e.date }))} />
-    </RuleBox></section>}
-    {r.sections.dataStories && <section aria-labelledby="front-data" data-shelf="data-stories"><RuleBox>
+  return <div className="space-y-10">
+    {r.sections.dataStories && <section aria-labelledby="front-data" data-shelf="data-stories">
       <Kicker id="front-data">Studies</Kicker>
       <Ledger className="mt-3" rows={r.dataStories.map(d => ({ key: d.slug, href: d.href, number: `No. ${d.number}`, title: d.headline ?? d.question }))} />
       <p className="ed-data mt-3"><Receipt href="/data" className="ed-tap">All studies →</Receipt></p>
-    </RuleBox></section>}
-  </>;
+    </section>}
+    {r.sections.editions && <section aria-labelledby="front-editions">
+      <Kicker id="front-editions">Editions</Kicker>
+      <Ledger className="mt-3" small rows={r.editions.map(e => ({ key: e.id, href: e.href, title: e.title, time: e.date }))} />
+    </section>}
+  </div>;
 }
 
 /** The whole front page from one full model (tests, /front.json consumers). */
 export function FrontView({ m }: { m: FrontModel }) {
-  return <FrontLayout m={m} slots={{ archive: <FrontArchive r={m} />, aside: <FrontAside m={m} r={m} />, lower: <FrontLower r={m} />, also: <AlsoCards items={m.also} pictures={{}} />, tape: null }} />;
+  return <FrontLayout m={m} slots={{ archive: <FrontArchive r={m} />, aside: <FrontAside r={m} />, asideRest: <FrontAsideRest m={m} r={m} />, lower: <FrontLower r={m} />, also: <AlsoCards items={m.also} pictures={{}} />, tape: null }} />;
 }
 // P1 · shell first: the lead, ticker and live column render from the critical read; the archive, side column and lower lists stream
 // into <Later> slots from the deferred read (same model, built once per lens on the server).
 const useRest = (m: FrontTop) => useSuspenseQuery(frontRestQuery(m.sector, m.format)).data;
 function RestArchive({ m }: { m: FrontTop }) { return <FrontArchive r={useRest(m)} />; }
-function RestAside({ m }: { m: FrontTop }) { return <FrontAside m={m} r={useRest(m)} />; }
+function RestAside({ m }: { m: FrontTop }) { return <FrontAside r={useRest(m)} />; }
+function RestAsideRest({ m }: { m: FrontTop }) { return <FrontAsideRest m={m} r={useRest(m)} />; }
 function RestLower({ m }: { m: FrontTop }) { return <FrontLower r={useRest(m)} />; }
 /** The deferred slots of one top model: archive, side column, lower lists, Also today's pictures and the tape. */
 function laterSlots(m: FrontTop): Slots {
   return {
     archive: m.sections.archive ? <Later id="front-archive-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><RestArchive m={m} /></Later> : null,
-    aside: <Later id="front-aside-later" shapes={[{ kind: "block", height: 380 }, { kind: "rows", n: 4, height: ROW.compact }]}><RestAside m={m} /></Later>,
+    aside: <Later id="front-aside-later" shapes={[{ kind: "block", height: 380 }]}><RestAside m={m} /></Later>,
+    asideRest: <Later id="front-aside-rest-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.compact }]}><RestAsideRest m={m} /></Later>,
     lower: m.sections.editions || m.sections.dataStories ? <Later id="front-lower-later" shapes={[{ kind: "rows", n: 4, height: ROW.compact }]}><RestLower m={m} /></Later> : null,
     also: m.sections.also ? <Later id="front-also-later" shapes={[{ kind: "block", height: 28 }, { kind: "block", height: 420 }]}><AlsoLater m={m} /></Later> : null,
     tape: <Later id="front-tape-later" className="d-stack" shapes={[{ kind: "block", height: 64 }, { kind: "rows", n: 8, height: ROW.compact }, { kind: "text", lines: 2 }]}><TapeLater /><WireLater /></Later>,
@@ -327,8 +341,12 @@ function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
       {m.lead ? <Lead m={m} now={now} /> : m.format === "all" && <p className="ed-standfirst">{voiced("read.frontView.3")}</p>}
       {slots.also}
       {(m.format === "all" || m.format === "live") && slots.tape}
-      <div className="grid grid-cols-1 gap-y-10 lg:grid-cols-12 lg:gap-x-10">
-        <section aria-labelledby="front-live" className="lg:col-span-8" data-tour="r-live">
+      {/* S1 · two columns from 1024 px (left: this week, the archive, the Morning Line link, Studies, Editions; rail: Chart of the day, then
+          your sector, explore, collections) with Moving now full width after both. Below 1024 px the columns dissolve (display: contents)
+          and `order` sets one column: this week, Chart of the day, Moving now, Studies, Editions, then the rest of the rail. */}
+      <div className="flex flex-col gap-y-10 lg:grid lg:grid-cols-12 lg:gap-x-10" data-front-cols="">
+        <div className="contents lg:col-span-8 lg:block lg:space-y-10" data-front-left="">
+        <section aria-labelledby="front-live" className="order-1" data-tour="r-live">
           {m.format === "explore"
             ? <><h2 id="front-live" className="ed-h2">Explore</h2><Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" /></>
             : <LiveColumn initial={m.column.items} serverNow={m.now} sector={m.sector} format={m.format} quiet={m.column.quiet} onUpdates={onUpdates} empty={empty}
@@ -337,12 +355,14 @@ function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
           {slots.archive}
           <p className="ed-data mt-6"><Link to="/morning" className="ed-tap">Older stories, day by day, in the Morning Line →</Link></p>
         </section>
-        <aside className="space-y-10 lg:col-span-4" aria-label="Chart of the day, your sector, explore and collections">
-          {slots.aside}
+        {slots.lower && <div className="order-4">{slots.lower}</div>}
+        </div>
+        <aside className="contents lg:col-span-4 lg:block lg:space-y-10" aria-label="Chart of the day, your sector, explore and collections" data-front-rail="">
+          {slots.aside && <div className="order-2">{slots.aside}</div>}
+          <div className="order-5 space-y-10">{slots.asideRest}</div>
         </aside>
+        {moving && <div className="order-3 lg:col-span-12"><Moving moving={moving} /></div>}
       </div>
-      {moving && <Moving moving={moving} />}
-      {slots.lower}
       <nav aria-label="About the front page" className="ed-navtext flex flex-wrap gap-x-6">{m.footer.filter(f => staff || !STAFF_HREFS.has(f.href)).map(f => <Receipt key={f.href} href={f.href} className="ed-tap inline-flex min-h-11 items-center">{f.label}</Receipt>)}</nav>
     </div>
     </FiltersScope>

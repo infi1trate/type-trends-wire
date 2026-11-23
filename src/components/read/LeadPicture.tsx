@@ -30,10 +30,19 @@ export function LeadFigure({ i, sizes, eager, label, compact = false }: { i: Lea
 /** The plan as a figure, or null when the plan has nothing to show here (chart: the slot's own chart stays; none). `compact` (I3b, the
  *  front lead only): one line under each picture (the domain linking to the live site, then Report) and one shared line under the whole
  *  picture saying what the pictures are, when they were captured and which first screens rotate. Story pages keep the full captions. */
-export function LeadPicture({ plan, eager = true, className = "", tileSizes = "(min-width: 1024px) 25vw, 50vw", compact = false }: { plan: LeadPlan; eager?: boolean; className?: string; tileSizes?: string; compact?: boolean }) {
+/** S1 · whether LeadPicture draws anything for this plan (a chart or "none" plan draws nothing: the slot's own chart takes the space). */
+export const planDraws = (plan: LeadPlan) => (plan.kind === "pair" || plan.kind === "single" || plan.kind === "card" || plan.kind === "mosaic") ? plan.items.length > 0
+  : plan.kind === "words" ? !!plan.words : plan.kind === "swatches" ? !!plan.swatches : plan.kind === "marks" ? !!plan.marks : false;
+
+export function LeadPicture({ plan, eager = true, className = "", tileSizes = "(min-width: 1024px) 25vw, 50vw", compact = false, stack = false }: { plan: LeadPlan; eager?: boolean; className?: string; tileSizes?: string; compact?: boolean; stack?: boolean }) {
   const line = compact ? sharedLine(plan) : plan.caption;
   const cap = line ? <figcaption className="ed-caption mt-2" data-lead-caption="">{line}</figcaption> : null;
   const wrap = (kind: string, body: React.ReactNode) => <figure className={`min-w-0 ${className}`} data-lead-picture={kind} data-lead-rule={plan.rule}>{body}{cap}</figure>;
+  // S1 · the front lead's two first screens as a composed stack from 1024 px (the first across the column, the second at 58% over its
+  // lower-left corner); below that, two equal pictures side by side. Fixed 3:2 boxes either way, so nothing moves when they load.
+  if (stack && plan.kind === "mosaic" && plan.items.length === 2) return wrap("stack", <div className="lead-stack" data-lead-stack="">
+    {plan.items.map((i, k) => <div key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={k === 0 ? "(min-width: 1024px) 34vw, 50vw" : "(min-width: 1024px) 20vw, 50vw"} eager={eager} compact={compact} /></div>)}
+  </div>);
   if (plan.kind === "pair") return wrap("pair", <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 md:gap-6">
     {plan.items.map(i => <LeadFigure key={i.asset} i={i} sizes="(min-width: 480px) 50vw, 100vw" eager={eager} compact={compact} label={compact ? (i.role === "before" ? "Before" : "After") : `${i.role === "before" ? "Before" : "After"} · ${i.date}`} />)}
   </div>);
