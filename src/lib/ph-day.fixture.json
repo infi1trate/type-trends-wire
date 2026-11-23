@@ -1,0 +1,167 @@
+{
+ "data": {
+  "posts": {
+   "edges": [
+    {
+     "node": {
+      "id": "1306148",
+      "name": "Yoroll",
+      "tagline": "Build playable stories without a game engine",
+      "url": "https://www.producthunt.com/products/yoroll?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "website": "https://www.producthunt.com/r/XKLWN5SDJ5RSLW?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "votesCount": 355,
+      "createdAt": "2026-11-22T08:01:00Z",
+      "topics": {
+       "edges": [
+        {
+         "node": {
+          "name": "Artificial Intelligence",
+          "slug": "artificial-intelligence"
+         }
+        },
+        {
+         "node": {
+          "name": "Games",
+          "slug": "games"
+         }
+        },
+        {
+         "node": {
+          "name": "No-Code",
+          "slug": "no-code"
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "id": "1323002",
+      "name": "Rankhog",
+      "tagline": "Get customers from Reddit on autopilot",
+      "url": "https://www.producthunt.com/products/rankhog?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "website": "https://www.producthunt.com/r/HVFQNHONLRBAJZ?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "votesCount": 340,
+      "createdAt": "2026-11-22T08:00:00Z",
+      "topics": {
+       "edges": [
+        {
+         "node": {
+          "name": "Marketing",
+          "slug": "marketing"
+         }
+        },
+        {
+         "node": {
+          "name": "Artificial Intelligence",
+          "slug": "artificial-intelligence"
+         }
+        },
+        {
+         "node": {
+          "name": "reddit",
+          "slug": "reddit"
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "id": "1324692",
+      "name": "Polylane Swarms",
+      "tagline": "A team of AI agents on your roughest production incidents",
+      "url": "https://www.producthunt.com/products/polylane?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "website": "https://www.producthunt.com/r/32EVX2QO6UY7TY?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "votesCount": 101,
+      "createdAt": "2026-11-23T08:00:00Z",
+      "topics": {
+       "edges": [
+        {
+         "node": {
+          "name": "Developer Tools",
+          "slug": "developer-tools"
+         }
+        },
+        {
+         "node": {
+          "name": "Artificial Intelligence",
+          "slug": "artificial-intelligence"
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "id": "1320738",
+      "name": "Ulika",
+      "tagline": "Visual editor for sites built with Claude, Cursor, or Codex",
+      "url": "https://www.producthunt.com/products/ulika?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "website": "https://www.producthunt.com/r/RMUGMIHZYR2MRX?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "votesCount": 93,
+      "createdAt": "2026-11-22T08:01:00Z",
+      "topics": {
+       "edges": [
+        {
+         "node": {
+          "name": "Design Tools",
+          "slug": "design-tools"
+         }
+        },
+        {
+         "node": {
+          "name": "Developer Tools",
+          "slug": "developer-tools"
+         }
+        },
+        {
+         "node": {
+          "name": "Artificial Intelligence",
+          "slug": "artificial-intelligence"
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "id": "1323666",
+      "name": "Mockreel",
+      "tagline": "your screen recording, but in a 3D phone. free, no signup",
+      "url": "https://www.producthunt.com/products/mockreel?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "website": "https://www.producthunt.com/r/JMDEOIWLDDDOHB?utm_campaign=producthunt-api&utm_medium=api-v2&utm_source=Application%3A+typetrends+%28ID%3A+321584%29",
+      "votesCount": 89,
+      "createdAt": "2026-11-22T08:01:00Z",
+      "topics": {
+       "edges": [
+        {
+         "node": {
+          "name": "Design Tools",
+          "slug": "design-tools"
+         }
+        },
+        {
+         "node": {
+          "name": "Marketing",
+          "slug": "marketing"
+         }
+        },
+        {
+         "node": {
+          "name": "Video",
+          "slug": "video"
+         }
+        }
+       ]
+      }
+     }
+    }
+   ]
+  }
+ }
+}

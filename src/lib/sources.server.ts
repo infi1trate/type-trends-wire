@@ -2,7 +2,7 @@
 // Only titles, links and channel names are stored; images are never fetched or persisted.
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { insertWireRows, logRun } from "./ingest.server";
-import { ARENA_DISABLED_REASON, ARENA_ENABLED, ARENA_BLOCKS_PER_CHANNEL, ARENA_MAX_REQUESTS, ARENA_QUERIES, PH_QUERY, arenaRows, cleanWebsite, parsePhPosts, phRows, pickArenaChannels, type ArenaChannel } from "./sources";
+import { ARENA_DISABLED_REASON, ARENA_ENABLED, ARENA_BLOCKS_PER_CHANNEL, ARENA_MAX_REQUESTS, ARENA_QUERIES, PH_QUERY, PH_QUERY_NO_TOPICS, arenaRows, cleanWebsite, parsePhPosts, inPhDay, phDayWindow, phRefused, phRows, pickArenaChannels, type ArenaChannel, type PhWindow } from "./sources";
 import type { WireRow } from "./wire-payload";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -89,18 +89,31 @@ export async function ingestArena() {
   }
 }
 
+/** PH1 · one GraphQL call (a second only when the API refuses the topics part); the rate-limit headers are kept so the cost is visible. */
+export async function fetchPhDay(token: string, w: PhWindow, withTopics = true) {
+  const call = async (query: string) => {
+    const r = await fetch("https://api.producthunt.com/v2/api/graphql", { method: "POST", signal: AbortSignal.timeout(15000),
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json", "user-agent": UA },
+      body: JSON.stringify({ query, variables: { after: w.after, before: w.before } }) });
+    // Provider error bodies may echo request details; keep only the status.
+    if (!r.ok) throw new Error(`Product Hunt: HTTP ${r.status}`);
+    const n = (h: string) => { const v = r.headers.get(h); return v == null || v === "" || Number.isNaN(Number(v)) ? null : Number(v); };
+    return { json: await r.json() as unknown, rate: { limit: n("x-rate-limit-limit"), remaining: n("x-rate-limit-remaining"), reset_s: n("x-rate-limit-reset") } };
+  };
+  let res = withTopics ? await call(PH_QUERY) : await call(PH_QUERY_NO_TOPICS), topics = withTopics;
+  if (withTopics && phRefused(res.json)) { res = await call(PH_QUERY_NO_TOPICS); topics = false; }
+  if (phRefused(res.json)) throw new Error("Product Hunt: query refused");
+  return { posts: parsePhPosts(res.json), topics_read: topics, rate: res.rate };
+}
+
 export async function ingestProductHunt() {
   const started = new Date(), failures: string[] = [];
   const token = process.env["PRODUCT_HUNT_TOKEN"];
   if (!token) return Response.json({ ok: true, dormant: true, reason: "PRODUCT_HUNT_TOKEN not set" });
   let written = 0;
   try {
-    const r = await fetch("https://api.producthunt.com/v2/api/graphql", { method: "POST", signal: AbortSignal.timeout(15000),
-      headers: { authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json", "user-agent": UA },
-      body: JSON.stringify({ query: PH_QUERY, variables: { after: new Date(started.getTime() - 864e5).toISOString() } }) });
-    // Provider error bodies may echo request details; keep only the status.
-    if (!r.ok) throw new Error(`Product Hunt: HTTP ${r.status}`);
-    const posts = parsePhPosts(await r.json());
+    const w = phDayWindow(started.getTime());
+    const day = await fetchPhDay(token, w), { topics_read, rate } = day, posts = day.posts.filter(p => inPhDay(p, w));
     const resolved = new Map<string, string | null>();
     // Website fields are producthunt.com redirects; read one Location hop from Product Hunt only (no request to the target site).
     await pool(posts, 6, async p => {
@@ -114,10 +127,21 @@ export async function ingestProductHunt() {
         resolved.set(p.url, loc ? cleanWebsite(new URL(loc, p.website).href) : null);
       } catch { resolved.set(p.url, null); failures.push(`website ${p.name}`); }
     });
-    const result = await insertWireRows(phRows(posts, resolved), failures);
+    const rows = phRows(posts, resolved, w);
+    // A launch read earlier (before its day finished) is already stored: its votes, topics, date and excerpt are brought up to the finished day.
+    const { data: had, error: hadErr } = rows.length ? await db.from("wire_items").select("url").in("url", rows.map(r => r.url)) : { data: [], error: null };
+    if (hadErr) throw new Error("Product Hunt: stored launch lookup failed");
+    const known = new Set((had ?? []).map(r => r.url));
+    const result = await insertWireRows(rows.filter(r => !known.has(r.url)), failures);
+    let updated = 0;
+    for (const r of rows.filter(x => known.has(x.url))) {
+      const { error } = await db.from("wire_items").update({ votes: r.votes ?? null, topics: r.topics ?? null, excerpt: r.excerpt, published_at: r.published_at, link: r.link }).eq("url", r.url).eq("source_kind", "producthunt");
+      if (error) failures.push(`update ${r.title.slice(0, 40)}`); else updated++;
+    }
     written = result.written;
-    await logRun("ingest-producthunt", started, true, written, { failures, seen: posts.length, discourse_rows: result.discourse_rows });
-    return Response.json({ ok: true, seen: posts.length, rows_written: written, failures });
+    const detail = { failures, seen: posts.length, next_day: day.posts.length - posts.length, day: w.day, window: { after: w.after, before: w.before }, topics_read, rate, updated, discourse_rows: result.discourse_rows };
+    await logRun("ingest-producthunt", started, true, written, detail);
+    return Response.json({ ok: true, seen: posts.length, rows_written: written, updated, day: w.day, topics_read, posts: posts.map(p => ({ votes: p.votes, topics: p.topics })), failures });
   } catch (e) {
     const error = e instanceof Error ? e.message : "Unknown ingestion error";
     await logRun("ingest-producthunt", started, false, written, { failures, error });

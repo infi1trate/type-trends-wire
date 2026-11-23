@@ -4502,7 +4502,9 @@ export type Database = {
           source_kind: string
           tags: string[]
           title: string
+          topics: string[] | null
           url: string
+          votes: number | null
         }
         Insert: {
           excerpt?: string | null
@@ -4515,7 +4517,9 @@ export type Database = {
           source_kind: string
           tags?: string[]
           title: string
+          topics?: string[] | null
           url: string
+          votes?: number | null
         }
         Update: {
           excerpt?: string | null
@@ -4528,7 +4532,9 @@ export type Database = {
           source_kind?: string
           tags?: string[]
           title?: string
+          topics?: string[] | null
           url?: string
+          votes?: number | null
         }
         Relationships: []
       }

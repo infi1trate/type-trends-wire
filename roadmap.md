@@ -257,3 +257,11 @@
 - [x] 2 Story build with 0 new changes under 2 s (check first); before/after
 - [x] 3 Publisher re-runs a failed package check (≤ every 6 h, ≤4 per issue), closes the bug item; link check 10 s + one retry, "slow" >3 s; run W47 check now; /terminal?panel=library 4.9 s
 - [x] 4 Product Hunt ingest start/finish rows + health jobs list, token works yes/no; discourse stale while ok
+
+# PH1 · Product Hunt launches
+- [ ] 1 Ingest reads the finished Pacific day (votes order, topics), stores votes/topics, plain run row, recorded-response tests
+- [ ] 2 Vote floor 150 + beat topics (300 without topics); below the line = wire item only
+- [ ] 3 Launches never numbered; No. 98–117 fate; held launch nowhere
+- [ ] 4 Today box ≤3 by votes, upvotes + launch day, no number; Terminal LAUNCHES group, not counted; before/after pictures
+- [ ] 5a W3c proof pictures into docs/proof/w3c/
+- [ ] 5b Retries for daily jobs / weekly model jobs; drafts made by an existing job with room

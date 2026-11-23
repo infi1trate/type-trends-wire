@@ -39,7 +39,8 @@ export const wireIngestPayload = z.discriminatedUnion("kind", [
 export type WireIngestPayload = z.infer<typeof wireIngestPayload>;
 type BskyItem = z.infer<typeof item>;
 
-export type WireRow = { url: string; title: string; source: string; source_kind: string; published_at: string; excerpt: string | null; link: string | null; tags: string[] };
+export type WireRow = { url: string; title: string; source: string; source_kind: string; published_at: string; excerpt: string | null; link: string | null; tags: string[];
+  /** Product Hunt only (PH1): finished-day votes and topic slugs. */ votes?: number | null; topics?: string[] | null };
 /** Public projection: headline + source + link only. Items older than the wire window or >1h in the future are skipped. */
 export function blueskyRows(items: BskyItem[], now: number): { rows: WireRow[]; skipped: { url: string; reason: string }[] } {
   const rows = new Map<string, WireRow>(), skipped: { url: string; reason: string }[] = [];

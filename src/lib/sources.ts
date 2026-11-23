@@ -45,23 +45,64 @@ export function arenaRows(json: unknown, channel: ArenaChannel, now: number): Wi
   return out;
 }
 
-export const PH_QUERY = `query TopToday($after: DateTime!) { posts(order: RANKING, first: 20, postedAfter: $after) { edges { node { id name tagline url website votesCount createdAt } } } }`;
-export type PhPost = { name: string; tagline: string; url: string; website: string | null; votes: number; created_at: string };
+// PH1 · Product Hunt is read once a day for the Pacific day that has just ended (its launch day runs midnight to midnight in
+// Los Angeles), ordered by votes, so every count is a finished day's count and never the first minutes of a new day.
+export const PH_TZ = "America/Los_Angeles";
+export const PH_FIRST = 20, PH_TOPICS_FIRST = 10;
+const POST_FIELDS = "id name tagline url website votesCount createdAt";
+export const PH_QUERY = `query FinishedDay($after: DateTime!, $before: DateTime!) { posts(order: VOTES, first: ${PH_FIRST}, postedAfter: $after, postedBefore: $before) { edges { node { ${POST_FIELDS} topics(first: ${PH_TOPICS_FIRST}) { edges { node { name slug } } } } } } }`;
+/** The same day without topics, asked only when the API refuses the topics query (its posts then carry topics: null). */
+export const PH_QUERY_NO_TOPICS = `query FinishedDay($after: DateTime!, $before: DateTime!) { posts(order: VOTES, first: ${PH_FIRST}, postedAfter: $after, postedBefore: $before) { edges { node { ${POST_FIELDS} } } } }`;
+const ptParts = (t: number) => {
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: PH_TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t));
+  const g = (k: string) => Number(f.find(x => x.type === k)?.value ?? 0);
+  return { y: g("year"), m: g("month"), d: g("day"), h: g("hour"), mi: g("minute"), s: g("second") };
+};
+const offsetMs = (t: number) => { const p = ptParts(t); return Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s) - Math.floor(t / 1000) * 1000; };
+/** The instant a Pacific calendar day starts (daylight saving handled: 23- and 25-hour days come out right). */
+export function pacificMidnight(y: number, m: number, d: number): number {
+  const t0 = Date.UTC(y, m - 1, d); let t = t0 - offsetMs(t0); t = t0 - offsetMs(t); return t;
+}
+/** The Pacific calendar day an instant falls on, as YYYY-MM-DD. */
+export function pacificDay(t: number): string { const p = ptParts(t); return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`; }
+export type PhWindow = { day: string; after: string; before: string };
+/** The Pacific day before the one `now` falls in: [start of that day, start of today). */
+export function phDayWindow(now: number): PhWindow {
+  const p = ptParts(now), prev = new Date(Date.UTC(p.y, p.m - 1, p.d - 1));
+  const after = pacificMidnight(prev.getUTCFullYear(), prev.getUTCMonth() + 1, prev.getUTCDate()), before = pacificMidnight(p.y, p.m, p.d);
+  return { day: prev.toISOString().slice(0, 10), after: new Date(after).toISOString(), before: new Date(before).toISOString() };
+}
+export type PhTopic = { name: string; slug: string };
+export type PhPost = { name: string; tagline: string; url: string; website: string | null; votes: number; created_at: string;
+  /** Topic slugs; null when the answer carried no topics field (topics were not read), [] when the post has none. */ topics: string[] | null; topic_names: string[] };
+/** Posts with a name, link and time, most votes first (ties by name), topics parsed when the field was asked for. */
 export function parsePhPosts(json: unknown): PhPost[] {
   const edges = o(o(o(json)["data"])["posts"])["edges"];
   return (Array.isArray(edges) ? edges : []).map(e => o(o(e)["node"])).filter(n => s(n["name"]) && s(n["url"]) && s(n["createdAt"]))
-    .map(n => ({ name: s(n["name"])!, tagline: s(n["tagline"]) ?? "", url: s(n["url"])!, website: s(n["website"]), votes: Number(n["votesCount"] ?? 0) || 0, created_at: s(n["createdAt"])! }));
+    .map(n => {
+      const te = n["topics"] == null ? null : o(n["topics"])["edges"];
+      const topics: PhTopic[] | null = te == null ? null : (Array.isArray(te) ? te : []).map(e => o(o(e)["node"])).filter(t => s(t["slug"])).map(t => ({ name: s(t["name"]) ?? s(t["slug"])!, slug: s(t["slug"])!.toLowerCase() }));
+      return { name: s(n["name"])!, tagline: s(n["tagline"]) ?? "", url: s(n["url"])!, website: s(n["website"]), votes: Number(n["votesCount"] ?? 0) || 0, created_at: s(n["createdAt"])!,
+        topics: topics ? topics.map(t => t.slug) : null, topic_names: topics ? topics.map(t => t.name) : [] };
+    })
+    .sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name));
 }
+/** True when the API answered with errors and no posts (the topics query refused): ask again without topics. */
+export const phRefused = (json: unknown) => Array.isArray(o(json)["errors"]) && !Array.isArray(o(o(o(json)["data"])["posts"])["edges"]);
 /** Product Hunt redirect targets carry tracking params; keep origin + path only. */
 export function cleanWebsite(url: string | null): string | null {
   if (!url) return null;
   try { const u = new URL(url); if (!/^https?:$/.test(u.protocol) || /(^|\.)producthunt\.com$/i.test(u.hostname)) return null; return `${u.origin}${u.pathname}`.slice(0, 2048); } catch { return null; }
 }
-export function phRows(posts: PhPost[], resolved: Map<string, string | null>): WireRow[] {
-  return posts.map(p => {
+/** The API's postedBefore takes posts made at the very instant the next day starts; those belong to the next day's read. */
+export const inPhDay = (p: Pick<PhPost, "created_at">, w: PhWindow) => { const t = Date.parse(p.created_at); return t >= Date.parse(w.after) && t < Date.parse(w.before); };
+/** Wire rows for one finished day: the launch's date is its launch time inside that day, with its votes and topics. */
+export function phRows(posts: PhPost[], resolved: Map<string, string | null>, w?: PhWindow): WireRow[] {
+  return posts.filter(p => !w || inPhDay(p, w)).map(p => {
     const site = resolved.get(p.url) ?? null, title = stripHtml(`${p.name}${p.tagline ? ` — ${p.tagline}` : ""}`, 300) ?? p.name;
-    return { url: p.url, title, source: "Product Hunt", source_kind: "producthunt", published_at: new Date(Date.parse(p.created_at)).toISOString(),
-      excerpt: `${p.votes} upvotes${site ? ` · ${new URL(site).hostname}` : ""}`, link: site, tags: tagText(`${p.name} ${p.tagline}`) };
+    const t = Date.parse(p.created_at);
+    return { url: p.url, title, source: "Product Hunt", source_kind: "producthunt", published_at: new Date(t).toISOString(),
+      excerpt: `${p.votes} upvotes${site ? ` · ${new URL(site).hostname}` : ""}`, link: site, tags: tagText(`${p.name} ${p.tagline}`), votes: p.votes, topics: p.topics };
   });
 }
 
