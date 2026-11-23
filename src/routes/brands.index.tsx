@@ -23,10 +23,9 @@ export const Route = createFileRoute("/brands/")({
   // title goes out first and the directory streams in as before.
   loaderDeps: ({ search }) => { const v = parseBrandsSearch(search); return { tab: v.tab, sector: resolveSector(v.sector) }; },
   loader: async ({ context, deps }) => {
-    await Promise.race([context.queryClient.ensureQueryData(brandsQuery()).catch(() => null), new Promise(r => setTimeout(r, BRANDS_FIRST_WAIT_MS))]);
+    const d = await Promise.race([context.queryClient.ensureQueryData(brandsQuery()).catch(() => null), new Promise<null>(r => setTimeout(() => r(null), BRANDS_FIRST_WAIT_MS))]);
     // W3d Part 5 · on a phone the "Moved this week" band's first crop is the largest picture: announced when the directory came in time.
-    const d = context.queryClient.getQueryData(brandsQuery().queryKey) as Parameters<typeof brandsPicture>[0] | undefined;
-    return { first: brandsPicture(d, deps) };
+    return { first: brandsPicture(d as Parameters<typeof brandsPicture>[0], deps) };
   },
   headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return link ? { Link: link } : undefined; },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "website" }, { property: "og:url", content: `${SITE_URL}/brands` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/brands` }, ...fontLinks()] }),
