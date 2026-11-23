@@ -319,6 +319,43 @@
   .digest .sig-fig { text-align: right; }
 }
 @media (min-width: 1024px) { .digest .sig-link, .digest .sig-head { grid-template-columns: max-content minmax(0, 1fr) 240px 8rem 9rem 7rem; } }
+/* S1 · Brands: "Moved this week" cards and the directory as tiles. Plates and pictures have fixed boxes; tiles off screen skip layout
+   (content-visibility with a size hint). Under 480 px a tile is a compact row (44 px plate left, name and facts right). */
+.digest .brand-plate { display: inline-grid; place-items: center; flex: none; overflow: hidden; background: var(--sys-color-surface); border: var(--tk-border-hairline) solid var(--sys-color-ink); }
+.digest .brand-plate-64 { width: 64px; height: 64px; } .digest .brand-plate-48 { width: 48px; height: 48px; } .digest .brand-plate-44 { width: 44px; height: 44px; }
+.digest .brand-plate img { width: 100%; height: 100%; object-fit: contain; padding: var(--tk-space-1); }
+.digest .brand-mono { display: grid; place-items: center; width: 100%; height: 100%; background: var(--sys-color-ink); font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h2-size); line-height: 1; }
+.digest .brand-plate-48 .brand-mono { font-size: var(--sys-text-h3-size); }
+.digest .brand-tile-name { display: block; font-family: var(--tk-type-h4-family); font-size: var(--tk-type-h4-size); line-height: var(--tk-type-h4-leading); font-weight: 700; text-transform: uppercase; letter-spacing: var(--tk-type-h4-tracking); overflow-wrap: anywhere; }
+.digest .brand-tile-move { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.digest .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: var(--tk-space-4); }
+.digest .brand-grid-item { content-visibility: auto; contain-intrinsic-size: auto 232px; }
+.digest .brand-tile { position: relative; display: flex; flex-direction: column; gap: var(--tk-space-3); height: 100%; padding: var(--tk-space-4); color: var(--sys-color-ink); text-decoration: none !important; border: var(--tk-border-hairline) solid var(--sys-color-rule); }
+.digest .brand-tile-body { display: flex; flex-direction: column; gap: var(--tk-space-1); min-width: 0; }
+.digest .brand-tile-chips { display: flex; flex-wrap: wrap; gap: var(--tk-space-1); }
+.digest .brand-tile:hover, .digest .brand-tile:focus-visible, .digest .moved-card:hover, .digest .moved-card:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); box-shadow: var(--tk-shadow-raised); }
+.digest .brand-tile:hover .ed-caption, .digest .brand-tile:focus-visible .ed-caption, .digest .moved-card:hover .ed-caption, .digest .moved-card:focus-visible .ed-caption { color: var(--tk-highlight-fg); }
+.digest .brand-tile-sticker { position: absolute; top: var(--tk-space-2); right: var(--tk-space-2); pointer-events: none; min-height: 0; padding: var(--tk-space-1) var(--tk-space-3); }
+@media (max-width: 479px) {
+  .digest .brand-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .digest .brand-grid-item { contain-intrinsic-size: auto 120px; border-bottom: var(--tk-border-hairline) solid var(--sys-color-rule); }
+  .digest .brand-tile { flex-direction: row; align-items: flex-start; border: 0; padding: var(--tk-space-3) var(--tk-space-2); }
+  .digest .brand-tile .brand-plate-64 { width: 44px; height: 44px; }
+  .digest .brand-tile .brand-plate-64 .brand-mono { font-size: var(--sys-text-h3-size); }
+  .digest .brand-tile-sticker { top: var(--tk-space-3); }
+  .digest .brand-tile-name { padding-right: 5.5rem; }
+}
+.digest .moved-band { display: grid; grid-auto-flow: column; grid-auto-columns: min(78vw, 20rem); gap: var(--tk-space-4); overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: var(--tk-space-3); }
+.digest .moved-band > li { scroll-snap-align: start; min-width: 0; }
+@media (min-width: 480px) and (max-width: 767px) { .digest .moved-band { grid-auto-columns: min(46vw, 20rem); } }
+@media (min-width: 768px) { .digest .moved-band { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; padding-bottom: 0; } }
+@media (min-width: 1024px) { .digest .moved-band { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1440px) { .digest .moved-band { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.digest .moved-card { display: flex; flex-direction: column; gap: var(--tk-space-1); height: 100%; padding: var(--tk-space-2); color: var(--sys-color-ink); text-decoration: none !important; }
+.digest .moved-crop { position: relative; display: block; aspect-ratio: 16 / 10; border: var(--tk-border-strong) solid var(--sys-color-rule); background: var(--sys-color-page); }
+.digest .moved-crop img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.digest .moved-crop .brand-plate { position: absolute; left: var(--tk-space-2); bottom: -1.25rem; }
+.digest .moved-card .brand-tile-name { margin-top: 1.75rem; }
 .digest .lead-box img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .digest [data-lead-item="icon"] .lead-box img { object-fit: scale-down; object-position: center; padding: var(--tk-space-4); }
 .digest .ed-typo { background: var(--sys-color-surface); border: var(--tk-border-strong) solid var(--sys-color-rule); aspect-ratio: 16 / 10; display: flex; flex-direction: column; justify-content: space-between; padding: var(--tk-space-3); }

@@ -1,21 +1,32 @@
 import { line as voiced } from "@/lib/voice";
-// /brands (Steady): the tracked brands as one Ledger — a search over the 300, the sector lens, columns for sector, last change and
+// /brands (Steady): the tracked brands as a grid of tiles (S1; "Moved this week" cards above) — a search over the 300, the sector lens, columns for sector, last change and
 // recorded moves, sortable by each; every choice lives in the URL. A Moves tab lists recent confirmed changes across every brand.
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { brandsQuery } from "@/lib/data";
 import { sectorName } from "@/lib/labels";
-import { storyTime } from "@/lib/stories";
 import { BRAND_SORTS, brandsIndex, brandsSearch, sortBy, type BrandsView } from "@/lib/brands-index";
 import { DigestShell } from "@/components/digest/Editorial";
-import { Ledger } from "@/components/brand/Ledger";
 import { RuleBox } from "@/components/brand/Containers";
 import { StoryCard } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { ScrollRow } from "./ScrollRow";
-import { MarkedName } from "./BrandMark";
-import { reserveIconSpace, type Pic } from "@/lib/pictures";
+import { longDay, type Pic } from "@/lib/pictures";
+/** "21 Nov", with the year kept when it is not the year of the directory's newest change (deterministic, so SSR and hydration agree). */
+const shortDay = (iso: string, year: string) => (iso.slice(0, 4) === year ? longDay(iso).replace(/ \d{4}$/, "") : longDay(iso));
+import { plateOf, type Plate } from "@/lib/brand-tiles";
+import { SYSTEM } from "@/lib/theme";
+
+const PLATE_COLORS = { ink: SYSTEM.color.ink.read, page: SYSTEM.color.page.read };
+/** S1 · the logo plate: the stored icon on the plate, or the brand's monogram on its measured accent; never empty. */
+function LogoPlate({ p, size, eager = false }: { p: Plate; size: 44 | 48 | 64; eager?: boolean }) {
+  return <span className={`brand-plate brand-plate-${size}`} aria-hidden="true" data-plate={p.kind}>
+    {p.kind === "icon" ? <img src={p.src} alt="" width={size} height={size} loading={eager ? "eager" : "lazy"} decoding="async" />
+      : <span className="brand-mono" style={{ ...(p.bg ? { background: p.bg } : {}), color: `var(--sys-color-${p.bg ? p.fg : "page"})` }}>{p.letter}</span>}
+  </span>;
+}
+type Moved = { domain: string; headline: string; at: string; hero: Pic };
 
 /** Rows in the first response; "Show all" draws the rest from data already on the page (a link with ?all=1 without scripts). */
 export const BRANDS_FIRST = 60;
@@ -25,7 +36,12 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
   const navigate = useNavigate();
   const idx = useMemo(() => brandsIndex(data.sites, v), [data, v]);
   const icons: Record<string, Pic> = (data as { icons?: Record<string, Pic> }).icons ?? {};
-  const reserve = reserveIconSpace(idx.rows.filter(r => icons[r.domain]).length, idx.rows.length);
+  const extra = data as { moved?: Moved[]; movedDomains?: string[] };
+  const movedNow = useMemo(() => new Set(extra.movedDomains ?? []), [extra.movedDomains]);
+  const band = (extra.moved ?? []).filter(m => v.sector === "all" || data.sites.find(x => x.domain === m.domain)?.sector === v.sector);
+  const year = useMemo(() => data.sites.reduce((y, x) => (x.lastChange && x.lastChange.slice(0, 4) > y ? x.lastChange.slice(0, 4) : y), ""), [data.sites]);
+  const siteOf = useMemo(() => new Map(data.sites.map(x => [x.domain, x])), [data.sites]);
+  const plate = (domain: string) => { const x = siteOf.get(domain); return plateOf({ icon: icons[domain], accent: (x as { accent?: string | null } | undefined)?.accent, name: x?.name, domain }, PLATE_COLORS); };
   const moves = data.moves.filter(m => v.sector === "all" || m.sector === v.sector);
   const go = (next: BrandsView, replace = false) => navigate({ to: "/brands", search: brandsSearch(next), replace, resetScroll: false });
   return <DigestShell label="Brands" section="brands" lens>
@@ -38,6 +54,16 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       <Link to="/brands" search={brandsSearch({ ...v, tab: "directory" })} aria-current={v.tab === "directory" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "directory" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Directory <span className="ed-muted">{idx.rows.length}</span></Link>
       <Link to="/brands" search={brandsSearch({ ...v, tab: "moves" })} aria-current={v.tab === "moves" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "moves" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Moves <span className="ed-muted">{moves.length}</span></Link>
     </ScrollRow></nav>
+    {v.tab === "directory" && band.length >= 3 && <section aria-labelledby="brands-moved" className="ed-wrap mt-8" data-moved-band="">
+      <h2 id="brands-moved" className="ed-kicker">Moved this week</h2>
+      <ul className="moved-band mt-3">{band.map((m, i) => { const x = siteOf.get(m.domain), name = x?.name ?? m.domain; return <li key={m.domain}>
+        <Link to="/brands/$domain" params={{ domain: m.domain }} className="moved-card" aria-label={`${name}: ${m.headline}`}>
+          <span className="moved-crop"><img src={m.hero.src} alt="" width={m.hero.width} height={m.hero.height} loading={i < 2 ? "eager" : "lazy"} decoding="async" /><LogoPlate p={plate(m.domain)} size={48} /></span>
+          <span className="brand-tile-name">{name}</span>
+          <span className="ed-caption brand-tile-move">{m.headline}</span>
+        </Link></li>; })}</ul>
+      <p className="ed-caption mt-2">First screens as captured; each links to the brand.</p>
+    </section>}
     {v.tab === "directory" ? <section aria-label="Brand directory" className="ed-wrap mt-6">
       <RuleBox className="p-4">
         <form role="search" method="get" action="/brands" className="flex flex-col gap-3 md:flex-row md:items-end" onSubmit={e => { e.preventDefault(); go(v); }}>
@@ -52,10 +78,22 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       </RuleBox>
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}</p>
       {idx.empty ? <p className="ed-body mt-4 max-w-[60ch]">{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p>
-        : <><Ledger className="mt-3" label="Tracked brands" rows={(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map(s => ({ key: s.domain, href: `/brands/${encodeURIComponent(s.domain)}`, title: <MarkedName icon={icons[s.domain]} reserve={reserve}>{s.name ?? s.domain}</MarkedName>,
-          line: <><span className="ed-code">{s.domain}</span>{s.lastMove ? ` · ${s.lastMove}` : ""}</>, facts: [sectorName(s.sector), s.lastChange ? `Changed ${storyTime(s.lastChange)}` : voiced("read.brandsIndexView.1"), `${s.moves} ${s.moves === 1 ? "move" : "moves"}`] }))} />
+        // S1 · the directory as tiles (a compact row under 480 px): logo plate, name, sector chip, moves and last change, the latest move.
+        : <><ul className="brand-grid mt-3" aria-label="Tracked brands" data-brand-grid="">{(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map((s, i) => { const name = s.name ?? s.domain, moved = movedNow.has(s.domain);
+          const facts = `${s.moves} ${s.moves === 1 ? "move" : "moves"} · ${s.lastChange ? `changed ${shortDay(s.lastChange, year)}` : voiced("read.brandsIndexView.1")}`;
+          return <li key={s.domain} className="brand-grid-item">
+            <Link to="/brands/$domain" params={{ domain: s.domain }} className="brand-tile" data-brand-tile="" aria-label={`${name}, ${sectorName(s.sector)}, ${facts}${moved ? ", moved this week" : ""}`}>
+              <LogoPlate p={plate(s.domain)} size={64} eager={i < 10} />
+              <span className="brand-tile-body">
+                <span className="brand-tile-name">{name}</span>
+                <span className="brand-tile-chips"><span className="ledger-tag">{sectorName(s.sector)}</span></span>
+                <span className="ed-caption brand-tile-facts">{facts}</span>
+                {s.lastMove && <span className="ed-caption brand-tile-move">{s.lastMove}</span>}
+              </span>
+              {moved && <span className="c-sticker brand-tile-sticker" aria-hidden="true" data-container="sticker">Moved</span>}
+            </Link></li>; })}</ul>
           {!all && !more && idx.rows.length > BRANDS_FIRST && <p className="ed-data mt-4"><Link to="/brands" search={{ ...brandsSearch(v), all: "1" }} resetScroll={false} className="c-raised ed-kicker no-underline" data-container="raised" data-show-all=""
-            onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-ledger] .ledger-link")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}
+            onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-brand-tile]")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}
     </section> : <section aria-label="Recent moves" className="ed-wrap mt-6">
       <p className="ed-caption">Confirmed changes (two captures agree) and rebrands in the last 30 days, newest first.</p>
       {moves.length ? <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 lg:grid-cols-3">{moves.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-body mt-4">No confirmed move{v.sector !== "all" ? ` in ${sectorName(v.sector)}` : ""} in the last 30 days. Moves land here as soon as two captures agree on a change.</p>}

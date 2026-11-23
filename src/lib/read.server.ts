@@ -157,24 +157,30 @@ const moveCounts = memo(TTL, async () => {
 
 /** /brands: the directory plus recent moves across every brand (precomputed record "brands-index"; computeBrands is the live load). */
 export async function loadBrands() {
-  const [rec, { picturesSafe }, { iconsFor }] = await Promise.all([brandsRecord(null).catch(() => lastBrandsRecord()), import("./pictures.server"), import("./pictures")]);
+  const [rec, { picturesSafe }, { iconsFor }, { movedThisWeek, movedSet }] = await Promise.all([brandsRecord(null).catch(() => lastBrandsRecord()), import("./pictures.server"), import("./pictures"), import("./brand-tiles")]);
+  const index = await picturesSafe(), now = Date.now();
+  // S1 · "Moved this week": one card per brand with a stored first-screen crop, and the brands that carry the MOVED sticker.
+  const moved = movedThisWeek(rec.moves, now, d => !!index.get(d)?.hero).map(c => ({ ...c, hero: index.get(c.domain)!.hero! }));
   // I1: each row's site icon from the pictures index (never stored in the record, so a new icon shows within minutes).
-  return { ...rec, icons: iconsFor(await picturesSafe(), rec.sites.map(s => s.domain)) };
+  return { ...rec, icons: iconsFor(index, rec.sites.map(s => s.domain)), moved, movedDomains: movedSet(rec.moves, now) };
 }
 export async function computeBrands() {
   const db = supabaseAnon();
-  const [sites, storyList, counts] = await Promise.all([
+  const [sites, storyList, counts, accents] = await Promise.all([
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_change_at: string | null; last_snapshot_at: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_change_at,last_snapshot_at").order("domain").range(f, t) as never),
     allStories(),
     moveCounts(),
+    // S1 · each brand's measured accent (the monogram plate's colour when no usable icon is stored); a failed read only loses the colour.
+    pages<{ domain: string; accent: string | null }>((f, t) => db.from("library_latest").select("domain,accent").order("domain").range(f, t) as never).catch(() => []),
   ]);
+  const accentOf = new Map(accents.map(a => [a.domain, a.accent]));
   // P2c · a directory built from incomplete inputs is refused (never kept in memory or written as the record); the next request retries.
   if (storyList.partial) { allStories.clear(); throw new Error("brands_inputs_incomplete"); }
   const { stories } = storyList;
   const moves = stories.filter(s => s.type === "move" || s.type === "rebrand").sort((a, b) => b.at.localeCompare(a.at) || a.id.localeCompare(b.id));
   const last = new Map<string, Story>(); for (const m of moves) for (const d of m.domains) if (!last.has(d)) last.set(d, m);
   return {
-    sites: sites.filter(s => s.active).map(s => { const c = counts.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, lastChange: c?.n ? (last.get(s.domain)?.at ?? c.last) : null, lastMove: last.get(s.domain)?.headline ?? null, captured: s.last_snapshot_at, moves: c?.n ?? 0 }; }),
+    sites: sites.filter(s => s.active).map(s => { const c = counts.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, accent: accentOf.get(s.domain) ?? null, lastChange: c?.n ? (last.get(s.domain)?.at ?? c.last) : null, lastMove: last.get(s.domain)?.headline ?? null, captured: s.last_snapshot_at, moves: c?.n ?? 0 }; }),
     moves: moves.slice(0, 120),
   };
 }

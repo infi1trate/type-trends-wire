@@ -82,7 +82,9 @@ describe("containers", () => {
     const css = readFileSync("src/styles.css", "utf8");
     const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(m => /--tk-shadow-(raised|sticker|pressed)/.test(m[2]!));
     expect(rules.length).toBeGreaterThan(0);
-    for (const r of rules) expect(r[1]!.trim(), r[1]).toMatch(/^\.c-(raised|sticker)\b/);
+    // S1 (owner's brief, 23 Nov): the brand tiles and "Moved this week" cards take the hard shadow on hover/focus (they are pressed),
+    // and the front lead's picture stack wears it; nothing else.
+    for (const r of rules) expect(r[1]!.trim(), r[1]).toMatch(/^(\.c-(raised|sticker)\b|\.digest \.(brand-tile|moved-card|lead-stack)\b)/);
     const code = walk("src").filter(f => /\.(tsx?|css)$/.test(f) && !f.endsWith(".test.ts") && !f.endsWith(".test.tsx") && !f.includes("/theme/") && !f.endsWith("styles.css"));
     expect(code.filter(f => /--tk-shadow-(raised|sticker|pressed)|shadow\.(raised|sticker)/.test(readFileSync(f, "utf8")))).toEqual([]);
   });
