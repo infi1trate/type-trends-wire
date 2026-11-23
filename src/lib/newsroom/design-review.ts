@@ -54,9 +54,16 @@ export const MEASURES = {
   console_errors: { schema: count, unit: "errors", what: "console errors" },
   failed_requests: { schema: count, unit: "requests", what: "failed requests" },
   changed_share: { schema: z.number().min(0).max(1), unit: "", what: "share of pixels changed" },
+  /** C1b · the age in whole seconds of the server instance that answered the page (its `x-instance-age` header), so a review can tell a
+   *  cold answer from a warm one. Stored and shown beside first byte; no budget, breach, gate rule or design call reads it. */
+  instance_age_s: { schema: z.number().int().min(0).max(86_400), unit: "s", what: "answering instance's age" },
 } as const;
 export type MeasureId = keyof typeof MEASURES;
 export const MEASURE_IDS = Object.keys(MEASURES) as MeasureId[];
+/** C1b · measures that describe the server, not the page: kept out of run differences and the weekly design call. */
+export const SERVER_MEASURES: ReadonlySet<MeasureId> = new Set(["instance_age_s"]);
+/** The measures the design desk compares and may cite (every page measure). */
+export const PAGE_MEASURE_IDS = MEASURE_IDS.filter(m => !SERVER_MEASURES.has(m));
 export type Measures = { [K in MeasureId]?: z.infer<(typeof MEASURES)[K]["schema"]> | undefined };
 /** Unknown measure names are refused (the object is strict). */
 export const measuresSchema = z.object(Object.fromEntries(MEASURE_IDS.map(k => [k, MEASURES[k].schema.optional()])) as { [K in MeasureId]: z.ZodOptional<(typeof MEASURES)[K]["schema"]> }).strict();
@@ -165,7 +172,7 @@ export function runDiff(after: readonly ReviewRow[], before: readonly ReviewRow[
   const a = cellsOf(after), b = cellsOf(before), out: CellDiff[] = [];
   for (const p of REVIEW_PAGES) for (const w of REVIEW_WIDTHS) {
     const x = b.get(cell(p.id, w))?.measures ?? {}, y = a.get(cell(p.id, w))?.measures ?? {};
-    const changes = MEASURE_IDS.filter(m => m !== "changed_share" && x[m] !== y[m]).map(m => ({ measure: m, before: (x[m] ?? null) as number | boolean | null, after: (y[m] ?? null) as number | boolean | null }));
+    const changes = PAGE_MEASURE_IDS.filter(m => m !== "changed_share" && x[m] !== y[m]).map(m => ({ measure: m, before: (x[m] ?? null) as number | boolean | null, after: (y[m] ?? null) as number | boolean | null }));
     if (y.changed_share !== undefined) changes.push({ measure: "changed_share", before: null, after: y.changed_share });
     if (changes.length) out.push({ page: p.id, width: w, changes });
   }
@@ -189,7 +196,7 @@ export const DESIGN_SCHEMA = {
   properties: {
     observations: { type: "array", maxItems: 2, items: { type: "object", properties: {
       where: { type: "string" }, sees: { type: "string" }, focus: { type: "string", enum: [...FOCUS] }, evidence: { type: "string" },
-      measure: { type: "string", enum: [...MEASURE_IDS, "picture"] },
+      measure: { type: "string", enum: [...PAGE_MEASURE_IDS, "picture"] },
       move: { type: "object", properties: { type: { type: "string", enum: ["setting", "layout"] }, setting: { type: "string", enum: [...SETTING_IDS, "none"] }, value: { type: "string" }, text: { type: "string" }, touches: { type: "string", enum: [...TOUCHES] } }, required: ["type", "setting", "value", "text", "touches"], additionalProperties: false },
     }, required: ["where", "sees", "focus", "evidence", "measure", "move"], additionalProperties: false } },
   },
@@ -206,8 +213,9 @@ export function registerFor(live: LivingValues): DesignInput["register"] {
     return { id, name: s.name, what: s.what, range, current: Array.isArray(live[id]) ? (live[id] as string[]).join(",") : String(live[id]) };
   });
 }
+const pageOnly = (m: Measures): Measures => Object.fromEntries(Object.entries(m).filter(([k]) => !SERVER_MEASURES.has(k as MeasureId))) as Measures;
 export const designText = (i: DesignInput) => [
-  `<page>${JSON.stringify({ page: i.page, name: pageName(i.page), path: i.path, widths: i.widths })}</page>`,
+  `<page>${JSON.stringify({ page: i.page, name: pageName(i.page), path: i.path, widths: i.widths.map(w => ({ ...w, now: pageOnly(w.now), last: w.last ? pageOnly(w.last) : null })) })}</page>`,
   `<register>${JSON.stringify(i.register)}</register>`,
   "The pictures follow: 1440 px, then 768 px, then 390 px, each preceded by its width.",
 ].join("\n");
@@ -222,7 +230,7 @@ export function parseDesign(raw: unknown): Observation[] | null {
   for (const o of (v as { observations: unknown[] }).observations) {
     if (!o || typeof o !== "object") return null;
     const x = o as Record<string, unknown>, m = (x["move"] ?? {}) as Record<string, unknown>;
-    const where = str(x["where"]), sees = str(x["sees"]), evidence = str(x["evidence"]), focus = oneOf(x["focus"], FOCUS), measure = oneOf(x["measure"], [...MEASURE_IDS, "picture"] as const);
+    const where = str(x["where"]), sees = str(x["sees"]), evidence = str(x["evidence"]), focus = oneOf(x["focus"], FOCUS), measure = oneOf(x["measure"], [...PAGE_MEASURE_IDS, "picture"] as const);
     const type = oneOf(m["type"], ["setting", "layout"] as const), setting = oneOf(m["setting"], [...SETTING_IDS, "none"] as const), text = str(m["text"]), touches = oneOf(m["touches"], TOUCHES);
     if (!where || !sees || !evidence || !focus || !measure || !type || !setting || !text || !touches) return null;
     out.push({ where, sees, focus, evidence, measure, move: { type, setting, value: typeof m["value"] === "string" ? m["value"].trim().slice(0, 120) : "", text, touches } });

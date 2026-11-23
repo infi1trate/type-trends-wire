@@ -42,11 +42,11 @@ function Table({ caption, head, children, min = 560 }: { caption: string; head: 
   </table></div>;
 }
 const val = (m: string, v: number | boolean | null | undefined) => (v == null ? "not measured" : typeof v === "boolean" ? (v ? "yes" : "no") : m === "changed_share" ? `${Math.round(v * 1000) / 10}%` : m === "cls" ? String(v) : String(Math.round(v)));
-const KEY = ["height_px", "words", "first_byte_ms", "lcp_ms", "small_targets", "low_contrast", "console_errors", "changed_share"] as const;
+const KEY = ["height_px", "words", "first_byte_ms", "instance_age_s", "lcp_ms", "small_targets", "low_contrast", "console_errors", "changed_share"] as const;
 const pageName = (pages: readonly { id: string; name: string }[], id: string) => pages.find(p => p.id === id)?.name ?? id;
 
 function RunTable({ caption, rows, pages }: { caption: string; rows: Cell[]; pages: readonly { id: string; name: string }[] }) {
-  return <Table caption={caption} head={["Page", "Width", "Height", "Words", "First byte", "Largest paint", "Small targets", "Low contrast", "Console errors", "Changed", "Picture"]} min={980}>
+  return <Table caption={caption} head={["Page", "Width", "Height", "Words", "First byte", "Instance age, s", "Largest paint", "Small targets", "Low contrast", "Console errors", "Changed", "Picture"]} min={1060}>
     {rows.map(r => <tr key={`${r.page}@${r.width}`} className="ed-hair"><th scope="row" className={`${td} text-left font-normal`}>{pageName(pages, r.page)}</th><td className={`${td} num`}>{r.width}</td>
       {KEY.map(k => <td key={k} className={`${td} num`}>{val(k, r.measures[k])}</td>)}<td className={td}>{r.picture ? "stored" : "none"}</td></tr>)}
   </Table>;
