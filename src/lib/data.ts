@@ -1,3 +1,4 @@
+import { wireShown } from "./launches";
 import { queryOptions } from "@tanstack/react-query";
 import { getWatchView, getWatchOptions, getAudit } from "./agency.functions";
 import { parseAuditSites } from "./agency/audit";
@@ -180,6 +181,9 @@ export interface WireItem {
   link: string | null;
   tags: string[];
   ref?: string | null;
+  /** Product Hunt launches only (PH1). */
+  votes?: number | null;
+  topics?: string[] | null;
 }
 
 export const wireQuery = () =>
@@ -189,11 +193,12 @@ export const wireQuery = () =>
     queryFn: async (): Promise<WireItem[]> => {
       const { data, error } = await supabase
         .from("wire_items")
-        .select("id,url,title,source,source_kind,published_at,excerpt,link,tags,ref")
+        .select("id,url,title,source,source_kind,published_at,excerpt,link,tags,ref,votes,topics")
         .order("published_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return data ?? [];
+      // PH1 · a launch under the vote floor or off slug's beat is stored but never shown.
+      return (data ?? []).filter(wireShown);
     },
   });
 

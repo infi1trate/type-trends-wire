@@ -14,12 +14,13 @@ export const Route = createFileRoute("/api/public/ingest-producthunt")({
     const [{ ingestProductHunt }, { startRun }, { phReason }] = await Promise.all([import("@/lib/sources.server"), import("@/lib/jobs/runs.server"), import("@/lib/health")]);
     const run = await startRun("ingest-producthunt");
     const res = await ingestProductHunt();
-    const body = await res.clone().json().catch(() => null) as { ok?: boolean; dormant?: boolean; reason?: string; seen?: number; rows_written?: number; updated?: number; day?: string; topics_read?: boolean; error?: string } | null;
+    const body = await res.clone().json().catch(() => null) as { ok?: boolean; dormant?: boolean; reason?: string; seen?: number; rows_written?: number; updated?: number; day?: string; topics_read?: boolean; posts?: { votes: number; topics: string[] | null }[]; error?: string } | null;
     if (body?.dormant) await run.finish(false, phReason(body.reason));
     else if (body?.ok) {
       // PH1 · the run row in plain words: the Pacific day read, what came back, what is new.
-      const { phRunLine } = await import("@/lib/launches");
-      await run.finish(true, phRunLine({ day: body.day ?? null, fetched: body.seen ?? 0, written: body.rows_written ?? 0, updated: body.updated ?? 0, topicsRead: body.topics_read ?? null }), { fetched: body.seen ?? 0, written: body.rows_written ?? 0 });
+      const { phRunLine, onTheLine } = await import("@/lib/launches");
+      const passed = (body.posts ?? []).filter(onTheLine).length;
+      await run.finish(true, phRunLine({ day: body.day ?? null, fetched: body.seen ?? 0, written: body.rows_written ?? 0, updated: body.updated ?? 0, topicsRead: body.topics_read ?? null, passed }), { fetched: body.seen ?? 0, written: body.rows_written ?? 0, passed });
     }
     else await run.finish(false, phReason(body?.error));
     return res;

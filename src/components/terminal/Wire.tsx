@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { wireQuery, wirePicksQuery, type WireItem } from "@/lib/data";
 import { decodeEntities } from "@/lib/entities";
+import { wireShown } from "@/lib/launches";
 import { alertDisplayTitle } from "@/lib/labels";
 import { Empty, Loading, PanelHeader, QueryBar, Seg } from "./primitives";
 import { sitePath, sourceName } from "@/lib/brand";
@@ -28,6 +29,7 @@ export function useWireRealtime(onNew: (id: number) => void) {
       .channel(`wire-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "wire_items" }, (payload) => {
         const row = payload.new as WireItem;
+        if (!wireShown(row)) return;
         qc.setQueryData<WireItem[]>(["wire"], (old) => [row, ...(old ?? []).filter((o) => o.id !== row.id)].slice(0, 200));
         qc.invalidateQueries({ queryKey: ["wire-24h"] });
         cb.current(row.id);

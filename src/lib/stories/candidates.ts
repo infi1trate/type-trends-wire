@@ -609,8 +609,9 @@ export function newsCandidates(m: NewsMatcher, wire: WireIn[]): { candidates: Ca
   }
   return { candidates: out, dropped: drops.bluesky + drops.no_name + drops.no_subject, drops };
 }
-export function launchCandidate(w: WireIn): Candidate {
-  return { id: `launch:${w.id}`, type: "launch", kicker: "Launch · Product Hunt", headline: clip(untick(w.title), 160), deck: w.excerpt ? clip(untick(w.excerpt), 180) : null,
+export function launchCandidate(w: WireIn & { votes?: number | null }): Candidate {
+  // PH1 · the deck is the finished day's vote count ("412 upvotes"), which the launch box reads.
+  return { id: `launch:${w.id}`, type: "launch", kicker: "Launch · Product Hunt", headline: clip(untick(w.title), 160), deck: w.votes != null ? `${w.votes} upvotes` : w.excerpt ? clip(untick(w.excerpt), 180) : null,
     facts: [{ text: `Product Hunt, ${shortDate(w.published_at)}`, href: w.url, basis: null, kind: "source" }], sector: null, signalKeys: [], domains: [],
     evidence: [{ label: "Product Hunt", href: w.url }], sourceIds: [`wire:${w.id}`], basis: null, happenedAt: w.published_at, magnitude: 1 };
 }

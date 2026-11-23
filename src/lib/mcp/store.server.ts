@@ -32,11 +32,13 @@ export async function familySuggestions(fragment: string, limit: number) {
   if (error) throw error; return (data ?? []).map(r=>r.family);
 }
 export async function wire(opts: {query?:string | undefined;tag?:string | undefined;source?:string | undefined;source_kind?:string | undefined;sinceIso:string;limit:number}) {
-  let q=supabaseAnon().from('wire_items').select('url,title,source,source_kind,published_at,excerpt,link,tags,ref').gte('published_at',opts.sinceIso);
+  let q=supabaseAnon().from('wire_items').select('url,title,source,source_kind,published_at,excerpt,link,tags,ref,votes,topics').gte('published_at',opts.sinceIso);
   if (opts.source_kind) q=q.eq('source_kind',opts.source_kind);
   if (opts.tag) q=q.contains('tags',[opts.tag]);
   const source=clean(opts.source ?? ''), query=clean(opts.query ?? '');
   if (source) q=q.ilike('source',`%${source}%`);
   if (query) q=q.or(`title.ilike.%${query}%,excerpt.ilike.%${query}%`);
-  const {data,error}=await q.order('published_at',{ascending:false}).limit(opts.limit); if(error) throw error; return data ?? [];
+  const {data,error}=await q.order('published_at',{ascending:false}).limit(opts.limit); if(error) throw error;
+  // PH1 · launches under the line stay stored wire items only.
+  const { wireShown } = await import('../launches'); return (data ?? []).filter(wireShown).map(({votes:_v,topics:_t,...r})=>r);
 }

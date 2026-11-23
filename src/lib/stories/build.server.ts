@@ -245,7 +245,9 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     pages<EventRow>((f, t) => db.from("library_events").select("id,domain,type,before,after,detected_at,source,page_type,viewport,summary,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").gte("detected_at", new Date(now - (o.days + REVERSAL_DAYS) * 864e5).toISOString()).order("id").range(f, t) as never),
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt,ref").eq("source_kind", "alert").gte("published_at", since).order("id").limit(500),
     pages<BuildInput["wire"][number]>((f, t) => db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", since).lte("published_at", new Date(now).toISOString()).order("id").range(f, t) as never),
-    db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").eq("source_kind", "producthunt").gte("published_at", since).order("id").limit(200),
+    // PH1 · only launches over the line (votes floor and slug's beat, launches.ts) are candidates; the rest stay wire items.
+    db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt,votes,topics").eq("source_kind", "producthunt").gte("published_at", since).order("id").limit(200)
+      .then(async r => ({ ...r, data: r.data ? r.data.filter((await import("../launches")).onTheLine) : r.data })),
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_snapshot_at: string | null; site_kind: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_snapshot_at,site_kind").order("domain").range(f, t) as never),
     readHistory<SiteRow & { captured_at: string | null }>(db, HIST, { now: true }),
     readHistory<SiteRow>(db, HIST, { now: false }),
