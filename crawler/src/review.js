@@ -77,6 +77,8 @@ export function measuresOf(m, extra = {}) {
   num("image_kb", 1); num("first_byte_ms", 0); num("lcp_ms", 0); num("cls", 3);
   if (typeof m.overflow_x === "boolean") out.overflow_x = m.overflow_x;
   if (Number.isFinite(extra.changed_share)) out.changed_share = Math.min(1, Math.max(0, Math.round(extra.changed_share * 1e4) / 1e4));
+  // C1b: the door takes the answering instance's age (whole seconds, 0 to 86,400); left out when the site did not send one.
+  if (Number.isInteger(extra.instance_age_s) && extra.instance_age_s >= 0 && extra.instance_age_s <= 86400) out.instance_age_s = extra.instance_age_s;
   return out;
 }
 /** Pure: the middle value of the numbers that were measured (the lower middle of an even count); NaN when none was. */
@@ -160,8 +162,8 @@ async function shoot(browser, base, p, width) {
   page.on("requestfailed", () => { failed++; });
   page.on("response", r => { if (r.status() >= 400) failed++; });
   try {
-    // C1: the site says how old the answering server instance is (x-instance-age, seconds). Kept for the run log only, so a slow
-    // measure can be read as cold or warm; the door takes named measures and this is not one of them.
+    // C1: the site says how old the answering server instance is (x-instance-age, seconds), so a slow measure can be read as cold
+    // or warm. Printed in the run log and, since C1b, sent to the door as instance_age_s.
     const first = await page.goto(base + p.path, { waitUntil: "networkidle", timeout: 60_000 }).catch(() => page.waitForLoadState("load", { timeout: 20_000 }).catch(() => null));
     const instanceAge = instanceAgeOf(first && typeof first.headers === "function" ? first.headers() : null);
     await page.waitForTimeout(1500);
@@ -244,7 +246,7 @@ async function main() {
         let share = NaN;
         if (theirs && fs.existsSync(path.join(theirs, file))) share = changedShare(await sharp(path.join(theirs, file)).removeAlpha().raw().toBuffer(), raw, COMPARE_WIDTH);
         const webp = await picture(shot.png);
-        const body = { actor: s.actor, action: "review", run: s.run, kind: s.kind, page: p.page, path: p.path, width, ...(s.against && Number.isFinite(share) ? { against: s.against } : {}), measures: measuresOf(shot.m, { changed_share: share }), ...(webp ? { picture: webp.toString("base64") } : {}) };
+        const body = { actor: s.actor, action: "review", run: s.run, kind: s.kind, page: p.page, path: p.path, width, ...(s.against && Number.isFinite(share) ? { against: s.against } : {}), measures: measuresOf(shot.m, { changed_share: share, instance_age_s: shot.instanceAge }), ...(webp ? { picture: webp.toString("base64") } : {}) };
         const line = `${p.page} ${width}: ${body.measures.height_px} px, ${body.measures.words} words, first byte ${body.measures.first_byte_ms ?? "?"} ms, largest paint ${body.measures.lcp_ms ?? "?"} ms, instance ${shot.instanceAge === null ? "age not sent" : `${shot.instanceAge} s old`}${Number.isFinite(share) ? `, ${(share * 100).toFixed(2)}% changed` : ""}`;
         if (s.dry) { console.log(`${line} (dry run, not sent)`); continue; }
         const res = await fetch(`${s.base}/api/public/desk`, { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(60_000) }).catch(e => ({ ok: false, status: 0, text: async () => String(e?.message ?? e) }));

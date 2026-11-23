@@ -73,3 +73,12 @@ test("the instance age is read from the site's header, and is null when it was n
   assert.equal(instanceAgeOf({}), null);
   assert.equal(instanceAgeOf(null), null);
 });
+
+test("the instance age is sent as a measure only when it is a whole number of seconds within a day", () => {
+  assert.equal(measuresOf({ height_px: 1 }, { instance_age_s: 0 }).instance_age_s, 0);
+  assert.equal(measuresOf({ height_px: 1 }, { instance_age_s: 137 }).instance_age_s, 137);
+  assert.equal("instance_age_s" in measuresOf({ height_px: 1 }, { instance_age_s: null }), false);
+  assert.equal("instance_age_s" in measuresOf({ height_px: 1 }, { instance_age_s: 86401 }), false);
+  assert.equal("instance_age_s" in measuresOf({ height_px: 1 }, { instance_age_s: 1.5 }), false);
+  assert.equal("instance_age_s" in measuresOf({ height_px: 1 }), false);
+});
