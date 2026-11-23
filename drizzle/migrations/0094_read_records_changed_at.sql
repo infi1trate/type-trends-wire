@@ -1,0 +1,2 @@
+ALTER TABLE public.read_records ADD COLUMN IF NOT EXISTS changed_at timestamptz;
+COMMENT ON COLUMN public.read_records.changed_at IS 'D1c: when the body last changed (computed_at also moves when an unchanged body is re-timed near its limit). Null for rows written before D1c.';

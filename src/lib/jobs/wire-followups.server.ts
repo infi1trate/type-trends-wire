@@ -10,7 +10,9 @@ export type StepResult = { step: wf.FollowupStep | "marked work"; ms: number; no
 export type WireFollowupsRun = { ran: boolean; why: string; run_id: number | null; first: wf.FollowupStep | null; steps: StepResult[]; ms: number; mode?: "background" | "inline" };
 type Deps = {
   build: (job: string, t0: number, limitMs: number) => Promise<string | null>;
-  sweep: (job: string, start: number, limitMs: number, force?: boolean) => Promise<{ written: string[]; retimed?: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
+  sweep: (job: string, start: number, limitMs: number, force?: boolean, metas?: { key: string; computed_at: string }[]) => Promise<{ written: string[]; retimed?: string[]; checked?: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
+  /** D1c · the stored pages past their limit or passing it before the next pass (with the times read, handed to the sweep). */
+  urgent: () => Promise<{ keys: string[]; metas: { key: string; computed_at: string }[] | null }>;
   /** D1b · the story build is on hold (job_hold): it then takes a second or two, so it goes first and the sweep gets the rest. */
   held: () => Promise<boolean>;
   /** D1 Part 2 · what crawler posts marked out of date (its own share of the pass, before the build and the sweep). */
@@ -19,7 +21,13 @@ type Deps = {
 };
 const DEPS: Deps = {
   build: async (job, t0, limitMs) => (await import("../stories/build.server")).afterJob(job, t0, { limitMs }),
-  sweep: async (job, start, limitMs, force) => (await import("../records/refresh.server")).refreshAfterJob(job, start, { limitMs, ...(force ? { force } : {}) }),
+  sweep: async (job, start, limitMs, force, metas) => (await import("../records/refresh.server")).refreshAfterJob(job, start, { limitMs, ...(force ? { force } : {}), ...(metas ? { metas } : {}) }),
+  urgent: async () => {
+    if (underTest()) return { keys: [], metas: null };
+    const [{ recordMetas }, { sweepUrgent }] = await Promise.all([import("../records/store.server"), import("../records/records")]);
+    const metas = await recordMetas();
+    return { keys: sweepUrgent(metas, Date.now()), metas };
+  },
   // Under test the pass's fakes never reach the live marks (job_runs and work_marks are the live record).
   marked: async deadline => (underTest() ? { note: "nothing marked", force: null, left: 0, errors: 0 } : (await import("./marked-work.server")).runMarkedWork(deadline)),
   pause: ms => (underTest() ? Promise.resolve() : new Promise(r => setTimeout(r, ms))),
@@ -44,10 +52,11 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
       const done = new Set((fin.data ?? []).map(x => x.start_id));
       if (open.data.some(x => !done.has(x.id))) { out.why = "another follow-ups pass is running"; return { out, work: null }; }
     }
-    const held = await deps.held().catch(() => false);
-    const order = wf.stepOrder(t0, held);
+    const [held, urgentRead] = await Promise.all([deps.held().catch(() => false), deps.urgent().catch(() => ({ keys: [] as string[], metas: null }))]);
+    const urgent = urgentRead.keys.length > 0;
+    const order = wf.stepOrder(t0, held, urgent);
     const { startRun } = await import("./runs.server");
-    const run = await startRun("wire-followups", { db, slot: wf.wireFollowupsSlot(t0), note: order.join(", ") });
+    const run = await startRun("wire-followups", { db, slot: wf.wireFollowupsSlot(t0), note: `${order.join(", ")}${urgent ? ` (urgent: ${urgentRead.keys.slice(0, 4).join(", ")})` : ""}` });
     if (run.slotTaken || run.id == null) { out.why = run.slotTaken ? "another pass took this slot" : "no start row"; return { out, work: null }; }
     out.ran = true; out.run_id = run.id; out.first = order[0]!; out.why = "started";
     const passEnd = t0 + wf.PASS_END_MS;
@@ -67,11 +76,11 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
             r.steps.push({ step, ms: clock() - t, note: note ? note.replace(/^wire · /, "") : "skipped: too little time left" });
           } else {
             // Second, the sweep has whatever is left before the pass's end; first, it leaves the build its room.
-            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0], held ? wf.HELD_BUILD_ROOM_MS : wf.BUILD_ROOM_MS), !!force);
+            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0], held ? wf.HELD_BUILD_ROOM_MS : wf.BUILD_ROOM_MS, urgent), !!force, urgentRead.metas ?? undefined);
             // The forced sweep's mark is cleared only when the sweep finished whole; a cut-short one stays marked for the next pass.
             if (force && s && !s.timed_out && !s.errors.length) { await (await import("./marks.server")).clearMark(force).catch(() => undefined); force = null; }
             const by = s ? wf.writtenByKind(s.written) : {};
-            r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.retimed?.length ? `, ${s.retimed.length} re-timed` : ""}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
+            r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.retimed?.length ? `, ${s.retimed.length} re-timed` : ""}${s.checked?.length ? `, ${s.checked.length} checked unchanged` : ""}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
           }
         }
       })();

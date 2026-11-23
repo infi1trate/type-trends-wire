@@ -251,3 +251,9 @@
 - [x] 3 Live measurements (b53ffa2): crawler post time, WAL/h + disk reads/h first hour, click-to-heading cold/warm
 - [x] 4a Today: server-chosen top-up (≤5 stories) so left column ends within 160 px of rail at 1024/1280/1440, no jump
 - [x] 4b Brand page: reserve Sections strip's real height from known crop count/sizes; shift after
+
+# D1c · The morning after (owner, 23 Nov 13:36 UTC)
+- [ ] 1 Sweep: re-time only near limit (or one statement per kind); overdue/soon-overdue kinds first whatever the cost, up to 20 s with story build yielding; ages over four passes
+- [ ] 2 Story build with 0 new changes under 2 s (check first); before/after
+- [ ] 3 Publisher re-runs a failed package check (≤ every 6 h, ≤4 per issue), closes the bug item; link check 10 s + one retry, "slow" >3 s; run W47 check now; /terminal?panel=library 4.9 s
+- [ ] 4 Product Hunt ingest start/finish rows + health jobs list, token works yes/no; discourse stale while ok

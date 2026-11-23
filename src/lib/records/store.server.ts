@@ -3,7 +3,7 @@
 import { supabaseAnon } from "../mcp/supabase";
 import { memo, memoBy } from "../memo";
 import { STALE_SERVE_MS, within } from "../deadline";
-import { bodyBytes, kindOf, maxAgeOf, usable, type RecordMeta, type RecordRow } from "./records";
+import { bodyBytes, kindOf, maxAgeOf, needsRetime, usable, type RecordMeta, type RecordRow } from "./records";
 import { readerNow } from "../reader-context.server";
 
 export async function readRecord<T>(key: string): Promise<RecordRow<T> | null> {
@@ -76,24 +76,28 @@ export function storedBy<A, T>(keyOf: (a: A) => string, compute: (a: A) => Promi
 export async function writeRecords(rows: { key: string; body: unknown; source: string }[]): Promise<string[]> {
   return (await writeRecordsCounted(rows)).written;
 }
-/** D1b · the same write, also naming the keys whose unchanged body only had its time moved (the sweep's run row counts both). */
-export async function writeRecordsCounted(rows: { key: string; body: unknown; source: string }[]): Promise<{ written: string[]; retimed: string[] }> {
-  if (!rows.length) return { written: [], retimed: [] };
+/** D1b · the same write, also naming the keys whose unchanged body only had its time moved (the sweep's run row counts both).
+ *  D1c · an unchanged body's time moves only in the last fifth of its limit (`needsRetime`); before that the check is recorded in
+ *  `read_record_checks` instead, one row per key, or one row for a whole per-brand set (`set`: its kind), all in one statement. A changed
+ *  body also records `changed_at`, so a re-timed body never looks like a change to what depends on it. */
+export async function writeRecordsCounted(rows: { key: string; body: unknown; source: string }[], o: { set?: string } = {}): Promise<{ written: string[]; retimed: string[]; checked: string[] }> {
+  if (!rows.length) return { written: [], retimed: [], checked: [] };
   const [{ supabaseAdmin }, { stableHash }] = await Promise.all([import("@/integrations/supabase/client.server"), import("../stable-json")]);
-  const now = new Date().toISOString(), out: string[] = [];
+  const t = Date.now(), now = new Date(t).toISOString(), out: string[] = [];
   const hashed = await Promise.all(rows.map(async r => ({ ...r, hash: await stableHash(r.body ?? null) })));
-  const have = new Map<string, string | null>(), keys = [...new Set(hashed.map(r => r.key))];
+  const have = new Map<string, { hash: string | null; at: string }>(), keys = [...new Set(hashed.map(r => r.key))];
   for (let i = 0; i < keys.length; i += 100) {
-    const { data, error } = await supabaseAdmin.from("read_records").select("key,body_hash").in("key", keys.slice(i, i + 100));
+    const { data, error } = await supabaseAdmin.from("read_records").select("key,body_hash,computed_at").in("key", keys.slice(i, i + 100));
     if (error) throw new Error("read_records hash read failed");
-    for (const r of (data ?? []) as { key: string; body_hash: string | null }[]) have.set(r.key, r.body_hash);
+    for (const r of (data ?? []) as { key: string; body_hash: string | null; computed_at: string }[]) have.set(r.key, { hash: r.body_hash, at: r.computed_at });
   }
-  const same = hashed.filter(r => have.get(r.key) === r.hash), changed = hashed.filter(r => have.get(r.key) !== r.hash);
-  for (let i = 0; i < same.length; i += 100) {
-    const { error } = await supabaseAdmin.from("read_records").update({ computed_at: now }).in("key", same.slice(i, i + 100).map(r => r.key));
+  const same = hashed.filter(r => have.get(r.key)?.hash === r.hash), changed = hashed.filter(r => have.get(r.key)?.hash !== r.hash);
+  const retime = same.filter(r => needsRetime(r.key, have.get(r.key)?.at, t)), checked = same.filter(r => !needsRetime(r.key, have.get(r.key)?.at, t));
+  for (let i = 0; i < retime.length; i += 100) {
+    const { error } = await supabaseAdmin.from("read_records").update({ computed_at: now }).in("key", retime.slice(i, i + 100).map(r => r.key));
     if (error) throw new Error("read_records time write failed");
   }
-  let batch: { key: string; kind: string; body: never; computed_at: string; source: string; bytes: number; body_hash: string }[] = [], size = 0;
+  let batch: { key: string; kind: string; body: never; computed_at: string; changed_at: string; source: string; bytes: number; body_hash: string }[] = [], size = 0;
   const flush = async () => {
     if (!batch.length) return;
     const { error } = await supabaseAdmin.from("read_records").upsert(batch, { onConflict: "key" });
@@ -103,8 +107,39 @@ export async function writeRecordsCounted(rows: { key: string; body: unknown; so
   for (const r of changed) {
     const bytes = bodyBytes(r.body);
     if (size + bytes > 1_500_000) await flush();
-    batch.push({ key: r.key, kind: kindOf(r.key), body: (r.body ?? null) as never, computed_at: now, source: r.source.slice(0, 60), bytes, body_hash: r.hash }); size += bytes;
+    batch.push({ key: r.key, kind: kindOf(r.key), body: (r.body ?? null) as never, computed_at: now, changed_at: now, source: r.source.slice(0, 60), bytes, body_hash: r.hash }); size += bytes;
   }
   await flush();
-  return { written: out, retimed: same.map(r => r.key) };
+  const source = rows[0]!.source.slice(0, 60);
+  const marks = o.set ? [{ key: o.set, checked_at: now, source }] : checked.map(r => ({ key: r.key, checked_at: now, source }));
+  if (marks.length) {
+    const { error } = await supabaseAdmin.from("read_record_checks").upsert(marks, { onConflict: "key" });
+    if (error) throw new Error("read_record_checks write failed");
+  }
+  return { written: out, retimed: retime.map(r => r.key), checked: checked.map(r => r.key) };
+}
+/** D1c · when the sweep last found each record (or per-brand set) unchanged. Service role (the table is private). */
+export async function recordChecks(): Promise<Map<string, string>> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const out = new Map<string, string>();
+  for (let from = 0; from < 5000; from += 1000) {
+    const { data, error } = await supabaseAdmin.from("read_record_checks").select("key,checked_at").order("key").range(from, from + 999);
+    if (error) throw new Error("read_record_checks read failed");
+    for (const r of data ?? []) out.set(r.key, r.checked_at);
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+/** D1c · the newest real change of one record's body (null before D1c or when missing): cards are dirtied by a changed signals record,
+ *  not by its re-timing. */
+export async function changedAt(key: string): Promise<string | null> {
+  const { data, error } = await supabaseAnon().from("read_records").select("changed_at").eq("key", key).maybeSingle();
+  if (error) throw error;
+  return (data as { changed_at: string | null } | null)?.changed_at ?? null;
+}
+/** D1c · the brands still tracked (health leaves stored rows of other brands out of its ages). */
+export async function trackedDomains(): Promise<Set<string>> {
+  const { data, error } = await supabaseAnon().from("library_sites").select("domain").eq("active", true).limit(5000);
+  if (error) throw error;
+  return new Set((data ?? []).map(r => String(r.domain).toLowerCase()));
 }

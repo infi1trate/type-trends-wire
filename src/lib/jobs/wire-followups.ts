@@ -36,7 +36,10 @@ export function firstStep(now: number): FollowupStep {
 /** Both steps, the first step's first. */
 /** D1b · `held`: the story build is on hold (it only checks the hold and runs its writers' tail with what is left), so the sweep goes
  *  first in every slot and leaves it HELD_BUILD_ROOM_MS instead of BUILD_ROOM_MS. */
-export const stepOrder = (now: number, held = false): FollowupStep[] => (!held && firstStep(now) === "story build" ? ["story build", "records sweep"] : ["records sweep", "story build"]);
+export const stepOrder = (now: number, held = false, urgent = false): FollowupStep[] => (!held && !urgent && firstStep(now) === "story build" ? ["story build", "records sweep"] : ["records sweep", "story build"]);
+/** D1c · a stored page past its limit, or passing it before the next pass, is waiting: the sweep goes first in any slot and may take up
+ *  to this long (the story build yields, as it does when held, and gets what is left). */
+export const URGENT_SWEEP_MS = 20_000;
 /** What a sweep going first leaves a held build. */
 export const HELD_BUILD_ROOM_MS = 4_000;
 const s1 = (ms: number) => `${Math.round(ms / 100) / 10} s`;
@@ -50,7 +53,8 @@ export const FINISH_GRACE_MS = 1_500;
 export const BUILD_ROOM_MS = 15_000;
 /** The records sweep's own limit, from its start: going second, whatever is left before the pass's end (0 when the build used it all);
  *  going first, whatever is left less BUILD_ROOM_MS, so the story build still runs every fifteen minutes. */
-export const sweepLimitMs = (passStart: number, sweepStart: number, first = false, room = BUILD_ROOM_MS) => Math.max(0, passStart + PASS_END_MS - (first ? room : 0) - sweepStart);
+export const sweepLimitMs = (passStart: number, sweepStart: number, first = false, room = BUILD_ROOM_MS, urgent = false) =>
+  urgent && first ? Math.max(0, Math.min(URGENT_SWEEP_MS, passStart + PASS_END_MS - sweepStart)) : Math.max(0, passStart + PASS_END_MS - (first ? room : 0) - sweepStart);
 /** What a sweep rewrote, by kind ("brand-card 12, signals 1"), for the finish row. */
 export function writtenByKind(keys: readonly string[]): Record<string, number> {
   const out: Record<string, number> = {};

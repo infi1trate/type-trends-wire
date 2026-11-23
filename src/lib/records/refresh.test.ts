@@ -10,6 +10,7 @@ function fakes(over: Partial<RefreshDeps> = {}) {
   const calls: string[] = [], written: string[] = [];
   const deps: RefreshDeps = {
     metas: async () => { calls.push("metas"); return []; }, // nothing stored yet: every shared record is due
+    checks: async () => new Map(), signalsChanged: async () => null,
     write: async rows => { written.push(...rows.map(r => r.key)); return rows.map(r => r.key); },
     card: async d => { calls.push(`card ${d}`); return { d }; },
     shared: async k => { calls.push(`shared ${k}`); return {}; },
@@ -23,6 +24,12 @@ function fakes(over: Partial<RefreshDeps> = {}) {
   return { deps, calls, written };
 }
 const hang = () => new Promise<never>(() => {});
+/** D1c · every record stored 40 minutes ago: due, inside its limit, so not urgent (an urgent step runs whatever its estimate). */
+const dueNotUrgent = (now = Date.now()) => {
+  const at = new Date(now - 40 * 60_000).toISOString();
+  return [...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "brands-index", "data-index"].map(k => ({ key: k, computed_at: at })),
+    ...SITES.flatMap(x => ["brand-similar", "brand-sector", "brand-card"].map(k => ({ key: `${k}:${x.domain}`, computed_at: at })))];
+};
 beforeEach(() => resetStepEstimates());
 
 describe("a crawl batch (only: captured)", () => {
@@ -66,7 +73,7 @@ describe("the full sweep", () => {
   });
   it("skips a step whose estimate does not fit, without starting it, and still runs the cheaper ones", async () => {
     let clock = 0;
-    const f = fakes();
+    const f = fakes({ metas: async () => dueNotUrgent(0) });
     const r = await refreshRecords({ job: "wire", deadline: 2_000, now: () => clock, deps: f.deps, estimates: { ...tiny, "brand-sector": 10_000 } });
     expect(f.calls).not.toContain("sector");
     expect(f.calls).toContain("similar");
@@ -74,9 +81,9 @@ describe("the full sweep", () => {
     expect(r.timed_out).toBe(true);
   });
   it("a step that was cut off is skipped up front next time (its estimate grows)", async () => {
-    const f = fakes({ shared: async k => (k === "rebrands" ? new Promise(r => setTimeout(() => r({}), 1_000)) : {}) });
+    const f = fakes({ metas: async () => dueNotUrgent(), shared: async k => (k === "rebrands" ? new Promise(r => setTimeout(() => r({}), 1_000)) : {}) });
     await refreshRecords({ job: "wire", deadline: Date.now() + 200, deps: f.deps, estimates: tiny });
-    const g = fakes();
+    const g = fakes({ metas: async () => dueNotUrgent() });
     const r = await refreshRecords({ job: "wire", deadline: Date.now() + 250, deps: g.deps, estimates: tiny });
     expect(g.calls).not.toContain("shared rebrands");
     expect(g.calls).toContain("shared moving-runs");
@@ -111,8 +118,8 @@ describe("T2 · Part 0c: overdue page models go before the per-brand rows", () =
   });
 });
 
-describe("D1b · the sweep's queue: overdue first and cheapest first", () => {
-  it("puts every page past its limit before a shared input that is only due, cheapest first", async () => {
+describe("D1b · the sweep's queue: overdue first (D1c: most late first)", () => {
+  it("puts every page past its limit before a shared input that is only due, most late first (cheapest first on a tie)", async () => {
     const { sweepOrder } = await import("./refresh.server");
     const H = 3_600_000;
     const order = sweepOrder([
@@ -123,7 +130,7 @@ describe("D1b · the sweep's queue: overdue first and cheapest first", () => {
       { what: "brand-sector", brand: true, age: Infinity, limit: 48 * H, est: 15_000, due: true },
       { what: "moving-runs", brand: false, age: 5 * 60_000, limit: 6 * H, est: 500, due: false },
     ]).map(x => x.what);
-    expect(order).toEqual(["gallery:default", "rebrands", "data-index", "brand-sector", "signals", "moving-runs"]);
+    expect(order).toEqual(["gallery:default", "data-index", "rebrands", "brand-sector", "signals", "moving-runs"]);
   });
   it("among items inside their limit, the one closest to its limit goes first", async () => {
     const { sweepOrder } = await import("./refresh.server");

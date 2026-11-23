@@ -3293,11 +3293,30 @@ export type Database = {
           },
         ]
       }
+      read_record_checks: {
+        Row: {
+          checked_at: string
+          key: string
+          source: string | null
+        }
+        Insert: {
+          checked_at: string
+          key: string
+          source?: string | null
+        }
+        Update: {
+          checked_at?: string
+          key?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       read_records: {
         Row: {
           body: Json
           body_hash: string | null
           bytes: number
+          changed_at: string | null
           computed_at: string
           key: string
           kind: string
@@ -3307,6 +3326,7 @@ export type Database = {
           body: Json
           body_hash?: string | null
           bytes?: number
+          changed_at?: string | null
           computed_at?: string
           key: string
           kind: string
@@ -3316,6 +3336,7 @@ export type Database = {
           body?: Json
           body_hash?: string | null
           bytes?: number
+          changed_at?: string | null
           computed_at?: string
           key?: string
           kind?: string

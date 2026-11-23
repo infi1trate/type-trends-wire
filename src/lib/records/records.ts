@@ -79,11 +79,13 @@ export const bodyBytes = (body: unknown) => new TextEncoder().encode(JSON.string
 /** T1 · each stored page's age against its limit, for /api/public/health: one entry per kind (per-brand kinds by their oldest row),
  *  and one line naming every kind past its limit, so a stalled sweep shows within the hour instead of nine hours later. */
 export type StoredAge = { kind: string; rows: number; oldest_at: string; age_min: number; limit_min: number; past_limit: boolean; rows_past_limit: number };
-export function storedAges(metas: readonly Pick<RecordMeta, "key" | "computed_at">[], now: number): { line: string; past_limit: number; kinds: StoredAge[] } {
+/** D1c · `tracked`: the brands still tracked; a per-brand row of a brand no longer tracked is never rewritten, so it is not counted. */
+export function storedAges(metas: readonly Pick<RecordMeta, "key" | "computed_at">[], now: number, tracked?: ReadonlySet<string> | null): { line: string; past_limit: number; kinds: StoredAge[] } {
   const by = new Map<string, { rows: number; oldest: number; past: number }>();
   for (const m of metas) {
     const kind = kindOf(m.key), lim = AGES[kind as RecordKind]?.maxAge, at = Date.parse(m.computed_at);
     if (!lim || !Number.isFinite(at)) continue;
+    if (tracked && kind in PER_BRAND && !tracked.has(m.key.slice(kind.length + 1))) continue;
     const b = by.get(kind) ?? { rows: 0, oldest: Infinity, past: 0 };
     b.rows++; b.oldest = Math.min(b.oldest, at); if (now - at >= lim) b.past++;
     by.set(kind, b);
@@ -97,4 +99,29 @@ export function storedAges(metas: readonly Pick<RecordMeta, "key" | "computed_at
   const line = !kinds.length ? "No stored pages." : !past.length ? `All ${kinds.length} kinds of stored page are within their limits (oldest ${hm(Math.max(...kinds.map(k => k.age_min)))} old).`
     : `${past.length} of ${kinds.length} kinds of stored page are past their limit, so fresh instances rebuild them live: ${past.map(k => `${k.kind} ${hm(k.age_min)} (limit ${hm(k.limit_min)}${k.rows > 1 ? `, ${k.rows_past_limit} of ${k.rows} rows` : ""})`).join("; ")}.`;
   return { line, past_limit: past.length, kinds };
+}
+
+/** D1c · an unchanged body's time is moved only in the last fifth of its limit: before that the sweep records the check instead (one
+ *  small row per page, one per whole per-brand set, in `read_record_checks`), because re-timing 300 to 400 unchanged per-brand pages
+ *  every pass took the sweep's whole share and the 9.5 s brands index never got its turn. */
+export const RETIME_FRACTION = 0.8;
+export function needsRetime(key: string, computedAt: string | null | undefined, now: number): boolean {
+  const at = computedAt ? Date.parse(computedAt) : NaN;
+  return !Number.isFinite(at) || now - at >= RETIME_FRACTION * maxAgeOf(key);
+}
+/** When the sweep last looked at a record: the later of its stored time and its last recorded check. */
+export function lastLook(computedAt: string | null | undefined, checkedAt: string | null | undefined): string | undefined {
+  const a = computedAt ? Date.parse(computedAt) : NaN, b = checkedAt ? Date.parse(checkedAt) : NaN;
+  if (!Number.isFinite(a) && !Number.isFinite(b)) return undefined;
+  return !Number.isFinite(b) || (Number.isFinite(a) && a >= b) ? computedAt! : checkedAt!;
+}
+/** D1c · one pass's time: a record past its limit, or that will pass it before the next pass, is urgent (it goes first, whatever it
+ *  costs, and the pass gives the sweep up to 20 s). */
+export const SWEEP_SOON_MS = 15 * MIN;
+export const isUrgent = (age: number, limit: number) => age + SWEEP_SOON_MS >= limit;
+/** The single records (shared inputs and page models) that are urgent now, most late first. Per-brand sets are left to the sweep (it
+ *  knows which brands are still tracked). */
+export function sweepUrgent(metas: readonly Pick<RecordMeta, "key" | "computed_at">[], now: number): string[] {
+  return metas.filter(m => { const k = kindOf(m.key); return (k in SHARED || k in PAGES) && isUrgent(now - Date.parse(m.computed_at), maxAgeOf(m.key)); })
+    .sort((a, b) => (maxAgeOf(a.key) - (now - Date.parse(a.computed_at))) - (maxAgeOf(b.key) - (now - Date.parse(b.computed_at))) || a.key.localeCompare(b.key)).map(m => m.key);
 }

@@ -121,7 +121,11 @@ async function loadPayload(): Promise<HealthPayload> {
   // W3a: museum works stored by source and the newest last_seen (public rows only); unreadable reads as null and never changes the status.
   const art = await artHealth().catch(() => null);
   // T1 · each stored page's age against its limit (anonymous read of keys and times only); unreadable reads as null and never changes the status.
-  const stored_pages = await import("./records/store.server").then(async m => (await import("./records/records")).storedAges(await m.recordMetas(), now)).catch(() => null);
+  const stored_pages = await import("./records/store.server").then(async m => {
+    // D1c · per-brand rows of a brand no longer tracked are left out (nothing rewrites them); an unreadable list counts every row.
+    const [metas, tracked] = await Promise.all([m.recordMetas(), m.trackedDomains().catch(() => null)]);
+    return (await import("./records/records")).storedAges(metas, now, tracked);
+  }).catch(() => null);
   // T1 · this week's spend totals from the anonymous spend_week_facts() facade; unreadable reads as null and never changes the status.
   const spend_week = await import("./newsroom/ledger.server").then(m => m.healthSpend(supabaseAnon() as never)).catch(() => null);
   value = { ...value, brand_names: names, spend, art, stored_pages, spend_week };
