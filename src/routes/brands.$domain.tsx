@@ -5,7 +5,6 @@ import { brandCardQuery, brandMovesQuery, brandSectionsQuery, brandSurfacesQuery
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { BrandFrame, BrandPageView, BrandPageWithoutCard } from "@/components/read/BrandView";
-import { BRAND_CARD_FIRST_MS, firstWithin } from "@/lib/first-within";
 import { Later, ROW } from "@/components/read/Later";
 import { seededName } from "@/lib/brand-names";
 import { BRAND_NAME } from "@/lib/brand";
@@ -31,14 +30,14 @@ export const Route = createFileRoute("/brands/$domain")({
       void q.prefetchQuery(librarySiteQuery(d)); void q.prefetchQuery(siteCropsQuery(d)); void q.prefetchQuery(siteThumbQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d));
       return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: true };
     }
-    // C1 · every part starts first; then a seeded brand's card (one stored row, the site row and its pictures) is waited for up to
-    // BRAND_CARD_FIRST_MS, so it is in the first HTML with the header facts instead of arriving late; past that it streams as before.
+    // C1 · every part starts first, the card with them; it streams into its slot (waiting for it before the first byte was measured:
+    // it held the first byte to 0.75–0.85 s on a cold server and the card still missed the first HTML).
     void q.prefetchQuery(brandMovesQuery(d)); void q.prefetchQuery(brandSectionsQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d)); void q.prefetchQuery(brandSectorQuery(d));
     void q.prefetchQuery(brandSimilarQuery(d)); void q.prefetchQuery(brandStoriesQuery(d));
     if (!name) {
       const b = await q.ensureQueryData(brandCardQuery(d));
       if (!b) throw notFound();
-    } else await firstWithin(q.prefetchQuery(brandCardQuery(d)), BRAND_CARD_FIRST_MS);
+    } else void q.prefetchQuery(brandCardQuery(d));
     return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: false };
   },
   head: ({ params, loaderData }) => {
