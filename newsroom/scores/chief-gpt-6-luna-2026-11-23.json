@@ -1,0 +1,38 @@
+{
+ "desk": "editor in chief",
+ "candidate_model": "openai/gpt-6-luna",
+ "against": "chief-v1",
+ "run_at": "2026-11-23T02:10:13.653Z",
+ "cost_usd": 0.003795,
+ "cases": 3,
+ "correct": 0,
+ "wrong": [
+  "2026-11-19",
+  "2026-11-20",
+  "2026-11-21"
+ ],
+ "gate": {
+  "ok": false,
+  "reasons": [
+   "2026-11-19 was right in the baseline and is now wrong",
+   "2026-11-21 was right in the baseline and is now wrong"
+  ]
+ },
+ "days": [
+  {
+   "day": "2026-11-19",
+   "key": "2026-11-19",
+   "right": false
+  },
+  {
+   "day": "2026-11-20",
+   "key": "2026-11-20",
+   "right": false
+  },
+  {
+   "day": "2026-11-21",
+   "key": "2026-11-21",
+   "right": false
+  }
+ ]
+}

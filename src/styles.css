@@ -209,6 +209,18 @@
   .library-table td::before { content: attr(data-label); display: block; font-size: var(--sys-text-caption-size); color: var(--sys-color-ink-muted); }
 }
 
+/* T1 · /desk's Spend table: a table from 1280 px, one stacked block per week below it (no sideways scroll at any width). */
+.spend-table td, .spend-table th { overflow-wrap: anywhere; }
+@media (max-width: 1279px) {
+  .spend-table thead { display: none; }
+  .spend-table tbody { display: block; }
+  .spend-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-block: 8px; }
+  .spend-table tr > th { grid-column: 1 / -1; }
+  .spend-table td { display: block; min-width: 0; padding: 6px 12px; }
+  .spend-table td::before { content: attr(data-label); display: block; font-size: var(--sys-text-caption-size); color: var(--sys-color-ink-muted); }
+}
+@media (min-width: 640px) and (max-width: 1279px) { .spend-table tr { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
 /* (i) buttons: 14px glyph, 44px hit area on touch screens. */
 .info-btn::after { content: ""; position: absolute; inset: -4px; }
 @media (pointer: coarse) { .info-btn::after { inset: -15px; } }

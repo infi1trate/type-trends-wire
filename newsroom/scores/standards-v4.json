@@ -1,0 +1,77 @@
+{
+ "desk": "standards",
+ "version": "v4",
+ "prompt_hash": "b8787268",
+ "models": [
+  "openai/gpt-6-luna",
+  "google/gemini-3.1-flash-lite"
+ ],
+ "run_at": "2026-11-23T02:09:41.036Z",
+ "source": "T2: the v3 prompt unchanged on openai/gpt-6-luna, on the seven cases v3 ran (scripts/t2-score-steps.ts); copy of standards-gpt-6-luna-2026-11-23.json",
+ "cases": 7,
+ "correct": 7,
+ "wrong": [],
+ "gate_against_v3": {
+  "ok": true,
+  "reasons": []
+ },
+ "cost_usd": 0.004437,
+ "items": [
+  {
+   "number": 77,
+   "key": "No. 77",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 92,
+   "key": "No. 92",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 91,
+   "key": "No. 91",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 45,
+   "key": "No. 45",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 43,
+   "key": "No. 43",
+   "right": true,
+   "verdict": "pass",
+   "expect": "pass",
+   "second_reader": "pass"
+  },
+  {
+   "number": 44,
+   "key": "No. 44",
+   "right": true,
+   "verdict": "pass",
+   "expect": "pass",
+   "second_reader": "pass"
+  },
+  {
+   "number": 90,
+   "key": "No. 90",
+   "right": true,
+   "verdict": "pass",
+   "expect": "pass",
+   "second_reader": "pass"
+  }
+ ]
+}

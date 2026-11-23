@@ -6,7 +6,7 @@ import { AI_FIELDS, fieldValue, steadiness, type AiField, type FieldReading, typ
 type Db = { from: (t: string) => any }; // eslint-disable-line @typescript-eslint/no-explicit-any
 const CHUNK = 150;
 type Snap = { id: number; domain: string; captured_at: string };
-type Tag = { snapshot_id: number; created_at: string; tags: Record<string, unknown> | null };
+type Tag = { snapshot_id: number; created_at: string; tags: Record<string, unknown> | null; carried_from?: string | null };
 
 /** Readings for two run times at once (one read of the captures and their tags up to the later run). */
 export async function runReadings(db: Db, domains: readonly string[], runs: readonly string[]): Promise<Map<string, Readings>> {
@@ -22,7 +22,7 @@ export async function runReadings(db: Db, domains: readonly string[], runs: read
   const tags = new Map<number, Tag>();
   const ids = snaps.map(s => s.id);
   for (let i = 0; i < ids.length; i += CHUNK) {
-    const r = await db.from("library_tags").select("snapshot_id,created_at,tags").in("snapshot_id", ids.slice(i, i + CHUNK));
+    const r = await db.from("library_tags").select("snapshot_id,created_at,tags,carried_from").in("snapshot_id", ids.slice(i, i + CHUNK));
     if (r.error) throw r.error;
     for (const t of (r.data ?? []) as Tag[]) tags.set(t.snapshot_id, t);
   }
@@ -31,7 +31,9 @@ export async function runReadings(db: Db, domains: readonly string[], runs: read
     const best = new Map<string, { s: Snap; t: Tag }>();
     for (const s of snaps) {
       const t = tags.get(s.id);
-      if (!t || !t.tags || s.captured_at > at || t.created_at > at) continue;
+      // T2 · a carried reading (copied from an earlier capture whose crops were the same) is not a fresh reading: the fresh one it came from
+      // stands for the homepage instead, with its own date.
+      if (!t || !t.tags || t.carried_from || s.captured_at > at || t.created_at > at) continue;
       if (t.tags["low_confidence"] === true || (t.tags["blocked_reason"] != null && t.tags["blocked_reason"] !== "")) continue;
       const b = best.get(s.domain);
       if (!b || s.captured_at > b.s.captured_at) best.set(s.domain, { s, t });

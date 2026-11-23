@@ -2,7 +2,7 @@
 // prompt part is a fingerprint computed from the code, so changing a prompt or a model changes it; the template version is bumped by
 // hand when a facts-built text changes. Every current fingerprint must be listed in VERSIONS with a score file in newsroom/scores/
 // whose score passes the gate against the baseline (versions.test.ts fails the build otherwise). Pure.
-import { AI_MODELS } from "../../ai-models";
+import { AI_MODELS, STEP_MODELS } from "../../ai-models";
 import { WRITER_SCHEMA, WRITER_SYSTEM } from "../../stories/writer";
 import { STUDY_SCHEMA, STUDY_SYSTEM } from "../../data-stories/writer";
 import { DIGEST_SCHEMA, DIGEST_SYSTEM } from "../../digest/writer";
@@ -53,7 +53,7 @@ export const currentVersion = (w: Writer) => {
 export const DESK_PROMPTS = ["standards", "editor in chief", "news", "graphics", "graphics chart", "data", "design review", "publisher", "scout"] as const;
 export type DeskPrompt = (typeof DESK_PROMPTS)[number];
 const DESK_PARTS: Record<DeskPrompt, { system: string; schema: unknown; models?: () => string[] }> = {
-  standards: { system: STANDARDS_SYSTEM, schema: STANDARDS_SCHEMA }, "editor in chief": { system: CHIEF_SYSTEM, schema: CHIEF_SCHEMA },
+  standards: { system: STANDARDS_SYSTEM, schema: STANDARDS_SCHEMA, models: () => [STEP_MODELS.standards, AI_MODELS.text] }, "editor in chief": { system: CHIEF_SYSTEM, schema: CHIEF_SCHEMA },
   news: { system: NEWS_SYSTEM, schema: NEWS_SCHEMA }, graphics: { system: GRAPHICS_SYSTEM, schema: GRAPHICS_SCHEMA, models: () => [AI_MODELS.vision] },
   "graphics chart": { system: CHART_SYSTEM, schema: CHART_SCHEMA }, data: { system: PROPOSAL_SYSTEM, schema: PROPOSAL_SCHEMA },
   "design review": { system: DESIGN_SYSTEM, schema: DESIGN_SCHEMA, models: () => [AI_MODELS.vision] },
@@ -66,6 +66,7 @@ export const DESK_VERSIONS: readonly DeskVersion[] = [
   { desk: "standards", version: "v1", prompt_hash: "aff6f787", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v1.json", note: "Baseline (N2 Part 6): held the four must-hold stories, but also blocked all six must-pass stories, mostly on picture capture dates, How we know and stage words." },
   { desk: "standards", version: "v2", prompt_hash: "d95f228d", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v2.json", note: "Tuned once: captions, How we know and stage words are records, and a blocker is defined. Run on Nos. 42, 88 and 89 (all passed) within the 16-call ceiling; not re-run on the other seven." },
   { desk: "standards", version: "v3", prompt_hash: "b14b95c3", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v3.json", note: "N3: v2 re-run on the seven cases held No. 43 (must pass) on a ranking its stored facts carry. Tuned once (a claim a FACTS line states is supported) and the stored facts now go with the sheet; run on Nos. 43, 77, 45 and 92 (all right; 77, 45 and 92 before the stored-facts change). Not re-run on the other six within the 30-call proof ceiling." },
+  { desk: "standards", version: "v4", prompt_hash: "b8787268", models: ["openai/gpt-6-luna", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/standards-v4.json", note: "T2: the v3 prompt unchanged, moved to openai/gpt-6-luna (the cheapest listed model) after it got all seven v3 cases right (four holds, three passes); the writer, the editor in chief and the other desks stay on the writer model, which no cheaper model matched (story-*-2026-11-23 and chief-*-2026-11-23 score files)." },
   { desk: "editor in chief", version: "v1", prompt_hash: "74a028af", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/chief-v1.json", note: "Baseline (N2 Part 6): replayed 19, 20 and 21 Nov; on 20 Nov it chose a weekly piece to lead, which the rules refused." },
   { desk: "news", version: "v1", prompt_hash: "34175f15", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/news-v1.json", note: "Baseline (N3 proof): replayed 19, 20 and 21 Nov, one pick a day, none dropped by the line check; the Mother Design item stays untagged." },
   { desk: "news", version: "v2", prompt_hash: "24e2d43c", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/news-v2.json", note: "N4c: the beat (brand identity, websites and digital products, type, design tools and the trade; architecture, interiors, furniture, objects, fashion, art and exhibitions out) in the prompt and in code. Replayed the last 72 hours (20, 21, 22 Nov) as three fixture calls: one pick each time: the Nielsen Norman AI-design study on 20 and 21 Nov (kept by the code after its word list took in users) and the Design Museum posters on 22 Nov (dropped by the code as a museum item); nothing naming a rebrand, typeface, website redesign or design tool was passed over." },

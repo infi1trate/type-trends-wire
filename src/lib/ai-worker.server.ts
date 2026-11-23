@@ -1,3 +1,4 @@
+import { structuredAttempts } from './ai-retries';
 import { z } from "zod";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { inferAI, AiFailure } from "./ai-inference.server";
@@ -55,8 +56,8 @@ async function processJob(job:Job,token:string,signal:AbortSignal,probe:boolean)
      failures++;validationError=error.validation??'Missing emit_result or invalid schema';
      await check(await db.from('library_ai_jobs').update({validation_failures:failures,validation_error:validationError}).eq('id',job.id).eq('lease_token',token));
      // A probe makes one call: the model answered, so the job goes back to the queue for its correction retry.
-     if(probe&&failures<2){await check(await db.from('library_ai_jobs').update({claimed_at:null,lease_token:null}).eq('id',job.id).eq('lease_token',token));return null;}
-     if(failures>=2)throw error;
+     if(probe&&failures<structuredAttempts(job.kind)){await check(await db.from('library_ai_jobs').update({claimed_at:null,lease_token:null}).eq('id',job.id).eq('lease_token',token));return null;}
+     if(failures>=structuredAttempts(job.kind))throw error;
     }
    }
   };

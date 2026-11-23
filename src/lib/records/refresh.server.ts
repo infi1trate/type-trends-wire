@@ -6,7 +6,7 @@
 // Deadline rules: each step has a cost estimate (the last run's duration on this instance, else STEP_ESTIMATE_MS). A step whose
 // estimate does not fit in the time left is skipped (the next sweep picks it up), and a step that starts is still cut off at the
 // deadline, so no call runs past it by more than a timer tick. Card loops check the per-chunk estimate before each chunk.
-import { SHARED, brandKey, cardsDue, due, pageKey, PAGES, type PageKind, type SharedKey } from "./records";
+import { SHARED, brandKey, cardsDue, due, maxAgeOf, pageKey, PAGES, type PageKind, type SharedKey } from "./records";
 import { CALL_BUDGET_MS } from "../jobs/steps";
 
 export type RefreshResult = { written: string[]; skipped: number; timed_out: boolean; errors: string[] };
@@ -153,6 +153,13 @@ export async function refreshRecords(o: RefreshOptions): Promise<RefreshResult> 
     if (!o.force && !due(metaOf(k), now())) { out.skipped++; continue; }
     await attempt(k, async () => { const body = await deps.shared(k); await write([{ key: k, body }]); });
   }
+  // T2 · Part 0c: page models already past the age a page will serve go before the per-brand rows. Those rows take a whole pass on
+  // their own (brand-sector is cut off at the deadline), so after them the pages never got a turn and aged past their limit.
+  let keys: string[] = [];
+  await attempt("page-keys", async () => { keys = await deps.pageKeys(); });
+  const pastLimit = overdueFirst(keys, metaOf, now());
+  const page = async (key: string) => attempt(key, async () => { const body = await deps.page(key); if (body !== undefined) await write([{ key, body }]); });
+  for (const key of pastLimit) await page(key);
   // 3. Similar brands and the sector field for every brand (one pass over the shared inputs).
   let sites: Site[] = [];
   if (!await attempt("sites", async () => { sites = await deps.sites(); })) return out;
@@ -163,17 +170,22 @@ export async function refreshRecords(o: RefreshOptions): Promise<RefreshResult> 
     if (!o.force && meta && !due(meta, now())) { out.skipped++; continue; }
     await attempt(kind, async () => { await write(await (kind === "brand-similar" ? deps.similar(sites) : deps.sector(sites))); });
   }
-  // 4. Page models that are due.
-  let keys: string[] = [];
-  await attempt("page-keys", async () => { keys = await deps.pageKeys(); });
+  // 4. Page models that are due (those already rewritten above are skipped).
   for (const key of keys) {
+    if (pastLimit.includes(key)) continue;
     if (!o.force && !due(metaOf(key), now(), null, PAGES[key.split(":")[0] as PageKind]?.every)) { out.skipped++; continue; }
-    await attempt(key, async () => { const body = await deps.page(key); if (body !== undefined) await write([{ key, body }]); });
+    await page(key);
   }
   // 5. Cards that are missing, dirtied by a newer capture or a newer signals record, or old — most out of date first, until the deadline.
   const queue = cardsDue(sites, metas, now(), metas.get("signals") ?? null).filter(d => !captured.includes(d));
   if (queue.length) await cards(queue);
   return out;
+}
+
+/** Page keys whose record is missing or older than the age a page will serve (`maxAgeOf`), most overdue first. */
+export function overdueFirst(keys: readonly string[], metaOf: (key: string) => { computed_at: string } | undefined, now: number): string[] {
+  const over = (k: string) => { const m = metaOf(k); return m ? now - Date.parse(m.computed_at) - maxAgeOf(k) : Infinity; };
+  return keys.filter(k => over(k) > 0).sort((a, b) => over(b) - over(a) || a.localeCompare(b));
 }
 
 const MIN_LEFT_MS = 6_000, MIN_LEFT_CAPTURED_MS = 1_000;

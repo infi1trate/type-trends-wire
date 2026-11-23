@@ -80,10 +80,15 @@ export async function reviewInput(id: string, r: ReviewCtx | null, o: { asOf?: s
 
 /** The desk's model call on the story writer's gateway path and cost ledger, recorded in desk_calls (only when a call was made). */
 export async function deskCall(db: Admin, desk: DeskName, purpose: "review" | "placement" | "fixture" | "picks" | "chart" | "proposal", req: { system: string; user: string; schema: Record<string, unknown>; schemaName: string; tool: import("../stories/writer.server").GatewayRequest["tool"]; maxTokens: number },
-  parse: (raw: unknown) => unknown | null, storyIds: string[], signal: AbortSignal, prompt: import("./golden/versions").DeskPrompt = desk as import("./golden/versions").DeskPrompt): Promise<{ parsed: unknown; call_id: number | null; model: string; cost: number } | null> {
+  parse: (raw: unknown) => unknown | null, storyIds: string[], signal: AbortSignal, prompt: import("./golden/versions").DeskPrompt = desk as import("./golden/versions").DeskPrompt,
+  /** T2 · a scoring run's candidate model (fixture calls only); the desks' own passes never set it. */
+  modelOverride?: import("../ai-models").AiModel): Promise<{ parsed: unknown; call_id: number | null; model: string; cost: number } | null> {
   const [{ gatewayCall, providerCanRun }, { AI_MODELS }] = await Promise.all([import("../stories/writer.server"), import("../ai-models")]);
   // The story writer's models: the writer model, or the text model where the provider cannot run it (as the writer falls back).
-  const model = providerCanRun(AI_MODELS.writer) ? AI_MODELS.writer : AI_MODELS.text;
+  const { STEP_MODELS } = await import("../ai-models");
+  // T2 · the standards second reader runs on its own (cheaper) model, which passed its frozen cases; the others stay on the writer's.
+  const own = desk === "standards" && providerCanRun(STEP_MODELS.standards) ? STEP_MODELS.standards : null;
+  const model = modelOverride && purpose === "fixture" ? modelOverride : own ?? (providerCanRun(AI_MODELS.writer) ? AI_MODELS.writer : AI_MODELS.text);
   const r = await gatewayCall(db, { model, ...req, textMaxTokens: Math.min(req.maxTokens, 2000) }, signal);
   if (!r) return null;
   const parsed = r.raw != null ? parse(r.raw) : null;

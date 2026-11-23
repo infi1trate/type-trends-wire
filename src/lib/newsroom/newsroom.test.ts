@@ -91,6 +91,17 @@ describe("N1 · every call through the endpoint is logged", () => {
     expect(calls).toEqual(["wire:true"]);
     expect(logs.map(l => l.decision)).toEqual(["refused", "refused", "done"]);
   });
+  it("T1 · spend kind: build records credits (the default), agent records dollars by hand, a mixed body is refused", async () => {
+    const { d, logs, calls } = mk();
+    d.store.spend = async r => { calls.push(`build:${r.credits}`); return { id: 1 }; };
+    d.store.spendAgent = async r => { calls.push(`agent:${r.usd}`); return { id: 2 }; };
+    expect((await handleDesk(post({ actor: "engineering", action: "spend", credits: 12, what: "P2c build" }), d)).status).toBe(201);
+    expect((await handleDesk(post({ actor: "owner", action: "spend", kind: "agent", usd: 3.5, what: "T1 desk session" }), d)).status).toBe(201);
+    expect((await handleDesk(post({ actor: "owner", action: "spend", kind: "agent", credits: 3, what: "wrong unit" }), d)).status).toBe(400);
+    expect((await handleDesk(post({ actor: "owner", action: "spend", usd: 3, what: "build without credits" }), d)).status).toBe(400);
+    expect(calls).toEqual(["build:12", "agent:3.5"]);
+    expect(logs.filter(l => l.decision === "done")).toEqual([expect.objectContaining({ action: "spend", reason: "P2c build" }), expect.objectContaining({ action: "spend", reason: "T1 desk session", detail: { kind: "agent", usd: 3.5 } })]);
+  });
   it("a proposal is recorded and changes nothing", async () => {
     const { d, logs, calls } = mk();
     const r = await handleDesk(post({ actor: "graphics", action: "propose", kind: "chart", text: "A slope chart for two quarters" }), d);

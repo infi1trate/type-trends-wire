@@ -56,7 +56,8 @@ export async function generateWeeklyBrief(runId: number) {
   // Fail closed before reserving: a misconfigured provider must never charge or silently fall back.
   const ai = aiClient(), provider = ai.provider;
   let lastError: string | undefined;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // T2 · D: the first call plus RETRIES.brief's one retry on a missing call or a failed check; a refusal throws (never retried).
+  for (let attempt = 0; attempt < (await import("./ai-retries")).structuredAttempts("brief"); attempt++) {
     const estimate = estimateCost({ provider, model: MODEL, input_tokens: 20000, output_tokens: 3000 });
     const res = await db.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: "brief", p_model: MODEL, p_estimate: estimate });
     const r = z.object({ ok: z.boolean(), id: z.number().optional(), code: z.string().optional() }).parse(res.data);

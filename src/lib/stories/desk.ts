@@ -98,7 +98,10 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("newsroom"), desk: z.string().min(1).max(40).optional() }).strict(),
   z.object({ action: z.literal("assign"), pitch: z.number().int().min(1), desk: z.enum(DESKS), status: z.enum(ASSIGN_STATUSES), reason: z.string().trim().min(3).max(300).optional() }).strict()
     .refine(b => b.status !== "dropped" || !!b.reason, { message: "a dropped pitch carries a reason", path: ["reason"] }),
-  z.object({ action: z.literal("spend"), credits: z.number().positive().max(100_000), what: z.string().trim().min(3).max(300).refine(noDollar), item: z.number().int().min(1).optional() }).strict(),
+  // T1 · `kind` "build" (the default: Lovable credits, optionally for a queue item) or "agent" (a desk or agent session's own cost in
+  // US dollars, recorded by hand because the product cannot measure it).
+  z.object({ action: z.literal("spend"), kind: z.enum(["build", "agent"]).optional(), credits: z.number().positive().max(100_000).optional(), usd: z.number().positive().max(10_000).optional(), what: z.string().trim().min(3).max(300).refine(noDollar), item: z.number().int().min(1).optional() }).strict()
+    .refine(b => ((b.kind ?? "build") === "build" ? b.credits != null && b.usd == null : b.usd != null && b.credits == null && b.item == null), { message: "build spend carries credits (and may name an item); agent spend carries usd only", path: ["kind"] }),
   z.object({ action: z.literal("spend_cap"), model_usd: z.number().min(0).max(100_000).nullable(), build_credits: z.number().min(0).max(1_000_000).nullable(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("wire_only"), on: z.boolean(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("propose"), kind: z.enum(PROPOSAL_KINDS), subject: z.string().trim().min(1).max(200).optional(), text: z.string().trim().min(3).max(1000) }).strict(),

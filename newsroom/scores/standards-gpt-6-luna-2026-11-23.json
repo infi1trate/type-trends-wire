@@ -1,0 +1,72 @@
+{
+ "desk": "standards",
+ "candidate_model": "openai/gpt-6-luna",
+ "against": "standards-v3",
+ "run_at": "2026-11-23T02:09:41.036Z",
+ "cost_usd": 0.004437,
+ "cases": 7,
+ "correct": 7,
+ "wrong": [],
+ "gate": {
+  "ok": true,
+  "reasons": []
+ },
+ "items": [
+  {
+   "number": 77,
+   "key": "No. 77",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 92,
+   "key": "No. 92",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 91,
+   "key": "No. 91",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 45,
+   "key": "No. 45",
+   "right": true,
+   "verdict": "hold",
+   "expect": "hold",
+   "second_reader": "hold"
+  },
+  {
+   "number": 43,
+   "key": "No. 43",
+   "right": true,
+   "verdict": "pass",
+   "expect": "pass",
+   "second_reader": "pass"
+  },
+  {
+   "number": 44,
+   "key": "No. 44",
+   "right": true,
+   "verdict": "pass",
+   "expect": "pass",
+   "second_reader": "pass"
+  },
+  {
+   "number": 90,
+   "key": "No. 90",
+   "right": true,
+   "verdict": "pass",
+   "expect": "pass",
+   "second_reader": "pass"
+  }
+ ]
+}

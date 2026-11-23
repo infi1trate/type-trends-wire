@@ -1,0 +1,62 @@
+{
+ "writer": "story",
+ "candidate_model": "openai/gpt-6-luna",
+ "against": "story-v1",
+ "source": "live calls on the frozen facts (no fallback)",
+ "scored_at": "2026-11-23T02:08:25.610Z",
+ "cost_usd": 0.00511,
+ "unanswered": 0,
+ "gate": {
+  "ok": false,
+  "reasons": [
+   "mean 93.3 is below the baseline's 100",
+   "No. 43 passed in the baseline and now fails: a moving share called flat: the facts give its momentum as 1.3 points a quarter",
+   "No. 88 passed in the baseline and now fails: how_we_know does not say which facts are our read"
+  ]
+ },
+ "items": [
+  {
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "number": 42,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "breakout:css:scroll_timeline:all:13",
+   "number": 43,
+   "score": 80,
+   "failures": [
+    "a moving share called flat: the facts give its momentum as 1.3 points a quarter"
+   ]
+  },
+  {
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "number": 44,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "brand:coinbase.com:2026-11-20",
+   "number": 88,
+   "score": 80,
+   "failures": [
+    "how_we_know does not say which facts are our read"
+   ]
+  },
+  {
+   "id": "census:agents:2026-W47",
+   "number": 89,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "census:sale:2026-W47",
+   "number": 90,
+   "score": 100,
+   "failures": []
+  }
+ ],
+ "mean": 93.3,
+ "passed": 4,
+ "total": 6
+}

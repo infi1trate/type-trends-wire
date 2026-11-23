@@ -1,0 +1,36 @@
+{
+ "desk": "editor in chief",
+ "candidate_model": "google/gemini-3.1-flash-lite",
+ "against": "chief-v1",
+ "run_at": "2026-11-23T02:12:02.735Z",
+ "cost_usd": 0.006463,
+ "cases": 3,
+ "correct": 1,
+ "wrong": [
+  "2026-11-20",
+  "2026-11-21"
+ ],
+ "gate": {
+  "ok": false,
+  "reasons": [
+   "2026-11-21 was right in the baseline and is now wrong"
+  ]
+ },
+ "days": [
+  {
+   "day": "2026-11-19",
+   "key": "2026-11-19",
+   "right": true
+  },
+  {
+   "day": "2026-11-20",
+   "key": "2026-11-20",
+   "right": false
+  },
+  {
+   "day": "2026-11-21",
+   "key": "2026-11-21",
+   "right": false
+  }
+ ]
+}

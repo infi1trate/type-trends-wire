@@ -50,6 +50,12 @@ export async function insertSpend(db: Admin, r: { credits: number; what: string;
   if (error || !data) throw new Error("spend_insert_failed");
   return data as unknown as { id: number; at: string };
 }
+/** T1 · an agent session's cost in dollars, recorded by hand (insert-only). */
+export async function insertAgentSpend(db: Admin, r: { usd: number; what: string; actor: string }) {
+  const { data, error } = await db.from("agent_spend" as never).insert(r as never).select("id,at").single();
+  if (error || !data) throw new Error("agent_spend_insert_failed");
+  return data as unknown as { id: number; at: string };
+}
 export async function insertCap(db: Admin, r: { model_usd: number | null; build_credits: number | null; reason: string }) {
   const { error } = await db.from("spend_caps" as never).insert({ ...r, actor: "owner" } as never);
   if (error) throw new Error("cap_insert_failed");

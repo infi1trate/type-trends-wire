@@ -1,0 +1,60 @@
+{
+ "writer": "story",
+ "candidate_model": "google/gemini-3.1-flash-lite",
+ "against": "story-v1",
+ "source": "live calls on the frozen facts (no fallback)",
+ "scored_at": "2026-11-23T02:11:57.724Z",
+ "cost_usd": 0.005794,
+ "unanswered": 0,
+ "gate": {
+  "ok": false,
+  "reasons": [
+   "mean 93.3 is below the baseline's 100",
+   "No. 90 passed in the baseline and now fails: banned word: landscape"
+  ]
+ },
+ "items": [
+  {
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "number": 42,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "breakout:css:scroll_timeline:all:13",
+   "number": 43,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "number": 44,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "brand:coinbase.com:2026-11-20",
+   "number": 88,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "census:agents:2026-W47",
+   "number": 89,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "census:sale:2026-W47",
+   "number": 90,
+   "score": 60,
+   "failures": [
+    "banned word: landscape",
+    "“rebrand” without type, colour and layout changing together"
+   ]
+  }
+ ],
+ "mean": 93.3,
+ "passed": 5,
+ "total": 6
+}

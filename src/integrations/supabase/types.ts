@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_spend: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          usd: number
+          what: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: number
+          usd: number
+          what: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: number
+          usd?: number
+          what?: string
+        }
+        Relationships: []
+      }
       ai_budget: {
         Row: {
           active: boolean
@@ -2594,6 +2618,7 @@ export type Database = {
       }
       library_tags: {
         Row: {
+          carried_from: string | null
           created_at: string
           domain: string
           model: string
@@ -2603,6 +2628,7 @@ export type Database = {
           tags: Json
         }
         Insert: {
+          carried_from?: string | null
           created_at?: string
           domain: string
           model: string
@@ -2612,6 +2638,7 @@ export type Database = {
           tags: Json
         }
         Update: {
+          carried_from?: string | null
           created_at?: string
           domain?: string
           model?: string
@@ -6075,6 +6102,7 @@ export type Database = {
       }
       spend_facts: { Args: never; Returns: Json }
       spend_status: { Args: never; Returns: Json }
+      spend_week_facts: { Args: never; Returns: Json }
       story_picture_choices: {
         Args: { p_ids: string[] }
         Returns: {

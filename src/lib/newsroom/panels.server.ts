@@ -92,6 +92,8 @@ export async function n4Panels(db: Admin, now = Date.now()) {
       waiting_moves: items.filter(i => i.kind === "design move" && i.proposal === "accepted" && i.open && !i.test).length,
     },
     engineering: {
+      // T1 · the spend ledger: eight Eastern-time weeks, newest first (model calls, build credits, agent sessions, unit costs).
+      spend: await import("./ledger.server").then(m => m.loadLedger(db, now)).catch(() => null),
       by_status: byStatus, items: items.slice(0, 60).map(slim),
       gate: gate ? { ...gate, item_title: items.find(i => i.id === gate.item_id)?.title ?? null } : null,
       checks: g.GATE_CHECKS, visible: g.VISIBLE_LIMITS, no_worse: g.NO_WORSE,

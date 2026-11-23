@@ -1,0 +1,62 @@
+{
+ "writer": "story",
+ "candidate_model": "openai/gpt-6.1-terra",
+ "against": "story-v1",
+ "source": "live calls on the frozen facts (no fallback)",
+ "scored_at": "2026-11-23T02:12:50.157Z",
+ "cost_usd": 0.027444,
+ "unanswered": 0,
+ "gate": {
+  "ok": false,
+  "reasons": [
+   "mean 93.3 is below the baseline's 100",
+   "No. 43 passed in the baseline and now fails: body has 51 words (60 to 140)",
+   "No. 88 passed in the baseline and now fails: body has 59 words (60 to 140)"
+  ]
+ },
+ "items": [
+  {
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "number": 42,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "breakout:css:scroll_timeline:all:13",
+   "number": 43,
+   "score": 80,
+   "failures": [
+    "body has 51 words (60 to 140)"
+   ]
+  },
+  {
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "number": 44,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "brand:coinbase.com:2026-11-20",
+   "number": 88,
+   "score": 80,
+   "failures": [
+    "body has 59 words (60 to 140)"
+   ]
+  },
+  {
+   "id": "census:agents:2026-W47",
+   "number": 89,
+   "score": 100,
+   "failures": []
+  },
+  {
+   "id": "census:sale:2026-W47",
+   "number": 90,
+   "score": 100,
+   "failures": []
+  }
+ ],
+ "mean": 93.3,
+ "passed": 4,
+ "total": 6
+}

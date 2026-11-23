@@ -32,7 +32,9 @@ export async function healthPayload(): Promise<HealthPayload> {
   const art = await artHealth().catch(() => null);
   // T1 · each stored page's age against its limit (anonymous read of keys and times only); unreadable reads as null and never changes the status.
   const stored_pages = await import("./records/store.server").then(async m => (await import("./records/records")).storedAges(await m.recordMetas(), now)).catch(() => null);
-  value = { ...value, brand_names: names, spend, art, stored_pages };
+  // T1 · this week's spend totals from the anonymous spend_week_facts() facade; unreadable reads as null and never changes the status.
+  const spend_week = await import("./newsroom/ledger.server").then(m => m.healthSpend(supabaseAnon() as never)).catch(() => null);
+  value = { ...value, brand_names: names, spend, art, stored_pages, spend_week };
   cache = { at: now, value };
   return value;
 }

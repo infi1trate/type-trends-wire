@@ -33,3 +33,32 @@ describe("normalizeCurrency", () => {
  it.each([["$","USD"],["US$","USD"],["usd","USD"],[" USD ","USD"],["€","EUR"],["eur","EUR"],["£","GBP"],["gbp","GBP"],["¥","JPY"],["cad","CAD"],["dollars",null],["",null],[null,null]] as const)("%s -> %s",(input,out)=>expect(normalizeCurrency(input)).toBe(out));
  it("applies when storing pricing", () => { const p = normalizeExtraction("pricing",{currency:"$",plans:[],has_free_tier:false,has_trial:false,trial_days:null,has_usage_based:false,has_ai_addon:false,ai_credits_model:false,cheapest_paid_monthly:null},"2026-11-11T00:00:00Z") as {currency:string|null}; expect(p.currency).toBe("USD"); });
 });
+
+// T2 · B: the changelog reading repairs what the code recomputes or can clip, and gives every stored good answer back unchanged.
+import golden from "./fixtures/changelog-golden.json";
+describe("T2 changelog reading", () => {
+  it("gives the ten stored good answers back unchanged", () => {
+    expect(golden.cases).toHaveLength(10);
+    // entries_last_30d depends on the capture date the answer was counted against (a reused answer was counted for a later capture), so
+    // it is recounted; everything else must come back exactly as stored.
+    const but30 = (x: unknown) => ({ ...(x as object), entries_last_30d: 0 });
+    for (const c of golden.cases) expect(but30(normalizeExtraction("changelog", c.data, c.captured_at))).toEqual(but30(c.data));
+  });
+  it("ignores the model's own count and share, clips long titles, reads partial dates as unknown, keeps the 15 newest", () => {
+    const entries = Array.from({ length: 18 }, (_, i) => ({ date: i === 0 ? "2026-11" : `2026-10-${String(10 + i).padStart(2, "0")}`, title: i === 1 ? `${"word ".repeat(40)}end` : `Entry ${i}`, category: i % 2 ? "ai" : "feature" }));
+    const out = normalizeExtraction("changelog", { entries, latest_date: "Nov 2026", entries_last_30d: 40, ai_share: 50 }, "2026-11-01T00:00:00Z") as { entries: { date: string | null; title: string }[]; entries_last_30d: number; ai_share: number; latest_date: string | null };
+    expect(changelogSchema.safeParse(out).success).toBe(true);
+    expect(out.entries).toHaveLength(15);
+    expect(out.entries[0]!.date).toBe("2026-10-27");
+    expect(out.entries.some(e => e.date === null)).toBe(false); // the undated entry sorts last and falls outside the newest 15
+    expect(out.latest_date).toBe("2026-10-27");
+    expect(out.entries_last_30d).toBe(15);
+    expect(out.ai_share).toBeLessThanOrEqual(1);
+    const long = normalizeExtraction("changelog", { entries: [{ date: null, title: `${"word ".repeat(40)}end`, category: "fix" }], latest_date: null, entries_last_30d: 0, ai_share: 0 }, "2026-11-01T00:00:00Z") as { entries: { title: string }[] };
+    expect(long.entries[0]!.title.length).toBeLessThanOrEqual(120);
+    expect(long.entries[0]!.title.endsWith("…")).toBe(true);
+  });
+  it("still refuses an unknown category", () => {
+    expect(() => normalizeExtraction("changelog", { entries: [{ date: null, title: "x", category: "marketing" }] }, "2026-11-01T00:00:00Z")).toThrow();
+  });
+});

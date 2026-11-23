@@ -1,0 +1,556 @@
+{
+ "built": "2026-11-23",
+ "note": "Ten stored good changelog answers (distinct sites); reading each again must give it back unchanged.",
+ "cases": [
+  {
+   "snapshot_id": 10556,
+   "captured_at": "2026-11-22T23:48:12.637+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-22",
+      "title": "green metal facade and plant walls envelop municipal kitchen in austria",
+      "category": "feature"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "organic geometries and curved shapes enter the kitchen landscape",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "‘we are tiny ecosystems’: iris van herpen on learning to collaborate with nature",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "the EU bans destruction of unsold fashion, but is it enough to stop luxury waste?",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "detour 2026 proves 'better, not perfect' is all it takes across 14 installations and a pop-up shop",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "NIKE rethinks air cushioning with digitally printed patterns inside its soles",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "katerina shukshina's shoes bloom straight from the garden",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "curved concrete extension by belén ilarri studio updates 1970s house near valencia",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "former sheet-metal workshop in japan becomes residence with carved-out garden terrace",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "BIG stacks timber volumes with alpine views for new neighborhood in switzerland",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "individual bedrooms sit beneath repeating pitched roofs in this indonesian house",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "john pawson sets white ribbon staircase against 18th century baroque portal at the madrid EDITION",
+      "category": "design"
+     },
+     {
+      "date": "2026-11-22",
+      "title": "stone plinths and secret blue rooms shape bureau de change's paris jewelry boutique",
+      "category": "design"
+     }
+    ],
+    "ai_share": 0,
+    "latest_date": "2026-11-22",
+    "entries_last_30d": 13
+   }
+  },
+  {
+   "snapshot_id": 9739,
+   "captured_at": "2026-11-21T13:16:17.959+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-13",
+      "title": "Image and Shader Generation",
+      "category": "ai"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Convert Update",
+      "category": "ai"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Harness 2",
+      "category": "ai"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Localization Update: Content Panel & Opt-In",
+      "category": "ai"
+     }
+    ],
+    "ai_share": 1,
+    "latest_date": "2026-11-13",
+    "entries_last_30d": 4
+   }
+  },
+  {
+   "snapshot_id": 9636,
+   "captured_at": "2026-11-21T13:09:46.817+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-09-22",
+      "title": "rabbit OS3 is generally available",
+      "category": "platform"
+     },
+     {
+      "date": "2025-09-08",
+      "title": "rabbitOS 2 launch with multi-agent system and vibe-coding",
+      "category": "platform"
+     },
+     {
+      "date": "2025-07-10",
+      "title": "rabbitOS 2.3 brings hermes agent to r1 and proactive rabbit",
+      "category": "platform"
+     },
+     {
+      "date": "2025-06-18",
+      "title": "rabbitOS 2.2 brings claude code to r1 and terminal mode",
+      "category": "platform"
+     },
+     {
+      "date": "2025-06-13",
+      "title": "rabbit intern official launch",
+      "category": "platform"
+     },
+     {
+      "date": "2025-04-06",
+      "title": "rabbitOS 2.1 refined with journal and enhanced magic camera",
+      "category": "platform"
+     },
+     {
+      "date": "2025-04-02",
+      "title": "rabbitOS intern planning, research and coding capabilities",
+      "category": "platform"
+     },
+     {
+      "date": "2025-02-19",
+      "title": "Android agent launched for app and device control",
+      "category": "platform"
+     },
+     {
+      "date": "2025-01-29",
+      "title": "DLAM, openclaw, and project cyberdeck launched",
+      "category": "platform"
+     },
+     {
+      "date": "2024-11-21",
+      "title": "teach mode beta opened to all r1 users",
+      "category": "platform"
+     },
+     {
+      "date": "2024-10-01",
+      "title": "LAM playground shipped as generalist web agent",
+      "category": "platform"
+     },
+     {
+      "date": "2024-07-11",
+      "title": "Core response agent (beta rabbit) launched",
+      "category": "platform"
+     },
+     {
+      "date": "2024-05-30",
+      "title": "Magic camera AI-enhanced image transformation feature",
+      "category": "platform"
+     },
+     {
+      "date": "2024-04-30",
+      "title": "First software update for r1 and rabbithole",
+      "category": "platform"
+     },
+     {
+      "date": "2024-01-18",
+      "title": "Perplexity partnership for real-time search capabilities",
+      "category": "platform"
+     }
+    ],
+    "ai_share": 0,
+    "latest_date": "2026-09-22",
+    "entries_last_30d": 0
+   }
+  },
+  {
+   "snapshot_id": 9438,
+   "captured_at": "2026-11-21T12:56:03.259+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": null,
+      "title": "Log Strength Your Way, Find Routes in Your Own Words, and Explore Offline Mode",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "See Which Muscles You Actually Worked, Know Trail Difficulty Before You Go",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "Strava connects to Claude, New Running Events and Races, and Club Messaging",
+      "category": "ai"
+     },
+     {
+      "date": null,
+      "title": "Physical Therapy, Updated Strength Training, and Route Deviation Alerts",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "More Languages, Annual Best Efforts, and Weekly Streak Stickers",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "Muscle Maps, New Sports, and Expanded Training Tools",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "Follow Routes From Your Wrist and New Tools for Club Events",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "Event Flyers for Club Organizers",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "Machine Learning to remove Cars from Run and Ride leaderboards",
+      "category": "ai"
+     },
+     {
+      "date": null,
+      "title": "Athlete Intelligence: Personalized AI Insights",
+      "category": "ai"
+     },
+     {
+      "date": null,
+      "title": "Desktop Route Builder Improvements",
+      "category": "feature"
+     },
+     {
+      "date": null,
+      "title": "Segment Updates: Verified Segments, Decluttering and Leaderboard FAQ’s",
+      "category": "feature"
+     }
+    ],
+    "ai_share": 0.25,
+    "latest_date": null,
+    "entries_last_30d": 0
+   }
+  },
+  {
+   "snapshot_id": 9367,
+   "captured_at": "2026-11-21T12:49:30.781+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-19",
+      "title": "Teammates can now request cards and higher spending limits",
+      "category": "feature"
+     },
+     {
+      "date": "2026-11-18",
+      "title": "Connect Books to your agents via MCP",
+      "category": "ai"
+     },
+     {
+      "date": "2026-11-16",
+      "title": "Track your rounds from start to close with Round Tracker",
+      "category": "feature"
+     },
+     {
+      "date": "2026-11-10",
+      "title": "See more of your spending in one place",
+      "category": "ai"
+     },
+     {
+      "date": "2026-11-05",
+      "title": "Let agents take on financial work without handing over the keys",
+      "category": "ai"
+     },
+     {
+      "date": "2026-11-04",
+      "title": "Treasury, reinvented",
+      "category": "feature"
+     },
+     {
+      "date": "2026-11-03",
+      "title": "Make one-time purchases with single-use cards",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-20",
+      "title": "Introducing Mercury Payroll",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-19",
+      "title": "Apply for a Mercury account with a pending EIN",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-15",
+      "title": "Take action on your Mercury account from ChatGPT and Claude",
+      "category": "ai"
+     }
+    ],
+    "ai_share": 0.4,
+    "latest_date": "2026-11-19",
+    "entries_last_30d": 7
+   }
+  },
+  {
+   "snapshot_id": 9330,
+   "captured_at": "2026-11-21T12:45:11.16+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-20",
+      "title": "Protect your MCP server with Clerk",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-12",
+      "title": "View organizations and update users with the Clerk MCP server",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Browser sessions for agents",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Set custom session limits per user or device",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Email events in Application Logs and the Backend API",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "Application Logs now group sign-ins and sign-ups",
+      "category": "other"
+     }
+    ],
+    "ai_share": 0,
+    "latest_date": "2026-11-20",
+    "entries_last_30d": 6
+   }
+  },
+  {
+   "snapshot_id": 9263,
+   "captured_at": "2026-11-21T12:38:26.282+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-10-27",
+      "title": "Runway Ads",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-26",
+      "title": "App Studio",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-15",
+      "title": "Mirelo SFX 2.0",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-15",
+      "title": "BiRefNet v2 Background Removal",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-14",
+      "title": "Fish Audio Drama 3",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-12",
+      "title": "Seedream 5.0 Flash",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-09",
+      "title": "Project Credit Caps",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-02",
+      "title": "Seedance 2.5 Draft Mode in Agent",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-02",
+      "title": "Ideogram 4.5",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-01",
+      "title": "OpenAI Dots x Runway",
+      "category": "feature"
+     },
+     {
+      "date": "2026-09-29",
+      "title": "ElevenLabs V4",
+      "category": "feature"
+     },
+     {
+      "date": "2026-09-23",
+      "title": "DaVinci Resolve Plugin",
+      "category": "feature"
+     },
+     {
+      "date": "2026-09-23",
+      "title": "Runway MCP on Cursor",
+      "category": "feature"
+     },
+     {
+      "date": "2026-09-22",
+      "title": "Brand Kits in Runway MCP",
+      "category": "feature"
+     },
+     {
+      "date": "2026-09-18",
+      "title": "Kling Models on Runway MCP",
+      "category": "feature"
+     }
+    ],
+    "ai_share": 0,
+    "latest_date": "2026-10-27",
+    "entries_last_30d": 5
+   }
+  },
+  {
+   "snapshot_id": 9251,
+   "captured_at": "2026-11-21T12:37:39.852+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-20",
+      "title": "New Home Feed",
+      "category": "feature"
+     },
+     {
+      "date": "2026-11-17",
+      "title": "Inference Providers Powered by OpenRouter",
+      "category": "integration"
+     },
+     {
+      "date": "2026-11-06",
+      "title": "A New Main Search UI",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-23",
+      "title": "External Collaborators from Repo Settings",
+      "category": "feature"
+     },
+     {
+      "date": "2026-10-22",
+      "title": "3D Previews for OpenUSD & SimReady Datasets",
+      "category": "feature"
+     }
+    ],
+    "ai_share": 0,
+    "latest_date": "2026-11-20",
+    "entries_last_30d": 4
+   }
+  },
+  {
+   "snapshot_id": 9195,
+   "captured_at": "2026-11-21T06:46:00.848+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-11",
+      "title": "Meet the new Pitch Agent",
+      "category": "ai"
+     },
+     {
+      "date": "2026-10-06",
+      "title": "Introducing the Anything block",
+      "category": "feature"
+     },
+     {
+      "date": "2026-08-12",
+      "title": "Introducing Pitch’s MCP and API",
+      "category": "feature"
+     },
+     {
+      "date": "2026-06-30",
+      "title": "Teamspaces, SCIM, and Agent upgrades",
+      "category": "feature"
+     },
+     {
+      "date": "2026-05-27",
+      "title": "Introducing Pitch Agent",
+      "category": "ai"
+     }
+    ],
+    "ai_share": 0.4,
+    "latest_date": "2026-11-11",
+    "entries_last_30d": 1
+   }
+  },
+  {
+   "snapshot_id": 8919,
+   "captured_at": "2026-11-21T06:30:57.517+00:00",
+   "data": {
+    "entries": [
+     {
+      "date": "2026-11-20",
+      "title": "As mathematicians race to verify AI Riemann proof, a human proof emerges",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-20",
+      "title": "A claimed proof of the Riemann hypothesis",
+      "category": "other"
+     },
+     {
+      "date": "2026-11-19",
+      "title": "Race to find high-ranking curves shows AI’s current limits",
+      "category": "other"
+     }
+    ],
+    "ai_share": 0,
+    "latest_date": "2026-11-20",
+    "entries_last_30d": 3
+   }
+  }
+ ]
+}

@@ -22,3 +22,24 @@ export async function storeAiResult(snapshot: { id: number; domain: string; page
  }
  throw new Error("AI confirmation contention");
 }
+/** T2 · store a carried vision reading for `snapshot` without advancing the AI confirmation: the baseline and its pending changes are
+ *  written back unchanged and no event is made, so a carried reading can never be the second sighting that confirms a change. The tags
+ *  row is marked `carried_from` (the date of the fresh read the chain began with) and keeps that read's version stamp. Returns false
+ *  (and stores nothing) when the domain has no AI baseline yet, so the caller reads fresh instead. */
+export async function storeCarriedVision(snapshot: { id: number; domain: string; page_type: string; viewport: string; captured_at: string; source?: string }, model: string, data: Json, carriedFrom: string, readVersion: string | null): Promise<boolean> {
+ if (snapshot.source === "wayback") return false;
+ for (let attempt=0;attempt<3;attempt++) {
+  const { data: current, error } = await db.from("library_ai_baselines").select("*").eq("domain",snapshot.domain).eq("page_type",snapshot.page_type).eq("viewport",snapshot.viewport).eq("kind","vision").maybeSingle();
+  if(error) throw new Error("AI confirmation lookup failed");
+  if(!current) return false;
+  const state={baseline:{signals:current.signals,snapshot_id:current.snapshot_id,confirmed_at:current.confirmed_at},pending:current.pending ?? {},events:[]};
+  const stored=await db.rpc("library_ai_store",{p_snapshot:snapshot.id,p_kind:"vision",p_model:model,p_data:data,p_expected:current as Json,p_state:state as unknown as Json});
+  if(stored.error) throw new Error("AI result write failed");
+  if(stored.data) {
+   const {error:markError}=await db.from("library_tags").update({carried_from:carriedFrom,...(readVersion?{read_version:readVersion}:{})} as never).eq("snapshot_id",snapshot.id);
+   if(markError) throw new Error("carried mark failed");
+   return true;
+  }
+ }
+ throw new Error("AI confirmation contention");
+}

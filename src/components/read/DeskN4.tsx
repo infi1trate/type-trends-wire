@@ -3,6 +3,8 @@
 // gate result with every check and its numbers, the health run's open items and credits per item. Nothing here is on a reader's page.
 import { line as voiced } from "@/lib/voice";
 import { storyTime } from "@/lib/stories";
+import { DeskSpend } from "./DeskSpend";
+import type { LedgerWeek } from "@/lib/newsroom/ledger";
 
 type Measures = Record<string, number | boolean>;
 type Cell = { page: string; width: number; measures: Measures; picture: boolean; against: string | null };
@@ -20,6 +22,7 @@ export type N4 = {
     pages: readonly { id: string; name: string }[]; widths: readonly number[]; waiting_moves: number;
   };
   engineering: {
+    spend?: LedgerWeek[] | null;
     by_status: Record<string, number>; items: Item[];
     gate: { id: number; at: string; item_id: number; item_title: string | null; commit_sha: string; tests: { passed: number; failed: number; skipped: number }; before_run: string; after_run: string; pass: boolean; checks: Check[] } | null;
     checks: readonly { id: string; name: string }[]; health: Item[]; health_run: { at: string; reason: string | null } | null; credits: { id: number; title: string; credits: number }[];
@@ -87,6 +90,7 @@ export function DeskN4({ n }: { n: N4 }) {
 
     <section aria-labelledby="desk-engineering" className="ed-wrap mt-12" data-desk-engineering="">
       <h2 id="desk-engineering" className="ed-h2 ed-rule pt-3">Engineering</h2>
+      <DeskSpend weeks={e.spend ?? null} />
       <dl className="ed-data mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">{Object.entries(e.by_status).map(([s, c]) => <div key={s}><dt className="ed-kicker">{s}</dt><dd className="num">{c}</dd></div>)}</dl>
       <h3 className="ed-h3 mt-6">The build queue</h3>
       {e.items.length ? <Table caption="The build queue, newest first" head={["Item", "Kind", "Expects", "Status", "Filed by", "Proposal", "Credits"]} min={820}>

@@ -89,3 +89,24 @@ describe("the full sweep", () => {
     expect(f.calls).toContain("sector");
   });
 });
+
+describe("T2 · Part 0c: overdue page models go before the per-brand rows", () => {
+  const tiny = { metas: 1, shared: 1, sites: 1, "brand-similar": 1, "brand-sector": 1, "page-keys": 1, page: 1, "card-chunk": 1 } as Record<string, number>;
+  it("a page past its limit is rewritten even when the brand-sector step takes the rest of the pass", async () => {
+    const now = Date.now(), old = new Date(now - 9 * 3_600_000).toISOString(), fresh = new Date(now - 60_000).toISOString();
+    const metas = [{ key: "data-story:a", kind: "data-story", computed_at: old }, { key: "data-index", kind: "data-index", computed_at: fresh },
+      ...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards"].map(k => ({ key: k, kind: k, computed_at: fresh }))];
+    const f = fakes({ metas: async () => metas, pageKeys: async () => ["data-index", "data-story:a"], sector: () => hang() });
+    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 300, deps: f.deps, estimates: tiny });
+    expect(f.calls.indexOf("page data-story:a")).toBeGreaterThan(-1);
+    expect(f.calls.indexOf("page data-story:a")).toBeLessThan(f.calls.indexOf("similar"));
+    expect(f.calls).not.toContain("page data-index"); // fresh and not due: still skipped
+    expect(r.written).toContain("data-story:a");
+  });
+  it("orders overdue keys most overdue first and leaves keys within their limit out", async () => {
+    const { overdueFirst } = await import("./refresh.server");
+    const now = Date.parse("2026-11-23T03:00:00Z"), at = (h: number) => ({ computed_at: new Date(now - h * 3_600_000).toISOString() });
+    const m: Record<string, { computed_at: string }> = { "data-story:a": at(7), digest: at(9), gallery: at(1) };
+    expect(overdueFirst(["gallery", "data-story:a", "digest", "collections"], k => m[k], now)).toEqual(["collections", "digest", "data-story:a"]);
+  });
+});

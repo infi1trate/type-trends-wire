@@ -26,6 +26,18 @@ export const pricingSchema = z.object({ currency: z.string().max(12).nullable(),
 export const CHANGE_CATEGORIES = ["feature","ai","integration","performance","fix","design","pricing","platform","security","other"] as const;
 const date = z.iso.date().nullable();
 export const changelogSchema = z.object({ entries: z.array(z.object({ date, title: short, category: z.enum(CHANGE_CATEGORIES) }).strict()).max(15), latest_date: date, entries_last_30d: z.number().int().nonnegative().max(15), ai_share: z.number().min(0).max(1) }).strict();
+/** T2 · how a changelog answer is read before it is stored. Of 22 failed changelog calls in the week to 22 Nov, every stored validation
+ *  error named a field the code already recomputes or can repair: entries_last_30d over 15 (the model counted the whole page) and ai_share
+ *  over 1 (both are recomputed from the entries, so the model's figure is ignored), a title over 120 characters (clipped at a word),
+ *  a date that is not a full YYYY-MM-DD (read as unknown, null, as the prompt asks) and more than 15 entries (the 15 newest kept). The
+ *  stored shape is still `changelogSchema`, so stored rows and reuse checks are unchanged; an unknown category still fails. */
+export const CHANGELOG_TITLE_MAX = 120, CHANGELOG_ENTRIES_MAX = 15;
+const clipTitle = (t: string) => { if (t.length <= CHANGELOG_TITLE_MAX) return t; const s = t.replace(/\s+/g, " ").trim(); if (s.length <= CHANGELOG_TITLE_MAX) return s; const cut = s.slice(0, CHANGELOG_TITLE_MAX - 1), sp = cut.lastIndexOf(" "); return `${(sp > 60 ? cut.slice(0, sp) : cut).trimEnd()}…`; };
+const answerDate = z.unknown().transform(v => (typeof v === "string" && z.iso.date().safeParse(v.trim()).success ? v.trim() : null));
+export const changelogAnswerSchema = z.object({
+  entries: z.array(z.object({ date: answerDate, title: z.string().min(1).transform(clipTitle), category: z.enum(CHANGE_CATEGORIES) }).strict()).max(200),
+  latest_date: z.unknown().optional(), entries_last_30d: z.unknown().optional(), ai_share: z.unknown().optional(),
+}).strict();
 export const FEATURE_THEMES = ["ai_assistant","ai_agents","ai_generation","search","collaboration","realtime","analytics","automation","integrations","api_dev","security_compliance","payments","mobile","offline","templates","customization","workflow","data_import_export","notifications","accessibility","other"] as const;
 export const productSchema = z.object({ features: z.array(z.object({ name: z.string().min(1).max(60), theme: z.enum(FEATURE_THEMES) }).strict()).max(20), primary_theme: z.enum(FEATURE_THEMES), mentions_agents: z.boolean(), mentions_mcp: z.boolean() }).strict();
 export const extractionSchemas = { pricing: pricingSchema, changelog: changelogSchema, product: productSchema };
@@ -41,8 +53,8 @@ export function normalizeExtraction(kind: ExtractionKind, value: unknown, captur
   return { ...p, currency: normalizeCurrency(p.currency), has_free_tier: p.plans.some(p => p.is_free), has_usage_based: p.plans.some(p => p.price_basis === "usage"), has_ai_addon: p.plans.some(p => p.ai_addon), cheapest_paid_monthly: paid.length ? Math.min(...paid) : null };
  }
  if (kind === "changelog") {
-  const c = changelogSchema.parse(value), time = Date.parse(capturedAt), entries = [...c.entries].sort((a,b) => (b.date ?? "").localeCompare(a.date ?? ""));
-  return { ...c, entries, latest_date: entries.find(e => e.date)?.date ?? null, entries_last_30d: entries.filter(e => e.date && Date.parse(e.date) <= time && Date.parse(e.date) >= time - 30 * 86400000).length, ai_share: entries.length ? entries.filter(e => e.category === "ai").length / entries.length : 0 };
+  const c = changelogAnswerSchema.parse(value), time = Date.parse(capturedAt), entries = [...c.entries].sort((a,b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, CHANGELOG_ENTRIES_MAX);
+  return changelogSchema.parse({ entries, latest_date: entries.find(e => e.date)?.date ?? null, entries_last_30d: entries.filter(e => e.date && Date.parse(e.date) <= time && Date.parse(e.date) >= time - 30 * 86400000).length, ai_share: entries.length ? entries.filter(e => e.category === "ai").length / entries.length : 0 });
  }
  return productSchema.parse(value);
 }

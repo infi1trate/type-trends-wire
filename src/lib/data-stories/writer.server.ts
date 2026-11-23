@@ -3,6 +3,7 @@
 // under the same cost-ledger purpose; one insert-only version per attempt. The orchestration takes injected I/O so tests run in memory;
 // nothing here ever throws into a job.
 import { AI_MODELS } from "../ai-models";
+import { retryGuard } from "../ai-retries";
 import { WRITER_PLAN, tryModels, type Attempt, type Known } from "../stories/writer";
 import { gatewayCall, providerCanRun } from "../stories/writer.server";
 import { STUDY_PER_DAY, STUDY_SCHEMA, STUDY_SYSTEM, STUDY_TOOL, checkStudyText, parseStudy, studyUser, type FactsSheet, type StudyWritten } from "./writer";
@@ -13,7 +14,7 @@ export type StudyIO = {
   /** Every stored version's meta for these studies (checked or not; service role). */
   metas: (slugs: string[]) => Promise<StudyMeta[]>;
   runs: (model: string) => boolean;
-  call: (model: string, sheet: FactsSheet, failures: string[], signal: AbortSignal) => Promise<{ raw: unknown; cost: number } | null>;
+  call: (model: string, sheet: FactsSheet, failures: string[], signal: AbortSignal) => Promise<{ raw: unknown; cost: number; refused?: boolean } | null>;
   insert: (row: StudyInsert) => Promise<boolean>;
 };
 export type StudyJob = { slug: string; number: number; sheet: FactsSheet; hash: string; fallback: StudyWritten };
@@ -47,7 +48,8 @@ export async function writeStudies(jobs: StudyJob[], io: StudyIO, known: Known, 
     if (!owed(j, metas, day)) { out.skipped++; continue; }
     if (used + out.calls >= cap || o.deadline - clock() < STUDY_CALL_MIN_MS) { out.skipped++; continue; }
     const canCall = (model: string) => { if (!io.runs(model) || used + out.calls >= cap || o.deadline - clock() < STUDY_CALL_MIN_MS) return false; out.calls++; return true; };
-    const r = await tryModels(WRITER_PLAN, (model, failures) => io.call(model, j.sheet, failures, AbortSignal.timeout(Math.max(1000, o.deadline - clock() - 2000))), parseStudy, t => checkStudyText(t, j.sheet, known), canCall);
+    const g = retryGuard("writer", parseStudy);
+    const r = await tryModels(WRITER_PLAN, (model, failures) => g.call(io.call(model, j.sheet, failures, AbortSignal.timeout(Math.max(1000, o.deadline - clock() - 2000)))), parseStudy, t => checkStudyText(t, j.sheet, known), m => g.open() && canCall(m));
     if (!r.attempts) { out.skipped++; continue; }
     out.tried.push(j.slug);
     const t = r.text ?? j.fallback;

@@ -26,6 +26,8 @@ export type NewsroomStore = {
   newsroom?: (desk: string | null) => Promise<unknown>;
   assign?: (r: { pitch_id: number; desk: string; status: string; actor: string; reason: string | null }) => Promise<unknown | null>;
   spend?: (r: { credits: number; what: string; actor: string }) => Promise<unknown>;
+  /** T1 · an agent session's own cost in dollars, recorded by hand (insert-only agent_spend). */
+  spendAgent?: (r: { usd: number; what: string; actor: string }) => Promise<unknown>;
   spendCap?: (r: { model_usd: number | null; build_credits: number | null; reason: string }) => Promise<void>;
   wireOnly?: (on: boolean, reason: string) => Promise<void>;
   capReached?: () => Promise<boolean>;
@@ -164,9 +166,13 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     return a ? { status: 201, body: { ok: true, assignment: a }, decision: "done", reason: b.reason ?? null } : { ...missing, reason: "No such pitch." };
   }
   if (b.action === "spend") {
+    if ((b.kind ?? "build") === "agent") {
+      if (!d.store.spendAgent) return missing;
+      return { status: 201, body: { ok: true, kind: "agent", entry: await d.store.spendAgent({ usd: b.usd!, what: b.what, actor }) }, decision: "done", reason: b.what, detail: { kind: "agent", usd: b.usd } };
+    }
     if (!d.store.spend) return missing;
     if (b.item != null && !(d.store.queueItemExists && await d.store.queueItemExists(b.item))) return { ...missing, reason: "No such queue item." };
-    return { status: 201, body: { ok: true, entry: await d.store.spend({ credits: b.credits, what: b.what, actor, ...(b.item != null ? { queue_item: b.item } : {}) }) }, decision: "done", reason: b.what, ...(b.item != null ? { detail: { item: b.item } } : {}) };
+    return { status: 201, body: { ok: true, entry: await d.store.spend({ credits: b.credits!, what: b.what, actor, ...(b.item != null ? { queue_item: b.item } : {}) }) }, decision: "done", reason: b.what, ...(b.item != null ? { detail: { item: b.item } } : {}) };
   }
   if (b.action === "spend_cap") { if (!d.store.spendCap) return missing; await d.store.spendCap({ model_usd: b.model_usd, build_credits: b.build_credits, reason: b.reason }); return { status: 201, body: { ok: true, cap: b.model_usd == null && b.build_credits == null ? null : { model_usd: b.model_usd, build_credits: b.build_credits } }, decision: "done", reason: b.reason }; }
   if (b.action === "wire_only") { if (!d.store.wireOnly) return missing; await d.store.wireOnly(b.on, b.reason); return { status: 201, body: { ok: true, wire_only: b.on }, decision: "done", reason: b.reason, detail: { on: b.on } }; }
@@ -382,6 +388,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       },
       assign: async r => (await import("../newsroom/newsroom.server")).insertAssignment(db, r),
       spend: async r => (await import("../newsroom/newsroom.server")).insertSpend(db, r),
+      spendAgent: async r => (await import("../newsroom/newsroom.server")).insertAgentSpend(db, r),
       spendCap: async r => (await import("../newsroom/newsroom.server")).insertCap(db, r),
       wireOnly: async (on, reason) => { await (await import("../newsroom/newsroom.server")).setWireOnly(db, on, reason); },
       capReached: async () => (await import("../newsroom/newsroom.server")).capReachedNow(db),

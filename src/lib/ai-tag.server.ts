@@ -2,7 +2,7 @@ import { authenticateCrawler } from "./crawl-ingest.server";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { tagRequestSchema, reusableTags, cleanTags } from "./ai-schema";
 import { inferAI, AiFailure } from "./ai-inference.server";
-import { storeAiResult } from "./ai-store.server";
+import { storeAiResult, storeCarriedVision } from "./ai-store.server";
 import { AI_LIMITS } from "./ai-models";
 import { fingerprint } from "./library";
 import { jpegDimensions } from './ai-vision';
@@ -34,20 +34,34 @@ export async function handleLibraryTag(request: Request) {
   const {data:snapshot,error}=await db.from("library_snapshots").select("id,domain,page_type,viewport,captured_at,source,signals,signals_hash,content_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source",input.source).eq("captured_at",input.captured_at).maybeSingle();
   if(error)throw new Error("Snapshot lookup failed");if(!snapshot)return Response.json({ok:false,code:"snapshot_not_found"},{status:404});
   if(snapshot.signals_hash!==input.signals_hash)return Response.json({ok:false,code:"signals_hash_mismatch"},{status:409});
-  const {data:previous,error:reuseError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,read_version,library_snapshots!inner(source)").eq("domain",input.domain).eq("signals_hash",input.signals_hash).eq("library_snapshots.source",input.source).gte("created_at",new Date(Date.now()-60*86400000).toISOString()).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const {data:previous,error:reuseError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,read_version,carried_from,library_snapshots!inner(source)").eq("domain",input.domain).eq("signals_hash",input.signals_hash).eq("library_snapshots.source",input.source).gte("created_at",new Date(Date.now()-60*86400000).toISOString()).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(reuseError)throw new Error("Tag reuse lookup failed");
-  if(previous&&reusableTags(previous,input.domain,input.signals_hash)) {const tags=cleanTags(previous.tags);await storeAiResult(snapshot,"vision",previous.model,tags,previous.read_version??null);return Response.json({ok:true,reused:true,tags});}
+  if(previous&&reusableTags(previous,input.domain,input.signals_hash)) {const tags=cleanTags(previous.tags);
+   // T2 · a copy of a carried reading is carried too (same first date), so it never counts as a fresh reading or a second sighting.
+   const from=(previous as {carried_from?:string|null}).carried_from??null;
+   if(from&&await storeCarriedVision(snapshot,previous.model,tags,from,previous.read_version??null))return Response.json({ok:true,reused:true,carried:true,tags});
+   await storeAiResult(snapshot,"vision",previous.model,tags,previous.read_version??null);return Response.json({ok:true,reused:true,tags});}
   // I3 · 0.1.5: a new signals hash alone (a field added to every capture) is not a new page: when the previous capture's measured look
   // fields and content hash match this one, its reliable read is copied and the vision model is not called.
   const {data:earlier,error:earlierError}=await db.from("library_snapshots").select("id,signals,content_hash").eq("domain",input.domain).eq("page_type","home").eq("viewport","desktop").eq("source",input.source).lt("captured_at",input.captured_at).order("captured_at",{ascending:false}).limit(1).maybeSingle();
   if(earlierError)throw new Error("Previous capture lookup failed");
   if(earlier){
-   const {data:prevTags,error:prevError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,read_version").eq("snapshot_id",earlier.id).maybeSingle();
+   const {data:prevTags,error:prevError}=await db.from("library_tags").select("domain,signals_hash,created_at,tags,model,read_version,carried_from").eq("snapshot_id",earlier.id).maybeSingle();
    if(prevError)throw new Error("Tag reuse lookup failed");
    const ctx={page_type:"home",viewport:"desktop",sector:""};
    if(prevTags&&reusableTags(prevTags,input.domain,prevTags.signals_hash)&&sameLookAndContent({fields:extractFields(earlier.signals as Comparable,ctx),content_hash:earlier.content_hash??null},{fields:extractFields(snapshot.signals as Comparable,ctx),content_hash:snapshot.content_hash??null})){
-    const tags=cleanTags(prevTags.tags);await storeAiResult(snapshot,"vision",prevTags.model,tags,prevTags.read_version??null);return Response.json({ok:true,reused:true,tags});
+    const tags=cleanTags(prevTags.tags);
+    const from=(prevTags as {carried_from?:string|null}).carried_from??null;
+    if(from&&await storeCarriedVision(snapshot,prevTags.model,tags,from,prevTags.read_version??null))return Response.json({ok:true,reused:true,carried:true,tags});
+    await storeAiResult(snapshot,"vision",prevTags.model,tags,prevTags.read_version??null);return Response.json({ok:true,reused:true,tags});
    }
+  }
+  // T2 · A: the section crops are the same as at the previous capture with a usable reading under 28 days old (and the site is not in
+  // the leading group): carry that reading forward instead of reading again (vision-carry.ts). Any doubt reads fresh.
+  {
+   const {carryFor}=await import("./vision-carry.server");
+   const c=await carryFor({domain:snapshot.domain,captured_at:snapshot.captured_at,source:snapshot.source??input.source});
+   if(c.decision.carry&&c.previous){const tags=cleanTags(c.previous.tags);if(await storeCarriedVision(snapshot,c.previous.model,tags,c.decision.from,c.previous.read_version))return Response.json({ok:true,reused:true,carried:true,tags});}
   }
   const f=fingerprint(snapshot.signals);const {data:site}=await db.from("library_sites").select("sector").eq("domain",input.domain).single();
   const result=await inferAI({snapshot_id:snapshot.id,kind:"vision",captured_at:input.captured_at,context:JSON.stringify({domain:input.domain,sector:site?.sector,headline:f.h1,h1_font:f.h1_family,body_font:f.body_family,theme:f.theme}),images,imageLabels});

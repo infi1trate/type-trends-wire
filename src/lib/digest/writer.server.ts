@@ -4,6 +4,7 @@
 // under the same cost-ledger purpose. The plan is the shared one (writer, writer again with its failures, text model) carried across
 // days for one sheet; one insert-only version per attempt. Injected I/O so tests run in memory; nothing here ever throws into a job.
 import { AI_MODELS } from "../ai-models";
+import { retryGuard } from "../ai-retries";
 import { WRITER_PLAN, tryModels, type Attempt, type Known } from "../stories/writer";
 import { gatewayCall, providerCanRun } from "../stories/writer.server";
 import { DIGEST_PER_DAY, DIGEST_SCHEMA, DIGEST_SYSTEM, DIGEST_TOOL, REWRITE_DAYS, checkDigestText, digestUser, parseDigest, type DigestSheet, type DigestWritten } from "./writer";
@@ -14,7 +15,7 @@ export type DigestMeta = { week: string; facts_hash: string; passed: boolean; cr
 export type DigestIO = {
   metas: (weeks: string[]) => Promise<DigestMeta[]>;
   runs: (model: string) => boolean;
-  call: (model: string, sheet: DigestSheet, failures: string[], signal: AbortSignal) => Promise<{ raw: unknown; cost: number } | null>;
+  call: (model: string, sheet: DigestSheet, failures: string[], signal: AbortSignal) => Promise<{ raw: unknown; cost: number; refused?: boolean } | null>;
   insert: (row: DigestInsert) => Promise<boolean>;
 };
 export type DigestJob = { week: string; sheet: DigestSheet; hash: string; subject: string[]; fallback: DigestWritten };
@@ -48,8 +49,9 @@ export async function writeDigests(jobs: DigestJob[], io: DigestIO, known: Known
     if (!owed(j, metas, clock()) || used + out.calls >= cap || o.deadline - clock() < DIGEST_CALL_MIN_MS) { out.skipped++; continue; }
     const prior = metas.filter(m => m.week === j.week && m.facts_hash === j.hash).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.failures ?? [];
     const canCall = (model: string) => { if (!io.runs(model) || used + out.calls >= cap || o.deadline - clock() < DIGEST_CALL_MIN_MS) return false; out.calls++; return true; };
-    const r = await tryModels(planFor(spentOn(metas, j.week, j.hash)), (model, failures) => io.call(model, j.sheet, failures.length ? failures : prior, AbortSignal.timeout(Math.max(1000, o.deadline - clock() - 2000))),
-      parseDigest, t => checkDigestText(t, j.sheet, j.subject, known), canCall);
+    const g = retryGuard("writer", parseDigest);
+    const r = await tryModels(planFor(spentOn(metas, j.week, j.hash)), (model, failures) => g.call(io.call(model, j.sheet, failures.length ? failures : prior, AbortSignal.timeout(Math.max(1000, o.deadline - clock() - 2000)))),
+      parseDigest, t => checkDigestText(t, j.sheet, j.subject, known), m => g.open() && canCall(m));
     if (!r.attempts) { out.skipped++; continue; }
     out.tried.push(j.week);
     const t = r.text ?? j.fallback;
