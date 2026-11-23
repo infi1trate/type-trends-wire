@@ -89,6 +89,8 @@ const storyOnce = memoBy(30_000, (id: string) => storyById(id), { key: id => id,
  *  waits for: the story's own row with its edits and checked text, each found by its id; the body streams after. */
 export async function loadStoryHead(id: string): Promise<{ headline: string; deck: string | null; kicker: string; ran: boolean; number: number | null } | null> {
   const s = await storyOnce(id);
+  // PH1 · a launch that is not running (held or taken down) has no page at all: it answers 404, never a held page.
+  if (s && id.startsWith("launch:") && s.state !== "published") return null;
   return s ? { headline: s.headline, deck: s.deck, kicker: s.kicker, ran: s.state === "published", number: s.state === "published" ? s.number ?? null : null } : null;
 }
 export async function loadStoryLead(id: string, o: { asOf?: string } = {}) {
@@ -183,7 +185,7 @@ async function retiredLead(s: StoryRecord) {
   const { supabaseAnon } = await import("../mcp/supabase");
   const [tape, number] = await Promise.all([
     ids.length ? tapeOf(ids).catch(() => []) : Promise.resolve([]),
-    supabaseAnon().from("story_numbers").select("number").eq("story_id", s.id).maybeSingle().then(r => (r.data?.number as number | undefined) ?? null, () => null),
+    s.id.startsWith("launch:") ? Promise.resolve(null) : supabaseAnon().from("story_numbers").select("number").eq("story_id", s.id).maybeSingle().then(r => (r.data?.number as number | undefined) ?? null, () => null),
   ]);
   const retired: Retired = { note: s.killReason, tape };
   return { ...page, eventIds: [] as number[], number, body: [], facts: [], beforeAfter: null, retired, icon: null, thumb: null, frames: null, series: null };

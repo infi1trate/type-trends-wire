@@ -3,7 +3,7 @@ import { supabaseAnon } from "../mcp/supabase";
 import { memo } from "../memo";
 import { overlay, type EditRow, type StoredStory } from "./edits";
 import type { StoryRecord } from "./view";
-import { withNumbers, type NumberRow } from "./numbers";
+import { isLaunchId, withNumbers, type NumberRow } from "./numbers";
 import { withTexts, type TextRow } from "./texts";
 
 type LineRow = { story_id: string; why_line: string; why_model: string; why_at: string };
@@ -54,7 +54,7 @@ export async function storyById(id: string, asOf?: string): Promise<StoryRecord 
 export async function storyIdByNumber(n: number): Promise<string | null> {
   const { data, error } = await supabaseAnon().from("story_numbers").select("story_id,number").eq("number", n).maybeSingle();
   if (error) throw error;
-  if (!data) return null;
+  if (!data || isLaunchId(data.story_id)) return null; // PH1 · a launch's old number points at nothing
   const s = await storyById(data.story_id);
   return s && (s.state === "published" || s.state === "killed") ? s.id : null;
 }

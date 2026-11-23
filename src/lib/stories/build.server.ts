@@ -478,7 +478,7 @@ export async function assignStoryNumbers(admin: Admin, o: { sinceDays: number | 
   const { applyEdits } = await import("./edits"), { assignNumbers } = await import("./numbers");
   type Row = { id: string; status: "published" | "held"; happened_at: string; created_at: string };
   const since = o.sinceDays == null ? null : new Date(Date.now() - o.sinceDays * 864e5).toISOString();
-  const stories = await pages<Row>((f, t) => { let q = admin.from("stories").select("id,status,happened_at,created_at"); if (since) q = q.gte("created_at", since); return q.order("id").range(f, t) as never; }, 1000);
+  const stories = await pages<Row>((f, t) => { let q = admin.from("stories").select("id,type,status,happened_at,created_at"); if (since) q = q.gte("created_at", since); return q.order("id").range(f, t) as never; }, 1000);
   if (!stories.length) return 0;
   const edits = await pages<import("./edits").EditRow>((f, t) => admin.from("story_edits").select("id,story_id,action,payload,note,at").order("id").range(f, t) as never, 1000);
   const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);

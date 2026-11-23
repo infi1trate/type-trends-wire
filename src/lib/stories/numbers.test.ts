@@ -36,4 +36,10 @@ describe("story numbers", () => {
     expect(sql).not.toMatch(/\b(DROP|UPDATE public|DELETE FROM|ALTER TABLE public\.(?!story_numbers))/);
     expect(sql).not.toMatch(/GRANT[^;]*(INSERT|UPDATE|DELETE)[^;]*TO (anon|authenticated)/);
   });
+  it("PH1 · a launch never takes a number and an old launch number shows nowhere", () => {
+    const next = assignNumbers([{ id: "launch:1", type: "launch", happened_at: "2026-11-23T08:00:00Z" }, { id: "move:9", type: "move", happened_at: "2026-11-23T09:00:00Z" }], [{ story_id: "launch:0", number: 117 }]);
+    expect(next).toEqual([{ story_id: "move:9", number: 118 }]);
+    expect(withNumbers([{ id: "launch:0", state: "published" }], [{ story_id: "launch:0", number: 117 }])[0]!.number).toBeNull();
+    expect(storyIdForNumber(117, [{ story_id: "launch:0", number: 117 }], () => "published")).toBeNull();
+  });
 });
