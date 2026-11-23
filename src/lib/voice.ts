@@ -215,6 +215,7 @@ export const VOICE = {
   "staff.loading": loading("Staff pages after the editor key", "Opening with the editor key…"),
   "staff.checking": loading("Staff pages, the editor key field", "Checking the key…"),
   "read.toolsViews.3": { kind: "loading", where: "Read · ToolsViews", text: "Checking which forecast runs count…", next: [] },
+  "root.copyAge": { kind: "offline", where: "Every Read page and the Terminal · the quiet line when the database is slow and the page is its last good copy", title: "An earlier copy of this page", text: "This page is the copy from {time} UTC. Newer figures follow when the database answers again.", next: [WAIT("Newer figures follow when the database answers again")] },
   "root.navProgress": { kind: "loading", where: "Every page · the line at the top during a page change", text: "Loading the page", next: [] },
   "read.toolsViews.4": { kind: "failed", where: "Read · ToolsViews", text: "Section crop coverage couldn't be read right now.", next: [RETRY] },
   "read.toolsViews.5": { kind: "loading", where: "Read · ToolsViews", text: "Checking section crops…", next: [] },

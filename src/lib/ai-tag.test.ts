@@ -4,6 +4,8 @@ const state=vi.hoisted(()=>({auth:true,snapshot:null as Record<string,unknown>|n
 vi.mock('./crawl-ingest.server',()=>({authenticateCrawler:async()=>state.auth}));
 vi.mock('@/integrations/supabase/client.server',()=>({supabaseAdmin:{from(table:string){let lt=false,byId=false;const c={select:()=>c,eq:(key:string,value:unknown)=>{state.filters.push([key,value]);if(key==='snapshot_id')byId=true;return c;},gte:()=>c,lt:()=>{lt=true;return c;},order:()=>c,limit:()=>c,maybeSingle:async()=>({data:table==='library_tags'?(byId?state.earlierTags:state.previous):(lt?state.earlier:state.snapshot),error:null}),single:async()=>({data:{sector:'ai'},error:null})};return c;}}}));
 vi.mock('./ai-inference.server',()=>({inferAI:vi.fn(),AiFailure:class extends Error{code='test';http=503;}}));
+// D1 Part 5 · the suite never reaches the live database: carrying a reading forward is stood in for (any doubt reads fresh).
+vi.mock('./vision-carry.server',()=>({carryFor:async()=>({decision:{carry:false},previous:null})}));
 vi.mock('./ai-store.server',()=>({storeAiResult:vi.fn(async()=>{})}));
 import {handleLibraryTag,readAiBody} from './ai-tag.server';
 import {inferAI} from './ai-inference.server';

@@ -4,6 +4,8 @@ vi.mock("@/lib/library-store.server", () => ({
   librarySite: vi.fn(async () => ({ site: { domain: "openai.com", last_snapshot_at: "2026-11-11T01:00:00Z" }, snapshots: [{ id: 1, page_type: "home", viewport: "desktop", source: "live", captured_at: "2026-11-11T01:00:00Z", url: "https://openai.com", signals: { skeleton: [{ x: 0 }], raw_text: "private", type: { rendered: { h1: { family: "OpenAI Sans" } } } } }], events: Array.from({ length: 25 }, (_, id) => ({ id, type: "theme_flip" })) })),
   libraryEvents: vi.fn(async () => []), librarySector: vi.fn(async () => ({ sector: "ai", top_fonts: { h1: [{ family: "OpenAI Sans", sites: 1 }] } })), currentSpread: vi.fn(async () => [{ signal: "dark_theme", spread_pts: 15.8 }]),
 }));
+// D1 Part 5 · the suite never reaches the live database: the similar-brands list (read from stored pages) is stood in for.
+vi.mock("@/lib/read.server", () => ({ similarFor: async () => null }));
 import { handleMcp } from "./server.server";
 async function call(name: string, args: Record<string, unknown>) {
   const res = await handleMcp(new Request("http://localhost/api/public/mcp", { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream", "x-forwarded-for": "library-tests" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }) }));

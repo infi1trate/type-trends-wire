@@ -12,7 +12,7 @@ import {
   useHydrated,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -142,6 +142,16 @@ function NavProgress() {
   return busy ? <div className="nav-progress" role="progressbar" aria-label={voiced("root.navProgress")} data-nav-progress="" /> : null;
 }
 
+/** D1 Part 5 · a page sent as its last good copy (the database slow or down) carries the copy's time in a head tag; one quiet line says
+ *  so, fixed at the bottom so nothing moves, drawn after hydration only. */
+function CopyAge() {
+  const [at, setAt] = useState<string | null>(null);
+  useEffect(() => { setAt(document.querySelector('meta[name="slug-copy-at"]')?.getAttribute("content") ?? null); }, []);
+  if (!at || Number.isNaN(Date.parse(at))) return null;
+  const d = new Date(at), time = `${d.getUTCDate()} ${d.toLocaleString("en-GB", { month: "short", timeZone: "UTC" })} ${d.toISOString().slice(11, 16)}`;
+  return <p className="copy-age" role="status" data-copy-age="">{voiced("root.copyAge", { time })}</p>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -153,6 +163,7 @@ function RootComponent() {
       <ReceiptDrawer />
       <RouteFocus />
       <NavProgress />
+      <CopyAge />
     </QueryClientProvider>
   );
 }

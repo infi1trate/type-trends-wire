@@ -1029,3 +1029,7 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 @keyframes nav-progress-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes nav-progress-grow { from { transform: scaleX(0.08); } to { transform: scaleX(0.92); } }
 @media (prefers-reduced-motion: reduce) { .nav-progress { animation: nav-progress-in 0ms linear 80ms both; transform: none; } }
+
+/* D1 Part 5 · the quiet line on a page sent as its last good copy: fixed at the bottom (nothing moves), small, the page's own colours. */
+.copy-age { position: fixed; inset: auto 0 0 0; z-index: 90; margin: 0; padding: var(--tk-space-1) var(--tk-space-3); font-size: var(--sys-text-caption-size);
+  color: var(--sys-color-ink-muted); background: var(--sys-color-page); border-top: 1px solid var(--sys-color-rule); }

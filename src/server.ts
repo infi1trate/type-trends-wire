@@ -102,12 +102,19 @@ export default {
       if (import.meta.env.DEV && request.method === "GET" && new URL(request.url).searchParams.get("__cold") === "1") (await import("./lib/memo")).clearAllMemosForDev();
       // P1/I1: public Read pages are the same for every visitor; serve a copy drawn in the last five minutes when there is one.
       // The dev server skips the copy (code changes between requests would serve stale pages); the live host keeps it.
-      return await servePage(request, GATE_ENABLED || import.meta.env.DEV, pages, async () => {
+      // D1 Part 5 · DEV ONLY: `?__copy=1` turns the copy on for the rehearsal of readers on last good copies, `&__dbdown=1` makes the
+      // database read as down for that request.
+      const rehearse = import.meta.env.DEV && new URL(request.url).searchParams.get("__copy") === "1";
+      const waitUntil = hostWaitUntil(request, c);
+      return await servePage(request, GATE_ENABLED || (import.meta.env.DEV && !rehearse), pages, async () => {
         const handler = await getServerEntry();
         const response = await handler.fetch(request, env, ctx);
         // A page whose stored-data read gave up (Retry-After set by the read) answers 503, not 500.
         return retryLater(await normalizeCatastrophicSsrResponse(response));
-      }, typeof c?.waitUntil === "function" ? p => c.waitUntil!(p) : undefined);
+      }, waitUntil, { preferLastGood: rehearse && new URL(request.url).searchParams.get("__dbdown") === "1", degraded: async () => {
+        if (rehearse) return new URL(request.url).searchParams.get("__dbdown") === "1";
+        return !(await (await import("./lib/db-probe.server")).probeDb()).ok;
+      } });
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
