@@ -258,7 +258,7 @@ export const sweepNote = (job: string, r: Pick<RefreshResult, "written" | "retim
 const MIN_LEFT_MS = 6_000, MIN_LEFT_CAPTURED_MS = 1_000;
 /** The end of a job's call: whatever time the call has left (CALL_BUDGET_MS minus a safety margin, or `limitMs` from `jobStartedAt`
  *  when shorter) goes to records. Never throws. */
-export async function refreshAfterJob(job: string, jobStartedAt: number, o: { domains?: string[]; force?: boolean; only?: "captured"; limitMs?: number; deps?: Partial<RefreshDeps>; metas?: RefreshOptions["metas"] } = {}): Promise<RefreshResult | null> {
+export async function refreshAfterJob(job: string, jobStartedAt: number, o: { domains?: string[]; force?: boolean; only?: "captured"; limitMs?: number; deps?: Partial<RefreshDeps>; metas?: NonNullable<RefreshOptions["metas"]> } = {}): Promise<RefreshResult | null> {
   try {
     const { limitMs, ...rest } = o;
     const deadline = Math.min(jobStartedAt + CALL_BUDGET_MS - 5_000, limitMs !== undefined ? jobStartedAt + limitMs : Infinity);
