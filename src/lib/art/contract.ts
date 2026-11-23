@@ -77,6 +77,11 @@ export const workHashInput = (w: ArtWorkIn) => JSON.stringify(workFields(w)) + "
 export const artRemoveBody = z.object({ source: z.enum(ART_SOURCES), source_id: z.string().min(1).max(40), reason: z.string().trim().min(3).max(300) });
 export type ArtRemove = z.infer<typeof artRemoveBody>;
 
+/** W3c · the credit every shown work carries: "Artist. Title, Date. Museum." (an unknown artist or a blank date is left out). */
+export function workCredit(w: { artist: string | null; title: string; date_display: string; source: ArtSource }): string {
+  const artist = w.artist?.trim(), date = w.date_display.trim();
+  return `${artist ? `${artist.replace(/\.$/, "")}. ` : ""}${w.title.trim()}${date ? `, ${date}` : ""}. ${MUSEUM_NAME[w.source]}.`;
+}
 /** The reader's line: "Nearest in the museum: <artist>, <title>, <date>. <museum>. Public domain." (an unknown artist is left out). */
 export function nearestLine(w: { artist: string | null; title: string; date_display: string; source: ArtSource }): string {
   return `Nearest in the museum: ${[w.artist, w.title, w.date_display].filter(x => x && x.trim()).join(", ")}. ${MUSEUM_NAME[w.source]}. Public domain.`;
