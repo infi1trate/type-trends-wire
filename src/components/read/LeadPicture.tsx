@@ -6,13 +6,16 @@ import { sharedLine, type LeadItem, type LeadPlan } from "@/lib/lead-picture";
 import { hexName } from "@/lib/agency/changes";
 import { Swatches, pr } from "@/components/digest/Editorial";
 import { BrandMark } from "./BrandMark";
+import { LEAD_SIZES } from "@/lib/first-paint";
 
-export function LeadFigure({ i, sizes, eager, label, compact = false, bare = false }: { i: LeadItem; sizes: string; eager: boolean; label?: string | undefined; compact?: boolean; bare?: boolean }) {
+/** `high` (C1b): whether the picture asks for high priority; by default every eager picture does. Today's stack asks it for its first
+ *  picture only (the one its first flush announces), so the second does not compete with it. */
+export function LeadFigure({ i, sizes, eager, label, compact = false, bare = false, high = eager }: { i: LeadItem; sizes: string; eager: boolean; label?: string | undefined; compact?: boolean; bare?: boolean; high?: boolean }) {
   return <figure className="min-w-0" data-lead-item={i.asset.split(":")[0]}>
     {label && <p className="ed-kicker mb-2">{label}</p>}
     <a href={i.live} target="_blank" rel="noopener" aria-label={`Open ${i.domain} (live site)`} className="lead-box block" {...pr(i.live)}>
       <img src={i.src} srcSet={i.srcSet ?? undefined} sizes={i.srcSet ? sizes : undefined} width={i.width} height={i.height} alt={i.alt}
-        loading={eager ? "eager" : "lazy"} fetchPriority={eager ? "high" : "auto"} decoding="async" />
+        loading={eager ? "eager" : "lazy"} fetchPriority={eager && high ? "high" : "auto"} decoding="async" />
     </a>
     {bare ? null : compact ? <figcaption className="ed-caption mt-1 flex flex-nowrap gap-x-3" data-lead-compact="">
       <a href={i.live} target="_blank" rel="noopener" className="ed-tap min-w-0" title={i.domain} {...pr(i.live)}><span className="min-w-0 truncate">{i.domain}</span></a>
@@ -34,7 +37,7 @@ export function LeadFigure({ i, sizes, eager, label, compact = false, bare = fal
 export const planDraws = (plan: LeadPlan) => (plan.kind === "pair" || plan.kind === "single" || plan.kind === "card" || plan.kind === "mosaic") ? plan.items.length > 0
   : plan.kind === "words" ? !!plan.words : plan.kind === "swatches" ? !!plan.swatches : plan.kind === "marks" ? !!plan.marks : false;
 
-export function LeadPicture({ plan, eager = true, className = "", tileSizes = "(min-width: 1024px) 25vw, 50vw", compact = false, stack = false }: { plan: LeadPlan; eager?: boolean; className?: string; tileSizes?: string; compact?: boolean; stack?: boolean }) {
+export function LeadPicture({ plan, eager = true, className = "", tileSizes = LEAD_SIZES.mosaic, compact = false, stack = false }: { plan: LeadPlan; eager?: boolean; className?: string; tileSizes?: string; compact?: boolean; stack?: boolean }) {
   const line = compact ? sharedLine(plan) : plan.caption;
   const cap = line ? <figcaption className="ed-caption mt-2" data-lead-caption="">{line}</figcaption> : null;
   const wrap = (kind: string, body: React.ReactNode) => <figure className={`min-w-0 ${className}`} data-lead-picture={kind} data-lead-rule={plan.rule}>{body}{cap}</figure>;
@@ -44,7 +47,7 @@ export function LeadPicture({ plan, eager = true, className = "", tileSizes = "(
   // its live-site link and one Report link; line two is the credit. Nothing sits between or under the overlapping pictures.
   if (stack && plan.kind === "mosaic" && plan.items.length === 2) return <figure className={`min-w-0 ${className}`} data-lead-picture="stack" data-lead-rule={plan.rule}>
     <div className="lead-stack" data-lead-stack="">
-      {plan.items.map((i, k) => <div key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={k === 0 ? "(min-width: 1024px) 34vw, 50vw" : "(min-width: 1024px) 20vw, 50vw"} eager={eager} bare /></div>)}
+      {plan.items.map((i, k) => <div key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={k === 0 ? LEAD_SIZES.stackFirst : LEAD_SIZES.stackSecond} eager={eager} high={k === 0} bare /></div>)}
     </div>
     <figcaption className="ed-caption lead-stack-cap" data-lead-caption="">
       <span className="flex flex-wrap gap-x-6" data-lead-names="">{plan.items.map(i => <span key={i.asset} className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1">
@@ -56,9 +59,9 @@ export function LeadPicture({ plan, eager = true, className = "", tileSizes = "(
     </figcaption>
   </figure>;
   if (plan.kind === "pair") return wrap("pair", <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 md:gap-6">
-    {plan.items.map(i => <LeadFigure key={i.asset} i={i} sizes="(min-width: 480px) 50vw, 100vw" eager={eager} compact={compact} label={compact ? (i.role === "before" ? "Before" : "After") : `${i.role === "before" ? "Before" : "After"} · ${i.date}`} />)}
+    {plan.items.map(i => <LeadFigure key={i.asset} i={i} sizes={LEAD_SIZES.pair} eager={eager} compact={compact} label={compact ? (i.role === "before" ? "Before" : "After") : `${i.role === "before" ? "Before" : "After"} · ${i.date}`} />)}
   </div>);
-  if (plan.kind === "single" || plan.kind === "card") return wrap(plan.kind, <div className="max-w-[720px]">{plan.items[0] && <LeadFigure i={plan.items[0]} sizes="(min-width: 768px) 720px, 100vw" eager={eager} compact={compact} />}</div>);
+  if (plan.kind === "single" || plan.kind === "card") return wrap(plan.kind, <div className="max-w-[720px]">{plan.items[0] && <LeadFigure i={plan.items[0]} sizes={LEAD_SIZES.single} eager={eager} compact={compact} />}</div>);
   if (plan.kind === "mosaic") return wrap("mosaic", <ul className={`grid grid-cols-2 gap-x-4 ${compact ? "gap-y-3" : "gap-y-6"}`}>
     {plan.items.map((i, k) => <li key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={tileSizes} eager={eager && k < 2} compact={compact} /></li>)}
   </ul>);

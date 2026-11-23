@@ -135,6 +135,14 @@ const storedLeads = memo(60_000, async (): Promise<Record<string, LeadEvidence |
   const row = await readRecord<Record<string, LeadEvidence | null>>("front-leads").catch(() => null);
   return row && usable(row, Date.now()) ? row.body : null;
 });
+/** C1b · the same stored lead pictures for a story page's announced picture (first-paint.server.ts). */
+export const storedFrontLeads = () => storedLeads();
+/** C1b · `front-first`: the picture Today's lead draws first and largest (first-paint.ts), written right after `front-leads` so the
+ *  first flush of a cold front page can announce it without building the front. No story text: only a picture address and its sizes. */
+export async function computeFrontFirst(): Promise<import("../first-paint").FirstPaint> {
+  const [{ frontPicture }, top] = await Promise.all([import("../first-paint"), loadFrontTop("all", "all")]);
+  return { picture: frontPicture(top.lead?.evidence ?? null) };
+}
 export const FRONT_TTL_MS = 20_000;
 type Lens = { sector: string; format: FormatFilter };
 const lensKey = (k: Lens) => `${k.sector}|${k.format}`;

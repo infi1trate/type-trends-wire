@@ -30,6 +30,7 @@ import { ReadFooter } from "./Bits";
 import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
 import { LeadFigureCompact, LeadFigureSlot } from "./Covers";
 import { LeadPicture, planDraws } from "./LeadPicture";
+import { LEAD_SIZES } from "@/lib/first-paint";
 import { FiltersScope } from "@/components/brand/Illustration";
 import { FrontDate, FrontTicker, LiveColumn, LiveItem, useNow } from "./FrontLive";
 import { leadFigure, relTime } from "@/lib/front/front";
@@ -74,7 +75,7 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
   if (l.evidence?.kind === "plan") return <section aria-labelledby="front-lead"><Plate className="md:p-10">
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:grid-rows-[auto_auto_1fr] lg:gap-y-6" data-lead-layout="picture">
       <div className="min-w-0 lg:col-span-7 lg:row-start-1">{kicker}{headline}{deck}</div>
-      <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:row-start-1 lg:self-center" data-evidence="plan"><LeadPicture plan={l.evidence.plan} compact stack tileSizes="(min-width: 1024px) 18vw, 50vw" /></div>
+      <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:row-start-1 lg:self-center" data-evidence="plan"><LeadPicture plan={l.evidence.plan} compact stack tileSizes={LEAD_SIZES.frontMosaic} /></div>
       {receipts("lg:col-span-7 lg:row-start-2")}
       {fig && <div className="min-w-0 lg:col-span-7 lg:row-start-3 lg:self-start"><div className="lg:hidden"><LeadFigureSlot f={fig} /></div><div className="max-lg:hidden"><LeadFigureCompact f={fig} /></div></div>}
     </div>
@@ -86,7 +87,7 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
         {receipts("mt-8")}
       </div>
       {l.evidence?.kind === "crops" && <figure className="lg:col-span-5" data-evidence=""><BeforeAfter before={l.evidence.before} after={l.evidence.after} /><figcaption className="ed-caption mt-2">Before → after · {l.evidence.section}</figcaption></figure>}
-      {l.evidence?.kind === "crop" && <div className="lg:col-span-5" data-evidence="crop"><CropFigure crop={l.evidence.crop} label={`After · ${l.evidence.section}`} priority sizes="(min-width: 1024px) 40vw, 100vw" /></div>}
+      {l.evidence?.kind === "crop" && <div className="lg:col-span-5" data-evidence="crop"><CropFigure crop={l.evidence.crop} label={`After · ${l.evidence.section}`} priority sizes={LEAD_SIZES.frontCrop} /></div>}
       {l.evidence?.kind === "card" && <div className="lg:col-span-5" data-evidence="card"><CoverFigure c={l.evidence.cover} /></div>}
       {fig && <div className="lg:col-span-5 lg:self-stretch"><LeadFigureSlot f={fig} /></div>}
     </div>

@@ -2,7 +2,7 @@
 // policy). Anonymous SELECT-only, memoised briefly per instance so new pictures show within a couple of minutes. Never throws:
 // a page without its pictures still renders as it does today.
 import { supabaseAnon } from "./mcp/supabase";
-import { memo } from "./memo";
+import { memo, memoBy } from "./memo";
 import { NO_PICS, pictureIndex, type BrandPics, type PictureRow } from "./pictures";
 
 export const pictures = memo(2 * 60_000, async (): Promise<Map<string, BrandPics>> => {
@@ -22,9 +22,12 @@ export const picturesSafe = () => pictures().catch(() => new Map<string, BrandPi
 export const picsFor = async (domain: string): Promise<BrandPics> => {
   const all = pictures.peek();
   if (all) return all.get(domain) ?? NO_PICS;
-  try {
-    const { data, error } = await supabaseAnon().from("brand_pictures").select("domain,kind,path,width,height,captured_at").eq("domain", domain).order("kind").limit(1000);
-    if (error) throw error;
-    return pictureIndex((data ?? []) as PictureRow[]).get(domain) ?? NO_PICS;
-  } catch { return NO_PICS; }
+  return onePics(domain).catch(() => NO_PICS);
 };
+/** C1b · one brand's rows, shared in flight and kept 30 s: the page's announced picture (first-paint.server.ts) and its card make one
+ *  read between them, not two. */
+const onePics = memoBy(30_000, async (domain: string): Promise<BrandPics> => {
+  const { data, error } = await supabaseAnon().from("brand_pictures").select("domain,kind,path,width,height,captured_at").eq("domain", domain).order("kind").limit(1000);
+  if (error) throw error;
+  return pictureIndex((data ?? []) as PictureRow[]).get(domain) ?? NO_PICS;
+}, { key: d => d, max: 200, retries: 0 });

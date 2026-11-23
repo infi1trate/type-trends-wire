@@ -116,6 +116,9 @@ async function answer(request: Request, env: unknown, ctx: unknown): Promise<Res
       const rehearse = import.meta.env.DEV && new URL(request.url).searchParams.get("__copy") === "1";
       const waitUntil = hostWaitUntil(request, c);
       return await servePage(request, GATE_ENABLED || (import.meta.env.DEV && !rehearse), pages, async () => {
+        // C1b · the page's announced picture (first-paint.server.ts) starts reading now, while the page code loads, so the first flush
+        // can name it without waiting.
+        if (request.method === "GET") void import("./lib/first-paint.server").then(m => m.startFirstPaint(new URL(request.url))).catch(() => undefined);
         const handler = await getServerEntry();
         const response = await handler.fetch(request, env, ctx);
         // A page whose stored-data read gave up (Retry-After set by the read) answers 503, not 500.

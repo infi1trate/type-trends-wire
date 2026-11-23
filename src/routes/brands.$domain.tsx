@@ -14,6 +14,9 @@ import { dataViewHead, DATA_VIEW_HEADERS } from "@/lib/views/head";
 import { librarySiteQuery, siteCropsQuery, siteThumbQuery } from "@/lib/data";
 import { DataShell } from "@/components/dataview/DataShell";
 import { BrandData } from "@/components/dataview/Views";
+import { AnnounceFirst } from "@/components/read/FirstPicture";
+import { firstPaint } from "@/lib/first-paint.iso";
+import { linkHeader } from "@/lib/first-paint";
 
 export const Route = createFileRoute("/brands/$domain")({
   staticData: { views: true },
@@ -28,32 +31,36 @@ export const Route = createFileRoute("/brands/$domain")({
     if (deps.data) {
       if (!name) { const b = await q.ensureQueryData(brandCardQuery(d)); if (!b) throw notFound(); } else void q.prefetchQuery(brandCardQuery(d));
       void q.prefetchQuery(librarySiteQuery(d)); void q.prefetchQuery(siteCropsQuery(d)); void q.prefetchQuery(siteThumbQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d));
-      return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: true };
+      return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: true, first: null };
     }
     // C1 · every part starts first, the card with them; it streams into its slot (waiting for it before the first byte was measured:
     // it held the first byte to 0.75–0.85 s on a cold server and the card still missed the first HTML).
     void q.prefetchQuery(brandMovesQuery(d)); void q.prefetchQuery(brandSectionsQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d)); void q.prefetchQuery(brandSectorQuery(d));
     void q.prefetchQuery(brandSimilarQuery(d)); void q.prefetchQuery(brandStoriesQuery(d));
+    // C1b · the card's cover (the brand's largest picture) is announced in the first flush from one small read started when the request
+    // arrived and shared with the card, waited for at most FIRST_PAINT_WAIT_MS.
+    const first = firstPaint("brand", d);
     if (!name) {
       const b = await q.ensureQueryData(brandCardQuery(d));
       if (!b) throw notFound();
     } else void q.prefetchQuery(brandCardQuery(d));
-    return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: false };
+    return { name: name ?? q.getQueryData(brandCardQuery(d).queryKey)?.name ?? d, data: false, first: (await first).picture };
   },
   head: ({ params, loaderData }) => {
     if (loaderData?.data) return dataViewHead({ type: "brand", id: params.domain }, loaderData.name);
     const title = `${loaderData?.name ?? params.domain} — brand · ${BRAND_NAME}`, desc = loaderData ? `${loaderData.name}: identity, every confirmed move and how it sits against its sector, on ${BRAND_NAME}.` : `Brand record for ${params.domain}.`;
     return { meta: withShare(shareImageFor("brand", params.domain), [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/brands/${params.domain}` }, { name: "twitter:card", content: "summary" }, ...(loaderData ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: `${SITE_URL}/brands/${params.domain}` }, ...fontLinks()] };
   },
-  headers: ({ loaderData }) => (loaderData?.data ? DATA_VIEW_HEADERS : undefined),
+  headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return loaderData?.data ? DATA_VIEW_HEADERS : link ? { Link: link } : undefined; },
   component: Brand,
   notFoundComponent: () => <DigestNotFound v="brand.notFound" section="brands" kicker="Brands" />,
   errorComponent: () => <DigestNotFound v="brand.failed" section="brands" kicker="Brands" />,
 });
 function Brand() {
-  const { domain } = Route.useParams(), { name, data } = Route.useLoaderData(), d = domain.toLowerCase();
+  const { domain } = Route.useParams(), { name, data, first } = Route.useLoaderData(), d = domain.toLowerCase();
   if (data) return <DataShell object={{ type: "brand", id: d }} name={name}><BrandData domain={d} /></DataShell>;
   return <BrandFrame name={name} domain={d}>
+    <AnnounceFirst p={first} />
     {/* C1 · a card that fails twice leaves one line in its place and the parts that don't need it (never just the frame). */}
     <Later id="brand-card-later" reserve="100dvh" shapes={[{ kind: "block", height: 40 }, { kind: "block", height: 96 }, { kind: "rows", n: 3, height: ROW.compact }, { kind: "block", height: 260 }]}
       failedAs={line => <BrandPageWithoutCard domain={d} name={name} line={line} />}><CardLater domain={d} /></Later>

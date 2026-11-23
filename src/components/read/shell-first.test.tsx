@@ -24,7 +24,9 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
     const r = await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "netlify.com" }, deps: { data: false } })));
     expect(c.awaited).toEqual([]);
     expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories", "brand-surfaces"]);
-    expect(r).toEqual({ name: "Netlify", data: false });
+    // C1b · beside the name, only the card's announced picture, which waits at most FIRST_PAINT_WAIT_MS (well inside this test's limit).
+    expect(r).toMatchObject({ name: "Netlify", data: false });
+    expect(Object.keys(r as object).sort()).toEqual(["data", "first", "name"]);
   });
   it("E3b · story page awaits only its head and streams the body and earlier stories", async () => {
     const { Route } = await import("@/routes/stories.$id");

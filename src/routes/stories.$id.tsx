@@ -13,6 +13,9 @@ import { dataViewHead, DATA_VIEW_HEADERS } from "@/lib/views/head";
 import { storyDataQuery } from "@/lib/data";
 import { DataShell } from "@/components/dataview/DataShell";
 import { StoryData } from "@/components/dataview/Views";
+import { AnnounceFirst } from "@/components/read/FirstPicture";
+import { firstPaint } from "@/lib/first-paint.iso";
+import { NO_FIRST, linkHeader } from "@/lib/first-paint";
 
 export const Route = createFileRoute("/stories/$id")({
   staticData: { views: true },
@@ -26,9 +29,11 @@ export const Route = createFileRoute("/stories/$id")({
     // U1: the Data view awaits the same head (it names the story exactly as the Read view does); its tables stream in after the frame.
     if (deps.data) void context.queryClient.prefetchQuery(storyDataQuery(params.id));
     else { void context.queryClient.prefetchQuery(storyLeadQuery(params.id)); void context.queryClient.prefetchQuery(storyRelatedQuery(params.id)); }
-    const s = await context.queryClient.ensureQueryData(storyHeadQuery(params.id));
+    // C1b · the lead's stored picture address is read beside the head (bounded; started when the request arrived) and announced in the
+    // first flush, so the picture's request leaves with the first byte instead of when the lead block streams in.
+    const [s, first] = await Promise.all([context.queryClient.ensureQueryData(storyHeadQuery(params.id)), deps.data ? Promise.resolve(NO_FIRST) : firstPaint("story", params.id)]);
     if (!s) throw notFound();
-    return { ...s, data: deps.data };
+    return { ...s, data: deps.data, first: s.ran ? first.picture : null };
   },
   head: ({ params, loaderData }) => {
     if (!loaderData) return { meta: [{ title: `Story unavailable — ${BRAND_NAME}` }, { name: "robots", content: "noindex" }] };
@@ -37,7 +42,7 @@ export const Route = createFileRoute("/stories/$id")({
     return { meta: withShare(shareImageFor("story", params.id), [{ title }, { name: "description", content: desc }, { property: "og:title", content: loaderData.headline }, { property: "og:description", content: desc }, { property: "og:type", content: "article" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }, ...(loaderData.ran ? [] : [{ name: "robots", content: "noindex" }])]), links: [{ rel: "canonical", href: url }, ...fontLinks()] };
   },
   // A story that did not run (held) or was retired is sent with a do-not-index header as well as the robots meta.
-  headers: ({ loaderData }) => (loaderData && (loaderData.data || !loaderData.ran) ? DATA_VIEW_HEADERS : undefined),
+  headers: ({ loaderData }) => { const link = linkHeader(loaderData?.first); return loaderData && (loaderData.data || !loaderData.ran) ? DATA_VIEW_HEADERS : link ? { Link: link } : undefined; },
   component: StoryPage,
   notFoundComponent: () => <DigestNotFound v="story.notFound" />,
   errorComponent: () => <DigestNotFound v="story.failed" />,
@@ -46,6 +51,7 @@ function StoryPage() {
   const { id } = Route.useParams(), head = Route.useLoaderData();
   if (head.data) return <DataShell object={{ type: "story", id }} name={head.headline} number={head.number ?? null}><StoryData id={id} /></DataShell>;
   return <StoryFrame id={id} headline={head.headline}>
+    <AnnounceFirst p={head.first} />
     <Later id="story-lead-later" shapes={[{ kind: "block", height: 28 }, { kind: "text", lines: 3 }, { kind: "text", lines: 2 }, { kind: "picture", ratio: 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 4, height: ROW.ledger }]}><Lead id={id} /></Later>
   </StoryFrame>;
 }
