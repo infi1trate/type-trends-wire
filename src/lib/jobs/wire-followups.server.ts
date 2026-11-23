@@ -98,6 +98,9 @@ export async function handleWireFollowups(request: Request, ctx: JobContext = {}
   if (!body || typeof body !== "object" || (body as { kind?: unknown }).kind !== "wire-followups") return Response.json({ error: "Expected {\"kind\":\"wire-followups\"}" }, { status: 400 });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const headers = { "cache-control": "no-store" };
+  // D1 Part 4 · a slow database: stand down at once ("skipped: database slow").
+  const gate = await import("./gate.server"), why = await gate.standDown("wire-followups");
+  if (why) return gate.stoodDown(why);
   const { out, work } = await beginWireFollowups(supabaseAdmin);
   if (!work) return Response.json({ ran: out.ran, why: out.why, run_id: out.run_id }, { headers });
   if (typeof ctx.waitUntil === "function") {

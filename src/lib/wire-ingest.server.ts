@@ -22,6 +22,9 @@ export async function handleIngestWire(request: Request): Promise<Response> {
       const text = await boundedText(request, 1024);
       let body: unknown = null; try { body = text ? JSON.parse(text) : null; } catch { /* invalid */ }
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) return Response.json({ error: "Expected empty JSON object" }, { status: 400 });
+      // D1 Part 4 · a slow database: stand down at once (the wire still runs in safe mode, never behind a slow database).
+      const gate = await import("./jobs/gate.server"), why = await gate.standDown("ingest-wire", { wire: true });
+      if (why) return gate.stoodDown(why);
       // N4c · the run's start row before any work, its finish row after (runs.ts).
       const run = await (await import("./jobs/runs.server")).startRun("ingest-wire");
       try {

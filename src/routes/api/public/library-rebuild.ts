@@ -4,6 +4,8 @@ export const Route = createFileRoute("/api/public/library-rebuild")({
   server: { handlers: { POST: async ({ request }) => {
     const denied = await authenticateCronRequest(request);
     if (denied) return denied;
+    // D1 Part 4 · a slow database: stand down at once.
+    { const gate = await import("@/lib/jobs/gate.server"); const why = await gate.standDown(null); if (why) return gate.stoodDown(why); }
     if (await request.text() !== "{}") return Response.json({ error: "Expected empty JSON object" }, { status: 400 });
     const { rebuildLibraryHistory } = await import("@/lib/library-replay.server");
     return rebuildLibraryHistory();

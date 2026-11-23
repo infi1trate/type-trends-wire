@@ -3,6 +3,8 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 export const Route=createFileRoute("/api/public/library-ai-worker")({server:{handlers:{POST:async({request})=>{
  const denied=await authenticateCronRequest(request);if(denied)return denied;
  if(await request.text()!=="{}")return Response.json({ok:false,code:"invalid_input"},{status:400});
+ // D1 Part 4 · a slow database: stand down at once ("skipped: database slow").
+ const gate=await import("@/lib/jobs/gate.server");const why=await gate.standDown("ai-worker");if(why)return gate.stoodDown(why);
  const start=Date.now();
  const jr=await (await import("@/lib/jobs/runs.server")).startRun("ai-worker");
  try{const {runAiWorker}=await import("@/lib/ai-worker.server");const result=await runAiWorker();

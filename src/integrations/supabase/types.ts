@@ -6020,6 +6020,7 @@ export type Database = {
         Returns: undefined
       }
       crop_opted_out: { Args: { p_domain: string }; Returns: boolean }
+      db_session_limits: { Args: never; Returns: Json }
       desk_switch_on: { Args: { p_name: string }; Returns: boolean }
       discourse_merge: {
         Args: { p_add: boolean; p_rows: Json }

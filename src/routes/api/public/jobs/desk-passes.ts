@@ -8,6 +8,9 @@ export const Route = createFileRoute("/api/public/jobs/desk-passes")({
     if (authFailure) return authFailure;
     let body: unknown = null; try { body = await request.json(); } catch { /* invalid */ }
     if (!body || typeof body !== "object" || (body as { kind?: unknown }).kind !== "desk-passes") return Response.json({ error: "Expected {\"kind\":\"desk-passes\"}" }, { status: 400 });
+    // D1 Part 4 · a slow database: stand down at once ("skipped: database slow").
+    const { standDown, stoodDown } = await import("@/lib/jobs/gate.server");
+    const why = await standDown("desk-passes"); if (why) return stoodDown(why);
     const [{ supabaseAdmin }, { runDeskPass }] = await Promise.all([import("@/integrations/supabase/client.server"), import("@/lib/newsroom/passes.server")]);
     const { withRun } = await import("@/lib/jobs/runs.server");
     const r = await withRun("desk-passes", () => runDeskPass(supabaseAdmin), x => ({ ok: !x.why.startsWith("failed"), note: x.why }));

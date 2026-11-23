@@ -8,6 +8,9 @@ export const Route = createFileRoute("/api/public/jobs/living-reading")({
     if (authFailure) return authFailure;
     let body: unknown = null; try { body = await request.json(); } catch { /* invalid */ }
     if (!body || typeof body !== "object" || (body as { kind?: unknown }).kind !== "living-reading") return Response.json({ error: "Expected {\"kind\":\"living-reading\"}" }, { status: 400 });
+    // D1 Part 4 · a slow database: stand down at once ("skipped: database slow"); the monthly reading is tried again next month or by hand.
+    const { standDown, stoodDown } = await import("@/lib/jobs/gate.server");
+    const why = await standDown("living-reading"); if (why) return stoodDown(why);
     const [{ supabaseAdmin }, { runReading }, { startRun }] = await Promise.all([import("@/integrations/supabase/client.server"), import("@/lib/living/reading.server"), import("@/lib/jobs/runs.server")]);
     const h = await startRun("living-reading");
     try {

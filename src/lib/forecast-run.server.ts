@@ -15,6 +15,8 @@ async function boundedText(request: Request): Promise<string | null> {
 
 export async function handleForecastRun(request: Request): Promise<Response> {
   const denied = await authenticateCronRequest(request); if (denied) return denied;
+  // D1 Part 4 · a slow database: stand down at once ("skipped: database slow").
+  { const gate = await import("./jobs/gate.server"); const why = await gate.standDown("forecast"); if (why) return gate.stoodDown(why); }
   const body = await boundedText(request);
   if (body === null) return Response.json({ ok: false, code: "body_too_large" }, { status: 413 });
   if (!parseForecastRunBody(body).ok) return Response.json({ ok: false, code: "invalid_input" }, { status: 400 });

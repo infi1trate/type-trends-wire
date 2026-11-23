@@ -8,6 +8,9 @@ export const Route = createFileRoute("/api/public/jobs/review-passes")({
     if (authFailure) return authFailure;
     let body: unknown = null; try { body = await request.json(); } catch { /* invalid */ }
     if (!body || typeof body !== "object" || (body as { kind?: unknown }).kind !== "review-passes") return Response.json({ error: "Expected {\"kind\":\"review-passes\"}" }, { status: 400 });
+    // D1 Part 4 · a slow database: stand down at once ("skipped: database slow").
+    const { standDown, stoodDown } = await import("@/lib/jobs/gate.server");
+    const why = await standDown("review-passes"); if (why) return stoodDown(why);
     const [{ supabaseAdmin }, { runReviewPass }] = await Promise.all([import("@/integrations/supabase/client.server"), import("@/lib/newsroom/review-pass.server")]);
     const r = await runReviewPass(supabaseAdmin);
     return Response.json({ ran: r.ran, why: r.why, items: r.items, ms: r.ms }, { headers: { "cache-control": "no-store" } });
