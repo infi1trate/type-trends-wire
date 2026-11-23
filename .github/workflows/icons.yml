@@ -1,9 +1,11 @@
 name: app-icon-colours
 # Reads Apple's public chart of top free apps (US store) in eighteen categories, measures each icon's colours in memory with the
 # same method as brand homepages, and sends only the measured colours with the app's name, maker and App Store link. No icon
-# picture is kept or sent (Apple's terms allow app icons only to promote store content). Started by hand until the site's
-# endpoint is live; the weekly schedule is added after the first real run.
+# picture is kept or sent (Apple's terms allow app icons only to promote store content). One reading a week (the site keeps
+# one snapshot per ISO week per category); a run by hand is a dry run unless dry_run is set to 0.
 on:
+  schedule:
+    - cron: "23 15 * * 1"   # Mondays 15:23 UTC: the week's reading
   workflow_dispatch:
     inputs:
       genres:
@@ -34,7 +36,7 @@ jobs:
         env:
           CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
           CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
-          ICON_GENRES: ${{ inputs.genres }}
-          ICON_LIMIT: ${{ inputs.limit }}
-          DRY_RUN: ${{ inputs.dry_run }}
+          ICON_GENRES: ${{ inputs.genres || '' }}
+          ICON_LIMIT: ${{ inputs.limit || '100' }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && '0' || inputs.dry_run }}
         run: node src/icons.js
