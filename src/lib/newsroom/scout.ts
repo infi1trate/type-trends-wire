@@ -39,6 +39,8 @@ export const SOURCES: readonly Source[] = [
   // W3a · two museums' open-access programmes (terms read by the owner on 22 Nov 2026). Only works the museum marks public domain (CC0).
   S("the-met", "The Metropolitan Museum of Art (Open Access)", MUSEUM_TAKES, "read", MUSEUMS_READ_ON, "https://www.metmuseum.org/policies/terms-and-conditions", "Works the museum marks public domain are CC0. API: https://metmuseum.github.io"),
   S("art-institute-of-chicago", "Art Institute of Chicago (Open Access)", MUSEUM_TAKES, "read", MUSEUMS_READ_ON, "https://www.artic.edu/terms", "Images and data marked public domain are CC0 (https://www.artic.edu/open-access/open-access-images); the API's description field is CC-BY and is not used. API: https://api.artic.edu/docs"),
+  // W3d-c · Apple's public top-free charts per App Store category (terms read 23 Nov 2026). Icon colours are measured, no icon kept.
+  S("apple-app-store-charts", "Apple App Store top charts (US)", "Top free apps per category: names, makers, App Store links and icon colours we measure. No icon pictures kept", "read", "2026-11-23", "https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/index.html", "Apple allows app icons only to promote store content, beside a store badge; slug shows none."),
   // Are.na's terms link is the one the code already records beside its hard-off switch (sources.ts ARENA_ENABLED).
   S("are-na", "Are.na", "Channels of saved design references (adapter kept, hard off)", "off", CLOSED_READ_ON, "https://www.are.na/terms", "Its acceptable-use policy prohibits automated crawling and structured data harvesting."),
 ];

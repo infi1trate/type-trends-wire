@@ -278,7 +278,8 @@ describe("B2 · the scout's register and candidates", () => {
     expect(by.get("Are.na")).toMatchObject({ status: "off" });
     // W3a · the two museums are the only read sources whose terms the owner read and linked (22 Nov 2026); every other stays not recorded.
     const museums = ["The Metropolitan Museum of Art (Open Access)", "Art Institute of Chicago (Open Access)"];
-    expect(sc.SOURCES.filter(s => s.status === "read" && !museums.includes(s.name)).every(s => s.terms_read === sc.NOT_RECORDED && s.terms_link === sc.NOT_RECORDED)).toBe(true);
+    // W3d-c · and Apple's App Store charts (terms read 23 Nov 2026).
+    expect(sc.SOURCES.filter(s => s.status === "read" && !museums.includes(s.name) && s.id !== "apple-app-store-charts").every(s => s.terms_read === sc.NOT_RECORDED && s.terms_link === sc.NOT_RECORDED)).toBe(true);
     expect(by.get(museums[0]!)).toMatchObject({ status: "read", terms_read: "2026-11-22", terms_link: "https://www.metmuseum.org/policies/terms-and-conditions" });
     expect(by.get(museums[1]!)).toMatchObject({ status: "read", terms_read: "2026-11-22", terms_link: "https://www.artic.edu/terms" });
   });
@@ -324,5 +325,16 @@ describe("B2 · the scout's register and candidates", () => {
   it("domains are read bare", () => {
     expect(sc.domainOf("https://www.Acme.co.uk/about?x=1")).toBe("acme.co.uk");
     expect(sc.domainOf("acme")).toBeNull();
+  });
+});
+
+// W3d-c Part 5 · Apple's charts in the sources register, as the owner worded it.
+import { SOURCES as REGISTERED } from "./scout";
+describe("the sources register (W3d-c)", () => {
+  it("lists Apple's App Store top charts, read, with its terms date, link, what it takes and the icon note", () => {
+    expect(REGISTERED.find(s => s.id === "apple-app-store-charts")).toEqual({ id: "apple-app-store-charts", name: "Apple App Store top charts (US)", status: "read", terms_read: "2026-11-23",
+      terms_link: "https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/index.html",
+      provides: "Top free apps per category: names, makers, App Store links and icon colours we measure. No icon pictures kept",
+      note: "Apple allows app icons only to promote store content, beside a store badge; slug shows none." });
   });
 });
