@@ -38,10 +38,10 @@ describe("T1 · the pass answers at once and finishes after the answer", () => {
     expect(stepOrder(Date.parse("2026-11-22T16:46:00Z"))).toEqual(["records sweep", "story build"]);
   });
 
-  const fakeDb = (open: { id: number }[] = [], finished: number[] = []) => {
+  const fakeDb = (open: { id: number }[] = [], finished: number[] = [], unreadable = false) => {
     const q: Record<string, unknown> = {};
     for (const k of ["select", "eq", "gte", "order", "in"]) q[k] = () => q;
-    q["limit"] = async () => ({ data: open });
+    q["limit"] = async () => (unreadable ? { data: null, error: { message: "timeout" } } : { data: open });
     q["then"] = (res: (v: unknown) => void) => res({ data: finished.map(start_id => ({ start_id })) });
     return { from: () => q } as never;
   };
@@ -83,6 +83,14 @@ describe("T1 · the pass answers at once and finishes after the answer", () => {
     const { runWireFollowups } = await import("./wire-followups.server");
     const r = await runWireFollowups(fakeDb([{ id: 5 }], []), { deps: { build: async () => { rows.push("build"); return null; }, sweep: async () => null } });
     expect(r).toMatchObject({ ran: false, why: "another follow-ups pass is running" });
+    expect(rows).toEqual([]);
+  });
+  it("D1 · stands down when the run list can't be read, so two passes never run at once", async () => {
+    const rows: string[] = [];
+    mockRuns(rows);
+    const { runWireFollowups } = await import("./wire-followups.server");
+    const r = await runWireFollowups(fakeDb([], [], true), { deps: { build: async () => { rows.push("build"); return null; }, sweep: async () => null } });
+    expect(r).toMatchObject({ ran: false, why: "runs unreadable; stood down" });
     expect(rows).toEqual([]);
   });
   it("writes the finish row at the pass's end when a step overruns, saying it was cut off", async () => {

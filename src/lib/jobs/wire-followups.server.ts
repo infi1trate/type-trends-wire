@@ -30,6 +30,8 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
   try {
     // A run still going (a start row in the last two minutes with no finish row) is never doubled; the slot is unique besides.
     const open = await db.from("job_runs").select("id").eq("job", "wire-followups").eq("phase", "start").gte("at", new Date(t0 - wf.WIRE_FOLLOWUPS_STALE_MS).toISOString()).order("id", { ascending: false }).limit(3);
+    // D1 Part 2 · like the story build's guard (dcd68ad), a start list that can't be read stands the pass down rather than risk two.
+    if (open.error) { out.why = "runs unreadable; stood down"; return { out, work: null }; }
     if (open.data?.length) {
       const fin = await db.from("job_runs").select("start_id").eq("phase", "finish").in("start_id", open.data.map(x => x.id));
       const done = new Set((fin.data ?? []).map(x => x.start_id));
@@ -58,7 +60,8 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
           } else {
             // Second, the sweep has whatever is left before the pass's end; first, it leaves the build its room.
             const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0]), !!force);
-            if (force && s) { await (await import("./marks.server")).clearMark(force).catch(() => undefined); force = null; }
+            // The forced sweep's mark is cleared only when the sweep finished whole; a cut-short one stays marked for the next pass.
+            if (force && s && !s.timed_out && !s.errors.length) { await (await import("./marks.server")).clearMark(force).catch(() => undefined); force = null; }
             const by = s ? wf.writtenByKind(s.written) : {};
             r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
           }
