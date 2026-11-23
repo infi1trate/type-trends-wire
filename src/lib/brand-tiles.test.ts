@@ -44,3 +44,14 @@ describe("moved this week", () => {
     expect(movedSet(moves, NOW)).toEqual(["a.com", "b.com", "c.com"]);
   });
 });
+
+import { moveAfterName } from "./brand-tiles";
+describe("move line under a brand's name", () => {
+  it("leaves out the stored headline's leading name", () => {
+    expect(moveAfterName("Figma · imagery (AI estimate), abstract gradients", "Figma", "figma.com")).toBe("Imagery (AI estimate), abstract gradients");
+    expect(moveAfterName("reMarkable · palette, Green-grey", "reMarkable", "remarkable.com")).toBe("Palette, Green-grey");
+  });
+  it("keeps a headline that does not open with the name", () => {
+    expect(moveAfterName("Homepages are making room for agents", "Figma", "figma.com")).toBe("Homepages are making room for agents");
+  });
+});

@@ -15,7 +15,7 @@ import { ScrollRow } from "./ScrollRow";
 import { longDay, type Pic } from "@/lib/pictures";
 /** "21 Nov", with the year kept when it is not the year of the directory's newest change (deterministic, so SSR and hydration agree). */
 const shortDay = (iso: string, year: string) => (iso.slice(0, 4) === year ? longDay(iso).replace(/ \d{4}$/, "") : longDay(iso));
-import { plateOf, type Plate } from "@/lib/brand-tiles";
+import { moveAfterName, plateOf, type Plate } from "@/lib/brand-tiles";
 import { SYSTEM } from "@/lib/theme";
 
 const PLATE_COLORS = { ink: SYSTEM.color.ink.read, page: SYSTEM.color.page.read };
@@ -57,10 +57,10 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
     {v.tab === "directory" && band.length >= 3 && <section aria-labelledby="brands-moved" className="ed-wrap mt-8" data-moved-band="">
       <h2 id="brands-moved" className="ed-kicker">Moved this week</h2>
       <ul className="moved-band mt-3">{band.map((m, i) => { const x = siteOf.get(m.domain), name = x?.name ?? m.domain; return <li key={m.domain}>
-        <Link to="/brands/$domain" params={{ domain: m.domain }} className="moved-card" aria-label={`${name}: ${m.headline}`}>
+        <Link to="/brands/$domain" params={{ domain: m.domain }} className="moved-card" aria-label={`${name}: ${moveAfterName(m.headline, name, m.domain)}`}>
           <span className="moved-crop"><img src={m.hero.src} alt="" width={m.hero.width} height={m.hero.height} loading={i < 2 ? "eager" : "lazy"} decoding="async" /><LogoPlate p={plate(m.domain)} size={48} /></span>
           <span className="brand-tile-name">{name}</span>
-          <span className="ed-caption brand-tile-move">{m.headline}</span>
+          <span className="ed-caption brand-tile-move">{moveAfterName(m.headline, name, m.domain)}</span>
         </Link></li>; })}</ul>
       <p className="ed-caption mt-2">First screens as captured; each links to the brand.</p>
     </section>}
@@ -88,7 +88,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
                 <span className="brand-tile-name">{name}</span>
                 <span className="brand-tile-chips"><span className="ledger-tag">{sectorName(s.sector)}</span></span>
                 <span className="ed-caption brand-tile-facts">{facts}</span>
-                {s.lastMove && <span className="ed-caption brand-tile-move">{s.lastMove}</span>}
+                {s.lastMove && <span className="ed-caption brand-tile-move">{moveAfterName(s.lastMove, name, s.domain)}</span>}
               </span>
               {moved && <span className="c-sticker brand-tile-sticker" aria-hidden="true" data-container="sticker">Moved</span>}
             </Link></li>; })}</ul>

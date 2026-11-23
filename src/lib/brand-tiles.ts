@@ -60,3 +60,16 @@ export function movedSet(moves: readonly MoveIn[], now: number): string[] {
   for (const m of moves) { const t = Date.parse(m.at); if (t >= since && t <= now + 36e5) for (const d of m.domains) s.add(d); }
   return [...s].sort();
 }
+
+/** A tile or card prints the brand's name above its latest move, so the move's own leading "Name · " (stored headlines open with the
+ *  brand) is left out there; any other headline is shown whole. */
+export function moveAfterName(headline: string, name: string | null | undefined, domain: string): string {
+  for (const n of [name, domain]) {
+    const lead = (n ?? "").trim();
+    if (lead && headline.toLocaleLowerCase("en").startsWith(`${lead.toLocaleLowerCase("en")} · `)) {
+      const rest = headline.slice(lead.length + 3).trim();
+      if (rest) return rest.charAt(0).toLocaleUpperCase("en") + rest.slice(1);
+    }
+  }
+  return headline;
+}
