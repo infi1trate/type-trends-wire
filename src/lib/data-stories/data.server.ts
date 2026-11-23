@@ -98,3 +98,4 @@ export async function capturesFor(domains: string[]): Promise<Map<string, Captur
   await Promise.all([...new Set(domains)].map(async d => { out.set(d, await capturesOf(d).catch(() => [])); }));
   return out;
 }
+// proof-render-temp
