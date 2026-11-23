@@ -57,16 +57,19 @@ export async function loadCropCoverage() {
 export const allThumbs = memo(10 * 60_000, () => pages<ThumbRow>((f, t) => supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").order("id").range(f, t) as never));
 
 /** Brand moves and rebrands as thin Stories (the Brands › Moves tab lists every confirmed change, not only the ones that ran as stories). */
-export const allStories = memo(TTL, async (): Promise<{ stories: Story[] }> => {
+export const allStories = memo(TTL, async (): Promise<{ stories: Story[]; partial?: true }> => {
   const db = supabaseAnon(), now = Date.now(), since = (d: number) => new Date(now - d * day).toISOString();
   const [events, rebrandAll] = await Promise.all([
     db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source,page_type,viewport,sector,summary,snapshot_id,prev_snapshot_id").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").gte("detected_at", since(30)).order("detected_at", { ascending: false }).limit(120).then(must),
     import("./rebrands.server").then(m => m.readerRebrands()),
   ]);
-  return { stories: [
-    ...(await (async () => { const active = await (await import("./active-sites.server")).activeDomains(); const evs = (await (await import("./integrity.server")).checkedEvents(db, ((events ?? []) as EventRow[]).filter(e => active.has(e.domain)))).tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
+  // P2c · `partial`: the change checks could not be read (no live change story then, fail closed) or the rebrands list says the same.
+  let partial = !!rebrandAll.partial;
+  const stories = [
+    ...(await (async () => { const active = await (await import("./active-sites.server")).activeDomains(); const checked = await (await import("./integrity.server")).checkedEvents(db, ((events ?? []) as EventRow[]).filter(e => active.has(e.domain))); if (checked.failed) partial = true; const evs = checked.tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
     ...rebrandAll.rows.filter(x => x.source === "live" && Date.parse(x.confirmed_at) >= now - 120 * day).map(x => fromRebrand(x as RebrandRow)),
-  ] };
+  ];
+  return partial ? { stories, partial: true } : { stories };
 });
 
 /** `/` Live: lead story, the stored story stream (30 a page, type chips), moving now, chart of the week, new on the scene. */
@@ -140,8 +143,10 @@ const moveCounts = memo(TTL, async () => {
   const db = supabaseAnon();
   const [events, rebrandAll] = await Promise.all([
     pages<{ id: number; type: string; domain: string; detected_at: string }>((f, t) => db.from("library_event_feed").select("id,type,domain,detected_at").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("id").range(f, t) as never, 1000)
-      .then(async evs => (await (await import("./integrity.server")).checkedEvents(db, evs)).tape),
-    import("./rebrands.server").then(m => m.readerRebrands()).then(r => r.rows).catch(() => []),
+      .then(async evs => { const c = await (await import("./integrity.server")).checkedEvents(db, evs); if (c.failed) throw new Error("move_counts_unchecked"); return c.tape; }),
+    // P2c · a count read without the checks or without the rebrands is short (31 words and 157 px of /brands at 390 px on a fresh
+    // instance): it fails instead, so it is never kept, and /brands falls back to the stored record.
+    import("./rebrands.server").then(m => m.readerRebrands()).then(r => { if (r.partial) throw new Error("move_counts_rebrands_incomplete"); return r.rows; }),
   ]);
   const out = new Map<string, { n: number; last: string | null }>();
   const add = (d: string, at: string) => { const c = out.get(d) ?? { n: 0, last: null }; c.n++; if (!c.last || at > c.last) c.last = at; out.set(d, c); };
@@ -152,17 +157,20 @@ const moveCounts = memo(TTL, async () => {
 
 /** /brands: the directory plus recent moves across every brand (precomputed record "brands-index"; computeBrands is the live load). */
 export async function loadBrands() {
-  const [rec, { picturesSafe }, { iconsFor }] = await Promise.all([brandsRecord(null), import("./pictures.server"), import("./pictures")]);
+  const [rec, { picturesSafe }, { iconsFor }] = await Promise.all([brandsRecord(null).catch(() => lastBrandsRecord()), import("./pictures.server"), import("./pictures")]);
   // I1: each row's site icon from the pictures index (never stored in the record, so a new icon shows within minutes).
   return { ...rec, icons: iconsFor(await picturesSafe(), rec.sites.map(s => s.domain)) };
 }
 export async function computeBrands() {
   const db = supabaseAnon();
-  const [sites, { stories }, counts] = await Promise.all([
+  const [sites, storyList, counts] = await Promise.all([
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_change_at: string | null; last_snapshot_at: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_change_at,last_snapshot_at").order("domain").range(f, t) as never),
     allStories(),
-    moveCounts().catch(() => new Map<string, { n: number; last: string | null }>()),
+    moveCounts(),
   ]);
+  // P2c · a directory built from incomplete inputs is refused (never kept in memory or written as the record); the next request retries.
+  if (storyList.partial) { allStories.clear(); throw new Error("brands_inputs_incomplete"); }
+  const { stories } = storyList;
   const moves = stories.filter(s => s.type === "move" || s.type === "rebrand").sort((a, b) => b.at.localeCompare(a.at) || a.id.localeCompare(b.id));
   const last = new Map<string, Story>(); for (const m of moves) for (const d of m.domains) if (!last.has(d)) last.set(d, m);
   return {
@@ -172,6 +180,12 @@ export async function computeBrands() {
 }
 
 const brandsRecord = storedBy((_: null) => pageKey("brands-index"), () => computeBrands());
+/** P2c · when the live directory can't be built whole, the last stored one (any age) rather than a shorter page; none stored: the error. */
+async function lastBrandsRecord(): Promise<Awaited<ReturnType<typeof computeBrands>>> {
+  const row = await (await import("./records/store.server")).readRecord<Awaited<ReturnType<typeof computeBrands>>>(pageKey("brands-index")).catch(() => null);
+  if (!row) throw new Error("brands_unavailable");
+  return row.body;
+}
 /** P1, critical for /patterns/<key>: name and count (head and title) from the shared records; null → 404. */
 export async function loadPatternHead(key: string, sector: string) {
   const [index, { signals }] = await Promise.all([siteTraitIndex(), latestSignals("all")]);

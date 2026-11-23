@@ -98,8 +98,9 @@ export async function recordChecks(admin: Db, checks: ReadonlyMap<number, Check>
   for (let i = 0; i < marks.length; i += 200) { const { error } = await admin.from("library_event_marks").upsert(marks.slice(i, i + 200) as never, { onConflict: "event_id,field", ignoreDuplicates: true }); if (error) throw new Error("event_marks_insert_failed"); }
   return rows.length;
 }
-/** The tape part and the Data view's unconfirmed list for changes read on a page. Fails closed (no live change) when verdicts can't be read. */
+/** The tape part and the Data view's unconfirmed list for changes read on a page. Fails closed (no live change) when verdicts can't be read;
+ *  P2c: `failed` then says so, so a caller that keeps or stores what it builds (a count, a record) can refuse a result missing them. */
 export async function checkedEvents<E extends { id: number; type: string; before?: unknown; after?: unknown; source?: string | null }>(db: Db, events: E[]) {
-  try { return splitChecked(events, await latestChecks(db, events.map(e => e.id))); }
-  catch { return { tape: events.filter(e => e.source && e.source !== "live"), unconfirmed: [], rereads: [] }; }
+  try { if (import.meta.env.DEV && await (await import("./dev-late.server")).devFail("checks")) throw new Error("dev_fail"); return { ...splitChecked(events, await latestChecks(db, events.map(e => e.id))), failed: false }; }
+  catch { return { tape: events.filter(e => e.source && e.source !== "live"), unconfirmed: [], rereads: [], failed: true }; }
 }

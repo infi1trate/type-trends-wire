@@ -30,7 +30,8 @@ async function sharedBody(k: SharedKey): Promise<unknown> {
   switch (k) {
     case "site-index": return (await import("../read.server")).siteTraitIndex.compute();
     case "signals": { const m = await import("../signals.server"); return m.snapshot.encode(await m.snapshot.compute()); }
-    case "rebrands": return (await import("../rebrands.server")).readerRebrands.compute();
+    // P2c · a rebrands list built without the change checks is missing every live rebrand: never stored (the record stays as it was).
+    case "rebrands": { const b = await (await import("../rebrands.server")).readerRebrands.compute(); if (b.partial) throw new Error("rebrands_incomplete"); return b; }
     case "moving-runs": return (await import("../read.server")).movingRuns.compute();
     case "quarter-series": return (await import("../front/front.server")).quarterSeries.compute();
     case "front-tape": return (await import("../front/tape.server")).frontTapeRecord.compute();

@@ -12,7 +12,7 @@ async function all<T>(page: (from: number, to: number) => PromiseLike<{ data: T[
   return out;
 }
 const str = (v: unknown) => (typeof v === "string" && v ? v : null);
-async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | null }> {
+async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | null; partial?: true }> {
   const runId = await readerRunId(db);
   const [rawEvents, sites, forecasts, wire, fonts] = await Promise.all([
     all<EventIn>((f, t) => db.from("library_events").select("id,domain,source,type,before,after,effective_at,detected_at,snapshot_id,prev_snapshot_id").in("type", [...MEASURED_EVENT_TYPES]).eq("page_type", "home").eq("viewport", "desktop").order("id").range(f, t) as never),
@@ -24,7 +24,8 @@ async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | n
   // E2e: only the passing part of each live change counts toward an identity change (integrity.ts; fails closed).
   // I3b: rebrands only for brands tracked now.
   const active = new Set(sites.filter(s => s.active).map(s => s.domain));
-  const events = (await (await import("./integrity.server")).checkedEvents(db, (rawEvents as (EventIn & { id: number })[]).filter(e => active.has(e.domain)))).tape;
+  const checked = await (await import("./integrity.server")).checkedEvents(db, (rawEvents as (EventIn & { id: number })[]).filter(e => active.has(e.domain)));
+  const events = checked.tape;
   const ids = [...new Set(events.flatMap(e => [e.snapshot_id, e.prev_snapshot_id]).filter((x): x is number => x != null))];
   const snaps: SideIn[] = [];
   for (let i = 0; i < ids.length; i += 200) {
@@ -42,7 +43,8 @@ async function load(db: Db): Promise<{ rows: Rebrand[]; data_through: string | n
     }
   }
   const rows = buildRebrands({ events, sites, snapshots: snaps, forecasts, wire, google: new Set(fonts.map(f => f.family.toLowerCase())) });
-  return { rows, data_through: events.map(e => e.detected_at).sort().at(-1) ?? null };
+  // P2c · without the change checks every live rebrand is left out (fail closed); the result says so, so nothing keeps it as whole.
+  return { rows, data_through: events.map(e => e.detected_at).sort().at(-1) ?? null, ...(checked.failed ? { partial: true as const } : {}) };
 }
 const CACHE_MS = 10 * 60_000;
 const rows = memo(CACHE_MS, () => load(supabaseAnon()));

@@ -45,7 +45,13 @@ export function Count({ text, className = "" }: { text: string; className?: stri
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [on, text]);
-  return <span ref={ref} className={className} data-motion-pattern="count"><span className="sr-only">{text}</span><span aria-hidden="true">{shown}</span></span>;
+  // P2c · the final value always holds the figure's width (invisible while the roll plays over it), so a narrower frame ("1.3%" on the
+  // way to "8.5%") can never pull the unit beside it up a line and back: the roll moves no layout.
+  const rolling = shown !== text;
+  return <span ref={ref} className={`relative inline-block ${className}`} data-motion-pattern="count"><span className="sr-only">{text}</span>
+    <span aria-hidden="true" className={rolling ? "invisible" : undefined}>{text}</span>
+    {rolling && <span aria-hidden="true" className="absolute left-0 top-0 whitespace-nowrap" data-count-frame="">{shown}</span>}
+  </span>;
 }
 
 /** A bar that grows from its start the first time it enters view (transform only). */

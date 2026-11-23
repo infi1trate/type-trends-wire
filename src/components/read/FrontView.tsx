@@ -3,14 +3,14 @@ import { line as voiced } from "@/lib/voice";
 // refresh from /front.json without a reload. Composition A (brand/README.md, "Layout moves"), Steady density: a date and state line
 // pinned left and right; ONE pink Plate for the lead; Moving now as a rule box; the live column as a Ledger; chart of the day in a Card;
 // the sector strip, editions and data stories as rule boxes. Nothing else is filled with colour.
-import { Component, Suspense, useCallback, useState, type ReactNode } from "react";
+import { Component, Suspense, use, useCallback, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { BRAND_NAME } from "@/lib/brand";
 import type { FrontModel, FrontRest, FrontStory, FrontTop, FrontUpdates } from "@/lib/front/front";
 import type { Crop } from "@/lib/crops";
 import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape, type TapePair } from "@/lib/front/tape-block";
 import { MarkedName } from "./BrandMark";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery, frontWireQuery } from "@/lib/data";
 import { WIRE_DATA_HREF, WIRE_SUB, WIRE_TITLE, type WireBlockRow } from "@/lib/newsroom/news";
 import { shortDay } from "@/lib/labels";
@@ -269,11 +269,38 @@ function laterSlots(m: FrontTop): Slots {
  *  one sized slot from the top read, and each lower module into its own. */
 export function FrontPageView({ sector, format }: { sector: string; format: string }) {
   return <FrontFrame sector={sector}>
-    <Later id="front-top-later" shapes={[{ kind: "block", height: 36 }, { kind: "block", height: 48 }, { kind: "block", height: 560 }, { kind: "block", height: 420 }, { kind: "rows", n: 6, height: ROW.ledger }]}><TopLater sector={sector} format={format} /></Later>
+    <Later id="front-top-later" reserve="100dvh" shapes={[{ kind: "block", height: 36 }, { kind: "block", height: 48 }, { kind: "block", height: 560 }, { kind: "block", height: 420 }, { kind: "rows", n: 6, height: ROW.ledger }]}><TopLater sector={sector} format={format} /></Later>
   </FrontFrame>;
+}
+/** P2c · the top slot lands together with the lower modules: their reads started with the top's (route loader), so it waits for them
+ *  too, up to this long. On a cold instance they used to land up to seconds after the lead, each swapping a placeholder whose height
+ *  differs from its content (Also today: 464 px held, 1,003 px real at 390 px), which moved whatever stood below it. A read slower
+ *  than this still streams into its own sized slot, as before. */
+export const FRONT_TOGETHER_MS = 5_000;
+const together = new WeakMap<QueryClient, Map<string, Promise<void>>>();
+function useLowerTogether(sector: string, format: string) {
+  const qc = useQueryClient();
+  const reads: { key: readonly unknown[]; load: () => Promise<unknown> }[] = [
+    { key: frontRestQuery(sector, format).queryKey, load: () => qc.ensureQueryData(frontRestQuery(sector, format)) },
+    { key: frontAlsoQuery(sector, format).queryKey, load: () => qc.ensureQueryData(frontAlsoQuery(sector, format)) },
+    { key: frontTapeQuery().queryKey, load: () => qc.ensureQueryData(frontTapeQuery()) },
+    { key: frontWireQuery().queryKey, load: () => qc.ensureQueryData(frontWireQuery()) },
+  ];
+  const waiting = reads.filter(r => { const st = qc.getQueryState(r.key); return !st || st.status === "pending"; });
+  if (!waiting.length) return;
+  let byKey = together.get(qc);
+  if (!byKey) together.set(qc, byKey = new Map());
+  const key = waiting.map(r => JSON.stringify(r.key)).join("|");
+  let p = byKey.get(key);
+  if (!p) {
+    p = Promise.race([Promise.allSettled(waiting.map(r => r.load())).then(() => undefined), new Promise<void>(r => setTimeout(r, FRONT_TOGETHER_MS))]);
+    byKey.set(key, p);
+  }
+  use(p);
 }
 function TopLater({ sector, format }: { sector: string; format: string }) {
   const { data: m } = useSuspenseQuery(frontTopQuery(sector, format));
+  useLowerTogether(sector, format);
   return <FrontBody m={m} slots={laterSlots(m)} />;
 }
 

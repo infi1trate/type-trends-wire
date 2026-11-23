@@ -22,13 +22,13 @@ export const getFront = createServerFn({ method: "GET" }).inputValidator(z.objec
   const { loadFront } = await import("./front/front.server");
   return loadFront(data.sector, data.format);
 });
-export const getFrontTop = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontTop(data.sector, data.format));
-export const getFrontRest = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontRest(data.sector, data.format));
+export const getFrontTop = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => { await (await import("./dev-late.server")).devLate("front-top"); return (await import("./front/front.server")).loadFrontTop(data.sector, data.format); });
+export const getFrontRest = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => { await (await import("./dev-late.server")).devLate("front-rest"); return (await import("./front/front.server")).loadFrontRest(data.sector, data.format); });
 // E3 · the front page's two new deferred modules: Also today's pictures and the tape.
-export const getFrontAlso = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => (await import("./front/front.server")).loadFrontAlso(data.sector, data.format));
-export const getFrontTape = createServerFn({ method: "GET" }).handler(async () => (await import("./front/tape.server")).loadFrontTape());
+export const getFrontAlso = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => { await (await import("./dev-late.server")).devLate("front-also"); return (await import("./front/front.server")).loadFrontAlso(data.sector, data.format); });
+export const getFrontTape = createServerFn({ method: "GET" }).handler(async () => { await (await import("./dev-late.server")).devLate("front-tape"); return (await import("./front/tape.server")).loadFrontTape(); });
 /** N3 · THE WIRE block: the news desk's picks from the last 24 hours (anonymous public facade). */
-export const getFrontWire = createServerFn({ method: "GET" }).handler(async () => (await import("./newsroom/news.server")).loadFrontWire());
+export const getFrontWire = createServerFn({ method: "GET" }).handler(async () => { await (await import("./dev-late.server")).devLate("front-wire"); return (await import("./newsroom/news.server")).loadFrontWire(); });
 /** N3 · the terminal wire view's picked marks: item id → the pick's line (last eight days). */
 export const getWirePicks = createServerFn({ method: "GET" }).handler(async () => (await import("./newsroom/news.server")).wirePickMarks());
 export const getStoryHead = createServerFn({ method: "GET" }).inputValidator(z.object({ id: storyId })).handler(async ({ data }) => (await import("./stories/page.server")).loadStoryHead(data.id));
@@ -61,6 +61,7 @@ export const getBrandSector = createServerFn({ method: "GET" }).inputValidator(d
 export const getBrandSimilar = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandSimilar(data.domain.toLowerCase()));
 export const getBrandStories = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./brand-read.server")).loadBrandStories(data.domain.toLowerCase()));
 export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
+  await (await import("./dev-late.server")).devLate("brands");
   const { loadBrands } = await import("./read.server");
   return loadBrands();
 });

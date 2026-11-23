@@ -51,10 +51,20 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
     await within(Promise.resolve(loaderOf((await import("@/routes/sectors.$sector")).Route)({ context: sec, params: { sector: "fintech" } })));
     expect(sec.awaited).toEqual(["sector-head"]);
   });
-  it("brand and signal indexes await nothing before the shell", async () => {
-    for (const [path, deps] of [["@/routes/brands.index", {}], ["@/routes/signals.index", { v: { tab: "all", sort: "momentum", sector: "all", archive: false } }], ["@/routes/sectors.index", {}]] as const) {
+  it("P2c · /brands waits for its stored directory, but never longer than BRANDS_FIRST_WAIT_MS", async () => {
+    const { BRANDS_FIRST_WAIT_MS } = await import("@/lib/brands-index");
+    expect(BRANDS_FIRST_WAIT_MS).toBe(3_000);
+    const awaited: string[] = [];
+    const c = { queryClient: { ensureQueryData: (o: Opts) => { awaited.push(String(o.queryKey[0])); return new Promise(() => {}); } } };
+    const t0 = Date.now();
+    await within(Promise.resolve(loaderOf((await import("@/routes/brands.index")).Route)({ context: c, deps: {} })), BRANDS_FIRST_WAIT_MS + 1_000);
+    expect(awaited).toEqual(["brands"]);
+    expect(Date.now() - t0).toBeGreaterThanOrEqual(BRANDS_FIRST_WAIT_MS - 50);
+  });
+  it("signal and sector indexes await nothing before the shell", async () => {
+    for (const [path, deps] of [["@/routes/signals.index", { v: { tab: "all", sort: "momentum", sector: "all", archive: false } }], ["@/routes/sectors.index", {}]] as const) {
       const c = client(() => null);
-      const mod = path === "@/routes/brands.index" ? await import("@/routes/brands.index") : path === "@/routes/signals.index" ? await import("@/routes/signals.index") : await import("@/routes/sectors.index");
+      const mod = path === "@/routes/signals.index" ? await import("@/routes/signals.index") : await import("@/routes/sectors.index");
       await within(Promise.resolve(loaderOf(mod.Route)({ context: c, deps })));
       expect(c.awaited, path).toEqual([]);
       expect(c.started.length, path).toBe(1);

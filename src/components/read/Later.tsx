@@ -58,7 +58,7 @@ function Ready({ children, id, className }: { children: ReactNode; id?: string |
  *  then already reaches past the bottom of the screen, so the footer is never on screen to be pushed down when the content lands. */
 export function Later({ children, shapes, className, id, before, reserve, placeholderClassName }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode; reserve?: string; placeholderClassName?: string }) {
   return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={reset} failed={retry => <div data-later="" id={id} className={className}>{before}<div className={before ? "ed-wrap mt-8" : undefined}><SectionFailed retry={retry} /></div></div>}>
-    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true" style={reserve ? { minHeight: reserve } : undefined}>{before}<Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} /></div>}>
+    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true" data-later-reserve={reserve ? "" : undefined} style={reserve ? { minHeight: reserve } : undefined}>{before}<Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} /></div>}>
       <Ready id={id} className={className}>{children}</Ready>
     </Suspense>
   </Catch>}</QueryErrorResetBoundary>;

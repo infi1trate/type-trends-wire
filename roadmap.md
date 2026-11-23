@@ -200,3 +200,11 @@
 - [x] E3 proof table runs 13 → 16
 - [x] E4 tests
 - [x] Report: heights, full suite, commit
+
+# P2c · Fresh-instance layout (front page at 390, /brands short)
+- [x] Reproduce with deferred reads forced late (dev only `?__late=`, `?__fail=checks`), measure placeholder vs real heights at 390/768/1440
+- [x] Bug 1 fix: the jump is the lead figure's count roll re-wrapping its line (fixed in Count); lower front blocks land with the top
+- [x] Bug 2 fix: short /brands = change checks failed on a fresh instance and rebrands dropped silently; now refused, stored record fallback; first response carries the stored directory
+- [x] Browser check `scripts/perf/deferred_heights.py` (fails on the old code, passes now)
+- [x] Report: CLS/LCP median of ten, heights/words cold vs warm, full suite, commit
+- [ ] Records sweep: the `wire-followups` pass has been cut off by its caller at about 5 s since 16:16 UTC 22 Nov, so stored records age out and fresh instances compute live (waits on owner: it changes how a scheduled job answers)

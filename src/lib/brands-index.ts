@@ -41,3 +41,7 @@ export function brandsIndex(sites: readonly BrandListing[], v: BrandsView) {
   const countLine = q ? `${rows.length} of ${sites.length} tracked brands match “${v.q.trim()}”${scope}.` : `${rows.length} tracked brands${scope}.`;
   return { rows, countLine, empty: rows.length ? null : q ? `No tracked brand matches “${v.q.trim()}”${scope}. Try part of the name or the domain, or audit any site instead.` : `No tracked brand${scope} yet.` };
 }
+
+/** P2c · how long the first response of /brands waits for the stored directory before it sends the title alone (a stored record reads
+ *  in about a second on a fresh instance; a live build takes longer and streams in behind the title, as before). */
+export const BRANDS_FIRST_WAIT_MS = 3_000;
