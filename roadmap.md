@@ -278,3 +278,7 @@
 - [x] 3 Study the-colour-app-icons-sit-on behind ICONS_SHOWN via withheld(): wall, lean, headline/deck by rule, method, check; series "Beyond the homepage" if a list entry
 - [x] 4 Proof pictures in docs/proof/w3d (real rows if arrived, else fixture said plainly)
 - [x] 5 First-bytes picture hint on /library/<domain>, /patterns/<key>, /collections/<slug>, /brands
+
+# W3d-b · Study No. 8 on the real week (owner, 23 Nov 22:17 UTC)
+- [x] 1 Proof pictures from the stored week 2026-W48 (w3d-real-*.png, README says which are real); wall reads as bands, no alt drawn
+- [ ] 2 Removal immediate for icon_remove and art_remove — stopped: needs a database read on every reader request (owner to choose)
