@@ -23,7 +23,7 @@ function DbPanel({ db, send }: { db: NonNullable<DeskQueue["db"]>; send: (body: 
   const flip = async () => { setMsg("Saving…"); setMsg(await send({ action: "safe_mode", on: !db.safe_mode.on, reason: reason.trim() || (db.safe_mode.on ? "owner turned safe mode off" : "owner turned safe mode on"), confirm: "owner confirms safe_mode" })); };
   return <section aria-labelledby="desk-db" className="ed-data mt-6 border border-ed-ink p-3" data-desk-db="">
     <h2 id="desk-db" className="ed-kicker">Database · safe mode {db.safe_mode.on ? `on (${db.safe_mode.by ?? "auto"}: ${db.safe_mode.why})` : "off"}</h2>
-    {db.alerts.length ? <ul className="mt-2 space-y-1">{db.alerts.map(a => <li key={a.at}><time dateTime={a.at}>{a.at.slice(0, 16).replace("T", " ")}</time> · <strong>{a.level === "bad" ? "Bad" : "Warn"}</strong> · {a.line}</li>)}</ul> : <p className="mt-2">No database alert in the last 48 hours.</p>}
+    {db.alerts.length ? <ul className="mt-2 space-y-1">{db.alerts.map(a => <li key={a.at}><time dateTime={a.at}>{a.at.slice(0, 16).replace("T", " ")}</time> · <strong>{a.level === "bad" ? "Bad" : "Warn"}</strong> · {a.line}</li>)}</ul> : <p className="mt-2">{voiced("read.deskView.db")}</p>}
     {db.changes.length > 0 && <p className="ed-muted mt-2">Last change: {db.changes[0]!.at.slice(0, 16).replace("T", " ")} · {db.changes[0]!.is_on ? "on" : "off"} · {db.changes[0]!.actor} · {db.changes[0]!.reason}</p>}
     <div className="mt-3 flex flex-wrap items-center gap-2">
       <label className="flex items-center gap-2">Reason <input value={reason} onChange={e => setReason(e.target.value)} maxLength={300} className="min-h-11 border border-ed-ink bg-transparent px-2" /></label>
