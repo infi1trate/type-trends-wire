@@ -8,7 +8,11 @@ const state = vi.hoisted(() => ({
   sites: new Map<string, Record<string, unknown>>(),
   refreshes: [] as { name: string; statuses: unknown[]; siteCount: number }[],
   refreshError: false,
+  marks: [] as string[][],
+  markError: false,
 }));
+// D1 Part 2 · follow-up work is marked, never done inside the request.
+vi.mock("./jobs/marks.server", () => ({ markWork: async (topics: string[]) => { if (state.markError) throw new Error("work_marks_write_failed"); state.marks.push([...topics]); } }));
 // The story build runs after the job; stub it so job tests stay offline (its own tests live in stories/).
 const afterJob = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock("./stories/build.server", () => ({ afterJob }));
@@ -61,7 +65,7 @@ const start = { kind: "start", run_id: "weekly_1", started_at: "2026-11-10T06:00
 const site = { run_id: "weekly_1", domain: "example.com", index: "vanguard", crawled_at: "2026-11-10T06:05:00Z", ok: true,
   type: { rendered: { h1: { family: "Inter" } } }, color: {}, layout: {}, composition: {}, lexicon: {}, tech: {} };
 
-beforeEach(async () => { state.hash = await sha256Hex(secret); state.runs.clear(); state.sites.clear(); state.refreshes = []; state.refreshError = false; });
+beforeEach(async () => { state.hash = await sha256Hex(secret); state.runs.clear(); state.sites.clear(); state.refreshes = []; state.refreshError = false; state.marks = []; state.markError = false; (await import("./db-probe.server")).setProbesForTest([]); });
 describe("crawler receiver", () => {
   it("returns 403 without a secret", async () => { expect((await handleCrawlIngest(request(start, null))).status).toBe(403); expect(state.runs.size).toBe(0); });
   it("returns 403 with a wrong secret", async () => { const res = await handleCrawlIngest(request(start, "wrong")); expect(res.status).toBe(403); expect(await res.json()).toEqual({ error: "forbidden" }); });
@@ -78,7 +82,7 @@ describe("crawler receiver", () => {
     expect(await (await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }))).json()).toEqual({ ok: true, written: 1 });
     expect(state.sites.get("weekly_1/example.com")).toMatchObject({ index_name: "vanguard", type: site.type });
     const finished_at = "2026-11-10T06:10:00Z";
-    expect(await (await handleCrawlIngest(request({ kind: "finish", run_id: "weekly_1", finished_at, stats: { ok: 1 } }))).json()).toEqual({ ok: true, written: 1 });
+    expect(await (await handleCrawlIngest(request({ kind: "finish", run_id: "weekly_1", finished_at, stats: { ok: 1 } }))).json()).toEqual({ ok: true, written: 1, followups: "marked" });
     expect(state.runs.get("weekly_1")).toMatchObject({ status: "finished", finished_at, stats: { ok: 1 } });
   });
   it("stores curated-index sites with their deduplicated gallery slugs", async () => {
@@ -88,39 +92,50 @@ describe("crawler receiver", () => {
     expect(state.sites.get("weekly_1/gallery.example")).toMatchObject({ index_name: "curated", galleries: ["godly", "awwwards"] });
     expect(state.sites.get("weekly_1/example.com")).toMatchObject({ index_name: "vanguard", galleries: null });
   });
-  it("refreshes all aggregates only after the finish write succeeds", async () => {
+  it("D1 · a finish marks the summaries and a forced sweep for the follow-up worker and does neither itself", async () => {
     await handleCrawlIngest(request(start));
-    expect(state.refreshes).toHaveLength(0);
+    expect(state.marks).toHaveLength(0);
     await handleCrawlIngest(request({ kind: "finish", run_id: "weekly_1", finished_at: start.started_at, stats: {} }));
-    expect(state.refreshes).toEqual([{ name: "refresh_crawl_aggregates", statuses: ["finished"], siteCount: 0 }]);
-    // P1: the crawl finish rewrites every precomputed page record (the job that changes the data writes the records).
-    expect(refreshAfterJob).toHaveBeenCalledWith("crawl-finish", expect.any(Number), { force: true });
+    expect(state.marks).toEqual([["crawl-aggregates", "records-force"]]);
+    expect(state.refreshes).toHaveLength(0);
+    expect(afterJob).not.toHaveBeenCalled();
+    expect(refreshAfterJob).not.toHaveBeenCalled();
   });
-  it("refreshes after site reposts to an already finished run", async () => {
+  it("D1 · site reposts to an already finished run mark the summaries", async () => {
     state.runs.set("weekly_1", { id: "weekly_1", status: "finished" });
     const response = await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }));
     expect(response.status).toBe(200);
-    expect(state.refreshes).toEqual([{ name: "refresh_crawl_aggregates", statuses: ["finished"], siteCount: 1 }]);
+    expect(state.marks).toEqual([["crawl-aggregates"]]);
+    expect(state.refreshes).toHaveLength(0);
   });
-  it.each(["running", "failed"])("does not refresh site batches for a %s run", async (status) => {
+  it.each(["running", "failed"])("does not mark site batches for a %s run", async (status) => {
     state.runs.set("weekly_1", { id: "weekly_1", status });
     expect((await handleCrawlIngest(request({ kind: "sites", run_id: "weekly_1", sites: [site] }))).status).toBe(200);
-    expect(state.refreshes).toHaveLength(0);
+    expect(state.marks).toHaveLength(0);
   });
-  it("never refreshes an unknown run", async () => {
+  it("never marks an unknown run", async () => {
     await handleCrawlIngest(request({ kind: "finish", run_id: "unknown", finished_at: start.started_at, stats: {} }));
-    expect(state.refreshes).toHaveLength(0);
+    expect(state.marks).toHaveLength(0);
   });
-  it.each(["finish", "sites"])("reports %s refresh errors so crawler retries can repair stale aggregates", async (kind) => {
+  it.each(["finish", "sites"])("D1 · fails a %s post whose marks cannot be written, so the crawler's retry leaves nothing unmarked", async (kind) => {
     state.runs.set("weekly_1", { id: "weekly_1", status: "finished" });
-    state.refreshError = true;
+    state.markError = true;
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const body = kind === "finish" ? { kind, run_id: "weekly_1", finished_at: start.started_at, stats: {} } : { kind, run_id: "weekly_1", sites: [site] };
     const response = await handleCrawlIngest(request(body));
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: "Internal error" });
-    expect(state.refreshes).toHaveLength(1);
     log.mockRestore();
+  });
+  it("D1 · a slow database refuses the post at once with the seconds to wait, before reading anything", async () => {
+    const now = Date.now();
+    (await import("./db-probe.server")).setProbesForTest([{ at: now - 1000, ms: 1000, ok: false }]);
+    const t0 = Date.now(), res = await handleCrawlIngest(request(start));
+    expect(Date.now() - t0).toBeLessThan(500);
+    expect(res.status).toBe(503);
+    expect(res.headers.get("retry-after")).toBe("60");
+    expect(await res.json()).toMatchObject({ error: "try_later", retry_after_s: 60 });
+    expect(state.runs.size).toBe(0);
   });
   it("marks only other running runs older than 24 hours failed", async () => {
     state.runs.set("stale", { id: "stale", status: "running", started_at: new Date(Date.now() - 25 * 3600000).toISOString() });

@@ -37,7 +37,11 @@ export type Run = { id: number; job: string; started_at: string; finished_at: st
  *  seconds apart on separate instances (02:30:25 and 02:31:01) as the database stopped answering. */
 export const BUILD_ONE_AT_A_TIME_MS = 120_000;
 export function earlierBuildRunning(rows: readonly Pick<RunRow, "id" | "at" | "job" | "phase">[], mine: { id: number; at: number }): boolean {
-  return rows.some(r => r.job === "story-build" && r.phase === "start" && r.id < mine.id && mine.at - Date.parse(r.at) < BUILD_ONE_AT_A_TIME_MS && Date.parse(r.at) <= mine.at + 5_000);
+  return earlierRunStarted(rows, mine, "story-build", BUILD_ONE_AT_A_TIME_MS);
+}
+/** D1 Part 2 · the same guard for any job: another start row of `job`, earlier than mine and newer than `windowMs`, goes first. */
+export function earlierRunStarted(rows: readonly Pick<RunRow, "id" | "at" | "job" | "phase">[], mine: { id: number; at: number }, job: string, windowMs: number): boolean {
+  return rows.some(r => r.job === job && r.phase === "start" && r.id < mine.id && mine.at - Date.parse(r.at) < windowMs && Date.parse(r.at) <= mine.at + 5_000);
 }
 export function pairRuns(rows: readonly RunRow[], now: number): Run[] {
   const fin = new Map<number, RunRow>();

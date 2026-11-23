@@ -3,17 +3,24 @@
 // T1 · the start row is written before the answer; the work runs after it (handed to the host's waitUntil), so the caller's five-second
 // limit no longer cuts the pass off. Without waitUntil (the dev server, tests) the work runs before the answer, as before.
 import * as wf from "./wire-followups";
+const underTest = () => typeof process !== "undefined" && !!process.env["VITEST"];
 type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
 
-export type StepResult = { step: wf.FollowupStep; ms: number; note: string | null; written?: Record<string, number> };
+export type StepResult = { step: wf.FollowupStep | "marked work"; ms: number; note: string | null; written?: Record<string, number> };
 export type WireFollowupsRun = { ran: boolean; why: string; run_id: number | null; first: wf.FollowupStep | null; steps: StepResult[]; ms: number; mode?: "background" | "inline" };
 type Deps = {
   build: (job: string, t0: number, limitMs: number) => Promise<string | null>;
-  sweep: (job: string, start: number, limitMs: number) => Promise<{ written: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
+  sweep: (job: string, start: number, limitMs: number, force?: boolean) => Promise<{ written: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
+  /** D1 Part 2 · what crawler posts marked out of date (its own share of the pass, before the build and the sweep). */
+  marked: (deadline: number) => Promise<import("./marked-work.server").MarkedResult>;
+  pause: (ms: number) => Promise<void>;
 };
 const DEPS: Deps = {
   build: async (job, t0, limitMs) => (await import("../stories/build.server")).afterJob(job, t0, { limitMs }),
-  sweep: async (job, start, limitMs) => (await import("../records/refresh.server")).refreshAfterJob(job, start, { limitMs }),
+  sweep: async (job, start, limitMs, force) => (await import("../records/refresh.server")).refreshAfterJob(job, start, { limitMs, ...(force ? { force } : {}) }),
+  // Under test the pass's fakes never reach the live marks (job_runs and work_marks are the live record).
+  marked: async deadline => (underTest() ? { note: "nothing marked", force: null, left: 0, errors: 0 } : (await import("./marked-work.server")).runMarkedWork(deadline)),
+  pause: ms => (underTest() ? Promise.resolve() : new Promise(r => setTimeout(r, ms))),
 };
 
 /** Checks that no pass is running, writes the start row and returns the work still to do (null when the pass does not run). */
@@ -37,14 +44,21 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
     const work = (async () => {
       const r: WireFollowupsRun = { ...out, steps: [] };
       const steps = (async () => {
+        // D1 Part 2 · first the marked work (summaries, archive replays), inside its share; a pause between heavy steps.
+        const { MARKS_STEP_MS, STEP_PAUSE_MS } = await import("./marks");
+        const tm = clock(), m = await deps.marked(tm + MARKS_STEP_MS);
+        if (m.note !== "nothing marked") r.steps.push({ step: "marked work", ms: clock() - tm, note: m.note });
+        let force = m.force;
         for (const step of order) {
+          await deps.pause(STEP_PAUSE_MS);
           const t = clock();
           if (step === "story build") {
             const note = await deps.build("wire", t0, wf.PASS_END_MS);
             r.steps.push({ step, ms: clock() - t, note: note ? note.replace(/^wire · /, "") : "skipped: too little time left" });
           } else {
             // Second, the sweep has whatever is left before the pass's end; first, it leaves the build its room.
-            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0]));
+            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0]), !!force);
+            if (force && s) { await (await import("./marks.server")).clearMark(force).catch(() => undefined); force = null; }
             const by = s ? wf.writtenByKind(s.written) : {};
             r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
           }

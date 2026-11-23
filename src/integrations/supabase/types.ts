@@ -4516,6 +4516,24 @@ export type Database = {
           },
         ]
       }
+      work_marks: {
+        Row: {
+          done_at: string | null
+          marked_at: string
+          topic: string
+        }
+        Insert: {
+          done_at?: string | null
+          marked_at?: string
+          topic: string
+        }
+        Update: {
+          done_at?: string | null
+          marked_at?: string
+          topic?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       ai_spend_summary: {

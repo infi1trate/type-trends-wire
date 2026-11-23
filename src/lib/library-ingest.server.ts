@@ -3,7 +3,6 @@ import { advance, diffLibrarySignals, type Baseline, type Pending } from "./libr
 import { librarySnapshotsPayload, librarySyncPayload } from "./library-payload";
 import { z } from "zod";
 import type { Json } from "@/integrations/supabase/types";
-import { replayArchive } from "./library-archive.server";
 import { correctSites, isWrongSite } from "./site-corrections";
 
 const contextSchema = z.object({
@@ -23,12 +22,11 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
     return Response.json({ ok: true, inserted: 0, events: 0 });
   }
   let inserted = 0, events = 0;
-  const archiveDomains=new Set<string>();
   // Sort archive/backfill batches so each key compares to its immediately earlier capture.
   for (const snapshot of payload.snapshots.filter(x => !isWrongSite(x.domain)).sort((a, b) => Date.parse(a.captured_at) - Date.parse(b.captured_at))) {
     const row = { ...snapshot, ...(payload.run_id ? { run_id: payload.run_id } : {}) };
     if(snapshot.source==="wayback") {
-      const {data,error}=await db.rpc("library_archive_store",{p_snapshot:row as Json});if(error)throw new Error("Archive snapshot write failed");inserted+=Number(data??0);archiveDomains.add(snapshot.domain);continue;
+      const {data,error}=await db.rpc("library_archive_store",{p_snapshot:row as Json});if(error)throw new Error("Archive snapshot write failed");inserted+=Number(data??0);continue;
     }
     let stored = false;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -49,7 +47,7 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
     }
     if (!stored) throw new Error("Library snapshot contention");
   }
-  for(const domain of archiveDomains)events+=await replayArchive(domain);
+  // D1 Part 2 · archive replays run in the follow-up worker (crawl-ingest marks each brand), never inside the crawler's request.
   // No history refresh here: the insert triggers mark the domain dirty (library_history_dirty_domains) and the scheduled
   // library-history-refresh job replaces its stored rows, so a stored batch always answers with its counts.
   return Response.json({ ok: true, inserted, events });

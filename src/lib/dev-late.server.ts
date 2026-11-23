@@ -20,3 +20,10 @@ export async function devFail(read: string): Promise<boolean> {
   try { const { getRequest } = await import("@tanstack/react-start/server"); return (new URL(getRequest().url).searchParams.get("__fail") ?? "").split(",").includes(read); }
   catch { return false; }
 }
+/** D1 · DEV ONLY: `?__dbdown=1` on a request makes the database guard read "not answering" for it (the rehearsal of readers on their
+ *  last good copies); the live build never reads it. */
+export async function devDbDown(): Promise<boolean> {
+  if (!import.meta.env.DEV) return false;
+  try { const { getRequest } = await import("@tanstack/react-start/server"); return new URL(getRequest().url).searchParams.get("__dbdown") === "1"; }
+  catch { return false; }
+}

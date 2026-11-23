@@ -7,6 +7,8 @@ vi.mock("./stories/build.server", () => ({ afterJob }));
 const refreshAfterJob = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => null));
 vi.mock("./records/refresh.server", () => ({ refreshAfterJob }));
 const inlineHistory = vi.hoisted(() => ({ calls: 0 }));
+const marks = vi.hoisted(() => ({ topics: [] as string[][] }));
+vi.mock("./jobs/marks.server", () => ({ markWork: async (t: string[]) => { marks.topics.push([...t]); } }));
 vi.mock("./vanguard.server", () => ({ loadVanguard: async () => ["linear.app", "vercel.com"] }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
   from() { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; },
@@ -94,46 +96,23 @@ it("archive state contains sorted desktop home timestamps and live hashes stay s
  const response=await handleLibraryState(new Request("http://localhost/api/public/library-state",{headers:{"x-crawl-secret":credential}}));
  expect((await response.json()).sites[0]).toMatchObject({wayback:["2021-01-03T01:00:00Z","2021-07-03T01:00:00Z"],latest:{"home:desktop":{captured_at:snapshot.captured_at}}});
 });
-// Fix · the crawl intake answers quickly: a batch refreshes only its own brands' cards, and a refresh can never fail a stored batch.
-it("a snapshot batch asks only for its own brands' cards, within 8 s of storing", async () => {
-  refreshAfterJob.mockClear();
-  await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }));
-  expect(refreshAfterJob).toHaveBeenCalledWith("library", expect.any(Number), { domains: ["example.com"], only: "captured", limitMs: 8_000 });
-});
-it("a throwing refresh still answers 200 with the stored counts", async () => {
-  refreshAfterJob.mockImplementationOnce(async () => { throw new Error("boom"); });
-  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }));
+// D1 Part 2 · the crawl intake stores and answers: no story build, no card refresh, no archive replay inside the request; archive
+// brands are marked for the follow-up worker.
+it("a live batch stores and answers without building stories or refreshing cards", async () => {
+  afterJob.mockClear(); refreshAfterJob.mockClear(); marks.topics = [];
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot, { ...snapshot, page_type: "pricing", captured_at: "2026-11-11T02:00:00Z" }] }));
   expect(res.status).toBe(200);
-  expect(res.headers.get("x-records-refresh")).toBe("inline");
-  expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
+  expect(res.headers.get("x-followups")).toBe("none");
+  expect(await res.json()).toEqual({ ok: true, inserted: 2, events: 0 });
+  expect(afterJob).not.toHaveBeenCalled();
+  expect(refreshAfterJob).not.toHaveBeenCalled();
+  expect(marks.topics).toEqual([]);
 });
-it("a refresh that never ends is abandoned at the limit and the batch still answers 200", async () => {
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-  try {
-    refreshAfterJob.mockImplementationOnce(() => new Promise<null>(() => {}));
-    let res: Response | undefined;
-    const pending = handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] })).then(r => { res = r; });
-    // Module loads are not timers: keep the fake clock moving until the answer is in (never more than ~9 s of fake time).
-    for (let i = 0; i < 400 && !res; i++) { await vi.advanceTimersByTimeAsync(25); await new Promise(r => setImmediate(r)); }
-    await pending;
-    if (!res) throw new Error("no answer");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
-  } finally { vi.useRealTimers(); }
-});
-it("with waitUntil the answer goes out before the refresh, which runs in the background", async () => {
-  let finish: ((v: null) => void) | undefined;
-  refreshAfterJob.mockClear();
-  refreshAfterJob.mockImplementationOnce(() => new Promise<null>(r => { finish = r; }));
-  const kept: Promise<unknown>[] = [];
-  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }), { waitUntil: p => { kept.push(p); } });
-  expect(res.status).toBe(200);
-  expect(res.headers.get("x-records-refresh")).toBe("background");
-  expect(await res.json()).toEqual({ ok: true, inserted: 1, events: 0 });
-  expect(kept).toHaveLength(1); // the card refresh, after the answer (history is the scheduled database job's)
-  await vi.waitFor(() => expect(finish).toBeDefined());
-  finish!(null);
-  await kept[0];
+it("an archive batch marks each brand's replay once and replays nothing itself", async () => {
+  marks.topics = [];
+  const res = await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [{ ...snapshot, source: "wayback", captured_at: "2021-07-03T01:00:00Z", raw_text: undefined }, { ...snapshot, source: "wayback", captured_at: "2021-01-03T01:00:00Z", raw_text: undefined }] }));
+  expect(res.headers.get("x-followups")).toBe("marked");
+  expect(marks.topics).toEqual([["archive:example.com"]]);
 });
 
 // U2c · a batch never refreshes history (inline or in the background): the insert triggers mark the brand dirty and the scheduled
@@ -146,5 +125,5 @@ it.each([["without", undefined], ["with", true]] as const)("a batch %s waitUntil
   expect(await res.json()).toMatchObject({ ok: true, inserted: 2 });
   expect(res.headers.get("x-history-refresh")).toBe("scheduled");
   expect(inlineHistory.calls).toBe(0);
-  if (wait) expect(kept).toHaveLength(1); // the card refresh only
+  expect(kept).toHaveLength(0); // D1 · nothing runs after the answer either: the follow-up worker does it
 });

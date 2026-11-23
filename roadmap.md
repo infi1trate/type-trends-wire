@@ -235,3 +235,12 @@
 - [x] S1 follow-up: restart, outage cause, one-story-build-at-a-time guard, real-data measurements, brand move line fix
 - [ ] Today left column ends ~450 px above the right at 1024–1440 (five-story top-up still not built)
 - [ ] Brand page Sections placeholder differs from real height (0.06 shift on a 1800 px tall window); fixing it means waiting before first byte, against E3b
+
+# D1 · Database hardening (owner, 23 Nov)
+- [ ] 1 Find the writes: per job/post rows + WAL MB per run, runs/day, ranked; disk-speed allowance; 22 Nov stalls vs 23 Nov
+- [ ] 2 Crawler posts store + mark dirty only; one follow-up worker across instances, newest state once; slow DB → quick "try later" with seconds; post time before/after
+- [ ] 3 Summary tables diff-write (no empty/refill, nothing when source unchanged); stored pages hash-compare; other delete+reinsert sets; WAL MB/h before/after
+- [ ] 4 Job limits (10 s pass step / 30 s rebuild), health precheck 1 s → "skipped: database slow", spread schedule (proposal), role settings (proposal), connections per part
+- [ ] 5 Reader-only last good copy outside DB (edge), quiet age line; no DB call on usual path; offline rehearsal test in suite; tests without live DB; preview DB question
+- [ ] 6 Health: DB answer time, connections, WAL/h, allowance, biggest job, skipped count; warn 5 min / bad → one desk finding + /desk; automatic safe mode + owner switch; health <2 s
+- [ ] 7 Old page stays on screen with progress line; Patterns first screen from stored copy, rest on scroll, cold <1 s; live re-measure after owner deploys

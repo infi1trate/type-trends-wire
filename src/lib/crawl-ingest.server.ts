@@ -61,19 +61,20 @@ async function boundedBody(request: Request): Promise<string | null> {
   return new TextDecoder().decode(bytes);
 }
 
-async function refreshAggregates(): Promise<void> {
-  const { error } = await db.rpc("refresh_crawl_aggregates");
-  if (error) throw new Error("Crawler aggregate refresh failed");
-}
-
-/** A crawl batch's card refresh gets at most this long, measured from when its snapshots were stored. */
-export const BATCH_REFRESH_MS = 8_000;
-export type IngestContext = { waitUntil?: (p: Promise<unknown>) => void };
-const pause = (ms: number) => new Promise<void>(r => setTimeout(r, Math.max(0, ms)));
+/** D1 Part 2 · the crawl intake stores what it was sent and answers. Nothing heavy runs inside the request any more (it took 35 to
+ *  40 s while the crawler waited): the summaries, the archive replays and the forced sweep are marked out of date (work_marks) and the
+ *  one follow-up worker does them in order. Story builds and brand cards follow from the stored captures themselves (the wire
+ *  follow-ups pass builds every fifteen minutes; a card older than its brand's newest capture is due in the sweep). */
+export type IngestContext = { waitUntil?: (p: Promise<unknown>) => void; mark?: (topics: string[]) => Promise<void> };
+const markDefault = async (topics: string[]) => (await import("./jobs/marks.server")).markWork(topics);
 
 export async function handleCrawlIngest(request: Request, ctx: IngestContext = {}): Promise<Response> {
   const started = Date.now();
   try {
+    // D1 · a slow database refuses the post at once (before the secret lookup, which is itself a read), with the seconds to wait.
+    const { probeDb, probeHistory } = await import("./db-probe.server");
+    const probe = await probeDb();
+    if (!probe.ok) { const { retryAfterS, tryLater } = await import("./db-guard"); return tryLater(retryAfterS(probeHistory(), Date.now())); }
     if (!await authenticateCrawler(request)) return forbidden();
     const text = await boundedBody(request);
     if (text === null) return Response.json({ error: "Body exceeds 2 MB" }, { status: 413 });
@@ -92,31 +93,19 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
     return Response.json({ error: "Internal error" }, { status: 500 });
   }
 }
-async function crawlWork(payload: import("zod").infer<typeof crawlPayload>, started: number, ctx: IngestContext): Promise<Response> {
+async function crawlWork(payload: import("zod").infer<typeof crawlPayload>, _started: number, ctx: IngestContext): Promise<Response> {
+  const mark = ctx.mark ?? markDefault;
   {
     if (payload.kind === "library_sync" || payload.kind === "library_snapshots") {
       const { ingestLibrary } = await import("./library-ingest.server");
       const res = await ingestLibrary(payload);
       if (res.ok && payload.kind === "library_snapshots") {
-        const stored = Date.now();
-        await (await import("./stories/build.server")).afterJob("library", started);
-        // Only the brands this batch captured get fresh identity cards, within BATCH_REFRESH_MS of storing; the wire poll's sweep
-        // does everything else. With waitUntil the crawler gets its answer now and the cards are written after; without it they are
-        // written inline, and a slow refresh is abandoned at the limit so a stored batch always answers with its counts.
-        const domains = [...new Set(payload.snapshots.map(s => s.domain))];
-        const refresh = import("./records/refresh.server")
-          .then(m => m.refreshAfterJob("library", stored, { domains, only: "captured", limitMs: BATCH_REFRESH_MS }))
-          .catch(() => null);
-        let mode: "background" | "inline" = "inline";
-        if (typeof ctx.waitUntil === "function") {
-          try { ctx.waitUntil(refresh); mode = "background"; } catch { /* fall back to inline */ }
-        }
-        if (mode === "inline") await Promise.race([refresh, pause(stored + BATCH_REFRESH_MS + 500 - Date.now())]);
-        console.info("crawl batch card refresh", mode, domains.length);
-        // History (U2c): nothing to do here. The capture insert's trigger marks the domain dirty and the scheduled
-        // library-history-refresh job replaces that domain's stored rows; the app never refreshes history through the API.
+        const { archiveTopic } = await import("./jobs/marks");
+        // Archive captures need their brand's history replayed; that is the worker's job now (newest state once per brand).
+        const archive = [...new Set(payload.snapshots.filter(x => x.source === "wayback").map(x => x.domain))];
+        if (archive.length) await mark(archive.map(archiveTopic));
         const out = new Response(res.body, res);
-        out.headers.set("x-records-refresh", mode);
+        out.headers.set("x-followups", archive.length ? "marked" : "none");
         out.headers.set("x-history-refresh", "scheduled");
         return out;
       }
@@ -151,16 +140,15 @@ async function crawlWork(payload: import("zod").infer<typeof crawlPayload>, star
       // Check after writing: a finish request may have completed while this batch was in flight.
       const { data: currentRun, error: statusError } = await db.from("crawl_runs").select("status").eq("id", payload.run_id).maybeSingle();
       if (statusError) throw new Error("Crawler run status lookup failed");
-      if (currentRun?.status === "finished") await refreshAggregates();
+      if (currentRun?.status === "finished") await mark([(await import("./jobs/marks")).MARK_AGGREGATES]);
       return Response.json({ ok: true, written: rows.length });
     }
     const { data, error } = await db.from("crawl_runs").update({ status: "finished", finished_at: payload.finished_at, stats: payload.stats })
       .eq("id", payload.run_id).select("id");
     if (error) throw new Error("Crawler run finish failed");
     if (!data?.length) return Response.json({ error: "Unknown run" }, { status: 404 });
-    await refreshAggregates();
-    await (await import("./stories/build.server")).afterJob("crawl-finish", started);
-    await (await import("./records/refresh.server")).refreshAfterJob("crawl-finish", started, { force: true });
-    return Response.json({ ok: true, written: data.length });
+    const { MARK_AGGREGATES, MARK_RECORDS_FORCE } = await import("./jobs/marks");
+    await mark([MARK_AGGREGATES, MARK_RECORDS_FORCE]);
+    return Response.json({ ok: true, written: data.length, followups: "marked" });
   }
 }
