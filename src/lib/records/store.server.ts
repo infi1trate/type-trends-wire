@@ -2,6 +2,7 @@
 // only scheduled jobs write, with the service role loaded inside the call. See records.ts for the age rules.
 import { supabaseAnon } from "../mcp/supabase";
 import { memo, memoBy } from "../memo";
+import { STALE_SERVE_MS, within } from "../deadline";
 import { bodyBytes, kindOf, maxAgeOf, usable, type RecordMeta, type RecordRow } from "./records";
 
 export async function readRecord<T>(key: string): Promise<RecordRow<T> | null> {
@@ -27,13 +28,18 @@ export async function recordMetas(): Promise<RecordMeta[]> {
   return out;
 }
 
+/** A stored copy past its age limit is rebuilt live, but only if the rebuild finishes within STALE_SERVE_MS (or fails): otherwise the
+ *  old copy is served (any age), so a sweep that fell behind after an outage turns into an older page, never a failed one. */
+export function liveOrOld<T>(compute: () => Promise<T>, old: () => T, what: string, ms = STALE_SERVE_MS): Promise<T> {
+  return within(compute(), ms, what, old).catch(() => old());
+}
 export type Stored<T> = (() => Promise<T>) & { /** The live computation, bypassing the record (the refresher writes this). */ compute: () => Promise<T>; clear: () => void };
 /** One shared input: the stored record when it is young enough, else the live computation. Memoised per instance as a second layer. */
 export function stored<T, B = T>(key: string, compute: () => Promise<T>, o: { ttl?: number; encode?: (v: T) => B; decode?: (b: B) => T } = {}): Stored<T> & { encode: (v: T) => B } {
   const decode = o.decode ?? ((b: B) => b as unknown as T), encode = o.encode ?? ((v: T) => v as unknown as B);
   const m = memo(o.ttl ?? 5 * 60_000, async () => {
     const row = await readRecord<B>(key).catch(() => null);
-    return row && usable(row, Date.now(), maxAgeOf(key)) ? decode(row.body) : compute();
+    return row && usable(row, Date.now(), maxAgeOf(key)) ? decode(row.body) : row ? liveOrOld(compute, () => decode(row.body), key) : compute();
   });
   const fn = (() => m()) as Stored<T> & { encode: (v: T) => B };
   fn.compute = compute; fn.clear = () => m.clear(); fn.encode = encode;
@@ -43,7 +49,7 @@ export function stored<T, B = T>(key: string, compute: () => Promise<T>, o: { tt
 export function storedBy<A, T>(keyOf: (a: A) => string, compute: (a: A) => Promise<T>, ttl = 5 * 60_000) {
   const m = memoBy(ttl, async (a: A) => {
     const key = keyOf(a), row = await readRecord<T>(key).catch(() => null);
-    return row && usable(row, Date.now(), maxAgeOf(key)) ? row.body : compute(a);
+    return row && usable(row, Date.now(), maxAgeOf(key)) ? row.body : row ? liveOrOld(() => compute(a), () => row.body, key) : compute(a);
   }, { key: keyOf, max: 400 });
   return Object.assign((a: A) => m(a), { compute, keyOf });
 }

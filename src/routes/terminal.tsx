@@ -32,7 +32,7 @@ import { resolveSector } from "@/lib/sector-lens";
 import { useModeToggle, useSectorLens } from "@/components/read/lens";
 import { BRAND_NAME } from "@/lib/brand";
 import { useStaffKey } from "@/lib/staff-key";
-import { Placeholder, ROW } from "@/components/read/Later";
+import { PartBoundary, Placeholder, ROW } from "@/components/read/Later";
 
 const TITLE = `Terminal — ${BRAND_NAME}`;
 const DESC = `The dense, keyboard-first view of ${BRAND_NAME}: seven sections (Today, Signals, Brands, Patterns, Studies, Digest, Tools) with every number's receipts.`;
@@ -144,6 +144,8 @@ function Terminal() {
         <Ticker />
       </div>
       <main id="tk-main" tabIndex={-1} className="flex min-h-0 flex-1 flex-col focus:outline-none" aria-label={`${sectionById(section).label} section`}>
+        {/* A panel whose read fails shows one retry line in the panel area; the bars, tabs, ticker and footer always stay. */}
+        <PartBoundary className="p-3 text-g500" key={view}>
         <Wait>
         {view === "today" && <Wait><Today go={setPanel} onTour={startTour} onGlossary={() => setOverlay("glossary")} focus={search.story} /></Wait>}
         {view === "wire" && <Wire freshIds={fresh} />}
@@ -170,6 +172,7 @@ function Terminal() {
         {view === "ledger" && <LedgerTab />}
         {view === "console" && <ConsoleTab onRun={c => openConsole(c)} />}
         </Wait>
+        </PartBoundary>
       </main>
       <footer className="label flex min-h-6 shrink-0 items-center justify-between gap-2 border-t border-rule bg-g900 px-3 text-g500 md:h-[24px]">
         <span className="truncate max-md:hidden">DATA: GOOGLE FONTS API · <span className="normal-case">{BRAND_NAME}</span> CRAWLER · DESIGN RSS · HACKER NEWS</span>

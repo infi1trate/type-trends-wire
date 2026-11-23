@@ -4,6 +4,9 @@
 export const READ_DEADLINE_MS = 4_000;
 /** A stored copy past its limit is rebuilt only if the rebuild finishes within this; otherwise the old copy is sent (any age). */
 export const STALE_SERVE_MS = 2_500;
+/** A late read that has a last good copy on its instance answers with that copy after this long (the library, its history, the front
+ *  page's rest), well inside READ_DEADLINE_MS. */
+export const LAST_GOOD_MS = 3_000;
 /** /api/public/health answers within this whatever the database does. */
 export const HEALTH_DEADLINE_MS = 1_800;
 export const TIMEOUT = "read_timeout";

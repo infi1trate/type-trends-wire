@@ -10,6 +10,7 @@ import { StoryRow } from "@/components/read/StoryCard";
 import { fromToday } from "@/lib/stories";
 import type { PanelId } from "./panels";
 import { StoryQueue } from "./StoryQueue";
+import { PartBoundary } from "@/components/read/Later";
 
 const hm = (iso: string) => `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
 
@@ -24,7 +25,8 @@ export function Today({ go, onTour, onGlossary, focus }: { go: (p: PanelId) => v
   return (
     <section aria-label="Today" className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
       <PanelHeader title="TODAY" g="p-today" meta={<span className="num">{t.date}</span>} />
-      <StoryQueue focus={focus} />
+      {/* The story list's own read failing leaves the TODAY lines below in place, with one retry line where the list was. */}
+      <PartBoundary className="border-b border-rule p-3 text-g500"><StoryQueue focus={focus} /></PartBoundary>
       <div data-tour="today" className="border-b border-rule">
         <div className="flex flex-col gap-1 border-b border-rule p-3">
           <p className="label text-g500">{t.date} · DATA AS OF <span className="text-ink">{t.asOf ? hm(t.asOf) : "NO DATA YET"}</span></p>

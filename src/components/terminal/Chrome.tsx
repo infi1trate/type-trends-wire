@@ -10,6 +10,7 @@ import { LENS_SECTORS, showingText } from "@/lib/sector-lens";
 import { sectorName } from "@/lib/labels";
 import { SpreadTicker } from "./Spread";
 import { LibraryTicker } from "./Library";
+import { PartBoundary } from "@/components/read/Later";
 import { Wordmark } from "@/components/brand/Wordmark";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -139,7 +140,7 @@ export function Ticker() {
         {content}
         <SpreadTicker/>
         {/* L2 · the library events join the ticker after hydration: the server render no longer waits on the whole library read. */}
-        {hydrated && <Suspense fallback={null}><LibraryTicker/></Suspense>}
+        {hydrated && <PartBoundary quiet><Suspense fallback={null}><LibraryTicker/></Suspense></PartBoundary>}
         {!items && content}
         {!items && content}
       </TickerTrack>

@@ -106,6 +106,16 @@ export function Later({ children, shapes, className, id, before, reserve, placeh
     </Suspense>
   </Catch>}</QueryErrorResetBoundary>;
 }
+/** Terminal fix (23 Nov) · an error boundary for a part that has its own placeholder elsewhere (a Terminal panel, the ticker's library
+ *  line, the story list): a failed read stays inside it. `quiet` draws nothing on failure (decoration such as the ticker); otherwise
+ *  the plain failed line with one retry that runs the failed reads again. The rest of the screen always stays. */
+export function PartBoundary({ children, quiet = false, className }: { children: ReactNode; quiet?: boolean; className?: string }) {
+  const g = useContext(FailCtx), qc = useContext(QueryClientContext);
+  const [order] = useState(() => g?.order() ?? null);
+  return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={() => { dropFailed(qc); reset(); }} failed={retry => quiet ? null : <div className={className} data-part-failed=""><Failed retry={retry} order={order} /></div>}>
+    {children}
+  </Catch>}</QueryErrorResetBoundary>;
+}
 /** A page title block for a placeholder slot: the same classes as the views' own headers, so the swap doesn't move the title. */
 export function TitleBlock({ kicker, title, deck, h1 = "ed-cover", wrap = "ed-wrap pt-8 md:pt-12" }: { kicker: ReactNode; title: ReactNode; deck?: ReactNode; h1?: string; wrap?: string }) {
   return <header className={wrap}><p className="ed-kicker">{kicker}</p><h1 className={`${h1} mt-3 break-words`}>{title}</h1>{deck === undefined ? <div className="mt-5 max-w-[62ch]"><Placeholder shapes={[{ kind: "text", lines: 2 }]} /></div> : deck}</header>;
