@@ -4,6 +4,18 @@ import { healthFactsResult } from "./health-facts.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { buildHealth, spendFacts, unavailableHealth, type HealthPayload } from "./health";
 let cache: { at: number; value: HealthPayload } | null = null;
+let inFlight: Promise<HealthPayload> | null = null;
+/** S1 · the health answer within HEALTH_DEADLINE_MS. When the database is slower, the answer is the last one this instance had (with
+ *  its time) or "down", plus a `database` line saying it did not answer in time; the read keeps going so the next call has it. */
+export async function healthWithin(): Promise<{ body: HealthPayload & { database?: { status: "slow"; note: string; last_answer_at: string | null } }; slow: boolean }> {
+  const { HEALTH_DEADLINE_MS, within } = await import("./deadline");
+  if (!inFlight) inFlight = healthPayload().finally(() => { inFlight = null; });
+  const SLOW = Symbol("slow");
+  const r = await within<HealthPayload | typeof SLOW>(inFlight, HEALTH_DEADLINE_MS, "health", () => SLOW).catch(() => unavailableHealth(new Date()));
+  if (r !== SLOW) return { body: r, slow: false };
+  const last = cache?.value ?? null;
+  return { slow: true, body: { ...(last ?? unavailableHealth(new Date())), database: { status: "slow", note: `The database did not answer within ${(HEALTH_DEADLINE_MS / 1000).toFixed(1)} s; ${last ? "these are the last facts this server had" : "no earlier facts on this server"}.`, last_answer_at: last ? new Date(cache!.at).toISOString() : null } } };
+}
 export async function healthPayload(): Promise<HealthPayload> {
   const now = Date.now();
   if (cache && now - cache.at < 60_000) return cache.value;

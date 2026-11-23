@@ -1,3 +1,4 @@
+import { line as voiced } from "@/lib/voice";
 import { ReceiptDrawer } from "@/components/receipts/ReceiptDrawer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -135,6 +136,12 @@ function RouteFocus() {
   return null;
 }
 
+/** S1 · while a page change is in flight, a thin line at the very top (fixed, so nothing moves) from 80 ms in; reduced motion: a still line. */
+function NavProgress() {
+  const busy = useRouterState({ select: s => s.status === "pending" || s.isLoading });
+  return busy ? <div className="nav-progress" role="progressbar" aria-label={voiced("root.navProgress")} data-nav-progress="" /> : null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -145,6 +152,7 @@ function RootComponent() {
       {/* U2 · the receipt drawer, over any Read page whose address carries ?receipt= (drawn after hydration only). */}
       <ReceiptDrawer />
       <RouteFocus />
+      <NavProgress />
     </QueryClientProvider>
   );
 }

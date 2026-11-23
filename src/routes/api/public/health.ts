@@ -3,8 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 // commit of the running build (nothing else about the response changes).
 export const Route = createFileRoute("/api/public/health")({
   server: { handlers: { GET: async () => {
-    const [{ healthPayload }, { BUILD }] = await Promise.all([import("@/lib/health.server"), import("@/lib/build-stamp")]);
-    const body = await healthPayload();
-    return Response.json({ ...body, build: BUILD }, { headers: { "Cache-Control": "public, max-age=60", "Access-Control-Allow-Origin": "*" } });
+    const [{ healthWithin }, { BUILD }] = await Promise.all([import("@/lib/health.server"), import("@/lib/build-stamp")]);
+    // S1 · answered within HEALTH_DEADLINE_MS whatever the database does: a slow database gets its own line (and the last answer, if any).
+    const { body, slow } = await healthWithin();
+    return Response.json({ ...body, build: BUILD }, { headers: { "Cache-Control": slow ? "no-store" : "public, max-age=60", "Access-Control-Allow-Origin": "*" } });
   } } },
 });

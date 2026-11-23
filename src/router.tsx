@@ -5,7 +5,10 @@ import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
   // One client per request: a module-level QueryClient leaks cached data between SSR requests.
-  const queryClient = new QueryClient();
+  // S1 · a failed read is not retried behind a placeholder: the part shows "could not load this part" with its own "Try again" at once
+  // (a read that passed its 4 s limit, or a part whose read failed while the page was built, arrives as an error the browser cannot
+  // always tell apart, so none is retried silently). Grey placeholders therefore never outlast one read's limit in the browser.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false } } });
 
   const router = createRouter({
     routeTree,

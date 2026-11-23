@@ -223,3 +223,12 @@
 - [ ] 2B Changelog structured-output failures: cause, fix, one retry, golden set
 - [ ] 2C story_why steps, cheapest passing model per step (≤60 calls), shorter fixed prompts
 - [ ] 2D One retry place, constant per kind
+
+# Phase S1 · Space and composition pass
+- [x] 1 Ledger number column: none when unnumbered, sized to the list's longest number; Tape icon, chips, text on one line
+- [x] 2 Today: lead picture stack; Studies and Editions in the left column; one-column order under 1024 px (left top-up with five more stories not built)
+- [x] 3 Signals: trend line column, three aligned figure columns, one header per tier
+- [x] 4 Brands: tiles with logo/monogram plates, MOVED sticker, Moved this week band
+- [x] 5 Studies: All studies shelf of cards, series key, In the works chips in two columns
+- [x] 6 Patterns: stored captures first, large tiles always captures (counts wait on the database)
+- [ ] 7 Loading: 4 s read limit, health within 2 s, no silent retries, top progress line (click-to-heading table waits on the database; old stored copy on timeout not built)

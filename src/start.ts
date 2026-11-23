@@ -1,6 +1,7 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { READ_DEADLINE_MS, isReaderFn, within } from "./lib/deadline";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
@@ -31,7 +32,13 @@ const csrfMiddleware = createCsrfMiddleware({
 // requireSupabaseAuth server functions need. Add it by hand only if Lovable Cloud or a
 // user-managed Supabase project is connected, no middleware here sets Authorization, and the
 // project did not intentionally replace it.
+// S1 · no page waits without limit: every reader GET server function (the public pages' reads and late blocks, by file; never the
+// desk's or the jobs') answers or fails within READ_DEADLINE_MS. A late block that fails shows "could not load this part" with a retry,
+// so a response always closes even when the database stops answering.
+const readDeadline = createMiddleware({ type: "function" }).server(async ({ next, method, serverFnMeta }) =>
+  isReaderFn(method, serverFnMeta?.filename) ? within(next(), READ_DEADLINE_MS, serverFnMeta?.name ?? "read") : next());
+
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
+  functionMiddleware: [attachSupabaseAuth, readDeadline],
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));

@@ -1011,3 +1011,10 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 .receipt-panel { animation: receipt-up var(--tk-motion-base) ease-out; }
 @media (min-width: 1024px) { .receipt-panel { animation-name: receipt-right; } }
 @media (prefers-reduced-motion: reduce) { .receipt-panel { animation: none; } }
+
+/* S1 · the page-change line: fixed at the top, the highlight colour, shown from 80 ms into a page change (no flash on a fast one). */
+.nav-progress { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 100; pointer-events: none; background: var(--sys-color-highlight);
+  transform-origin: 0 50%; animation: nav-progress-in 0ms linear 80ms both, nav-progress-grow 4s cubic-bezier(.1, .7, .2, 1) 80ms both; }
+@keyframes nav-progress-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nav-progress-grow { from { transform: scaleX(0.08); } to { transform: scaleX(0.92); } }
+@media (prefers-reduced-motion: reduce) { .nav-progress { animation: nav-progress-in 0ms linear 80ms both; transform: none; } }
