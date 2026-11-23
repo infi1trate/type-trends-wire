@@ -132,7 +132,7 @@ describe("<Ledger>", () => {
     const { container } = await renderInRouter(() => <Ledger rows={[{ key: "a", href: "/stories/a", number: 48, title: "Title", line: "Line", facts: ["12%", "3 sites"], tags: ["Move"], time: "2 h ago" }]} />);
     const a = container.querySelector("a.ledger-link")!;
     expect(a.getAttribute("href")).toBe("/stories/a");
-    expect(a.querySelector(".ledger-num")!.textContent).toBe("48");
+    expect(a.querySelector(".ledger-num .ledger-fit > span:first-child")!.textContent).toBe("48");
     expect(a.querySelector(".ledger-title")!.textContent).toContain("Title");
     expect([...a.querySelectorAll(".ledger-fact")].map(e => e.textContent)).toEqual(["12%", "3 sites"]);
     expect(a.querySelector(".ledger-time")!.textContent).toBe("2 h ago");
@@ -143,7 +143,7 @@ describe("<Ledger>", () => {
   });
   it("keeps the number, the title and one fact beside each other on narrow screens; the rest wraps under the title", () => {
     const css = readFileSync("src/styles.css", "utf8");
-    expect(css).toMatch(/\.ledger-link \{ display: grid; grid-template-columns: 4\.5ch minmax\(0, 1fr\) auto;/);
+    expect(css).toMatch(/\.ledger-link \{ display: grid; grid-template-columns: max-content minmax\(0, 1fr\) auto;/); // S1: the list sizes the number column
     expect(css).toMatch(/\.ledger-rest \{ grid-column: 2 \/ -1;/);
   });
 });

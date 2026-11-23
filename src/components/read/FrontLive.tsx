@@ -11,7 +11,7 @@ import { numberLabel } from "@/lib/stories/numbers";
 import { storyTime } from "@/lib/stories";
 import { pct } from "@/lib/digest/copy";
 import { TickerTrack } from "@/components/kit/TickerTrack";
-import { LedgerItem, StoryNo } from "@/components/brand/Ledger";
+import { LedgerItem, StoryNo, ledgerDigits } from "@/components/brand/Ledger";
 import { Sticker } from "@/components/brand/Containers";
 import { BrandMark } from "./BrandMark";
 
@@ -59,10 +59,10 @@ export function FrontTicker({ items }: { items: TickerItem[] }) {
 }
 
 /** One live-column item: a Ledger row with the story's number, its type and sector as tags, one line, the basis mark and a relative time. */
-export function LiveItem({ s, now, drop = false }: { s: FrontStory; now: number; drop?: boolean }) {
-  const num = s.number != null ? <StoryNo n={s.number} /> : <span data-story-number="">·</span>;
+export function LiveItem({ s, now, drop = false, digits = 2 }: { s: FrontStory; now: number; drop?: boolean; digits?: number }) {
+  const num = s.number != null ? <StoryNo n={s.number} /> : <StoryNo n="·" blank />;
   return <LedgerItem r={{ key: s.id, id: `fs-${s.id}`, href: s.href, number: num, title: <>{s.icon && <BrandMark icon={s.icon} size={20} className="mr-2" />}{s.headline}</>, line: s.line,
-    tags: [s.typeName, ...(s.sectorName ? [s.sectorName] : [])], time: <time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now)}</time>, drop }} />;
+    tags: [s.typeName, ...(s.sectorName ? [s.sectorName] : [])], time: <time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now)}</time>, drop }} digits={digits} story />;
 }
 
 /** E3b · the column's own heading: the count sits beside it ("Earlier this week · 6"), and a single group with the same title adds no
@@ -112,7 +112,7 @@ export function LiveColumn({ initial, serverNow, sector, format, quiet, onUpdate
     {pending.length > 0 && <div className="mt-4"><Sticker onClick={insert} data-pop="">{newStoriesText(pending.length)} · show {pending.length === 1 ? "it" : "them"}</Sticker></div>}
     {groups.length ? groups.map(g => <section key={g.id} aria-labelledby={single ? heading!.id : `fg-${g.id}`} className="mt-6">
       {!single && <h3 id={`fg-${g.id}`} className="ed-kicker">{g.title} <span className="ed-muted">· {g.items.length}</span></h3>}
-      <ul className="ledger mt-2" data-ledger="">{g.items.map(s => [since?.beforeId === s.id ? marker : null, <LiveItem key={s.id} s={s} now={now} drop={s.id === dropId} />])}</ul>
+      <ul className="ledger mt-2" data-ledger="">{g.items.map(s => [since?.beforeId === s.id ? marker : null, <LiveItem key={s.id} s={s} now={now} drop={s.id === dropId} digits={ledgerDigits(g.items.map(x => x.number))} />])}</ul>
     </section>) : <p className="ed-small mt-4">{empty}</p>}
     {since && since.beforeId === null && flat.length > 0 && <ul className="mt-2">{marker}</ul>}
   </div>;

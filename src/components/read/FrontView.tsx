@@ -9,7 +9,7 @@ import { BRAND_NAME } from "@/lib/brand";
 import type { FrontModel, FrontRest, FrontStory, FrontTop, FrontUpdates } from "@/lib/front/front";
 import type { Crop } from "@/lib/crops";
 import { FRONT_TAPE_SUB, FRONT_TAPE_TITLE, UNCONFIRMED_HREF, WHOLE_TAPE_HREF, confirmedText, unconfirmedText, type FrontTape, type TapePair } from "@/lib/front/tape-block";
-import { MarkedName } from "./BrandMark";
+import { BrandMark } from "./BrandMark";
 import { useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery, frontWireQuery } from "@/lib/data";
 import { WIRE_DATA_HREF, WIRE_SUB, WIRE_TITLE, type WireBlockRow } from "@/lib/newsroom/news";
@@ -23,7 +23,7 @@ import { pct } from "@/lib/digest/copy";
 import { DigestShell, Dim, StageWord } from "@/components/digest/Editorial";
 import { Bars, DonutChart, QuarterLine, ScatterChart } from "@/components/chartkit";
 import { Card, Plate, Raised, RuleBox } from "@/components/brand/Containers";
-import { Ledger } from "@/components/brand/Ledger";
+import { Ledger, ledgerDigits } from "@/components/brand/Ledger";
 import { BeforeAfter, CoverFigure, CropFigure } from "./Evidence";
 import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
@@ -120,8 +120,8 @@ function Strip({ s, format, now }: { s: NonNullable<FrontModel["strip"]>; format
     <Kicker id="front-sector">Your sector · {s.name}</Kicker>
     {s.note && <p className="ed-caption mt-1">{s.note}</p>}
     {s.signals.length > 0 && <ul className="mt-2">{s.signals.map(x => <li key={x.key} className="ed-hair py-2"><Link to="/signals/$key" params={{ key: x.key }} className="ed-h4 no-underline hover:underline">{x.name}</Link><span className="ed-data mt-1 flex flex-wrap items-center gap-2"><StageWord stage={x.stage} /><span>{x.share == null ? "—" : pct(x.share, 1)}</span>{s.scope === "all" && <span className="ed-muted">all sectors</span>}</span></li>)}</ul>}
-    {s.newest && <><p className="ed-kicker mt-4">Newest {s.name} story</p><ul className="ledger mt-1"><LiveItem s={s.newest} now={now} /></ul></>}
-    {s.whiteSpace && s.whiteSpace.id !== s.newest?.id && <><p className="ed-kicker mt-4">White space</p><ul className="ledger mt-1"><LiveItem s={s.whiteSpace} now={now} /></ul></>}
+    {s.newest && <><p className="ed-kicker mt-4">Newest {s.name} story</p><ul className="ledger mt-1"><LiveItem s={s.newest} now={now} digits={ledgerDigits([s.newest.number])} /></ul></>}
+    {s.whiteSpace && s.whiteSpace.id !== s.newest?.id && <><p className="ed-kicker mt-4">White space</p><ul className="ledger mt-1"><LiveItem digits={ledgerDigits([s.whiteSpace.number])} s={s.whiteSpace} now={now} /></ul></>}
     {!s.newest && <p className="ed-small mt-3">No {s.name} story in the last four months.</p>}
     <p className="ed-data mt-3"><Link to="/sectors/$sector" params={{ sector: s.sector }} className="ed-tap">State of {s.name}, the sector report →</Link></p>
   </RuleBox></section>;
@@ -167,7 +167,7 @@ export function TapeBlock({ t }: { t: FrontTape }) {
     <h2 id="front-tape" className="ed-h2">{FRONT_TAPE_TITLE}</h2>
     <p className="ed-caption mt-1">{FRONT_TAPE_SUB}</p>
     {t.lines.length > 0
-      ? <Ledger className="mt-3" small label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, title: <MarkedName icon={l.icon} size={20}>{l.name} · {l.what}{l.pair && <TapePairPics p={l.pair} />}</MarkedName>, tags: l.marks, time: l.when }))} />
+      ? <Ledger className="mt-3" small inlineTags label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, lead: <BrandMark icon={l.icon} size={20} />, title: <>{l.name} · {l.what}{l.pair && <TapePairPics p={l.pair} />}</>, tags: l.marks, time: l.when }))} />
       : <p className="ed-small mt-3">No confirmed change in the last {t.days} days.</p>}
     <p className="ed-data mt-3" data-tape-counts="">{confirmedText(t.confirmed, t.days)}; <a href={UNCONFIRMED_HREF} className="ed-tap">{unconfirmedText(t.unconfirmed)}</a> (seen once or alternating).</p>
     <p className="ed-data mt-2"><a href={WHOLE_TAPE_HREF} className="ed-tap">The whole tape →</a></p>
@@ -215,7 +215,7 @@ function FrontAside({ m, r }: { m: FrontTop; r: FrontRest }) {
     {r.sections.launches && <section aria-labelledby="front-launches"><RuleBox>
       <Kicker id="front-launches">New on the scene</Kicker>
       <p className="ed-caption mt-1">Product Hunt launches. They never rank in the live column.</p>
-      <ul className="ledger mt-2">{r.launches.map(s => <LiveItem key={s.id} s={s} now={now} />)}</ul>
+      <ul className="ledger mt-2">{r.launches.map(s => <LiveItem digits={ledgerDigits(r.launches.map(x => x.number))} key={s.id} s={s} now={now} />)}</ul>
     </RuleBox></section>}
     {r.strip && <Strip s={r.strip} format={m.format} now={now} />}
     {m.format === "all" && m.sections.exploreAside && <section aria-labelledby="front-explore"><RuleBox>

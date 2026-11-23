@@ -14,6 +14,8 @@ describe("live column rows", () => {
   });
   it("show a dot when a story has no number yet", () => {
     const { container } = render(<ul><LiveItem s={toFront(st("b", { number: null }) as never)} now={NOW} /></ul>);
-    expect(container.querySelector("[data-story-number]")?.textContent).toBe("·");
+    // S1: the dot sits in the figure's place with the "No." label held invisibly, so its title lines up with numbered rows.
+    expect(container.querySelector("[data-story-number] .ledger-no-fig")?.textContent).toBe("·");
+    expect(container.querySelector<HTMLElement>("[data-story-number] .ledger-no-label")?.style.visibility).toBe("hidden");
   });
 });

@@ -486,23 +486,29 @@
   /* N3 · a row with a second link beside its own (THE WIRE's brand): side by side from 768 px, the second under the first below it. */
   .ledger-row-split { display: flex; flex-wrap: wrap; align-items: stretch; }
   .ledger-row-split > .ledger-link { flex: 1 1 100%; min-width: 0; }
-  .ledger-after { display: flex; align-items: center; padding: 0 var(--tk-space-2) var(--tk-space-1) calc(4.5ch + var(--tk-space-3) + var(--tk-space-2)); }
+  /* S1 · the second link sits under the title on phones; only unnumbered lists carry one, so it starts at the row's own padding. */
+  .ledger-after { display: flex; align-items: center; padding: 0 var(--tk-space-2) var(--tk-space-1) var(--tk-space-2); }
   .ledger-after a { display: inline-flex; align-items: center; min-height: var(--tk-layout-tap); }
   @media (min-width: 768px) { .ledger-row-split { flex-wrap: nowrap; } .ledger-row-split > .ledger-link { flex: 1 1 auto; } .ledger-after { padding: 0 var(--tk-space-2); } }
   /* N3 · THE WIRE: no number column, the tape's gap halved above it, and three rows on phones (its height budget). */
   .d-stack > * + .front-wire, .d-stack > .front-wire { margin-top: var(--tk-space-4); }
-  .ledger-wire .ledger-num { display: none; }
-  .ledger-wire .ledger-link { grid-template-columns: minmax(0, 1fr) auto; }
-  .ledger-wire .ledger-rest { grid-column: 1 / -1; }
-  .ledger-wire .ledger-after { padding-left: var(--tk-space-2); }
+
   .ledger-brand { display: inline-flex; align-items: center; min-height: var(--tk-layout-tap); text-decoration: underline; text-underline-offset: .2em; }
   @media (max-width: 767px) { .ledger-wire > li:nth-child(n + 4) { display: none; } .ledger-wire .ledger-row-split { position: relative; } .ledger-wire .ledger-after { position: absolute; right: 0; bottom: 0; padding: 0 var(--tk-space-2); } .ledger-wire .ledger-row-split .ledger-rest { padding-right: 12ch; } }
-  @media (min-width: 768px) { .ledger-wire .ledger-link { grid-template-columns: minmax(0, 1fr) auto auto; } .ledger-wire .ledger-rest { grid-column: auto; } }
-  .ledger-link { display: grid; grid-template-columns: 4.5ch minmax(0, 1fr) auto; column-gap: var(--tk-space-3); row-gap: var(--tk-space-1); align-items: baseline; min-height: var(--tk-layout-tap);
+
+  /* S1 · the number column is as wide as the longest number in its own list (an invisible stand-in in each cell), and a list with no
+     numbers has no number column at all (.ledger-plain): the title starts at the row's padding. */
+  .ledger-link { display: grid; grid-template-columns: max-content minmax(0, 1fr) auto; column-gap: var(--tk-space-3); row-gap: var(--tk-space-1); align-items: baseline; min-height: var(--tk-layout-tap);
     padding: var(--tk-space-2) var(--tk-space-2); color: var(--sys-color-ink); text-decoration: none !important; }
   .ledger-link:hover, .ledger-link:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }
   .ledger-link:hover .ledger-muted, .ledger-link:focus-visible .ledger-muted { color: var(--tk-highlight-fg); }
-  .ledger-num { font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; font-variant-numeric: tabular-nums; }
+  .ledger-num { font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ledger-fit { display: inline-grid; } .ledger-fit > * { grid-area: 1 / 1; } .ledger-ghost { visibility: hidden; }
+  .ledger-plain .ledger-link { grid-template-columns: minmax(0, 1fr) auto; }
+  .ledger-plain .ledger-rest { grid-column: 1 / -1; }
+  .ledger-tags { display: inline; margin-right: var(--tk-space-2); }
+  .ledger-tags .ledger-tag + .ledger-tag { margin-left: var(--tk-space-1); }
+  .ledger-title > .brand-mark { margin-right: var(--tk-space-2); vertical-align: -0.3em; }
   .ledger-num-sm { font-size: var(--sys-text-kicker-size); letter-spacing: var(--sys-text-kicker-tracking); text-transform: uppercase; font-weight: 700; }
   .ledger-title { font-family: var(--sys-text-reading-family); font-size: var(--sys-text-small-size); line-height: 1.35; text-wrap: pretty; min-width: 0; }
   .ledger-line { display: block; margin-top: var(--tk-space-1); font-family: var(--sys-text-caption-family); font-size: var(--sys-text-caption-size); line-height: var(--sys-text-caption-leading); color: var(--sys-color-ink-muted); }
@@ -513,7 +519,9 @@
   .ledger-tag { display: inline-block; font-family: var(--sys-text-chip-family); font-weight: var(--sys-text-chip-weight); font-size: var(--sys-text-chip-size); line-height: var(--sys-text-chip-leading); letter-spacing: var(--sys-text-chip-tracking); text-transform: uppercase;
     background: var(--tk-surface-inverse); color: var(--tk-text-inverse); padding: 0 6px; white-space: nowrap; }
   @media (min-width: 768px) {
-    .ledger-link { grid-template-columns: 5.5ch minmax(0, 1fr) auto auto; }
+    .ledger-link { grid-template-columns: max-content minmax(0, 1fr) auto auto; }
+    .ledger-plain .ledger-link { grid-template-columns: minmax(0, 1fr) auto auto; }
+    .ledger-plain .ledger-rest { grid-column: auto; }
     .ledger-rest { grid-column: auto; justify-content: flex-end; flex-wrap: nowrap; }
     .ledger-rest .ledger-time { min-width: 9ch; text-align: right; }
   }
@@ -552,9 +560,7 @@
 @media (prefers-reduced-motion: reduce) { .c-raised, .c-sticker { transition: none; } }
 @media print { .c-raised, .c-sticker { box-shadow: none !important; transform: none !important; } .c-slab { background: none !important; color: inherit !important; } }
 @layer components {
-  /* Story ledgers carry "No. 48": a wider number column, the same on every row so titles align. */
-  .ledger-link:has([data-story-number]) { grid-template-columns: 7ch minmax(0, 1fr) auto; }
-  @media (min-width: 768px) { .ledger-link:has([data-story-number]) { grid-template-columns: 8ch minmax(0, 1fr) auto auto; } }
+
 }
 @layer components {
   /* Brand pages: the mark at full width, and a stand-in "photograph" (a halftone of ink on green) for grounds and photo plates. */
@@ -762,12 +768,9 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   .scroll-row-wrap[data-more-start] .scroll-cue-start, .scroll-row-wrap[data-more-end] .scroll-cue-end { display: inline-flex; }
 
   /* "No. 45": the figure never wraps; the column is sized for four digits, so titles align. */
-  .ledger-no { display: inline-flex; align-items: baseline; gap: .18em; white-space: nowrap; min-width: calc(4ch + 1.3em); }
+  .ledger-no { display: inline-flex; align-items: baseline; gap: .18em; white-space: nowrap; }
   .ledger-no-label { font-family: var(--sys-text-kicker-family); font-weight: 700; font-size: var(--sys-text-kicker-size); letter-spacing: var(--sys-text-kicker-tracking); text-transform: uppercase; }
   .ledger-no-fig { font-family: var(--sys-text-h3-family); font-weight: 900; font-variant-numeric: tabular-nums; }
-  .ledger-link:has(.ledger-no) { grid-template-columns: max-content minmax(0, 1fr) auto; }
-  @media (min-width: 768px) { .ledger-link:has(.ledger-no) { grid-template-columns: max-content minmax(0, 1fr) auto auto; } }
-  .ledger-num-sm .ledger-no { min-width: calc(4ch + 2.6em); }
 
   /* Form fields: one 3 px ink border at rest; the focus ring only on keyboard focus. Errors sit under the field in plain words. */
   .form-field { border: var(--tk-border-strong) solid var(--sys-color-rule); border-radius: 0; outline: none; }
