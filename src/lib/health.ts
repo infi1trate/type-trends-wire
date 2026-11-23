@@ -27,6 +27,8 @@ export type BrandNameFacts = { checked_at: string; checked: number; not_captured
 /** N1 · the weekly spend cap as health states it: set or not, reached or not, and one plain line (no amounts on this public payload). */
 export type SpendFacts = { week_start: string | null; cap_set: boolean; reached: boolean; line: string };
 export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null; spend?: SpendFacts | null; art?: { met: number; aic: number; newest_last_seen: string | null } | null;
+  /** W3d · App Store icon colours: the newest stored week, its categories and apps (not removed), and when its rows were last written (an unchanged post writes nothing). */
+  icons?: import("./icons/contract").IconHealth | null;
   /** T1 · each stored page kind's age against its limit (never changes `status`). */
   stored_pages?: { line: string; past_limit: number; kinds: import("./records/records").StoredAge[] } | null;
   /** T1 · this Eastern-time week's model dollars, build credits and total dollars (totals only; the owner asked for these amounts). */

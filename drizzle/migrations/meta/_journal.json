@@ -673,6 +673,13 @@
       "when": 1795447195126,
       "tag": "0095_wire_items_launch_votes_topics",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1795466052007,
+      "tag": "0096_app_icons",
+      "breakpoints": true
     }
   ]
 }

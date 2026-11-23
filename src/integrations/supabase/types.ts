@@ -129,6 +129,66 @@ export type Database = {
           },
         ]
       }
+      app_icons: {
+        Row: {
+          app_id: string
+          chart: string
+          day: string
+          genre_id: number
+          genre_name: string
+          id: number
+          link: string
+          maker: string
+          name: string
+          palette: Json
+          rank: number
+          removed_at: string | null
+          removed_reason: string | null
+          run_id: string
+          store: string
+          stored_at: string
+          week: string
+        }
+        Insert: {
+          app_id: string
+          chart: string
+          day: string
+          genre_id: number
+          genre_name: string
+          id?: never
+          link: string
+          maker: string
+          name: string
+          palette: Json
+          rank: number
+          removed_at?: string | null
+          removed_reason?: string | null
+          run_id: string
+          store: string
+          stored_at?: string
+          week: string
+        }
+        Update: {
+          app_id?: string
+          chart?: string
+          day?: string
+          genre_id?: number
+          genre_name?: string
+          id?: never
+          link?: string
+          maker?: string
+          name?: string
+          palette?: Json
+          rank?: number
+          removed_at?: string | null
+          removed_reason?: string | null
+          run_id?: string
+          store?: string
+          stored_at?: string
+          week?: string
+        }
+        Relationships: []
+      }
       art_works: {
         Row: {
           artist: string | null

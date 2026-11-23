@@ -122,6 +122,8 @@ async function loadPayload(): Promise<HealthPayload> {
   const spend = await supabaseAnon().rpc("spend_facts" as never).then(r => (r.error ? null : spendFacts(r.data)), () => null);
   // W3a: museum works stored by source and the newest last_seen (public rows only); unreadable reads as null and never changes the status.
   const art = await artHealth().catch(() => null);
+  // W3d: App Store icon colours for the newest week (service role read, counts only); unreadable reads as null and never changes the status.
+  const icons = await import("./icons/ingest.server").then(m => m.iconHealth()).catch(() => null);
   // T1 · each stored page's age against its limit (anonymous read of keys and times only); unreadable reads as null and never changes the status.
   const stored_pages = await import("./records/store.server").then(async m => {
     // D1c · per-brand rows of a brand no longer tracked are left out (nothing rewrites them); an unreadable list counts every row.
@@ -130,7 +132,7 @@ async function loadPayload(): Promise<HealthPayload> {
   }).catch(() => null);
   // T1 · this week's spend totals from the anonymous spend_week_facts() facade; unreadable reads as null and never changes the status.
   const spend_week = await import("./newsroom/ledger.server").then(m => m.healthSpend(supabaseAnon() as never)).catch(() => null);
-  value = { ...value, brand_names: names, spend, art, stored_pages, spend_week };
+  value = { ...value, brand_names: names, spend, art, icons, stored_pages, spend_week };
   cache = { at: now, value };
   return value;
 }

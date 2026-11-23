@@ -271,3 +271,10 @@
 - [x] 2 Cold targets (TTFB ≤800 ms, LCP ≤2.5 s, CLS ≤0.05; 5 pages × 390/768/1440): one early stored read, connection while rendering, less code before first byte, LCP picture eager, fonts never hold text; after table
 - [x] 3 Later retries once after ~1.2 s; brand page never without header facts + stored card (test once/twice failed); every Later page listed; brand Data view shift ≤0.05
 - [x] 4 Warming after a deploy without a new scheduled job (written out, not built: would only warm instances near the job's caller)
+
+# W3d · App icons as measured colour only (hidden, ICONS_SHOWN false)
+- [ ] 1 Intake: POST /api/public/ingest-icons (crawler secret, ≤256 KB, per-row refusals), app_icons table (service role only, one snapshot per ISO week per category, unchanged writes nothing, 26 weeks), icon_remove (owner), health line
+- [ ] 2 Measure (pure, tested): ground (largest share, <0.35 mixed, white/grey/black), per category counts/leading/mixed share, lean in points
+- [ ] 3 Study the-colour-app-icons-sit-on behind ICONS_SHOWN via withheld(): wall, lean, headline/deck by rule, method, check; series "Beyond the homepage" if a list entry
+- [ ] 4 Proof pictures in docs/proof/w3d (real rows if arrived, else fixture said plainly)
+- [ ] 5 First-bytes picture hint on /library/<domain>, /patterns/<key>, /collections/<slug>, /brands

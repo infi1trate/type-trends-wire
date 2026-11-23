@@ -68,6 +68,8 @@ export type NewsroomStore = {
   sourceNote?: (r: { source: string; status: string; read_on: string | null; link: string | null; note: string; actor: string }) => Promise<{ id: number }>;
   /** W3a · the owner removes a museum work (row kept with the reason; thumbnail deleted). */
   artRemove?: (r: import("../art/contract").ArtRemove) => Promise<{ removed: true; thumb_deleted: boolean } | { refused: string } | null>;
+  /** W3d · the owner removes an app from the icon study (rows kept with the reason; refused forever). */
+  iconRemove?: (r: import("../icons/contract").IconRemove) => Promise<{ removed: true; rows: number } | { refused: string } | null>;
   candidateStatus?: (r: { candidate: number; status: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
   /** L2b · a rewrite request for a published story (refused while one for the same story is still open). */
   rewrite?: (r: { story_id: string; actor: string; reason: string }) => Promise<{ id: number } | { refused: string }>;
@@ -83,7 +85,7 @@ const subjectOf = (b: DeskBody): string | null =>
     : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
     : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? (b.ref ?? b.run)
     : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : b.action === "job_hold" || b.action === "job_release" ? `job:${b.job}`
-    : b.action === "draft_status" ? `draft:${b.draft}` : b.action === "audience" ? b.week : b.action === "source_note" ? `source:${b.source}` : b.action === "candidate_status" ? `candidate:${b.candidate}` : b.action === "art_remove" ? `art:${b.source}:${b.source_id}` : null;
+    : b.action === "draft_status" ? `draft:${b.draft}` : b.action === "audience" ? b.week : b.action === "source_note" ? `source:${b.source}` : b.action === "candidate_status" ? `candidate:${b.candidate}` : b.action === "art_remove" ? `art:${b.source}:${b.source_id}` : b.action === "icon_remove" ? `app:${b.app_id}` : null;
 
 /**
  * N1 · THE DOOR. Every authenticated call is logged in the desk log (allowed, proposed, refused or failed) with its actor, level,
@@ -294,6 +296,13 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
     return { status: 201, body: { ok: true, source: b.source, source_id: b.source_id, removed: true, thumb_deleted: r.thumb_deleted }, decision: "done", reason: b.reason, detail: { source: b.source, source_id: b.source_id, thumb_deleted: r.thumb_deleted } };
   }
+  if (b.action === "icon_remove") {
+    if (!d.store.iconRemove) return missing;
+    const r = await d.store.iconRemove({ app_id: b.app_id, reason: b.reason });
+    if (!r) return { ...missing, reason: "No such app in the stored charts." };
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, app_id: b.app_id, removed: true, rows: r.rows }, decision: "done", reason: b.reason, detail: { app_id: b.app_id, rows: r.rows } };
+  }
   if (b.action === "candidate_status") {
     if (!d.store.candidateStatus) return missing;
     const r = await d.store.candidateStatus({ candidate: b.candidate, status: b.status, actor, reason: b.reason ?? null });
@@ -421,6 +430,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       audience: async r => (await import("../newsroom/publisher.server")).insertAudience(db, r),
       sourceNote: async r => (await import("../newsroom/scout.server")).insertSourceNote(db, r),
       artRemove: async r => (await import("../art/ingest.server")).removeArtWork(r),
+      iconRemove: async r => (await import("../icons/ingest.server")).removeIconApp(r),
       candidateStatus: async r => (await import("../newsroom/scout.server")).insertCandidateStatus(db, r),
       rewrite: async r => (await import("./rewrite.server")).insertRewriteRequest(db, r),
       living: {
