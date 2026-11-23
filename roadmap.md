@@ -259,9 +259,9 @@
 - [x] 4 Product Hunt ingest start/finish rows + health jobs list, token works yes/no; discourse stale while ok
 
 # PH1 · Product Hunt launches
-- [ ] 1 Ingest reads the finished Pacific day (votes order, topics), stores votes/topics, plain run row, recorded-response tests
-- [ ] 2 Vote floor 150 + beat topics (300 without topics); below the line = wire item only
-- [ ] 3 Launches never numbered; No. 98–117 fate; held launch nowhere
-- [ ] 4 Today box ≤3 by votes, upvotes + launch day, no number; Terminal LAUNCHES group, not counted; before/after pictures
-- [ ] 5a W3c proof pictures into docs/proof/w3c/
-- [ ] 5b Retries for daily jobs / weekly model jobs; drafts made by an existing job with room
+- [x] 1 Ingest reads the finished Pacific day (votes order, topics), stores votes/topics, plain run row, recorded-response tests
+- [x] 2 Vote floor 150 + beat topics (300 without topics); below the line = wire item only
+- [x] 3 Launches never numbered; No. 98–117 fate; held launch nowhere
+- [x] 4 Today box ≤3 by votes, upvotes + launch day, no number; Terminal LAUNCHES group, not counted; before/after pictures
+- [x] 5a W3c proof pictures into docs/proof/w3c/
+- [x] 5b Retries for daily jobs / weekly model jobs; drafts made by an existing job with room
