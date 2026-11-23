@@ -232,3 +232,6 @@
 - [x] 5 Studies: All studies shelf of cards, series key, In the works chips in two columns
 - [x] 6 Patterns: stored captures first, large tiles always captures (counts wait on the database)
 - [ ] 7 Loading: 4 s read limit, health within 2 s, no silent retries, top progress line (click-to-heading table waits on the database; old stored copy on timeout not built)
+- [x] S1 follow-up: restart, outage cause, one-story-build-at-a-time guard, real-data measurements, brand move line fix
+- [ ] Today left column ends ~450 px above the right at 1024–1440 (five-story top-up still not built)
+- [ ] Brand page Sections placeholder differs from real height (0.06 shift on a 1800 px tall window); fixing it means waiting before first byte, against E3b
