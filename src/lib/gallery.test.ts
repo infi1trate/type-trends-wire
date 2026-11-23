@@ -67,7 +67,25 @@ describe("gallery model", () => {
     expect(p1.tiles).toHaveLength(48); expect(p1.countLine).toBe("48 of 100 captures");
     expect(p2.countLine).toBe("49–96 of 100 captures");
     expect(p9.page).toBe(3); expect(p9.tiles).toHaveLength(4);
-    expect(p1.tiles.filter(t => t.size === "lg")).toHaveLength(Math.ceil(48 / LARGE_EVERY));
+    // S1 · no stored pictures here, so no tile is large (stand-ins only ever take small tiles).
+    expect(p1.tiles.filter(t => t.size === "lg")).toHaveLength(0);
+    const withCrops = galleryModel(input({ captures: many, crops: many.map(c => crop(c.domain, "hero", c.at)) }), NO_FILTER);
+    expect(withCrops.tiles.filter(t => t.size === "lg")).toHaveLength(Math.ceil(48 / LARGE_EVERY));
+  });
+  it("S1 · stored captures come before stand-ins, a large tile is always a stored capture, and a stand-in never opens the wall", () => {
+    // Every third capture has its stored picture; the rest would be drawn stand-ins.
+    const many = Array.from({ length: 60 }, (_, k) => ({ id: 3000 + k, domain: sites[k % 3]!.domain, at: new Date(NOW - k * 864e5).toISOString(), quarter: "2026Q4", source: "live" as const, traits: ["combo:big_type"] }));
+    const crops = many.filter((_, k) => k % 3 === 0).map(c => crop(c.domain, "hero", c.at));
+    const m = galleryModel(input({ captures: many, crops }), NO_FILTER);
+    const withPic = m.tiles.findIndex(t => !t.crop);
+    expect(withPic).toBe(20);
+    expect(m.tiles.slice(0, 20).every(t => t.crop)).toBe(true);
+    expect(m.tiles.filter(t => t.size === "lg").every(t => t.crop)).toBe(true);
+    // Within each group the wall is still newest first.
+    const days = m.tiles.slice(0, 20).map(t => t.at);
+    expect([...days].sort().reverse()).toEqual(days);
+    // The first screen (first twelve tiles) holds no more than one stand-in in six.
+    expect(m.tiles.slice(0, 12).filter(t => !t.crop).length).toBeLessThanOrEqual(2);
   });
   it("no-JavaScript paged links carry the whole filter", () => {
     const many = Array.from({ length: 60 }, (_, k) => ({ id: 2000 + k, domain: "ramp.com", at: new Date(NOW - k * 864e5).toISOString(), quarter: "2026Q4", source: "live" as const, traits: ["combo:big_type"] }));

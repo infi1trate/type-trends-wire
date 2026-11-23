@@ -81,6 +81,13 @@ export function tileCrop(crops: CropRow[], domain: string, at: string, section: 
   return crops.filter(r => r.domain === domain && r.section === s && r.viewport === "desktop" && Math.abs(Date.parse(r.captured_at) - t) <= TILE_CROP_DAYS * 864e5)
     .sort((a, b) => Math.abs(Date.parse(a.captured_at) - t) - Math.abs(Date.parse(b.captured_at) - t))[0] ?? null;
 }
+/** `tileCrop` over crops indexed once by domain (a wall asks for every candidate's crop; same answer, without rescanning every row). */
+export function cropFinder(crops: CropRow[], section: CropSection | null): (domain: string, at: string) => CropRow | null {
+  const by = new Map<string, CropRow[]>();
+  for (const r of crops) { const l = by.get(r.domain); if (l) l.push(r); else by.set(r.domain, [r]); }
+  const memo = new Map<string, CropRow | null>();
+  return (domain, at) => { const k = `${domain} ${at}`; let v = memo.get(k); if (v === undefined) { v = tileCrop(by.get(domain) ?? [], domain, at, section); memo.set(k, v); } return v; };
+}
 /** A frame cut to a tile: the first TILE_FOLD page pixels and at most TILE_BOXES boxes (sections first, then the largest). */
 export function tileFrame(fr: Frame, max = TILE_BOXES, fold = TILE_FOLD): Frame {
   const h = Math.min(fr.h, fold), inFold = fr.boxes.filter(b => b[2] < h);
@@ -141,13 +148,23 @@ export function galleryModel(i: GalleryIn, raw: GalleryFilter) {
   };
   const hasSection = (c: Cand) => !f.section || !!tileCrop(i.crops, c.domain, c.at, f.section);
   const matched = pool.filter(c => inSector(c.domain) && (!period || c.quarter === period) && (!f.since || (c.quarter != null && qNum(c.quarter) >= qNum(f.since))) && shows(c) && hasSection(c));
-  const ordered = f.changed ? matched : [...matched].sort((a, b) => b.at.localeCompare(a.at) || a.domain.localeCompare(b.domain));
+  // S1 · stored captures (a tile with its crop) come before drawn stand-ins within the same sort, so a wall opens on pictures; the
+  // "changed" view keeps its before/after pairs in order.
+  const cropOf = cropFinder(i.crops, f.section);
+  const byDate = (a: Cand, b: Cand) => b.at.localeCompare(a.at) || a.domain.localeCompare(b.domain);
+  const ordered = f.changed ? matched : [...matched].sort((a, b) => Number(!cropOf(a.domain, a.at)) - Number(!cropOf(b.domain, b.at)) || byDate(a, b));
   const total = ordered.length, pages = Math.max(1, Math.ceil(total / GALLERY_PAGE)), page = Math.min(f.page, pages);
   const from = (page - 1) * GALLERY_PAGE;
+  // S1 · a large tile is always a stored capture: a large slot (every LARGE_EVERY-th) that falls on a stand-in passes to the next
+  // tile on the page that has its picture; stand-ins only ever take small tiles.
+  let owed = false;
   const tiles: Tile[] = ordered.slice(from, from + GALLERY_PAGE).map((c, k) => {
-    const s = site.get(c.domain)!, crop = tileCrop(i.crops, c.domain, c.at, f.section);
+    const s = site.get(c.domain)!, crop = cropOf(c.domain, c.at);
+    if ((from + k) % LARGE_EVERY === 0) owed = true;
+    const size: Tile["size"] = owed && crop ? "lg" : "sm";
+    if (size === "lg") owed = false;
     return { id: `${c.snapshot}`, snapshot: c.snapshot, domain: c.domain, name: s.name ?? c.domain, sector: s.sector, at: c.at, day: dayText(c.at), quarter: c.quarter, source: c.source,
-      label: tileLabel(c.domain, c.at, crop && f.section ? f.section : null), href: brandPath(c.domain), size: (from + k) % LARGE_EVERY === 0 ? "lg" : "sm", crop: crop ? toCrop(crop) : null, note: c.note };
+      label: tileLabel(c.domain, c.at, crop && f.section ? f.section : null), href: brandPath(c.domain), size, crop: crop ? toCrop(crop) : null, note: c.note };
   });
   const resolved: GalleryFilter = { ...f, page };
   const at = (p: number) => galleryQuery({ ...resolved, page: p });
