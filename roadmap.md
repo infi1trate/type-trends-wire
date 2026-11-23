@@ -246,8 +246,8 @@
 - [~] 7 (live re-measure waits on the owner's deploy) Old page stays on screen with progress line; Patterns first screen from stored copy, rest on scroll, cold <1 s; live re-measure after owner deploys
 
 # D1b · After the D1 deploy (owner, 23 Nov 07:09 UTC)
-- [ ] 1 Stored-pages sweep: name + fix the 2 errors; why 6 pages take 23 s; overdue + cheapest first; enough of the pass; ages per kind before/after; written vs re-timed; split a kind that can't fit
-- [ ] 2 Health: "starting" (not "down") on a cold server, within 2 s, reads DB lines first if it can; one-sentence "down" rule; sweep's last result on the database lines
-- [ ] 3 Live measurements (b53ffa2): crawler post time, WAL/h + disk reads/h first hour, click-to-heading cold/warm
-- [ ] 4a Today: server-chosen top-up (≤5 stories) so left column ends within 160 px of rail at 1024/1280/1440, no jump
-- [ ] 4b Brand page: reserve Sections strip's real height from known crop count/sizes; shift after
+- [x] 1 (live catch-up awaits deploy) Stored-pages sweep: name + fix the 2 errors; why 6 pages take 23 s; overdue + cheapest first; enough of the pass; ages per kind before/after; written vs re-timed; split a kind that can't fit
+- [x] 2 Health: "starting" (not "down") on a cold server, within 2 s, reads DB lines first if it can; one-sentence "down" rule; sweep's last result on the database lines
+- [x] 3 Live measurements (b53ffa2): crawler post time, WAL/h + disk reads/h first hour, click-to-heading cold/warm
+- [x] 4a Today: server-chosen top-up (≤5 stories) so left column ends within 160 px of rail at 1024/1280/1440, no jump
+- [x] 4b Brand page: reserve Sections strip's real height from known crop count/sizes; shift after

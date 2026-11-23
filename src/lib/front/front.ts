@@ -16,6 +16,7 @@ import { isoWeek, longDate } from "../digest/week";
 import { NO_COMPARISON_TEXT } from "../run-gap";
 import { storyFormat, shows, surfaceShows, type Format, type FormatFilter } from "./formats";
 import { chartOfDay, type ChartInput } from "./chart-day";
+import { topUpCount } from "./top-up";
 
 const MIN = 6e4, HOUR = 36e5, DAY = 864e5;
 
@@ -289,6 +290,8 @@ export function frontModel(i: FrontInput) {
   const items = inFormat.filter(s => !above.has(s.id) && groupOf(s.happened_at, i.now) !== null).slice(0, COLUMN_MAX).map(x => frontWith(x, i.icons));
   const quiet = state === "quiet";
   const archive = quiet && shows(i.format, "live") ? archiveFill(ranked, i.archiveMoves, i.now) : [];
+  // Stories from before this week, newest first: the left column's top-up (chosen below, once the rail's parts are known).
+  const before = i.format === "all" ? inFormat.filter(s => !above.has(s.id) && groupOf(s.happened_at, i.now) === null) : [];
   const dayStart = Date.parse(`${utcDay(i.now)}T00:00:00Z`);
   const chart = surfaceShows(i.format, "chart-of-the-day") ? chartOfDay({ ...i.chart, day: utcDay(i.now), stories: ranked.filter(s => Date.parse(s.happened_at) < dayStart && Date.parse(s.happened_at) >= dayStart - COLUMN_DAYS * DAY).map(s => ({ type: s.type })) }) : null;
   const launches = surfaceShows(i.format, "new-on-the-scene") ? stream.filter(s => s.type === "launch").slice(0, 6).map(x => frontWith(x, i.icons)) : [];
@@ -300,15 +303,21 @@ export function frontModel(i: FrontInput) {
   const strip = surfaceShows(i.format, "your-sector") ? sectorStrip(i.sector, i.lens, stream) : null;
   const dataStories = surfaceShows(i.format, "data-stories") ? (i.dataStories ?? []).slice(0, 3) : [];
   const collections = shows(i.format, "explore") ? (i.collections ?? []) : [];
+  // D1b · the top-up: how many of `before` the left column shows (top-up.ts), from what each column holds; the editions are assumed.
+  const groups = groupColumn(items, i.now, { sector: i.sector, quiet });
+  const more = before.slice(0, topUpCount({ storyRows: items.length + archive.length, groups: groups.length + (archive.length ? 1 : 0), studies: dataStories.length,
+    chart: !!chart, strip: !!strip, explore: shows(i.format, "explore") ? exploreAside.length : 0, collections: collections.length, available: before.length })).map(x => frontWith(x, i.icons));
   return {
     now: new Date(i.now).toISOString(), today: utcDay(i.now), sector: i.sector, format: i.format, state,
     ticker: tickerOf(i.signals), freshness: i.freshness,
     lead, also,
     moving: movingShown ? { items: i.moving.items, line: movingLine(i.moving), comparison: i.moving.pair ? `Between forecast run ${i.moving.pair.earlier.id} and run ${i.moving.pair.latest.id}, ${i.moving.pair.days} days apart, across all sectors.` : null } : null,
-    column: { items, quiet, groups: groupColumn(items, i.now, { sector: i.sector, quiet }) },
+    column: { items, quiet, groups },
+    /** D1b · stories from before this week under the column (≤ 5, from 1024 px only), so the two columns end together. */
+    more,
     archive, chart, launches, strip, editions, explore, exploreAside, dataStories, collections, footer: FRONT_FOOTER,
     /** Which sections render. Absent sections are left out of the page, never shown empty. */
-    sections: { lead: !!lead, also: also.length > 0, moving: movingShown, chart: !!chart, launches: launches.length > 0, strip: !!strip, editions: editions.length > 0, explore: explore.length > 0, exploreAside: exploreAside.length > 0, archive: archive.length > 0, dataStories: dataStories.length > 0, collections: collections.length > 0 },
+    sections: { more: more.length > 0, lead: !!lead, also: also.length > 0, moving: movingShown, chart: !!chart, launches: launches.length > 0, strip: !!strip, editions: editions.length > 0, explore: explore.length > 0, exploreAside: exploreAside.length > 0, archive: archive.length > 0, dataStories: dataStories.length > 0, collections: collections.length > 0 },
   };
 }
 export type FrontModel = ReturnType<typeof frontModel>;

@@ -70,7 +70,8 @@ function FaceValue({ f }: { f: Face | null }) {
 
 /** The card as drawn: I1 adds the brand's own icon and cover (absent on older callers, which draw as before). W3b · `art` is drawn only
  *  in the Data view (dataview/Views.tsx); the Read view never draws a museum line. */
-type CardIn = BrandCard & { icon?: Pic | null; cover?: Cover | null; art?: ArtNear | null };
+type CardIn = BrandCard & { icon?: Pic | null; cover?: Cover | null; art?: ArtNear | null; tiles?: BrandPage["sections"] | null };
+const NO_HISTORY = {} as BrandPage["history"];
 function IdentityCard({ b }: { b: CardIn }) {
   const i = b.identity;
   return <Card as="section" aria-labelledby="ed-brand-title" className="p-5 md:p-8" data-identity-card="">
@@ -201,7 +202,9 @@ export function BrandPageView({ card, section = null, bare = false }: { card: Ca
   return <BrandBody b={card} bare={bare} parts={{
     surfaces: <Later id="ed-surfaces" shapes={[]}><SurfacesPart domain={card.domain} /></Later>,
     moves: <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }, { kind: "picture", ratio: 2 * 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={card} /></Later>,
-    sections: <Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }, { kind: "text", lines: 1 }]}><SectionsPart b={card} open={open} /></Later>,
+    // D1b · the strip from the card's own latest crops when they came with it (no late arrival); the section history still arrives late.
+    sections: <Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }, { kind: "text", lines: 1 }]}
+      fallback={card.tiles?.length ? <Sections b={{ domain: card.domain, sections: card.tiles, history: NO_HISTORY }} open={null} /> : undefined}><SectionsPart b={card} open={open} /></Later>,
     sector: <Later shapes={[{ kind: "picture", ratio: 4 / 3, maxWidth: 768 }, { kind: "rows", n: 4, height: ROW.compact }]}><SectorPart b={card} /></Later>,
     similarLine: null,
     similar: <Later shapes={[{ kind: "text", lines: 1 }, { kind: "rows", n: 4, height: ROW.ledger }]}><SimilarPart b={card} /></Later>,

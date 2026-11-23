@@ -97,11 +97,13 @@ function Ready({ children, id, className }: { children: ReactNode; id?: string |
  * above the placeholders only (a page's title block, when the whole page body is the deferred part and draws its own). */
 /** P2 · `reserve` is a minimum height for the placeholder only (for example "100dvh" when the whole page body streams in): the slot
  *  then already reaches past the bottom of the screen, so the footer is never on screen to be pushed down when the content lands. */
-export function Later({ children, shapes, className, id, before, reserve, placeholderClassName }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode; reserve?: string; placeholderClassName?: string }) {
+/** D1b · `fallback` replaces the placeholders with content the page already has (the brand page's sections strip from the card), so the
+ *  slot is its final size from the first byte. */
+export function Later({ children, shapes, className, id, before, reserve, placeholderClassName, fallback }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode; reserve?: string; placeholderClassName?: string; fallback?: ReactNode }) {
   const g = useContext(FailCtx), qc = useContext(QueryClientContext);
   const [order] = useState(() => g?.order() ?? null);
   return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={() => { dropFailed(qc); reset(); }} failed={retry => <div data-later="" id={id} className={className}>{before}<div className={before ? "ed-wrap mt-8" : undefined}><Failed retry={retry} order={order} /></div></div>}>
-    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true" data-later-reserve={reserve ? "" : undefined} style={reserve ? { minHeight: reserve } : undefined}>{before}<Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} /></div>}>
+    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true" data-later-reserve={reserve ? "" : undefined} style={reserve ? { minHeight: reserve } : undefined}>{before}{fallback ?? <Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} />}</div>}>
       <Ready id={id} className={className}>{children}</Ready>
     </Suspense>
   </Catch>}</QueryErrorResetBoundary>;

@@ -215,6 +215,14 @@ function FrontArchive({ r }: { r: Pick<FrontRest, "archive" | "sections"> }) {
     <Ledger className="mt-2" rows={r.archive.map(a => ({ key: a.id, href: a.href, number: a.number != null ? String(a.number) : "·", title: a.headline, line: a.line, tags: [a.match], time: <time dateTime={a.at}>{a.date}</time> }))} />
   </section>;
 }
+/** D1b · the left column's top-up: the newest stories from before this week (how many is chosen on the server so both columns end
+ *  together, front/top-up.ts), as one more day group. Only where there are two columns (1024 px and wider); a CSS rule, so no shift. */
+function BeforeThisWeek({ items, now }: { items: FrontStory[]; now: number }) {
+  return <section aria-labelledby="fg-before" className="mt-6 hidden lg:block" data-front-more="">
+    <h3 id="fg-before" className="ed-kicker">Before this week <span className="ed-muted">· {items.length}</span></h3>
+    <ul className="ledger mt-2" data-ledger="">{items.map(s => <LiveItem key={s.id} s={s} now={now} digits={ledgerDigits(items.map(x => x.number))} />)}</ul>
+  </section>;
+}
 // S1 · the rail in two parts: Chart of the day on top, then the rest (launches, your sector, explore, collections). Below 1024 px the
 // page is one column and Moving now, Studies and Editions sit between the two parts.
 function FrontAside({ r }: { r: FrontRest }) {
@@ -354,6 +362,7 @@ function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
                 heading={{ id: "front-live", title: EARLIER_TITLE, note: m.state === "quiet" ? <p className="ed-caption mt-1" role="note">Quiet: no new story in the last 24 hours. Below is the rest of this week{m.sections.archive ? ", then the same week from the archive" : ""}, each with the date it happened.</p> : null }} />}
           {m.format === "explore" && !m.sections.explore && <p className="ed-small mt-3">{voiced("read.frontView.4")}</p>}
           {slots.archive}
+          {m.format === "all" && m.more.length > 0 && <BeforeThisWeek items={m.more} now={now} />}
           <p className="ed-data mt-6"><Link to="/morning" className="ed-tap">Older stories, day by day, in the Morning Line →</Link></p>
         </section>
         {slots.lower && <div className="order-4">{slots.lower}</div>}

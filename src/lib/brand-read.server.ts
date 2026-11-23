@@ -62,15 +62,24 @@ const brandSector = storedBy((d: string) => brandKey("brand-sector", d), compute
 const brandCard = storedBy((d: string) => brandKey("brand-card", d), computeBrandCard, 60_000);
 
 /** The card as the page draws it: the stored card plus the brand's own icon and its cover (I1), read fresh beside the record. */
-export type BrandCardView = BrandCard & { icon: Pic | null; cover: Cover | null; art?: import("./art/read.server").ArtNear | null };
+export type BrandCardView = BrandCard & { icon: Pic | null; cover: Cover | null; art?: import("./art/read.server").ArtNear | null; tiles?: BrandPage["sections"] | null };
+/** D1b · the sections strip's latest crops, read beside the card and given up after this long, so the strip is drawn in the first response
+ *  (a late strip moved the page by 0.062 at 1440 px) without holding the first bytes back; a miss draws the old placeholder. */
+export const CARD_TILES_WAIT_MS = 300;
+function tilesWithin(domain: string, ms = CARD_TILES_WAIT_MS): Promise<BrandPage["sections"] | null> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  const read = import("./read.server").then(m => m.cropsFor([domain])).then(rows => brandSections(rows, domain).sections);
+  return Promise.race([read, new Promise<null>(r => { t = setTimeout(() => r(null), ms); })]).catch(() => null).finally(() => clearTimeout(t));
+}
 /** Critical: the card, or null when the domain is not an active library brand (the route answers 404). Existence is read fresh. */
 export async function loadBrandCard(domain: string): Promise<BrandCardView | null> {
   // W3a · the nearest museum work is read beside the record (never stored in it); nothing until the works clear the line, and a failed
   // read draws no line.
+  const tiles = tilesWithin(domain);
   const [site, pics, art] = await Promise.all([siteOf(domain), picsFor(domain), (MUSEUM_SHOWN ? import("./art/read.server").then(m => m.brandArt(domain)).catch(() => null) : Promise.resolve(null))]);
   if (!site?.active) return null;
-  const card = await brandCard(domain);
-  return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics), ...(art ? { art } : {}) } : null;
+  const [card, strip] = await Promise.all([brandCard(domain), tiles]);
+  return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics), tiles: strip, ...(art ? { art } : {}) } : null;
 }
 /** Deferred: every move with its before/after. */
 export async function loadBrandMoves(domain: string): Promise<{ timeline: BrandPage["timeline"] }> {
