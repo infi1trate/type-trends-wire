@@ -12,6 +12,7 @@
 //   5. The accent's family is its hue as the study strips name it (colour-family.ts), one of the eight HUE_FAMILIES.
 import { familyOf } from "../colour-family";
 import { chroma, oklab, type Lab, type Swatch } from "./palette";
+import { MUSEUM_NAME, workCredit, type ArtSource } from "./contract";
 
 /** OKLCH chroma from which an accent reads as a vivid hue on screen (a teal button, a bright orange), not a muted or greyed tint. */
 export const ACCENT_MIN_CHROMA = 0.1;
@@ -138,4 +139,27 @@ export function accentFigures(brands: readonly BrandIn[], works: readonly (WorkI
 /** The study's check: the headline's numbers and named families are exactly the stored ones (recomputed, never trusted). */
 export function headlineHolds(headline: string, f: Pick<AccentFigures, "works" | "families">): boolean {
   return headline === accentHeadline(f.families, f.works);
+}
+
+// W3c Part 3 · the brand line (Data view only): the accent swatch, "This {family} is in" the work's title (the only link), artist and date,
+// the thumbnail inside LINE_THUMB, and the share the colour holds. Full credit on hover and for screen readers.
+/** The thumbnail is drawn inside this square at most. */
+export const LINE_THUMB = 64;
+/** A title longer than this is cut with an ellipsis on the line (the full credit is the link's tooltip), so it stays within two lines at 390 px. */
+export const LINE_TITLE_MAX = 36;
+export type LineWork = WorkIn & { title: string; artist: string | null; date_display: string; link: string; thumb: string | null; width: number; height: number };
+export type AccentNear = { accent: string; family: HueFamily; workHex: string; share: number; distance: number; title: string; artistDate: string; credit: string; museum: string; href: string; thumb: string | null; width: number; height: number; work: string };
+export function accentNear(a: Accent, h: Hold<LineWork>): AccentNear {
+  const w = h.work, k = Math.min(1, LINE_THUMB / Math.max(1, w.width), LINE_THUMB / Math.max(1, w.height)), src = w.source as ArtSource;
+  return { accent: a.hex, family: a.family, workHex: h.colour.hex, share: h.colour.share, distance: h.distance,
+    title: w.title.length > LINE_TITLE_MAX ? `${w.title.slice(0, LINE_TITLE_MAX - 1).trimEnd()}…` : w.title,
+    artistDate: [w.artist, w.date_display].filter(x => x && String(x).trim()).join(", "), credit: workCredit({ artist: w.artist, title: w.title, date_display: w.date_display, source: src }),
+    museum: MUSEUM_NAME[src] ?? w.source, href: w.link, thumb: w.thumb ? `/crops/${w.thumb}` : null, width: Math.max(1, Math.round(w.width * k)), height: Math.max(1, Math.round(w.height * k)), work: workKey(w) };
+}
+/** The line for one brand: null with no vivid accent, no stored work, or no work holding it (no line at all, never an empty one). */
+export function brandAccentLine(accent: string | null | undefined, works: readonly LineWork[], limit = HELD_DISTANCE): AccentNear | null {
+  const v = vividAccent(accent);
+  if (!v.ok) return null;
+  const h = holdOf(v.accent, works.filter(w => !w.removed_at), limit);
+  return h.held && h.nearest ? accentNear(v.accent, h.nearest) : null;
 }

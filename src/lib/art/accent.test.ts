@@ -94,3 +94,23 @@ it("the credit reads Artist. Title, Date. Museum.", () => {
   expect(workCredit({ artist: "Edgar Degas", title: "The Millinery Shop", date_display: "1879–86", source: "aic" })).toBe("Edgar Degas. The Millinery Shop, 1879–86. The Art Institute of Chicago.");
   expect(workCredit({ artist: null, title: "Landscape", date_display: "", source: "met" })).toBe("Landscape. The Metropolitan Museum of Art.");
 });
+
+describe("the brand line (W3c Part 3)", () => {
+  const lw = (id: string, palette: { hex: string; share: number }[], o: Partial<import("./accent").LineWork> = {}): import("./accent").LineWork =>
+    ({ source: "aic", source_id: id, palette, title: `Work ${id}`, artist: "Edgar Degas", date_display: "1879–86", link: `https://www.artic.edu/artworks/${id}`, thumb: `art/${id}.webp`, width: 240, height: 180, ...o });
+  it("no line with no vivid accent, or no work holding it", async () => {
+    const { brandAccentLine } = await import("./accent");
+    const works = [lw("1", [{ hex: "#FF7A00", share: 0.2 }])];
+    expect(brandAccentLine(null, works)).toBeNull();
+    expect(brandAccentLine("#777777", works)).toBeNull();
+    expect(brandAccentLine("#10B070", works)).toBeNull();
+    expect(brandAccentLine("#FF7A00", [lw("2", [{ hex: "#FF7A00", share: 0.2 }], { removed_at: "2026-11-20T00:00:00Z" })])).toBeNull();
+  });
+  it("the nearest work, ties to the larger share; credited, linked, thumbnail inside 64 px, long titles cut", async () => {
+    const { brandAccentLine } = await import("./accent");
+    const l = brandAccentLine("#FF7A00", [lw("small", [{ hex: "#FF7A00", share: 0.05 }]), lw("big", [{ hex: "#FF7A00", share: 0.19 }], { title: "The Millinery Shop, with a very long descriptive title" }), lw("near", [{ hex: "#F87A08", share: 0.5 }])])!;
+    expect(l).toMatchObject({ accent: "#FF7A00", family: "orange", workHex: "#FF7A00", share: 0.19, distance: 0, width: 64, height: 48, href: "https://www.artic.edu/artworks/big", thumb: "/crops/art/big.webp", artistDate: "Edgar Degas, 1879–86" });
+    expect(l.title).toBe("The Millinery Shop, with a very lon…");
+    expect(l.credit).toBe("Edgar Degas. The Millinery Shop, with a very long descriptive title, 1879–86. The Art Institute of Chicago.");
+  });
+});

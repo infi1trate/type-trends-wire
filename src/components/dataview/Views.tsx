@@ -27,6 +27,7 @@ import { show } from "@/lib/library";
 import { assetVerdictText } from "@/lib/surfaces";
 import type { Edition } from "@/lib/digest/edition";
 import type { ArtNear } from "@/lib/art/read.server";
+import type { AccentNear } from "@/lib/art/accent";
 
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "–");
 const rowsShape = (n = 6) => [{ kind: "rows" as const, n, height: ROW.compact }];
@@ -87,6 +88,16 @@ export function MuseumLine({ a }: { a: ArtNear }) {
     <span className="line-clamp-2 min-w-0 text-compare-muted"><a href={a.href} target="_blank" rel="noopener" title={a.line} className="text-ink underline underline-offset-2">{a.title}</a> · {a.short}{a.credit ? ` · ${a.credit}` : ""} · distance {a.distance.toFixed(3)}</span>
   </p>;
 }
+/** W3c · the brand's accent held by a stored work, as one line (two at most at 390 px): the accent swatch, the thumbnail inside 64 px,
+ *  "This {family} is in" the title (the only link, the full credit its tooltip and read to screen readers), artist and date (from 640 px),
+ *  and the share the colour holds of the picture. */
+export function AccentLine({ a }: { a: AccentNear }) {
+  return <p className="flex items-center gap-3 p-3" data-accent-art="">
+    <span className="block h-4 w-4 shrink-0 border" style={{ background: a.accent }} title={`Accent ${a.accent}`} aria-hidden="true" />
+    {a.thumb && <img src={a.thumb} width={a.width} height={a.height} loading="lazy" decoding="async" alt="" className="block shrink-0 border" style={{ width: a.width, height: a.height }} />}
+    <span className="line-clamp-2 min-w-0 text-compare-muted">This {a.family} is in <a href={a.href} target="_blank" rel="noopener" title={a.credit} className="text-ink underline underline-offset-2">{a.title}<span className="sr-only"> ({a.credit})</span></a>{a.artistDate ? <span className="hidden sm:inline"> · {a.artistDate}</span> : null} · holds {Math.round(a.share * 100)}% of the picture</span>
+  </p>;
+}
 export function BrandData({ domain }: { domain: string }) {
   return <Later id="brand-data-later" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
 }
@@ -94,11 +105,13 @@ function BrandDataBody({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(librarySiteQuery(domain)), { data: s } = useSuspenseQuery(brandSurfacesQuery(domain)), { data: card } = useSuspenseQuery(brandCardQuery(domain));
   if (!data) return <DataNote>Not in the library: only tracked brands have a record.</DataNote>;
   // W3b · nothing of the museum while MUSEUM_SHOWN is false.
-  const art = MUSEUM_SHOWN ? card?.art ?? null : null;
+  const art = MUSEUM_SHOWN ? card?.art ?? null : null, accentArt = MUSEUM_SHOWN ? card?.accentArt ?? null : null;
   return <>
     <LibrarySite domain={domain} embedded />
     {/* W3b · the nearest museum work as one line (at most two at 390 px), a thumbnail inside 64 px, only the title linked. Off while MUSEUM_SHOWN is false. */}
     {art && <Band title="NEAREST MUSEUM WORK"><MuseumLine a={art} /></Band>}
+    {/* W3c · the stored work that holds this brand's accent, one line, sent with the card (never late). Off while MUSEUM_SHOWN is false. */}
+    {accentArt && <Band title="ACCENT IN THE MUSEUM"><AccentLine a={accentArt} /></Band>}
     {/* W1b · every surface side by side with the homepage, then every stored icon and card version with its verdict. */}
     {s.rows.length > 0 && <Band title="SURFACES">
       <DataTable caption="Latest live desktop capture of each page, measured fields side by side" head={["Surface", ...s.fieldNames, "Captured", "Address", "Matches home"]}

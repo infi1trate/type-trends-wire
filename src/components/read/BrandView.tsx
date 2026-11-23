@@ -70,7 +70,7 @@ function FaceValue({ f }: { f: Face | null }) {
 
 /** The card as drawn: I1 adds the brand's own icon and cover (absent on older callers, which draw as before). W3b · `art` is drawn only
  *  in the Data view (dataview/Views.tsx); the Read view never draws a museum line. */
-type CardIn = BrandCard & { icon?: Pic | null; cover?: Cover | null; art?: ArtNear | null; tiles?: BrandPage["sections"] | null };
+type CardIn = BrandCard & { icon?: Pic | null; cover?: Cover | null; art?: ArtNear | null; accentArt?: import("@/lib/art/accent").AccentNear | null; tiles?: BrandPage["sections"] | null };
 const NO_HISTORY = {} as BrandPage["history"];
 function IdentityCard({ b }: { b: CardIn }) {
   const i = b.identity;

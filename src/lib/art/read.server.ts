@@ -5,6 +5,7 @@ import { supabaseAnon } from "../mcp/supabase";
 import { memo, memoBy } from "../memo";
 import { MUSEUM_NAME, nearestLine, type ArtSource } from "./contract";
 import { groups, nearestFor, readyToShow, type Group, type Hero, type Swatch, type Work } from "./palette";
+import { STUDY_MIN_WORKS, brandAccentLine, type AccentNear } from "./accent";
 
 export type StoredArt = Work & { link: string; thumb: string | null; width: number; height: number; credit_line: string; /** W3c · painting, print, drawing… (the method note counts them). */ kind: string };
 const TTL = 10 * 60_000;
@@ -62,6 +63,19 @@ export function nearView(w: StoredArt, distance: number, group: { g: Group; dist
   const k = Math.min(1, THUMB_MAX / w.width, THUMB_MAX / w.height), width = Math.max(1, Math.round(w.width * k)), height = Math.max(1, Math.round(w.height * k));
   return { title: w.title.length > TITLE_MAX ? `${w.title.slice(0, TITLE_MAX - 1).trimEnd()}…` : w.title, short: MUSEUM_SHORT[w.source as ArtSource], credit: [w.artist, w.date_display].filter(x => x && String(x).trim()).join(", "), line: nearestLine({ artist: w.artist, title: w.title, date_display: w.date_display, source: w.source as ArtSource }), museum: MUSEUM_NAME[w.source as ArtSource], href: w.link,
     thumb: w.thumb ? `/crops/${w.thumb}` : null, width, height, distance: Math.round(distance * 1e4) / 1e4, work: `${w.source}:${w.source_id}`, group: group?.g.name ?? null, groupDistance: group ? Math.round(group.distance * 1e4) / 1e4 : null };
+}
+/** W3c · a brand's newest measured accent (the Data view's ACCENT: newest live desktop home capture). */
+export const brandAccent = memoBy(TTL, async (domain: string): Promise<string | null> => {
+  const r = await supabaseAnon().from("library_snapshots").select("accent:signals->color->>accent").eq("domain", domain).eq("source", "live").eq("page_type", "home").eq("viewport", "desktop").order("captured_at", { ascending: false }).limit(1);
+  if (r.error) throw r.error;
+  const a = (r.data?.[0] as { accent?: unknown } | undefined)?.accent;
+  return typeof a === "string" && a ? a : null;
+}, { key: d => d, max: 400 });
+/** W3c · the brand line: the nearest stored work that holds the brand's vivid accent, or nothing. Absent until STUDY_MIN_WORKS are stored. */
+export async function brandAccentArt(domain: string): Promise<AccentNear | null> {
+  const art = await storedArt();
+  if (art.works.length < STUDY_MIN_WORKS) return null;
+  return brandAccentLine(await brandAccent(domain), art.works);
 }
 export async function brandArt(domain: string): Promise<ArtNear | null> {
   const art = await storedArt();
