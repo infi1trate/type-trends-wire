@@ -26,7 +26,7 @@ import { label } from "@/lib/labels";
 import { show } from "@/lib/library";
 import { assetVerdictText } from "@/lib/surfaces";
 import type { Edition } from "@/lib/digest/edition";
-import { MUSEUM_STUDY_SLUG } from "@/lib/data-stories/registry";
+import type { ArtNear } from "@/lib/art/read.server";
 
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "–");
 const rowsShape = (n = 6) => [{ kind: "rows" as const, n, height: ROW.compact }];
@@ -79,6 +79,14 @@ function StoryDataBody({ id }: { id: string }) {
 }
 
 // BRAND --------------------------------------------------------------------------------------------------------------------------
+/** W3b · one line under the band's own title: thumbnail (inside 64 px), the work's title (the only link, to the museum's page; the full
+ *  credit is its tooltip), the museum, artist and date, and the measured distance. Clamped to two lines so it never turns into a block. */
+export function MuseumLine({ a }: { a: ArtNear }) {
+  return <p className="flex items-center gap-3 p-3" data-nearest-art="">
+    {a.thumb && <img src={a.thumb} width={a.width} height={a.height} loading="lazy" decoding="async" alt="" className="block shrink-0 border" style={{ width: a.width, height: a.height }} />}
+    <span className="line-clamp-2 min-w-0 text-compare-muted"><a href={a.href} target="_blank" rel="noopener" title={a.line} className="text-ink underline underline-offset-2">{a.title}</a> · {a.short}{a.credit ? ` · ${a.credit}` : ""} · distance {a.distance.toFixed(3)}</span>
+  </p>;
+}
 export function BrandData({ domain }: { domain: string }) {
   return <Later id="brand-data-later" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
 }
@@ -89,11 +97,8 @@ function BrandDataBody({ domain }: { domain: string }) {
   const art = MUSEUM_SHOWN ? card?.art ?? null : null;
   return <>
     <LibrarySite domain={domain} embedded />
-    {/* W3a · the nearest museum work's measured distance and the method, only when the brand page shows the line. */}
-    {art && <Band title="NEAREST MUSEUM WORK">
-      <DataTable caption="Nearest public-domain work by palette (OKLab, neutrals set aside, share-weighted; 0 is identical)" head={["Work", "Distance", "Nearest group", "Group distance", "Method"]}
-        rows={[[<a key="w" href={art.href} target="_blank" rel="noopener" className="text-ink underline underline-offset-2">{art.work}</a>, art.distance.toFixed(4), art.group ?? "–", art.groupDistance != null ? art.groupDistance.toFixed(4) : "–", <Lnk key="m" href={`/data/${MUSEUM_STUDY_SLUG}`}>METHOD →</Lnk>]]} />
-    </Band>}
+    {/* W3b · the nearest museum work as one line (at most two at 390 px), a thumbnail inside 64 px, only the title linked. Off while MUSEUM_SHOWN is false. */}
+    {art && <Band title="NEAREST MUSEUM WORK"><MuseumLine a={art} /></Band>}
     {/* W1b · every surface side by side with the homepage, then every stored icon and card version with its verdict. */}
     {s.rows.length > 0 && <Band title="SURFACES">
       <DataTable caption="Latest live desktop capture of each page, measured fields side by side" head={["Surface", ...s.fieldNames, "Captured", "Address", "Matches home"]}

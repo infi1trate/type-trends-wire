@@ -63,12 +63,13 @@ export const DATA_STORIES: readonly Entry[] = [
     deck: "Measured homepage changes and confirmed rebrands, sector by sector, per compared capture; then the most changeable brand, before and after.",
     templates: ["multiples", "before-after"], params: { sectors: null, period: "2020 to now" },
     collection: { label: "Rebrands", href: "/terminal?panel=rebrands" }, status: "live", reason: null, check: "sector-minds", recorded: { sectors: 10 } },
-  // W3a · hidden until 200 stored public-domain works fall into 8 groups of 15. `recorded` is the owner's 22 Nov dry run (297 works,
-  // 9 groups), never stored: with no works in the table the check fails at read time and the study does not exist for readers.
+  // W3a · hidden until 200 stored public-domain works fall into 8 groups of 15. W3b · and until 5 sectors name a group under the
+  // comparable-palette rules; withheld by the editor while MUSEUM_SHOWN is false. `recorded` is the stored works on 22 Nov 2026 (595 works,
+  // 26 groups, 0 sectors naming a group): the check fails, so a hidden study's status is decided at read time, never by these figures.
   { slug: MUSEUM_STUDY_SLUG, number: 6, series: "sector-v-sector", question: "Which museum palettes are sector homepages nearest to?",
     deck: "Each sector's homepage colours beside the group of public-domain paintings, prints and textiles most of its homepages are nearest to, by measured distance.",
     templates: ["drift"], params: { sectors: null, period: "Newest capture" },
-    collection: { label: "All brands", href: "/brands" }, status: "live", reason: null, check: "museum", recorded: { works: 297, groups: 9 }, hidden: true },
+    collection: { label: "All brands", href: "/brands" }, status: "live", reason: null, check: "museum", recorded: { works: 595, groups: 26, sectors: 0 }, hidden: true },
 ];
 /** E4 · "Where does your brand sit?" (/data/where-you-sit) is a tool, not a study: no number (its old 5 is retired), no series. */
 export const WHERE_YOU_SIT = { slug: "where-you-sit", kind: "tool" as const, question: "Where does your brand sit?", deck: "Pick a tracked brand: where it sits in its sector, its homepage through time, and the signals that set it apart.", templates: ["field", "strip"] as TemplateId[] } as const;

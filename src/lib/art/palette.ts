@@ -8,6 +8,12 @@
 //   3. What is left is re-weighted to sum to 1; fewer than MIN_COLOURS colours, or under MIN_COLOUR_SHARE of colour in all, is "mostly neutral".
 //   4. Distance is the cost of moving one weighted palette onto the other (greedy transport, nearest pairs first; symmetric, 0 = identical).
 //   5. A group's palette pools its works (each work weighs the same) and merges the nearest colours down to GROUP_COLOURS.
+// W3b · a match has to mean something:
+//   6. A work, a group or a brand is comparable only when its colours are varied (VARIED_*): paper and varnish are not a palette.
+//      "One colour" is a colour family as the study strips draw it (colour-family.ts), so a beige split into three shades is one beige.
+//   7. A brand whose first screen is mostly a video or a photograph (MEDIA_*) gets no match: those are the picture's colours, not the
+//      brand's, and the stored fallback (accent and page background, no button colour) is at most two colours, which rule 6 refuses.
+//   8. A group pools only its comparable works and needs GROUP_MIN_WORKS of them; a sector names a group only past SECTOR_MIN_*.
 
 /** Specks under 1% of the picture are edge and anti-aliasing noise, not a colour anyone sees. */
 export const MIN_SHARE = 0.01;
@@ -33,6 +39,23 @@ export const SHOW_MIN_WORKS = 200;
 export const SHOW_MIN_GROUPS = 8;
 /** If more than this share of matched brands land on one work, the method is clumping, not matching. */
 export const CLUMP_SHARE = 0.2;
+
+import { familyOf } from "../colour-family";
+
+/** W3b · a palette is varied only when, neutrals set aside, no one colour family holds more than this share ... */
+export const VARIED_MAX_SHARE = 0.6;
+/** ... and at least this many colour families hold VARIED_COLOUR_SHARE or more each. */
+export const VARIED_MIN_COLOURS = 3;
+export const VARIED_COLOUR_SHARE = 0.05;
+/** W3b · a hero measured as one of these that covers more than MEDIA_COVERAGE of the first screen is a picture's colours, not the brand's. */
+export const MEDIA_HEROES: readonly string[] = ["video", "image"];
+export const MEDIA_COVERAGE = 0.5;
+/** W3b · a sector names its nearest group only when at least this share of its compared homepages are nearest to it ... */
+export const SECTOR_MIN_SHARE = 1 / 3;
+/** ... and they are at least this many homepages. */
+export const SECTOR_MIN_HOMEPAGES = 8;
+/** W3b · the study makes a claim about sectors only when at least this many sectors name a group; otherwise it is not built. */
+export const STUDY_MIN_SECTORS = 5;
 
 export type Swatch = { hex: string; share: number };
 export type Lab = { L: number; a: number; b: number };
@@ -79,10 +102,40 @@ export function distance(p: readonly Colour[], q: readonly Colour[]): number {
   return Math.round(cost * 1e6) / 1e6;
 }
 
+/** W3b · a palette's colour families (as the strips draw them) with their shares, largest first. */
+export function familyShares(cs: readonly Pick<Colour, "hex" | "w">[]): { id: string; w: number }[] {
+  const by = new Map<string, number>();
+  for (const c of cs) { const id = familyOf(c.hex).id; by.set(id, (by.get(id) ?? 0) + c.w); }
+  return [...by].map(([id, w]) => ({ id, w })).sort((a, b) => b.w - a.w || a.id.localeCompare(b.id));
+}
+/** W3b · varied: no family over VARIED_MAX_SHARE and at least VARIED_MIN_COLOURS families of VARIED_COLOUR_SHARE or more. */
+export function varied(cs: readonly Pick<Colour, "hex" | "w">[]): boolean {
+  const f = familyShares(cs);
+  return f.length > 0 && f[0]!.w <= VARIED_MAX_SHARE + 1e-9 && f.filter(x => x.w >= VARIED_COLOUR_SHARE - 1e-9).length >= VARIED_MIN_COLOURS;
+}
+/** What the first screen's hero was measured as, and how much of the first screen media covers (stored with each capture). */
+export type Hero = { media: string | null; coverage: number | null };
+export const mediaLed = (h: Hero | null | undefined) => !!h && !!h.media && MEDIA_HEROES.includes(h.media) && (h.coverage ?? 0) > MEDIA_COVERAGE;
+export type NoMatch = "mostly neutral" | "not varied" | "photo or video";
+export type Comparable = { ok: true; colours: Colour[]; colourShare: number } | { ok: false; reason: NoMatch; colourShare: number };
+/** W3b · the colours a palette is compared on, or why it is not compared (a hero that is mostly video or a photograph, mostly neutral, not varied). */
+export function comparable(palette: readonly Swatch[], hero?: Hero | null, o: { keepNeutrals?: boolean } = {}): Comparable {
+  const c = chromatic(palette, o);
+  if (mediaLed(hero)) return { ok: false, reason: "photo or video", colourShare: c.colourShare };
+  if (!c.ok) return { ok: false, reason: "mostly neutral", colourShare: c.colourShare };
+  if (!varied(c.colours)) return { ok: false, reason: "not varied", colourShare: c.colourShare };
+  return c;
+}
+
 export type Work = { source: string; source_id: string; title: string; artist: string | null; date_display: string; year_start: number; tradition: string; movement: string | null; palette: readonly Swatch[] };
-/** A movement where the museum gives one; otherwise the tradition and half-century ("European paintings, 1850 to 1899"). */
-export function groupOf(w: Pick<Work, "movement" | "tradition" | "year_start">): { key: string; name: string } {
-  if (w.movement) { const name = w.movement.replace(/\s*\(culture or style\)\s*$/i, "").trim(); return { key: `movement:${name.toLowerCase()}`, name }; }
+/** W3b · the museum that gave a movement label, as a group name says it. */
+const LABELLER: Record<string, string> = { met: "the Met", aic: "the Art Institute of Chicago" };
+/** A movement where the museum gives one; otherwise the tradition and half-century ("European paintings, 1850 to 1899"). W3b · a
+ *  movement group is named with the museum's label in full and whose label it is ("Chinese (culture or style), as the Art Institute of
+ *  Chicago labels it"), never an adjective alone; the key still joins "Chinese" and "Chinese (culture or style)". */
+export function groupOf(w: Pick<Work, "movement" | "tradition" | "year_start"> & { source?: string }): { key: string; name: string } {
+  if (w.movement) { const label = w.movement.trim(), short = label.replace(/\s*\(culture or style\)\s*$/i, "").trim();
+    return { key: `movement:${short.toLowerCase()}`, name: `${label}, as ${(w.source && LABELLER[w.source]) || "the museum"} labels it` }; }
   const h = Math.floor(w.year_start / 50) * 50;
   return { key: `tradition:${w.tradition.toLowerCase()}:${h}`, name: `${w.tradition}, ${h} to ${h + 49}` };
 }
@@ -99,18 +152,23 @@ function merge(cs: Colour[], k: number): Colour[] {
   }
   return out.sort((a, b) => b.w - a.w);
 }
-export type Group = { key: string; name: string; works: number; colours: Colour[] };
-/** Groups with at least GROUP_MIN_WORKS works, each palette built from all its (not mostly neutral) works, every work weighing the same. */
+/** `works` is the group's comparable works (its palette's base); `stored` is every stored work in it. */
+export type Group = { key: string; name: string; works: number; stored: number; colours: Colour[] };
+/** W3b · groups with at least GROUP_MIN_WORKS comparable works, each palette pooled from those works only (every work weighing the same),
+ *  kept only when the pooled palette is itself varied. */
 export function groups(works: readonly Work[]): Group[] {
-  const by = new Map<string, { name: string; works: Work[] }>();
-  for (const w of works) { const g = groupOf(w); const e = by.get(g.key) ?? { name: g.name, works: [] }; e.works.push(w); by.set(g.key, e); }
+  const by = new Map<string, { names: Set<string>; works: Work[] }>();
+  for (const w of works) { const g = groupOf(w); const e = by.get(g.key) ?? { names: new Set<string>(), works: [] }; e.names.add(g.name); e.works.push(w); by.set(g.key, e); }
   const out: Group[] = [];
   for (const [key, e] of by) {
-    if (e.works.length < GROUP_MIN_WORKS) continue;
-    const pooled = e.works.flatMap(w => { const c = chromatic(w.palette); return c.ok ? c.colours.map(x => ({ ...x, w: x.w / e.works.length })) : []; });
-    if (pooled.length < MIN_COLOURS) continue;
+    const cw = e.works.flatMap(w => { const c = comparable(w.palette); return c.ok ? [c.colours] : []; });
+    if (cw.length < GROUP_MIN_WORKS) continue;
+    const pooled = cw.flatMap(cs => cs.map(x => ({ ...x, w: x.w / cw.length })));
     const total = pooled.reduce((a, c) => a + c.w, 0), colours = merge(pooled, GROUP_COLOURS).map(c => ({ ...c, w: c.w / total }));
-    out.push({ key, name: e.name, works: e.works.length, colours });
+    if (!varied(colours)) continue;
+    // One label from two museums reads as the museums' label; one museum's stays its own.
+    const name = e.names.size === 1 ? [...e.names][0]! : [...e.names][0]!.replace(/, as .+ labels it$/, ", as the museums label it");
+    out.push({ key, name, works: cw.length, stored: e.works.length, colours });
   }
   return out.sort((a, b) => a.key.localeCompare(b.key));
 }
@@ -123,15 +181,16 @@ export function readyToShow(works: readonly Pick<Work, "movement" | "tradition" 
 }
 
 export type BrandMatch =
-  | { domain: string; neutral: true; colourShare: number }
+  | { domain: string; neutral: true; reason: NoMatch; colourShare: number }
   | { domain: string; neutral: false; work: { w: Work; distance: number; near: boolean } | null; group: { g: Group; distance: number } | null };
-/** For one brand: the nearest work (kept only when near) and the nearest group. Ties go to the lower key, so the answer is stable. */
-export function nearestFor(domain: string, palette: readonly Swatch[], works: readonly Work[], gs: readonly Group[], o: { keepNeutrals?: boolean } = {}): BrandMatch {
-  const b = chromatic(palette, o);
-  if (!b.ok) return { domain, neutral: true, colourShare: b.colourShare };
+/** For one brand: the nearest comparable work (kept only when near) and the nearest group. Ties go to the lower key, so the answer is
+ *  stable. W3b · a brand that is not comparable (see `comparable`) gets no match and says why. */
+export function nearestFor(domain: string, palette: readonly Swatch[], works: readonly Work[], gs: readonly Group[], o: { keepNeutrals?: boolean; hero?: Hero | null } = {}): BrandMatch {
+  const b = comparable(palette, o.hero, o);
+  if (!b.ok) return { domain, neutral: true, reason: b.reason, colourShare: b.colourShare };
   let work: { w: Work; distance: number } | null = null;
   for (const w of works) {
-    const c = chromatic(w.palette, o); if (!c.ok) continue;
+    const c = comparable(w.palette, null, o); if (!c.ok) continue;
     const d = distance(b.colours, c.colours);
     if (!work || d < work.distance || (d === work.distance && `${w.source}:${w.source_id}` < `${work.w.source}:${work.w.source_id}`)) work = { w, distance: d };
   }
@@ -140,19 +199,32 @@ export function nearestFor(domain: string, palette: readonly Swatch[], works: re
   return { domain, neutral: false, work: work ? { ...work, near: work.distance < NEAR_DISTANCE } : null, group };
 }
 const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b), m = Math.floor(s.length / 2); return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2; };
-export type SectorMatch = { sector: string; base: number; neutral: number; group: Group | null; median: number | null; count: number };
-/** For a sector: the group most of its (not mostly neutral) brands are each nearest to, ties to the lower middle distance, then the lower key;
- *  `count` of `base` brands are nearest to it ("6 of 30 health homepages are nearest to …") and `median` is the middle distance of all its
- *  colourful brands to that group. Choosing by middle distance alone picked a compromise group no brand was nearest to in four of ten
- *  sectors on the dry run (count 0), so the count leads and the middle distance only breaks ties. The base is every brand with a palette. */
-export function nearestForSector(sector: string, brands: readonly { domain: string; palette: readonly Swatch[] }[], gs: readonly Group[]): SectorMatch {
-  const reads = brands.map(b => ({ b, c: chromatic(b.palette) })), live = reads.filter((r): r is { b: typeof r.b; c: Extract<Chromatic, { ok: true }> } => r.c.ok);
-  if (!live.length || !gs.length) return { sector, base: brands.length, neutral: reads.length - live.length, group: null, median: null, count: 0 };
+export type SectorMatch = {
+  sector: string; base: number;
+  /** Homepages with a comparable palette (each has a nearest group when any group exists). */
+  compared: number;
+  /** Homepages left out, by reason. */
+  excluded: Record<NoMatch, number>;
+  /** The group most compared homepages are nearest to (ties: lower middle distance, then lower key), with that count, whether or not it stands out. */
+  top: Group | null; count: number; median: number | null;
+  /** W3b · named only when `count` is at least SECTOR_MIN_SHARE of `compared` and at least SECTOR_MIN_HOMEPAGES; otherwise no group stands out. */
+  group: Group | null;
+};
+/** For a sector: which group its comparable homepages are each nearest to. The commonest leads (count first; the middle distance only
+ *  breaks ties, because choosing by middle distance alone picked a compromise group no brand was nearest to). W3b · the sector names it
+ *  only past SECTOR_MIN_SHARE and SECTOR_MIN_HOMEPAGES, so a sector row never rests on two to five homepages. */
+export function nearestForSector(sector: string, brands: readonly { domain: string; palette: readonly Swatch[]; hero?: Hero | null }[], gs: readonly Group[]): SectorMatch {
+  const reads = brands.map(b => comparable(b.palette, b.hero)), live = reads.filter((c): c is Extract<Comparable, { ok: true }> => c.ok);
+  const excluded: Record<NoMatch, number> = { "mostly neutral": 0, "not varied": 0, "photo or video": 0 };
+  for (const c of reads) if (!c.ok) excluded[c.reason] += 1;
+  const none = { sector, base: brands.length, compared: live.length, excluded, top: null, count: 0, median: null, group: null };
+  if (!live.length || !gs.length) return none;
   const counts = new Map<string, number>();
-  for (const r of live) { let n: Group | null = null, nd = Infinity; for (const g of gs) { const d = distance(r.c.colours, g.colours); if (d < nd) { nd = d; n = g; } } if (n) counts.set(n.key, (counts.get(n.key) ?? 0) + 1); }
-  const med = new Map(gs.map(g => [g.key, median(live.map(r => distance(r.c.colours, g.colours)))]));
-  const best = [...gs].sort((x, y) => (counts.get(y.key) ?? 0) - (counts.get(x.key) ?? 0) || med.get(x.key)! - med.get(y.key)! || x.key.localeCompare(y.key))[0]!;
-  return { sector, base: brands.length, neutral: reads.length - live.length, group: best, median: Math.round(med.get(best.key)! * 1e4) / 1e4, count: counts.get(best.key) ?? 0 };
+  for (const c of live) { let n: Group | null = null, nd = Infinity; for (const g of gs) { const d = distance(c.colours, g.colours); if (d < nd || (d === nd && n && g.key < n.key)) { nd = d; n = g; } } if (n) counts.set(n.key, (counts.get(n.key) ?? 0) + 1); }
+  const med = new Map(gs.map(g => [g.key, median(live.map(c => distance(c.colours, g.colours)))]));
+  const top = [...gs].sort((x, y) => (counts.get(y.key) ?? 0) - (counts.get(x.key) ?? 0) || med.get(x.key)! - med.get(y.key)! || x.key.localeCompare(y.key))[0]!;
+  const count = counts.get(top.key) ?? 0, stands = count >= SECTOR_MIN_HOMEPAGES && count >= live.length * SECTOR_MIN_SHARE - 1e-9;
+  return { ...none, top, count, median: Math.round(med.get(top.key)! * 1e4) / 1e4, group: stands ? top : null };
 }
 /** Spread: matched brands, distinct works, and whether one work takes more than CLUMP_SHARE of them (the method would be wrong). */
 export function spread(matches: readonly BrandMatch[]): { matched: number; distinct: number; top: { key: string; n: number } | null; clumps: boolean } {

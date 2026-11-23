@@ -26,6 +26,8 @@ describe("studies registry", () => {
   it("every live story passed its check on the recorded figures and has a builder; every draft carries a reason and failed", () => {
     for (const e of DATA_STORIES) {
       const v = e.check ? VERDICT[e.check](e.recorded as never) : null;
+      // W3b · a hidden study is decided at read time on stored data; its recorded figures are a note (the museum study's fail).
+      if (e.hidden) { expect(v, e.slug).not.toBeNull(); expect(BUILDERS[e.slug], e.slug).toBeDefined(); continue; }
       if (e.status === "live") { expect(v?.pass, e.slug).toBe(true); expect(BUILDERS[e.slug], e.slug).toBeDefined(); expect(e.reason).toBeNull(); }
       else { expect(e.reason?.length ?? 0, e.slug).toBeGreaterThan(20); expect(v?.pass, e.slug).toBe(false); }
     }

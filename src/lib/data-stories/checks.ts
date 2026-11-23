@@ -6,7 +6,7 @@ import { compositeKey } from "../composites";
 import { label } from "../labels";
 import { SECTORS } from "../library";
 import { museumFigures, museumVerdictText, type MuseumFigures } from "./museum";
-import { SHOW_MIN_GROUPS, SHOW_MIN_WORKS } from "../art/palette";
+import { SHOW_MIN_GROUPS, SHOW_MIN_WORKS, STUDY_MIN_SECTORS } from "../art/palette";
 
 export const SOFTWARE = { sectors: ["dev-tools", "enterprise-saas"] as const, movePts: 0.05, minMoved: 3, minCaptures: 6, minBrands: 2 } as const;
 export const BIG_TYPE = { key: compositeKey("big_type"), minEntries: 25 } as const;
@@ -79,7 +79,7 @@ export function waitOf(id: CheckId, i: DataInput): Wait {
     case "software": { const f = softwareFigures(i); return { have: f.moved, need: SOFTWARE.minMoved, text: `Has ${f.moved} composite signals that moved ${SOFTWARE.movePts * 100} points, needs ${SOFTWARE.minMoved}.`, perQuarter: false }; }
     case "big-type": { const f = bigTypeFigures(i); return { have: f.entries, need: BIG_TYPE.minEntries, text: `Has ${f.entries} dated adopters, needs ${BIG_TYPE.minEntries}.`, perQuarter: false }; }
     case "fintech-colour": { const f = fintechFigures(i); return { have: f.quarters, need: FINTECH_COLOUR.minQuarters, text: `Has ${f.quarters} well-covered quarters of fintech palettes, needs ${FINTECH_COLOUR.minQuarters}.`, perQuarter: true }; }
-    case "museum": { const f = museumFigures(i); return { have: f.works, need: SHOW_MIN_WORKS, text: museumVerdictText(f), perQuarter: false }; }
+    case "museum": { const f = museumFigures(i); return f.ready ? { have: f.sectors, need: STUDY_MIN_SECTORS, text: museumVerdictText(f), perQuarter: false } : { have: f.works, need: SHOW_MIN_WORKS, text: museumVerdictText(f), perQuarter: false }; }
     case "sector-minds": { const f = sectorMindsFigures(i); return { have: f.sectors, need: SECTOR_MINDS.minSectors, text: `Has ${f.sectors} sectors with ${SECTOR_MINDS.minEvents} dated changes, needs ${SECTOR_MINDS.minSectors}.`, perQuarter: false }; }
   }
 }
@@ -92,8 +92,10 @@ export const CHECKS = {
 } as const;
 export type CheckId = keyof typeof CHECKS;
 
-// W3a · nearest in the museum: enough stored public-domain works, in enough groups of fifteen.
-export const museumVerdict = (f: MuseumFigures) => verdict([
+// W3a · nearest in the museum: enough stored public-domain works, in enough groups of fifteen. W3b · and enough sectors that name a
+// group under the comparable-palette rules: a sector-level claim on two to five homepages is not a finding.
+export const museumVerdict = (f: Pick<MuseumFigures, "works" | "groups" | "sectors">) => verdict([
   { id: "works", label: "Public-domain works stored", value: f.works, need: SHOW_MIN_WORKS },
   { id: "groups", label: "Groups of fifteen works or more", value: f.groups, need: SHOW_MIN_GROUPS },
-], x => x.id === "works" ? `Has ${x.value} works, needs ${x.need}.` : `Has ${x.value} groups, needs ${x.need}.`);
+  { id: "sectors", label: "Sectors that name a museum group", value: f.sectors, need: STUDY_MIN_SECTORS },
+], x => x.id === "works" ? `Has ${x.value} works, needs ${x.need}.` : x.id === "groups" ? `Has ${x.value} groups, needs ${x.need}.` : `Not enough for a finding: ${x.value} sectors name a museum group, needs ${x.need}.`);

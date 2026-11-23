@@ -49,7 +49,7 @@ describe("museum surfaces withheld (W3b Part 1)", () => {
   });
   it("a brand page with a near work draws what it drew before W3a (no line, same markup)", async () => {
     const b = brandModel({ domain: "vercel.com", audit: { ...auditFixture(), domains: ["vercel.com"] }, events: auditFixture().events, peers: [], tiers: [], captures: [] });
-    const art: ArtNear = { line: "Tintoretto, Venus and Mars, about 1550, The Art Institute of Chicago", museum: "The Art Institute of Chicago", href: "https://www.artic.edu/artworks/1", thumb: "/crops/art/aic/1.webp", width: 120, height: 90, distance: 0.05, work: "aic:1", group: "European paintings, 1550 to 1599", groupDistance: 0.06 };
+    const art: ArtNear = { title: "Venus and Mars", short: "Art Institute of Chicago", credit: "Tintoretto, about 1550", line: "Tintoretto, Venus and Mars, about 1550, The Art Institute of Chicago", museum: "The Art Institute of Chicago", href: "https://www.artic.edu/artworks/1", thumb: "/crops/art/aic/1.webp", width: 120, height: 90, distance: 0.05, work: "aic:1", group: "European paintings, 1550 to 1599", groupDistance: 0.06 };
     // The page's clock ticks between renders, so the comparison is the identity card (where the line sat) and the page minus its clock.
     const page = (c: HTMLElement) => ({ card: c.querySelector("[data-identity-card]")!.outerHTML, rest: c.innerHTML.replace(/<time[^>]*>[^<]*<\/time>/g, "") });
     const without = page((await renderInRouter(() => createElement(BrandPageView, { card: cardOf(b) }), "/brands/vercel.com")).container);

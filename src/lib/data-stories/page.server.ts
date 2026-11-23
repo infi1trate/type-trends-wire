@@ -4,6 +4,7 @@ import { dataInput, capturesFor, capturesOf } from "./data.server";
 import { BUILDERS, buildStory, buildWhereYouSit, indexRows, isTracked, normDomain, liveNow, statusOf } from "./build";
 import { DATA_STORIES, entryOf, seriesOf, studyLabel, templateName, withheld } from "./registry";
 import { BIG_TYPE, adoptionEntries, waitOf } from "./checks";
+import { museumFigures } from "./museum";
 import { chooseText, factsHash, factsSheet, fallbackText, type StudyRow } from "./writer";
 import { candidateRows, changedAt, draftRow, frontStudies, homeWithout, studiesHome, type HomeStudy, type StudiesHome } from "./shelf";
 import { coverTrail } from "./cover";
@@ -44,7 +45,8 @@ export async function computeDataIndex(): Promise<DataIndex> {
     const p = studyPage(m, texts);
     return [{ slug: e.slug, number: e.number, label: studyLabel(e.number), series: e.series, seriesTitle: seriesOf(e.series)?.title ?? "", headline: p.text.headline, deck: p.text.deck, question: e.question, dataThrough: m.dataThrough, href: `/data/${e.slug}`, key: m.key, cover: coverTrail(m), changedAt: changedAt(texts, e.slug, p.hash, now), written: p.text.source !== "fallback" }];
   });
-  const drafts = DATA_STORIES.filter(e => !e.hidden && !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
+  // W3b · a hidden study whose works clear the intake line, and that the editor shows, waits on In the works with its counts.
+  const drafts = DATA_STORIES.filter(e => (!e.hidden || (i && !withheld(e) && e.check === "museum" && museumFigures(i).ready)) && !studies.some(x => x.slug === e.slug)).map(e => (i && e.check ? draftRow(e, waitOf(e.check, i), now) : { key: e.slug, question: e.question, series: seriesOf(e.series)?.title ?? "", wait: statusOf(e, i).reason ?? "", earliest: null, ready: false }));
   const cands = i ? i.headline.filter(h => h.key !== BIG_TYPE.key).map(h => ({ key: h.key, name: h.name, entries: adoptionEntries(i, h.key, h.name) })) : [];
   return { rows, home: studiesHome(studies, [...drafts, ...candidateRows(cands, BIG_TYPE.minEntries)]), v: 4 };
 }

@@ -208,3 +208,10 @@
 - [x] Browser check `scripts/perf/deferred_heights.py` (fails on the old code, passes now)
 - [x] Report: CLS/LCP median of ten, heights/words cold vs warm, full suite, commit
 - [ ] Records sweep: the `wire-followups` pass has been cut off by its caller at about 5 s since 16:16 UTC 22 Nov, so stored records age out and fresh instances compute live (waits on owner: it changes how a scheduled job answers)
+
+# W3b · Museum surfaces off; a match has to mean something
+- [x] Part 1: `MUSEUM_SHOWN = false` hides the study (404, not listed, not on the shelf, not in the Digest) and the brand line; own commit
+- [x] Part 2: comparable palettes (colour families: ≤60% one, ≥3 at 5%), media-led first screens get no match, groups pool comparable works only
+- [x] Part 2: sector names a group only at ≥⅓ and ≥8; study only with ≥5 sectors, else "not enough for a finding" with counts; full museum labels
+- [x] Part 2: brand line redrawn for the Data view only (≤2 lines at 390, ≤64 px thumbnail, title-only link); stays off
+- [x] Part 2: read-only proof on the stored works (picture, counts, sector rows)

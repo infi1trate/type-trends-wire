@@ -28,7 +28,6 @@ import { BeforeAfter, CoverFigure, CropFallback, CropFigure } from "./Evidence";
 import { BrandMark, MarkedName } from "./BrandMark";
 import type { Cover, Pic } from "@/lib/pictures";
 import type { ArtNear } from "@/lib/art/read.server";
-import { MUSEUM_SHOWN } from "@/lib/site";
 import { CROP_SECTION_NAME } from "@/lib/labels";
 import { isCropSection, type CropSection } from "@/lib/crops";
 
@@ -69,15 +68,9 @@ function FaceValue({ f }: { f: Face | null }) {
   </span>;
 }
 
-/** The card as drawn: I1 adds the brand's own icon and cover (absent on older callers, which draw as before). */
+/** The card as drawn: I1 adds the brand's own icon and cover (absent on older callers, which draw as before). W3b · `art` is drawn only
+ *  in the Data view (dataview/Views.tsx); the Read view never draws a museum line. */
 type CardIn = BrandCard & { icon?: Pic | null; cover?: Cover | null; art?: ArtNear | null };
-/** W3a · one line and one thumbnail inside the palette block, only when the brand has a near museum work (fixed size: no layout shift). */
-function NearestArt({ a }: { a: ArtNear }) {
-  return <p className="mt-3 flex items-start gap-3" data-nearest-art="">
-    {a.thumb && <a href={a.href} target="_blank" rel="noopener" className="shrink-0" aria-hidden="true" tabIndex={-1}><img src={a.thumb} width={a.width} height={a.height} loading="lazy" decoding="async" alt="" className="block border" style={{ width: a.width, height: a.height }} /></a>}
-    <a href={a.href} target="_blank" rel="noopener" className="ed-small ed-tap min-w-0 break-words">{a.line}</a>
-  </p>;
-}
 function IdentityCard({ b }: { b: CardIn }) {
   const i = b.identity;
   return <Card as="section" aria-labelledby="ed-brand-title" className="p-5 md:p-8" data-identity-card="">
@@ -90,7 +83,7 @@ function IdentityCard({ b }: { b: CardIn }) {
       <dl className="min-w-0"><div><dt className="ed-kicker">Palette · share of the first screen</dt>
         <dd className="mt-2">{i.palette.length ? <ul className="space-y-1" aria-label={`${b.name} palette, largest first`}>{i.palette.map((p, k) => <li key={`${p.hex}${k}`}>
           <AppLink href={i.receipt} className="ed-tap flex items-center gap-2 no-underline hover:underline"><span className="ed-swatch inline-block h-6 w-6 shrink-0 border" style={{ background: p.hex }} aria-hidden="true" /><span className="ed-code">{p.hex}</span><span className="ed-data ml-auto">{p.share != null ? pct(p.share, 0) : "—"}</span></AppLink>
-        </li>)}</ul> : <span className="ed-small">{voiced("read.brandView.2")}</span>}{MUSEUM_SHOWN && b.art && <NearestArt a={b.art} />}</dd></div></dl>
+        </li>)}</ul> : <span className="ed-small">{voiced("read.brandView.2")}</span>}</dd></div></dl>
       <dl className="min-w-0"><div><dt className="ed-kicker">Voice and style</dt>
         <dd className="mt-2">{i.tags.length ? <ul className="flex flex-wrap gap-2" aria-label="Voice and style tags">{i.tags.map(t => <li key={t.key}><AppLink href={i.receipt} className="ed-tap ed-data inline-flex items-center gap-1 no-underline hover:underline">{t.name}<BasisWord b={t.basis} /></AppLink></li>)}</ul> : <span className="ed-small">{voiced("read.brandView.3")}</span>}</dd></div></dl>
       <dl className="min-w-0"><div><dt className="ed-kicker">Layout · measured</dt>
