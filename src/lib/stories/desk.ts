@@ -104,6 +104,7 @@ export const deskBody = z.discriminatedUnion("action", [
     .refine(b => ((b.kind ?? "build") === "build" ? b.credits != null && b.usd == null : b.usd != null && b.credits == null && b.item == null), { message: "build spend carries credits (and may name an item); agent spend carries usd only", path: ["kind"] }),
   z.object({ action: z.literal("spend_cap"), model_usd: z.number().min(0).max(100_000).nullable(), build_credits: z.number().min(0).max(1_000_000).nullable(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("wire_only"), on: z.boolean(), reason: z.string().trim().min(3).max(300) }).strict(),
+  z.object({ action: z.literal("safe_mode"), on: z.boolean(), reason: z.string().trim().min(3).max(300) }).strict(),
   z.object({ action: z.literal("propose"), kind: z.enum(PROPOSAL_KINDS), subject: z.string().trim().min(1).max(200).optional(), text: z.string().trim().min(3).max(1000) }).strict(),
   // N2 · a desk puts a published or reviewed story back to held (with the reason its page shows), leaves a note for the other desks,
   // and the owner sets a proposal's status.

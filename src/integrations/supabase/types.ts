@@ -897,6 +897,78 @@ export type Database = {
           },
         ]
       }
+      db_alerts: {
+        Row: {
+          at: string
+          id: number
+          key: string
+          level: string
+          line: string
+          reading: Json
+        }
+        Insert: {
+          at?: string
+          id?: never
+          key: string
+          level: string
+          line: string
+          reading?: Json
+        }
+        Update: {
+          at?: string
+          id?: never
+          key?: string
+          level?: string
+          line?: string
+          reading?: Json
+        }
+        Relationships: []
+      }
+      db_load_samples: {
+        Row: {
+          at: string
+          stats_reset: string | null
+          wal_bytes: number
+        }
+        Insert: {
+          at?: string
+          stats_reset?: string | null
+          wal_bytes: number
+        }
+        Update: {
+          at?: string
+          stats_reset?: string | null
+          wal_bytes?: number
+        }
+        Relationships: []
+      }
+      db_safe_mode: {
+        Row: {
+          actor: string
+          at: string
+          id: number
+          is_on: boolean
+          reading: Json
+          reason: string
+        }
+        Insert: {
+          actor: string
+          at?: string
+          id?: never
+          is_on: boolean
+          reading?: Json
+          reason: string
+        }
+        Update: {
+          actor?: string
+          at?: string
+          id?: never
+          is_on?: boolean
+          reading?: Json
+          reason?: string
+        }
+        Relationships: []
+      }
       desk_calls: {
         Row: {
           answer: Json
@@ -6020,6 +6092,7 @@ export type Database = {
         Returns: undefined
       }
       crop_opted_out: { Args: { p_domain: string }; Returns: boolean }
+      db_load_facts: { Args: never; Returns: Json }
       db_session_limits: { Args: never; Returns: Json }
       desk_switch_on: { Args: { p_name: string }; Returns: boolean }
       discourse_merge: {

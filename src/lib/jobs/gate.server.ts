@@ -17,7 +17,7 @@ export async function standDown(job: RunJob | null, o: { wire?: boolean } & Gate
     const p = await probe();
     let why: string | null = null;
     if (!p.ok) why = `${SKIPPED_SLOW} (no answer within ${Math.round(p.ms)} ms)`;
-    else if (!o.wire && o.safe) { const s = await o.safe(); if (s.on) why = `skipped: safe mode (${s.why})`; }
+    else if (!o.wire) { const s = await (o.safe ?? (async () => (await import("../safe-mode.server")).safeModeOn()))(); if (s.on) why = `skipped: safe mode (${s.why})`; }
     if (!why) return null;
     console.info("job stood down", job ?? "unrecorded job", why);
     if (!job) return why;

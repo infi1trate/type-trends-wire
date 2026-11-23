@@ -30,6 +30,8 @@ export type NewsroomStore = {
   spendAgent?: (r: { usd: number; what: string; actor: string }) => Promise<unknown>;
   spendCap?: (r: { model_usd: number | null; build_credits: number | null; reason: string }) => Promise<void>;
   wireOnly?: (on: boolean, reason: string) => Promise<void>;
+  /** D1 Part 6 · the owner's safe-mode switch. */
+  safeMode?: (on: boolean, reason: string) => Promise<void>;
   capReached?: () => Promise<boolean>;
   /** After a story edit: record the states it implies. Never fails the call. */
   afterEdit?: (storyId: string) => Promise<void>;
@@ -77,7 +79,7 @@ const limiter = createRateLimiter(DESK_RATE_PER_MIN, 60_000);
 type Outcome = { status: number; body: unknown; decision: LogRow["decision"]; reason?: string | null; edit_id?: number | null; detail?: Record<string, unknown> };
 const subjectOf = (b: DeskBody): string | null =>
   "id" in b ? b.id : b.action === "pitch" ? b.ref : b.action === "assign" ? String(b.pitch) : b.action === "living_approve" || b.action === "living_rollback" ? String(b.edition)
-    : b.action === "wire_only" ? "wire_only" : b.action === "propose" ? (b.subject ?? b.kind) : b.action === "queue" ? (b.day ?? null) : b.action === "staff" ? b.page
+    : b.action === "wire_only" ? "wire_only" : b.action === "safe_mode" ? "safe_mode" : b.action === "propose" ? (b.subject ?? b.kind) : b.action === "queue" ? (b.day ?? null) : b.action === "staff" ? b.page
     : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
     : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? (b.ref ?? b.run)
     : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : b.action === "job_hold" || b.action === "job_release" ? `job:${b.job}`
@@ -175,6 +177,7 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     return { status: 201, body: { ok: true, entry: await d.store.spend({ credits: b.credits!, what: b.what, actor, ...(b.item != null ? { queue_item: b.item } : {}) }) }, decision: "done", reason: b.what, ...(b.item != null ? { detail: { item: b.item } } : {}) };
   }
   if (b.action === "spend_cap") { if (!d.store.spendCap) return missing; await d.store.spendCap({ model_usd: b.model_usd, build_credits: b.build_credits, reason: b.reason }); return { status: 201, body: { ok: true, cap: b.model_usd == null && b.build_credits == null ? null : { model_usd: b.model_usd, build_credits: b.build_credits } }, decision: "done", reason: b.reason }; }
+  if (b.action === "safe_mode") { if (!d.store.safeMode) return missing; await d.store.safeMode(b.on, b.reason); return { status: 201, body: { ok: true, safe_mode: b.on }, decision: "done", reason: b.reason, detail: { on: b.on } }; }
   if (b.action === "wire_only") { if (!d.store.wireOnly) return missing; await d.store.wireOnly(b.on, b.reason); return { status: 201, body: { ok: true, wire_only: b.on }, decision: "done", reason: b.reason, detail: { on: b.on } }; }
   if (b.action === "propose") return { status: 202, body: { ok: true, proposed: true }, decision: "proposed" };
   if (b.action === "living_approve" || b.action === "living_rollback") {
@@ -374,7 +377,9 @@ export async function prodDeps(): Promise<DeskDeps> {
         // N1 · each story's state history beside it.
         const states = await nr.statesFor(db, [...q.published, ...q.held, ...q.killed].map(s => s.id)).catch(() => new Map());
         const withStates = <T extends { id: string }>(xs: T[]) => xs.map(x => ({ ...x, states: states.get(x.id) ?? [] }));
-        return { ...q, published: withStates(q.published), held: withStates(q.held), killed: withStates(q.killed), news, pitches };
+        // D1 Part 6 · the database's engineering alerts and safe mode, shown above the fold.
+        const dbDesk = await import("../db-desk.server").then(m => m.dbDeskFacts()).catch(() => null);
+        return { ...q, published: withStates(q.published), held: withStates(q.held), killed: withStates(q.killed), news, pitches, db: dbDesk };
       },
       log: async r => (await import("../newsroom/newsroom.server")).insertLog(db, r),
       memory: async () => (await import("../newsroom/memory.server")).loadMemory(db),
@@ -391,6 +396,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       spendAgent: async r => (await import("../newsroom/newsroom.server")).insertAgentSpend(db, r),
       spendCap: async r => (await import("../newsroom/newsroom.server")).insertCap(db, r),
       wireOnly: async (on, reason) => { await (await import("../newsroom/newsroom.server")).setWireOnly(db, on, reason); },
+      safeMode: async (on, reason) => { await (await import("../safe-mode.server")).setOwnerSafeMode(on, reason); },
       capReached: async () => (await import("../newsroom/newsroom.server")).capReachedNow(db),
       afterEdit: async () => { await (await import("../newsroom/newsroom.server")).syncStoryStates(db, { days: 120, force: true }); },
       pitch: async p => (await import("./pitch.server")).pitchNow(db, p),

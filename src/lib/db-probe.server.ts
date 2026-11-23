@@ -25,6 +25,11 @@ export async function probeDb(): Promise<Probe> {
   const now = Date.now(), last = recent.at(-1);
   if (underTest()) return last ?? { at: now, ms: 0, ok: true };
   if (last && now - last.at < PROBE_REUSE_MS) return last;
-  if (!inFlight) inFlight = once().then(p => { recent = keepRecent(recent, p, Date.now()); return p; }).finally(() => { inFlight = null; });
+  if (!inFlight) inFlight = once().then(async p => {
+    recent = keepRecent(recent, p, Date.now());
+    // D1 Part 6 · each reading moves this server's safe mode (capped so the answer is never held behind its log write).
+    await Promise.race([import("./safe-mode.server").then(m => m.observeReading(recent, p)), new Promise(r => setTimeout(r, 1_200))]).catch(() => undefined);
+    return p;
+  }).finally(() => { inFlight = null; });
   return inFlight;
 }

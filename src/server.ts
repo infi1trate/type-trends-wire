@@ -113,7 +113,8 @@ export default {
         return retryLater(await normalizeCatastrophicSsrResponse(response));
       }, waitUntil, { preferLastGood: rehearse && new URL(request.url).searchParams.get("__dbdown") === "1", degraded: async () => {
         if (rehearse) return new URL(request.url).searchParams.get("__dbdown") === "1";
-        return !(await (await import("./lib/db-probe.server")).probeDb()).ok;
+        if (!(await (await import("./lib/db-probe.server")).probeDb()).ok) return true;
+        return (await (await import("./lib/safe-mode.server")).safeModeOn()).on;
       } });
     } catch (error) {
       console.error(error);

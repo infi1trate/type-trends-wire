@@ -137,6 +137,16 @@ describe("crawler receiver", () => {
     expect(await res.json()).toMatchObject({ error: "try_later", retry_after_s: 60 });
     expect(state.runs.size).toBe(0);
   });
+  it("D1 Part 6 · in safe mode the post is refused with try later (two minutes) and nothing is stored", async () => {
+    const sm = await import("./safe-mode.server");
+    sm.setSafeModeForTest({ on: true, by: "auto", since: Date.now(), goodSince: null, why: "the database is not answering in time" });
+    try {
+      const res = await handleCrawlIngest(request(start));
+      expect(res.status).toBe(503);
+      expect(res.headers.get("retry-after")).toBe("120");
+      expect(state.runs.size).toBe(0);
+    } finally { sm.setSafeModeForTest({ on: false, by: null, since: null, goodSince: null, why: "" }); }
+  });
   it("marks only other running runs older than 24 hours failed", async () => {
     state.runs.set("stale", { id: "stale", status: "running", started_at: new Date(Date.now() - 25 * 3600000).toISOString() });
     state.runs.set("fresh", { id: "fresh", status: "running", started_at: new Date(Date.now() - 23 * 3600000).toISOString() });

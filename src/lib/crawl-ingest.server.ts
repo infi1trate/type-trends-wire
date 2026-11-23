@@ -75,6 +75,9 @@ export async function handleCrawlIngest(request: Request, ctx: IngestContext = {
     const { probeDb, probeHistory } = await import("./db-probe.server");
     const probe = await probeDb();
     if (!probe.ok) { const { retryAfterS, tryLater } = await import("./db-guard"); return tryLater(retryAfterS(probeHistory(), Date.now())); }
+    // D1 Part 6 · in safe mode posts are refused the same way (the crawler waits and posts again).
+    const safe = await (await import("./safe-mode.server")).safeModeOn();
+    if (safe.on) { const { tryLater } = await import("./db-guard"); return tryLater(120, `The site is in safe mode (${safe.why}); nothing was stored.`); }
     if (!await authenticateCrawler(request)) return forbidden();
     const text = await boundedBody(request);
     if (text === null) return Response.json({ error: "Body exceeds 2 MB" }, { status: 413 });

@@ -15,7 +15,23 @@ import { ReadFooter } from "./Bits";
 import { DeskNewsroom } from "./DeskNewsroom";
 
 type Item = QueueModel["published"][number] & { states?: { state: string; actor: string; reason: string | null; at: string }[] };
-export type DeskQueue = QueueModel & { news?: { kept: number; dropped: number; drops: NewsDrops } | null; pitches?: PitchedItem[] };
+export type DeskQueue = QueueModel & { news?: { kept: number; dropped: number; drops: NewsDrops } | null; pitches?: PitchedItem[]; db?: import("@/lib/db-health").DbDesk | null };
+
+/** D1 Part 6 · the database above the fold: safe mode (with the owner's switch) and the engineering alerts of the last 48 hours. */
+function DbPanel({ db, send }: { db: NonNullable<DeskQueue["db"]>; send: (body: Record<string, unknown>) => Promise<string> }) {
+  const [msg, setMsg] = useState<string | null>(null), [reason, setReason] = useState("");
+  const flip = async () => { setMsg("Saving…"); setMsg(await send({ action: "safe_mode", on: !db.safe_mode.on, reason: reason.trim() || (db.safe_mode.on ? "owner turned safe mode off" : "owner turned safe mode on"), confirm: "owner confirms safe_mode" })); };
+  return <section aria-labelledby="desk-db" className="ed-data mt-6 border border-ed-ink p-3" data-desk-db="">
+    <h2 id="desk-db" className="ed-kicker">Database · safe mode {db.safe_mode.on ? `on (${db.safe_mode.by ?? "auto"}: ${db.safe_mode.why})` : "off"}</h2>
+    {db.alerts.length ? <ul className="mt-2 space-y-1">{db.alerts.map(a => <li key={a.at}><time dateTime={a.at}>{a.at.slice(0, 16).replace("T", " ")}</time> · <strong>{a.level === "bad" ? "Bad" : "Warn"}</strong> · {a.line}</li>)}</ul> : <p className="mt-2">No database alert in the last 48 hours.</p>}
+    {db.changes.length > 0 && <p className="ed-muted mt-2">Last change: {db.changes[0]!.at.slice(0, 16).replace("T", " ")} · {db.changes[0]!.is_on ? "on" : "off"} · {db.changes[0]!.actor} · {db.changes[0]!.reason}</p>}
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <label className="flex items-center gap-2">Reason <input value={reason} onChange={e => setReason(e.target.value)} maxLength={300} className="min-h-11 border border-ed-ink bg-transparent px-2" /></label>
+      <button type="button" className="ed-tap min-h-11 border border-ed-ink px-3" onClick={() => void flip()}>{db.safe_mode.on ? "Turn safe mode off" : "Turn safe mode on"}</button>
+      {msg && <span role="status">{msg}</span>}
+    </div>
+  </section>;
+}
 const day = (iso: string) => iso.slice(0, 10);
 
 function Actions({ s, send }: { s: Item; send: (body: Record<string, unknown>) => Promise<string> }) {
@@ -92,6 +108,7 @@ export function DeskView({ q, onDay }: { q: DeskQueue; onDay: (d: string | null)
         <button type="button" onClick={() => onDay(null)} aria-current={q.day === null ? "true" : undefined} className={`ed-tap min-h-11 border px-3 ${q.day === null ? "border-ed-ink font-semibold" : "border-transparent"}`}>Last 7 days</button>
         {q.days.map(d => <button key={d.day} type="button" onClick={() => onDay(d.day)} aria-current={q.day === d.day ? "true" : undefined} className={`ed-tap min-h-11 gap-2 border px-3 ${q.day === d.day ? "border-ed-ink font-semibold" : "border-transparent"}`}>{d.day}<span className="ed-muted">{d.published} ran · {d.held} held{d.killed ? ` · ${d.killed} killed` : ""}</span></button>)}
       </nav>
+      {q.db && <DbPanel db={q.db} send={send} />}
       <div className="ed-data mt-6 flex flex-wrap items-center gap-2">
         <span>Editor key accepted for this tab.</span><button type="button" className="ed-tap min-h-11 border border-ed-ink px-3" onClick={() => setStaffKey(null)}>Lock</button>
       </div>
