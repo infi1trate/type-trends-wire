@@ -70,9 +70,10 @@ export function iconsStory(i: DataInput, _caps: Captures, m: Meta): StoryModel {
   const cats = r.categories, leans = [...r.leans].sort((a, b) => b.points - a.points || a.category.localeCompare(b.category));
   const byName = new Map(cats.map(c => [c.name, c]));
   const n = (v: number) => num(String(v), v, href), pct = (v: number) => num(`${Math.round(v * 100)}%`, v, href), cat = (name: string) => ref(name, href);
-  const wall: DriftFig = { kind: "drift", title: "Each category's top free apps, one swatch per icon", scope: "US App Store, top free",
+  const source = "Apple's public charts of top free apps, US App Store; icon colours measured by slug (no icon pictures kept)";
+  const wall: DriftFig = { kind: "drift", source, title: "Each category's top free apps, one swatch per icon", scope: "US App Store, top free",
     note: `Each swatch is one icon's ground: the colour holding most of it, in its own measured colour. Rows run most one-colour first.`, rowHead: "Category", bands: cats.map(wallBand) };
-  const lean: DriftFig = { kind: "drift", title: "Where each category leans", scope: "US App Store, top free", rowHead: "Category",
+  const lean: DriftFig = { kind: "drift", source, title: "Where each category leans", scope: "US App Store, top free", rowHead: "Category",
     note: "Lit: the ground each category has most above its share across all categories.", bands: leans.map(l => leanBand(byName.get(l.category)!, l)) };
   const top = cats[0], last = cats.at(-1), mostly = mostlyOne(r);
   const allTop = (Object.entries(r.all.counts) as [string, number][]).filter(([k]) => k !== "mixed").sort((a, b) => b[1] - a[1])[0];

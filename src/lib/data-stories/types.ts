@@ -47,7 +47,7 @@ export type DriftBand = { q: string; brands: number; swatches: Swatch[]; /** W3c
   /** W3d · one equal swatch per item instead of weighted segments, each its own measured hex (the icon wall); 25 a row on a phone. */ cells?: string[];
   /** W3d · cells [from, to) at full strength, the rest faded (the lean). */ lit?: [number, number];
   /** W3d · links under the note (app names to their App Store pages). */ links?: Link[] };
-export type DriftFig = { kind: "drift"; title: string; note: string; scope: string; bands: DriftBand[]; /** W3a · rows that are not quarters (the museum study): the table head and a wider label column. */ rowHead?: string };
+export type DriftFig = { kind: "drift"; title: string; note: string; scope: string; bands: DriftBand[]; /** W3a · rows that are not quarters (the museum study): the table head and a wider label column. */ rowHead?: string; /** W3d · the figure's source line when it is not the tracked brands' captures (Apple's charts). */ source?: string };
 
 /** One stored capture redrawn from its skeleton: compact boxes in page pixels, the capture's own colours, and a crop when one exists. */
 export type BoxKind = "h" | "t" | "c" | "m" | "s" | "o";
