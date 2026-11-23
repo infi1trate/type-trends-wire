@@ -3,7 +3,7 @@ import { SITE_URL, DIGEST_NAME } from "../site";
 import type { Edition } from "./edition";
 import type { TraitPage } from "./trait";
 import { traitSummary } from "./trait";
-import { oembedLink } from "../embed/embed";
+import { oembedLink } from "../embed/oembed-link";
 import { BRAND_NAME } from "../brand";
 import { fontLinks as themeFontLinks } from "../theme";
 /** Editorial faces for Read pages; the URLs live in the theme (src/lib/theme). */

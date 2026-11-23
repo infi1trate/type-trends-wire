@@ -5,7 +5,7 @@ import { chartCardQuery } from "@/lib/data";
 import { ChartOfWeek } from "@/components/terminal/ChartCard";
 import { SITE_URL } from "@/lib/site";
 import { cardText } from "@/lib/chart/card";
-import { oembedLink } from "@/lib/embed/embed";
+import { oembedLink } from "@/lib/embed/oembed-link";
 import { EmbedPanel } from "@/components/embed/EmbedPanel";
 import { BRAND_NAME } from "@/lib/brand";
 
@@ -15,7 +15,9 @@ export const Route = createFileRoute("/chart/$week")({
     if (!/^\d{4}-W\d{2}$/.test(params.week)) throw notFound();
     const card = await context.queryClient.ensureQueryData(chartCardQuery(params.week));
     if (!card) throw notFound();
-    const t = cardText(card.model);
+    // C1 · loaded here, not at the top of the route file: card.ts carries the 390 KB glyph table, and a static import put it in
+    // front of every page's first byte on a cold server (route files load with the route tree). The component's own use is split.
+    const t = (await import("@/lib/chart/card")).cardText(card.model);
     return { name: `${t.name} [${t.dimension}]`, call: t.call };
   },
   head: ({ params, loaderData }) => {

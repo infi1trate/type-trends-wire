@@ -116,7 +116,7 @@ export function oembedResponse(src: string, title: string, maxwidth?: number | n
   return { version: "1.0", type: "rich", provider_name: `${BRAND_NAME}`, provider_url: SITE_URL, title: `${title} — ${BRAND_NAME}`, cache_age: 3600, width, height,
     html: `<iframe src="${esc(src)}" title="${esc(`${title} — ${BRAND_NAME} signal chart`)}" width="${width}" height="${height}" style="border:0;max-width:100%" loading="lazy"></iframe>` };
 }
-export const oembedLink = (pageUrl: string, title: string) => ({ rel: "alternate", type: "application/json+oembed", href: `${SITE_URL}/api/public/oembed?url=${encodeURIComponent(pageUrl)}&format=json`, title });
+export { oembedLink } from "./oembed-link";
 
 export type EmbedLoaders = { trait: (key: string, scope: string) => Promise<EmbedModel | null>; chart: (week: string) => Promise<EmbedModel | null> };
 /** GET /embed/trait/<key> and /embed/chart/<week>: 200 widget or 404 "Signal not found" card; load errors read as not found. */

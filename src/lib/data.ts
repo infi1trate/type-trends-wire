@@ -3,7 +3,13 @@ import { queryOptions } from "@tanstack/react-query";
 import { getWatchView, getWatchOptions, getAudit } from "./agency.functions";
 import { parseAuditSites } from "./agency/audit";
 import type { WatchRange } from "./agency/watch-feed";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+// C1 · the browser database client (and its auth, storage and realtime libraries, about 700 KB) is loaded by the first browser read that
+// needs it, not with this module: every route imports this file, so a static import put it in front of every page's first byte on a
+// cold server. Every read below that uses `supabase` awaits `ready()` first.
+let supabase!: SupabaseClient<Database>;
+let loading: Promise<void> | undefined;
+const ready = (): Promise<void> => (supabase ? Promise.resolve() : (loading ??= import("@/integrations/supabase/client").then(m => { supabase = m.supabase; }, e => { loading = undefined; throw e; })));
 import { computeBand, type BandResult, type RankPoint } from "./bands";
 import type { Scope } from "./crawl";
 import type { Database } from "@/integrations/supabase/types";
@@ -49,6 +55,7 @@ async function fetchAll<T>(build: (from: number, to: number) => PromiseLike<{ da
 }
 
 async function dateAtOrBefore(date: string): Promise<string | null> {
+  await ready();
   const { data, error } = await supabase
     .from("gfont_snapshots")
     .select("captured_on")
@@ -83,6 +90,7 @@ export interface TypeIndex {
 }
 
 async function fetchTypeIndex(): Promise<TypeIndex> {
+  await ready();
   const { data: l, error } = await supabase
     .from("gfont_snapshots")
     .select("captured_on")
@@ -136,6 +144,7 @@ export const sparkQuery = (families: string[], latest: string | null) =>
     enabled: !!latest && families.length > 0,
     staleTime: STALE,
     queryFn: async () => {
+      await ready();
       const rows = await fetchAll<{ family: string; captured_on: string; popularity_rank: number }>((f, t) =>
         supabase
           .from("gfont_snapshots")
@@ -159,15 +168,17 @@ export const familyHistoryQuery = (family: string | null) =>
     queryKey: ["family-history", family],
     enabled: !!family,
     staleTime: STALE,
-    queryFn: () =>
-      fetchAll<RankPoint>((f, t) =>
+    queryFn: async () => {
+      await ready();
+      return fetchAll<RankPoint>((f, t) =>
         supabase
           .from("gfont_snapshots")
           .select("captured_on,popularity_rank,trending_rank")
           .eq("family", family!)
           .order("captured_on")
           .range(f, t),
-      ),
+      );
+    },
   });
 
 export interface WireItem {
@@ -191,6 +202,7 @@ export const wireQuery = () =>
     queryKey: ["wire"],
     staleTime: STALE,
     queryFn: async (): Promise<WireItem[]> => {
+      await ready();
       const { data, error } = await supabase
         .from("wire_items")
         .select("id,url,title,source,source_kind,published_at,excerpt,link,tags,ref,votes,topics")
@@ -207,6 +219,7 @@ export const wire24hQuery = () =>
     queryKey: ["wire-24h"],
     staleTime: 60_000,
     queryFn: async () => {
+      await ready();
       const { count, error } = await supabase
         .from("wire_items")
         .select("id", { count: "exact", head: true })
@@ -221,6 +234,7 @@ export const lastIngestQuery = () =>
     queryKey: ["last-ingest"],
     staleTime: 60_000,
     queryFn: async () => {
+      await ready();
       const { data, error } = await supabase
         .from("ingest_runs")
         .select("finished_at,started_at")
@@ -239,6 +253,7 @@ export const typeSnapshotQuery = () =>
     queryKey: ["type-snapshot"],
     staleTime: 60_000,
     queryFn: async () => {
+      await ready();
       const { data, error } = await supabase.from("ingest_runs")
         .select("started_at,detail").eq("job", "ingest-gfonts").eq("ok", true)
         .order("started_at", { ascending: false }).limit(1);
@@ -263,6 +278,7 @@ const CRAWL_STALE = 10 * 60_000;
 export const crawlQuery = (scope: Scope) => queryOptions({
   queryKey: ["crawl",scope], staleTime: CRAWL_STALE,
   queryFn: async () => {
+    await ready();
     const { data: latest, error } = await supabase.from("crawl_latest").select("id,prev_id").limit(1);
     if (error) throw error;
     const id = latest?.[0]?.id;
@@ -302,6 +318,7 @@ export type ForecastRow = { dimension: string; value: string; scope: string; sta
 export type ModelCard = { data_through: string | null; ai_provider?: "lovable" | "google" | "misconfigured"; backtest_cutoff: string; median_mae_pts: number | null; hit_rate: number | null; n_backtested: number; n_traits: number; n_forecast_ok: number; n_insufficient: number; usable_quarters_all: string[]; next_wave_backtest: { ranked: number; grew_5pts: number; status?: string; hit_rate?: number | null }; next_wave_backtest_legacy_weights?: { ranked: number; grew_5pts: number; hit_rate?: number | null }; component_coverage?: Record<string, number> };
 export type BriefDoc = { week: string; headline: string; caveats: string; provider?: "lovable" | "google"; refs?: Record<string, { label: string; domain?: string; url?: string }>; sections: { title: string; body: string; citations: { kind: "forecast" | "event" | "wire" | "spread"; id: string }[] }[] };
 export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleTime: 10 * 60_000, queryFn: async () => {
+  await ready();
   // The reader run (readerRuns in run-gap.ts), never a sandbox run once a newer real run exists.
   const runId = await readerRunId(supabase);
   const [card, rows, setters, briefs] = await Promise.all([
@@ -316,10 +333,12 @@ export const forecastQuery = () => queryOptions({ queryKey: ["forecast"], staleT
     briefs: (briefs.data ?? []).map(b => ({ week: b.week, model: b.model, created_at: b.created_at, brief: b.brief as unknown as BriefDoc })) };
 } });
 export const forecastDetailQuery = (dimension: string, value: string) => queryOptions({ queryKey: ["forecast-detail", dimension, value], staleTime: 10 * 60_000, queryFn: async () => {
+  await ready();
   const { data, error } = await supabase.from("forecasts").select("scope,status,model,evidence,backtest,components,proj_q1,proj_q1_lo,proj_q1_hi,proj_q2,proj_q2_lo,proj_q2_hi,proj_q4,proj_q4_lo,proj_q4_hi").eq("run_id", await readerRunId(supabase)).eq("dimension", dimension).eq("value", value).order("scope");
   if (error) throw error; return data ?? [];
 } });
 export const latestBriefQuery = () => queryOptions({ queryKey: ["brief-latest"], staleTime: 10 * 60_000, queryFn: async () => {
+  await ready();
   const { data, error } = await supabase.from("weekly_briefs").select("week,brief").order("week", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error; return data ? { week: data.week, headline: (data.brief as unknown as BriefDoc).headline } : null;
 } });
@@ -336,6 +355,7 @@ export const todayQuery = () => queryOptions({
   queryKey: ["today"],
   staleTime: STALE,
   queryFn: async (): Promise<Omit<TodayInput, "type">> => {
+    await ready();
     const now = new Date().toISOString(), since = new Date(Date.now() - 864e5).toISOString();
     // Real runs only; stage lines compare the latest real run with the most recent real run at least MIN_RUN_GAP_DAYS older.
     const real = await fetchRealRuns(supabase), pair = comparisonPair(real), last = real.at(-1);
@@ -367,6 +387,7 @@ export const todayQuery = () => queryOptions({
 
 /** First discourse sample, for "fills in after N weeks" copy. */
 export const discourseSinceQuery = () => queryOptions({ queryKey: ["discourse-since"], staleTime: 60 * 60_000, queryFn: async () => {
+  await ready();
   const { data, error } = await supabase.from("discourse_counts").select("updated_at").order("updated_at").limit(1);
   if (error) throw error;
   return data?.[0]?.updated_at ?? null;
@@ -378,6 +399,7 @@ export const briefWithdrawnQuery = (week: string) => queryOptions({ queryKey: ["
 export const archiveQuery = () => queryOptions({ queryKey: ["digest-archive"], staleTime: 10 * 60_000, queryFn: () => getArchive() });
 export const traitPageQuery = (key: string) => queryOptions({ queryKey: ["trait-page", key], staleTime: 10 * 60_000, queryFn: () => getTrait({ data: { key } }) });
 export const siteThumbQuery = (domain: string) => queryOptions({ queryKey: ["site-thumb", domain], staleTime: 10 * 60_000, queryFn: async () => {
+  await ready();
   const { data, error } = await supabase.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", domain).order("captured_at", { ascending: false }).limit(4);
   if (error) throw error;
   return data ?? [];
@@ -447,6 +469,7 @@ export const patternsQuery = (sector: string, illustrated = false) => queryOptio
 export const cropCoverageQuery = () => queryOptions({ queryKey: ["crop-coverage"], staleTime: 10 * 60_000, queryFn: () => getCropCoverage() });
 /** Terminal brand record: this brand's stored section crops (public SELECT; opted-out sites are hidden by policy). */
 export const siteCropsQuery = (domain: string) => queryOptions({ queryKey: ["site-crops", domain], staleTime: 10 * 60_000, queryFn: async () => {
+  await ready();
   const { data, error } = await supabase.from("site_crops").select("domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash").eq("domain", domain).order("captured_at", { ascending: false }).limit(100);
   if (error) throw error; return data ?? [];
 } });

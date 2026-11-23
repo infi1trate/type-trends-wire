@@ -2,7 +2,8 @@ import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/r
 
 import { renderErrorPage } from "./lib/error-page";
 import { READ_DEADLINE_MS, isReaderFn, within } from "./lib/deadline";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+// C1 · attachSupabaseAuthLazy replaces the generated attachSupabaseAuth on purpose (same header, client loaded lazily; auth-attach.ts).
+import { attachSupabaseAuthLazy } from "./lib/auth-attach";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -39,6 +40,6 @@ const readDeadline = createMiddleware({ type: "function" }).server(async ({ next
   isReaderFn(method, serverFnMeta?.filename) ? within(next(), READ_DEADLINE_MS, serverFnMeta?.name ?? "read") : next());
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth, readDeadline],
+  functionMiddleware: [attachSupabaseAuthLazy, readDeadline],
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));
