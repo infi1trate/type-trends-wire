@@ -1,1 +1,2 @@
 - The Terminal's brand library is a shared stored record (`library`), served reader-first like the Read pages, because built live on a cold server it ran past the reader limit and the panel failed.
+- A study page, share image and embed read only the stored `data-story` copy for readers ("being prepared", never cached, until it exists); "no such study" copies and the Studies home carry the build stamp and the sweep rebuilds other-build ones first, so a switch flipped in code shows on the first pass instead of after a stale copy expires.

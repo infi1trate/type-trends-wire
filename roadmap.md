@@ -281,11 +281,11 @@
 
 # W3d-b · Study No. 8 on the real week (owner, 23 Nov 22:17 UTC)
 - [x] 1 Proof pictures from the stored week 2026-W48 (w3d-real-*.png, README says which are real); wall reads as bands, no alt drawn
-- [ ] 2 Removal immediate for icon_remove and art_remove — stopped: needs a database read on every reader request (owner to choose)
+- [x] 2 Removal immediate for icon_remove and art_remove — done the cheaper way in W3d-c Part 4
 
 # W3d-c · Study No. 8 goes on (owner, 23 Nov 23:22 UTC)
-- [ ] 1 Study fixes: no lean under 5 points; deck joins same-pair ties; mixed set off by thinnest gap + method sentence
-- [ ] 2 First visit: sweep builds the copy on its first pass; no stale "no such study"; waiting line; /data, shelf, series list No. 8
-- [ ] 3 ICONS_SHOWN = true (nothing else in site.ts)
-- [ ] 4 Removal rewrites stored copies + clears the taking server's copy (icon_remove, art_remove), tests, longest visible
-- [ ] 5 Health icons count past 1,000 rows (test at 1,001); other health/desk counts checked; Apple charts in the sources register
+- [x] 1 Study fixes: no lean under 5 points; deck joins same-pair ties; mixed set off by thinnest gap + method sentence
+- [x] 2 First visit: sweep builds the copy on its first pass; no stale "no such study"; waiting line; /data, shelf, series list No. 8
+- [x] 3 ICONS_SHOWN = true (nothing else in site.ts)
+- [x] 4 Removal rewrites stored copies + clears the taking server's copy (icon_remove, art_remove), tests, longest visible
+- [x] 5 Health icons count past 1,000 rows (test at 1,001); other health/desk counts checked; Apple charts in the sources register
