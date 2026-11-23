@@ -1,0 +1,40 @@
+name: app-icon-colours
+# Reads Apple's public chart of top free apps (US store) in eighteen categories, measures each icon's colours in memory with the
+# same method as brand homepages, and sends only the measured colours with the app's name, maker and App Store link. No icon
+# picture is kept or sent (Apple's terms allow app icons only to promote store content). Started by hand until the site's
+# endpoint is live; the weekly schedule is added after the first real run.
+on:
+  workflow_dispatch:
+    inputs:
+      genres:
+        description: "Category names, comma-separated (empty = all eighteen)"
+        default: ""
+      limit:
+        description: "Apps per category (1-100)"
+        default: "100"
+      dry_run:
+        description: "1 = read and print, send nothing"
+        default: "1"
+permissions:
+  contents: read
+concurrency: { group: slug-app-icons, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - name: Measure the icons and send their colours
+        env:
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          ICON_GENRES: ${{ inputs.genres }}
+          ICON_LIMIT: ${{ inputs.limit }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node src/icons.js
