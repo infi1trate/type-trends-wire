@@ -527,8 +527,9 @@ const JOB_LIMIT_MS = CALL_BUDGET_MS, MIN_INTERVAL_MS = 120_000;
 let lastRun = 0;
 /** `limitMs`: the call's own limit from `jobStartedAt` when shorter than CALL_BUDGET_MS (T1 · the follow-ups pass works after it has
  *  answered and has less time). Every deadline below is measured from it. Returns the build's run note (null when it did not run). */
-export async function afterJob(job: string, jobStartedAt: number, extra: Pick<BuildOptions, "realRunIds"> & { limitMs?: number } = {}): Promise<string | null> {
-  const { limitMs, ...build } = extra, LIMIT = Math.min(JOB_LIMIT_MS, limitMs ?? JOB_LIMIT_MS);
+export async function afterJob(job: string, jobStartedAt: number, extra: Pick<BuildOptions, "realRunIds"> & { limitMs?: number; /** D1c · the tail (writers, desk jobs, copy sweep) ends by then: the follow-ups pass keeps the sweep's share when the build goes first */ tailUntil?: number } = {}): Promise<string | null> {
+  const { limitMs, tailUntil, ...build } = extra, LIMIT = Math.min(JOB_LIMIT_MS, limitMs ?? JOB_LIMIT_MS);
+  const studies = (j: string, t: number, l: number) => tailWork(j, t, l, tailUntil);
   try {
     const now = Date.now(), left = LIMIT - (now - jobStartedAt) - 10_000;
     if (left < 5000 || now - lastRun < MIN_INTERVAL_MS) { await studies(job, jobStartedAt, LIMIT); return null; }
@@ -573,13 +574,15 @@ async function otherBuildFirst(id: number): Promise<boolean> {
   } catch { return true; }
 }
 /** E4 · after the stories (their twelve calls come first), the study writer takes what time is left, when a call still fits. Never throws. */
-async function studies(job: string, jobStartedAt: number, LIMIT = JOB_LIMIT_MS) {
-  await (await import("../data-stories/writer.server")).runStudyWriter(job, jobStartedAt + LIMIT - 6000).catch(() => null);
+async function tailWork(job: string, jobStartedAt: number, LIMIT = JOB_LIMIT_MS, tailUntil?: number) {
+  const END = Math.min(jobStartedAt + LIMIT, tailUntil ?? Infinity);
+  await (await import("../data-stories/writer.server")).runStudyWriter(job, END - 6000).catch(() => null);
   // E5 · then the digest writer (two calls a day at most, its own count), when a call still fits.
-  await (await import("../digest/writer.server")).runDigestWriter(job, jobStartedAt + LIMIT - 6000).catch(() => null);
+  await (await import("../digest/writer.server")).runDigestWriter(job, END - 6000).catch(() => null);
   // N2 · the copy desk's weekly sweep, when time is left (resumes in a later build; never fails the job).
-  if (jobStartedAt + LIMIT - Date.now() > 20_000) await (await import("../newsroom/sweep.server")).runCopySweep((await import("@/integrations/supabase/client.server")).supabaseAdmin, jobStartedAt + LIMIT - 8000).catch(() => null);
-  // N3 · the news, graphics and data desks' scheduled work, when time is left (never fails the job).
-  if (jobStartedAt + LIMIT - Date.now() > 20_000) await (await import("../newsroom/desks-run.server")).runDeskJobs(jobStartedAt + LIMIT - 6000).catch(() => null);
+  if (END - Date.now() > 20_000) await (await import("../newsroom/sweep.server")).runCopySweep((await import("@/integrations/supabase/client.server")).supabaseAdmin, END - 8000).catch(() => null);
+  // N3 · the news, graphics and data desks' scheduled work, when time is left (never fails the job). Each item has its own gate on the
+  // time left; D1c · from 10 s the publisher's package re-check can run (the others need 15 s or more).
+  if (END - Date.now() > 10_000) await (await import("../newsroom/desks-run.server")).runDeskJobs(END - 1000).catch(() => null);
 }
 export const storyLabel = (k: string) => label(k).name;

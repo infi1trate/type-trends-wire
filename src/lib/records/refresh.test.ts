@@ -27,7 +27,7 @@ const hang = () => new Promise<never>(() => {});
 /** D1c · every record stored 40 minutes ago: due, inside its limit, so not urgent (an urgent step runs whatever its estimate). */
 const dueNotUrgent = (now = Date.now()) => {
   const at = new Date(now - 40 * 60_000).toISOString();
-  return [...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "brands-index", "data-index"].map(k => ({ key: k, computed_at: at })),
+  return [...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "library", "brands-index", "data-index"].map(k => ({ key: k, computed_at: at })),
     ...SITES.flatMap(x => ["brand-similar", "brand-sector", "brand-card"].map(k => ({ key: `${k}:${x.domain}`, computed_at: at })))];
 };
 beforeEach(() => resetStepEstimates());
@@ -102,7 +102,7 @@ describe("T2 · Part 0c: overdue page models go before the per-brand rows", () =
   it("a page past its limit is rewritten even when the brand-sector step takes the rest of the pass", async () => {
     const now = Date.now(), old = new Date(now - 9 * 3_600_000).toISOString(), fresh = new Date(now - 60_000).toISOString();
     const metas = [{ key: "data-story:a", kind: "data-story", computed_at: old }, { key: "data-index", kind: "data-index", computed_at: fresh },
-      ...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards"].map(k => ({ key: k, kind: k, computed_at: fresh }))];
+      ...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "library"].map(k => ({ key: k, kind: k, computed_at: fresh }))];
     const f = fakes({ metas: async () => metas, pageKeys: async () => ["data-index", "data-story:a"], sector: () => hang() });
     const r = await refreshRecords({ job: "wire", deadline: Date.now() + 300, deps: f.deps, estimates: tiny });
     expect(f.calls.indexOf("page data-story:a")).toBeGreaterThan(-1);
@@ -145,16 +145,16 @@ describe("D1b · the sweep's queue: overdue first (D1c: most late first)", () =>
     const now = Date.now(), old = new Date(now - 13.6 * 3_600_000).toISOString(), due = new Date(now - 20 * 60_000).toISOString();
     const pages = ["data-index", "data-story:a", "collections", "collection:x:1", "gallery:default", "digest:2026-W46"];
     const metas = [...pages.map(k => ({ key: k, kind: k.split(":")[0]!, computed_at: old })),
-      ...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards"].map(k => ({ key: k, kind: k, computed_at: due }))];
+      ...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "library"].map(k => ({ key: k, kind: k, computed_at: due }))];
     const f = fakes({ metas: async () => metas, pageKeys: async () => pages });
-    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 2_000, deps: f.deps, estimates: { metas: 1, "page-keys": 1, sites: 1, page: 1, "card-chunk": 1, "brand-similar": 1, "brand-sector": 1, "site-index": 1, signals: 1, rebrands: 1, "moving-runs": 1, "quarter-series": 1, "front-tape": 1, "front-cards": 1 } });
+    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 2_000, deps: f.deps, estimates: { metas: 1, "page-keys": 1, sites: 1, page: 1, "card-chunk": 1, "brand-similar": 1, "brand-sector": 1, "site-index": 1, signals: 1, rebrands: 1, "moving-runs": 1, "quarter-series": 1, "front-tape": 1, "front-cards": 1, library: 1 } });
     const firstShared = Math.min(...f.calls.map((c, i) => (c.startsWith("shared ") ? i : Infinity)));
     for (const p of pages) expect(f.calls.indexOf(`page ${p}`)).toBeLessThan(firstShared);
     expect(r.overdue_tried).toEqual(expect.arrayContaining(pages));
   });
   it("counts bodies that only had their time moved apart from those rewritten", async () => {
     const f = fakes({ write: async rows => ({ written: rows.filter(r => r.key === "signals").map(r => r.key), retimed: rows.filter(r => r.key !== "signals").map(r => r.key) }) });
-    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 2_000, deps: f.deps, estimates: { metas: 1, "page-keys": 1, sites: 1, page: 1, "card-chunk": 1, "brand-similar": 1, "brand-sector": 1, "site-index": 1, signals: 1, rebrands: 1, "moving-runs": 1, "quarter-series": 1, "front-tape": 1, "front-cards": 1 } });
+    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 2_000, deps: f.deps, estimates: { metas: 1, "page-keys": 1, sites: 1, page: 1, "card-chunk": 1, "brand-similar": 1, "brand-sector": 1, "site-index": 1, signals: 1, rebrands: 1, "moving-runs": 1, "quarter-series": 1, "front-tape": 1, "front-cards": 1, library: 1 } });
     expect(r.written).toEqual(["signals"]);
     expect(r.retimed).toContain("site-index");
     expect(r.retimed).not.toContain("signals");

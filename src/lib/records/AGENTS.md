@@ -1,0 +1,1 @@
+- The Terminal's brand library is a shared stored record (`library`), served reader-first like the Read pages, because built live on a cold server it ran past the reader limit and the panel failed.

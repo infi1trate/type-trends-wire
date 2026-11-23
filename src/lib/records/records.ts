@@ -17,6 +17,9 @@ export const SHARED = {
    *  Written by the story build right after it runs; the sweeper rewrites them when older than `every`. */
   "front-tape": { maxAge: 2 * HOUR, every: 15 * MIN },
   "front-cards": { maxAge: 2 * HOUR, every: 15 * MIN },
+  /** D1c · the Terminal's brand library (F3 Brands and the ticker's change line): built live it took 1.7–3.8 s on a cold server and
+   *  past the reader limit the panel failed, so it is a stored copy like the Read pages. */
+  library: { maxAge: 3 * HOUR, every: 15 * MIN },
 } as const;
 export type SharedKey = keyof typeof SHARED;
 /** Per-brand records (one row per tracked domain) and their ages. Cards are also rewritten whenever a new capture of the brand lands. */

@@ -2,8 +2,8 @@
 // together (the AI trends and the pictures index used to wait for everything before them, ~3.8 s in a row from a cold start, past the
 // reader time limit), and a read that runs late is answered with the last good copy this instance built, so the Terminal never waits
 // on it without limit. Anonymous SELECT-only reads; nothing is written.
-import { memo } from "./memo";
 import { LAST_GOOD_MS, within } from "./deadline";
+import { stored } from "./records/store.server";
 
 async function computeLibrary() {
   const [{ libraryRows, libraryEvents, librarySectors }, { aiTrends }, { supabaseAnon }, { picturesSafe }, { iconsFor }] = await Promise.all([
@@ -34,13 +34,15 @@ async function computeLibrary() {
   return { rows, icons, events: rowsOut.map(({ also, pages: _p, parts: _parts, ...e }) => ({ ...e, tape: e.tape, seasonal: [e.id, ...also].some(id => seasonal.has(id)), reversed: [e.id, ...also].some(id => reversed.has(id)) })), unconfirmed, sectors, ai: await ai };
 }
 export type LibraryRead = Awaited<ReturnType<typeof computeLibrary>>;
-/** Built once a minute per instance (the query's own stale time is five minutes). */
-const fresh = memo(60_000, computeLibrary);
+export { computeLibrary };
+/** D1c · served from its stored copy (read_records "library", rewritten by the sweep only when it changed), like the Read pages: the
+ *  reader gets the stored copy first and a rebuild happens behind it; with no usable copy it is built live, as before. */
+const record = stored("library", computeLibrary, { ttl: 60_000 });
 /** A read still running after this is answered with the last good copy, when this instance has one. */
 export const LIBRARY_LAST_GOOD_MS = LAST_GOOD_MS;
 let last: LibraryRead | null = null;
 export async function loadLibrary(): Promise<LibraryRead> {
-  const p = fresh().then(v => { last = v; return v; });
+  const p = record().then(v => { last = v; return v; });
   const had = last;
   if (!had) return p;
   return within(p, LIBRARY_LAST_GOOD_MS, "library", () => had).catch(() => had);

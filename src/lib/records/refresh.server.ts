@@ -41,6 +41,7 @@ async function sharedBody(k: SharedKey): Promise<unknown> {
     case "quarter-series": return (await import("../front/front.server")).quarterSeries.compute();
     case "front-tape": return (await import("../front/tape.server")).frontTapeRecord.compute();
     case "front-cards": return (await import("../front/front.server")).frontCards.compute();
+    case "library": return (await import("../library-read.server")).computeLibrary();
   }
 }
 /** Page models: one record per key (`kind:part…`), built by the page's own loader. A finished week's Digest holds its week's stories
@@ -96,7 +97,7 @@ const DEFAULT_DEPS: RefreshDeps = {
  *  collections 1.9 s, a collection or the gallery under 0.6 s, brand-similar 1.4 s, brand-sector 11 s (the same studies input + 1.6 s). */
 export const STEP_ESTIMATE_MS: Readonly<Record<string, number>> = {
   metas: 1_500, sites: 1_500, "page-keys": 1_500, "card-chunk": 2_500,
-  "site-index": 5_000, signals: 5_000, rebrands: 6_000, "moving-runs": 4_000, "quarter-series": 4_000, "front-tape": 8_000, "front-cards": 6_000,
+  "site-index": 5_000, signals: 5_000, rebrands: 6_000, "moving-runs": 4_000, "quarter-series": 4_000, "front-tape": 8_000, "front-cards": 6_000, library: 4_000,
   "brand-similar": 4_000, "brand-sector": 12_000, page: 5_000,
   "page:brands-index": 11_000, "page:data-index": 11_000, "page:data-story": 11_000, "page:digest": 5_000, "page:collections": 3_000, "page:collection": 2_000, "page:gallery": 2_000,
 };

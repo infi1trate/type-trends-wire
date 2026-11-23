@@ -39,7 +39,17 @@ export async function runDeskJobs(deadline: number): Promise<Record<string, stri
       out["package"] = r.why;
       await deskDoor("publisher", { action: "data_run", run: "package", ...(r.week ? { ref: `package:${r.week}` } : {}), summary: `Package check ${r.week ?? ""}: ${r.why}${r.row ? ` (row ${r.row})` : ""}.`.slice(0, 600), counts: { items: r.items.length, failed: r.items.filter(x => !x.ok).length } }).catch(() => null);
     }
-    if (monday && left() > 30_000 && !held.has("drafts")) {
+    // D1c · the publisher can try again: the newest issue's failed check runs again (every six hours at most, four times an issue);
+    // a cut-off re-check stores nothing and counts for nothing.
+    if (left() > 8_000 && !held.has("package")) {
+      const r = await (await import("./publisher.server")).runPackageRecheck(db, { signal: AbortSignal.timeout(Math.max(4000, left() - 500)) }).catch(e => ({ ran: false, why: e instanceof Error ? e.message : "error", run: undefined, closed: null }));
+      if (r.ran && r.run) {
+        out["package recheck"] = r.why;
+        await deskDoor("publisher", { action: "data_run", run: "package", ...(r.run.week ? { ref: `package:${r.run.week}:recheck` } : {}), summary: `Package re-check ${r.run.week ?? ""}: ${r.run.why}${r.run.row ? ` (row ${r.run.row})` : ""}${r.closed ? `; closed queue item ${r.closed}` : ""}.`.slice(0, 600), counts: { items: r.run.items.length, failed: r.run.items.filter(x => !x.ok).length } }).catch(() => null);
+      }
+    }
+    // The drafts call follows the newest issue's passing check within the week (D1c: also when a re-check passed after Monday).
+    if (left() > 30_000 && !held.has("drafts")) {
       const { data: chk } = await db.from("package_checks").select("id,week,pass").eq("test", false).gte("at", weekAgo).order("id", { ascending: false }).limit(1);
       const c = chk?.[0];
       if (c?.pass && await begin("drafts", weekAgo)) { const r = await (await import("./publisher.server")).runDrafts(db, { week: c.week, checkId: c.id, signal: AbortSignal.timeout(Math.max(5000, left() - 5000)) }); out["drafts"] = r.why; await deskDoor("publisher", { action: "data_run", run: "drafts", ref: `drafts:${c.week}`, summary: `Drafts for ${c.week}: ${r.why}.`.slice(0, 600), counts: { kept: r.kept.length, dropped: r.dropped.length } }).catch(() => null); }

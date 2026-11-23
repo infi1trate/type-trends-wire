@@ -5,13 +5,21 @@ import type { Admin } from "./review.server";
 import * as p from "./publisher";
 import { SITE_URL } from "../site";
 
-const FETCH_MS = 8_000, CONCURRENCY = 6;
-async function get(url: string, o: { body?: boolean; signal?: AbortSignal | undefined } = {}): Promise<p.Fetched & { redirected: boolean; final: string }> {
+const CONCURRENCY = 6;
+type Got = p.Fetched & { redirected: boolean; final: string; ms: number };
+async function getOnce(url: string, o: { body?: boolean; signal?: AbortSignal | undefined }): Promise<Got> {
+  const t0 = Date.now();
   try {
-    const r = await fetch(url, { redirect: "follow", signal: o.signal ? AbortSignal.any([o.signal, AbortSignal.timeout(FETCH_MS)]) : AbortSignal.timeout(FETCH_MS), headers: { "user-agent": "slug-publisher/1 (package check)" } });
+    const r = await fetch(url, { redirect: "follow", signal: o.signal ? AbortSignal.any([o.signal, AbortSignal.timeout(p.LINK_TIMEOUT_MS)]) : AbortSignal.timeout(p.LINK_TIMEOUT_MS), headers: { "user-agent": "slug-publisher/1 (package check)" } });
     const buf = new Uint8Array(await r.arrayBuffer());
-    return { status: r.status, type: r.headers.get("content-type"), bytes: buf.byteLength, ...(o.body ? { body: new TextDecoder().decode(buf) } : {}), redirected: r.redirected, final: r.url };
-  } catch { return { status: 0, type: null, bytes: 0, redirected: false, final: url }; }
+    return { status: r.status, type: r.headers.get("content-type"), bytes: buf.byteLength, ...(o.body ? { body: new TextDecoder().decode(buf) } : {}), redirected: r.redirected, final: r.url, ms: Date.now() - t0 };
+  } catch { return { status: 0, type: null, bytes: 0, redirected: false, final: url, ms: Date.now() - t0 }; }
+}
+/** D1c · 10 s per try and one retry before a link counts as dead. */
+async function get(url: string, o: { body?: boolean; signal?: AbortSignal | undefined } = {}): Promise<Got> {
+  let r = await getOnce(url, o);
+  for (let k = 1; k < p.LINK_TRIES && r.status !== 200 && !o.signal?.aborted; k++) r = await getOnce(url, o);
+  return r;
 }
 async function pooled<T, R>(xs: readonly T[], f: (x: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(xs.length); let i = 0;
@@ -31,14 +39,16 @@ export async function runPackageCheck(db: Admin, o: { week?: string; base?: stri
   const morningNewest = morningArchive(await storyRaw(), now).find(x => x.final)?.day ?? null;
   const [share, digestRss, morningRss, checked] = await Promise.all([
     get(`${base}/digest/${e.week}.png`, { signal: o.signal }), get(`${base}/digest/rss.xml`, { body: true, signal: o.signal }), get(`${base}/morning/rss.xml`, { body: true, signal: o.signal }),
-    pooled(links, async path => { const r = await get(`${base}${path}`, { signal: o.signal }); return { path, status: r.status, redirected: r.redirected, final: r.final }; }),
+    pooled(links, async path => { const r = await get(`${base}${path}`, { signal: o.signal }); return { path, status: r.status, redirected: r.redirected, final: r.final, ms: r.ms }; }),
   ]);
+  // D1c · a check whose own time ran out is not a result: nothing is stored or filed, and it does not count as a re-check.
+  if (o.signal?.aborted) return { row: null, week: e.week, number: e.number, pass: false, items: [], queue: null, redirects: 0, why: "cut off before every link answered; not stored" };
   const cover = checked.find(l => l.path === coverHref) ?? null;
   const items = p.packageChecks({
     now, closed: finishedWeek(e.week, now),
     issue: { week: e.week, number: e.number, words: e.words, rows: e.rows.map(r => ({ href: r.href, picture: !!r.picture })), picturesAvailable: e.picturesAvailable ?? null, chart: e.chart ? { href: e.chart.number != null ? `/stories/no/${e.chart.number}` : `/stories/${encodeURIComponent(e.chart.storyId)}` } : null, cover: { id: e.cover.id, href: coverHref, subject: e.cover.subject }, links },
     share, cover: cover ? { status: cover.status } : null, digestRss, morningRss, morningNewest,
-    links: checked.map(l => ({ path: l.path, status: l.status === 200 && new URL(l.final).origin === new URL(base).origin ? 200 : l.status === 200 ? 0 : l.status })),
+    links: checked.map(l => ({ path: l.path, status: l.status === 200 && new URL(l.final).origin === new URL(base).origin ? 200 : l.status === 200 ? 0 : l.status, ms: l.ms })),
   });
   const pass = p.packagePassed(items), redirects = checked.filter(l => l.redirected).length;
   const { data, error } = await db.from("package_checks").insert({ week: e.week, issue: e.number, pass, checks: items as never, test: o.test ?? false }).select("id").single();
@@ -50,6 +60,28 @@ export async function runPackageCheck(db: Admin, o: { week?: string; base?: stri
     queue = ((r.body as { item?: number }).item) ?? null;
   }
   return { row: data.id, week: e.week, number: e.number, pass, items, queue, redirects, why: pass ? "passed" : `${items.filter(x => !x.ok).length} failed` };
+}
+
+/** D1c · the publisher's re-check: when the newest issue's last check failed (recheckDue: at most every six hours, four times an issue),
+ *  run it again for that week; a pass closes the bug item the failure opened (through the door, with the note). */
+export async function runPackageRecheck(db: Admin, o: { signal?: AbortSignal; now?: number; base?: string; force?: boolean } = {}): Promise<{ ran: boolean; why: string; run?: PackageRun; closed?: number | null }> {
+  const now = o.now ?? Date.now();
+  const { data, error } = await db.from("package_checks").select("id,at,week,pass,test").order("id", { ascending: false }).limit(40);
+  if (error) return { ran: false, why: "package checks unreadable" };
+  const due = p.recheckDue((data ?? []) as p.CheckRow[], now);
+  if (!due.due) return { ran: false, why: due.why };
+  const run = await runPackageCheck(db, { week: due.week, ...(o.signal ? { signal: o.signal } : {}), ...(o.base ? { base: o.base } : {}), now });
+  if (run.row == null) return { ran: false, why: run.why, run };
+  let closed: number | null = null;
+  if (run.pass) {
+    const { data: items } = await db.from("build_queue").select("id").eq("ikey", `package:${due.week}`).eq("kind", "bug").eq("test", false).order("id", { ascending: false }).limit(3);
+    const { deskDoor } = await import("../stories/desk.server");
+    for (const it of items ?? []) {
+      const r = await deskDoor("engineering", { action: "queue_move", item: it.id, to: "declined", reason: p.recheckCloseReason(due.week, run.row) });
+      if (r.status < 300) closed = it.id;
+    }
+  }
+  return { ran: true, why: `${due.why}: ${run.why}`, run, closed };
 }
 
 /** The drafts sheet: the issue's own words and numbers, and up to three of the week's stories the editor in chief led with. */

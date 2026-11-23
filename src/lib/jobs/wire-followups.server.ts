@@ -9,7 +9,7 @@ type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseA
 export type StepResult = { step: wf.FollowupStep | "marked work"; ms: number; note: string | null; written?: Record<string, number> };
 export type WireFollowupsRun = { ran: boolean; why: string; run_id: number | null; first: wf.FollowupStep | null; steps: StepResult[]; ms: number; mode?: "background" | "inline" };
 type Deps = {
-  build: (job: string, t0: number, limitMs: number) => Promise<string | null>;
+  build: (job: string, t0: number, limitMs: number, tailUntil?: number) => Promise<string | null>;
   sweep: (job: string, start: number, limitMs: number, force?: boolean, metas?: { key: string; computed_at: string }[]) => Promise<{ written: string[]; retimed?: string[]; checked?: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
   /** D1c · the stored pages past their limit or passing it before the next pass (with the times read, handed to the sweep). */
   urgent: () => Promise<{ keys: string[]; metas: { key: string; computed_at: string }[] | null }>;
@@ -20,7 +20,7 @@ type Deps = {
   pause: (ms: number) => Promise<void>;
 };
 const DEPS: Deps = {
-  build: async (job, t0, limitMs) => (await import("../stories/build.server")).afterJob(job, t0, { limitMs }),
+  build: async (job, t0, limitMs, tailUntil) => (await import("../stories/build.server")).afterJob(job, t0, { limitMs, ...(tailUntil ? { tailUntil } : {}) }),
   sweep: async (job, start, limitMs, force, metas) => (await import("../records/refresh.server")).refreshAfterJob(job, start, { limitMs, ...(force ? { force } : {}), ...(metas ? { metas } : {}) }),
   urgent: async () => {
     if (underTest()) return { keys: [], metas: null };
@@ -72,7 +72,8 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
           await deps.pause(STEP_PAUSE_MS);
           const t = clock();
           if (step === "story build") {
-            const note = await deps.build("wire", t0, wf.PASS_END_MS);
+            // D1c · first, the build and its tail stay inside the build's room so the sweep keeps its share (a quick build leaves its tail time).
+            const note = await deps.build("wire", t0, wf.PASS_END_MS, step === order[0] ? t0 + wf.BUILD_ROOM_MS : undefined);
             r.steps.push({ step, ms: clock() - t, note: note ? note.replace(/^wire · /, "") : "skipped: too little time left" });
           } else {
             // Second, the sweep has whatever is left before the pass's end; first, it leaves the build its room.

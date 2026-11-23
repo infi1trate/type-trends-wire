@@ -42,7 +42,28 @@ export type PackageItem = { id: PackageItemId; name: string; ok: boolean; detail
 export type Fetched = { status: number; type?: string | null; bytes?: number; body?: string };
 export type PackageIssue = { week: string; number: number; words: number; rows: { href: string; picture: boolean }[];
   /** L2 · how many of the issue's rows have a picture it could carry; null when the stored issue predates the count. */ picturesAvailable?: number | null; chart: { href: string } | null; cover: { id: string; href: string; subject: string } | null; links: string[] };
-export type PackageInput = { now: number; closed: boolean; issue: PackageIssue; share: Fetched; cover: Fetched | null; digestRss: Fetched; morningRss: Fetched; morningNewest: string | null; links: { path: string; status: number }[] };
+export type PackageInput = { now: number; closed: boolean; issue: PackageIssue; share: Fetched; cover: Fetched | null; digestRss: Fetched; morningRss: Fetched; morningNewest: string | null; links: { path: string; status: number; /** D1c · how long the answer took (the slower try when retried) */ ms?: number }[] };
+
+/** D1c · the link check: each link gets LINK_TIMEOUT_MS and one retry before it counts as dead; a link that answered 200 in more than
+ *  SLOW_LINK_MS is named "slow" in the detail (it does not fail the check). */
+export const LINK_TIMEOUT_MS = 10_000, LINK_TRIES = 2, SLOW_LINK_MS = 3_000;
+/** D1c · when the newest issue's last check failed, the publisher checks again on its next pass: at most once every RECHECK_EVERY_MS and
+ *  at most RECHECKS_MAX times for one issue, so a failure during a stall does not hold the week's drafts for a week. */
+export const RECHECK_EVERY_MS = 6 * 3_600_000, RECHECKS_MAX = 4;
+export type CheckRow = { id: number; at: string; week: string; pass: boolean; test: boolean };
+export function recheckDue(rows: readonly CheckRow[], now: number): { due: true; week: string; recheck: number; why: string } | { due: false; week: string | null; why: string } {
+  const real = rows.filter(r => !r.test).sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
+  const last = real.at(-1);
+  if (!last) return { due: false, week: null, why: "no package check yet" };
+  const mine = real.filter(r => r.week === last.week), done = mine.length - 1;
+  if (last.pass) return { due: false, week: last.week, why: `${last.week} passed` };
+  if (done >= RECHECKS_MAX) return { due: false, week: last.week, why: `${last.week}: all ${RECHECKS_MAX} re-checks used` };
+  const next = Date.parse(last.at) + RECHECK_EVERY_MS;
+  if (now < next) return { due: false, week: last.week, why: `${last.week}: next re-check after ${new Date(next).toISOString().slice(11, 16)} UTC` };
+  return { due: true, week: last.week, recheck: done + 1, why: `${last.week} failed at ${last.at.slice(11, 16)} UTC; re-check ${done + 1} of ${RECHECKS_MAX}` };
+}
+/** The note a passing re-check closes the failed check's bug item with. */
+export const recheckCloseReason = (week: string, row: number) => `no longer found: the package check for ${week} passed on a re-check (row ${row})`;
 
 /** Every internal path an issue links to (the cover, the five rows, the chart's story, the numbers line, corrections, keep reading, its
  *  own address and the archive), without fragments, de-duplicated, in page order. */
@@ -104,7 +125,8 @@ export function picturesItem(name: string, pics: number, available: number | nul
 /** Every item of the package check, in order (code only). */
 export function packageChecks(i: PackageInput): PackageItem[] {
   const n = (id: PackageItemId) => PACKAGE_ITEMS.find(x => x.id === id)!.name, x = i.issue;
-  const pics = x.rows.filter(r => r.picture).length, bad = i.links.filter(l => l.status !== 200);
+  const pics = x.rows.filter(r => r.picture).length, bad = i.links.filter(l => l.status !== 200), slow = i.links.filter(l => l.status === 200 && (l.ms ?? 0) > SLOW_LINK_MS);
+  const slowNote = slow.length ? `; slow: ${slow.slice(0, 6).map(l => `${l.path} (${Math.round((l.ms ?? 0) / 100) / 10} s)`).join(", ")}` : "";
   const image = (f: Fetched | null, what: string) => !f ? `no ${what}` : f.status !== 200 ? `answered ${f.status}` : !(f.type ?? "").startsWith("image/") && what === "share image" ? `answered ${f.type ?? "no type"}` : (f.bytes ?? 0) < 1024 && what === "share image" ? `only ${f.bytes ?? 0} bytes` : null;
   const shareWhy = image(i.share, "share image"), coverWhy = !x.cover ? "no cover story" : image(i.cover, "cover page");
   return [
@@ -117,7 +139,7 @@ export function packageChecks(i: PackageInput): PackageItem[] {
     { id: "share_image", name: n("share_image"), ok: !shareWhy, detail: shareWhy ?? `/digest/${x.week}.png, ${i.share.type}, ${Math.round((i.share.bytes ?? 0) / 1024)} KB` },
     feedItem("digest_rss", i.digestRss, `/digest/${x.week}`),
     feedItem("morning_rss", i.morningRss, i.morningNewest ? `/morning/${i.morningNewest}` : null),
-    { id: "links", name: n("links"), ok: !bad.length && i.links.length > 0, detail: !i.links.length ? "no links checked" : bad.length ? `${bad.length} of ${i.links.length} failed: ${bad.slice(0, 6).map(l => `${l.path} (${l.status || "no answer"})`).join(", ")}` : `${i.links.length} of ${i.links.length} answer 200` },
+    { id: "links", name: n("links"), ok: !bad.length && i.links.length > 0, detail: !i.links.length ? "no links checked" : bad.length ? `${bad.length} of ${i.links.length} failed: ${bad.slice(0, 6).map(l => `${l.path} (${l.status || "no answer"})`).join(", ")}${slowNote}` : `${i.links.length} of ${i.links.length} answer 200${slowNote}` },
   ];
 }
 export const packagePassed = (items: readonly PackageItem[]) => items.length > 0 && items.every(x => x.ok);
