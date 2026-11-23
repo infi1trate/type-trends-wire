@@ -8,6 +8,9 @@ test("a slow or silent database means wait; a stale job does not", () => {
   assert.equal(readHealth(200, { status: "down", database: { status: "slow" } }).go, false);
   assert.equal(readHealth(200, { database: { status: "bad" } }).go, false);
   assert.equal(readHealth(200, { safe_mode: { on: true } }).go, false);
+  assert.equal(readHealth(200, { status: "down", db: { answer: { state: "warn" }, safe_mode: { on: false } } }).go, true);   // a cold server says "down"; that is not the database
+  assert.equal(readHealth(200, { db: { answer: { state: "bad" } } }).go, false);
+  assert.equal(readHealth(200, { db: { safe_mode: { on: true } } }).go, false);
   assert.equal(readHealth(0, null).go, false);
   assert.equal(readHealth(503, null).go, false);
 });

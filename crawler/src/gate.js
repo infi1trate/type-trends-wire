@@ -14,7 +14,8 @@ export function readHealth(status, body) {
   if (status >= 500) return { go: false, why: `the health check answered ${status}` };
   const db = body?.database?.status;
   if (db === "slow" || db === "bad" || db === "down") return { go: false, why: `the site says its database is ${db}` };
-  if (body?.safe_mode === true || body?.safe_mode?.on === true) return { go: false, why: "the site is in safe mode" };
+  if (body?.safe_mode === true || body?.safe_mode?.on === true || body?.db?.safe_mode?.on === true) return { go: false, why: "the site is in safe mode" };
+  if (body?.db?.answer?.state === "bad") return { go: false, why: "the site says its database is answering badly" };   // D1's health lines; "warn" still posts
   return { go: true, why: "ok" };   // an old job being stale is not a reason to stop posting; a slow database is
 }
 export const healthUrl = (endpoint) => new URL("/api/public/health", endpoint).toString();
