@@ -57,6 +57,8 @@ async function pageKeys(): Promise<string[]> {
 }
 export async function pageBody(key: string): Promise<unknown> {
   const [kind, a, b] = key.split(":") as [PageKind, string?, string?];
+  // W3d-c · a study copy is never built from input cached before the newest removal (another server took it).
+  if (kind === "data-story" || kind === "data-index") await (await import("../removal.server")).freshAfterRemovals().catch(() => false);
   switch (kind) {
     case "data-index": return (await import("../data-stories/page.server")).computeDataIndex();
     case "data-story": return (await import("../data-stories/page.server")).computeDataStory(a ?? "");

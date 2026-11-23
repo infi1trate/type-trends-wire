@@ -3,7 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { gate, GATE_ENABLED } from "./lib/gate";
-import { createPageCache, servePage } from "./lib/page-cache";
+import { SERVER_PAGES, servePage } from "./lib/page-cache";
 import { retryLater } from "./lib/unavailable";
 import { movedObjectHref } from "./lib/ia";
 import { instanceClock, withInstanceHeaders } from "./lib/instance";
@@ -63,7 +63,7 @@ function hostWaitUntil(request: Request, ctx: { waitUntil?: WaitUntil } | undefi
 }
 
 /** Public Read pages kept in memory for five minutes per server instance (page-cache.ts: the host's Cache API is a no-op). */
-const pages = createPageCache();
+const pages = SERVER_PAGES;
 
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded

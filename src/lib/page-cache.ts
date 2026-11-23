@@ -42,6 +42,8 @@ export function createPageCache(o: { max?: number; ttlMs?: number; now?: () => n
   };
 }
 
+/** The one per-server copy of public Read pages (src/server.ts serves through it; a removal clears it on the server that took it). */
+export const SERVER_PAGES = createPageCache();
 const HOP = new Set(["content-length", "content-encoding", "transfer-encoding", "connection", "set-cookie", "x-read-cache"]);
 /** D1 Part 5 · a stale copy younger than this is sent at once and redrawn behind the reader's back; older ones are redrawn first. */
 export const STALE_SERVE_MAX_MS = 60 * 60_000;

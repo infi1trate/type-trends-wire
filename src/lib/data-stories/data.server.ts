@@ -81,6 +81,8 @@ const TTL = 10 * 60_000;
 const input = memo(TTL, load);
 /** Everything data stories draw from, cached per instance (settled values only; see memo.ts). */
 export const dataInput = (): Promise<DataInput> => input();
+/** W3d-c · drop this server's cached input (a removal: the next study build reads the rows again, without the removed app or work). */
+export const forgetDataInput = () => input.clear();
 /** The cached input when already loaded, without loading (the gallery reuses it). */
 export const peekDataInput = (): DataInput | undefined => input.peek();
 

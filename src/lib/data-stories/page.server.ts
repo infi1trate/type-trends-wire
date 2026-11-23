@@ -94,6 +94,8 @@ async function readerStory(slug: string, e: { number: number; question: string }
   const r = await dataStoryRecord(slug).catch(() => row!.body as DataStoryPage);
   return isPage(r) && !oldMissing(r) ? r : row.body;
 }
+/** W3d-c · this server forgets its study models and stored study copies (a removal). */
+export function forgetStudies() { built.clear(); preparingRows.clear(); dataIndexRecord.clear(); dataStoryRecord.clear(); }
 export const loadDataStory = async (slug: string): Promise<DataStoryPage> => {
   const e = entryOf(slug); if (!e || withheld(e)) return { kind: "missing" };
   if (readerNow()) return readerStory(slug, e);

@@ -40,6 +40,8 @@ const readerRows = memoBy(60_000, async (key: string) => readRecord<unknown>(key
 /** W3d-c · the stored copy as a reader's page reads it (the same per-instance minute memo; null when unreadable). */
 export const readerRecord = (key: string) => readerRows(key);
 const rebuilt = new Map<string, { at: number; v: unknown }>();
+/** W3d-c · this server forgets every stored copy it holds in memory (a removal: the next read goes to the stored row). */
+export function forgetReaderCopies() { readerRows.clear(); rebuilt.clear(); }
 async function readerFirst<T>(key: string, decode: (b: never) => T, run: () => Promise<T>, ttl: number): Promise<T> {
   if (!readerNow()) return run();
   const w = rebuilt.get(key);
@@ -69,7 +71,7 @@ export function storedBy<A, T>(keyOf: (a: A) => string, compute: (a: A) => Promi
     const key = keyOf(a), row = await readRecord<T>(key).catch(() => null);
     return row && usable(row, Date.now(), maxAgeOf(key)) ? row.body : compute(a);
   }, { key: keyOf, max: 400 });
-  return Object.assign((a: A) => readerFirst(keyOf(a), (b: T) => b, () => m(a), ttl), { compute, keyOf });
+  return Object.assign((a: A) => readerFirst(keyOf(a), (b: T) => b, () => m(a), ttl), { compute, keyOf, clear: () => m.clear() });
 }
 
 /** Upsert records with the service role, in batches that stay well under the request size limit. Returns the keys rewritten.

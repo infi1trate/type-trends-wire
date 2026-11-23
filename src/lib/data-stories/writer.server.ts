@@ -93,6 +93,8 @@ export async function runStudyWriter(job: string, deadline: number): Promise<Stu
     const [{ supabaseAdmin }, { studyJobs }] = await Promise.all([import("@/integrations/supabase/client.server"), import("./page.server")]);
     const today = await supabaseAdmin.from("study_texts").select("slug,facts_hash,checked_at,created_at,attempts,log").gte("created_at", dayStart());
     if (today.error || callsOn((today.data ?? []) as StudyMeta[], dayStart().slice(0, 10)) >= STUDY_PER_DAY) return null;
+    // W3d-c · the sheets (and the copies written after) are never built from input cached before the newest removal.
+    await (await import("../removal.server")).freshAfterRemovals().catch(() => false);
     const { jobs, known } = await studyJobs();
     const r = await writeStudies(jobs, studyIO(supabaseAdmin), known, { deadline });
     if (r.rows.some(x => x.checked_at)) {
