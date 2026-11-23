@@ -17,9 +17,7 @@ on:
         default: "1"
 permissions:
   contents: read
-concurrency:
-  group: museum-palettes
-  cancel-in-progress: false
+concurrency: { group: slug-heavy-ingest, cancel-in-progress: false }   # heavy posters take turns (see wayback.yml)
 defaults:
   run:
     working-directory: crawler

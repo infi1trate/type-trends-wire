@@ -8,6 +8,7 @@
 //   → { stored, unchanged, refused: [{ domain, section, reason }] }
 // The server keeps a new version only when the hash differs from the newest stored crop of that domain + section.
 import sharp from "sharp";
+import { gateFor } from "./gate.js";
 import { createHash } from "node:crypto";
 
 export const SECTIONS = ["hero", "nav", "pricing", "cta", "footer"];
@@ -196,12 +197,14 @@ export async function capturePageTop(page, domain, pageType, sender, { now = () 
 
 /** Buffers crops and posts them under the server's 12-capture / 4 MB limits. Never throws. */
 export function makeCropSender({ endpoint, secret, dry = false, runId, fetchImpl = fetch, log = console.log }) {
+  const ready = dry || fetchImpl !== fetch ? async () => {} : () => gateFor(endpoint)();
   let buf = [], bytes = 0;
   const totals = { captured: 0, stored: 0, unchanged: 0, refused: 0, failed: 0, by_section: {}, reasons: {} };
   const send = async (captures) => {
     if (dry) { totals.stored += captures.length; return; }
     const body = JSON.stringify({ run_id: runId, captures });
     for (let attempt = 1; attempt <= 3; attempt++) {
+      if (!(await ready().then(() => true, e => (log(String(e?.message ?? e)), false)))) break;   // gate.js: ask the site first
       const r = await fetchImpl(new URL("ingest-crops", endpoint), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body }).catch(() => null);
       if (r?.ok) {
         const j = await r.json().catch(() => ({}));

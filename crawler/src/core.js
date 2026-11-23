@@ -1,5 +1,6 @@
 // Shared by the index crawl (crawl.js) and the library crawl (library.js).
 import { mkdirSync, appendFileSync } from "node:fs";
+import { gateFor, retryAfterMs } from "./gate.js";
 import { extractInPage } from "./extract-page.js";
 import { paletteFromScreenshot, pickAccent, parseCssColor, contrast, rgbToHex } from "./color.js";
 import { homepageAllowed } from "./robots.js";
@@ -26,6 +27,7 @@ export function describeBatch(body, bytes) {
 }
 
 export function makePoster({ endpoint, secret, dry, runId }) {
+  const ready = dry ? async () => {} : () => gateFor(endpoint)();   // made on first post: the endpoint may not be set when this module loads
   return async function post(body) {
     if (dry) { mkdirSync("out", { recursive: true }); appendFileSync(`out/${runId}.jsonl`, JSON.stringify(body) + "\n"); return {}; }
     // What failed is printed per attempt (status, time taken, the server's own short message; never the secret or the payload),
@@ -33,6 +35,7 @@ export function makePoster({ endpoint, secret, dry, runId }) {
     const payload = JSON.stringify(body), what = describeBatch(body, payload.length);
     let last = "";
     for (let attempt = 1; attempt <= 4; attempt++) {
+      await ready();   // ask the site first, and keep the gap between posts (gate.js)
       const t0 = Date.now();
       const r = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body: payload }).catch((e) => ({ ok: false, status: 0, text: async () => String(e?.cause?.code ?? e?.message ?? e) }));
       if (r.ok) return r.json().catch(() => ({}));
@@ -40,7 +43,8 @@ export function makePoster({ endpoint, secret, dry, runId }) {
       if (r.status >= 400 && r.status < 500 && r.status !== 429) throw new Error(`ingest rejected (${r.status}): ${msg}`);
       last = `status ${r.status} after ${Date.now() - t0} ms: ${msg}`;
       console.log(`ingest attempt ${attempt} failed (${what}): ${last}`);
-      await new Promise((s) => setTimeout(s, attempt * 3000));
+      // "try later" is taken at its word; otherwise back off longer than before (a struggling database needs room, not retries)
+      await new Promise((s) => setTimeout(s, retryAfterMs(r.headers?.get?.("retry-after")) ?? attempt * 10000));
     }
     throw new Error(`ingest failed after 4 attempts (${what}): ${last}`);
   };

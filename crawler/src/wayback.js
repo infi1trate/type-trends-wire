@@ -7,6 +7,7 @@
 //      WB_RECYCLE (renders per browser before a fresh one, default 30), WB_RENDER_DEADLINE_S (default 200),
 //      WB_CACHE_FILE (what the Archive holds per brand and what failed, kept between runs; default .cache/wayback.json)
 import { chromium } from "playwright";
+import { gateFor } from "./gate.js";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
 import os from "node:os";
@@ -188,6 +189,7 @@ async function main() {
     const body = { domain: rec.domain, page_type: "home", viewport: "desktop", source: "wayback", captured_at: rec.captured_at, signals_hash: rec.signals_hash, images: imgs };
     if (DRY) { appendFileSync(`out/${RUN_ID}.tags.jsonl`, JSON.stringify({ ...body, images: { fold: imgs.fold.length, sections: imgs.sections.length } }) + "\n"); totals.tagged++; return; }
     for (let attempt = 1; attempt <= 3; attempt++) {
+      await gateFor(ENDPOINT)().catch(() => null);   // gate.js: ask the site first
       const r = await fetch(new URL("library-tag", ENDPOINT), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": SECRET }, body: JSON.stringify(body) }).catch(() => null);
       if (r?.ok) { totals.tagged++; return; }
       if (r?.status === 429 && /budget/i.test(await r.text())) { tagBudgetOut = true; console.log("tagging stopped: AI budget exhausted"); return; }

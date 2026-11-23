@@ -15,6 +15,7 @@
 // Env: CRAWL_ENDPOINT (…/api/public/ingest-crawl; this posts to its sibling ingest-art), CRAWL_SECRET, DRY_RUN=1 to print and send
 //      nothing, ART_LIMIT (works per run, default 120), ART_SOURCES ("met,aic"), ART_PROXY / ART_INSECURE=1 for a local run.
 import fs from "node:fs";
+import { gateFor } from "./gate.js";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import sharp from "sharp";
@@ -119,6 +120,7 @@ export function nextBatch(slices, sent, limit = ART_LIMITS.perRun) {
 
 /** Buffers works and posts them under the server's limits. Never throws. */
 export function makeArtSender({ endpoint, secret, dry = false, runId, fetchImpl = fetch, log = console.log }) {
+  const ready = dry || fetchImpl !== fetch ? async () => {} : () => gateFor(endpoint)();
   let buf = [], bytes = 0;
   const totals = { read: 0, stored: 0, unchanged: 0, refused: 0, failed: 0, reasons: {}, done: [] };
   const send = async works => {
@@ -126,6 +128,7 @@ export function makeArtSender({ endpoint, secret, dry = false, runId, fetchImpl 
     if (dry) { totals.stored += works.length; totals.done.push(...keys); return; }
     const body = JSON.stringify({ run_id: runId, works });
     for (let attempt = 1; attempt <= 3; attempt++) {
+      if (!(await ready().then(() => true, e => (log(String(e?.message ?? e)), false)))) break;   // gate.js: ask the site first
       const r = await fetchImpl(new URL("ingest-art", endpoint), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body }).catch(() => null);
       if (r?.ok) {
         const j = await r.json().catch(() => ({}));

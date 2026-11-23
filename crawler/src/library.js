@@ -18,6 +18,7 @@
 //      desktop homepage as small WebPs to /api/public/ingest-crops, where the site keeps a version only when one changes.
 //      Thumbnails and section crops are the only stored images.
 import { chromium } from "playwright";
+import { gateFor } from "./gate.js";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { VIEWPORTS, UA, makePoster, robotsOk, openPage, analyzePage, evalSettled, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
@@ -282,6 +283,7 @@ async function main() {
     const body = { domain: rec.domain, page_type: rec.page_type, viewport: rec.viewport, source: rec.source, captured_at: rec.captured_at, signals_hash: rec.signals_hash, images: imgs };
     if (DRY) { appendFileSync(`out/${RUN_ID}.tags.jsonl`, JSON.stringify({ ...body, images: { fold: imgs.fold.length, sections: imgs.sections.map((x) => x.length) } }) + "\n"); totals.tagged++; return; }
     for (let attempt = 1; attempt <= 3; attempt++) {
+      await gateFor(ENDPOINT)().catch(() => null);   // gate.js: ask the site first
       const r = await fetch(new URL("library-tag", ENDPOINT), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": SECRET }, body: JSON.stringify(body) }).catch(() => null);
       if (r?.ok) { const j = await r.json().catch(() => ({})); if (j.reused) totals.tag_reused++; else totals.tagged++; return; }
       if (r?.status === 429 && /budget/i.test(await r.text())) { tagBudgetOut = true; console.log("tagging stopped: AI budget exhausted"); return; }

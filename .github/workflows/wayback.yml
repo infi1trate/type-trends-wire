@@ -20,7 +20,7 @@ on:
 permissions:
   contents: read
   actions: write
-concurrency: { group: wayback, cancel-in-progress: false }
+concurrency: { group: slug-heavy-ingest, cancel-in-progress: false }   # shared with the museum and weekly crawls: heavy posters take turns
 defaults:
   run:
     working-directory: crawler
@@ -48,7 +48,8 @@ jobs:
           # Short runs, more often: every run from 15 to 21 Nov that lasted past an hour lost its runner.
           TIME_BUDGET_MIN: ${{ inputs.budget_min || '50' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
-          WB_CONCURRENCY: "3"
+          WB_CONCURRENCY: "2"
+          POST_GAP_MS: "10000"   # ten seconds between posts: the backfill is the heaviest poster (gate.js)
         run: npm run wayback
       # GitHub often starts scheduled runs hours late or not at all. While the yearly samples (the Q1 of each year) are
       # unfinished, a run that ran out of time with captures to show starts the next one itself, for those samples only.

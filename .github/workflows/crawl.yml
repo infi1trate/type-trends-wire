@@ -16,7 +16,7 @@ on:
       dry_run:
         description: "1 = don't post, upload results as an artifact"
         default: "0"
-concurrency: { group: crawl, cancel-in-progress: false }
+concurrency: { group: slug-heavy-ingest, cancel-in-progress: false }   # heavy posters take turns (see wayback.yml)
 defaults:
   run:
     working-directory: crawler

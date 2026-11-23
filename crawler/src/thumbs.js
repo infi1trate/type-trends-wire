@@ -3,6 +3,7 @@
 // Contract: x-crawl-secret auth; { run_id?, captures: [{ domain, viewport, captured_at, images: { full, w640?, w320? } }] }
 // base64 WebP; full ≤1280×800 and ≤150 KB, variants ≤640/≤320 wide with the same aspect; ≤12 captures and ≤4 MB per request.
 import sharp from "sharp";
+import { gateFor } from "./gate.js";
 
 export const LIMITS = { maxWidth: 1280, maxHeight: 800, storedBytes: 150 * 1024, variants: [640, 320], maxCaptures: 12, requestBytes: 3_500_000 };
 const QUALITIES = [72, 62, 52, 42, 34];
@@ -46,12 +47,14 @@ const captureSize = (c) => c.images.full.length + (c.images.w640?.length ?? 0) +
 
 /** Buffers captures and posts them in requests under the server's 12-capture / 4 MB limits. Never throws. */
 export function makeThumbSender({ endpoint, secret, dry = false, runId, fetchImpl = fetch, log = console.log }) {
+  const ready = dry || fetchImpl !== fetch ? async () => {} : () => gateFor(endpoint)();
   let buf = [], bytes = 0;
   const totals = { stored: 0, rejected: 0, pruned: 0, failed: 0, reasons: {} };
   const send = async (captures) => {
     if (dry) { totals.stored += captures.length; return; }
     const body = JSON.stringify({ run_id: runId, captures });
     for (let attempt = 1; attempt <= 3; attempt++) {
+      if (!(await ready().then(() => true, e => (log(String(e?.message ?? e)), false)))) break;   // gate.js: ask the site first
       const r = await fetchImpl(new URL("ingest-thumbs", endpoint), { method: "POST", headers: { "content-type": "application/json", "x-crawl-secret": secret }, body }).catch(() => null);
       if (r?.ok) {
         const j = await r.json().catch(() => ({}));
