@@ -16,3 +16,8 @@ export const LANDING_PUBLIC = false;
 export const DATA_STORIES_PUBLIC = false;
 /** The brand pages (/brand, /brand/<page>, /brand/files/<name>) stay private: gated like every other page, nothing in OPEN_PATHS. Only the owner flips this. */
 export const BRAND_PUBLIC = false;
+/** W3b · While false, readers see neither the museum study (/data/nearest-in-the-museum: not on /data, not on the shelf, its page, share
+ *  image and embed answer 404, not in the Digest) nor the brand page's "Nearest in the museum" line (Read or Data view), however many
+ *  works are stored. The works, their intake, credits, removal, the health line and the desk's list are unaffected. Turned on only after
+ *  the editor has looked at the W3b Part 2 proof. */
+export const MUSEUM_SHOWN = false;

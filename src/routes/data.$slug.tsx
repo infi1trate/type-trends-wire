@@ -3,7 +3,7 @@ import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { dataStoryQuery, studyRelatedQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
-import { entryOf, studyLabel } from "@/lib/data-stories/registry";
+import { entryOf, studyLabel, withheld } from "@/lib/data-stories/registry";
 import { paramOfScene, sceneFromParam } from "@/lib/data-stories/scenes";
 import { DataStoryView, StudyRelated } from "@/components/data/DataStoryView";
 import { DraftView } from "@/components/data/DataIndexView";
@@ -23,7 +23,8 @@ export const Route = createFileRoute("/data/$slug")({
   staticData: { views: true },
   validateSearch: (s: Record<string, unknown>): { step?: number | undefined; figures?: "all" | undefined } & ViewSearch => { const n = typeof s["step"] === "number" ? s["step"] : typeof s["step"] === "string" ? Number.parseInt(s["step"], 10) : NaN; return { ...(Number.isFinite(n) ? { step: n } : {}), ...(s["figures"] === "all" ? { figures: "all" as const } : {}), ...viewSearch(s) }; },
   loaderDeps: ({ search }) => ({ data: search.view === "data" }),
-  beforeLoad: ({ params }) => { if (!entryOf(params.slug)) throw notFound(); },
+  // W3b · a study withheld by the editor answers 404 like an unknown address.
+  beforeLoad: ({ params }) => { const e = entryOf(params.slug); if (!e || withheld(e)) throw notFound(); },
   // The page awaits only its stored record, as before; the related stories start now and stream into their slot.
   loader: async ({ context, params, deps }) => {
     if (deps.data) void context.queryClient.prefetchQuery(studyDataQuery(params.slug)); else void context.queryClient.prefetchQuery(studyRelatedQuery(params.slug));

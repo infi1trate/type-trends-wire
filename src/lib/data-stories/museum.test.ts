@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+// W3b · these tests read the study as it would be with MUSEUM_SHOWN on; museum-withheld.test.tsx reads it as shipped (off).
+vi.mock("../site", async orig => ({ ...(await orig<object>()), MUSEUM_SHOWN: true }));
 import { fxInput } from "./fixtures";
 import { buildStory, indexRows, liveNow, statusOf } from "./build";
 import { entryOf, liveEntries, relatedFor, MUSEUM_STUDY_SLUG } from "./registry";

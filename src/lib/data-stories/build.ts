@@ -1,7 +1,7 @@
 // Ties registry entries to their builders and checks. Pure over DataInput + captures.
 import { collectionForStory } from "../collections/registry";
 import { CHECKS } from "./checks";
-import { DATA_STORIES, WHERE_YOU_SIT, entryOf, relatedFor, seriesOf, studyLabel, templateName, type Entry } from "./registry";
+import { DATA_STORIES, WHERE_YOU_SIT, entryOf, relatedFor, seriesOf, studyLabel, templateName, withheld, type Entry } from "./registry";
 import { bigTypeStory, mindsBrand, sectorMindsStory, softwareStory, whereYouSit, type Captures, type Meta } from "./stories";
 import { softwareFigures } from "./checks";
 import type { DataInput } from "./series";
@@ -20,6 +20,7 @@ export type Status = { status: "live" | "draft"; reason: string | null };
 /** The registry status, re-checked on current data: a live story whose check no longer passes, or that has no builder, reads as a draft. */
 export function statusOf(e: Entry, i: DataInput | null): Status {
   if (e.status === "draft") return { status: "draft", reason: e.reason };
+  if (withheld(e)) return { status: "draft", reason: "Withheld by the editor." };
   // W3a · a hidden study is live only when its check passes on data in hand (never assumed without data).
   if (e.hidden && !i) return { status: "draft", reason: "Withheld until its data is stored." };
   if (!BUILDERS[e.slug]) return { status: "draft", reason: "No builder for this story yet." };

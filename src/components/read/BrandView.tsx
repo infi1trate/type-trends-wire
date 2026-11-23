@@ -28,6 +28,7 @@ import { BeforeAfter, CoverFigure, CropFallback, CropFigure } from "./Evidence";
 import { BrandMark, MarkedName } from "./BrandMark";
 import type { Cover, Pic } from "@/lib/pictures";
 import type { ArtNear } from "@/lib/art/read.server";
+import { MUSEUM_SHOWN } from "@/lib/site";
 import { CROP_SECTION_NAME } from "@/lib/labels";
 import { isCropSection, type CropSection } from "@/lib/crops";
 
@@ -89,7 +90,7 @@ function IdentityCard({ b }: { b: CardIn }) {
       <dl className="min-w-0"><div><dt className="ed-kicker">Palette · share of the first screen</dt>
         <dd className="mt-2">{i.palette.length ? <ul className="space-y-1" aria-label={`${b.name} palette, largest first`}>{i.palette.map((p, k) => <li key={`${p.hex}${k}`}>
           <AppLink href={i.receipt} className="ed-tap flex items-center gap-2 no-underline hover:underline"><span className="ed-swatch inline-block h-6 w-6 shrink-0 border" style={{ background: p.hex }} aria-hidden="true" /><span className="ed-code">{p.hex}</span><span className="ed-data ml-auto">{p.share != null ? pct(p.share, 0) : "—"}</span></AppLink>
-        </li>)}</ul> : <span className="ed-small">{voiced("read.brandView.2")}</span>}{b.art && <NearestArt a={b.art} />}</dd></div></dl>
+        </li>)}</ul> : <span className="ed-small">{voiced("read.brandView.2")}</span>}{MUSEUM_SHOWN && b.art && <NearestArt a={b.art} />}</dd></div></dl>
       <dl className="min-w-0"><div><dt className="ed-kicker">Voice and style</dt>
         <dd className="mt-2">{i.tags.length ? <ul className="flex flex-wrap gap-2" aria-label="Voice and style tags">{i.tags.map(t => <li key={t.key}><AppLink href={i.receipt} className="ed-tap ed-data inline-flex items-center gap-1 no-underline hover:underline">{t.name}<BasisWord b={t.basis} /></AppLink></li>)}</ul> : <span className="ed-small">{voiced("read.brandView.3")}</span>}</dd></div></dl>
       <dl className="min-w-0"><div><dt className="ed-kicker">Layout · measured</dt>

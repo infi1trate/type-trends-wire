@@ -44,6 +44,12 @@ export function studiesHome(live: readonly HomeStudy[], shelf: readonly ShelfRow
     tool: { question: "Where does your brand sit?", line: TOOL_LINE, href: "/data/where-you-sit" } };
 }
 /** The front page's Studies list: the lead study first, then the rest by number, at most three. */
+/** W3b · a stored home without the studies `out` names (withheld after the record was written): the lead is chosen again from the rest. */
+export function homeWithout(h: StudiesHome, out: (slug: string) => boolean): StudiesHome {
+  const all = h.series.flatMap(s => s.studies);
+  if (!all.some(x => out(x.slug)) && !(h.lead && out(h.lead.slug)) && !h.shelf.some(r => out(r.key))) return h;
+  return { ...studiesHome(all.filter(x => !out(x.slug)), h.shelf.filter(r => !out(r.key))), tool: h.tool };
+}
 export function frontStudies(h: Pick<StudiesHome, "lead" | "series">): { slug: string; number: number; label: string; headline: string; question: string; href: string }[] {
   const all = h.series.flatMap(s => s.studies).sort((a, b) => a.number - b.number), lead = h.lead;
   return [...(lead ? [lead] : []), ...all.filter(x => x.slug !== lead?.slug)].slice(0, 3).map(x => ({ slug: x.slug, number: x.number, label: studyLabel(x.number), headline: x.headline, question: x.question, href: x.href }));

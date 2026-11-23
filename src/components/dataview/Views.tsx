@@ -1,5 +1,6 @@
 // U1 · the Data view of each object type (`?view=data` on its one address), inside DataShell. Dark and dense, built from the terminal's
 // own parts; tables load after the frame (Later skeletons). Every table, score and field the terminal showed for the object is here.
+import { MUSEUM_SHOWN } from "@/lib/site";
 import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter, useSearch } from "@tanstack/react-router";
@@ -84,7 +85,8 @@ export function BrandData({ domain }: { domain: string }) {
 function BrandDataBody({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(librarySiteQuery(domain)), { data: s } = useSuspenseQuery(brandSurfacesQuery(domain)), { data: card } = useSuspenseQuery(brandCardQuery(domain));
   if (!data) return <DataNote>Not in the library: only tracked brands have a record.</DataNote>;
-  const art = card?.art ?? null;
+  // W3b · nothing of the museum while MUSEUM_SHOWN is false.
+  const art = MUSEUM_SHOWN ? card?.art ?? null : null;
   return <>
     <LibrarySite domain={domain} embedded />
     {/* W3a · the nearest museum work's measured distance and the method, only when the brand page shows the line. */}

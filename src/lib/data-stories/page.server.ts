@@ -2,10 +2,10 @@
 // No writes, no AI per view: the written text is read from study_texts (checked versions only, anonymous).
 import { dataInput, capturesFor, capturesOf } from "./data.server";
 import { BUILDERS, buildStory, buildWhereYouSit, indexRows, isTracked, normDomain, liveNow, statusOf } from "./build";
-import { DATA_STORIES, entryOf, seriesOf, studyLabel, templateName } from "./registry";
+import { DATA_STORIES, entryOf, seriesOf, studyLabel, templateName, withheld } from "./registry";
 import { BIG_TYPE, adoptionEntries, waitOf } from "./checks";
 import { chooseText, factsHash, factsSheet, fallbackText, type StudyRow } from "./writer";
-import { candidateRows, changedAt, draftRow, frontStudies, studiesHome, type HomeStudy, type StudiesHome } from "./shelf";
+import { candidateRows, changedAt, draftRow, frontStudies, homeWithout, studiesHome, type HomeStudy, type StudiesHome } from "./shelf";
 import { coverTrail } from "./cover";
 import type { StoryModel, StudyPage } from "./types";
 import { memoBy } from "../memo";
@@ -51,7 +51,7 @@ export async function computeDataIndex(): Promise<DataIndex> {
 export type DataStoryPage = { kind: "live"; story: StudyPage } | { kind: "draft"; number: number; question: string; deck: string; template: string; reason: string | null; series?: string } | { kind: "missing" };
 export async function computeDataStory(slug: string): Promise<DataStoryPage> {
   const e = entryOf(slug);
-  if (!e) return { kind: "missing" };
+  if (!e || withheld(e)) return { kind: "missing" };
   const i = await dataInput();
   const story = await modelOf(slug, i);
   if (story) return { kind: "live", story: studyPage(story, await studyRows([slug])) };
@@ -64,15 +64,18 @@ const dataStoryRecord = storedBy((slug: string) => pageKey("data-story", slug), 
 // A record written before E4 (no `v`) is a list without a home or a model without scenes: compute live instead (still correct).
 const isIndex = (x: unknown): x is DataIndex => !!x && typeof x === "object" && (x as { v?: unknown }).v === 4 && "home" in (x as object);
 const isPage = (x: DataStoryPage) => x.kind !== "live" || (x.story as Partial<StudyPage>).v === 4;
-export const loadDataIndex = async (): Promise<DataIndex> => { const r = await dataIndexRecord(null); return isIndex(r) ? r : computeDataIndex(); };
-export const loadDataStory = async (slug: string): Promise<DataStoryPage> => { if (!entryOf(slug)) return { kind: "missing" }; const r = await dataStoryRecord(slug); return isPage(r) ? r : computeDataStory(slug); };
+/** W3b · a study withheld after a record was written never reaches a reader from that record. */
+const isWithheld = (slug: string) => { const e = entryOf(slug); return !!e && withheld(e); };
+export const indexWithout = (x: DataIndex): DataIndex => ({ ...x, rows: x.rows.filter(r => !isWithheld(r.slug)), home: homeWithout(x.home, isWithheld) });
+export const loadDataIndex = async (): Promise<DataIndex> => { const r = await dataIndexRecord(null); return indexWithout(isIndex(r) ? r : await computeDataIndex()); };
+export const loadDataStory = async (slug: string): Promise<DataStoryPage> => { const e = entryOf(slug); if (!e || withheld(e)) return { kind: "missing" }; const r = await dataStoryRecord(slug); return isPage(r) ? r : computeDataStory(slug); };
 /** The front page's Studies rows (written headlines, lead first, at most three), from the stored home. */
 export async function loadStudyShelf() { return frontStudies((await loadDataIndex()).home); }
 /** The front page's Studies rows from the stored home only (never computes; null when no current record): the front page adds no slow read. */
 export async function storedStudyShelf() {
   const { readRecord } = await import("../records/store.server");
   const r = await readRecord<unknown>(pageKey("data-index")).catch(() => null);
-  return r && isIndex(r.body) ? frontStudies(r.body.home) : null;
+  return r && isIndex(r.body) ? frontStudies(homeWithout(r.body.home, isWithheld)) : null;
 }
 /** Every tracked brand for the picker (the only brands a reader can choose). */
 export async function loadTrackedBrands() {

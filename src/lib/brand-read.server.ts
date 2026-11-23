@@ -1,6 +1,7 @@
 // The brand page in parts (P1 · shell first): the identity card is the critical read (one small row plus one precomputed record);
 // moves, sections, the sector field, similar brands and stories are deferred, each from one precomputed record or a few indexed
 // queries about this one brand, never the whole library. Anonymous SELECT-only; no AI per view.
+import { MUSEUM_SHOWN } from "./site";
 import { supabaseAnon } from "./mcp/supabase";
 import { brandModel, brandSections, brandTimeline, cardOf, type BrandCard, type BrandPage, type ContrastItem } from "./brand-page";
 import type { EventRow } from "./agency/changes";
@@ -66,7 +67,7 @@ export type BrandCardView = BrandCard & { icon: Pic | null; cover: Cover | null;
 export async function loadBrandCard(domain: string): Promise<BrandCardView | null> {
   // W3a · the nearest museum work is read beside the record (never stored in it); nothing until the works clear the line, and a failed
   // read draws no line.
-  const [site, pics, art] = await Promise.all([siteOf(domain), picsFor(domain), import("./art/read.server").then(m => m.brandArt(domain)).catch(() => null)]);
+  const [site, pics, art] = await Promise.all([siteOf(domain), picsFor(domain), (MUSEUM_SHOWN ? import("./art/read.server").then(m => m.brandArt(domain)).catch(() => null) : Promise.resolve(null))]);
   if (!site?.active) return null;
   const card = await brandCard(domain);
   return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics), ...(art ? { art } : {}) } : null;

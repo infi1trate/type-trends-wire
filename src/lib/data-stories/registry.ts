@@ -4,6 +4,7 @@
 import type { CheckId } from "./checks";
 import type { Link } from "./types";
 import { compositeKey } from "../composites";
+import { MUSEUM_SHOWN } from "../site";
 
 export const TEMPLATES = {
   adoption: "Adoption timeline",
@@ -74,6 +75,8 @@ export const WHERE_YOU_SIT = { slug: "where-you-sit", kind: "tool" as const, que
 
 export const entryOf = (slug: string) => DATA_STORIES.find(e => e.slug === slug) ?? null;
 export const templateName = (e: { templates: readonly TemplateId[] }) => e.templates.map(t => TEMPLATES[t]).join(" + ");
+/** W3b · withheld by the editor: the museum study does not exist for readers while MUSEUM_SHOWN is false, whatever its check says. */
+export const withheld = (e: { slug: string }) => e.slug === MUSEUM_STUDY_SLUG && !MUSEUM_SHOWN;
 /** Live in the registry and not hidden (a hidden study joins only through `liveNow`, when its check passes on stored data). */
 export const liveEntries = () => DATA_STORIES.filter(e => e.status === "live" && !e.hidden);
 /** A study's way on: the other live studies in its series, its collection, then all studies (never itself, never unrelated studies). */
