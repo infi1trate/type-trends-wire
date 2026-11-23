@@ -38,7 +38,7 @@ export const Route = createFileRoute("/brands/$domain")({
     void q.prefetchQuery(brandMovesQuery(d)); void q.prefetchQuery(brandSectionsQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d)); void q.prefetchQuery(brandSectorQuery(d));
     void q.prefetchQuery(brandSimilarQuery(d)); void q.prefetchQuery(brandStoriesQuery(d));
     // C1b · the card's cover (the brand's largest picture) is announced in the first flush from one small read started when the request
-    // arrived and shared with the card, waited for at most FIRST_PAINT_WAIT_MS.
+    // arrived and shared with the card, waited for until FIRST_PAINT_DEADLINE_MS after arrival.
     const first = firstPaint("brand", d);
     if (!name) {
       const b = await q.ensureQueryData(brandCardQuery(d));

@@ -125,7 +125,11 @@ describe("brand downloads", () => {
     expect(links.every(a => a.getAttribute("href")!.startsWith("/brand/files/"))).toBe(true);
   });
   it("nothing from brand/ is copied into public/ except the favicon (the one existing open path)", () => {
-    expect(walk("public").map(p => p.replace(/^public\//, "")).sort()).toEqual(["favicon.svg", "site.webmanifest"]);
+    // C1b · the self-hosted platform faces (public/fonts, each named by src/fonts.css) are type files, not brand/ material.
+    const files = walk("public").map(p => p.replace(/^public\//, "")), fonts = files.filter(f => f.startsWith("fonts/"));
+    const css = readFileSync("src/fonts.css", "utf8");
+    for (const f of fonts) { expect(f).toMatch(/^fonts\/[a-z0-9-]+-[A-Za-z0-9_-]+\.woff2$/); expect(css).toContain(`/${f}`); }
+    expect(files.filter(f => !f.startsWith("fonts/")).sort()).toEqual(["favicon.svg", "site.webmanifest"]);
     expect(activeTheme.name).toBe("slug");
   });
 });

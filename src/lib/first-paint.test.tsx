@@ -66,3 +66,16 @@ describe("C1b · the Link header and which requests announce", () => {
     expect(firstOf("/data/who-went-big-first", q())).toBeNull();
   });
 });
+
+describe("C1b · how long the first flush waits for its picture address", () => {
+  it("counts from the request's arrival, up to the deadline", async () => {
+    const { firstWaitMs, FIRST_PAINT_DEADLINE_MS, FIRST_PAINT_FLOOR_MS, FIRST_PAINT_WAIT_MS } = await import("./first-paint");
+    expect(FIRST_PAINT_DEADLINE_MS).toBe(650);
+    expect(firstWaitMs(0)).toBe(650);
+    expect(firstWaitMs(150)).toBe(500);
+    expect(firstWaitMs(600)).toBe(FIRST_PAINT_FLOOR_MS);
+    expect(firstWaitMs(5_000)).toBe(50);
+    expect(firstWaitMs(-20)).toBe(650);
+    expect(firstWaitMs(null)).toBe(FIRST_PAINT_WAIT_MS);
+  });
+});

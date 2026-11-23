@@ -6,6 +6,7 @@
 // row for exactly this address through the public read, the brand not opted out, then the stored bytes), with plain requests.
 // A served picture is kept in this instance's memory for PICTURE_MEMORY_MS (well inside the hour a removal must take), never a 404.
 import { cropRefOf, mainPathOf } from "./picture-paths";
+import { restRows, storageBytes } from "./plain-rest.server";
 
 /** A picture this instance served is served again from memory for at most this long (a removed picture stops within it). */
 export const PICTURE_MEMORY_MS = 10 * 60_000;
@@ -88,34 +89,10 @@ async function cropBytes(db: PictureStore, path: string): Promise<{ bytes: Uint8
 }
 
 // PLAIN REQUESTS ------------------------------------------------------------------------------------------------------------------
-const env = (names: string[]) => { for (const n of names) { const v = process.env[n]?.trim(); if (v) return v; } return undefined; };
-function publishableKey(): string | undefined {
-  let key = env(["SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_PUBLISHABLE_KEY"]);
-  if (!key) {
-    try {
-      const keys: unknown = JSON.parse(process.env["SUPABASE_PUBLISHABLE_KEYS"] ?? "{}");
-      if (keys && typeof keys === "object" && !Array.isArray(keys)) { const values = keys as Record<string, unknown>; key = [values["default"], ...Object.values(values)].find((v): v is string => typeof v === "string" && v.trim().startsWith("sb_publishable_"))?.trim(); }
-    } catch { /* a legacy key may still be set */ }
-  }
-  return key ?? env(["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"]);
-}
-/** The headers the generated clients send: the key as `apikey`, and as a bearer only when it is a legacy JWT (new keys are opaque). */
-const authHeaders = (key: string): Record<string, string> => (key.startsWith("sb_") ? { apikey: key } : { apikey: key, Authorization: `Bearer ${key}` });
 function plainStore(): PictureStore {
-  const url = env(["SUPABASE_URL", "VITE_SUPABASE_URL"]), anon = publishableKey(), service = env(["SUPABASE_SERVICE_ROLE_KEY"]);
-  if (!url || !anon || !service) throw new Error("Picture configuration missing");
-  const rest = async (key: string, table: string, query: string) => {
-    const r = await fetch(`${url}/rest/v1/${table}?${query}`, { headers: { ...authHeaders(key), Accept: "application/json" } });
-    if (!r.ok) throw new Error(`Picture lookup failed (${r.status})`);
-    return (await r.json()) as Record<string, unknown>[];
-  };
   return {
-    async visible(table, column, value, select) { return (await rest(anon, table, `select=${select}&${column}=eq.${encodeURIComponent(value)}&limit=1`))[0] ?? null; },
-    async optedOut(domain) { return (await rest(service, "thumb_optouts", `select=domain&domain=eq.${encodeURIComponent(domain)}&limit=1`)).length > 0; },
-    async bytes(bucket, path) {
-      const r = await fetch(`${url}/storage/v1/object/${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`, { headers: authHeaders(service) });
-      if (!r.ok) { await r.body?.cancel(); return null; }
-      return new Uint8Array(await r.arrayBuffer());
-    },
+    async visible(table, column, value, select) { return (await restRows("public", table, `select=${select}&${column}=eq.${encodeURIComponent(value)}&limit=1`))[0] ?? null; },
+    async optedOut(domain) { return (await restRows("service", "thumb_optouts", `select=domain&domain=eq.${encodeURIComponent(domain)}&limit=1`)).length > 0; },
+    bytes: storageBytes,
   };
 }

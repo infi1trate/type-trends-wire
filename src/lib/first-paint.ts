@@ -27,8 +27,16 @@ export const NO_FIRST: FirstPaint = { picture: null };
 /** Today's lead picture is the largest element only where it stands beside the headline (from 1024 px); below that the headline is,
  *  and the picture sits under the deck, so it is announced for those widths only. */
 export const FRONT_PICTURE_MEDIA = "(min-width: 1024px)";
-/** A page's first flush waits at most this long for its stored picture address (it was started before the page code loaded). */
+/** A page's first flush waits at most this long for its stored picture address when the read's start is unknown. */
 export const FIRST_PAINT_WAIT_MS = 250;
+/** C1b · the read starts when the request arrives, before the page code loads; on a cold instance its first database connection
+ *  takes 400 to 650 ms (measured, local engine, 23 Nov), so the first flush waits until this long after arrival, and never less than
+ *  the floor. A warm instance has the address kept and does not wait at all. */
+export const FIRST_PAINT_DEADLINE_MS = 650;
+export const FIRST_PAINT_FLOOR_MS = 50;
+/** How long a page's loader still waits for the announced picture, given how long ago its read started (null: not known). */
+export const firstWaitMs = (elapsedMs: number | null): number =>
+  elapsedMs === null || !Number.isFinite(elapsedMs) ? FIRST_PAINT_WAIT_MS : Math.max(FIRST_PAINT_FLOOR_MS, Math.min(FIRST_PAINT_DEADLINE_MS, FIRST_PAINT_DEADLINE_MS - Math.max(0, elapsedMs)));
 
 const DRAWN = new Set(["pair", "single", "card", "mosaic"]);
 const pic = (src: string, srcSet: string | null, sizes: string | null, media: string | null): FirstPicture => ({ href: src, srcSet: srcSet || null, sizes: srcSet ? sizes : null, media });

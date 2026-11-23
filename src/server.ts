@@ -7,6 +7,7 @@ import { createPageCache, servePage } from "./lib/page-cache";
 import { retryLater } from "./lib/unavailable";
 import { movedObjectHref } from "./lib/ia";
 import { instanceClock, withInstanceHeaders } from "./lib/instance";
+import { startFirstPaint } from "./lib/first-paint.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -129,7 +130,7 @@ async function answer(request: Request, env: unknown, ctx: unknown): Promise<Res
       return await servePage(request, GATE_ENABLED || (import.meta.env.DEV && !rehearse), pages, async () => {
         // C1b · the page's announced picture (first-paint.server.ts) starts reading now, while the page code loads, so the first flush
         // can name it without waiting.
-        if (request.method === "GET") void import("./lib/first-paint.server").then(m => m.startFirstPaint(new URL(request.url))).catch(() => undefined);
+        if (request.method === "GET") startFirstPaint(new URL(request.url));
         const handler = await getServerEntry();
         const response = await handler.fetch(request, env, ctx);
         // A page whose stored-data read gave up (Retry-After set by the read) answers 503, not 500.
