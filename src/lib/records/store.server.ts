@@ -54,22 +54,36 @@ export function storedBy<A, T>(keyOf: (a: A) => string, compute: (a: A) => Promi
   return Object.assign((a: A) => m(a), { compute, keyOf });
 }
 
-/** Upsert records with the service role, in batches that stay well under the request size limit. Returns the keys written. */
+/** Upsert records with the service role, in batches that stay well under the request size limit. Returns the keys rewritten.
+ *  D1 Part 3 · a body whose hash matches the stored one is not rewritten: only its time moves (the age rules read it), so a sweep on a
+ *  quiet hour writes a few small rows instead of ~300 page bodies. A stored row with no hash yet is rewritten once, with its hash. */
 export async function writeRecords(rows: { key: string; body: unknown; source: string }[]): Promise<string[]> {
   if (!rows.length) return [];
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [{ supabaseAdmin }, { stableHash }] = await Promise.all([import("@/integrations/supabase/client.server"), import("../stable-json")]);
   const now = new Date().toISOString(), out: string[] = [];
-  let batch: { key: string; kind: string; body: never; computed_at: string; source: string; bytes: number }[] = [], size = 0;
+  const hashed = await Promise.all(rows.map(async r => ({ ...r, hash: await stableHash(r.body ?? null) })));
+  const have = new Map<string, string | null>(), keys = [...new Set(hashed.map(r => r.key))];
+  for (let i = 0; i < keys.length; i += 100) {
+    const { data, error } = await supabaseAdmin.from("read_records").select("key,body_hash").in("key", keys.slice(i, i + 100));
+    if (error) throw new Error("read_records hash read failed");
+    for (const r of (data ?? []) as { key: string; body_hash: string | null }[]) have.set(r.key, r.body_hash);
+  }
+  const same = hashed.filter(r => have.get(r.key) === r.hash), changed = hashed.filter(r => have.get(r.key) !== r.hash);
+  for (let i = 0; i < same.length; i += 100) {
+    const { error } = await supabaseAdmin.from("read_records").update({ computed_at: now }).in("key", same.slice(i, i + 100).map(r => r.key));
+    if (error) throw new Error("read_records time write failed");
+  }
+  let batch: { key: string; kind: string; body: never; computed_at: string; source: string; bytes: number; body_hash: string }[] = [], size = 0;
   const flush = async () => {
     if (!batch.length) return;
     const { error } = await supabaseAdmin.from("read_records").upsert(batch, { onConflict: "key" });
     if (error) throw new Error("read_records write failed");
     out.push(...batch.map(b => b.key)); batch = []; size = 0;
   };
-  for (const r of rows) {
+  for (const r of changed) {
     const bytes = bodyBytes(r.body);
     if (size + bytes > 1_500_000) await flush();
-    batch.push({ key: r.key, kind: kindOf(r.key), body: (r.body ?? null) as never, computed_at: now, source: r.source.slice(0, 60), bytes }); size += bytes;
+    batch.push({ key: r.key, kind: kindOf(r.key), body: (r.body ?? null) as never, computed_at: now, source: r.source.slice(0, 60), bytes, body_hash: r.hash }); size += bytes;
   }
   await flush();
   return out;

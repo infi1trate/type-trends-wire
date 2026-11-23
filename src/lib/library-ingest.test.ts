@@ -23,7 +23,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
     if (name === "refresh_library_history") { inlineHistory.calls++; return {data:null,error:{message:"canceling statement due to statement timeout"}}; }
     if(name==="library_archive_store"){state.snapshots.push({...row,id:state.snapshots.length+1});return {data:1,error:null};}
     if(name==="library_archive_input")return {data:state.snapshots.filter(s=>s['domain']===args['p_domain']&&s['source']==="wayback").map(s=>({...s,sector:"ai"})),error:null};
-    if(name==="library_archive_replace")return {data:true,error:null};
+    if(name==="library_archive_replace_changed")return {data:{ok:true},error:null};
     if(name==="library_archive_state")return {data:{sites:[...state.sites.values()].filter(s=>s['active']).map(s=>({domain:s['domain'],wayback:state.snapshots.filter(r=>r['domain']===s['domain']&&r['source']==="wayback").sort((a,b)=>String(a['captured_at']).localeCompare(String(b['captured_at']))).map(r=>({captured_at:r['captured_at'],quarter:(r['signals'] as {archive:{quarter:string}}).archive.quarter}))}))},error:null};
     if (name === "library_sync") {
       const sites = args['p_sites'] as Record<string, unknown>[];

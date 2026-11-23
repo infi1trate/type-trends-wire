@@ -7,8 +7,9 @@ export async function replayArchive(domain:string) {
  for(let attempt=0;attempt<3;attempt++){
   const {data,error}=await db.rpc("library_archive_input",{p_domain:domain});if(error)throw new Error("Archive replay read failed");
   const rows:ReplaySnapshot[]=rowsSchema.parse(data);const history=replayLibrary(rows);
-  const result=await db.rpc("library_archive_replace",{p_domain:domain,p_expected:data as Json,p_history:history as unknown as Json});
-  if(result.error)throw new Error("Archive replay write failed");if(result.data)return history.events.length;
+  // D1 Part 3 · writes only the archive events and baselines that differ (the old function deleted and re-inserted them all).
+  const result=await db.rpc("library_archive_replace_changed",{p_domain:domain,p_expected:data as Json,p_history:history as unknown as Json});
+  if(result.error)throw new Error("Archive replay write failed");if((result.data as {ok?:boolean}|null)?.ok)return history.events.length;
  }
  throw new Error("Archive replay contention");
 }

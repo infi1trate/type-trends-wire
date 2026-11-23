@@ -3224,6 +3224,7 @@ export type Database = {
       read_records: {
         Row: {
           body: Json
+          body_hash: string | null
           bytes: number
           computed_at: string
           key: string
@@ -3232,6 +3233,7 @@ export type Database = {
         }
         Insert: {
           body: Json
+          body_hash?: string | null
           bytes?: number
           computed_at?: string
           key: string
@@ -3240,6 +3242,7 @@ export type Database = {
         }
         Update: {
           body?: Json
+          body_hash?: string | null
           bytes?: number
           computed_at?: string
           key?: string
@@ -6063,6 +6066,10 @@ export type Database = {
       library_archive_replace: {
         Args: { p_domain: string; p_expected: Json; p_history: Json }
         Returns: boolean
+      }
+      library_archive_replace_changed: {
+        Args: { p_domain: string; p_expected: Json; p_history: Json }
+        Returns: Json
       }
       library_archive_state: { Args: never; Returns: Json }
       library_archive_store: { Args: { p_snapshot: Json }; Returns: number }

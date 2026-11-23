@@ -4,6 +4,7 @@
 import type { supabaseAnon } from "./mcp/supabase";
 import { applyMarks, captureOf, checkEvent, splitChecked, type Capture, type Check, type StoredVerdict } from "./integrity";
 import type { Mark } from "./reread";
+import { stableJson } from "./stable-json";
 
 type Db = ReturnType<typeof supabaseAnon>;
 type Ev = { id: number; domain: string; type: string; before?: unknown; after?: unknown; detected_at: string; page_type?: string | null; viewport?: string | null; source?: string | null; snapshot_id?: number | null; prev_snapshot_id?: number | null };
@@ -86,7 +87,10 @@ export async function latestChecks(db: Db, ids: number[]): Promise<Map<number, C
   return new Map([...base].map(([id, c]) => [id, applyMarks(c, marks.get(id) ?? {})]));
 }
 const baseOf = (c: Check): Check => c.base ?? c;
-const same = (a: Check, b: Check) => a.verdict === b.verdict && JSON.stringify([...a.pass].sort()) === JSON.stringify([...b.pass].sort()) && JSON.stringify(a.fields) === JSON.stringify(b.fields);
+// D1 Part 3 · compared key-order-free: the stored fields come back from the database with their keys reordered, so the plain text
+// compare read every verdict as changed and each story build appended ~479 identical rows (99% of change_checks by 23 Nov).
+export const sameCheck = (a: Check, b: Check) => a.verdict === b.verdict && stableJson([...a.pass].sort()) === stableJson([...b.pass].sort()) && stableJson(a.fields) === stableJson(b.fields);
+const same = sameCheck;
 /** Append a row for each change whose unmarked verdict differs from its newest stored one, and each new mark (insert-only, never
  *  replaced); returns how many verdict rows were written. */
 export async function recordChecks(admin: Db, checks: ReadonlyMap<number, Check>): Promise<number> {
