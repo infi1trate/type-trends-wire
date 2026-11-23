@@ -20,6 +20,7 @@ export const RUN_JOBS = {
   "health": { name: "Engineering health run", limitMs: 60_000 },
   "living-reading": { name: "Monthly design reading (L3)", limitMs: 60_000 },
   "ingest-producthunt": { name: "Product Hunt ingest (daily)", limitMs: 60_000 },
+  "ingest-gfonts": { name: "Google Fonts ingest (daily)", limitMs: 60_000 },
 } as const;
 export type RunJob = keyof typeof RUN_JOBS;
 /** A start row with no finish row this long after it is a run that never finished (every job is cut off well before). */

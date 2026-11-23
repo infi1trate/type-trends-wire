@@ -27,3 +27,10 @@ describe("D1c · records health can read", () => {
       .toEqual(["the token was refused", "Product Hunt answered 500", "no token is set", "Product Hunt did not answer in 15 s"]);
   });
 });
+describe("D1c · stale never reads ok", () => {
+  it("every stale job whose last run was fine reads late", () => {
+    const h = buildHealth({ ...base, library_check_at: ago(60 * H), taste_refreshed_at: ago(20 * 24 * H) }, NOW);
+    for (const name of ["library_check", "taste_refresh"]) expect(h.jobs.find(j => j.job === name)).toMatchObject({ stale: true, last_status: "late" });
+    expect(h.jobs.filter(j => j.stale && j.last_status === "ok")).toEqual([]);
+  });
+});

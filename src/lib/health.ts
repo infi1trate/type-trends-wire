@@ -171,6 +171,8 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
       : { job: "chart_card", last_ok_at: b.card_at, last_run_at: b.card_at ?? b.created_at, last_status: b.card_at ? "ok" : "missing", expected_every: "7d", stale: !b.card_at || olderThan(b.card_at, CHART_MAX_AGE_MS, t), consecutive_failures: 0, note: b.card_at ? `latest brief ${b.week}` : `no card for latest brief ${b.week}` });
   }
   jobs.push(indicatorsJob(f.indicators ?? null, t));
+  // D1c · one rule for every job: a stale job whose last run was fine reads "late", never "ok" (the run that should have come did not).
+  for (const j of jobs) if (j.stale && j.last_status === "ok") j.last_status = "late";
   return { status: overallStatus(jobs), checked_at: now.toISOString(), jobs };
 }
 
