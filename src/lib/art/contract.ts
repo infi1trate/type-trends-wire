@@ -67,7 +67,7 @@ export function checkWork(w: ArtWorkIn): { ok: true; bytes: Uint8Array } | { ok:
 export const ART_DIR = "art";
 const safeId = (id: string) => id.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 40);
 export const artPath = (source: ArtSource, sourceId: string, hash: string) => `${ART_DIR}/${source}-${safeId(sourceId)}-${hash.slice(0, 8)}.webp`;
-export const isArtPath = (p: string) => /^art\/(met|aic)-[A-Za-z0-9_-]{1,40}-[0-9a-f]{8}\.webp$/.test(p);
+export { isArtPath } from "../picture-paths";
 /** The fields a stored row carries (everything but the picture). */
 export const workFields = (w: ArtWorkIn) => ({ source: w.source, source_id: w.source_id, title: w.title, artist: w.artist, date_display: w.date_display, year_start: w.year_start, year_end: w.year_end,
   tradition: w.tradition, movement: w.movement, kind: w.kind, credit_line: w.credit_line, link: w.link, licence: "CC0" as const, palette: w.palette, width: w.width, height: w.height });

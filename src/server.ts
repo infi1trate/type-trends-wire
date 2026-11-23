@@ -86,6 +86,17 @@ async function answer(request: Request, env: unknown, ctx: unknown): Promise<Res
         const u = new URL(request.url), moved = movedObjectHref(u.pathname, Object.fromEntries(u.searchParams));
         if (moved) return new Response(null, { status: 301, headers: { location: moved } });
       }
+      // C1b Part 2 · pictures are answered here, before any page code or database client loads (pictures-serve.server.ts); the route
+      // files stay as the fallback for anything else (HEAD, other methods).
+      if (request.method === "GET") {
+        const p = new URL(request.url).pathname, route = p.startsWith("/thumbs/") ? "thumbs" : p.startsWith("/crops/") ? "crops" : null;
+        if (route) {
+          let path: string | null = null;
+          try { path = decodeURIComponent(p.slice(route.length + 2)); } catch { path = null; }
+          const { servePicture } = await import("./lib/pictures-serve.server");
+          return await servePicture(route, path ?? "");
+        }
+      }
       if (new URL(request.url).pathname === "/api/public/mcp") {
         const { handleMcp } = await import("./lib/mcp/server.server");
         return await handleMcp(request);

@@ -30,7 +30,8 @@ export function checkAsset(kind: AssetKind, bytes: Uint8Array, declared: { width
 
 /** `assets/<domain>/<kind>/<yyyy-mm-dd>-<first 8 of hash>.webp`: the crops bucket under its own prefix. */
 export const assetPath = (domain: string, kind: AssetKind, capturedAt: string, hash: string) => `assets/${domain}/${kind}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
-export const ASSET_PATH_RE = /^assets\/([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(icon|card)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
+import { ASSET_PATH_RE } from "./picture-paths";
+export { ASSET_PATH_RE };
 export const parseAssetPath = (path: string) => { const m = ASSET_PATH_RE.exec(path); return m && DOMAIN_RE.test(m[1]!) ? { domain: m[1]!, kind: m[2] as AssetKind } : null; };
 
 export type AssetRow = { id?: number; domain: string; kind: AssetKind | string; captured_at: string; first_seen_at: string; last_seen_at: string; path: string; width: number; height: number; bytes: number; hash: string; run_id?: string | null };

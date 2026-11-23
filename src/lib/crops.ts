@@ -81,7 +81,8 @@ export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 export const cropPath = (domain: string, section: CropSection, capturedAt: string, hash: string) => `${domain}/${section}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
 /** W1c · `<domain>/<page-product|page-about|page-pricing>/<yyyy-mm-dd>-<hash8>.webp`; never the same folder as a homepage section. */
 export const surfacePath = (domain: string, section: SurfaceSection, capturedAt: string, hash: string) => `${domain}/${section}/${utcDay(capturedAt)}-${hash.slice(0, 8)}.webp`;
-export const SURFACE_PATH_RE = /^([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(page-product|page-about|page-pricing)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
+import { SURFACE_PATH_RE, CROP_PATH_RE } from "./picture-paths";
+export { SURFACE_PATH_RE, CROP_PATH_RE };
 export const parseSurfacePath = (path: string) => { const m = SURFACE_PATH_RE.exec(path); return m && DOMAIN_RE.test(m[1]!) ? { domain: m[1]!, section: m[2] as SurfaceSection } : null; };
 /** A first screen: a crop that passes checkCrop and is no taller than 800 px. */
 export function checkSurface(bytes: Uint8Array, declared: { width: number; height: number }): CropCheck {
@@ -89,7 +90,6 @@ export function checkSurface(bytes: Uint8Array, declared: { width: number; heigh
   const c = checkCrop(bytes, declared);
   return c.ok && c.height > SURFACE_MAX_HEIGHT ? { ok: false, reason: "too_large_dimensions" } : c;
 }
-export const CROP_PATH_RE = /^([a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)\/(hero|nav|pricing|cta|footer)\/(\d{4}-\d{2}-\d{2})-([0-9a-f]{8})\.webp$/;
 export const parseCropPath = (path: string) => { const m = CROP_PATH_RE.exec(path); return m && DOMAIN_RE.test(m[1]!) ? { domain: m[1]!, section: m[2] as CropSection } : null; };
 
 export type CropRow = { id?: number; domain: string; section: CropSection | string; viewport: string; captured_at: string; first_seen_at: string; last_seen_at: string; path: string; width: number; height: number; bytes: number; hash: string; run_id?: string | null };

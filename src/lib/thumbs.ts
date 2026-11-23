@@ -8,7 +8,8 @@ export const THUMB_LIMITS = {
 } as const;
 export const VIEWPORTS = ["desktop", "mobile"] as const;
 export type Viewport = (typeof VIEWPORTS)[number];
-export const DOMAIN_RE = /^(?=.{3,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+import { DOMAIN_RE } from "./picture-paths";
+export { DOMAIN_RE };
 // base64 of 300 KB is 409,600 chars; the schema stops anything longer before decoding.
 const b64 = z.string().min(16).max(Math.ceil(THUMB_LIMITS.imageBytesHard / 3) * 4 + 4).regex(/^[A-Za-z0-9+/]+={0,2}$/, "base64");
 export const thumbCapture = z.object({
@@ -67,8 +68,7 @@ export function checkImage(bytes: Uint8Array, maxWidth: number, maxHeight: numbe
 /** `<domain>/<yyyy-mm-dd>-<viewport>.webp`; variants add `-640w` / `-320w`. */
 export const thumbPath = (domain: string, capturedAt: string, viewport: Viewport, variant?: number) =>
   `${domain}/${capturedAt.slice(0, 10)}-${viewport}${variant ? `-${variant}w` : ""}.webp`;
-export const THUMB_PATH_RE = /^([a-z0-9.-]+)\/(\d{4}-\d{2}-\d{2})-(desktop|mobile)(?:-(640|320)w)?\.webp$/;
-export const mainPathOf = (path: string) => (THUMB_PATH_RE.test(path) ? path.replace(/-(640|320)w\.webp$/, ".webp") : null);
+export { THUMB_PATH_RE, mainPathOf } from "./picture-paths";
 
 export type ThumbVariant = { w: number; h: number; bytes: number; path: string };
 export type ThumbRow = { id?: number; domain: string; captured_at: string; viewport: Viewport | string; path: string; width: number; height: number; bytes: number; variants: ThumbVariant[] | unknown; removed_at?: string | null };
