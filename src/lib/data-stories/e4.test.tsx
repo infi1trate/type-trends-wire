@@ -70,7 +70,8 @@ describe("the shelf", () => {
     const a = study({ slug: "a", number: 1, changedAt: "2026-11-10T00:00:00Z" }), b = study({ slug: "b", number: 2, series: "first-movers", changedAt: "2026-11-18T00:00:00Z" }), c = study({ slug: "c", number: 4, series: "sector-v-sector", changedAt: "2026-11-18T00:00:00Z" });
     expect(leadOf([a, b, c])?.slug).toBe("b");
     const h = studiesHome([c, a, b], []);
-    expect(h.series.map(s => s.studies.map(x => x.slug))).toEqual([["b"], ["a"], ["c"]]);
+    // W3d-c · Beyond the homepage is listed now that No. 8 is switched on (empty here: no study of it in this list).
+    expect(h.series.map(s => s.studies.map(x => x.slug))).toEqual([["b"], ["a"], ["c"], []]);
     expect(frontStudies(h).map(x => x.slug)).toEqual(["b", "a", "c"]);
     expect(frontStudies(studiesHome([a, b, c, study({ slug: "d", number: 6 })], [])).length).toBe(3);
   });

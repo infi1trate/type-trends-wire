@@ -1,6 +1,8 @@
 // W3d · with ICONS_SHOWN false the icon study does not exist for readers, whatever is stored: not live, not listed, not on the shelf or
-// the Studies home, builds nothing, and its page (and so its share image and embed) answers missing.
-import { describe, expect, it } from "vitest";
+// the Studies home, builds nothing, and its page (and so its share image and embed) answers missing. W3d-c · the switch ships on, so
+// these tests turn it off to keep the switch working; app-icons-shown.test.ts reads it as shipped.
+import { describe, expect, it, vi } from "vitest";
+vi.mock("../site", async orig => ({ ...(await orig<object>()), ICONS_SHOWN: false }));
 import { ICONS_SHOWN, MUSEUM_SHOWN } from "../site";
 import { fxInput } from "./fixtures";
 import { buildStory, dataShelf, indexRows, liveNow, statusOf } from "./build";
@@ -11,7 +13,7 @@ import { computeDataStory, loadDataStory } from "./page.server";
 
 const e = entryOf(ICONS_SLUG)!;
 describe("the icon study withheld (W3d)", () => {
-  it("ships off, beside the museum switch", () => { expect(ICONS_SHOWN).toBe(false); expect(MUSEUM_SHOWN).toBe(false); expect(withheld(e)).toBe(true); });
+  it("switched off, beside the museum switch", () => { expect(ICONS_SHOWN).toBe(false); expect(MUSEUM_SHOWN).toBe(false); expect(withheld(e)).toBe(true); });
   it("does not exist for readers even with a full week stored", () => {
     const i = { ...fxInput(), icons: probeRows() };
     expect(statusOf(e, i)).toEqual({ status: "draft", reason: "Withheld by the editor." });
