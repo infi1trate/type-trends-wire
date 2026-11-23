@@ -215,3 +215,11 @@
 - [x] Part 2: sector names a group only at ≥⅓ and ≥8; study only with ≥5 sectors, else "not enough for a finding" with counts; full museum labels
 - [x] Part 2: brand line redrawn for the Data view only (≤2 lines at 390, ≤64 px thumbnail, title-only link); stays off
 - [x] Part 2: read-only proof on the stored works (picture, counts, sector rows)
+
+# T1 + T2 · Stored-pages job, one spend ledger, cut the site's own calls
+- [ ] 0 wire-followups answers at once + finishes in background (run id, start/finish rows, no doubling); 16:16 cause; health stored-page ages; front LCP wait check; own commit
+- [ ] 1 Spend ledger (pure + loader, 8 ET weeks, kinds/models, build credits @0.30, agent spend by hand, 3 unit costs, cap line); /desk Spend table; health line; tests
+- [ ] 2A Vision: count unchanged-capture share; skip-and-carry rule (28 d, low confidence, top 30); confirmation + steadiness honesty; expected calls/dollars
+- [ ] 2B Changelog structured-output failures: cause, fix, one retry, golden set
+- [ ] 2C story_why steps, cheapest passing model per step (≤60 calls), shorter fixed prompts
+- [ ] 2D One retry place, constant per kind

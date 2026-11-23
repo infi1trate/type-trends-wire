@@ -525,33 +525,38 @@ export async function buildStories(o: BuildOptions & { withAi?: boolean } = {}):
 // Scheduled calls answer within CALL_BUDGET_MS (jobs/steps.ts); the build only uses what is left of it.
 const JOB_LIMIT_MS = CALL_BUDGET_MS, MIN_INTERVAL_MS = 120_000;
 let lastRun = 0;
-export async function afterJob(job: string, jobStartedAt: number, extra: Pick<BuildOptions, "realRunIds"> = {}): Promise<void> {
+/** `limitMs`: the call's own limit from `jobStartedAt` when shorter than CALL_BUDGET_MS (T1 · the follow-ups pass works after it has
+ *  answered and has less time). Every deadline below is measured from it. Returns the build's run note (null when it did not run). */
+export async function afterJob(job: string, jobStartedAt: number, extra: Pick<BuildOptions, "realRunIds"> & { limitMs?: number } = {}): Promise<string | null> {
+  const { limitMs, ...build } = extra, LIMIT = Math.min(JOB_LIMIT_MS, limitMs ?? JOB_LIMIT_MS);
   try {
-    const now = Date.now(), left = JOB_LIMIT_MS - (now - jobStartedAt) - 10_000;
-    if (left < 5000 || now - lastRun < MIN_INTERVAL_MS) return void await studies(job, jobStartedAt);
+    const now = Date.now(), left = LIMIT - (now - jobStartedAt) - 10_000;
+    if (left < 5000 || now - lastRun < MIN_INTERVAL_MS) { await studies(job, jobStartedAt, LIMIT); return null; }
     lastRun = now;
-    const budgetMs = Math.min(BUILD_BUDGET_MS, left), writeDeadline = jobStartedAt + JOB_LIMIT_MS - 8000;
+    const budgetMs = Math.min(BUILD_BUDGET_MS, left), writeDeadline = jobStartedAt + LIMIT - 8000;
     // N4c · the build's own run row (its duration in each job is what health and /desk read).
     const run = await (await import("../jobs/runs.server")).startRun("story-build", { note: job });
-    const r = await Promise.race([buildStories({ ...extra, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
+    const r = await Promise.race([buildStories({ ...build, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
     if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
     else console.warn("story build timed out", job);
-    await run.finish(!!r, r?.skipped === "held" ? `${job} · held: job_hold on stories` : r ? `${job} · ${r.inserted} new, ${r.published} published, ${r.held} held${r.sheets != null ? `, ${r.sheets} sheets` : ""}` : `${job} · timed out after ${Math.round((Date.now() - now) / 1000)} s (${Math.round(budgetMs / 1000)} s left when it started)`);
+    const note = r?.skipped === "held" ? `${job} · held: job_hold on stories` : r ? `${job} · ${r.inserted} new, ${r.published} published, ${r.held} held${r.sheets != null ? `, ${r.sheets} sheets` : ""}` : `${job} · timed out after ${Math.round((Date.now() - now) / 1000)} s (${Math.round(budgetMs / 1000)} s left when it started)`;
+    await run.finish(!!r, note);
     // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
-    if (r && r.skipped !== "held") await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + JOB_LIMIT_MS - 5000);
+    if (r && r.skipped !== "held") await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + LIMIT - 5000);
     // N1 · the state history: what this build and its writers stored, recorded as states (at most every five minutes; never fails the job).
-    if (r && JOB_LIMIT_MS - (Date.now() - jobStartedAt) > 15_000) await (await import("../newsroom/newsroom.server")).syncStoryStates((await import("@/integrations/supabase/client.server")).supabaseAdmin, { days: 14 }).catch(e => console.error("story states failed", e instanceof Error ? e.message.slice(0, 60) : "UnknownError"));
-    await studies(job, jobStartedAt);
-  } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); }
+    if (r && LIMIT - (Date.now() - jobStartedAt) > 15_000) await (await import("../newsroom/newsroom.server")).syncStoryStates((await import("@/integrations/supabase/client.server")).supabaseAdmin, { days: 14 }).catch(e => console.error("story states failed", e instanceof Error ? e.message.slice(0, 60) : "UnknownError"));
+    await studies(job, jobStartedAt, LIMIT);
+    return note;
+  } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); return null; }
 }
 /** E4 · after the stories (their twelve calls come first), the study writer takes what time is left, when a call still fits. Never throws. */
-async function studies(job: string, jobStartedAt: number) {
-  await (await import("../data-stories/writer.server")).runStudyWriter(job, jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
+async function studies(job: string, jobStartedAt: number, LIMIT = JOB_LIMIT_MS) {
+  await (await import("../data-stories/writer.server")).runStudyWriter(job, jobStartedAt + LIMIT - 6000).catch(() => null);
   // E5 · then the digest writer (two calls a day at most, its own count), when a call still fits.
-  await (await import("../digest/writer.server")).runDigestWriter(job, jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
+  await (await import("../digest/writer.server")).runDigestWriter(job, jobStartedAt + LIMIT - 6000).catch(() => null);
   // N2 · the copy desk's weekly sweep, when time is left (resumes in a later build; never fails the job).
-  if (jobStartedAt + JOB_LIMIT_MS - Date.now() > 20_000) await (await import("../newsroom/sweep.server")).runCopySweep((await import("@/integrations/supabase/client.server")).supabaseAdmin, jobStartedAt + JOB_LIMIT_MS - 8000).catch(() => null);
+  if (jobStartedAt + LIMIT - Date.now() > 20_000) await (await import("../newsroom/sweep.server")).runCopySweep((await import("@/integrations/supabase/client.server")).supabaseAdmin, jobStartedAt + LIMIT - 8000).catch(() => null);
   // N3 · the news, graphics and data desks' scheduled work, when time is left (never fails the job).
-  if (jobStartedAt + JOB_LIMIT_MS - Date.now() > 20_000) await (await import("../newsroom/desks-run.server")).runDeskJobs(jobStartedAt + JOB_LIMIT_MS - 6000).catch(() => null);
+  if (jobStartedAt + LIMIT - Date.now() > 20_000) await (await import("../newsroom/desks-run.server")).runDeskJobs(jobStartedAt + LIMIT - 6000).catch(() => null);
 }
 export const storyLabel = (k: string) => label(k).name;

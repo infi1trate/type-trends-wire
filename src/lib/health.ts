@@ -26,7 +26,9 @@ export type JobHealth = { job: string; last_ok_at: string | null; last_run_at: s
 export type BrandNameFacts = { checked_at: string; checked: number; not_captured: string[]; failing: { domain: string; name: string; title: string | null; h1: string | null }[] };
 /** N1 · the weekly spend cap as health states it: set or not, reached or not, and one plain line (no amounts on this public payload). */
 export type SpendFacts = { week_start: string | null; cap_set: boolean; reached: boolean; line: string };
-export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null; spend?: SpendFacts | null; art?: { met: number; aic: number; newest_last_seen: string | null } | null };
+export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null; spend?: SpendFacts | null; art?: { met: number; aic: number; newest_last_seen: string | null } | null;
+  /** T1 · each stored page kind's age against its limit (never changes `status`). */
+  stored_pages?: { line: string; past_limit: number; kinds: import("./records/records").StoredAge[] } | null };
 /** N1 · read the public spend_facts() facade's answer. */
 export function spendFacts(raw: unknown): SpendFacts | null {
   if (!raw || typeof raw !== "object") return null;

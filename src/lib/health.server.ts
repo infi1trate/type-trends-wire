@@ -30,7 +30,9 @@ export async function healthPayload(): Promise<HealthPayload> {
   const spend = await supabaseAnon().rpc("spend_facts" as never).then(r => (r.error ? null : spendFacts(r.data)), () => null);
   // W3a: museum works stored by source and the newest last_seen (public rows only); unreadable reads as null and never changes the status.
   const art = await artHealth().catch(() => null);
-  value = { ...value, brand_names: names, spend, art };
+  // T1 · each stored page's age against its limit (anonymous read of keys and times only); unreadable reads as null and never changes the status.
+  const stored_pages = await import("./records/store.server").then(async m => (await import("./records/records")).storedAges(await m.recordMetas(), now)).catch(() => null);
+  value = { ...value, brand_names: names, spend, art, stored_pages };
   cache = { at: now, value };
   return value;
 }

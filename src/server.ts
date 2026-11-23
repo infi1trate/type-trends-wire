@@ -89,6 +89,17 @@ export default {
         const waitUntil = hostWaitUntil(request, c);
         return await handleCrawlIngest(request, waitUntil ? { waitUntil } : {});
       }
+      // T1 · the wire follow-ups pass answers its scheduled caller at once (which gives up after five seconds) and finishes its work
+      // after the answer through waitUntil; the route file stays as the inline fallback.
+      if (request.method === "POST" && new URL(request.url).pathname === "/api/public/jobs/wire-followups") {
+        const waitUntil = hostWaitUntil(request, c);
+        if (waitUntil) {
+          const { handleWireFollowups } = await import("./lib/jobs/wire-followups.server");
+          return await handleWireFollowups(request, { waitUntil });
+        }
+      }
+      // T1 · DEV ONLY: `?__cold=1` empties every per-instance memo first, so the page is drawn the way a fresh instance draws it.
+      if (import.meta.env.DEV && request.method === "GET" && new URL(request.url).searchParams.get("__cold") === "1") (await import("./lib/memo")).clearAllMemosForDev();
       // P1/I1: public Read pages are the same for every visitor; serve a copy drawn in the last five minutes when there is one.
       // The dev server skips the copy (code changes between requests would serve stale pages); the live host keeps it.
       return await servePage(request, GATE_ENABLED || import.meta.env.DEV, pages, async () => {

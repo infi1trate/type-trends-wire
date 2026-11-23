@@ -40,6 +40,10 @@ export function jobProblems(name: string, runs: readonly JobRun[], now: number):
   if (med && last != null && last > SLOW_FACTOR * med && last > SLOW_FLOOR_MS) out.push({ key: `${HEALTH_PREFIX}job-slow:${name}`, title: `Scheduled job ${name} ran slowly`, why: `Its newest run took ${secs(last)}, more than ${SLOW_FACTOR} times its ${HEALTH_DAYS}-day median of ${secs(med)}.` });
   return out;
 }
+/** T1 · stored pages past their age limit (health's `stored_pages`): the sweep has stalled, so fresh instances rebuild them live. */
+export function storedPageProblems(sp: { line: string; past_limit: number } | null | undefined): Problem[] {
+  return sp && sp.past_limit > 0 ? [{ key: `${HEALTH_PREFIX}stored-pages-past-limit`, title: "Stored pages are past their age limit", why: sp.line.slice(0, 560) }] : [];
+}
 /** A crawl or the wire older than health.ts's staleness rules (its own `stale` flag). */
 export function staleProblems(jobs: readonly { job: string; stale: boolean; last_ok_at: string | null; expected_every: string }[]): Problem[] {
   return jobs.filter(j => (j.job === "crawl" || j.job === "wire") && j.stale).map(j => ({ key: `${HEALTH_PREFIX}stale:${j.job}`, title: `The ${j.job === "crawl" ? "crawl" : "wire"} is stale`, why: `Its last good run was ${j.last_ok_at ? `${j.last_ok_at.slice(0, 16).replace("T", " ")} UTC` : "never"}, older than twice its interval (${j.expected_every}).` }));

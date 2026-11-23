@@ -152,6 +152,7 @@ export async function runHealth(db: Admin, o: { now?: number; write?: boolean; f
     const { healthPayload } = await import("../health.server");
     const h = await healthPayload().catch(() => null);
     found.push(...e.staleProblems(h?.jobs ?? []));
+    found.push(...e.storedPageProblems(h?.stored_pages));
     const runs = (await import("./design-review")).runsOf(rv).filter(r => r.kind !== "test");
     const newest = runs[0] ? { run: runs[0].run, rows: rv.filter(x => x.run === runs[0]!.run) } : null;
     found.push(...e.speedProblems(newest));

@@ -51,8 +51,12 @@ export function memoBy<K, T>(ttl: number, load: (k: K) => Promise<T>, o: MemoOpt
   fn.pending = () => flying.size;
   fn.size = () => values.size;
   fn.clear = () => { values.clear(); flying.clear(); };
+  if (import.meta.env?.DEV) DEV_CLEARS.add(fn.clear);
   return fn;
 }
+/** T1 · DEV ONLY: every memo's clear, so `?__cold=1` on a dev page address (src/server.ts) can draw it the way a fresh instance would. */
+const DEV_CLEARS = new Set<() => void>();
+export function clearAllMemosForDev(): number { if (!import.meta.env?.DEV) return 0; for (const c of DEV_CLEARS) c(); return DEV_CLEARS.size; }
 /** A memo of one value. */
 export function memo<T>(ttl: number, load: () => Promise<T>, o: MemoOptions = {}): Memo<void, T> & (() => Promise<T>) {
   return memoBy<void, T>(ttl, () => load(), { ...o, key: () => "" }) as Memo<void, T> & (() => Promise<T>);

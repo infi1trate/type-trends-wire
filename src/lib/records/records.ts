@@ -75,3 +75,26 @@ export function cardsDue(sites: { domain: string; last_snapshot_at: string | nul
 }
 /** Bytes a body takes as JSON (recorded beside each row so /status can show what the pages read). */
 export const bodyBytes = (body: unknown) => new TextEncoder().encode(JSON.stringify(body ?? null)).length;
+
+/** T1 · each stored page's age against its limit, for /api/public/health: one entry per kind (per-brand kinds by their oldest row),
+ *  and one line naming every kind past its limit, so a stalled sweep shows within the hour instead of nine hours later. */
+export type StoredAge = { kind: string; rows: number; oldest_at: string; age_min: number; limit_min: number; past_limit: boolean; rows_past_limit: number };
+export function storedAges(metas: readonly Pick<RecordMeta, "key" | "computed_at">[], now: number): { line: string; past_limit: number; kinds: StoredAge[] } {
+  const by = new Map<string, { rows: number; oldest: number; past: number }>();
+  for (const m of metas) {
+    const kind = kindOf(m.key), lim = AGES[kind as RecordKind]?.maxAge, at = Date.parse(m.computed_at);
+    if (!lim || !Number.isFinite(at)) continue;
+    const b = by.get(kind) ?? { rows: 0, oldest: Infinity, past: 0 };
+    b.rows++; b.oldest = Math.min(b.oldest, at); if (now - at >= lim) b.past++;
+    by.set(kind, b);
+  }
+  const kinds = (Object.keys(AGES) as RecordKind[]).filter(k => by.has(k)).map(kind => {
+    const b = by.get(kind)!, lim = AGES[kind].maxAge;
+    return { kind, rows: b.rows, oldest_at: new Date(b.oldest).toISOString(), age_min: Math.max(0, Math.round((now - b.oldest) / 60_000)), limit_min: lim / 60_000, past_limit: b.past > 0, rows_past_limit: b.past };
+  });
+  const hm = (min: number) => (min < 120 ? `${min} min` : `${Math.round(min / 6) / 10} h`);
+  const past = kinds.filter(k => k.past_limit);
+  const line = !kinds.length ? "No stored pages." : !past.length ? `All ${kinds.length} kinds of stored page are within their limits (oldest ${hm(Math.max(...kinds.map(k => k.age_min)))} old).`
+    : `${past.length} of ${kinds.length} kinds of stored page are past their limit, so fresh instances rebuild them live: ${past.map(k => `${k.kind} ${hm(k.age_min)} (limit ${hm(k.limit_min)}${k.rows > 1 ? `, ${k.rows_past_limit} of ${k.rows} rows` : ""})`).join("; ")}.`;
+  return { line, past_limit: past.length, kinds };
+}
