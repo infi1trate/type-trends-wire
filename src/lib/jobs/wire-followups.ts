@@ -34,7 +34,11 @@ export function firstStep(now: number): FollowupStep {
   return Math.floor(new Date(now).getUTCMinutes() / WIRE_FOLLOWUPS_SLOT_MIN) % 2 === 0 ? "story build" : "records sweep";
 }
 /** Both steps, the first step's first. */
-export const stepOrder = (now: number): FollowupStep[] => (firstStep(now) === "story build" ? ["story build", "records sweep"] : ["records sweep", "story build"]);
+/** D1b · `held`: the story build is on hold (it only checks the hold and runs its writers' tail with what is left), so the sweep goes
+ *  first in every slot and leaves it HELD_BUILD_ROOM_MS instead of BUILD_ROOM_MS. */
+export const stepOrder = (now: number, held = false): FollowupStep[] => (!held && firstStep(now) === "story build" ? ["story build", "records sweep"] : ["records sweep", "story build"]);
+/** What a sweep going first leaves a held build. */
+export const HELD_BUILD_ROOM_MS = 4_000;
 const s1 = (ms: number) => `${Math.round(ms / 100) / 10} s`;
 /** The finish row's note: each step with its seconds, and what it rewrote when it says. */
 export const followupsNote = (steps: readonly { step: string; ms: number; note?: string | null }[]) => steps.map(x => `${x.step} ${s1(x.ms)}${x.note ? ` (${x.note})` : ""}`).join(" · ") || "nothing ran";
@@ -46,7 +50,7 @@ export const FINISH_GRACE_MS = 1_500;
 export const BUILD_ROOM_MS = 15_000;
 /** The records sweep's own limit, from its start: going second, whatever is left before the pass's end (0 when the build used it all);
  *  going first, whatever is left less BUILD_ROOM_MS, so the story build still runs every fifteen minutes. */
-export const sweepLimitMs = (passStart: number, sweepStart: number, first = false) => Math.max(0, passStart + PASS_END_MS - (first ? BUILD_ROOM_MS : 0) - sweepStart);
+export const sweepLimitMs = (passStart: number, sweepStart: number, first = false, room = BUILD_ROOM_MS) => Math.max(0, passStart + PASS_END_MS - (first ? room : 0) - sweepStart);
 /** What a sweep rewrote, by kind ("brand-card 12, signals 1"), for the finish row. */
 export function writtenByKind(keys: readonly string[]): Record<string, number> {
   const out: Record<string, number> = {};

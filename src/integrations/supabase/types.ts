@@ -6091,6 +6091,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      change_checks_latest_for: {
+        Args: { _ids: number[] }
+        Returns: {
+          checked_at: string
+          event_id: number
+          fields: Json
+          pass_fields: string[]
+          verdict: string
+        }[]
+      }
       crop_opted_out: { Args: { p_domain: string }; Returns: boolean }
       db_load_facts: { Args: never; Returns: Json }
       db_session_limits: { Args: never; Returns: Json }

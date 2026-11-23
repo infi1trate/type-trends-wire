@@ -10,7 +10,9 @@ export type StepResult = { step: wf.FollowupStep | "marked work"; ms: number; no
 export type WireFollowupsRun = { ran: boolean; why: string; run_id: number | null; first: wf.FollowupStep | null; steps: StepResult[]; ms: number; mode?: "background" | "inline" };
 type Deps = {
   build: (job: string, t0: number, limitMs: number) => Promise<string | null>;
-  sweep: (job: string, start: number, limitMs: number, force?: boolean) => Promise<{ written: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
+  sweep: (job: string, start: number, limitMs: number, force?: boolean) => Promise<{ written: string[]; retimed?: string[]; skipped: number; timed_out: boolean; errors: string[] } | null>;
+  /** D1b · the story build is on hold (job_hold): it then takes a second or two, so it goes first and the sweep gets the rest. */
+  held: () => Promise<boolean>;
   /** D1 Part 2 · what crawler posts marked out of date (its own share of the pass, before the build and the sweep). */
   marked: (deadline: number) => Promise<import("./marked-work.server").MarkedResult>;
   pause: (ms: number) => Promise<void>;
@@ -21,6 +23,11 @@ const DEPS: Deps = {
   // Under test the pass's fakes never reach the live marks (job_runs and work_marks are the live record).
   marked: async deadline => (underTest() ? { note: "nothing marked", force: null, left: 0, errors: 0 } : (await import("./marked-work.server")).runMarkedWork(deadline)),
   pause: ms => (underTest() ? Promise.resolve() : new Promise(r => setTimeout(r, ms))),
+  held: async () => {
+    if (underTest()) return false;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return (await import("../newsroom/passes.server")).isHeld(supabaseAdmin, "stories").catch(() => false);
+  },
 };
 
 /** Checks that no pass is running, writes the start row and returns the work still to do (null when the pass does not run). */
@@ -37,7 +44,8 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
       const done = new Set((fin.data ?? []).map(x => x.start_id));
       if (open.data.some(x => !done.has(x.id))) { out.why = "another follow-ups pass is running"; return { out, work: null }; }
     }
-    const order = wf.stepOrder(t0);
+    const held = await deps.held().catch(() => false);
+    const order = wf.stepOrder(t0, held);
     const { startRun } = await import("./runs.server");
     const run = await startRun("wire-followups", { db, slot: wf.wireFollowupsSlot(t0), note: order.join(", ") });
     if (run.slotTaken || run.id == null) { out.why = run.slotTaken ? "another pass took this slot" : "no start row"; return { out, work: null }; }
@@ -59,11 +67,11 @@ export async function beginWireFollowups(db: Admin, o: { now?: () => number; dep
             r.steps.push({ step, ms: clock() - t, note: note ? note.replace(/^wire · /, "") : "skipped: too little time left" });
           } else {
             // Second, the sweep has whatever is left before the pass's end; first, it leaves the build its room.
-            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0]), !!force);
+            const s = await deps.sweep("wire", t, wf.sweepLimitMs(t0, t, step === order[0], held ? wf.HELD_BUILD_ROOM_MS : wf.BUILD_ROOM_MS), !!force);
             // The forced sweep's mark is cleared only when the sweep finished whole; a cut-short one stays marked for the next pass.
             if (force && s && !s.timed_out && !s.errors.length) { await (await import("./marks.server")).clearMark(force).catch(() => undefined); force = null; }
             const by = s ? wf.writtenByKind(s.written) : {};
-            r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
+            r.steps.push({ step, ms: clock() - t, note: s ? `${wf.writtenLine(by)}${s.retimed?.length ? `, ${s.retimed.length} re-timed` : ""}${s.timed_out ? ", rest next pass" : ""}${s.errors.length ? `, ${s.errors.length} errors` : ""}` : "skipped: too little time left", written: by });
           }
         }
       })();

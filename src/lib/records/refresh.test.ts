@@ -110,3 +110,62 @@ describe("T2 · Part 0c: overdue page models go before the per-brand rows", () =
     expect(overdueFirst(["gallery", "data-story:a", "digest", "collections"], k => m[k], now)).toEqual(["collections", "digest", "data-story:a"]);
   });
 });
+
+describe("D1b · the sweep's queue: overdue first and cheapest first", () => {
+  it("puts every page past its limit before a shared input that is only due, cheapest first", async () => {
+    const { sweepOrder } = await import("./refresh.server");
+    const H = 3_600_000;
+    const order = sweepOrder([
+      { what: "signals", brand: false, age: 20 * 60_000, limit: 3 * H, est: 2_000, due: true },
+      { what: "data-index", brand: false, age: 13.6 * H, limit: 6 * H, est: 11_000, due: true },
+      { what: "gallery:default", brand: false, age: 13.6 * H, limit: 6 * H, est: 2_000, due: true },
+      { what: "rebrands", brand: false, age: 5.7 * H, limit: 3 * H, est: 6_000, due: true },
+      { what: "brand-sector", brand: true, age: Infinity, limit: 48 * H, est: 15_000, due: true },
+      { what: "moving-runs", brand: false, age: 5 * 60_000, limit: 6 * H, est: 500, due: false },
+    ]).map(x => x.what);
+    expect(order).toEqual(["gallery:default", "rebrands", "data-index", "brand-sector", "signals", "moving-runs"]);
+  });
+  it("among items inside their limit, the one closest to its limit goes first", async () => {
+    const { sweepOrder } = await import("./refresh.server");
+    const H = 3_600_000;
+    const order = sweepOrder([
+      { what: "collections", brand: false, age: 1 * H, limit: 6 * H, est: 100, due: true },
+      { what: "site-index", brand: false, age: 2.5 * H, limit: 3 * H, est: 9_000, due: true },
+    ]).map(x => x.what);
+    expect(order).toEqual(["site-index", "collections"]);
+  });
+  it("the 07:01 pass: with every shared input due and seven pages overdue, the overdue pages are built before the due shared inputs", async () => {
+    const now = Date.now(), old = new Date(now - 13.6 * 3_600_000).toISOString(), due = new Date(now - 20 * 60_000).toISOString();
+    const pages = ["data-index", "data-story:a", "collections", "collection:x:1", "gallery:default", "digest:2026-W46"];
+    const metas = [...pages.map(k => ({ key: k, kind: k.split(":")[0]!, computed_at: old })),
+      ...["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards"].map(k => ({ key: k, kind: k, computed_at: due }))];
+    const f = fakes({ metas: async () => metas, pageKeys: async () => pages });
+    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 2_000, deps: f.deps, estimates: { metas: 1, "page-keys": 1, sites: 1, page: 1, "card-chunk": 1, "brand-similar": 1, "brand-sector": 1, "site-index": 1, signals: 1, rebrands: 1, "moving-runs": 1, "quarter-series": 1, "front-tape": 1, "front-cards": 1 } });
+    const firstShared = Math.min(...f.calls.map((c, i) => (c.startsWith("shared ") ? i : Infinity)));
+    for (const p of pages) expect(f.calls.indexOf(`page ${p}`)).toBeLessThan(firstShared);
+    expect(r.overdue_tried).toEqual(expect.arrayContaining(pages));
+  });
+  it("counts bodies that only had their time moved apart from those rewritten", async () => {
+    const f = fakes({ write: async rows => ({ written: rows.filter(r => r.key === "signals").map(r => r.key), retimed: rows.filter(r => r.key !== "signals").map(r => r.key) }) });
+    const r = await refreshRecords({ job: "wire", deadline: Date.now() + 2_000, deps: f.deps, estimates: { metas: 1, "page-keys": 1, sites: 1, page: 1, "card-chunk": 1, "brand-similar": 1, "brand-sector": 1, "site-index": 1, signals: 1, rebrands: 1, "moving-runs": 1, "quarter-series": 1, "front-tape": 1, "front-cards": 1 } });
+    expect(r.written).toEqual(["signals"]);
+    expect(r.retimed).toContain("site-index");
+    expect(r.retimed).not.toContain("signals");
+  });
+  it("the run note names the errors", async () => {
+    const { sweepNote } = await import("./refresh.server");
+    expect(sweepNote("wire", { written: ["a", "b"], retimed: ["c"], skipped: 3, timed_out: true, errors: ["rebrands: rebrands_incomplete"] })).toBe("wire · 2 written, 1 re-timed, 3 skipped, timed out, 1 error (rebrands: rebrands_incomplete)");
+  });
+});
+
+describe("D1b · slow per-brand sets are rebuilt before they pass their limit", () => {
+  it("a per-brand set at 40 h of 48 h goes before a shared input at 20 min of 3 h", async () => {
+    const { sweepOrder } = await import("./refresh.server");
+    const H = 3_600_000;
+    const order = sweepOrder([
+      { what: "signals", brand: false, age: 20 * 60_000, limit: 3 * H, est: 2_000, due: true },
+      { what: "brand-sector", brand: true, age: 40 * H, limit: 48 * H, est: 12_000, due: true },
+    ]).map(x => x.what);
+    expect(order).toEqual(["brand-sector", "signals"]);
+  });
+});

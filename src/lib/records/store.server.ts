@@ -74,7 +74,11 @@ export function storedBy<A, T>(keyOf: (a: A) => string, compute: (a: A) => Promi
  *  D1 Part 3 · a body whose hash matches the stored one is not rewritten: only its time moves (the age rules read it), so a sweep on a
  *  quiet hour writes a few small rows instead of ~300 page bodies. A stored row with no hash yet is rewritten once, with its hash. */
 export async function writeRecords(rows: { key: string; body: unknown; source: string }[]): Promise<string[]> {
-  if (!rows.length) return [];
+  return (await writeRecordsCounted(rows)).written;
+}
+/** D1b · the same write, also naming the keys whose unchanged body only had its time moved (the sweep's run row counts both). */
+export async function writeRecordsCounted(rows: { key: string; body: unknown; source: string }[]): Promise<{ written: string[]; retimed: string[] }> {
+  if (!rows.length) return { written: [], retimed: [] };
   const [{ supabaseAdmin }, { stableHash }] = await Promise.all([import("@/integrations/supabase/client.server"), import("../stable-json")]);
   const now = new Date().toISOString(), out: string[] = [];
   const hashed = await Promise.all(rows.map(async r => ({ ...r, hash: await stableHash(r.body ?? null) })));
@@ -102,5 +106,5 @@ export async function writeRecords(rows: { key: string; body: unknown; source: s
     batch.push({ key: r.key, kind: kindOf(r.key), body: (r.body ?? null) as never, computed_at: now, source: r.source.slice(0, 60), bytes, body_hash: r.hash }); size += bytes;
   }
   await flush();
-  return out;
+  return { written: out, retimed: same.map(r => r.key) };
 }

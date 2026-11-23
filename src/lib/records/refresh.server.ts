@@ -6,16 +6,17 @@
 // Deadline rules: each step has a cost estimate (the last run's duration on this instance, else STEP_ESTIMATE_MS). A step whose
 // estimate does not fit in the time left is skipped (the next sweep picks it up), and a step that starts is still cut off at the
 // deadline, so no call runs past it by more than a timer tick. Card loops check the per-chunk estimate before each chunk.
-import { SHARED, brandKey, cardsDue, due, maxAgeOf, pageKey, PAGES, type PageKind, type SharedKey } from "./records";
+import { SHARED, brandKey, cardsDue, due, everyOf, maxAgeOf, pageKey, PAGES, type PageKind, type SharedKey } from "./records";
 import { CALL_BUDGET_MS } from "../jobs/steps";
 
-export type RefreshResult = { written: string[]; skipped: number; timed_out: boolean; errors: string[] };
+export type RefreshResult = { written: string[]; /** D1b · bodies unchanged since the stored copy: only their time moved. */ retimed: string[]; skipped: number; timed_out: boolean; errors: string[]; /** D1b · the queue as run, and the overdue items it reached. */ order?: string[]; overdue_tried: string[] };
 type Site = { domain: string; sector: string; last_snapshot_at: string | null };
 type Row = { key: string; body: unknown };
 /** Everything the refresh reads, computes and writes; injectable so tests run with fake steps and a fake clock. */
 export type RefreshDeps = {
   metas: () => Promise<{ key: string; computed_at: string }[]>;
-  write: (rows: (Row & { source: string })[]) => Promise<string[]>;
+  /** The keys rewritten; or (the real store) those rewritten and those whose unchanged body only had its time moved. */
+  write: (rows: (Row & { source: string })[]) => Promise<string[] | { written: string[]; retimed: string[] }>;
   card: (domain: string) => Promise<unknown>;
   shared: (k: SharedKey) => Promise<unknown>;
   sites: () => Promise<Site[]>;
@@ -59,7 +60,7 @@ export async function pageBody(key: string): Promise<unknown> {
 }
 const DEFAULT_DEPS: RefreshDeps = {
   metas: async () => (await import("./store.server")).recordMetas(),
-  write: async rows => (await import("./store.server")).writeRecords(rows),
+  write: async rows => (await import("./store.server")).writeRecordsCounted(rows),
   card: async d => (await import("../brand-read.server")).computeBrandCard(d),
   shared: sharedBody,
   sites: async () => {
@@ -83,21 +84,28 @@ const DEFAULT_DEPS: RefreshDeps = {
   page: pageBody,
 };
 
-/** Fixed starting estimates (ms) per step, used until this instance has timed the step once. Generous on purpose. */
+/** Fixed starting estimates (ms) per step, used until this instance has timed the step once. Generous on purpose.
+ *  D1b · page models have one bucket per kind (a 9 s data-index no longer makes every page look slow); measured cold on 23 Nov:
+ *  brands-index 9.5 s, data-index 9.5 s (it loads the studies' shared input; the data-story pages after it take 0.2 s), digest 3.3 s,
+ *  collections 1.9 s, a collection or the gallery under 0.6 s, brand-similar 1.4 s, brand-sector 11 s (the same studies input + 1.6 s). */
 export const STEP_ESTIMATE_MS: Readonly<Record<string, number>> = {
   metas: 1_500, sites: 1_500, "page-keys": 1_500, "card-chunk": 2_500,
-  "site-index": 5_000, signals: 5_000, rebrands: 4_000, "moving-runs": 4_000, "quarter-series": 4_000, "front-tape": 6_000, "front-cards": 6_000,
-  "brand-similar": 12_000, "brand-sector": 15_000, page: 5_000, "page:digest": 6_000,
+  "site-index": 5_000, signals: 5_000, rebrands: 6_000, "moving-runs": 4_000, "quarter-series": 4_000, "front-tape": 8_000, "front-cards": 6_000,
+  "brand-similar": 4_000, "brand-sector": 12_000, page: 5_000,
+  "page:brands-index": 11_000, "page:data-index": 11_000, "page:data-story": 11_000, "page:digest": 5_000, "page:collections": 3_000, "page:collection": 2_000, "page:gallery": 2_000,
 };
 const learned = new Map<string, number>();
 export const resetStepEstimates = () => learned.clear();
-/** The estimate bucket: a named step, or `page:<kind>` / `page` for a page model key (`brands-index`, `digest:2026-W46`, …). */
+/** The estimate bucket: a named step, or `page:<kind>` for a page model key (`brands-index`, `digest:2026-W46`, …). */
 const stepOf = (what: string) => {
   if (what in STEP_ESTIMATE_MS) return what;
   const kind = what.split(":")[0] ?? what;
-  return kind in PAGES ? (`page:${kind}` in STEP_ESTIMATE_MS ? `page:${kind}` : "page") : what;
+  return kind in PAGES ? `page:${kind}` : what;
 };
-export const estimateOf = (what: string, seed: Partial<Record<string, number>> = {}) => learned.get(stepOf(what)) ?? seed[stepOf(what)] ?? STEP_ESTIMATE_MS[stepOf(what)] ?? 5_000;
+export const estimateOf = (what: string, seed: Partial<Record<string, number>> = {}) => {
+  const step = stepOf(what), isPage = step.startsWith("page:");
+  return learned.get(step) ?? seed[step] ?? (isPage ? seed["page"] : undefined) ?? STEP_ESTIMATE_MS[step] ?? (isPage ? STEP_ESTIMATE_MS["page"] : undefined) ?? 5_000;
+};
 
 const TIMED_OUT = Symbol("timed out");
 /** Resolve with the work, or with TIMED_OUT once `ms` passes (the work is abandoned, not awaited). */
@@ -112,9 +120,13 @@ export type RefreshOptions = { job: string; deadline: number; domains?: string[]
 /** Rewrite what is due (or forced) until the deadline. `domains`: brands just captured, whose cards are rewritten first.
  *  `only: "captured"`: those cards and nothing else (a crawl batch). */
 export async function refreshRecords(o: RefreshOptions): Promise<RefreshResult> {
-  const now = o.now ?? Date.now, deps: RefreshDeps = { ...DEFAULT_DEPS, ...o.deps }, out: RefreshResult = { written: [], skipped: 0, timed_out: false, errors: [] };
+  const now = o.now ?? Date.now, deps: RefreshDeps = { ...DEFAULT_DEPS, ...o.deps }, out: RefreshResult = { written: [], retimed: [], skipped: 0, timed_out: false, errors: [], overdue_tried: [] };
   const left = () => o.deadline - now();
-  const write = async (rows: Row[]) => { if (rows.length) out.written.push(...await deps.write(rows.map(r => ({ ...r, source: o.job })))); };
+  const write = async (rows: Row[]) => {
+    if (!rows.length) return;
+    const r = await deps.write(rows.map(x => ({ ...x, source: o.job })));
+    if (Array.isArray(r)) out.written.push(...r); else { out.written.push(...r.written); out.retimed.push(...r.retimed); }
+  };
   /** Run one step if its estimate fits; cut it off at the deadline. Returns false when the step was skipped or cut off. */
   const attempt = async (what: string, f: () => Promise<void>): Promise<boolean> => {
     const step = stepOf(what), est = estimateOf(what, o.estimates);
@@ -148,38 +160,64 @@ export async function refreshRecords(o: RefreshOptions): Promise<RefreshResult> 
   if (!await attempt("metas", async () => { metas = new Map((await deps.metas()).map(m => [m.key, m.computed_at])); })) return out;
   const metaOf = (key: string) => (metas.has(key) ? { key, computed_at: metas.get(key)! } : undefined);
 
-  // 2. Shared inputs that are due (forced on a crawl finish).
-  for (const k of Object.keys(SHARED) as SharedKey[]) {
-    if (!o.force && !due(metaOf(k), now())) { out.skipped++; continue; }
-    await attempt(k, async () => { const body = await deps.shared(k); await write([{ key: k, body }]); });
-  }
-  // T2 · Part 0c: page models already past the age a page will serve go before the per-brand rows. Those rows take a whole pass on
-  // their own (brand-sector is cut off at the deadline), so after them the pages never got a turn and aged past their limit.
+  // D1b · one queue for the shared inputs, the page models and the two per-brand sets, in this order: what is past the age a page
+  // will serve (cheapest first, so one slow build cannot keep the rest overdue), then what is merely due (closest to its limit first).
+  // Before, every shared input was rewritten each pass first (≈18 s) and the first overdue page was cut off at the deadline, so seven
+  // kinds stayed 6–14 h past their limits. Past their limit, the per-brand sets (48 h limits) go after the pages.
   let keys: string[] = [];
   await attempt("page-keys", async () => { keys = await deps.pageKeys(); });
-  const pastLimit = overdueFirst(keys, metaOf, now());
+  let sites: Site[] | null = null, sitesFailed = false;
+  const loadSites = async () => {
+    if (sites || sitesFailed) return !!sites;
+    if (!await attempt("sites", async () => { sites = await deps.sites(); })) { sitesFailed = true; return false; }
+    return true;
+  };
   const page = async (key: string) => attempt(key, async () => { const body = await deps.page(key); if (body !== undefined) await write([{ key, body }]); });
-  for (const key of pastLimit) await page(key);
-  // 3. Similar brands and the sector field for every brand (one pass over the shared inputs).
-  let sites: Site[] = [];
-  if (!await attempt("sites", async () => { sites = await deps.sites(); })) return out;
-  const oldest = (kind: "brand-similar" | "brand-sector") => sites.map(s => metaOf(brandKey(kind, s.domain))).reduce<{ key: string; computed_at: string } | undefined>((m, x) => (!x ? undefined : !m ? x : x.computed_at < m.computed_at ? x : m), sites.length ? { key: brandKey(kind, "~"), computed_at: "9999" } : undefined);
-  const missingAny = (kind: "brand-similar" | "brand-sector") => sites.some(s => !metas.has(brandKey(kind, s.domain)));
-  for (const kind of ["brand-similar", "brand-sector"] as const) {
-    const meta = missingAny(kind) ? undefined : oldest(kind);
-    if (!o.force && meta && !due(meta, now())) { out.skipped++; continue; }
-    await attempt(kind, async () => { await write(await (kind === "brand-similar" ? deps.similar(sites) : deps.sector(sites))); });
+  type Item = { what: string; brand: boolean; run: () => Promise<unknown> };
+  const items: (Item & { meta: { computed_at: string } | undefined })[] = [
+    ...(Object.keys(SHARED) as SharedKey[]).map(k => ({ what: k, brand: false, meta: metaOf(k), run: () => attempt(k, async () => { const body = await deps.shared(k); await write([{ key: k, body }]); }) })),
+    ...keys.map(k => ({ what: k, brand: false, meta: metaOf(k), run: () => page(k) })),
+  ];
+  // The per-brand sets need the site list; their record age is the oldest row's (missing rows count as missing).
+  const brandMeta = (kind: "brand-similar" | "brand-sector") => {
+    const rows = [...metas].filter(([k]) => k.startsWith(`${kind}:`)).map(([, at]) => at);
+    return rows.length ? { computed_at: rows.sort()[0]! } : undefined;
+  };
+  for (const kind of ["brand-similar", "brand-sector"] as const) items.push({ what: kind, brand: true, meta: brandMeta(kind), run: async () => {
+    if (!await loadSites()) return false;
+    const all = sites ?? [];
+    if (all.some(s => !metas.has(brandKey(kind, s.domain))) || o.force || due(brandMeta(kind) ? { key: brandKey(kind, "~"), ...brandMeta(kind)! } : undefined, now())) return attempt(kind, async () => { await write(await (kind === "brand-similar" ? deps.similar(all) : deps.sector(all))); });
+    out.skipped++; return false;
+  } });
+  const t = now();
+  const ageOf = (it: { what: string; meta: { computed_at: string } | undefined }) => (it.meta ? t - Date.parse(it.meta.computed_at) : Infinity);
+  const limitOf = (what: string) => maxAgeOf(what.startsWith("brand-") ? brandKey(what as "brand-similar", "~") : what) || 1;
+  const overdue = (it: { what: string; meta: { computed_at: string } | undefined }) => ageOf(it) >= limitOf(it.what);
+  const isDue = (it: Item & { meta: { computed_at: string } | undefined }) => o.force || it.brand || due(it.meta ? { key: it.what, ...it.meta } : undefined, t, null, everyOf(it.what.startsWith("brand-") ? brandKey(it.what as "brand-similar", "~") : it.what));
+  const order = sweepOrder(items.map(it => ({ what: it.what, brand: it.brand, age: ageOf(it), limit: limitOf(it.what), est: estimateOf(it.what, o.estimates), due: isDue(it) })));
+  out.order = order.map(x => x.what);
+  for (const x of order) {
+    const it = items.find(i => i.what === x.what)!;
+    if (!x.due) { out.skipped++; continue; }
+    if (overdue(it)) out.overdue_tried.push(it.what);
+    await it.run();
   }
-  // 4. Page models that are due (those already rewritten above are skipped).
-  for (const key of keys) {
-    if (pastLimit.includes(key)) continue;
-    if (!o.force && !due(metaOf(key), now(), null, PAGES[key.split(":")[0] as PageKind]?.every)) { out.skipped++; continue; }
-    await page(key);
-  }
-  // 5. Cards that are missing, dirtied by a newer capture or a newer signals record, or old — most out of date first, until the deadline.
-  const queue = cardsDue(sites, metas, now(), metas.get("signals") ?? null).filter(d => !captured.includes(d));
+  // Cards that are missing, dirtied by a newer capture or a newer signals record, or old — most out of date first, until the deadline.
+  if (!await loadSites()) return out;
+  const queue = cardsDue(sites ?? [], metas, now(), metas.get("signals") ?? null).filter(d => !captured.includes(d));
   if (queue.length) await cards(queue);
   return out;
+}
+
+/** D1b · the sweep's order (pure): shared inputs and page models past their limit, cheapest first (then most overdue); per-brand sets
+ *  past their limit (cheapest first too); then everything due but inside its limit, closest to its limit first (a 48 h per-brand set at
+ *  40 h goes before a shared input at 20 min of 3 h, so the slow sets are rebuilt before they go past). Not-due items
+ *  keep their place at the end (the sweep counts them as skipped). */
+export type SweepItem = { what: string; brand: boolean; age: number; limit: number; est: number; due: boolean };
+export function sweepOrder(items: readonly SweepItem[]): SweepItem[] {
+  const over = (x: SweepItem) => x.age >= x.limit, tier = (x: SweepItem) => (!x.due ? 4 : over(x) ? (x.brand ? 1 : 0) : 2);
+  const frac = (x: SweepItem) => (Number.isFinite(x.age) ? x.age / x.limit : Infinity);
+  return [...items].sort((a, b) => tier(a) - tier(b) || (tier(a) <= 1 ? a.est - b.est : 0) || frac(b) - frac(a)); // stable: ties keep the given order
 }
 
 /** Page keys whose record is missing or older than the age a page will serve (`maxAgeOf`), most overdue first. */
@@ -188,6 +226,9 @@ export function overdueFirst(keys: readonly string[], metaOf: (key: string) => {
   return keys.filter(k => over(k) > 0).sort((a, b) => over(b) - over(a) || a.localeCompare(b));
 }
 
+/** The sweep's run note: "wire · 6 written, 9 re-timed, 4 skipped, timed out, 1 error (rebrands: rebrands_incomplete)". */
+export const sweepNote = (job: string, r: Pick<RefreshResult, "written" | "retimed" | "skipped" | "timed_out" | "errors">) =>
+  `${job} · ${r.written.length} written, ${r.retimed.length} re-timed, ${r.skipped} skipped${r.timed_out ? ", timed out" : ""}${r.errors.length ? `, ${r.errors.length} error${r.errors.length === 1 ? "" : "s"} (${r.errors.slice(0, 2).join("; ").slice(0, 160)})` : ""}`;
 const MIN_LEFT_MS = 6_000, MIN_LEFT_CAPTURED_MS = 1_000;
 /** The end of a job's call: whatever time the call has left (CALL_BUDGET_MS minus a safety margin, or `limitMs` from `jobStartedAt`
  *  when shorter) goes to records. Never throws. */
@@ -199,8 +240,9 @@ export async function refreshAfterJob(job: string, jobStartedAt: number, o: { do
     // N4c · a job run row for the sweep (not for tests, which inject deps).
     const run = o.deps ? null : await (await import("../jobs/runs.server")).startRun("records-refresh", { note: job });
     const r = await refreshRecords({ job, deadline, ...rest });
-    console.info("records refresh", job, { written: r.written.length, skipped: r.skipped, timed_out: r.timed_out, errors: r.errors.length });
-    await run?.finish(r.errors.length === 0, `${job} · ${r.written.length} written, ${r.skipped} skipped${r.timed_out ? ", timed out" : ""}${r.errors.length ? `, ${r.errors.length} errors` : ""}`);
+    console.info("records refresh", job, { written: r.written.length, retimed: r.retimed.length, skipped: r.skipped, timed_out: r.timed_out, errors: r.errors });
+    // D1b · the run row names its errors and what it only re-timed, so a stuck sweep is readable from job_runs and health alone.
+    await run?.finish(r.errors.length === 0, sweepNote(job, r), { written: r.written.length, retimed: r.retimed.length, skipped: r.skipped, timed_out: r.timed_out, errors: r.errors.slice(0, 8), overdue_tried: r.overdue_tried.slice(0, 20) });
     return r;
   } catch (e) { console.error("records refresh failed", job, short(e)); return null; }
 }

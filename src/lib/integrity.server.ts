@@ -75,7 +75,9 @@ export async function storedMarks(db: Db, ids: number[]): Promise<Map<number, Re
 async function latestBase(db: Db, ids: number[]): Promise<Map<number, Check>> {
   const out = new Map<number, Check>(), want = [...new Set(ids)];
   for (let i = 0; i < want.length; i += 200) {
-    const { data, error } = await db.from("change_checks_latest").select("event_id,verdict,pass_fields,fields").in("event_id", want.slice(i, i + 200));
+    // D1b · one index probe per change (change_checks_latest_for): the DISTINCT ON view read every older copy of each check (77k rows
+    // for 200 changes, 2–3.3 s), so the anonymous reader's three-second limit cut the rebrands list and it was never stored.
+    const { data, error } = await db.rpc("change_checks_latest_for", { _ids: want.slice(i, i + 200) });
     if (error) throw error;
     for (const r of (data ?? []) as unknown as CheckRow[]) out.set(r.event_id, { verdict: r.verdict, pass: r.pass_fields ?? [], fields: (r.fields ?? {}) as Check["fields"] });
   }

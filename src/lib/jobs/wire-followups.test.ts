@@ -123,3 +123,14 @@ describe("T1 · stored pages' ages in health", () => {
     expect(storedAges([{ key: "signals", computed_at: "2026-11-23T00:50:00Z" }], now).line).toBe("All 1 kinds of stored page are within their limits (oldest 10 min old).");
   });
 });
+
+describe("D1b · a held story build leaves the sweep the pass", () => {
+  it("the sweep goes first in every slot while stories are held, leaving the build four seconds", async () => {
+    const { stepOrder, sweepLimitMs, HELD_BUILD_ROOM_MS, BUILD_ROOM_MS } = await import("./wire-followups");
+    const buildSlot = Date.parse("2026-11-23T07:01:00Z");
+    expect(stepOrder(buildSlot)).toEqual(["story build", "records sweep"]);
+    expect(stepOrder(buildSlot, true)).toEqual(["records sweep", "story build"]);
+    expect(sweepLimitMs(0, 1_000, true, HELD_BUILD_ROOM_MS)).toBe(22_000);
+    expect(sweepLimitMs(0, 1_000, true, BUILD_ROOM_MS)).toBe(11_000);
+  });
+});
