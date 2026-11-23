@@ -31,6 +31,14 @@ export const runNote = (s: string | null | undefined) => (s ?? "").replace(/\b(?
 export type RunRow = { id: number; at: string; job: string; phase: "start" | "finish"; start_id: number | null; ok: boolean | null; ms: number | null; note: string | null };
 export type Run = { id: number; job: string; started_at: string; finished_at: string | null; ok: boolean | null; ms: number | null; note: string | null; unfinished: boolean };
 /** Start rows joined to their finish rows, newest first. A start with no finish after UNFINISHED_AFTER_MS is unfinished. */
+/** S1 follow-up · one story build at a time across every server instance. Each caller writes its start row first; it goes ahead only
+ *  when no other story-build start row is earlier than its own and newer than this window (a build is cut at its job's 60 s limit, and
+ *  a newer start means the stored stories were just caught up). On 23 Nov the crawler's posts and the follow-ups pass started builds
+ *  seconds apart on separate instances (02:30:25 and 02:31:01) as the database stopped answering. */
+export const BUILD_ONE_AT_A_TIME_MS = 120_000;
+export function earlierBuildRunning(rows: readonly Pick<RunRow, "id" | "at" | "job" | "phase">[], mine: { id: number; at: number }): boolean {
+  return rows.some(r => r.job === "story-build" && r.phase === "start" && r.id < mine.id && mine.at - Date.parse(r.at) < BUILD_ONE_AT_A_TIME_MS && Date.parse(r.at) <= mine.at + 5_000);
+}
 export function pairRuns(rows: readonly RunRow[], now: number): Run[] {
   const fin = new Map<number, RunRow>();
   for (const r of rows) if (r.phase === "finish" && r.start_id != null) fin.set(r.start_id, r);

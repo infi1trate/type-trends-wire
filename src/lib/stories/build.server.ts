@@ -536,6 +536,8 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     const budgetMs = Math.min(BUILD_BUDGET_MS, left), writeDeadline = jobStartedAt + LIMIT - 8000;
     // N4c · the build's own run row (its duration in each job is what health and /desk read).
     const run = await (await import("../jobs/runs.server")).startRun("story-build", { note: job });
+    // S1 follow-up · another instance's build started within the last two minutes: this one stands down (its own rows say so).
+    if (run.id != null && await otherBuildFirst(run.id)) { await run.finish(true, `${job} · skipped: another story build started first`); return null; }
     const r = await Promise.race([buildStories({ ...build, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
     if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
     else console.warn("story build timed out", job);
@@ -548,6 +550,16 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
     await studies(job, jobStartedAt, LIMIT);
     return note;
   } catch (e) { console.error("story build failed", job, e instanceof Error ? e.message.slice(0, 80) : "UnknownError"); return null; }
+}
+async function otherBuildFirst(id: number): Promise<boolean> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { earlierBuildRunning, BUILD_ONE_AT_A_TIME_MS } = await import("../jobs/runs");
+    const since = new Date(Date.now() - BUILD_ONE_AT_A_TIME_MS).toISOString();
+    const { data, error } = await supabaseAdmin.from("job_runs").select("id,at,job,phase").eq("job", "story-build").eq("phase", "start").gte("at", since).lt("id", id).limit(5);
+    if (error) return true; // the database is not answering: do not add a build's reads to it
+    return earlierBuildRunning((data ?? []) as never, { id, at: Date.now() });
+  } catch { return true; }
 }
 /** E4 · after the stories (their twelve calls come first), the study writer takes what time is left, when a call still fits. Never throws. */
 async function studies(job: string, jobStartedAt: number, LIMIT = JOB_LIMIT_MS) {
