@@ -8,7 +8,7 @@ import { familyName } from "@/lib/data-stories/templates/drift";
 import { pctText, quarterText as qText } from "@/lib/labels";
 import { linear, ticks } from "@/lib/charts/scale";
 import { ChartFrame, SmallMultiples, BeforeAfterStrip } from "@/components/chartkit";
-import { FIGURE_SOURCE, HL, INK, MUTED, POS, RULE, fade, hlMark, hlSvgText, hlText } from "@/components/chartkit/ink";
+import { FIGURE_SOURCE, HL, INK, MUTED, PAGE, POS, RULE, fade, hlMark, hlSvgText, hlText } from "@/components/chartkit/ink";
 import { Receipt } from "@/components/read/StoryCard";
 export { CaptureFrame, STRIP_TICK_MS } from "@/components/chartkit/BeforeAfter";
 
@@ -86,7 +86,7 @@ function Drift({ f, v }: { f: DriftFig; v: View }) {
     {() => <ol className="grid gap-2" data-figure="drift">{f.bands.map(b => { const total = b.swatches.reduce((a, s) => a + s.w, 0) || 1, hot = v.focus === b.q;
       return <li key={b.q} className={f.rowHead ? "grid grid-cols-1 items-center gap-1 sm:grid-cols-[16rem_1fr] sm:gap-2" : "grid grid-cols-[9ch_1fr] items-center gap-2"}>
         <span className="tk-t-data" style={hot ? hlText : undefined}>{qText(b.q)}</span>
-        {b.cells ? <DriftCells cells={b.cells} lit={b.lit} hot={hot} />
+        {b.cells ? <DriftCells cells={b.cells} lit={b.lit} split={b.split} hot={hot} />
           : <span className="flex h-8 w-full overflow-hidden border" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true">
           {b.swatches.map(s => <span key={s.id} title={s.label ?? `${familyName(s.id)} ${s.hex} · ${pctText(s.w)}`} className={fade} style={{ width: `${(100 * s.w) / total}%`, background: s.hex, opacity: any && !on.has(s.id) ? 0.25 : 1, outline: on.has(s.id) ? `2px solid ${INK}` : undefined, outlineOffset: -2 }} />)}
         </span>}
@@ -97,10 +97,12 @@ function Drift({ f, v }: { f: DriftFig; v: View }) {
   </ChartFrame>;
 }
 /** W3d · the strip as equal cells, one per item in its own measured hex (the icon wall): one row of 100 from 640 px, rows of 25 below;
- *  `lit` keeps cells [from, to) at full strength and fades the rest, as a highlighted swatch does. */
-function DriftCells({ cells, lit, hot }: { cells: string[]; lit?: [number, number] | undefined; hot: boolean }) {
-  return <span className="grid w-full overflow-hidden border grid-cols-[repeat(25,minmax(0,1fr))] sm:grid-cols-[repeat(100,minmax(0,1fr))]" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true" data-cells={cells.length}>
-    {cells.map((hex, k) => <span key={k} className={`block h-3 sm:h-8 ${fade}`} style={{ background: hex, opacity: lit && (k < lit[0] || k >= lit[1]) ? 0.25 : 1 }} />)}
+ *  `lit` keeps cells [from, to) at full strength and fades the rest, as a highlighted swatch does. W3d-c · `split`: the first cell of the
+ *  closing group (the mixed icons) carries the thinnest space step in the page colour on its leading edge, so the cells stay equal. */
+const SPLIT_GAP = `inset var(--sys-space-1) 0 0 0 ${PAGE}`;
+function DriftCells({ cells, lit, split, hot }: { cells: string[]; lit?: [number, number] | undefined; split?: number | undefined; hot: boolean }) {
+  return <span className="grid w-full overflow-hidden border grid-cols-[repeat(25,minmax(0,1fr))] sm:grid-cols-[repeat(100,minmax(0,1fr))]" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true" data-cells={cells.length} {...(split ? { "data-split": split } : {})}>
+    {cells.map((hex, k) => <span key={k} className={`block h-3 sm:h-8 ${fade}`} style={{ background: hex, opacity: lit && (k < lit[0] || k >= lit[1]) ? 0.25 : 1, ...(split && k === split ? { boxShadow: SPLIT_GAP } : {}) }} />)}
   </span>;
 }
 /** W3c · a brand's accent beside the work that holds it: the two swatches, the share, the thumbnail (inside 64 px, sized before it

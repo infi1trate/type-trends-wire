@@ -16,6 +16,11 @@ export const STUDY_MIN_CATEGORIES = 12;
 export const MOSTLY = 0.5;
 /** App names shown per lean. */
 export const LEAN_EXAMPLES = 3;
+/** W3d-c · a category whose furthest ground is less than this many points above its share across all categories has no lean. */
+export const LEAN_MIN_POINTS = 5;
+/** Whether a lean is shown as one (at least LEAN_MIN_POINTS points), or the category reads "No lean this week". */
+export const hasLean = (l: Pick<Lean, "points">) => l.points >= LEAN_MIN_POINTS;
+export const NO_LEAN = "No lean this week";
 /** Grounds in the strips' order: the eight hues, then white, grey, black; mixed last. */
 export const GROUNDS = [...HUE_FAMILIES, "white", "grey", "black", "mixed"] as const;
 export type Ground = (typeof GROUNDS)[number];

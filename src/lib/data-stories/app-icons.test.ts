@@ -6,8 +6,8 @@ import { fxInput } from "./fixtures";
 import { buildStory, statusOf } from "./build";
 import { entryOf, ICONS_SLUG } from "./registry";
 import { CHECKS } from "./checks";
-import { iconDeck, iconHeadline, iconHeadlineHolds, iconStudyFigures } from "./app-icons";
-import { readWeek, type IconIn } from "../icons/measure";
+import { iconDeck, iconHeadline, iconHeadlineHolds, iconStudyFigures, leadClauses } from "./app-icons";
+import { LEAN_MIN_POINTS, NO_LEAN, hasLean, readWeek, type IconIn } from "../icons/measure";
 import { probeRows } from "../icons/__fixtures__/probe";
 import type { DriftFig } from "./types";
 
@@ -65,5 +65,45 @@ describe("the icon study (W3d, switch on, fixture)", () => {
     const s = buildStory(ICONS_SLUG, withIcons(rows.map(a => (a.app_id === gone.app_id ? { ...a, removed_at: "2026-11-23T00:00:00Z" } : a))), new Map())!;
     expect(JSON.stringify(s)).not.toContain(gone.name);
     expect((s.figures["wall"] as DriftFig).bands.find(b => b.q === "Finance")!.cells).toHaveLength(99);
+  });
+});
+
+// W3d-c Part 1 · the four fixes the owner asked for on the real week (23 Nov 2026).
+const HEX: Record<string, string> = { white: "#FFFFFF", black: "#000000", blue: "#0A84FF", red: "#E5332A" };
+function cat(id: number, name: string, spec: Record<string, number>): IconIn[] {
+  let rank = 1;
+  return Object.entries(spec).flatMap(([g, n]) => Array.from({ length: n }, () => {
+    const r = rank++, palette = g === "mixed" ? ["#E5332A", "#0A84FF", "#FFD100", "#1DB954"].map(hex => ({ hex, share: 0.24 })) : [{ hex: HEX[g]!, share: 0.7 }];
+    return { app_id: `${id}${String(r).padStart(3, "0")}`, rank: r, name: `${name} ${r}`, maker: "m", link: `https://apps.apple.com/us/app/x/id${id}${r}`, palette, genre_id: id, genre_name: name, week: "2026-W48" };
+  }));
+}
+describe("W3d-c fixes to study No. 8", () => {
+  it("the owner's sentence: white and black tie in Photo & Video and News; blue and white tie in Shopping", () => {
+    const r = readWeek([...cat(1, "Photo & Video", { white: 27, black: 27, red: 20, mixed: 26 }), ...cat(2, "News", { white: 23, black: 23, blue: 21, red: 20, mixed: 13 }), ...cat(3, "Shopping", { blue: 22, white: 22, red: 12, mixed: 44 })]);
+    expect(leadClauses(r)).toEqual(["white and black tie in Photo & Video and News", "blue and white tie in Shopping"]);
+  });
+  it("a category less than 5 points from its share shows No lean this week, with no apps listed and nothing lit", () => {
+    const i = withIcons(probeRows()), r = readWeek(i.icons), lean = buildStory(ICONS_SLUG, i, new Map())!.figures["lean"] as DriftFig;
+    const flat = r.leans.filter(l => l.points < LEAN_MIN_POINTS), leaning = r.leans.filter(l => l.points >= LEAN_MIN_POINTS);
+    expect(flat.length).toBeGreaterThan(0);
+    expect(leaning.length).toBeGreaterThan(0);
+    for (const l of flat) expect(lean.bands.find(b => b.q === l.category)).toMatchObject({ note: NO_LEAN, lit: [0, 0] });
+    for (const l of flat) expect(lean.bands.find(b => b.q === l.category)!.links).toBeUndefined();
+    for (const l of leaning) expect(lean.bands.find(b => b.q === l.category)!.note).toMatch(/ leans /);
+  });
+  it("4.9 points is no lean, 5.0 is a lean", () => {
+    const l = (points: number) => ({ points });
+    expect([hasLean(l(4.9)), hasLean(l(5)), hasLean(l(23.4))]).toEqual([false, true, true]);
+  });
+  it("sets the mixed icons off at the end of the row and keeps the mixed count under it", () => {
+    const wall = buildStory(ICONS_SLUG, withIcons(probeRows()), new Map())!.figures["wall"] as DriftFig;
+    const travel = wall.bands.find(b => b.q === "Travel")!;
+    expect(travel.split).toBe(98);
+    expect(travel.note).toMatch(/ · 2 mixed$/);
+    expect(wall.bands.find(b => b.q === "Productivity")!.split).toBeUndefined(); // no mixed icon, no gap
+  });
+  it("the method note says what a mixed icon is and how it is drawn", () => {
+    const s = buildStory(ICONS_SLUG, withIcons(probeRows()), new Map())!;
+    expect(s.basis.rule).toContain("A mixed icon has no colour holding 35% of it, and is drawn in its largest colour.");
   });
 });

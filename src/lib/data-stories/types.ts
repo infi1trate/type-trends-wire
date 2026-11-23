@@ -46,6 +46,7 @@ export type DriftPair = { domain: string; brandHex: string; brandHref: string; w
 export type DriftBand = { q: string; brands: number; swatches: Swatch[]; /** W3c · one plain line under the strip. */ note?: string; /** W3c · example pairs under the strip. */ pairs?: DriftPair[];
   /** W3d · one equal swatch per item instead of weighted segments, each its own measured hex (the icon wall); 25 a row on a phone. */ cells?: string[];
   /** W3d · cells [from, to) at full strength, the rest faded (the lean). */ lit?: [number, number];
+  /** W3d-c · cells from this index on (the mixed icons) are set off from the rest by the thinnest gap. */ split?: number;
   /** W3d · links under the note (app names to their App Store pages). */ links?: Link[] };
 export type DriftFig = { kind: "drift"; title: string; note: string; scope: string; bands: DriftBand[]; /** W3a · rows that are not quarters (the museum study): the table head and a wider label column. */ rowHead?: string; /** W3d · the figure's source line when it is not the tracked brands' captures (Apple's charts). */ source?: string };
 
