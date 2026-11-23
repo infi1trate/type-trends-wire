@@ -3,7 +3,7 @@
 // U3: small multiples and the before-and-after strip are chart-kit components (src/components/chartkit), shared with the Data view;
 // the three study-only views (adoption, field, drift) stay here and draw with the kit's frame and inks.
 import type { ReactNode } from "react";
-import type { AdoptionFig, DriftFig, FieldFig, Figure, View } from "@/lib/data-stories/types";
+import type { AdoptionFig, DriftFig, DriftPair, FieldFig, Figure, View } from "@/lib/data-stories/types";
 import { familyName } from "@/lib/data-stories/templates/drift";
 import { pctText, quarterText as qText } from "@/lib/labels";
 import { linear, ticks } from "@/lib/charts/scale";
@@ -82,15 +82,31 @@ function Field({ f, v }: { f: FieldFig; v: View }) {
 // PALETTE DRIFT ------------------------------------------------------------------------------------
 function Drift({ f, v }: { f: DriftFig; v: View }) {
   const on = new Set(v.highlight), any = on.size > 0;
-  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} isEmpty={!f.bands.length} table={{ columns: [f.rowHead ?? "Quarter", f.rowHead ? "Count" : "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, b.swatches.map(s => `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; ")]) }}>
+  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} isEmpty={!f.bands.length} table={{ columns: [f.rowHead ?? "Quarter", f.rowHead ? "Count" : "Brands", "Colours (share of first screens)"], rows: f.bands.map(b => [qText(b.q), b.brands, [b.swatches.map(s => s.label ?? `${familyName(s.id)} ${s.hex} ${pctText(s.w)}`).join("; "), b.note ?? "", ...(b.pairs ?? []).map(pairText)].filter(Boolean).join(". ")]) }}>
     {() => <ol className="grid gap-2" data-figure="drift">{f.bands.map(b => { const total = b.swatches.reduce((a, s) => a + s.w, 0) || 1, hot = v.focus === b.q;
       return <li key={b.q} className={f.rowHead ? "grid grid-cols-1 items-center gap-1 sm:grid-cols-[16rem_1fr] sm:gap-2" : "grid grid-cols-[9ch_1fr] items-center gap-2"}>
         <span className="tk-t-data" style={hot ? hlText : undefined}>{qText(b.q)}</span>
         <span className="flex h-8 w-full overflow-hidden border" style={{ borderColor: hot ? INK : RULE }} aria-hidden="true">
-          {b.swatches.map(s => <span key={s.id} title={`${familyName(s.id)} ${s.hex} · ${pctText(s.w)}`} className={fade} style={{ width: `${(100 * s.w) / total}%`, background: s.hex, opacity: any && !on.has(s.id) ? 0.25 : 1, outline: on.has(s.id) ? `2px solid ${INK}` : undefined, outlineOffset: -2 }} />)}
+          {b.swatches.map(s => <span key={s.id} title={s.label ?? `${familyName(s.id)} ${s.hex} · ${pctText(s.w)}`} className={fade} style={{ width: `${(100 * s.w) / total}%`, background: s.hex, opacity: any && !on.has(s.id) ? 0.25 : 1, outline: on.has(s.id) ? `2px solid ${INK}` : undefined, outlineOffset: -2 }} />)}
         </span>
+        {b.note && <p className="tk-t-caption tk-c-muted" style={{ gridColumn: "1 / -1" }} data-band-note="">{b.note}</p>}
+        {b.pairs?.length ? <DriftPairs pairs={b.pairs} /> : null}
       </li>; })}</ol>}
   </ChartFrame>;
+}
+/** W3c · a brand's accent beside the work that holds it: the two swatches, the share, the thumbnail (inside 64 px, sized before it
+ *  loads) and the full credit, the title the only link to the museum's own page. */
+const pairText = (p: DriftPair) => `${p.domain} ${p.brandHex} beside ${p.credit} (${p.workHex}, holds ${Math.round(p.share * 100)}% of the picture)`;
+const chip = (hex: string) => <span className="inline-block h-3 w-3 border" style={{ background: hex, borderColor: RULE, flexShrink: 0 }} aria-hidden="true" />;
+function DriftPairs({ pairs }: { pairs: DriftPair[] }) {
+  return <ul className="grid gap-2 sm:grid-cols-3" style={{ gridColumn: "1 / -1" }} data-pairs="">{pairs.map(p => <li key={p.domain} className="flex min-w-0 gap-2" style={{ alignItems: "flex-start" }}>
+    {p.thumb ? <img src={p.thumb} width={p.width} height={p.height} loading="lazy" decoding="async" alt="" className="block border" style={{ width: p.width, height: p.height, borderColor: RULE, flexShrink: 0 }} /> : null}
+    <span className="tk-t-caption min-w-0" style={{ overflowWrap: "anywhere" }}>
+      <span className="flex items-center gap-1">{chip(p.brandHex)}<Receipt href={p.brandHref} className="tk-tap">{p.domain}</Receipt></span>
+      <span className="flex items-center gap-1">{chip(p.workHex)}<span>holds {Math.round(p.share * 100)}% of the picture</span></span>
+      <span className="tk-c-muted">{p.artist ? `${p.artist.replace(/\.$/, "")}. ` : ""}<a href={p.href} target="_blank" rel="noopener" title={p.credit} className="underline underline-offset-2" style={{ color: INK }}>{p.title}</a>{p.date ? `, ${p.date}` : ""}. {p.museum}.</span>
+    </span>
+  </li>)}</ul>;
 }
 
 export const FigureNote = ({ children }: { children: ReactNode }) => <p className="tk-t-caption tk-c-muted mt-2">{children}</p>;

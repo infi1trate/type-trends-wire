@@ -14,8 +14,8 @@ import { sectorName } from "../labels";
 import { SECTORS } from "../library";
 
 /** What the museum study reads, loaded beside the other study inputs (absent or empty: the study does not exist for readers). */
-export type ArtWorkIn = Work & { link: string; read_at?: string | null };
-export type ArtInput = { works: ArtWorkIn[]; brands: { domain: string; sector: string; palette: Swatch[]; hero?: Hero | null }[]; through: string | null };
+export type ArtWorkIn = Work & { link: string; read_at?: string | null; /** W3c · what the one-colour study reads beside the palette. */ kind?: string; thumb?: string | null; width?: number; height?: number; removed_at?: string | null };
+export type ArtInput = { works: ArtWorkIn[]; brands: { domain: string; sector: string; palette: Swatch[]; hero?: Hero | null; /** W3c · the newest measured accent. */ accent?: string | null }[]; through: string | null };
 /** At most this many example works per sector row, each credited and linked. */
 export const EXAMPLES_PER_SECTOR = 3;
 export const MUSEUM_SLUG = "nearest-in-the-museum";

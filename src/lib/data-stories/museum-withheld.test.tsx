@@ -7,7 +7,7 @@ vi.mock("@/lib/read.functions", async orig => { const w = () => new Promise<neve
 import { MUSEUM_SHOWN } from "../site";
 import { fxInput } from "./fixtures";
 import { buildStory, dataShelf, indexRows, liveNow, statusOf } from "./build";
-import { entryOf, liveEntries, relatedFor, withheld, MUSEUM_STUDY_SLUG } from "./registry";
+import { entryOf, liveEntries, relatedFor, withheld, MUSEUM_STUDY_SLUG, MUSEUM_ACCENT_SLUG } from "./registry";
 import { homeWithout, studiesHome, frontStudies, type HomeStudy } from "./shelf";
 import { readyToShow } from "../art/palette";
 import type { ArtInput } from "./museum";
@@ -39,6 +39,20 @@ describe("museum surfaces withheld (W3b Part 1)", () => {
     expect(dataShelf().some(x => x.slug === MUSEUM_STUDY_SLUG)).toBe(false);
     expect(relatedFor("which-sector-changes-its-mind").some(l => l.href === `/data/${MUSEUM_STUDY_SLUG}`)).toBe(false);
     expect(buildStory(MUSEUM_STUDY_SLUG, i, new Map())).toBeNull();
+  });
+  it("W3c · the one-colour study is withheld too: not live, not listed, not on the shelf, builds nothing", () => {
+    const w = entryOf(MUSEUM_ACCENT_SLUG)!, i = withArt();
+    expect(withheld(w)).toBe(true);
+    expect(statusOf(w, i)).toEqual({ status: "draft", reason: "Withheld by the editor." });
+    expect(indexRows(i, null).some(r => r.slug === MUSEUM_ACCENT_SLUG)).toBe(false);
+    expect(liveNow(i).some(x => x.slug === MUSEUM_ACCENT_SLUG)).toBe(false);
+    expect(liveEntries().some(x => x.slug === MUSEUM_ACCENT_SLUG)).toBe(false);
+    expect(dataShelf().some(x => x.slug === MUSEUM_ACCENT_SLUG)).toBe(false);
+    expect(relatedFor("which-sector-changes-its-mind").some(l => l.href === `/data/${MUSEUM_ACCENT_SLUG}`)).toBe(false);
+    expect(buildStory(MUSEUM_ACCENT_SLUG, i, new Map())).toBeNull();
+    const h = studiesHome([study(MUSEUM_ACCENT_SLUG, 7), study("which-sector-changes-its-mind", 4)], [{ key: MUSEUM_ACCENT_SLUG, question: "", series: "", wait: "", earliest: null, ready: false }]);
+    const out = homeWithout(h, s => withheld({ slug: s }));
+    expect(JSON.stringify(out)).not.toContain(MUSEUM_ACCENT_SLUG);
   });
   it("a Studies home stored while the study was live (and its lead) loses it on read", () => {
     const h = studiesHome([study(MUSEUM_STUDY_SLUG, 6), study("which-sector-changes-its-mind", 4)], [{ key: MUSEUM_STUDY_SLUG, question: "", series: "", wait: "", earliest: null, ready: false }]);

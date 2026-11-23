@@ -164,6 +164,7 @@ A census counts what homepages say now: a brand counts when its newest capture a
 - **Sector against sector** (`sector-v-sector`): The same measure across all ten sectors, side by side.
   - Study No. 4, “Which sector changes its mind most?” (live)
   - Study No. 6, “Which museum palettes are sector homepages nearest to?” (hidden from readers until its check passes on stored data)
+  - Study No. 7, “Which brand colours do the museum's works hold?” (hidden from readers until its check passes on stored data)
 
 ## The Digest
 

@@ -129,8 +129,9 @@ export async function loadReceipt(raw: string): Promise<ReceiptModel | null> {
 
 // STUDY DATA VIEW -----------------------------------------------------------------------------------------------------------------
 export async function loadStudyData(slug: string) {
-  const [{ entryOf }, { CHECKS, waitOf }, { dataInput }] = await Promise.all([import("../data-stories/registry"), import("../data-stories/checks"), import("../data-stories/data.server")]);
-  const e = entryOf(slug); if (!e) return null;
+  const [{ entryOf, withheld }, { CHECKS, waitOf }, { dataInput }] = await Promise.all([import("../data-stories/registry"), import("../data-stories/checks"), import("../data-stories/data.server")]);
+  // W3c · a withheld museum study has no data view either: its counts and texts stay out of reach while MUSEUM_SHOWN is false.
+  const e = entryOf(slug); if (!e || withheld(e)) return null;
   const i = await dataInput().catch(() => null);
   const check = e.check && i ? { id: e.check, ...CHECKS[e.check](i), wait: waitOf(e.check, i), recorded: e.recorded } : e.check ? { id: e.check, pass: null, figures: [], reason: "The check's data did not load.", wait: null, recorded: e.recorded } : null;
   const { data } = await supabaseAnon().from("study_texts").select("facts_hash,headline,deck,model,checked_at,created_at").match({ slug }).order("created_at", { ascending: false }).limit(20);

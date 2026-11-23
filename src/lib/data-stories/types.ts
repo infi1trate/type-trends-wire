@@ -39,8 +39,11 @@ export type FieldFig = {
   extremes: { id: string; domain: string; label: string }[];
 };
 
-export type Swatch = { id: string; hex: string; w: number };
-export type DriftBand = { q: string; brands: number; swatches: Swatch[] };
+export type Swatch = { id: string; hex: string; w: number; /** W3c · what the swatch is when it is not a colour family (a brand's accent). */ label?: string };
+/** W3c · a brand's accent beside the stored work that holds it: both swatches, the share, a small credited and linked thumbnail. */
+export type DriftPair = { domain: string; brandHex: string; brandHref: string; workHex: string; share: number; distance: number;
+  artist: string | null; title: string; date: string; museum: string; credit: string; href: string; thumb: string | null; width: number; height: number };
+export type DriftBand = { q: string; brands: number; swatches: Swatch[]; /** W3c · one plain line under the strip. */ note?: string; /** W3c · example pairs under the strip. */ pairs?: DriftPair[] };
 export type DriftFig = { kind: "drift"; title: string; note: string; scope: string; bands: DriftBand[]; /** W3a · rows that are not quarters (the museum study): the table head and a wider label column. */ rowHead?: string };
 
 /** One stored capture redrawn from its skeleton: compact boxes in page pixels, the capture's own colours, and a crop when one exists. */

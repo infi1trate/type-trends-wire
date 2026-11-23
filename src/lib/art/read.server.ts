@@ -6,9 +6,9 @@ import { memo, memoBy } from "../memo";
 import { MUSEUM_NAME, nearestLine, type ArtSource } from "./contract";
 import { groups, nearestFor, readyToShow, type Group, type Hero, type Swatch, type Work } from "./palette";
 
-export type StoredArt = Work & { link: string; thumb: string | null; width: number; height: number; credit_line: string };
+export type StoredArt = Work & { link: string; thumb: string | null; width: number; height: number; credit_line: string; /** W3c · painting, print, drawing… (the method note counts them). */ kind: string };
 const TTL = 10 * 60_000;
-const COLS = "source,source_id,title,artist,date_display,year_start,tradition,movement,palette,link,thumb,width,height,credit_line";
+const COLS = "source,source_id,title,artist,date_display,year_start,tradition,movement,palette,link,thumb,width,height,credit_line,kind";
 const swatches = (v: unknown): Swatch[] => (Array.isArray(v) ? v : []).flatMap(p => { const r = (p && typeof p === "object" ? p : {}) as Record<string, unknown>; return typeof r["hex"] === "string" && typeof r["share"] === "number" ? [{ hex: r["hex"], share: r["share"] }] : []; });
 
 /** Stored works (paged), or none. A cheap count first, so the empty case costs one head request. */
@@ -39,15 +39,16 @@ export const brandPalette = memoBy(TTL, async (domain: string): Promise<{ palett
 }, { key: d => d, max: 400 });
 
 /** Every active brand's newest palette (the study), paged over the live desktop home captures. */
-export async function allBrandPalettes(sites: readonly { domain: string; sector: string; active: boolean }[]): Promise<{ domain: string; sector: string; palette: Swatch[]; hero: Hero }[]> {
-  const db = supabaseAnon(), latest = new Map<string, { palette: Swatch[]; hero: Hero }>();
+export async function allBrandPalettes(sites: readonly { domain: string; sector: string; active: boolean }[]): Promise<{ domain: string; sector: string; palette: Swatch[]; hero: Hero; accent: string | null }[]> {
+  const db = supabaseAnon(), latest = new Map<string, { palette: Swatch[]; hero: Hero; accent: string | null }>();
   for (let f = 0; ; f += 1000) {
-    const r = await db.from("library_snapshots").select(`domain,palette:signals->color->palette,${HERO_COLS}`).eq("source", "live").eq("page_type", "home").eq("viewport", "desktop").order("captured_at", { ascending: false }).range(f, f + 999);
+    const r = await db.from("library_snapshots").select(`domain,palette:signals->color->palette,accent:signals->color->>accent,${HERO_COLS}`).eq("source", "live").eq("page_type", "home").eq("viewport", "desktop").order("captured_at", { ascending: false }).range(f, f + 999);
     if (r.error) throw r.error;
-    for (const x of (r.data ?? []) as unknown as { domain: string; palette: unknown; hero?: unknown; coverage?: unknown }[]) if (!latest.has(x.domain)) { const p = swatches(x.palette); if (p.length) latest.set(x.domain, { palette: p, hero: heroOf(x) }); }
+    // W3c · the newest capture's accent (the Data view's ACCENT) rides along: a capture with an accent and no palette still counts.
+    for (const x of (r.data ?? []) as unknown as { domain: string; palette: unknown; accent?: unknown; hero?: unknown; coverage?: unknown }[]) if (!latest.has(x.domain)) { const p = swatches(x.palette), accent = typeof x.accent === "string" && x.accent ? x.accent : null; if (p.length || accent) latest.set(x.domain, { palette: p, hero: heroOf(x), accent }); }
     if ((r.data ?? []).length < 1000) break;
   }
-  return sites.filter(s => s.active).flatMap(s => { const p = latest.get(s.domain); return p ? [{ domain: s.domain, sector: s.sector, palette: p.palette, hero: p.hero }] : []; });
+  return sites.filter(s => s.active).flatMap(s => { const p = latest.get(s.domain); return p ? [{ domain: s.domain, sector: s.sector, palette: p.palette, hero: p.hero, accent: p.accent }] : []; });
 }
 
 /** The brand page's one line and thumbnail: only when the stored works clear the line and the nearest work is near. */

@@ -21,7 +21,7 @@ export function figureTables(fig: Figure): ReceiptTable[] {
     case "field":
       return [{ caption: fig.title, head: ["Brand", fig.axes.x.label, fig.axes.y.label], rows: fig.points.map(p => [p.name, px(fig.axes.x.unit, p.x), px(fig.axes.y.unit, p.y)]) }];
     case "drift":
-      return [{ caption: fig.title, head: ["Quarter", "Brands", "Colours"], rows: fig.bands.map(b => [q(b.q), String(b.brands), b.swatches.map(x => x.hex).join(", ")]) }];
+      return [{ caption: fig.title, head: ["Quarter", "Brands", "Colours"], rows: fig.bands.map(b => [q(b.q), String(b.brands), [b.swatches.map(x => x.label ?? x.hex).join(", "), b.note ?? "", ...(b.pairs ?? []).map(p => `${p.domain} ${p.brandHex} beside ${p.credit} (${p.workHex}, holds ${Math.round(p.share * 100)}% of the picture)`)].filter(Boolean).join(". ")]) }];
     case "before-after":
       return [{ caption: `${fig.title} (${dayText(fig.before.at)} and ${dayText(fig.after.at)})`, head: ["Field", "Before", "After"], rows: fig.diffs.length ? fig.diffs.map(d => [d.field, d.before, d.after]) : [["–", "The compared fields measure the same.", "–"]] }];
     case "strip":
