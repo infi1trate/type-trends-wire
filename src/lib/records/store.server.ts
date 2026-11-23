@@ -4,6 +4,7 @@ import { supabaseAnon } from "../mcp/supabase";
 import { memo, memoBy } from "../memo";
 import { STALE_SERVE_MS, within } from "../deadline";
 import { bodyBytes, kindOf, maxAgeOf, usable, type RecordMeta, type RecordRow } from "./records";
+import { readerNow } from "../reader-context.server";
 
 export async function readRecord<T>(key: string): Promise<RecordRow<T> | null> {
   const { data, error } = await supabaseAnon().from("read_records").select("key,body,computed_at").eq("key", key).maybeSingle();
@@ -33,15 +34,30 @@ export async function recordMetas(): Promise<RecordMeta[]> {
 export function liveOrOld<T>(compute: () => Promise<T>, old: () => T, what: string, ms = STALE_SERVE_MS): Promise<T> {
   return within(compute(), ms, what, old).catch(() => old());
 }
+/** D1 · readers only (readerNow): a stored copy past its age limit is sent at once and rebuilt behind the reader (the rebuild's value
+ *  serves the next readers on this server for `ttl`). Jobs never come here: for them a stale copy is always rebuilt (`run`). */
+const readerRows = memoBy(60_000, async (key: string) => readRecord<unknown>(key).catch(() => null), { key: (k: string) => k, max: 800 });
+const rebuilt = new Map<string, { at: number; v: unknown }>();
+async function readerFirst<T>(key: string, decode: (b: never) => T, run: () => Promise<T>, ttl: number): Promise<T> {
+  if (!readerNow()) return run();
+  const w = rebuilt.get(key);
+  if (w && Date.now() - w.at < ttl) return w.v as T;
+  const row = await readerRows(key);
+  if (!row || usable(row, Date.now(), maxAgeOf(key))) return run();
+  void run().then(v => { rebuilt.delete(key); rebuilt.set(key, { at: Date.now(), v }); if (rebuilt.size > 800) { const first = rebuilt.keys().next().value; if (first !== undefined) rebuilt.delete(first); } }, () => undefined);
+  return decode(row.body as never);
+}
 export type Stored<T> = (() => Promise<T>) & { /** The live computation, bypassing the record (the refresher writes this). */ compute: () => Promise<T>; clear: () => void };
 /** One shared input: the stored record when it is young enough, else the live computation. Memoised per instance as a second layer. */
 export function stored<T, B = T>(key: string, compute: () => Promise<T>, o: { ttl?: number; encode?: (v: T) => B; decode?: (b: B) => T } = {}): Stored<T> & { encode: (v: T) => B } {
   const decode = o.decode ?? ((b: B) => b as unknown as T), encode = o.encode ?? ((v: T) => v as unknown as B);
-  const m = memo(o.ttl ?? 5 * 60_000, async () => {
+  const ttl = o.ttl ?? 5 * 60_000;
+  // A stale copy is rebuilt (jobs, and readers' background rebuilds); readers are sent the old copy first by readerFirst.
+  const m = memo(ttl, async () => {
     const row = await readRecord<B>(key).catch(() => null);
-    return row && usable(row, Date.now(), maxAgeOf(key)) ? decode(row.body) : row ? liveOrOld(compute, () => decode(row.body), key) : compute();
+    return row && usable(row, Date.now(), maxAgeOf(key)) ? decode(row.body) : compute();
   });
-  const fn = (() => m()) as Stored<T> & { encode: (v: T) => B };
+  const fn = (() => readerFirst(key, (b: B) => decode(b), () => m(), ttl)) as Stored<T> & { encode: (v: T) => B };
   fn.compute = compute; fn.clear = () => m.clear(); fn.encode = encode;
   return fn;
 }
@@ -49,9 +65,9 @@ export function stored<T, B = T>(key: string, compute: () => Promise<T>, o: { tt
 export function storedBy<A, T>(keyOf: (a: A) => string, compute: (a: A) => Promise<T>, ttl = 5 * 60_000) {
   const m = memoBy(ttl, async (a: A) => {
     const key = keyOf(a), row = await readRecord<T>(key).catch(() => null);
-    return row && usable(row, Date.now(), maxAgeOf(key)) ? row.body : row ? liveOrOld(() => compute(a), () => row.body, key) : compute(a);
+    return row && usable(row, Date.now(), maxAgeOf(key)) ? row.body : compute(a);
   }, { key: keyOf, max: 400 });
-  return Object.assign((a: A) => m(a), { compute, keyOf });
+  return Object.assign((a: A) => readerFirst(keyOf(a), (b: T) => b, () => m(a), ttl), { compute, keyOf });
 }
 
 /** Upsert records with the service role, in batches that stay well under the request size limit. Returns the keys rewritten.

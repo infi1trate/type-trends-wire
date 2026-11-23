@@ -1025,10 +1025,10 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 
 /* S1 · the page-change line: fixed at the top, the highlight colour, shown from 80 ms into a page change (no flash on a fast one). */
 .nav-progress { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 100; pointer-events: none; background: var(--sys-color-highlight);
-  transform-origin: 0 50%; animation: nav-progress-in 0ms linear 80ms both, nav-progress-grow 4s cubic-bezier(.1, .7, .2, 1) 80ms both; }
+  transform-origin: 0 50%; animation: nav-progress-in 0ms linear 40ms both, nav-progress-grow 4s cubic-bezier(.1, .7, .2, 1) 40ms both; }
 @keyframes nav-progress-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes nav-progress-grow { from { transform: scaleX(0.08); } to { transform: scaleX(0.92); } }
-@media (prefers-reduced-motion: reduce) { .nav-progress { animation: nav-progress-in 0ms linear 80ms both; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .nav-progress { animation: nav-progress-in 0ms linear 40ms both; transform: none; } }
 
 /* D1 Part 5 · the quiet line on a page sent as its last good copy: fixed at the bottom (nothing moves), small, the page's own colours. */
 .copy-age { position: fixed; inset: auto 0 0 0; z-index: 90; margin: 0; padding: var(--tk-space-1) var(--tk-space-3); font-size: var(--sys-text-caption-size);
