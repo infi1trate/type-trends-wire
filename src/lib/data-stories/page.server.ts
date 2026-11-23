@@ -71,8 +71,7 @@ const isPage = (x: DataStoryPage) => x.kind !== "live" || (x.story as Partial<St
 const isWithheld = (slug: string) => { const e = entryOf(slug); return !!e && withheld(e); };
 export const indexWithout = (x: DataIndex): DataIndex => ({ ...x, rows: x.rows.filter(r => !isWithheld(r.slug)), home: homeWithout(x.home, isWithheld) });
 export const loadDataIndex = async (): Promise<DataIndex> => { const r = await dataIndexRecord(null); return indexWithout(isIndex(r) ? r : await computeDataIndex()); };
-let proofTemp: Promise<DataStoryPage> | null = null; // PROOF-TEMP
-export const loadDataStory = async (slug: string): Promise<DataStoryPage> => { const e = entryOf(slug); if (!e || withheld(e)) return { kind: "missing" }; const r = slug === "the-colour-app-icons-sit-on" ? await (proofTemp ??= computeDataStory(slug)) : await dataStoryRecord(slug); return isPage(r) ? r : computeDataStory(slug); }; // PROOF-TEMP
+export const loadDataStory = async (slug: string): Promise<DataStoryPage> => { const e = entryOf(slug); if (!e || withheld(e)) return { kind: "missing" }; const r = await dataStoryRecord(slug); return isPage(r) ? r : computeDataStory(slug); };
 /** The front page's Studies rows (written headlines, lead first, at most three), from the stored home. */
 export async function loadStudyShelf() { return frontStudies((await loadDataIndex()).home); }
 /** The front page's Studies rows from the stored home only (never computes; null when no current record): the front page adds no slow read. */

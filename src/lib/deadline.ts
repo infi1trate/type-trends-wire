@@ -1,7 +1,7 @@
 // S1 · time limits, pure: no page waits without limit. A read that passes its limit is answered from what is already in hand (an old
 // stored copy, the last health answer) or fails with a short error the page shows as "could not load this part" with a retry.
 /** Every reader server function and every late block: answered or failed within this many milliseconds. */
-export const READ_DEADLINE_MS = 60_000; // PROOF-TEMP
+export const READ_DEADLINE_MS = 4_000;
 /** A stored copy past its limit is rebuilt only if the rebuild finishes within this; otherwise the old copy is sent (any age). */
 export const STALE_SERVE_MS = 2_500;
 /** A late read that has a last good copy on its instance answers with that copy after this long (the library, its history, the front
