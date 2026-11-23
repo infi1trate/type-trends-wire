@@ -83,17 +83,29 @@ export async function removeIconApp(r: IconRemove, store?: IconStore, at = new D
   return n ? { removed: true, rows: n } : null;
 }
 
-/** W3d · health: the newest stored week, its categories and apps (not removed), and when its rows were last written. */
-export async function iconHealth(): Promise<IconHealth> {
-  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-  const top = await db.from("app_icons").select("week").is("removed_at", null).order("week", { ascending: false }).limit(1);
-  if (top.error) throw new Error("Icon health read failed");
-  const week = top.data?.[0]?.week ?? null;
+/** W3d · health: the newest stored week, its categories and apps (not removed), and when its rows were last written. W3d-c · the week's
+ *  rows are read in pages (the data API stops at 1,000 rows a request: 18 categories and 1,797 apps read as 11 and 1,000). */
+export type IconHealthReads = { newestWeek: () => Promise<string | null>; weekPage: (week: string, from: number, to: number) => PromiseLike<{ data: { genre_id: number; stored_at: string }[] | null; error: unknown }> };
+export async function iconHealth(reads?: IconHealthReads): Promise<IconHealth> {
+  const r = reads ?? await adminHealthReads();
+  const week = await r.newestWeek();
   if (!week) return { week: null, categories: 0, apps: 0, last_stored_at: null };
-  const r = await db.from("app_icons").select("genre_id,stored_at").eq("week", week).is("removed_at", null).limit(2000);
-  if (r.error) throw new Error("Icon health read failed");
-  const rows = r.data ?? [];
+  const { pagedRows } = await import("../paged");
+  const got = await pagedRows((from, to) => r.weekPage(week, from, to));
+  if (got.error) throw new Error("Icon health read failed");
+  const rows = got.data;
   return { week, categories: new Set(rows.map(x => x.genre_id)).size, apps: rows.length, last_stored_at: rows.reduce<string | null>((m, x) => (!m || x.stored_at > m ? x.stored_at : m), null) };
+}
+async function adminHealthReads(): Promise<IconHealthReads> {
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+  return {
+    async newestWeek() {
+      const top = await db.from("app_icons").select("week").is("removed_at", null).order("week", { ascending: false }).limit(1);
+      if (top.error) throw new Error("Icon health read failed");
+      return top.data?.[0]?.week ?? null;
+    },
+    weekPage: (week, from, to) => db.from("app_icons").select("genre_id,stored_at").eq("week", week).is("removed_at", null).order("id").range(from, to),
+  };
 }
 
 async function adminIconStore(): Promise<IconStore> {

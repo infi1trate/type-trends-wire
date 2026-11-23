@@ -125,8 +125,10 @@ export async function runHealth(db: Admin, o: { now?: number; write?: boolean; f
       if ((count ?? 0) > 0) { out.why = "already ran today"; return out; }
     }
     const since = new Date(now - e.HEALTH_DAYS * 864e5).toISOString(), day = new Date(now - 864e5).toISOString();
+    const { pagedRows } = await import("../paged");
     const [ing, hist, crawl, fc, calls, usage, st, sy, dg, rv] = await Promise.all([
-      db.from("ingest_runs").select("job,started_at,finished_at,ok,error:detail->>error").gte("started_at", since).order("started_at", { ascending: false }).limit(5000),
+      // W3d-c · 14 days of ingest runs passed 1,000 rows (1,051 on 23 Nov) and the data API cut the oldest off: read in pages.
+      pagedRows((from, to) => db.from("ingest_runs").select("job,started_at,finished_at,ok,error:detail->>error").gte("started_at", since).order("started_at", { ascending: false }).order("id", { ascending: false }).range(from, to)),
       db.from("library_history_runs").select("kind,started_at,finished_at,ms").gte("started_at", since).order("started_at", { ascending: false }).limit(2000),
       db.from("crawl_runs").select("status,started_at,finished_at").gte("started_at", new Date(now - 60 * 864e5).toISOString()).order("started_at", { ascending: false }).limit(50),
       db.from("forecast_runs").select("status,computed_at,error").gte("computed_at", new Date(now - 60 * 864e5).toISOString()).order("id", { ascending: false }).limit(50),
