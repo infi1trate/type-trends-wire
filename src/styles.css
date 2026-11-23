@@ -294,6 +294,31 @@
   .digest .lead-stack > :first-child [data-lead-compact] { justify-content: flex-end; }
   .digest .lead-stack > :nth-child(2) { position: relative; z-index: 1; width: 58%; margin-left: calc(-1 * var(--tk-space-5)); margin-top: -16%; }
 }
+/* S1 · Signals rows: rank | name over chips | trend line | Share now | Momentum | Change, the figures right-aligned in fixed columns that
+   line up down a tier, with one header row per tier. 768–1023 px: a narrower line. Under 768 px: line one rank, name and chips; then the
+   line across the text column (28 px) and the three figures, each with its own label. */
+.digest .sig-link, .digest .sig-head { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--tk-space-3); align-items: baseline; }
+.digest .sig-head { padding: 0 var(--tk-space-2) var(--tk-space-1); display: none; }
+.digest .sig-link .sig-spark { grid-column: 2; display: block; }
+.digest .sig-link .sig-spark svg { width: 100%; height: 28px; display: block; }
+.digest .sig-link .sig-fig { grid-column: 2; }
+.digest .sig-fig-label { display: block; }
+@media (max-width: 767px) {
+  .digest .sig-link { grid-template-columns: max-content repeat(3, minmax(0, 1fr)); row-gap: var(--tk-space-1); }
+  .digest .sig-link .sig-name { grid-column: 2 / -1; }
+  .digest .sig-link .sig-spark { grid-column: 2 / -1; }
+  .digest .sig-link .sig-fig { grid-column: auto; }
+  .digest .sig-link > :nth-child(4) { grid-column-start: 2; }
+}
+@media (min-width: 768px) {
+  .digest .sig-link, .digest .sig-head { grid-template-columns: max-content minmax(0, 1fr) 160px 8rem 8rem 7rem; }
+  .digest .sig-head { display: grid; }
+  .digest .sig-link .sig-spark, .digest .sig-link .sig-fig { grid-column: auto; }
+  .digest .sig-link .sig-spark { align-self: center; }
+  .digest .sig-link .sig-spark svg { height: 32px; }
+  .digest .sig-fig { text-align: right; }
+}
+@media (min-width: 1024px) { .digest .sig-link, .digest .sig-head { grid-template-columns: max-content minmax(0, 1fr) 240px 8rem 9rem 7rem; } }
 .digest .lead-box img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .digest [data-lead-item="icon"] .lead-box img { object-fit: scale-down; object-position: center; padding: var(--tk-space-4); }
 .digest .ed-typo { background: var(--sys-color-surface); border: var(--tk-border-strong) solid var(--sys-color-rule); aspect-ratio: 16 / 10; display: flex; flex-direction: column; justify-content: space-between; padding: var(--tk-space-3); }

@@ -5,11 +5,10 @@ import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { signalsIndexQuery } from "@/lib/data";
 import { SIGNAL_TABS } from "@/lib/ia";
-import { NOT_SCORED_RULE, SIGNAL_SORTS, momentumText, signalsSearch, type SignalsGroup, type SignalsRow, type SignalsView } from "@/lib/signals-index";
+import { NOT_SCORED_RULE, SIGNAL_SORTS, signalsSearch, type SignalsGroup, type SignalsRow, type SignalsView } from "@/lib/signals-index";
 import { sectorName } from "@/lib/labels";
 import { pct } from "@/lib/digest/copy";
 import { BasisWord, DigestShell, StageWord, pr } from "@/components/digest/Editorial";
-import { Ledger } from "@/components/brand/Ledger";
 import { RuleBox } from "@/components/brand/Containers";
 import { ReadFooter } from "./Bits";
 import { Sparkline } from "@/components/chartkit";
@@ -18,15 +17,27 @@ import { ScrollRow } from "./ScrollRow";
 const TIER_NOTE: Record<SignalsGroup["tier"], string> = { headline: "Shown by default everywhere: visible, decision-worthy, well measured and moving.", supporting: "Evidence: shown inside headline signals, audits and drawers.", archive: "Collected, never deleted, not shown by default." };
 const signed = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pts`);
 
-function rowsOf(rows: SignalsRow[], scoped: boolean, sector: string, lensQ: string | undefined) {
-  return rows.map((r: SignalsRow) => ({
-    key: r.key, href: `/signals/${encodeURIComponent(r.key)}${lensQ ? `?sector=${lensQ}` : ""}`, number: r.rank, title: r.name,
-    line: <span className="inline-flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /><Sparkline look="read" values={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>,
-    facts: [
-      <span key="s" className="tabular-nums">{scoped ? <>{pct(r.share, 1) ?? "—"} <span className="ledger-muted">{sectorName(sector)} · {pct(r.allShare, 1) ?? "—"} all</span></> : pct(r.share, 1) ?? "—"}</span>,
-      momentumText(r), signed(r.change),
-    ],
-  }));
+/** S1 · one tier as a table-like list: rank | name over chips | trend line (own column) | Share now | Momentum | Change. The three
+ *  figures are fixed-width, right-aligned tabular columns under one header row per tier; below 768 px the trend line and the figures
+ *  take a second line (each figure then carries its own small label, since the header row is hidden). */
+export function SignalRows({ rows, scoped, sector, lensQ, label }: { rows: SignalsRow[]; scoped: boolean; sector: string; lensQ: string | undefined; label: string }) {
+  const digits = Math.max(1, ...rows.map(r => String(r.rank).length));
+  const fig = (name: string, body: React.ReactNode, key: string) => <span key={key} className="sig-fig tabular-nums"><span className="sig-fig-label ed-kicker md:sr-only">{name} </span>{body}</span>;
+  return <div className="mt-3" data-signal-rows="">
+    <div className="sig-head ed-kicker" aria-hidden="true"><span className="sig-rank" style={{ minWidth: `${digits}ch` }} /><span /><span className="sig-spark-col" /><span className="sig-fig">Share now</span><span className="sig-fig">Momentum</span><span className="sig-fig">Change</span></div>
+    <ul className="ledger" aria-label={label} data-ledger="" data-ledger-digits={digits}>
+      {rows.map(r => <li key={r.key} className="ledger-row" data-ledger-row="">
+        <Link to={`/signals/${encodeURIComponent(r.key)}${lensQ ? `?sector=${lensQ}` : ""}` as string} className="ledger-link sig-link">
+          <span className="ledger-num sig-rank" data-ledger-number=""><span className="ledger-fit"><span>{r.rank}</span><span aria-hidden="true" className="ledger-ghost">{"0".repeat(digits)}</span></span></span>
+          <span className="ledger-title sig-name">{r.name}<span className="ledger-line flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /></span></span>
+          <span className="sig-spark-col sig-spark"><Sparkline look="read" w={240} h={32} values={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>
+          {fig("Share now", scoped ? <>{pct(r.share, 1) ?? "—"} <span className="ledger-muted block">{sectorName(sector)} · {pct(r.allShare, 1) ?? "—"} all</span></> : pct(r.share, 1) ?? "—", "s")}
+          {fig("Momentum", r.momentum == null ? "—" : <>{r.momentum}{r.momentumAll && <span className="ledger-muted block">all sectors</span>}</>, "m")}
+          {fig("Change", signed(r.change), "c")}
+        </Link>
+      </li>)}
+    </ul>
+  </div>;
 }
 
 export function SignalsIndexView({ v }: { v: SignalsView }) {
@@ -52,8 +63,8 @@ export function SignalsIndexView({ v }: { v: SignalsView }) {
       const cut = g.unscoredFrom ?? g.rows.length, scored = g.rows.slice(0, cut), unscored = g.rows.slice(cut);
       const all = signalsSearch({ ...v, archive: true });
       const body = g.count ? <>
-        {scored.length > 0 && <Ledger className="mt-3" label={`${g.title} signals`} rows={rowsOf(scored, idx.scoped, v.sector, lensQ)} />}
-        {unscored.length > 0 && <><h3 className="ed-kicker mt-6" data-not-scored="">{NOT_SCORED_RULE} · {unscored.length}</h3><Ledger className="mt-2" label={`${g.title} signals, Momentum not scored`} rows={rowsOf(unscored, idx.scoped, v.sector, lensQ)} /></>}
+        {scored.length > 0 && <SignalRows label={`${g.title} signals`} rows={scored} scoped={idx.scoped} sector={v.sector} lensQ={lensQ} />}
+        {unscored.length > 0 && <><h3 className="ed-kicker mt-6" data-not-scored="">{NOT_SCORED_RULE} · {unscored.length}</h3><SignalRows label={`${g.title} signals, Momentum not scored`} rows={unscored} scoped={idx.scoped} sector={v.sector} lensQ={lensQ} /></>}
         {!g.folded && g.rows.length < g.count && <p className="ed-data mt-4"><Link to="/signals" search={all} hash={`sig-${g.tier}`} className="ed-tap underline" data-show-all="">Show all {g.count} {g.title.toLowerCase()} signals →</Link> <span className="ed-caption">The first {g.rows.length} are shown; the full list also opens the archive.</span></p>}
       </>
         : <p className="ed-body mt-3">No {g.title.toLowerCase()} signal in this dimension{idx.scoped ? ` for ${sectorName(v.sector)}` : ""} this week. Pick another dimension or switch the lens to All.</p>;
