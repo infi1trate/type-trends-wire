@@ -286,21 +286,23 @@
 /* I3 · lead pictures sit in fixed 3:2 boxes (top of the capture kept), drawn like ed-thumb. */
 .digest .lead-box { aspect-ratio: 3 / 2; overflow: hidden; border: var(--tk-border-strong) solid var(--sys-color-rule); background: var(--sys-color-page); }
 /* S1 · the front lead's stack: two equal pictures below 1024 px; from 1024 px the first spans the column and the second (58%) sits over
-   its lower-left corner, offset down and left, framed the same with the hard shadow. The first caption is set right so it stays clear. */
+   its lower-left corner, offset down and left, framed the same with the hard shadow. One caption block sits under the whole stack. */
 .digest .lead-stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tk-space-4); }
 @media (min-width: 1024px) {
   .digest .lead-stack { display: block; }
   .digest .lead-stack .lead-box { box-shadow: var(--tk-shadow-raised); }
-  .digest .lead-stack > :first-child [data-lead-compact] { justify-content: flex-end; }
   .digest .lead-stack > :nth-child(2) { position: relative; z-index: 1; width: 58%; margin-left: calc(-1 * var(--tk-space-5)); margin-top: -16%; }
+  .digest .lead-stack-cap { margin-left: calc(-1 * var(--tk-space-5)); }
 }
+/* S1 polish · the stack's one caption block: under the whole stack, starting at its left edge (the second picture's, from 1024 px). */
+.digest .lead-stack-cap { display: block; margin-top: var(--tk-space-2); }
 /* S1 · Signals rows: rank | name over chips | trend line | Share now | Momentum | Change, the figures right-aligned in fixed columns that
    line up down a tier, with one header row per tier. 768–1023 px: a narrower line. Under 768 px: line one rank, name and chips; then the
    line across the text column (28 px) and the three figures, each with its own label. */
 .digest .sig-link, .digest .sig-head { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--tk-space-3); align-items: baseline; }
 .digest .sig-head { padding: 0 var(--tk-space-2) var(--tk-space-1); display: none; }
 .digest .sig-link .sig-spark { grid-column: 2; display: block; }
-.digest .sig-link .sig-spark svg { width: 100%; height: 28px; display: block; }
+.digest .sig-link .sig-spark svg { display: block; width: auto; height: 28px; aspect-ratio: 240 / 32; margin-inline: auto; }
 .digest .sig-link .sig-fig { grid-column: 2; }
 .digest .sig-fig-label { display: block; }
 @media (max-width: 767px) {
@@ -315,10 +317,12 @@
   .digest .sig-head { display: grid; }
   .digest .sig-link .sig-spark, .digest .sig-link .sig-fig { grid-column: auto; }
   .digest .sig-link .sig-spark { align-self: center; }
-  .digest .sig-link .sig-spark svg { height: 32px; }
+  .digest .sig-link .sig-spark svg { width: 100%; height: auto; margin-inline: 0; }
   .digest .sig-fig { text-align: right; }
 }
 @media (min-width: 1024px) { .digest .sig-link, .digest .sig-head { grid-template-columns: max-content minmax(0, 1fr) 240px 8rem 9rem 7rem; } }
+/* S1 polish · from 1280 px the trend line takes the spare width up to 420 px (still drawn 32 px tall), before the name column grows. */
+@media (min-width: 1280px) { .digest .sig-link, .digest .sig-head { grid-template-columns: max-content minmax(0, 1fr) minmax(240px, 420px) 8rem 9rem 7rem; } .digest .sig-link .sig-spark svg { height: 32px; aspect-ratio: auto; } }
 /* S1 · Brands: "Moved this week" cards and the directory as tiles. Plates and pictures have fixed boxes; tiles off screen skip layout
    (content-visibility with a size hint). Under 480 px a tile is a compact row (44 px plate left, name and facts right). */
 .digest .brand-plate { display: inline-grid; place-items: center; flex: none; overflow: hidden; background: var(--sys-color-surface); border: var(--tk-border-hairline) solid var(--sys-color-ink); }
@@ -588,6 +592,13 @@
   .ledger-tags { display: inline; margin-right: var(--tk-space-2); }
   .ledger-tags .ledger-tag + .ledger-tag { margin-left: var(--tk-space-1); }
   .ledger-title > .brand-mark { margin-right: var(--tk-space-2); vertical-align: -0.3em; }
+  .ledger-hang { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--tk-space-2); align-items: baseline; }
+  .ledger-hang-head { white-space: nowrap; }
+  .ledger-hang-head:empty { display: none; } .ledger-hang-head:empty + .ledger-hang-text { grid-column: 1 / -1; }
+  .ledger-hang-head > .brand-mark { vertical-align: -0.3em; }
+  .ledger-hang-head > .brand-mark + .ledger-tags { margin-left: var(--tk-space-2); }
+  .ledger-hang .ledger-tags { margin-right: 0; }
+  .ledger-hang-text { min-width: 0; }
   .ledger-num-sm { font-size: var(--sys-text-kicker-size); letter-spacing: var(--sys-text-kicker-tracking); text-transform: uppercase; font-weight: 700; }
   .ledger-title { font-family: var(--sys-text-reading-family); font-size: var(--sys-text-small-size); line-height: 1.35; text-wrap: pretty; min-width: 0; }
   .ledger-line { display: block; margin-top: var(--tk-space-1); font-family: var(--sys-text-caption-family); font-size: var(--sys-text-caption-size); line-height: var(--sys-text-caption-leading); color: var(--sys-color-ink-muted); }

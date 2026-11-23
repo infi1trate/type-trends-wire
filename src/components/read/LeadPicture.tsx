@@ -7,14 +7,14 @@ import { hexName } from "@/lib/agency/changes";
 import { Swatches, pr } from "@/components/digest/Editorial";
 import { BrandMark } from "./BrandMark";
 
-export function LeadFigure({ i, sizes, eager, label, compact = false }: { i: LeadItem; sizes: string; eager: boolean; label?: string | undefined; compact?: boolean }) {
+export function LeadFigure({ i, sizes, eager, label, compact = false, bare = false }: { i: LeadItem; sizes: string; eager: boolean; label?: string | undefined; compact?: boolean; bare?: boolean }) {
   return <figure className="min-w-0" data-lead-item={i.asset.split(":")[0]}>
     {label && <p className="ed-kicker mb-2">{label}</p>}
     <a href={i.live} target="_blank" rel="noopener" aria-label={`Open ${i.domain} (live site)`} className="lead-box block" {...pr(i.live)}>
       <img src={i.src} srcSet={i.srcSet ?? undefined} sizes={i.srcSet ? sizes : undefined} width={i.width} height={i.height} alt={i.alt}
         loading={eager ? "eager" : "lazy"} fetchPriority={eager ? "high" : "auto"} decoding="async" />
     </a>
-    {compact ? <figcaption className="ed-caption mt-1 flex flex-nowrap gap-x-3" data-lead-compact="">
+    {bare ? null : compact ? <figcaption className="ed-caption mt-1 flex flex-nowrap gap-x-3" data-lead-compact="">
       <a href={i.live} target="_blank" rel="noopener" className="ed-tap min-w-0" title={i.domain} {...pr(i.live)}><span className="min-w-0 truncate">{i.domain}</span></a>
       <a href={i.report} className="ed-tap shrink-0" aria-label={`Report this image of ${i.domain}`}>Report</a>
     </figcaption> : <figcaption className="ed-caption mt-1">
@@ -40,9 +40,21 @@ export function LeadPicture({ plan, eager = true, className = "", tileSizes = "(
   const wrap = (kind: string, body: React.ReactNode) => <figure className={`min-w-0 ${className}`} data-lead-picture={kind} data-lead-rule={plan.rule}>{body}{cap}</figure>;
   // S1 · the front lead's two first screens as a composed stack from 1024 px (the first across the column, the second at 58% over its
   // lower-left corner); below that, two equal pictures side by side. Fixed 3:2 boxes either way, so nothing moves when they load.
-  if (stack && plan.kind === "mosaic" && plan.items.length === 2) return wrap("stack", <div className="lead-stack" data-lead-stack="">
-    {plan.items.map((i, k) => <div key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={k === 0 ? "(min-width: 1024px) 34vw, 50vw" : "(min-width: 1024px) 20vw, 50vw"} eager={eager} compact={compact} /></div>)}
-  </div>);
+  // S1 polish: one caption block under the whole stack, from the stack's left edge: line one names both captures in order, each with
+  // its live-site link and one Report link; line two is the credit. Nothing sits between or under the overlapping pictures.
+  if (stack && plan.kind === "mosaic" && plan.items.length === 2) return <figure className={`min-w-0 ${className}`} data-lead-picture="stack" data-lead-rule={plan.rule}>
+    <div className="lead-stack" data-lead-stack="">
+      {plan.items.map((i, k) => <div key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={k === 0 ? "(min-width: 1024px) 34vw, 50vw" : "(min-width: 1024px) 20vw, 50vw"} eager={eager} bare /></div>)}
+    </div>
+    <figcaption className="ed-caption lead-stack-cap" data-lead-caption="">
+      <span className="flex flex-wrap gap-x-6" data-lead-names="">{plan.items.map(i => <span key={i.asset} className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1">
+        <a href={i.live} target="_blank" rel="noopener" className="ed-tap min-w-0 [overflow-wrap:anywhere]" {...pr(i.live)}>{i.domain}</a>
+        <span aria-hidden="true">·</span>
+        <a href={i.report} className="ed-tap shrink-0" aria-label={`Report this image of ${i.domain}`}>Report</a>
+      </span>)}</span>
+      {line && <span className="block">{line}</span>}
+    </figcaption>
+  </figure>;
   if (plan.kind === "pair") return wrap("pair", <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 md:gap-6">
     {plan.items.map(i => <LeadFigure key={i.asset} i={i} sizes="(min-width: 480px) 50vw, 100vw" eager={eager} compact={compact} label={compact ? (i.role === "before" ? "Before" : "After") : `${i.role === "before" ? "Before" : "After"} · ${i.date}`} />)}
   </div>);

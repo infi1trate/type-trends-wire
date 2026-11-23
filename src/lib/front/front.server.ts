@@ -13,6 +13,7 @@ import { wellCovered, type QuarterSeries } from "../kit";
 import { supabaseAnon } from "../mcp/supabase";
 import { readerRunId } from "../real-runs";
 import { memoBy } from "../memo";
+import { within } from "../deadline";
 import { stored } from "../records/store.server";
 import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, type FrontModel, type FrontTop, type FrontRest } from "./front";
 import { resolveFormat, type FormatFilter } from "./formats";
@@ -35,13 +36,27 @@ export const quarterSeries = stored("quarter-series", async (): Promise<QuarterS
 }, { ttl: 10 * 60_000 });
 const clip = (s: string, n = 180) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-async function build(sector: string, format: FormatFilter, withEditions = true): Promise<FrontModel> {
+type Editions = Awaited<ReturnType<typeof import("../editions/editions.server").loadEditions>>;
+/** The editions part of the model's input (the Morning Line, the Digest, sector editions); all empty when the read is missing. */
+function editionsIn(editions: Editions | null): FrontInput["editions"] {
+  const digestWeek = editions?.digest?.week ?? null, digestNo = digestWeek ? issueNumber(digestWeek) : null;
+  return {
+    morning: editions?.morning ? { day: editions.morning.href.split("/").at(-1) ?? "", title: editions.morning.title, href: editions.morning.href, count: editions.morning.count } : null,
+    digest: digestWeek && digestNo ? { week: digestWeek, number: digestNo, dates: weekRange(digestWeek)?.label ?? digestWeek, href: `/digest/${digestWeek}`, headline: editions?.digest?.headline ?? null } : null,
+    sectors: editions ? { at: editions.run?.at ?? null, count: editions.sectors.length } : null,
+  };
+}
+const loadEditionsSafe = () => import("../editions/editions.server").then(m => m.loadEditions(null)).catch(() => null);
+
+/** Everything the model needs except the editions (the stories, signals, charts, pictures and the lead's evidence). One build serves
+ *  the top read, the rest read and the full model, so the page's parts never start a second build of the same thing. */
+async function buildInput(sector: string, format: FormatFilter): Promise<FrontInput> {
   const now = Date.now();
-  const [read, { loadFreshness }, { loadEditions }, { siteTraitIndex }] = await Promise.all([import("../read.server"), import("../freshness.server"), import("../editions/editions.server"), import("../read.server")]);
-  const [all, { snap, tiers, signals }, moves, fresh, editions, series, index, studies] = await Promise.all([
+  const [read, { loadFreshness }, { siteTraitIndex }] = await Promise.all([import("../read.server"), import("../freshness.server"), import("../read.server")]);
+  const [all, { snap, tiers, signals }, moves, fresh, series, index, studies] = await Promise.all([
     // N1 · the owner's wire-only switch takes stories off the front page only (off by default; an unreadable switch reads as off).
     Promise.all([storyIndex(), import("../newsroom/newsroom.server").then(m => m.wireOnlyOn()).catch(() => false), import("../newsroom/wire-only")]).then(([a, on, w]) => w.frontStories(a, on)),
-    latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), withEditions ? loadEditions(null).catch(() => null) : Promise.resolve(null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
+    latestSignals("all"), read.movingRuns(), loadFreshness().catch(() => null), quarterSeries().catch(() => []), siteTraitIndex().catch(() => []),
     import("../data-stories/page.server").then(m => m.storedStudyShelf()).catch(() => null),
   ]);
   const headlineKeys = new Set([...tiers.values()].filter(t => t.tier === "headline").map(t => t.key));
@@ -51,7 +66,6 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
   const quarters: Record<string, string[]> = Object.fromEntries(series.map(s => [s.key, s.quarters.filter(wellCovered).map(p => p.q)]));
   const quiet = pageState(streamOf(all).filter(s => s.type !== "launch").map(s => s.happened_at), now) === "quiet";
   const archiveMoves: ArchiveMove[] = quiet ? await import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: `rebrand:${x.id}`, at: x.confirmed_at, headline: rebrandSentence(x), line: x.read ? clip(untick(x.read)) : null, href: `/brands/${encodeURIComponent(x.domain)}`, source: x.source }))).catch(() => []) : [];
-  const digestWeek = editions?.digest?.week ?? null, digestNo = digestWeek ? issueNumber(digestWeek) : null;
   // I1: stored site icons for single-brand rows (the pictures index; an empty map when it can't be read).
   const pics = await picturesSafe();
   const input: FrontInput = {
@@ -60,16 +74,12 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
     moving: { items: read.movingItems(moves, headlineKeys, byKey), pair: moves.pair, next: moves.next },
     freshness: fresh?.line ?? null, leadEvidence: null, series: points, seriesQuarters: quarters,
     chart: { composites: signals.filter(s => isComposite(s.key)), headline: signals.filter(s => s.tier === "headline"), series },
-    editions: {
-      morning: editions?.morning ? { day: editions.morning.href.split("/").at(-1) ?? "", title: editions.morning.title, href: editions.morning.href, count: editions.morning.count } : null,
-      digest: digestWeek && digestNo ? { week: digestWeek, number: digestNo, dates: weekRange(digestWeek)?.label ?? digestWeek, href: `/digest/${digestWeek}`, headline: editions?.digest?.headline ?? null } : null,
-      sectors: editions ? { at: editions.run?.at ?? null, count: editions.sectors.length } : null,
-    },
+    editions: editionsIn(null),
     archiveMoves, patternKeys: new Set(signals.filter(isPatternSignal).map(s => s.key)), brandNames: new Map(index.map(s => [s.domain, s.name])),
     dataStories: studies ?? dataShelf(),
     collections: liveCollections().map(c => ({ slug: c.slug, number: c.number, title: c.title, href: collectionPath(c.slug) })),
   };
-  let model = frontModel(input);
+  const model = frontModel(input);
   // The lead's evidence slot (I1: real pictures first): before/after crops when two captures straddle the change, else one "after"
   // crop of the changed section, else a single-brand story's own social card; otherwise the sparkline or nothing, as before.
   const lead = model.lead ? all.find(s => s.id === model.lead!.story.id) : null;
@@ -86,27 +96,50 @@ async function build(sector: string, format: FormatFilter, withEditions = true):
       : pair?.compare ? { id: lead.id, crops: { section: pair.sectionName ?? "", before: pair.compare.before, after: pair.compare.after } }
       : pair?.after ? { id: lead.id, crops: null, crop: { section: pair.sectionName ?? "", crop: pair.after } }
       : cover?.kind === "card" ? { id: lead.id, crops: null, cover } : null;
-    if (leadEvidence) model = frontModel({ ...input, leadEvidence });
+    if (leadEvidence) return { ...input, leadEvidence };
   }
-  return model;
+  return input;
 }
 export const FRONT_TTL_MS = 20_000;
-const fronts = memoBy(FRONT_TTL_MS, (k: { sector: string; format: FormatFilter }) => build(k.sector, k.format), { key: k => `${k.sector}|${k.format}`, max: 100 });
+type Lens = { sector: string; format: FormatFilter };
+const lensKey = (k: Lens) => `${k.sector}|${k.format}`;
+const inputs = memoBy(FRONT_TTL_MS, (k: Lens) => buildInput(k.sector, k.format), { key: lensKey, max: 100 });
+const fronts = memoBy(FRONT_TTL_MS, async (k: Lens) => {
+  const [input, editions] = await Promise.all([inputs(k), loadEditionsSafe()]);
+  return frontModel({ ...input, editions: editionsIn(editions) });
+}, { key: lensKey, max: 100 });
 export function loadFront(rawSector: unknown, rawFormat: unknown): Promise<FrontModel> {
   return fronts({ sector: resolveSector(rawSector), format: resolveFormat(rawFormat) });
 }
 // P1 · shell first: the lead and the live column are critical (built without the editions read); the side column, chart of the day
-// and lower lists are deferred and come from the full model, memoised, so the server builds each lens once.
-const tops = memoBy(FRONT_TTL_MS, (k: { sector: string; format: FormatFilter }) => build(k.sector, k.format, false), { key: k => `${k.sector}|${k.format}`, max: 100 });
+// and lower lists are deferred. S1 polish: the deferred part reuses the top's build (the same memoised input) and adds only the
+// editions, so it is ready as soon as the top is, instead of starting a second full build that a slow database could push past 4 s.
 export async function loadFrontTop(rawSector: unknown, rawFormat: unknown): Promise<FrontTop> {
   const k = { sector: resolveSector(rawSector), format: resolveFormat(rawFormat) };
-  const m = fronts.peek(k) ?? await tops(k);
+  const m = fronts.peek(k) ?? frontModel(await inputs(k));
   const { chart: _c, launches: _l, strip: _s, collections: _co, editions: _e, dataStories: _d, archive: _a, ...top } = m;
   return top;
 }
+const restOf = (m: FrontModel): FrontRest => ({ chart: m.chart, launches: m.launches, strip: m.strip, collections: m.collections, editions: m.editions, dataStories: m.dataStories, archive: m.archive, sections: m.sections, format: m.format, sector: m.sector, now: m.now, state: m.state });
+/** The editions wait at most this long beside the rest; late, the last editions this instance read are used (or none). */
+export const REST_EDITIONS_MS = 2_000;
+/** A rest read still running after this is answered with the last good copy this instance sent for the lens, when it has one. */
+export const REST_LAST_GOOD_MS = 3_000;
+const lastEditions: { v: Editions | null } = { v: null };
+const lastRest = new Map<string, FrontRest>();
+async function freshRest(k: Lens): Promise<FrontRest> {
+  const full = fronts.peek(k);
+  if (full) return restOf(full);
+  const eds = loadEditionsSafe().then(e => { if (e) lastEditions.v = e; return e; });
+  const [input, editions] = await Promise.all([inputs(k), within(eds, REST_EDITIONS_MS, "front editions", () => lastEditions.v)]);
+  return restOf(frontModel({ ...input, editions: editionsIn(editions) }));
+}
 export async function loadFrontRest(rawSector: unknown, rawFormat: unknown): Promise<FrontRest> {
-  const m = await loadFront(rawSector, rawFormat);
-  return { chart: m.chart, launches: m.launches, strip: m.strip, collections: m.collections, editions: m.editions, dataStories: m.dataStories, archive: m.archive, sections: m.sections, format: m.format, sector: m.sector, now: m.now, state: m.state };
+  const k = { sector: resolveSector(rawSector), format: resolveFormat(rawFormat) }, key = lensKey(k);
+  const p = freshRest(k).then(r => { lastRest.delete(key); lastRest.set(key, r); while (lastRest.size > 100) lastRest.delete(lastRest.keys().next().value!); return r; });
+  const last = lastRest.get(key);
+  if (!last) return p;
+  return within(p, REST_LAST_GOOD_MS, "front rest", () => last).catch(() => last);
 }
 // E3 · Also today's pictures, deferred. E3b: the candidates come from the stored `front-cards` record, which the story build writes
 // right after it runs (and the records sweeper keeps fresh); a story newer than the record is computed for itself alone. The pure
@@ -134,7 +167,7 @@ export async function computeFrontCards(ids?: readonly string[]): Promise<CardCa
 }
 export const frontCards = stored("front-cards", () => computeFrontCards(), { ttl: 60_000 });
 const alsos = memoBy(FRONT_TTL_MS, async (k: { sector: string; format: FormatFilter }): Promise<AlsoPictures> => {
-  const m = fronts.peek(k) ?? await tops(k);
+  const m = fronts.peek(k) ?? frontModel(await inputs(k));
   if (!m.also.length) return {};
   const rec = await frontCards().catch(() => ({} as CardCandidates));
   const missing = m.also.filter(a => !(a.id in rec)).map(a => a.id);

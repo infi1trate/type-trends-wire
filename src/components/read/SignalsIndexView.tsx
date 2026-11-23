@@ -30,7 +30,7 @@ export function SignalRows({ rows, scoped, sector, lensQ, label }: { rows: Signa
         <Link to={`/signals/${encodeURIComponent(r.key)}${lensQ ? `?sector=${lensQ}` : ""}` as string} className="ledger-link sig-link">
           <span className="ledger-num sig-rank" data-ledger-number=""><span className="ledger-fit"><span>{r.rank}</span><span aria-hidden="true" className="ledger-ghost">{"0".repeat(digits)}</span></span></span>
           <span className="ledger-title sig-name">{r.name}<span className="ledger-line flex flex-wrap items-center gap-2"><StageWord stage={r.stage} /><BasisWord b={r.basis} /></span></span>
-          <span className="sig-spark-col sig-spark"><Sparkline look="read" w={240} h={32} values={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>
+          <span className="sig-spark-col sig-spark"><Sparkline look="read" w={240} h={32} stretch values={r.points} label={`${r.name}, well-covered quarters, all sectors`} /></span>
           {fig("Share now", scoped ? <>{pct(r.share, 1) ?? "—"} <span className="ledger-muted block">{sectorName(sector)} · {pct(r.allShare, 1) ?? "—"} all</span></> : pct(r.share, 1) ?? "—", "s")}
           {fig("Momentum", r.momentum == null ? "—" : <>{r.momentum}{r.momentumAll && <span className="ledger-muted block">all sectors</span>}</>, "m")}
           {fig("Change", signed(r.change), "c")}

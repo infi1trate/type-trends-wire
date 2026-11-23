@@ -68,10 +68,15 @@ function LinkOf({ r, children }: { r: LedgerRow; children: ReactNode }) {
 export function LedgerItem({ r, small, plain = false, inlineTags = false, digits = 2, story }: { r: LedgerRow; small?: boolean; plain?: boolean; inlineTags?: boolean; digits?: number; story?: boolean }) {
   const [first, ...more] = r.facts ?? [];
   const tags = r.tags && r.tags.length > 0 ? r.tags : null;
+  // S1 polish · with the chips set inline (the Tape), the favicon and chips stand in their own column and a wrapped title hangs under
+  // the first line's text, never back under the icon. A row without an icon or chips is a plain title.
+  const hang = inlineTags && (r.lead != null || !!tags);
   return <li className={r.after ? "ledger-row ledger-row-split" : "ledger-row"} id={r.id} data-ledger-row="" data-drop={r.drop ? "" : undefined}>
     <LinkOf r={r}>
       {!plain && <span className={`ledger-num ${small ? "ledger-num-sm" : ""}`.trim()} data-ledger-number=""><Fit n={numberOf(r.number ?? "")} digits={digits} story={story ?? (labelOf(r.number) != null ? NO.test(labelOf(r.number)!) : isValidElement(r.number) && r.number.type === StoryNo)} /></span>}
-      <span className="ledger-title">{r.lead}{tags && <span className={`ledger-tags ${inlineTags ? "" : "max-md:hidden"}`.trim()}>{tags.map(t => <span key={t} className="ledger-tag">{t}</span>)}</span>}{r.title}{r.line && <span className="ledger-line">{r.line}</span>}</span>
+      {hang
+        ? <span className="ledger-title ledger-hang" data-ledger-hang=""><span className="ledger-hang-head">{r.lead}{tags && <span className="ledger-tags">{tags.map(t => <span key={t} className="ledger-tag">{t}</span>)}</span>}</span><span className="ledger-hang-text">{r.title}{r.line && <span className="ledger-line">{r.line}</span>}</span></span>
+        : <span className="ledger-title">{r.lead}{tags && <span className={`ledger-tags ${inlineTags ? "" : "max-md:hidden"}`.trim()}>{tags.map(t => <span key={t} className="ledger-tag">{t}</span>)}</span>}{r.title}{r.line && <span className="ledger-line">{r.line}</span>}</span>}
       <span className="ledger-fact">{first ?? ""}</span>
       {(more.length > 0 || r.time || (tags && !inlineTags)) && <span className="ledger-rest">
         {tags && !inlineTags && <span className="inline-flex gap-1 md:hidden">{tags.map(t => <span key={t} className="ledger-tag">{t}</span>)}</span>}

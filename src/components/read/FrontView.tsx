@@ -14,7 +14,7 @@ import { useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/re
 import { frontAlsoQuery, frontRestQuery, frontTapeQuery, frontTopQuery, frontWireQuery } from "@/lib/data";
 import { WIRE_DATA_HREF, WIRE_SUB, WIRE_TITLE, type WireBlockRow } from "@/lib/newsroom/news";
 import { shortDay } from "@/lib/labels";
-import { Later, ROW } from "./Later";
+import { FailGroup, Later, ROW } from "./Later";
 import { FORMAT_LABEL, FORMAT_NOTE, FORMATS, frontSearch, type FormatFilter } from "@/lib/front/formats";
 import { numberLabel } from "@/lib/stories/numbers";
 import { storyTime } from "@/lib/stories";
@@ -346,6 +346,7 @@ function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
           and `order` sets one column: this week, Chart of the day, Moving now, Studies, Editions, then the rest of the rail. */}
       <div className="flex flex-col gap-y-10 lg:grid lg:grid-cols-12 lg:gap-x-10" data-front-cols="">
         <div className="contents lg:col-span-8 lg:block lg:space-y-10" data-front-left="">
+        <FailGroup>
         <section aria-labelledby="front-live" className="order-1" data-tour="r-live">
           {m.format === "explore"
             ? <><h2 id="front-live" className="ed-h2">Explore</h2><Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" /></>
@@ -356,10 +357,13 @@ function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
           <p className="ed-data mt-6"><Link to="/morning" className="ed-tap">Older stories, day by day, in the Morning Line →</Link></p>
         </section>
         {slots.lower && <div className="order-4">{slots.lower}</div>}
+        </FailGroup>
         </div>
         <aside className="contents lg:col-span-4 lg:block lg:space-y-10" aria-label="Chart of the day, your sector, explore and collections" data-front-rail="">
+          <FailGroup>
           {slots.aside && <div className="order-2">{slots.aside}</div>}
           <div className="order-5 space-y-10">{slots.asideRest}</div>
+          </FailGroup>
         </aside>
         {moving && <div className="order-3 lg:col-span-12"><Moving moving={moving} /></div>}
       </div>

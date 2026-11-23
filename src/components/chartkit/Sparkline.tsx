@@ -6,11 +6,18 @@ import { ChartTable } from "./ChartTable";
 import { CHART, lw, pt } from "./ink";
 
 /** `what`: how the line is read aloud (default "share by quarter, N quarters"). */
-function ReadSpark({ points, label, w = 96, h = 24, what }: { points: number[] | undefined; label: string; w?: number; h?: number; what?: string }) {
+/** `stretch` (S1 polish, the Signals rows): the line fills whatever box CSS gives the drawing, with the stroke and end dot kept at their
+ *  drawn size, so a wider column draws a wider line at the same height. */
+function ReadSpark({ points, label, w = 96, h = 24, what, stretch = false }: { points: number[] | undefined; label: string; w?: number; h?: number; what?: string; stretch?: boolean }) {
   const p = points ?? [];
   if (p.length < 2) return <span className="ed-caption" aria-label={`${label}: not enough history`}>—</span>;
   const W = w, H = h, max = Math.max(...p, 0.01), min = Math.min(...p, 0), r1 = (n: number) => Math.round(n * 10) / 10, x = (i: number) => r1(2 + (i / (p.length - 1)) * (W - 4)), y = (v: number) => r1(H - 2 - ((v - min) / Math.max(0.0001, max - min)) * (H - 4));
-  return <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={`${label}: ${what ?? `share by quarter, ${p.length} quarters`}`} className="inline-block h-auto max-w-full align-middle" overflow="visible">
+  const name = `${label}: ${what ?? `share by quarter, ${p.length} quarters`}`;
+  if (stretch) return <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} preserveAspectRatio="none" role="img" aria-label={name} className="inline-block max-w-full align-middle" overflow="visible" data-spark-stretch="">
+    <polyline fill="none" stroke="currentColor" strokeWidth={lw(3)} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" points={p.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
+    <path d={`M${x(p.length - 1)} ${y(p[p.length - 1]!)}h0`} fill="none" stroke="currentColor" strokeWidth={pt(4) * 2} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+  </svg>;
+  return <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={name} className="inline-block h-auto max-w-full align-middle" overflow="visible">
     <polyline fill="none" stroke="currentColor" strokeWidth={lw(3)} strokeLinejoin="round" strokeLinecap="round" points={p.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
     <circle cx={x(p.length - 1)} cy={y(p[p.length - 1]!)} r={pt(4)} fill="currentColor" />
   </svg>;
@@ -60,7 +67,7 @@ function RankLine({ points }: { points: { date: string; rank: number }[] }) {
 
 
 export type SparklineProps =
-  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string }
+  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean }
   | { look: "data"; values: number[] | undefined; label?: string }
   | { look: "data"; large: true; points: { date: string; rank: number }[] };
 /** A sparkline in either look. */
