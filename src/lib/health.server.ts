@@ -99,7 +99,7 @@ async function loadPayload(): Promise<HealthPayload> {
   let value: HealthPayload;
   {
     const db = supabaseAnon();
-    const [{ data, error }, pause, indicators, history, writer, calls, deskFacts] = await Promise.all([healthFactsResult(), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null),
+    const [{ data, error }, pause, indicators, history, writer, calls, deskFacts, ph] = await Promise.all([healthFactsResult(), db.rpc("ai_pause_facts").then(r => (r.error ? null : r.data), () => null),
       // W2: the newest leading-indicator run; unreadable reads as not started rather than failing health.
       import("./indicators/read.server").then(m => m.indicatorsHealthFacts()).catch(() => null),
       // When the library history series last finished refreshing; unreadable leaves the library_check note as before.
@@ -109,10 +109,12 @@ async function loadPayload(): Promise<HealthPayload> {
       // N2: each writer's and desk's calls today against its own limit; unreadable falls back to the single count.
       db.rpc("newsroom_call_facts").then(r => (r.error ? null : r.data), () => null),
       // N3: every desk's calls today keyed desk:purpose; unreadable leaves the meter without the new desks.
-      db.rpc("newsroom_desk_facts" as never).then(r => (r.error ? null : r.data), () => null)]);
+      db.rpc("newsroom_desk_facts" as never).then(r => (r.error ? null : r.data), () => null),
+      // D1c: the Product Hunt ingest's last runs (public receipts); unreadable leaves it out of the list.
+      productHuntFacts(db)]);
     // The pause reason and probe times only add to the library_ai note; when they can't be read the job reads as before.
     if (error) throw error instanceof Error ? error : new Error(`health_facts: ${(error as { code?: string; message?: string })?.code ?? ""} ${(error as { message?: string })?.message ?? "unreadable"}`.trim());
-    value = buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(calls && typeof calls === "object" ? { newsroom_calls: calls } : {}), ...(deskFacts && typeof deskFacts === "object" ? { desk_calls: deskFacts } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}) } as never, new Date(now));
+    value = buildHealth({ ...(data as object), ...(pause && typeof pause === "object" && Object.keys(pause).length ? { ai_pause: pause } : {}), ...(indicators ? { indicators } : {}), ...(writer && typeof writer === "object" ? { story_writer: writer } : {}), ...(calls && typeof calls === "object" ? { newsroom_calls: calls } : {}), ...(deskFacts && typeof deskFacts === "object" ? { desk_calls: deskFacts } : {}), ...(history && typeof history === "object" ? { library_history: history } : {}), ...(ph !== undefined ? { producthunt: ph } : {}) } as never, new Date(now));
   }
   // I3b: the brand-name check is a fact beside the jobs; unreadable reads as null and never changes the status.
   const names = await import("./name-check.server").then(m => m.brandNameCheck()).catch(() => null);
@@ -139,4 +141,17 @@ async function artHealth(): Promise<{ met: number; aic: number; newest_last_seen
   const count = (source: "met" | "aic") => db.from("art_works").select("id", { count: "exact", head: true }).eq("source", source).then(r => { if (r.error) throw r.error; return r.count ?? 0; });
   const [met, aic, newest] = await Promise.all([count("met"), count("aic"), db.from("art_works").select("last_seen").order("last_seen", { ascending: false }).limit(1).then(r => { if (r.error) throw r.error; return r.data?.[0]?.last_seen ?? null; })]);
   return { met, aic, newest_last_seen: newest };
+}
+
+/** D1c · the Product Hunt ingest's newest receipts (30 days): undefined when unreadable, null when there were none. */
+async function productHuntFacts(db: ReturnType<typeof supabaseAnon>) {
+  try {
+    const { data, error } = await db.from("ingest_runs").select("finished_at,ok,rows_written,detail").eq("job", "ingest-producthunt").gte("finished_at", new Date(Date.now() - 30 * 864e5).toISOString()).order("finished_at", { ascending: false }).limit(30);
+    if (error) return undefined;
+    const rows = (data ?? []) as { finished_at: string; ok: boolean; rows_written: number; detail: { seen?: unknown; error?: unknown } | null }[];
+    const last = rows[0]; if (!last) return null;
+    const okIdx = rows.findIndex(r => r.ok), seen = last.detail?.seen;
+    return { last_run_at: last.finished_at, last_ok_at: okIdx >= 0 ? rows[okIdx]!.finished_at : null, last_ok: last.ok, failures_since_ok: okIdx >= 0 ? okIdx : rows.length,
+      fetched: typeof seen === "number" ? seen : 0, written: last.rows_written ?? 0, error: typeof last.detail?.error === "string" ? last.detail.error.slice(0, 120) : null };
+  } catch { return undefined; }
 }

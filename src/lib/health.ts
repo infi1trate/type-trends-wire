@@ -67,11 +67,23 @@ export const healthFactsSchema = z.object({
   // N3 · every desk's model calls today keyed "desk:purpose" (fixtures excluded), from newsroom_desk_facts().
   desk_calls: z.record(z.string(), num).nullable().optional(),
   brief: z.object({ week: z.string(), created_at: ts, card_at: ts }).nullable().optional(),
+  // D1c · the newest Product Hunt runs (public ingest_runs receipts); absent when unreadable, null when there was none in 30 days.
+  producthunt: z.object({ last_run_at: ts, last_ok_at: ts, last_ok: z.boolean(), failures_since_ok: num, fetched: num.optional(), written: num.optional(), error: z.string().nullable().optional() }).nullable().optional(),
   // Optional cron-introspection flags (job name → has callback timeout). Not available on managed Cloud.
   timeouts: z.array(z.object({ job: z.string(), has_timeout: z.boolean() })).nullable().optional().transform(v => v ?? []),
 });
 export type HealthFacts = z.input<typeof healthFactsSchema>;
 
+/** D1c · a Product Hunt failure in plain words (never the token): the provider's status, or that no token is set. */
+export function phReason(error: string | null | undefined): string {
+  const e = error ?? "", st = /HTTP (\d{3})/.exec(e)?.[1];
+  if (st === "401" || st === "403") return "the token was refused";
+  if (st === "429") return "Product Hunt asked us to slow down";
+  if (st) return `Product Hunt answered ${st}`;
+  if (/not set/i.test(e)) return "no token is set";
+  if (/timeout|timed out|abort/i.test(e)) return "Product Hunt did not answer in 15 s";
+  return e ? "an error in the run (see ingest_runs)" : "no reason recorded";
+}
 const ms = (iso: string | null | undefined) => { if (!iso) return null; const t = Date.parse(iso); return Number.isFinite(t) ? t : null; };
 /** True when there is no successful run, or the last one is older than maxAgeMs. */
 export function olderThan(lastOk: string | null | undefined, maxAgeMs: number, now: number): boolean { const t = ms(lastOk); return t === null || now - t > maxAgeMs; }
@@ -136,7 +148,21 @@ export function buildHealth(raw: HealthFacts, now: Date): HealthPayload {
     const q = f.render_queue, pending = q?.pending ?? 0, oldest = q?.oldest_pending_at ?? null;
     jobs.push({ job: "render_queue", last_ok_at: q?.last_done_at ?? null, last_run_at: q?.last_done_at ?? null, last_status: pending ? "pending" : "ok", expected_every: "6h", stale: pending > 0 && olderThan(oldest, QUEUE_MAX_AGE_MS, t), consecutive_failures: 0, note: `${pending} pending${pending ? `, oldest ${age(oldest, t)}` : ""}` });
   }
-  jobs.push({ job: "discourse", last_ok_at: f.bluesky_window_end, last_run_at: f.bluesky_window_end, last_status: f.bluesky_window_end ? "ok" : "never", expected_every: "6h", stale: olderThan(f.bluesky_window_end, DISCOURSE_MAX_AGE_MS, t), consecutive_failures: 0, note: "Bluesky sampler; stale after 10h" });
+  {
+    // D1c · the sampler (crawler) posts one window at a time; when none has arrived for 10 h the job is "late", not "ok": the last
+    // post having been fine says nothing about the posts that never came.
+    const late = olderThan(f.bluesky_window_end, DISCOURSE_MAX_AGE_MS, t);
+    jobs.push({ job: "discourse", last_ok_at: f.bluesky_window_end, last_run_at: f.bluesky_window_end, last_status: !f.bluesky_window_end ? "never" : late ? "late" : "ok", expected_every: "6h", stale: late, consecutive_failures: 0,
+      note: late && f.bluesky_window_end ? `Bluesky sampler (crawler); nothing has arrived for ${age(f.bluesky_window_end, t)} (stale after 10h)` : "Bluesky sampler (crawler); stale after 10h" });
+  }
+  // D1c · the daily Product Hunt ingest, from its receipts (ingest_runs, merged in by health.server.ts); a refused token reads as such.
+  if (f.producthunt !== undefined) {
+    const p = f.producthunt;
+    jobs.push(!p
+      ? { job: "producthunt", last_ok_at: null, last_run_at: null, last_status: "never", expected_every: "1d", stale: true, consecutive_failures: 0, note: "no Product Hunt run in 30 days" }
+      : { job: "producthunt", last_ok_at: p.last_ok_at, last_run_at: p.last_run_at, last_status: p.last_ok ? "ok" : "error", expected_every: "1d", stale: isStale(p.last_ok_at, "1d", t), consecutive_failures: p.failures_since_ok,
+          note: p.last_ok ? `${p.fetched ?? 0} launches fetched in the last run, ${p.written ?? 0} new` : `last run failed: ${phReason(p.error)}` });
+  }
   jobs.push({ job: "taste_refresh", last_ok_at: f.taste_refreshed_at, last_run_at: f.taste_refreshed_at, last_status: f.taste_refreshed_at ? "ok" : "never", expected_every: "7d", stale: isStale(f.taste_refreshed_at, "7d", t), consecutive_failures: 0 });
   {
     const b = f.brief;
