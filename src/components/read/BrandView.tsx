@@ -192,11 +192,11 @@ export function BrandView({ b, section = null }: { b: BrandPage & { stories?: St
 }
 
 // P1 · shell first: the card arrives with the page; each section below fills its own slot as its read lands.
-function MovesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandMovesQuery(b.domain)); return <Moves b={{ name: b.name, timeline: data.timeline }} />; }
-function SectionsPart({ b, open }: { b: BrandCard; open: CropSection | null }) { const { data } = useSuspenseQuery(brandSectionsQuery(b.domain)); return <Sections b={{ domain: b.domain, ...data }} open={open} />; }
+function MovesPart({ b }: { b: Pick<BrandCard, "domain" | "name"> }) { const { data } = useSuspenseQuery(brandMovesQuery(b.domain)); return <Moves b={{ name: b.name, timeline: data.timeline }} />; }
+function SectionsPart({ b, open }: { b: Pick<BrandCard, "domain">; open: CropSection | null }) { const { data } = useSuspenseQuery(brandSectionsQuery(b.domain)); return <Sections b={{ domain: b.domain, ...data }} open={open} />; }
 function SectorPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSectorQuery(b.domain)); return <Sector b={{ domain: b.domain, sectorName: b.sectorName, ...data }} />; }
-function SimilarPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandSimilarQuery(b.domain)); return <>{similarLine(data.line)}<SimilarList similar={data} /></>; }
-function StoriesPart({ b }: { b: BrandCard }) { const { data } = useSuspenseQuery(brandStoriesQuery(b.domain)); return <RelatedStories stories={data} empty={voiced("read.brandView.6")} />; }
+function SimilarPart({ b }: { b: Pick<BrandCard, "domain"> }) { const { data } = useSuspenseQuery(brandSimilarQuery(b.domain)); return <>{similarLine(data.line)}<SimilarList similar={data} /></>; }
+function StoriesPart({ b }: { b: Pick<BrandCard, "domain"> }) { const { data } = useSuspenseQuery(brandStoriesQuery(b.domain)); return <RelatedStories stories={data} empty={voiced("read.brandView.6")} />; }
 export function BrandPageView({ card, section = null, bare = false }: { card: CardIn; section?: string | null; bare?: boolean }) {
   const open = isCropSection(section) ? section : null;
   return <BrandBody b={card} bare={bare} parts={{
@@ -209,5 +209,24 @@ export function BrandPageView({ card, section = null, bare = false }: { card: Ca
     similarLine: null,
     similar: <Later shapes={[{ kind: "text", lines: 1 }, { kind: "rows", n: 4, height: ROW.ledger }]}><SimilarPart b={card} /></Later>,
     stories: <Later shapes={[{ kind: "rows", n: 3, height: ROW.ledger }]}><StoriesPart b={card} /></Later>,
+  }} />;
+}
+/** C1 · the brand page when its identity card failed twice: the brand's name, the one failed line in the card's place, and every part
+ *  that does not need the card (moves, sections, similar brands, stories), each in its own slot. Never fewer words than that. */
+export function BrandPageWithoutCard({ domain, name, line }: { domain: string; name: string; line: ReactNode }) {
+  const b = { domain, name };
+  return <ObjectPage kind="brand" id="ed-brand" blocks={{
+    headline: <><h1 id="ed-brand-title" className="ed-cover break-words">{name}</h1><div className="mt-6" data-card-failed="">{line}</div></>,
+    evidence: <>
+      <BlockPart title="Moves" kicker="Every dated, measured change, newest first, with the two captures either side. Rebrands are confirmed by the rebrand desk.">
+        <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={b} /></Later>
+      </BlockPart>
+      <BlockPart title="Sections" kicker="Credited crops of the desktop homepage: hero, navigation, pricing, call to action and footer, each with its history."><Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }]}><SectionsPart b={b} open={null} /></Later></BlockPart>
+    </>,
+    "so-what": null,
+    related: <>
+      <BlockPart title={SIMILAR_TITLE} kicker={undefined}><Later shapes={[{ kind: "rows", n: 4, height: ROW.ledger }]}><SimilarPart b={b} /></Later></BlockPart>
+      <BlockPart title="Stories about this brand"><Later shapes={[{ kind: "rows", n: 3, height: ROW.ledger }]}><StoriesPart b={b} /></Later></BlockPart>
+    </>,
   }} />;
 }

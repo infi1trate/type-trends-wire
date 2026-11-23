@@ -29,11 +29,23 @@ export function Placeholder({ shapes, className = "" }: { shapes: readonly Shape
   })}</div>;
 }
 
-class Catch extends Component<{ children: ReactNode; onReset: () => void; failed: (retry: () => void) => ReactNode }, { error: boolean }> {
-  override state = { error: false };
+/** C1 · a failed or over-limit read tries once more by itself after this long, the slot keeping its placeholder meanwhile; only a second
+ *  failure shows the failed line (a cold server's first reads can miss the reader limit once and answer a moment later). */
+export const LATER_RETRY_MS = 1200;
+class Catch extends Component<{ children: ReactNode; onReset: () => void; failed: (retry: () => void) => ReactNode; waiting: ReactNode }, { error: boolean; retried: boolean }> {
+  override state = { error: false, retried: false };
+  private timer: ReturnType<typeof setTimeout> | undefined;
   static getDerivedStateFromError() { return { error: true }; }
-  override componentDidCatch(e: unknown) { console.error("deferred section failed", e instanceof Error ? e.message.slice(0, 120) : "UnknownError"); }
-  override render() { return this.state.error ? this.props.failed(() => { this.props.onReset(); this.setState({ error: false }); }) : this.props.children; }
+  override componentDidCatch(e: unknown) {
+    if (!this.state.retried) { this.timer = setTimeout(() => { this.timer = undefined; this.props.onReset(); this.setState({ error: false, retried: true }); }, LATER_RETRY_MS); return; }
+    console.error("deferred section failed", e instanceof Error ? e.message.slice(0, 120) : "UnknownError");
+  }
+  override componentWillUnmount() { if (this.timer) clearTimeout(this.timer); }
+  override render() {
+    if (!this.state.error) return this.props.children;
+    if (!this.state.retried) return this.props.waiting;
+    return this.props.failed(() => { this.props.onReset(); this.setState({ error: false, retried: false }); });
+  }
 }
 export function SectionFailed({ retry }: { retry: () => void }) {
   const v = say("read.section.failed");
@@ -99,11 +111,13 @@ function Ready({ children, id, className }: { children: ReactNode; id?: string |
  *  then already reaches past the bottom of the screen, so the footer is never on screen to be pushed down when the content lands. */
 /** D1b · `fallback` replaces the placeholders with content the page already has (the brand page's sections strip from the card), so the
  *  slot is its final size from the first byte. */
-export function Later({ children, shapes, className, id, before, reserve, placeholderClassName, fallback }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode; reserve?: string; placeholderClassName?: string; fallback?: ReactNode }) {
+/** C1 · `failedAs` draws the slot's failed state around its failed line (the brand page keeps its other sections when its card fails). */
+export function Later({ children, shapes, className, id, before, reserve, placeholderClassName, fallback, failedAs }: { children: ReactNode; shapes: readonly Shape[]; className?: string; id?: string; before?: ReactNode; reserve?: string; placeholderClassName?: string; fallback?: ReactNode; failedAs?: (line: ReactNode) => ReactNode }) {
   const g = useContext(FailCtx), qc = useContext(QueryClientContext);
   const [order] = useState(() => g?.order() ?? null);
-  return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={() => { dropFailed(qc); reset(); }} failed={retry => <div data-later="" id={id} className={className}>{before}<div className={before ? "ed-wrap mt-8" : undefined}><Failed retry={retry} order={order} /></div></div>}>
-    <Suspense fallback={<div data-later="" id={id} className={className} aria-busy="true" data-later-reserve={reserve ? "" : undefined} style={reserve ? { minHeight: reserve } : undefined}>{before}{fallback ?? <Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} />}</div>}>
+  const waiting = <div data-later="" id={id} className={className} aria-busy="true" data-later-reserve={reserve ? "" : undefined} style={reserve ? { minHeight: reserve } : undefined}>{before}{fallback ?? <Placeholder shapes={shapes} className={before ? "ed-wrap mt-8" : placeholderClassName ?? ""} />}</div>;
+  return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={() => { dropFailed(qc); reset(); }} waiting={waiting} failed={retry => failedAs ? <div data-later="" id={id} className={className}>{failedAs(<Failed retry={retry} order={order} />)}</div> : <div data-later="" id={id} className={className}>{before}<div className={before ? "ed-wrap mt-8" : undefined}><Failed retry={retry} order={order} /></div></div>}>
+    <Suspense fallback={waiting}>
       <Ready id={id} className={className}>{children}</Ready>
     </Suspense>
   </Catch>}</QueryErrorResetBoundary>;
@@ -114,7 +128,8 @@ export function Later({ children, shapes, className, id, before, reserve, placeh
 export function PartBoundary({ children, quiet = false, className }: { children: ReactNode; quiet?: boolean; className?: string }) {
   const g = useContext(FailCtx), qc = useContext(QueryClientContext);
   const [order] = useState(() => g?.order() ?? null);
-  return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={() => { dropFailed(qc); reset(); }} failed={retry => quiet ? null : <div className={className} data-part-failed=""><Failed retry={retry} order={order} /></div>}>
+  // C1 · while its one quiet try again runs, the part keeps its box (the Terminal's panels sit in boxes of their final size).
+  return <QueryErrorResetBoundary>{({ reset }) => <Catch onReset={() => { dropFailed(qc); reset(); }} waiting={quiet ? null : <div className={className} aria-busy="true" data-part-waiting="" />} failed={retry => quiet ? null : <div className={className} data-part-failed=""><Failed retry={retry} order={order} /></div>}>
     {children}
   </Catch>}</QueryErrorResetBoundary>;
 }

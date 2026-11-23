@@ -12,7 +12,7 @@ import { label } from "../labels";
 import { rowKey, tiersFrom, type SignalRow } from "../signals";
 import { patternIndex, patternModel } from "../patterns";
 import { resolveSector } from "../sector-lens";
-import { isEditionDay, morningArchive, morningEdition, todayOf, type ChartRow, type MovingInput } from "./morning";
+import { isEditionDay, morningArchive, morningEdition, morningHead, todayOf, type ChartRow, type MovingInput } from "./morning";
 import { morningRss } from "./morning-rss";
 import { sectorIndex, sectorReport, type SectorPatternBlock } from "./sector";
 
@@ -45,6 +45,14 @@ async function pagesOf<T>(f: (from: number, to: number) => PromiseLike<{ data: T
   return out;
 }
 
+/** C1 · today's edition head and the seven newest archive days, for the Editions box (the same fields as `loadMorning` gave it, without
+ *  the whole edition); null when today is not an edition day. */
+const morningBox = memo(TTL, async (_: null) => {
+  const now = Date.now(), d = todayOf(now);
+  if (!isEditionDay(d, now)) return null;
+  const raw = await storyRaw();
+  return { ...morningHead(raw, d, now), archive: morningArchive(raw, now, 7) };
+});
 /** /morning (today) and /morning/<date>; null when the date is not an edition day. */
 export const loadMorning = memo(TTL, async (day: string | null) => {
   const now = Date.now(), d = day ?? todayOf(now);
@@ -62,16 +70,21 @@ export async function morningFeedResponse(): Promise<Response> {
   }
 }
 
-const sectorInputs = memo(TTL, async (_: null) => {
+/** C1 · what the sector index needs (the front page's Editions box reads it); the crops and trait index only the reports use are read
+ *  beside it in `sectorInputs`, so a cold front page no longer waits on every brand's crops. */
+const sectorBase = memo(TTL, async (_: null) => {
   const db = supabaseAnon(), reader = await fetchReaderRuns(db), run = reader.latest;
-  const [{ snap, tiers, signals }, sites, setters, stories, index, crops] = await Promise.all([
+  const [{ snap, tiers, signals }, sites, setters, stories] = await Promise.all([
     latestSignals("all"),
     db.from("library_sites").select("domain,sector,name").eq("active", true).range(0, 999).then(must),
     db.from("trendsetters").select("domain,rank,sector").eq("run_id", run?.id ?? -1).order("rank").limit(200).then(must),
     storyIndex().catch(() => []),
-    siteTraitIndex(), allCrops(),
   ]);
-  return { run: run ? { id: run.id, at: run.at } : null, rows: snap.rows, tiers, signals, sites: sites ?? [], trendsetters: setters ?? [], stories, index, crops };
+  return { run: run ? { id: run.id, at: run.at } : null, rows: snap.rows, tiers, signals, sites: sites ?? [], trendsetters: setters ?? [], stories };
+});
+const sectorInputs = memo(TTL, async (_: null) => {
+  const [base, index, crops] = await Promise.all([sectorBase(null), siteTraitIndex(), allCrops()]);
+  return { ...base, index, crops };
 });
 export const SECTOR_PATTERNS_MAX = 6;
 export const loadSectorReport = memo(TTL, async (raw: string) => {
@@ -85,15 +98,15 @@ export const loadSectorReport = memo(TTL, async (raw: string) => {
   return sectorReport({ sector, now, run: i.run, rows: i.rows, tiers: i.tiers, sites: i.sites, trendsetters: i.trendsetters, stories: i.stories, patterns });
 });
 export const loadSectorIndex = memo(TTL, async (_: null) => {
-  const i = await sectorInputs(null), now = Date.now();
+  const i = await sectorBase(null), now = Date.now();
   return { run: i.run, sectors: sectorIndex({ now, run: i.run, rows: i.rows, tiers: i.tiers, sites: i.sites, stories: i.stories }) };
 });
 
 /** /editions: today's Morning Line lead, the latest Digest issue and the sector reports. */
 export const loadEditions = memo(TTL, async (_: null) => {
   // E5 · the latest Digest is the newest closed week that has an issue, named by its written headline.
-  const [m, s, digest] = await Promise.all([loadMorning(null), loadSectorIndex(null), import("../digest/digest.server").then(d => d.loadIssue(null)).catch(() => null)]);
-  return { morning: m ? { title: m.edition.title, href: m.edition.href, lead: m.edition.lead, count: m.edition.count, thin: m.edition.thin, archive: m.archive.slice(0, 7) } : null,
+  const [m, s, digest] = await Promise.all([morningBox(null), loadSectorIndex(null), import("../digest/digest.server").then(d => d.loadIssue(null)).catch(() => null)]);
+  return { morning: m,
     digest: digest ? { week: digest.week, number: digest.number, headline: digest.text.headline, dates: digest.dates.label } : null, sectors: s.sectors, run: s.run };
 });
 

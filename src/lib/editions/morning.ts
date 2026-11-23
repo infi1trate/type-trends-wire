@@ -126,10 +126,18 @@ export function morningEdition(raw: MorningRaw, day: string, now: number, o: { m
 export const morningPath = (day: string) => `/morning/${day}`;
 export const titleOf = (day: string) => `The Morning Line · ${longDate(day)}`;
 
-/** The archive: every edition day with at least one story, newest first. */
-export function morningArchive(raw: MorningRaw, now: number) {
+/** C1 · the edition's head only (title, link, lead, count, thin), without the openings chain, moving signals or last full edition: what
+ *  the front page's Editions box shows, equal to the same fields of `morningEdition`. The full edition replays every day since the
+ *  first for its openings, which held a cold front page about a second. */
+export function morningHead(raw: MorningRaw, day: string, now: number) {
+  const clock = editionClock(day, now), ranked = rankedFor(shownFor(raw, day, now), clock.asOf);
+  return { title: titleOf(day), href: morningPath(day), lead: ranked[0] ? item(ranked[0]) : null, count: ranked.length, thin: ranked.length < MORNING_MIN_STORIES };
+}
+
+/** The archive: every edition day with at least one story, newest first; with `limit`, only that many newest (the same prefix). */
+export function morningArchive(raw: MorningRaw, now: number, limit = Infinity) {
   const out: { day: string; title: string; count: number; lead: string | null; leadNumber: number | null; final: boolean; href: string }[] = [];
-  for (let d = todayOf(now); d >= MORNING_FIRST_DAY; d = addDays(d, -1)) {
+  for (let d = todayOf(now); d >= MORNING_FIRST_DAY && out.length < limit; d = addDays(d, -1)) {
     const c = editionClock(d, now), r = rankedFor(shownFor(raw, d, now), c.asOf);
     if (r.length) out.push({ day: d, title: titleOf(d), count: r.length, lead: r[0]!.headline, leadNumber: r[0]!.number ?? null, final: c.final, href: morningPath(d) });
   }

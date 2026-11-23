@@ -12,7 +12,7 @@ import { issueNumber, weekRange } from "../digest/week";
 import { wellCovered, type QuarterSeries } from "../kit";
 import { supabaseAnon } from "../mcp/supabase";
 import { readerRunId } from "../real-runs";
-import { memoBy } from "../memo";
+import { memo, memoBy } from "../memo";
 import { within } from "../deadline";
 import { stored } from "../records/store.server";
 import { frontModel, pageState, updatesOf, type ArchiveMove, type FrontInput, type FrontModel, type FrontTop, type FrontRest } from "./front";
@@ -53,6 +53,8 @@ const loadEditionsSafe = () => import("../editions/editions.server").then(m => m
 async function buildInput(sector: string, format: FormatFilter): Promise<FrontInput> {
   const now = Date.now();
   const [read, { loadFreshness }, { siteTraitIndex }] = await Promise.all([import("../read.server"), import("../freshness.server"), import("../read.server")]);
+  // C1 · the lead pictures' stored record and the pictures index start with the first reads (they waited for them before).
+  const leadsP = storedLeads(), picsP = picturesSafe();
   const [all, { snap, tiers, signals }, moves, fresh, series, index, studies] = await Promise.all([
     // N1 · the owner's wire-only switch takes stories off the front page only (off by default; an unreadable switch reads as off).
     Promise.all([storyIndex(), import("../newsroom/newsroom.server").then(m => m.wireOnlyOn()).catch(() => false), import("../newsroom/wire-only")]).then(([a, on, w]) => w.frontStories(a, on)),
@@ -67,7 +69,7 @@ async function buildInput(sector: string, format: FormatFilter): Promise<FrontIn
   const quiet = pageState(streamOf(all).filter(s => s.type !== "launch").map(s => s.happened_at), now) === "quiet";
   const archiveMoves: ArchiveMove[] = quiet ? await import("../rebrands.server").then(m => m.readerRebrands()).then(r => r.rows.map(x => ({ id: `rebrand:${x.id}`, at: x.confirmed_at, headline: rebrandSentence(x), line: x.read ? clip(untick(x.read)) : null, href: `/brands/${encodeURIComponent(x.domain)}`, source: x.source }))).catch(() => []) : [];
   // I1: stored site icons for single-brand rows (the pictures index; an empty map when it can't be read).
-  const pics = await picturesSafe();
+  const pics = await picsP;
   const input: FrontInput = {
     icons: iconsFor(pics, all.flatMap(s => (s.domains.length === 1 ? [s.domains[0]!] : []))),
     now, sector, format, stories: all, signals, lens, stages: new Map(signals.map(s => [s.key, s.stage])),
@@ -84,22 +86,55 @@ async function buildInput(sector: string, format: FormatFilter): Promise<FrontIn
   // crop of the changed section, else a single-brand story's own social card; otherwise the sparkline or nothing, as before.
   const lead = model.lead ? all.find(s => s.id === model.lead!.story.id) : null;
   if (lead) {
-    const one = lead.domains.length === 1 ? lead.domains[0]! : null;
-    const ps = await import("../stories/page.server");
-    const ev = ["move", "counter_move", "rebrand", "roundup"].includes(lead.type) ? await ps.evidenceOf(lead, lead.type).catch(() => null) : null;
-    // I3: the lead picture by rule (lead-picture.ts); the older slot logic stays as the fallback when the lookup fails.
-    const { censusLines } = await import("../stories/view");
-    const plan = await ps.leadOf(lead, ev, { colourEvents: await ps.colourEventsOf(lead).catch(() => []), census: lead.id.startsWith("census:") ? censusLines(Array.isArray(lead.facts) ? lead.facts as never : []) : null, chart: false, names: input.brandNames }).catch(() => null);
-    const pair = ev && lead.type !== "roundup" ? ev : null;
-    const cover = one ? coverOf(one, pics.get(one) ?? NO_PICS) : null;
-    const leadEvidence = plan ? { id: lead.id, crops: null, plan }
-      : pair?.compare ? { id: lead.id, crops: { section: pair.sectionName ?? "", before: pair.compare.before, after: pair.compare.after } }
-      : pair?.after ? { id: lead.id, crops: null, crop: { section: pair.sectionName ?? "", crop: pair.after } }
-      : cover?.kind === "card" ? { id: lead.id, crops: null, cover } : null;
+    // C1 · the lead's pictures from the stored `front-leads` record when it holds this story (a cold server spent ~1.4 s of reads on
+    // them), else worked out here as before. Only the story's own sources and the stored pictures decide them, never its text.
+    const rec = await leadsP;
+    const leadEvidence = rec && lead.id in rec ? rec[lead.id] ?? null : await leadEvidenceOf(lead, pics, input.brandNames);
     if (leadEvidence) return { ...input, leadEvidence };
   }
   return input;
 }
+type LeadEvidence = NonNullable<FrontInput["leadEvidence"]>;
+/** The lead's evidence slot (I1: real pictures first): before/after crops when two captures straddle the change, else one "after"
+ *  crop of the changed section, else a single-brand story's own social card; otherwise the sparkline or nothing, as before. */
+async function leadEvidenceOf(lead: Story, pics: Awaited<ReturnType<typeof picturesSafe>>, names: ReadonlyMap<string, string | null>): Promise<LeadEvidence | null> {
+  const one = lead.domains.length === 1 ? lead.domains[0]! : null;
+  const ps = await import("../stories/page.server");
+  const ev = ["move", "counter_move", "rebrand", "roundup"].includes(lead.type) ? await ps.evidenceOf(lead, lead.type).catch(() => null) : null;
+  // I3: the lead picture by rule (lead-picture.ts); the older slot logic stays as the fallback when the lookup fails.
+  const { censusLines } = await import("../stories/view");
+  const plan = await ps.leadOf(lead, ev, { colourEvents: await ps.colourEventsOf(lead).catch(() => []), census: lead.id.startsWith("census:") ? censusLines(Array.isArray(lead.facts) ? lead.facts as never : []) : null, chart: false, names: names }).catch(() => null);
+  const pair = ev && lead.type !== "roundup" ? ev : null;
+  const cover = one ? coverOf(one, pics.get(one) ?? NO_PICS) : null;
+  const leadEvidence = plan ? { id: lead.id, crops: null, plan }
+    : pair?.compare ? { id: lead.id, crops: { section: pair.sectionName ?? "", before: pair.compare.before, after: pair.compare.after } }
+    : pair?.after ? { id: lead.id, crops: null, crop: { section: pair.sectionName ?? "", crop: pair.after } }
+    : cover?.kind === "card" ? { id: lead.id, crops: null, cover } : null;
+  return leadEvidence;
+}
+/** C1 · the stories the front page can lead with: published in the last week (a quiet day leads with an older story), newest first, at
+ *  most this many. */
+export const FRONT_LEADS_MAX = 12;
+const LEADS_WINDOW_MS = 7 * 864e5;
+/** C1 · `front-leads`: each lead-able story's evidence slot, keyed by story id, written by the story build and the records sweep like
+ *  `front-cards`. No story text: a kill or a new story changes which id leads, and a lead the record lacks is worked out live. */
+export async function computeFrontLeads(): Promise<Record<string, LeadEvidence | null>> {
+  const [all, pics, { siteTraitIndex }] = await Promise.all([storyIndex(), picturesSafe(), import("../read.server")]);
+  const index = await siteTraitIndex().catch(() => []), names = new Map(index.map(s => [s.domain, s.name] as [string, string | null])), now = Date.now();
+  const these = streamOf(all).filter(s => s.type !== "launch" && Date.parse(s.happened_at) > now - LEADS_WINDOW_MS)
+    .sort((a, b) => b.happened_at.localeCompare(a.happened_at)).slice(0, FRONT_LEADS_MAX);
+  const out: Record<string, LeadEvidence | null> = {};
+  // Three at a time: each story's pictures take a few reads (the hosted runtime allows six requests at once).
+  for (let i = 0; i < these.length; i += 3) await Promise.all(these.slice(i, i + 3).map(async s => { out[s.id] = await leadEvidenceOf(s, pics, names).catch(() => null); }));
+  return out;
+}
+/** Readers read the stored row only (never the twelve-story computation): a missing, unreadable or over-age row reads as empty and the
+ *  lead is worked out live, as before. One small read, kept a minute per instance. */
+const storedLeads = memo(60_000, async (): Promise<Record<string, LeadEvidence | null> | null> => {
+  const [{ readRecord }, { usable }] = await Promise.all([import("../records/store.server"), import("../records/records")]);
+  const row = await readRecord<Record<string, LeadEvidence | null>>("front-leads").catch(() => null);
+  return row && usable(row, Date.now()) ? row.body : null;
+});
 export const FRONT_TTL_MS = 20_000;
 type Lens = { sector: string; format: FormatFilter };
 const lensKey = (k: Lens) => `${k.sector}|${k.format}`;

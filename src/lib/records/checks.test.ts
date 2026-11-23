@@ -67,7 +67,7 @@ describe("the sweep's order and share of the pass", () => {
   });
   it("the 13:31 case: brands-index 3.1 h old is built even though its estimate is longer than the time left", async () => {
     const now = Date.now(), at = (ms: number) => new Date(now - ms).toISOString();
-    const shared = ["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "library"];
+    const shared = ["site-index", "signals", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "front-leads", "library"];
     const calls: string[] = [];
     const deps: RefreshDeps = {
       metas: async () => [{ key: "brands-index", computed_at: at(3.1 * H) }, ...shared.map(k => ({ key: k, computed_at: at(20 * MIN) }))],
@@ -87,7 +87,7 @@ describe("the sweep's order and share of the pass", () => {
     const calls: string[] = [];
     const deps: RefreshDeps = {
       metas: async () => [
-        ...["site-index", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "library"].map(k => ({ key: k, computed_at: at(5 * MIN) })),
+        ...["site-index", "rebrands", "moving-runs", "quarter-series", "front-tape", "front-cards", "front-leads", "library"].map(k => ({ key: k, computed_at: at(5 * MIN) })),
         { key: "signals", computed_at: at(1 * MIN) }, // re-timed a minute ago, last changed 10 h ago
         ...sites.flatMap(s => ["brand-similar", "brand-sector", "brand-card"].map(k => ({ key: `${k}:${s.domain}`, computed_at: at(10 * H) }))),
         { key: "brand-card:gone.com", computed_at: at(47.9 * H) }, // a brand no longer tracked

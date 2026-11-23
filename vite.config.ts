@@ -34,15 +34,18 @@ const lazyMcpHandlers = {
   },
 };
 
+type NitroOptions = Exclude<NonNullable<Parameters<typeof defineConfig>[0]>["nitro"], undefined>;
+
 export default defineConfig({
   vite: { plugins: [lazyMcpHandlers, mcpPlugin({ path: "/api/public/mcp", metadataPath: "/api/public/oauth-protected-resource" })], define: { __SLUG_BUILD__: JSON.stringify(commit) } },
   // C1 · the server bundle grouped zod and unenv's performance shim into the AI tools toolkit's library chunk, so every page's first
   // byte on a cold server waited for that megabyte to load. Their own chunks keep the toolkit off the page path (it loads on the
   // first MCP request; see lazyMcpHandlers above). Nitro adds its per-package groups after these.
+  // The wrapper passes nitro options through whole but types only a few of them, hence the cast.
   nitro: { rolldownConfig: { output: { codeSplitting: { groups: [
     { name: "_libs/zod", test: /node_modules[\\/]zod[\\/]/, priority: 30 },
     { name: "_libs/unenv", test: /node_modules[\\/]unenv[\\/]/, priority: 30 },
-  ] } } } },
+  ] } } } } as unknown as NitroOptions,
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

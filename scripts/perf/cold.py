@@ -7,7 +7,9 @@ code loaded beyond the entry. A warm measure asks for the same page under a new 
 warm instance without its kept copy of the page. Records time to first byte, end of the HTML, largest paint and its element (and
 whether it sits in a late block), layout shift with its first sources, the time each late block arrived, words, failed parts and the
 x-instance-age / x-instance-requests headers. When the build carries the scratch read timer (`/__c1t`), every server read is listed.
-Against the live site, use the x-instance-age header to sort measures into cold and warm instead of starting a server."""
+Against the live site, use the x-instance-age header to sort measures into cold and warm instead of starting a server.
+The browser asks for the page uncompressed: the local engine gzips a streamed page in one block at its end (the hosted runtime streams
+compressed pages in pieces, measured 23 Nov), so a compressed local measure would time the whole page, not when its parts arrive."""
 import asyncio, json, os, subprocess, sys, time, urllib.request, signal
 from playwright.async_api import async_playwright
 DIST = sys.argv[1]; OUT = sys.argv[2]; PAGES = sys.argv[3].split(","); WIDTHS = [int(w) for w in sys.argv[4].split(",")]; MODES = sys.argv[5].split(",") if len(sys.argv) > 5 else ["cold", "warm"]
@@ -53,7 +55,7 @@ def srvlog(path):
 async def visit(pw, path, w):
     h = 844 if w < 500 else (1024 if w < 1000 else 900)
     b = await pw.chromium.launch(headless=True)
-    ctx = await b.new_context(viewport={"width": w, "height": h}, device_scale_factor=2 if w < 800 else 1, is_mobile=w < 800, has_touch=w < 800, user_agent=UA)
+    ctx = await b.new_context(viewport={"width": w, "height": h}, device_scale_factor=2 if w < 800 else 1, is_mobile=w < 800, has_touch=w < 800, user_agent=UA, extra_http_headers={"accept-encoding": "identity"})
     page = await ctx.new_page(); await page.add_init_script(OBS)
     errs = []; page.on("console", lambda m: errs.append(m.text[:120]) if m.type == "error" else None)
     t = time.time(); r = await page.goto(BASE + path, wait_until="load", timeout=60000)

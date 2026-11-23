@@ -1,5 +1,5 @@
 import { line as voiced } from "@/lib/voice";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useSearch, useNavigate } from "@tanstack/react-router";
 import { librarySiteQuery, siteCropsQuery } from "@/lib/data";
 import { heroRevealFor } from "@/lib/pictures";
@@ -28,7 +28,7 @@ export function LibrarySite({ domain, embedded = false }: { domain: string; embe
   const { viewport = "desktop", page_type = "home", a = "", b = "" } = useSearch({ strict: false }) as { viewport?: string; page_type?: string; a?: string; b?: string };
   const navigate = useNavigate();
   // I1: the stored hero crops (the same read the sections row makes) let a desktop wireframe reveal the real hero on intent.
-  const { data: cropRows } = useQuery(siteCropsQuery(domain));
+  const { data: cropRows } = useSuspenseQuery(siteCropsQuery(domain));
   if (!data) return null;
   const { site, snapshots, events, sector, pending } = data;
   const home = snapshots.find(s => s.page_type === "home" && s.viewport === "desktop" && s.source === "live");

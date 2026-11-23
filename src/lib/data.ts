@@ -398,11 +398,15 @@ export const issueQuery = (week: string | null) => queryOptions({ queryKey: ["di
 export const briefWithdrawnQuery = (week: string) => queryOptions({ queryKey: ["brief-withdrawn", week], staleTime: 10 * 60_000, queryFn: () => getBriefWithdrawn({ data: { week } }) });
 export const archiveQuery = () => queryOptions({ queryKey: ["digest-archive"], staleTime: 10 * 60_000, queryFn: () => getArchive() });
 export const traitPageQuery = (key: string) => queryOptions({ queryKey: ["trait-page", key], staleTime: 10 * 60_000, queryFn: () => getTrait({ data: { key } }) });
+/** C1 · the brand record waits for this read (suspending), so the thumbnail is in the page as it is drawn: arriving after hydration it
+ *  pushed the whole record down (0.10–0.19 at 390–1440 px) and was the page's late largest paint. `[]` when the read fails. */
 export const siteThumbQuery = (domain: string) => queryOptions({ queryKey: ["site-thumb", domain], staleTime: 10 * 60_000, queryFn: async () => {
-  await ready();
-  const { data, error } = await supabase.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", domain).order("captured_at", { ascending: false }).limit(4);
-  if (error) throw error;
-  return data ?? [];
+  try {
+    await ready();
+    const { data, error } = await supabase.from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").eq("domain", domain).order("captured_at", { ascending: false }).limit(4);
+    if (error) throw error;
+    return data ?? [];
+  } catch { return []; }
 } });
 
 // Agency workflow (gated pages): watchlists read through server functions (the table is service-role only); audits are cached per normalized site list.
@@ -468,10 +472,14 @@ export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime:
 export const patternsQuery = (sector: string, illustrated = false) => queryOptions({ queryKey: ["patterns", sector, illustrated], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector, illustrated } }) });
 export const cropCoverageQuery = () => queryOptions({ queryKey: ["crop-coverage"], staleTime: 10 * 60_000, queryFn: () => getCropCoverage() });
 /** Terminal brand record: this brand's stored section crops (public SELECT; opted-out sites are hidden by policy). */
+/** A brand's stored crops (the brand record's sections row and hero reveals). C1 · `null` when the read fails, never an error: the record
+ *  waits for this read (suspending) so the row is drawn with the page instead of after it (a late row moved the Data view by 0.10–0.19). */
 export const siteCropsQuery = (domain: string) => queryOptions({ queryKey: ["site-crops", domain], staleTime: 10 * 60_000, queryFn: async () => {
-  await ready();
-  const { data, error } = await supabase.from("site_crops").select("domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash").eq("domain", domain).order("captured_at", { ascending: false }).limit(100);
-  if (error) throw error; return data ?? [];
+  try {
+    await ready();
+    const { data, error } = await supabase.from("site_crops").select("domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash").eq("domain", domain).order("captured_at", { ascending: false }).limit(100);
+    if (error) throw error; return data ?? [];
+  } catch { return null; }
 } });
 export const patternQuery = (key: string, sector: string) => queryOptions({ queryKey: ["pattern", key, sector], staleTime: 10 * 60_000, queryFn: () => getPattern({ data: { key, sector } }) });
 export const galleryQuery = (s: GallerySearch) => queryOptions({ queryKey: ["gallery", s], staleTime: 10 * 60_000, queryFn: () => getGallery({ data: s }) });

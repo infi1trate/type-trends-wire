@@ -99,7 +99,8 @@ export function AccentLine({ a }: { a: AccentNear }) {
   </p>;
 }
 export function BrandData({ domain }: { domain: string }) {
-  return <Later id="brand-data-later" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
+  // C1 · the placeholder reaches past the screen, so the record landing never pushes the footer bar (it moved by 0.02).
+  return <Later id="brand-data-later" reserve="100dvh" shapes={[{ kind: "block", height: 96 }, ...rowsShape(8)]}><BrandDataBody domain={domain} /></Later>;
 }
 function BrandDataBody({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(librarySiteQuery(domain)), { data: s } = useSuspenseQuery(brandSurfacesQuery(domain)), { data: card } = useSuspenseQuery(brandCardQuery(domain));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EditRow, StoredStory } from "../stories/edits";
-import { MORNING_BASELINE, MORNING_FIRST_DAY, isEditionDay, morningArchive, morningEdition, openingChain, type MorningRaw } from "./morning";
+import { MORNING_BASELINE, MORNING_FIRST_DAY, isEditionDay, morningArchive, morningEdition, morningHead, openingChain, type MorningRaw } from "./morning";
 import { morningRss } from "./morning-rss";
 
 let n = 0;
@@ -76,5 +76,19 @@ describe("Morning Line", () => {
     expect(xml).not.toContain("/morning/2026-11-20<");
     expect(xml).toContain("<pubDate>Thu, 19 Nov 2026 00:00:00 GMT</pubDate>");
     expect((xml.match(/<item>/g) ?? []).length).toBe(1);
+  });
+  it("C1 · the edition head equals the full edition's head fields, and a limited archive is the same newest prefix", () => {
+    const raw: MorningRaw = { edits: [], lines: [], stories: [
+      ...[1, 2, 3].map(i => story({ id: `h${i}`, score: 50 + i, happened_at: `2026-11-16T0${i}:00:00Z` })),
+      ...[1, 2, 3, 4].map(i => story({ id: `t${i}`, score: 60 + i, happened_at: `2026-11-18T0${i}:00:00Z` })),
+      story({ id: "only", happened_at: "2026-11-17T08:00:00Z" }),
+    ] };
+    for (const day of ["2026-11-16", "2026-11-17", "2026-11-18"]) {
+      const e = morningEdition(raw, day, NOW, opts);
+      expect(morningHead(raw, day, NOW)).toEqual({ title: e.title, href: e.href, lead: e.lead, count: e.count, thin: e.thin });
+    }
+    const all = morningArchive(raw, NOW);
+    expect(all.length).toBe(3);
+    expect(morningArchive(raw, NOW, 2)).toEqual(all.slice(0, 2));
   });
 });

@@ -76,10 +76,13 @@ export async function loadBrandCard(domain: string): Promise<BrandCardView | nul
   // W3a · the nearest museum work is read beside the record (never stored in it); nothing until the works clear the line, and a failed
   // read draws no line. W3c · it is now the work that holds the brand's accent (one colour), not the nearest whole palette, which
   // matched no brand under the W3b rules; `brandArt` stays for the old study's code.
-  const tiles = tilesWithin(domain);
+  // C1 · one wave: the stored card is read beside the site row (it was read after it, a second round trip on a cold server); it is
+  // only used once the site row says the brand is active.
+  const tiles = tilesWithin(domain), cardP = brandCard(domain);
+  cardP.catch(() => undefined);
   const [site, pics, art] = await Promise.all([siteOf(domain), picsFor(domain), (MUSEUM_SHOWN ? import("./art/read.server").then(m => m.brandAccentArt(domain)).catch(() => null) : Promise.resolve(null))]);
   if (!site?.active) return null;
-  const [card, strip] = await Promise.all([brandCard(domain), tiles]);
+  const [card, strip] = await Promise.all([cardP, tiles]);
   return card ? { ...card, icon: pics.icon, cover: coverOf(domain, pics), tiles: strip, ...(art ? { accentArt: art } : {}) } : null;
 }
 /** Deferred: every move with its before/after. */

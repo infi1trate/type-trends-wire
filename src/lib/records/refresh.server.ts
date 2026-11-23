@@ -41,6 +41,7 @@ async function sharedBody(k: SharedKey): Promise<unknown> {
     case "quarter-series": return (await import("../front/front.server")).quarterSeries.compute();
     case "front-tape": return (await import("../front/tape.server")).frontTapeRecord.compute();
     case "front-cards": return (await import("../front/front.server")).frontCards.compute();
+    case "front-leads": return (await import("../front/front.server")).computeFrontLeads();
     case "library": return (await import("../library-read.server")).computeLibrary();
   }
 }
@@ -97,7 +98,7 @@ const DEFAULT_DEPS: RefreshDeps = {
  *  collections 1.9 s, a collection or the gallery under 0.6 s, brand-similar 1.4 s, brand-sector 11 s (the same studies input + 1.6 s). */
 export const STEP_ESTIMATE_MS: Readonly<Record<string, number>> = {
   metas: 1_500, sites: 1_500, "page-keys": 1_500, "card-chunk": 2_500,
-  "site-index": 5_000, signals: 5_000, rebrands: 6_000, "moving-runs": 4_000, "quarter-series": 4_000, "front-tape": 8_000, "front-cards": 6_000, library: 4_000,
+  "site-index": 5_000, signals: 5_000, rebrands: 6_000, "moving-runs": 4_000, "quarter-series": 4_000, "front-tape": 8_000, "front-cards": 6_000, "front-leads": 8_000, library: 4_000,
   "brand-similar": 4_000, "brand-sector": 12_000, page: 5_000,
   "page:brands-index": 11_000, "page:data-index": 11_000, "page:data-story": 11_000, "page:digest": 5_000, "page:collections": 3_000, "page:collection": 2_000, "page:gallery": 2_000,
 };
@@ -273,21 +274,22 @@ export async function refreshAfterJob(job: string, jobStartedAt: number, o: { do
   } catch (e) { console.error("records refresh failed", job, short(e)); return null; }
 }
 
-/** E3b · the front page's two records, written by the story build right after it runs (it has just recorded the integrity checks and
+/** E3b · the front page's records (C1: three, with the lead pictures), written by the story build right after it runs (it has just recorded the integrity checks and
  *  stored the day's stories): the tape block and Also today's card pictures. Each is cut off at the deadline; never throws. */
-export type FrontRecordDeps = { tape: () => Promise<unknown>; cards: () => Promise<unknown>; write: (rows: { key: string; body: unknown; source: string }[]) => Promise<string[]>; fresh?: () => Promise<unknown>; now?: () => number };
+export type FrontRecordDeps = { tape: () => Promise<unknown>; cards: () => Promise<unknown>; /** C1 · the lead pictures (optional so older callers keep their two). */ leads?: () => Promise<unknown>; write: (rows: { key: string; body: unknown; source: string }[]) => Promise<string[]>; fresh?: () => Promise<unknown>; now?: () => number };
 export async function writeFrontRecords(job: string, deadline: number, deps?: FrontRecordDeps): Promise<string[]> {
   try {
     const d: FrontRecordDeps = deps ?? {
       tape: async () => (await import("../front/tape.server")).frontTapeRecord.compute(),
       cards: async () => (await import("../front/front.server")).frontCards.compute(),
+      leads: async () => (await import("../front/front.server")).computeFrontLeads(),
       write: async rows => (await import("./store.server")).writeRecords(rows),
       // The build just stored stories: read them fresh, not this instance's minute-old copy.
       fresh: async () => (await import("../stories/read.server")).deskIndex(),
     };
     const now = d.now ?? Date.now, out: string[] = [];
     if (d.fresh) { const r = await within(deadline - now(), d.fresh()); if (r === TIMED_OUT) return out; }
-    for (const [key, f] of [["front-tape", d.tape], ["front-cards", d.cards]] as const) {
+    for (const [key, f] of [["front-tape", d.tape], ["front-cards", d.cards], ...(d.leads ? [["front-leads", d.leads] as const] : [])] as const) {
       if (deadline - now() < 1_000) break;
       const body = await within(deadline - now(), f());
       if (body === TIMED_OUT) break;
