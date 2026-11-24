@@ -41,7 +41,7 @@ const NO_STORE = { "cache-control": "no-store" };
 const j = (status: number, body: unknown) => Response.json(body, { status, headers: NO_STORE });
 export type AdminDeps = { authorize: (r: Request) => Promise<boolean>; store: KeyStore; now: () => Date };
 
-/** POST /api/public/mcp-keys — crawler-secret auth BEFORE the body is read; list never returns hashes. */
+/** POST /api/public/mcp-keys — owner key-admin secret auth BEFORE the body is read; list never returns hashes. */
 export async function handleKeyAdmin(request: Request, deps?: AdminDeps): Promise<Response> {
   if (request.method !== "POST") return j(405, { error: "method_not_allowed" });
   const d = deps ?? await prodAdminDeps();
@@ -83,6 +83,18 @@ export async function adminKeyStore(): Promise<KeyStore> {
   };
 }
 async function prodAdminDeps(): Promise<AdminDeps> {
-  const { authenticateQueueCaller } = await import("../crawl-requests.server");
-  return { authorize: authenticateQueueCaller, store: await adminKeyStore(), now: () => new Date() };
+  return { authorize: authorizeKeyAdmin, store: await adminKeyStore(), now: () => new Date() };
+}
+
+/** Key admin needs its own owner secret (MCP_ADMIN_SECRET), never the crawler's; unset means locked. */
+export async function authorizeKeyAdmin(request: Request): Promise<boolean> {
+  const expected = process.env["MCP_ADMIN_SECRET"];
+  if (!expected || expected.length < 24) return false;
+  const given = /^Bearer\s+(.+)$/i.exec(request.headers.get("authorization") ?? "")?.[1]?.trim();
+  if (!given) return false;
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([crypto.subtle.digest("SHA-256", enc.encode(given)), crypto.subtle.digest("SHA-256", enc.encode(expected))]);
+  const x = new Uint8Array(a), y = new Uint8Array(b); let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
 }

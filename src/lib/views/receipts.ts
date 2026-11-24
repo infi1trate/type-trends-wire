@@ -139,6 +139,8 @@ export function figureReceipt(study: { slug: string; number: number; headline: s
 }
 /** One table as CSV (RFC 4180 quoting). */
 export function tableCsv(t: Pick<ReceiptTable, "head" | "rows">): string {
-  const cell = (v: string) => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  // Neutralise spreadsheet formulas (=, +, -, @, tab, CR) unless the cell is a plain number.
+  const safe = (v: string) => (/^[=+\-@\t\r]/.test(v) && !/^[+-]?\d[\d,]*(\.\d+)?%?$/.test(v) ? `'${v}` : v);
+  const cell = (raw: string) => { const v = safe(raw); return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   return [t.head, ...t.rows].map(r => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }
