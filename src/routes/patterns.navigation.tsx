@@ -9,6 +9,7 @@ import { Later, ROW, TitleBlock } from "@/components/read/Later";
 import { NavPatternsView } from "@/components/read/Structure";
 import { viewSearch, type ViewSearch } from "@/lib/views/search";
 import { DataShell } from "@/components/dataview/DataShell";
+import { dataViewHead, DATA_VIEW_HEADERS } from "@/lib/views/head";
 
 // J1 · the one new page: the words in top navigation over five years and the sign-in split, read from stored counts only.
 const TITLE = `The words in top navigation — patterns · ${BRAND_NAME}`;
@@ -16,8 +17,10 @@ const DESC = "Which words lead the top navigation of the homepages slug reads, n
 export const Route = createFileRoute("/patterns/navigation")({
   staticData: { views: true },
   validateSearch: (s: Record<string, unknown>): ViewSearch => viewSearch(s),
-  loader: ({ context }) => { void context.queryClient.prefetchQuery(navPatternsQuery()); },
-  head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/patterns/navigation` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/patterns/navigation` }, ...fontLinks()] }),
+  loaderDeps: ({ search }) => ({ data: search.view === "data" }),
+  loader: ({ context, deps }) => { void context.queryClient.prefetchQuery(navPatternsQuery()); return { data: deps.data }; },
+  headers: ({ loaderData }) => (loaderData?.data ? DATA_VIEW_HEADERS : undefined),
+  head: ({ loaderData }) => loaderData?.data ? dataViewHead({ type: "pattern", id: "navigation" }, "Navigation words") : ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { property: "og:type", content: "article" }, { property: "og:url", content: `${SITE_URL}/patterns/navigation` }, { name: "twitter:card", content: "summary" }], links: [{ rel: "canonical", href: `${SITE_URL}/patterns/navigation` }, ...fontLinks()] }),
   component: NavPage,
   errorComponent: () => <DigestNotFound v="patterns.failed" />,
 });

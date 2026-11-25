@@ -254,7 +254,7 @@ const qIndex = (q: string) => Number(q.slice(0, 4)) * 4 + Number(q.slice(5)) - 1
  *  quarters of the target (earlier first on a tie); null when none. */
 export function nearestRead(rows: readonly SeriesRow[], signal: string, vp: Viewport, target: string, within = 2): SeriesRow | null {
   const t = qIndex(target);
-  return rows.filter(r => r.signal === signal && r.viewport === vp && r.scope === "all" && r.n_read >= STRUCTURE_FLOOR && Math.abs(qIndex(r.quarter) - t) <= within)
+  return covered(rows.filter(r => r.scope === "all")).filter(r => r.signal === signal && r.viewport === vp && r.scope === "all" && r.n_read >= STRUCTURE_FLOOR && Math.abs(qIndex(r.quarter) - t) <= within)
     .sort((a, b) => Math.abs(qIndex(a.quarter) - t) - Math.abs(qIndex(b.quarter) - t) || a.quarter.localeCompare(b.quarter))[0] ?? null;
 }
 
@@ -267,3 +267,11 @@ export function structureDeskLine(f: StructureFacts): string {
 }
 /** The health endpoint's library line addition (3.2). */
 export const structureHealthLine = (f: Pick<StructureFacts, "fresh_desktop" | "fresh_phone">) => `structure read in the last ${STRUCTURE_FRESH_DAYS} days: ${f.fresh_desktop} brands on desktop, ${f.fresh_phone} on a phone`;
+
+/** Well covered: STRUCTURE_FLOOR brands read and at least a quarter of the most brands this signal was ever read on, so the live-only
+ *  quarters between twice-yearly archive copies (10–15 brands) never draw a zig-zag against archive quarters (150+). */
+export function covered<T extends { signal: string; viewport: string; n_read: number }>(rows: readonly T[]): T[] {
+  const max = new Map<string, number>();
+  for (const r of rows) { const k = `${r.signal}|${r.viewport}`; max.set(k, Math.max(max.get(k) ?? 0, r.n_read)); }
+  return rows.filter(r => r.n_read >= Math.max(STRUCTURE_FLOOR, 0.25 * (max.get(`${r.signal}|${r.viewport}`) ?? 0)));
+}

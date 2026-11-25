@@ -109,3 +109,10 @@ describe("desk and health lines", () => {
     expect(out.map(x => x.signal)).toEqual(["page:long"]);
   });
 });
+describe("well-covered quarters", () => {
+  it("drops live-only quarters between archive quarters", async () => {
+    const { covered } = await import("./structure");
+    const row = (quarter: string, n_read: number) => ({ signal: "navword:ai", viewport: "desktop", scope: "all", quarter, n_read, n_yes: 1 });
+    expect(covered([row("2025Q1", 170), row("2025Q2", 16), row("2026Q4", 204)]).map(r => r.quarter)).toEqual(["2025Q1", "2026Q4"]);
+  });
+});

@@ -135,6 +135,7 @@ const COLUMNS: Row[] = [
   ["hero", "Hero", "What fills the first screen: image, video, 3D or nothing.", "From the latest confirmed capture.", "m-library"],
   ["whitespace", "Space", "How much of the first screen is empty.", "Higher means a more open layout.", "m-library"],
   ["last-change", "Change", "Date of the latest confirmed change.", "Recent dates mean the site is actively evolving.", "m-library"],
+  ["structure", "Structure columns", "From the homepage's stored structure reading: the primary ask on the first screen, top navigation items, sections, and the phone navigation pattern. Section names are given by rule.", "“not read” means the page has not been read for structure yet, never zero.", "m-library"],
   ["events-30d", "Events, 30 days", "Confirmed changes in the last 30 days.", "Higher means more design activity.", "m-library"],
   ["snapshotted", "Snapshotted", "Sites with at least one successful capture.", "Below the site count means some captures are still pending.", "m-library"],
   ["dark-share", "Dark", "Share of sites using a dark theme.", "Compare sectors to see whose house style is dark.", "m-library"],

@@ -24,7 +24,7 @@ export async function refreshStructure(o: { budgetMs?: number; now?: () => numbe
     const domains = [...new Set(fresh.map(x => x.domain))], quarters = [...new Set(fresh.map(x => x.quarter))];
     const old = await db.from("library_structure_records").select("domain,viewport,quarter,snapshot_id,source,captured_at,structure_read,record,flags").in("domain", domains).in("quarter", quarters);
     if (old.error) return { ok: false, read, stored, series: null, done: false, code: "records_read_failed" };
-    const winners = pickRows([...((old.data ?? []) as unknown as RecordRow[]), ...fresh]).filter(w => fresh.some(f => f.snapshot_id === w.snapshot_id && f.domain === w.domain && f.viewport === w.viewport));
+    const winners = pickRows([...fresh, ...((old.data ?? []) as unknown as RecordRow[])]).filter(w => fresh.some(f => f.snapshot_id === w.snapshot_id && f.domain === w.domain && f.viewport === w.viewport));
     if (winners.length) {
       const w = await db.from("library_structure_records").upsert(winners.map(x => ({ ...x, record: x.record as never, flags: x.flags as never, derived_at: new Date(now()).toISOString() })), { onConflict: "domain,viewport,quarter" });
       if (w.error) return { ok: false, read, stored, series: null, done: false, code: "records_write_failed" };

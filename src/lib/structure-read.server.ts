@@ -1,7 +1,7 @@
 // J1 + M1 · page reads of the stored structure rows (anonymous SELECT only; nothing is derived per view). Library-wide counts are
 // held in memory for ten minutes so a page view costs at most one small read.
 import { supabaseAnon } from "./mcp/supabase";
-import { STRUCTURE_SIGNALS, STRUCTURE_BY_KEY, isStructureKey, shareOf, type SeriesRow, type StructureRecord, type Viewport } from "./structure";
+import { covered, STRUCTURE_SIGNALS, STRUCTURE_BY_KEY, isStructureKey, shareOf, type SeriesRow, type StructureRecord, type Viewport } from "./structure";
 
 export type BrandStructure = { domain: string; quarter: string | null; desktop: { record: StructureRecord; captured_at: string; source: string } | null; phone: { record: StructureRecord; captured_at: string; source: string } | null };
 type RecRow = { viewport: string; quarter: string; captured_at: string; source: string; record: unknown };
@@ -46,7 +46,7 @@ export async function loadStructureIndex(scope: string): Promise<{ scope: string
   const rows = STRUCTURE_SIGNALS.map(sig => {
     const vp: Viewport = sig.viewports.includes("desktop") ? "desktop" : "mobile";
     const d = q ? at.get(`${sig.key}|desktop|${q}`) : undefined, p = q ? at.get(`${sig.key}|mobile|${q}`) : undefined;
-    const trail = s.filter(r => r.signal === sig.key && r.viewport === vp && r.n_read >= 15).sort((a, b) => a.quarter.localeCompare(b.quarter));
+    const trail = covered(s.filter(r => r.signal === sig.key && r.viewport === vp)).sort((a, b) => a.quarter.localeCompare(b.quarter));
     const now = q ? shareOf(at.get(`${sig.key}|${vp}|${q}`)) : null, back = q ? shareOf(nearestRead(s, sig.key, vp, quarterBack(q, 4))) : null;
     return { key: sig.key, name: sig.name, meaning: sig.meaning, group: sig.group, source: sig.source, desktop: shareOf(d), phone: shareOf(p), nDesktop: d?.n_read ?? 0, nPhone: p?.n_read ?? 0, change: now != null && back != null ? now - back : null, points: trail.map(r => r.n_yes / r.n_read), since: trail[0]?.quarter ?? null };
   });
@@ -62,7 +62,8 @@ export async function loadStructureSignal(key: string): Promise<StructureSignalP
   const sig = STRUCTURE_BY_KEY.get(key)!, db = supabaseAnon();
   const all = await scopeSeries("all"), q = latestOf(all);
   const mine = all.filter(r => r.signal === key);
-  const qs = [...new Set(mine.map(r => r.quarter))].sort();
+  const ok = new Set(covered(mine).map(r => `${r.viewport}|${r.quarter}`)), latestQ = q;
+  const qs = [...new Set(mine.map(r => r.quarter))].sort().filter(qq => qq === latestQ || ok.has(`desktop|${qq}`) || ok.has(`mobile|${qq}`));
   const at = (vp: string, qq: string) => mine.find(r => r.viewport === vp && r.quarter === qq) ?? null;
   const trail = qs.map(qq => ({ quarter: qq, desktop: shareOf(at("desktop", qq)), phone: shareOf(at("mobile", qq)), n: Math.max(at("desktop", qq)?.n_read ?? 0, at("mobile", qq)?.n_read ?? 0) }));
   const sec = q ? await db.from("library_structure_series").select("scope,viewport,n_read,n_yes").eq("signal", key).eq("quarter", q).not("scope", "like", "cat:%").neq("scope", "all") : { data: [], error: null };

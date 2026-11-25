@@ -3,7 +3,7 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { brandStructureQuery, navPatternsQuery, scopeStructureQuery, structureIndexQuery, structureSignalQuery } from "@/lib/data";
-import { ASK_NAME, NAV_WORDS, NOT_READ, PHONE_NAV_NAME, ROLE_NAME, SIGNIN_WORDINGS, STRUCTURE_FLOOR, TOO_FEW, desktopPhone, navWordKey, pctText, quarterBack, quarterLabel, shareOf, signinKey, nearestRead, type SeriesRow, type StructureRecord } from "@/lib/structure";
+import { ASK_NAME, NAV_WORDS, NOT_READ, PHONE_NAV_NAME, ROLE_NAME, SIGNIN_WORDINGS, STRUCTURE_FLOOR, TOO_FEW, desktopPhone, navWordKey, pctText, quarterBack, quarterLabel, shareOf, signinKey, nearestRead, covered, type SeriesRow, type StructureRecord } from "@/lib/structure";
 import { sectorName } from "@/lib/labels";
 import { Bars, QuarterLine, Sparkline } from "@/components/chartkit";
 import { INK, MUTED, PAGE, RULE } from "@/components/chartkit/ink";
@@ -124,7 +124,7 @@ export function StructureSignalView({ k }: { k: string }) {
     </section>
     <section aria-labelledby="ss-trail">
       <h2 id="ss-trail" className="ed-h3">By quarter</h2>
-      {pts.length >= 2 ? <div className="mt-3"><QuarterLine look="read" series={[{ id: k, label: data.name, points: pts }]} y={{ label: "Share of brands read", format: x => pctText(x) }} title={`${data.name}, ${vp === "desktop" ? "desktop" : "phone"}`} note={`Quarters with ${STRUCTURE_FLOOR} or more brands read.`} source="Stored homepage captures and archive history" /></div>
+      {pts.length >= 2 ? <div className="mt-3"><QuarterLine look="read" series={[{ id: k, label: vp === "desktop" ? "Desktop" : "Phone", points: pts }]} y={{ label: "Share of brands read", format: x => pctText(x) }} title={`${data.name}, ${vp === "desktop" ? "desktop" : "phone"}`} note={`Quarters with ${STRUCTURE_FLOOR} or more brands read and at least a quarter of the most ever read; archived copies come about twice a year.`} source="Stored homepage captures and archive history" /></div>
         : <p className="ed-small mt-3">{data.source === "history" ? TOO_FEW : `This reading started ${pts[0] ? `in ${quarterLabel(pts[0].x)}` : "with the newest captures"}; a line needs two quarters.`}</p>}
     </section>
     <section aria-labelledby="ss-sectors">
@@ -149,9 +149,10 @@ export function NavPatternsView({ look = "read" }: { look?: "read" | "data" }) {
   const at = (rows: SeriesRow[], key: string, qq: string | null) => (qq ? rows.find(r => r.signal === key && r.quarter === qq) ?? null : null);
   const thenQ = back ? nearestRead(data.words, navWordKey("pricing"), "desktop", back)?.quarter ?? null : null;
   const words = NAV_WORDS.map(w => { const k = navWordKey(w), now = shareOf(at(data.words, k, q)), then = shareOf(at(data.words, k, thenQ));
-    const trail = data.words.filter(r => r.signal === k && r.n_read >= STRUCTURE_FLOOR).sort((a, b) => a.quarter.localeCompare(b.quarter)).map(r => r.n_yes / r.n_read);
+    const trail = covered(data.words.filter(r => r.signal === k)).sort((a, b) => a.quarter.localeCompare(b.quarter)).map(r => r.n_yes / r.n_read);
     return { w, now, then, change: now != null && then != null ? now - then : null, trail }; }).sort((a, b) => (b.now ?? -1) - (a.now ?? -1));
-  const qs = [...new Set(data.signin.map(r => r.quarter))].sort().filter(qq => (at(data.signin, signinKey("log in"), qq)?.n_read ?? 0) >= STRUCTURE_FLOOR);
+  const okQ = new Set(covered(data.signin.filter(r => r.signal === signinKey("log in"))).map(r => r.quarter));
+  const qs = [...new Set(data.signin.map(r => r.quarter))].sort().filter(qq => okQ.has(qq));
   const split = qs.map(qq => ({ q: qq, parts: SIGNIN_WORDINGS.map(w => ({ w, s: shareOf(at(data.signin, signinKey(w), qq)) ?? 0 })) }));
   const word = (w: string) => w === "ai" ? "AI" : w.replace(/^./, c => c.toUpperCase());
   return <div className="space-y-12" data-nav-patterns={look}>
