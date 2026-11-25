@@ -1,3 +1,9 @@
+# R1 · Category map (25 Nov)
+- [ ] Source map, pure taxonomy/labels/coverage rules and one additive fill migration — database approval required
+- [ ] Brand kicker, sector/index filters and Terminal columns; existing routes and sector-wide signals retained
+- [ ] Brand JSON/MCP fields, scout-door validation and engineering coverage summary
+- [ ] Real screenshots at 1440/390, full suite and exact migration report; no deploy
+
 # B1 · Chart repair (25 Nov)
 - [ ] Shared pointer, touch and keyboard readouts across chart kit, study figures and Terminal
 - [ ] Container fit, readable axes and soft-object endpoint labels
