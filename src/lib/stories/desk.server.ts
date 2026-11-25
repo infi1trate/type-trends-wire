@@ -78,7 +78,22 @@ export type NewsroomStore = {
   textRestore?: (id: string) => Promise<{ restored: string[] }>;
 };
 export type DeskStore = NewsroomStore & { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
-export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
+/** "owner" = accepted by the staff password: the call is the owner's whatever its body says. true = the crawler secret (actor from the body). */
+export type DeskAuth = boolean | "owner";
+export type DeskDeps = { authorize: (r: Request) => Promise<DeskAuth>; store: DeskStore; allow: (ip: string) => boolean; now: () => number; failures?: FailGate };
+/** Refused-bearer limit per IP: after DESK_FAIL_MAX refusals in DESK_FAIL_WINDOW_MS, 429 for the rest of that window (in memory, per instance). */
+export const DESK_FAIL_MAX = 8, DESK_FAIL_WINDOW_MS = 10 * 60_000;
+export type FailGate = { blocked: (ip: string, now: number) => boolean; fail: (ip: string, now: number) => void };
+export function createFailGate(max = DESK_FAIL_MAX, windowMs = DESK_FAIL_WINDOW_MS): FailGate {
+  const m = new Map<string, { start: number; n: number }>();
+  const cur = (ip: string, now: number) => { const e = m.get(ip); if (e && now - e.start < windowMs) return e; if (e) m.delete(ip); return null; };
+  return {
+    blocked: (ip, now) => (cur(ip, now)?.n ?? 0) >= max,
+    fail: (ip, now) => { if (m.size > 5000) m.clear(); const e = cur(ip, now); if (e) e.n++; else m.set(ip, { start: now, n: 1 }); },
+  };
+}
+const failGate = createFailGate();
+const NO_FAIL_GATE: FailGate = { blocked: () => false, fail: () => {} };
 const limiter = createRateLimiter(DESK_RATE_PER_MIN, 60_000);
 
 type Outcome = { status: number; body: unknown; decision: LogRow["decision"]; reason?: string | null; edit_id?: number | null; detail?: Record<string, unknown> };
@@ -98,8 +113,11 @@ const subjectOf = (b: DeskBody): string | null =>
 export async function handleDesk(request: Request, deps?: DeskDeps): Promise<Response> {
   if (request.method !== "POST") return j(405, { error: "method_not_allowed" });
   const d = deps ?? await prodDeps();
-  if (!d.allow(ipOf(request))) return j(429, { error: "rate_limited" });
-  if (!(await d.authorize(request))) return j(401, { error: "unauthorized" });
+  const ip = ipOf(request), fg = d.failures ?? (deps ? NO_FAIL_GATE : failGate);
+  if (!d.allow(ip)) return j(429, { error: "rate_limited" });
+  if (fg.blocked(ip, d.now())) return j(429, { error: "rate_limited" });
+  const auth = await d.authorize(request);
+  if (!auth) { fg.fail(ip, d.now()); return j(401, { error: "unauthorized" }); }
   // N4 · a review may carry one small picture; every other action keeps the 8 KB limit (checked once the action is known).
   const text = await bounded(request, DESK_REVIEW_BODY_LIMIT);
   if (text === null) return refuse(d, 413, "unknown", "unknown", "The body is larger than the desk accepts.", { error: "body_too_large" });
@@ -108,7 +126,9 @@ export async function handleDesk(request: Request, deps?: DeskDeps): Promise<Res
     const o = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
     return refuse(d, 413, typeof o["actor"] === "string" ? String(o["actor"]).slice(0, 40) : "unknown", typeof o["action"] === "string" ? String(o["action"]).slice(0, 40) : "unknown", "The body is larger than the desk accepts.", { error: "body_too_large" });
   }
-  const r = await doorCall(d, raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {});
+  const obj = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  // The staff password is the owner's: force the actor whatever the body names.
+  const r = await doorCall(d, auth === "owner" ? { ...obj, actor: "owner" } : obj);
   return j(r.status, r.body);
 }
 const logWith = (d: DeskDeps) => async (r: LogRow): Promise<number | null> => { if (!d.store.log) return null; const id = await d.store.log(r).catch(() => { console.error("desk_log_failed"); return null; }); return typeof id === "number" ? id : null; };
@@ -397,9 +417,9 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
 
 /** The real deps (exported for hand-run checks that supply their own authorize). */
 export async function prodDeps(): Promise<DeskDeps> {
-  const [{ authenticateQueueCaller }, { supabaseAdmin: db }, { loadQueue }] = await Promise.all([import("../crawl-requests.server"), import("@/integrations/supabase/client.server"), import("./page.server")]);
+  const [{ authenticateQueueCaller }, { authenticateStaff }, { supabaseAdmin: db }, { loadQueue }] = await Promise.all([import("../crawl-requests.server"), import("../staff-auth.server"), import("@/integrations/supabase/client.server"), import("./page.server")]);
   return {
-    authorize: authenticateQueueCaller, allow: ip => limiter(ip), now: Date.now,
+    authorize: async r => (await authenticateQueueCaller(r)) || ((await authenticateStaff(r)) ? "owner" : false), allow: ip => limiter(ip), now: Date.now,
     store: {
       exists: async id => { const { data, error } = await db.from("stories").select("id").eq("id", id).maybeSingle(); if (error) throw new Error("story_lookup_failed"); return !!data; },
       insertEdit: async e => { const { data, error } = await db.from("story_edits").insert(e as never).select("id,story_id,action,payload,note,at").single(); if (error || !data) throw new Error("edit_insert_failed"); return data as unknown as EditRow; },

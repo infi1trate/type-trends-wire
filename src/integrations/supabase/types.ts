@@ -4060,6 +4060,24 @@ export type Database = {
           },
         ]
       }
+      staff_secrets: {
+        Row: {
+          id: number
+          secret_sha256: string
+          set_at: string
+        }
+        Insert: {
+          id: number
+          secret_sha256: string
+          set_at?: string
+        }
+        Update: {
+          id?: number
+          secret_sha256?: string
+          set_at?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           basis: string | null

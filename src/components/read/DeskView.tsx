@@ -102,7 +102,7 @@ export function DeskView({ q, onDay }: { q: DeskQueue; onDay: (d: string | null)
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Desk · {q.day ?? "last 7 days"}</p>
       <h1 className="ed-cover mt-3">The story queue</h1>
-      <p className="ed-standfirst mt-5">What the engine ran, what it held and why. Staff only: the editor key opens this page and can pin, kill, correct or restore; every call is logged in the desk log below with who made it.</p>
+      <p className="ed-standfirst mt-5">What the engine ran, what it held and why. Staff only: the password opens this page and can pin, kill, correct or restore; every call is logged in the desk log below with who made it.</p>
       {q.news && <p className="ed-data mt-4" data-news-drops="">Outside news, last 7 days: {q.news.kept} became candidates · {q.news.dropped} dropped ({q.news.drops.bluesky} Bluesky posts · {q.news.drops.no_name} no tracked name in the title · {q.news.drops.no_subject} no design subject)</p>}
       <nav aria-label="Days" className="ed-data mt-6 flex flex-wrap gap-x-1 gap-y-1">
         <button type="button" onClick={() => onDay(null)} aria-current={q.day === null ? "true" : undefined} className={`ed-tap min-h-11 border px-3 ${q.day === null ? "border-ed-ink font-semibold" : "border-transparent"}`}>Last 7 days</button>
@@ -110,7 +110,7 @@ export function DeskView({ q, onDay }: { q: DeskQueue; onDay: (d: string | null)
       </nav>
       {q.db && <DbPanel db={q.db} send={send} />}
       <div className="ed-data mt-6 flex flex-wrap items-center gap-2">
-        <span>Editor key accepted for this tab.</span><button type="button" className="ed-tap min-h-11 border border-ed-ink px-3" onClick={() => setStaffKey(null)}>Lock</button>
+        <span>Open for this tab.</span><button type="button" className="ed-tap min-h-11 border border-ed-ink px-3" onClick={() => setStaffKey(null)}>Lock</button>
       </div>
     </header>
     {sections.map(([title, items, empty]) => <section key={title} aria-labelledby={`desk-${title}`} className="ed-wrap mt-12">

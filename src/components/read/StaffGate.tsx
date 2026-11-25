@@ -13,7 +13,7 @@ export function StaffScreen({ page }: { page: string }) {
       <p className="ed-kicker">{page}</p>
       <h1 className="ed-cover mt-3">Staff only</h1>
       <form className="ed-data mt-8 flex flex-wrap items-center gap-2" onSubmit={async e => { e.preventDefault(); setBusy(true); setErr(await unlockStaff(k)); setBusy(false); }}>
-        <label htmlFor="staff-key">Editor key</label>
+        <label htmlFor="staff-key">Password</label>
         <input id="staff-key" type="password" autoComplete="off" value={k} onChange={e => setK(e.target.value)} className="min-h-11 w-64 border border-ed-ink bg-transparent px-2" />
         <button type="submit" disabled={!k || busy} className="ed-tap min-h-11 border border-ed-ink px-3 disabled:opacity-50">{busy ? voiced("staff.checking") : "Open"}</button>
         {err && <span role="alert">{err}</span>}
