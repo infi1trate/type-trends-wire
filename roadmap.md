@@ -308,3 +308,11 @@
 - [x] 3 ICONS_SHOWN = true (nothing else in site.ts)
 - [x] 4 Removal rewrites stored copies + clears the taking server's copy (icon_remove, art_remove), tests, longest visible
 - [x] 5 Health icons count past 1,000 rows (test at 1,001); other health/desk counts checked; Apple charts in the sources register
+
+## A3 + A4 + leftovers (open)
+- [ ] 1.2 numeric cells / raised percent everywhere / 16 px heading gaps audit
+- [ ] 1.3 layout-shift before/after table; Terminal Library 768 jump
+- [ ] 2.1 shared readout strip for small multiples; 2.3/2.4 readout structure and docking
+- [ ] 3.3 highlight on Signals and sector pages; 3.6 full restraint audit
+- [ ] 4.5 placeholder audit; 4.6 count-up, line draw-in, Copied label
+- [ ] 5.1 before pictures and 768 px set
