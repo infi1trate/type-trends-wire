@@ -1,0 +1,2 @@
+import { createServerFn } from "@tanstack/react-start";
+export const getReferenceKit = createServerFn({ method: "GET" }).handler(async () => (await import("./designer-kit.server")).loadReferenceKit());

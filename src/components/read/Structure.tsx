@@ -138,6 +138,7 @@ export function StructureSignalView({ k }: { k: string }) {
     </section>
     <section aria-labelledby="ss-brands">
       <h2 id="ss-brands" className="ed-h3">Brands with it · {data.brands.length}</h2>
+      <p className="ed-data mt-3"><Link to="/boards/$key" params={{key:k}} className="ed-tap">See every brand that does this →</Link></p>
       {data.brands.length ? <ul className="mt-3">{data.brands.map(b => <li key={b.domain} className="ed-hair flex min-w-0 items-start gap-3 py-2">
         <span className="min-w-0"><Link to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap ed-small font-medium">{b.name}</Link>
           {b.words && <span className="ed-caption block break-words">{b.words.join(" · ")}</span>}</span>

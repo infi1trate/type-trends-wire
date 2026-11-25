@@ -54,6 +54,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
             <p className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Raised href={`/watch/new?add=${encodeURIComponent(p.key)}`}>+ Watch this signal</Raised>
               <AppLink href={p.whoUses} className="ed-tap ed-data">Who uses this well →</AppLink>
+              <Link to="/boards/$key" params={{key:p.key}} className="ed-tap ed-data">See every brand that does this →</Link>
               <AppLink href={p.terminal} className="ed-tap ed-data" {...pr(p.terminal)}>Open in terminal ⇄</AppLink>
             </p>
           </div>

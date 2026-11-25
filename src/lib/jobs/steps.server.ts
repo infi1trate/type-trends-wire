@@ -54,6 +54,7 @@ export async function advanceFollowUps(callStartedAt: number, runners: Record<st
 
 /** The weekly forecast's follow-ups, each the same call the single long request used to make. */
 export const forecastRunners: Record<string, StepRunner> = {
+  "designer-kit": async () => (await import("../designer-kit-refresh.server")).refreshDesignerKit(),
   // J1 · structure records and counts from new HOME captures (no AI; resumes from its bookmark).
   // B2 · then the lead-and-lag counts and (Y1) the evidence desk's dossiers (stored site history, no AI); a failure there never fails the structure step.
   structure: async () => { const s = await (await import("../structure.server")).refreshStructure(); const leadlag = await (await import("../leadlag.server")).refreshLeadLag().catch(() => ({ ok: false, code: "leadlag_failed" })); const evidence = await (await import("../evidence/evidence.server")).buildDossiers().catch(() => ({ built: 0, error: "evidence_failed" })); return { ...s, leadlag, evidence }; },

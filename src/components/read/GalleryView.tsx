@@ -29,6 +29,7 @@ export function GalleryView({ search }: { search: GallerySearch }) {
       <h1 className="ed-cover mt-3">{p ? p.name : "Patterns, seen on the page"}</h1>
       <p className="ed-standfirst mt-5 max-w-[62ch]">{p ? `Every stored capture showing ${p.name.toLowerCase()}, newest first. Open a tile for the brand.` : "Stored captures of tracked homepages that show a headline pattern, newest first. Filter by pattern, period and how it was read; open a tile for the brand."}</p>
       {!p && <p className="ed-small mt-3" data-nav-patterns-link=""><Link to="/patterns/navigation" className="ed-tap font-semibold">The words in top navigation, over five years →</Link></p>}
+      <p className="ed-small mt-3"><Link to="/boards" className="ed-tap">Reference boards · see every brand →</Link></p>
     </header>
     <section aria-label="Filters" className="ed-wrap mt-8">
       <RuleBox className="p-4">

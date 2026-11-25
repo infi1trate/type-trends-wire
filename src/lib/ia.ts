@@ -201,8 +201,8 @@ export const VIEW_NAME = { read: "Read", data: "Data" } as const;
 /** The switch's two words, the same on every page: on an object page "Terminal" is its Data view. */
 export const MODE_NAME: Record<Mode, string> = { read: "Read", terminal: "Terminal" };
 /** Pages that are not objects but keep a Read view and a Data view at one address: leading indicators (W2) and the colophon (L1). */
-export const VIEW_PAGES = ["/signals/leading", "/colophon"] as const;
-const isViewPage = (pathname: string) => (VIEW_PAGES as readonly string[]).includes(pathname);
+export const VIEW_PAGES = ["/signals/leading", "/colophon", "/boards", "/compare"] as const;
+const isViewPage = (pathname: string) => (VIEW_PAGES as readonly string[]).includes(pathname) || pathname.startsWith("/boards/");
 /** True when the address shows an object's Data view (or a view page's, which shares the model). */
 export const isDataView = (pathname: string, search: Record<string, unknown> = {}) => search["view"] === "data" && (!!objectOf(pathname) || isViewPage(pathname));
 /** Old terminal object views → the object's one address in its Data view, keeping every other parameter; null for section views. */
@@ -242,7 +242,7 @@ export function toggleHref(pathname: string, search: Record<string, unknown> = {
   const obj = objectOf(pathname);
   if (obj) return search["view"] === "data" ? readHref(obj, search) : dataHref(obj, search);
   // W2 + L1: view pages keep one address; the switch moves between their Read view and their Data view.
-  if (isViewPage(pathname)) return search["view"] === "data" ? pathname : `${pathname}?view=data`;
+  if (isViewPage(pathname)) return `${pathname}${qs({ ...keepParams(search, SWITCH_DROPS), ...(search["view"] === "data" ? {} : {view:"data"}) })}`;
   if (modeOf(pathname, search) === "terminal") {
     if (seg[0] === "library" && seg[1]) return `${brandPath(seg[1])}${qs({ sector })}`;
     const objHref = terminalObjectHref(search);
@@ -353,6 +353,9 @@ export const SURFACES: Record<string, Surface> = {
   "brands.$domain": S("brands", "read", "shown", "Brand object page; links to its dense terminal record."),
   "library.$domain": S("brands", "terminal", "shown", "Dense brand record (Terminal view of a brand)."),
   "patterns.index": S("patterns", "read", "shown", "The pattern gallery: a wall of stored captures showing headline patterns, filters in the URL."),
+  "boards.index": S("patterns", "both", "shown", "Reference boards from stored brand traits; index needs fifteen brands."),
+  "boards.$key": S("patterns", "both", "shown", "Every current adopter of a signal, with URL filters and removable credited crops."),
+  "compare": S("brands", "both", "shown", "Two or three stored brand identities aligned without scores or a winner."),
   "collections.index": S("patterns", "read", "shown", "Numbered collections: saved gallery filters, live at 12 or more tiles."),
   "collections.$slug": S("patterns", "read", "shown", "One collection as a wall, paired with its study or signal."),
   "patterns.navigation": S("patterns", "read", "shown", "The words in top navigation over five years, and how sign-in is worded (J1)."),

@@ -1,0 +1,14 @@
+import { describe,it,expect } from "vitest";
+import { boardMembers,boardIndex,boardCrop,boardCropSection,chooseCompare,sameValues,compareDomains,type KitRecord } from "./designer-kit";
+const row=(domain:string,patch:Partial<KitRecord>={}):KitRecord=>({domain,name:domain,sector:"ai",category:"assistants",subcategory:"coding",headline:null,body:null,theme:null,accent:null,ask:null,captured:"2026-11-25",traits:["nav:has_pricing"],firstSeen:{"nav:has_pricing":"2026-11-25"},structure:null,phone:null,lastChange:null,collections:[],identity:{h1:null,body:null,theme:null,accent:null,palette:[],tags:[],layout:[],receipt:""},...patch});
+describe("F2 reference rules",()=>{
+ it("membership requires the current trait",()=>expect(boardMembers([row("a"),row("b",{traits:[]})],"nav:has_pricing").map(r=>r.domain)).toEqual(["a"]));
+ it("sector filter is exact",()=>expect(boardMembers([row("a"),row("b",{sector:"fintech"})],"nav:has_pricing",{sector:"ai"}).map(r=>r.domain)).toEqual(["a"]));
+ it("category and subcategory filters are exact",()=>expect(boardMembers([row("a"),row("b",{subcategory:"writing"})],"nav:has_pricing",{category:"assistants",sub:"coding"}).map(r=>r.domain)).toEqual(["a"]));
+ it("since filters first-seen dates",()=>expect(boardMembers([row("a"),row("b",{firstSeen:{"nav:has_pricing":"2020-01-01"}})],"nav:has_pricing",{since:"2026-01-01"}).map(r=>r.domain)).toEqual(["a"]));
+ it("the board index requires fifteen brands",()=>{expect(boardIndex(Array.from({length:14},(_,i)=>row(String(i))))).toHaveLength(0);expect(boardIndex(Array.from({length:15},(_,i)=>row(String(i))))[0]?.count).toBe(15);});
+ it("opt-out overrides even an existing stored crop",()=>{const crops=[{domain:"a",section:"nav",viewport:"desktop",captured_at:"2026-11-25",first_seen_at:"2026-11-25",last_seen_at:"2026-11-25",path:"a/nav/x.webp",width:640,height:400,bytes:100,hash:"x"}];expect(boardCrop(crops,row("a"),"nav:has_pricing",true)).toBeNull();expect(boardCrop(crops,row("a"),"nav:has_pricing",false)?.section).toBe("nav");});
+ it("maps structure traits to their relevant crop",()=>{expect(boardCropSection("ask:demo")).toBe("cta");expect(boardCropSection("page:has_pricing_section")).toBe("pricing");expect(boardCropSection("furn:ask_ai")).toBe("nav");});
+ it("comparison permits only two or three unique tracked-domain choices",()=>{expect(chooseCompare(["a","b","c"],"d")).toEqual(["a","b","c"]);expect(chooseCompare(["a","b"],"a")).toEqual(["b"]);expect(compareDomains({a:"stripe.com",b:"stripe.com",c:"linear.app"})).toEqual(["stripe.com","linear.app"]);});
+ it("equal rows match and different or missing readings do not",()=>{expect(sameValues(["demo","demo"])).toBe(true);expect(sameValues(["demo","start"])).toBe(false);expect(sameValues([null,"demo"])).toBe(false);});
+});

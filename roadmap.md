@@ -1,7 +1,7 @@
 # F1 + F2 · Designer’s kit (25 Nov)
 - [x] J1b: navigation menu-button union, chart join note and truncated section stub (31 targeted tests; navigation proof at three widths)
 - [x] F1: brand take-away payloads and copy row (11 targeted checks, real Stripe copy/reset at three widths)
-- [ ] F2: boards with filters, crops, exports and compare selection
+- [x] F2: boards with filters, crops, exports and compare selection (real-data 390/768/1440; weekly stored refresh; no RSS new-adopter contract)
 - [ ] F2: comparison page and entry points
 - [ ] F1: collection exports and missing chart/table actions
 - [ ] F2: Tools front doors; responsive proof, tests and report; no deployment

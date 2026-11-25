@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuditDotpngRouteImport } from './routes/audit[.]png'
 import { Route as ColophonRouteImport } from './routes/colophon'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as DeskRouteImport } from './routes/desk'
 import { Route as EditionsRouteImport } from './routes/editions'
 import { Route as FrontDotjsonRouteImport } from './routes/front[.]json'
@@ -27,6 +28,8 @@ import { Route as AmbientIndexRouteImport } from './routes/ambient.index'
 import { Route as AmbientSetupRouteImport } from './routes/ambient.setup'
 import { Route as AuditIndexRouteImport } from './routes/audit.index'
 import { Route as AuditNewRouteImport } from './routes/audit.new'
+import { Route as BoardsIndexRouteImport } from './routes/boards.index'
+import { Route as BoardsKeyRouteImport } from './routes/boards.$key'
 import { Route as BrandIndexRouteImport } from './routes/brand.index'
 import { Route as BrandColourRouteImport } from './routes/brand.colour'
 import { Route as BrandContainersRouteImport } from './routes/brand.containers'
@@ -127,6 +130,11 @@ const ColophonRoute = ColophonRouteImport.update({
   path: '/colophon',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeskRoute = DeskRouteImport.update({
   id: '/desk',
   path: '/desk',
@@ -200,6 +208,16 @@ const AuditIndexRoute = AuditIndexRouteImport.update({
 const AuditNewRoute = AuditNewRouteImport.update({
   id: '/audit/new',
   path: '/audit/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardsIndexRoute = BoardsIndexRouteImport.update({
+  id: '/boards/',
+  path: '/boards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BoardsKeyRoute = BoardsKeyRouteImport.update({
+  id: '/boards/$key',
+  path: '/boards/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandIndexRoute = BrandIndexRouteImport.update({
@@ -639,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
   '/colophon': typeof ColophonRoute
+  '/compare': typeof CompareRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
   '/front.json': typeof FrontDotjsonRoute
@@ -652,6 +671,7 @@ export interface FileRoutesByFullPath {
   '/what-we-show': typeof WhatWeShowRoute
   '/ambient/setup': typeof AmbientSetupRoute
   '/audit/new': typeof AuditNewRoute
+  '/boards/$key': typeof BoardsKeyRoute
   '/brand/colour': typeof BrandColourRoute
   '/brand/containers': typeof BrandContainersRoute
   '/brand/downloads': typeof BrandDownloadsRoute
@@ -692,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/watch/new': typeof WatchNewRoute
   '/ambient/': typeof AmbientIndexRoute
   '/audit/': typeof AuditIndexRoute
+  '/boards/': typeof BoardsIndexRoute
   '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
@@ -743,6 +764,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
   '/colophon': typeof ColophonRoute
+  '/compare': typeof CompareRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
   '/front.json': typeof FrontDotjsonRoute
@@ -756,6 +778,7 @@ export interface FileRoutesByTo {
   '/what-we-show': typeof WhatWeShowRoute
   '/ambient/setup': typeof AmbientSetupRoute
   '/audit/new': typeof AuditNewRoute
+  '/boards/$key': typeof BoardsKeyRoute
   '/brand/colour': typeof BrandColourRoute
   '/brand/containers': typeof BrandContainersRoute
   '/brand/downloads': typeof BrandDownloadsRoute
@@ -796,6 +819,7 @@ export interface FileRoutesByTo {
   '/watch/new': typeof WatchNewRoute
   '/ambient': typeof AmbientIndexRoute
   '/audit': typeof AuditIndexRoute
+  '/boards': typeof BoardsIndexRoute
   '/brand': typeof BrandIndexRoute
   '/brands': typeof BrandsIndexRoute
   '/chart': typeof ChartIndexRoute
@@ -848,6 +872,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/audit.png': typeof AuditDotpngRoute
   '/colophon': typeof ColophonRoute
+  '/compare': typeof CompareRoute
   '/desk': typeof DeskRoute
   '/editions': typeof EditionsRoute
   '/front.json': typeof FrontDotjsonRoute
@@ -861,6 +886,7 @@ export interface FileRoutesById {
   '/what-we-show': typeof WhatWeShowRoute
   '/ambient/setup': typeof AmbientSetupRoute
   '/audit/new': typeof AuditNewRoute
+  '/boards/$key': typeof BoardsKeyRoute
   '/brand/colour': typeof BrandColourRoute
   '/brand/containers': typeof BrandContainersRoute
   '/brand/downloads': typeof BrandDownloadsRoute
@@ -901,6 +927,7 @@ export interface FileRoutesById {
   '/watch/new': typeof WatchNewRoute
   '/ambient/': typeof AmbientIndexRoute
   '/audit/': typeof AuditIndexRoute
+  '/boards/': typeof BoardsIndexRoute
   '/brand/': typeof BrandIndexRoute
   '/brands/': typeof BrandsIndexRoute
   '/chart/': typeof ChartIndexRoute
@@ -954,6 +981,7 @@ export interface FileRouteTypes {
     | '/'
     | '/audit.png'
     | '/colophon'
+    | '/compare'
     | '/desk'
     | '/editions'
     | '/front.json'
@@ -967,6 +995,7 @@ export interface FileRouteTypes {
     | '/what-we-show'
     | '/ambient/setup'
     | '/audit/new'
+    | '/boards/$key'
     | '/brand/colour'
     | '/brand/containers'
     | '/brand/downloads'
@@ -1007,6 +1036,7 @@ export interface FileRouteTypes {
     | '/watch/new'
     | '/ambient/'
     | '/audit/'
+    | '/boards/'
     | '/brand/'
     | '/brands/'
     | '/chart/'
@@ -1058,6 +1088,7 @@ export interface FileRouteTypes {
     | '/'
     | '/audit.png'
     | '/colophon'
+    | '/compare'
     | '/desk'
     | '/editions'
     | '/front.json'
@@ -1071,6 +1102,7 @@ export interface FileRouteTypes {
     | '/what-we-show'
     | '/ambient/setup'
     | '/audit/new'
+    | '/boards/$key'
     | '/brand/colour'
     | '/brand/containers'
     | '/brand/downloads'
@@ -1111,6 +1143,7 @@ export interface FileRouteTypes {
     | '/watch/new'
     | '/ambient'
     | '/audit'
+    | '/boards'
     | '/brand'
     | '/brands'
     | '/chart'
@@ -1162,6 +1195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/audit.png'
     | '/colophon'
+    | '/compare'
     | '/desk'
     | '/editions'
     | '/front.json'
@@ -1175,6 +1209,7 @@ export interface FileRouteTypes {
     | '/what-we-show'
     | '/ambient/setup'
     | '/audit/new'
+    | '/boards/$key'
     | '/brand/colour'
     | '/brand/containers'
     | '/brand/downloads'
@@ -1215,6 +1250,7 @@ export interface FileRouteTypes {
     | '/watch/new'
     | '/ambient/'
     | '/audit/'
+    | '/boards/'
     | '/brand/'
     | '/brands/'
     | '/chart/'
@@ -1267,6 +1303,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuditDotpngRoute: typeof AuditDotpngRoute
   ColophonRoute: typeof ColophonRoute
+  CompareRoute: typeof CompareRoute
   DeskRoute: typeof DeskRoute
   EditionsRoute: typeof EditionsRoute
   FrontDotjsonRoute: typeof FrontDotjsonRoute
@@ -1280,6 +1317,7 @@ export interface RootRouteChildren {
   WhatWeShowRoute: typeof WhatWeShowRoute
   AmbientSetupRoute: typeof AmbientSetupRoute
   AuditNewRoute: typeof AuditNewRoute
+  BoardsKeyRoute: typeof BoardsKeyRoute
   BrandColourRoute: typeof BrandColourRoute
   BrandContainersRoute: typeof BrandContainersRoute
   BrandDownloadsRoute: typeof BrandDownloadsRoute
@@ -1320,6 +1358,7 @@ export interface RootRouteChildren {
   WatchNewRoute: typeof WatchNewRoute
   AmbientIndexRoute: typeof AmbientIndexRoute
   AuditIndexRoute: typeof AuditIndexRoute
+  BoardsIndexRoute: typeof BoardsIndexRoute
   BrandIndexRoute: typeof BrandIndexRoute
   BrandsIndexRoute: typeof BrandsIndexRoute
   ChartIndexRoute: typeof ChartIndexRoute
@@ -1389,6 +1428,13 @@ declare module '@tanstack/react-router' {
       path: '/colophon'
       fullPath: '/colophon'
       preLoaderRoute: typeof ColophonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desk': {
@@ -1494,6 +1540,20 @@ declare module '@tanstack/react-router' {
       path: '/audit/new'
       fullPath: '/audit/new'
       preLoaderRoute: typeof AuditNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boards/': {
+      id: '/boards/'
+      path: '/boards'
+      fullPath: '/boards/'
+      preLoaderRoute: typeof BoardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/boards/$key': {
+      id: '/boards/$key'
+      path: '/boards/$key'
+      fullPath: '/boards/$key'
+      preLoaderRoute: typeof BoardsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brand/': {
@@ -2091,6 +2151,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuditDotpngRoute: AuditDotpngRoute,
   ColophonRoute: ColophonRoute,
+  CompareRoute: CompareRoute,
   DeskRoute: DeskRoute,
   EditionsRoute: EditionsRoute,
   FrontDotjsonRoute: FrontDotjsonRoute,
@@ -2104,6 +2165,7 @@ const rootRouteChildren: RootRouteChildren = {
   WhatWeShowRoute: WhatWeShowRoute,
   AmbientSetupRoute: AmbientSetupRoute,
   AuditNewRoute: AuditNewRoute,
+  BoardsKeyRoute: BoardsKeyRoute,
   BrandColourRoute: BrandColourRoute,
   BrandContainersRoute: BrandContainersRoute,
   BrandDownloadsRoute: BrandDownloadsRoute,
@@ -2144,6 +2206,7 @@ const rootRouteChildren: RootRouteChildren = {
   WatchNewRoute: WatchNewRoute,
   AmbientIndexRoute: AmbientIndexRoute,
   AuditIndexRoute: AuditIndexRoute,
+  BoardsIndexRoute: BoardsIndexRoute,
   BrandIndexRoute: BrandIndexRoute,
   BrandsIndexRoute: BrandsIndexRoute,
   ChartIndexRoute: ChartIndexRoute,

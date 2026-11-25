@@ -1,5 +1,6 @@
 import { wireShown } from "./launches";
 import { queryOptions } from "@tanstack/react-query";
+import { getReferenceKit } from "./designer-kit.functions";
 import { getWatchView, getWatchOptions, getAudit } from "./agency.functions";
 import { parseAuditSites } from "./agency/audit";
 import type { WatchRange } from "./agency/watch-feed";
@@ -469,6 +470,7 @@ export const brandSimilarQuery = (domain: string) => queryOptions({ queryKey: ["
 export const brandStoriesQuery = (domain: string) => queryOptions({ queryKey: ["brand-stories", domain], staleTime: 60_000, queryFn: () => getBrandStories({ data: { domain } }) });
 export const brandQuery = (domain: string) => queryOptions({ queryKey: ["brand", domain], staleTime: 10 * 60_000, queryFn: () => getBrand({ data: { domain } }) });
 export const brandsQuery = () => queryOptions({ queryKey: ["brands"], staleTime: 10 * 60_000, queryFn: () => getBrands() });
+export const referenceKitQuery = () => queryOptions({ queryKey: ["reference-kit"], staleTime: 60_000, queryFn: () => getReferenceKit() });
 export const patternsQuery = (sector: string, illustrated = false) => queryOptions({ queryKey: ["patterns", sector, illustrated], staleTime: 10 * 60_000, queryFn: () => getPatterns({ data: { sector, illustrated } }) });
 export const cropCoverageQuery = () => queryOptions({ queryKey: ["crop-coverage"], staleTime: 10 * 60_000, queryFn: () => getCropCoverage() });
 /** Terminal brand record: this brand's stored section crops (public SELECT; opted-out sites are hidden by policy). */

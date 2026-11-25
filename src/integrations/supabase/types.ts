@@ -463,6 +463,24 @@ export type Database = {
           },
         ]
       }
+      brand_kit_records: {
+        Row: {
+          computed_at: string
+          domain: string
+          payload: Json
+        }
+        Insert: {
+          computed_at?: string
+          domain: string
+          payload: Json
+        }
+        Update: {
+          computed_at?: string
+          domain?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       build_queue: {
         Row: {
           at: string
