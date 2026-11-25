@@ -10,7 +10,7 @@ on:
         description: "full, check, or tag (one-off AI tagging backfill)"
         default: "full"
       limit:
-        description: "Only the first N sites (0 = all 300)"
+        description: "Only the first N sites (0 = every site)"
         default: "0"
       dry_run:
         description: "1 = don't post, upload results as an artifact"
@@ -36,7 +36,9 @@ defaults:
 jobs:
   library:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    # A full pass takes about 45 minutes per 300 brands at eight at a time. 340 minutes leaves room for 1,000 brands plus
+    # the tests; past about 1,800 brands the weekly full run has to be split by slice.
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
