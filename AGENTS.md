@@ -71,3 +71,4 @@ use the editor.
 - Public critique/differentiate may add new URLs to the render queue only under the caps in `src/lib/crawl-requests.ts` (fail closed), so anonymous callers cannot point the crawler at unbounded sites.
 - Page structure (J1/M1) is pure in `src/lib/structure.ts` (derivation, signals registry, counts, 15-brand floor; missing reading = null, never zero); the weekly forecast's `structure` follow-up writes `library_structure_records`/`_series` from a bookmark and pages only read those rows, because heavy work in request paths caused the 23 Nov outage.
 - Navigation derivation unions stored links and menu buttons without rebuilding history; the shared charts mark the dated reading join, and section strips cap unread tails at the stored extent.
+- Designer-kit copy payloads stay pure in `src/lib/take-away.ts` over stored identity and structure fields; CSV exports reuse `tableCsv` and one shared copy control handles clipboard feedback.

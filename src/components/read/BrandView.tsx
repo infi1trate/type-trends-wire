@@ -22,6 +22,7 @@ import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { SurfacesPart } from "./Surfaces";
 import { StructurePart } from "./Structure";
+import { TakeAway } from "./TakeAway";
 import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { Card, Raised } from "@/components/brand/Containers";
@@ -92,6 +93,7 @@ function IdentityCard({ b }: { b: CardIn }) {
       <dl className="min-w-0"><div><dt className="ed-kicker">Layout · measured</dt>
         <dd className="mt-2">{i.layout.length ? <ul className="space-y-1">{i.layout.map(f => <li key={f.id}><AppLink href={i.receipt} className="ed-tap flex items-baseline justify-between gap-3 no-underline hover:underline"><span className="ed-small">{f.label}</span><span className="ed-data">{f.value}</span></AppLink></li>)}</ul> : <span className="ed-small">{voiced("read.brandView.4")}</span>}</dd></div></dl>
     </div>
+    <TakeAway b={b} />
   </Card>;
 }
 

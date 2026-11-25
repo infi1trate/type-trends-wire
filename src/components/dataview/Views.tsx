@@ -1,6 +1,7 @@
 // U1 · the Data view of each object type (`?view=data` on its one address), inside DataShell. Dark and dense, built from the terminal's
 // own parts; tables load after the frame (Later skeletons). Every table, score and field the terminal showed for the object is here.
 import { WhyNow } from "@/components/read/WhyNow";
+import { TakeAway } from "@/components/read/TakeAway";
 import { MUSEUM_SHOWN } from "@/lib/site";
 import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -111,6 +112,7 @@ function BrandDataBody({ domain }: { domain: string }) {
   const art = MUSEUM_SHOWN ? card?.art ?? null : null, accentArt = MUSEUM_SHOWN ? card?.accentArt ?? null : null;
   return <>
     <LibrarySite domain={domain} embedded />
+    {card && <div className="px-3 pb-4"><TakeAway b={card} /></div>}
     {/* W3b · the nearest museum work as one line (at most two at 390 px), a thumbnail inside 64 px, only the title linked. Off while MUSEUM_SHOWN is false. */}
     {art && <Band title="NEAREST MUSEUM WORK"><MuseumLine a={art} /></Band>}
     {/* W3c · the stored work that holds this brand's accent, one line, sent with the card (never late). Off while MUSEUM_SHOWN is false. */}
