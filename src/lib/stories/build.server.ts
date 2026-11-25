@@ -17,7 +17,7 @@ import { knownFrom, validateWhy, WHY_PER_BUILD, WHY_PER_DAY } from "./why";
 import { soWhatOf } from "./view";
 import { CALL_BUDGET_MS } from "../jobs/steps";
 import { REVERSAL_DAYS } from "../reversal";
-import { basis as basisOf, label, sectorName } from "../labels";
+import { basis as basisOf, label, storySectorName as sectorName } from "../labels";
 import { seededNames } from "../brand-names";
 import { sheetNumbers } from "./sheet";
 import { writerFacts, type FactSource, type FactStory, type ShareBase } from "./writer-facts";

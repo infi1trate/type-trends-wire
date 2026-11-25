@@ -132,7 +132,7 @@ export function resolveKey(key: string): KeyDef | null {
 export const keyView = (d: KeyDef | null): ViewId | null => (!d ? null : "view" in d.target ? d.target.view : "section" in d.target ? sectionById(d.target.section).terminal : null);
 
 // URLS — the terminal lives at /terminal; `/` is always Read.
-export type TerminalSearch = { panel?: string; sector?: string; q?: string; sort?: string; desc?: boolean; page?: number; cmd?: string | undefined; trait?: string | undefined; story?: string | undefined };
+export type TerminalSearch = { panel?: string; sector?: string; cat?: string | undefined; sub?: string | undefined; q?: string; sort?: string; desc?: boolean; page?: number; cmd?: string | undefined; trait?: string | undefined; story?: string | undefined };
 const enc = encodeURIComponent;
 const qs = (o: Record<string, string | number | boolean | undefined | null>) => {
   const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== "" && v !== false).map(([k, v]) => `${k}=${enc(String(v))}`);

@@ -5,6 +5,7 @@ import { auditModel, traitsOf, type AuditRows, type TraitRef } from "./agency/au
 import { rebrandSentence, EVENT_KIND, FIELD, type EventRow } from "./agency/changes";
 import { identityLabel, isRebrand } from "./rebrand-rule";
 import { flipRuns, flipSentence, type FlipIn } from "./flips";
+import { classOf } from "./categories";
 import { basis, label, sectorName, stageName, type Basis, type Dimension, type StageName } from "./labels";
 import { OBJECT_BLOCKS, brandPath, consoleHref, signalPath, type Block } from "./ia";
 import type { Tier } from "./tiers";
@@ -30,7 +31,7 @@ export type LayoutFact = { id: "theme" | "hero" | "h1" | "whitespace"; label: st
 export type Move = { id: string; at: string; kind: string; text: string; basis: Basis; href: string; story: boolean; rebrand: boolean; seasonal: boolean; /** Changed back within seven days, or the change back (reversal.ts): labelled, never hidden. */ reversed: boolean; section: CropSection | null; compare: { before: Crop; after: Crop } | null; pair: BeforeAfterFig | null; pairShared: boolean;
   /** A back-and-forth run folded into this one row (flips.ts); its single moves sit behind a disclosure. */ folded?: Move[] };
 export type BrandPage = {
-  domain: string; name: string; sector: string | null; sectorName: string; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
+  domain: string; name: string; sector: string | null; sectorName: string; category: string | null; subcategory: string | null; tracked: boolean; captured: string | null; lastMove: { text: string; at: string } | null; thumb: Thumb | null;
   identity: { h1: Face | null; body: Face | null; theme: string | null; accent: { hex: string; name: string } | null; palette: { hex: string; name: string; share: number | null }[]; tags: BrandTag[]; layout: LayoutFact[]; receipt: string };
   timeline: Move[];
   /** The sector's brand field with this brand marked, and the headline signals it has that its sector mostly lacks (and the reverse). */
@@ -170,7 +171,7 @@ export function brandModel(r: BrandRows): BrandPage {
   const face = (f: typeof h1): Face | null => f ? { family: plainFace(f.family), google: f.google, size: f.size, css: showableFace(f.family) } : null;
   const palette = (color?.palette ?? []).map(p => ({ hex: p.hex, name: p.name, share: p.share })).sort((x, y) => (y.share ?? -1) - (x.share ?? -1));
   return {
-    domain: d, name: site?.site?.name ?? d, sector, sectorName: sectorName(sector), tracked: g.status === "tracked", captured: g.captured, lastMove: timeline[0] ? { text: timeline[0].text, at: timeline[0].at } : g.latest, thumb: g.thumb,
+    domain: d, name: site?.site?.name ?? d, sector, sectorName: sectorName(sector), ...classOf({ domain: d, ...(site?.site as { category?: string | null; subcategory?: string | null } | null | undefined ?? {}) }), tracked: g.status === "tracked", captured: g.captured, lastMove: timeline[0] ? { text: timeline[0].text, at: timeline[0].at } : g.latest, thumb: g.thumb,
     identity: { h1: face(h1), body: face(body), theme: color?.theme ?? null, accent: color?.accent ?? null, palette, tags, layout, receipt: `/brands/${d}?view=data` },
     field: r.field ?? null, contrast: r.contrast ?? null, similar,
     timeline, sections: latestSections(crops, d), history, versus, soWhat: versus ? brandSoWhat(versus.ahead.length, versus.behind.length, where) : "Not enough measured data on this brand yet to compare it with its sector.",

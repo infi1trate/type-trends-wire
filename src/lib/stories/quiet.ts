@@ -24,7 +24,7 @@
 // Stored as a `move` row (the stored type list is a fixed check), told apart by its `quiet:` id and its "Quiet change" kicker.
 import { brandName } from "../brand-names";
 import { isShowcaseSector } from "../carousel";
-import { betweenDays, dayText, sectorName, shortDay } from "../labels";
+import { betweenDays, dayText, storySectorName as sectorName, shortDay } from "../labels";
 import { brandPath } from "../ia";
 import type { EventRow } from "../agency/changes";
 import { moveCandidate, newsMatches, type NewsMatcher, type WireIn } from "./candidates";

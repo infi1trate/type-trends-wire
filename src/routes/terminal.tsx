@@ -40,7 +40,7 @@ const str = (v: unknown) => (typeof v === "string" ? v : undefined);
 
 export const Route = createFileRoute("/terminal")({
   staticData: { mode: "dark" },
-  validateSearch: (s: Record<string, unknown>): TerminalSearch => ({ panel: str(s["panel"]) ?? "today", ...(str(s["sector"]) ? { sector: str(s["sector"])! } : {}), q: str(s["q"]) ?? "", sort: str(s["sort"]) ?? "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0, cmd: str(s["cmd"])?.slice(0, 4096), trait: str(s["trait"]), story: str(s["story"])?.slice(0, 200) }),
+  validateSearch: (s: Record<string, unknown>): TerminalSearch => ({ panel: str(s["panel"]) ?? "today", ...(str(s["sector"]) ? { sector: str(s["sector"])! } : {}), ...(str(s["cat"]) ? { cat: str(s["cat"])!.slice(0, 60) } : {}), ...(str(s["sub"]) ? { sub: str(s["sub"])!.slice(0, 60) } : {}), q: str(s["q"]) ?? "", sort: str(s["sort"]) ?? "domain", desc: s["desc"] === true, page: typeof s["page"] === "number" ? s["page"] : 0, cmd: str(s["cmd"])?.slice(0, 4096), trait: str(s["trait"]), story: str(s["story"])?.slice(0, 200) }),
   // U1: an object's terminal view (a story, a signal or a pattern) has moved to that object's one address, in its Data view.
   beforeLoad: ({ location }) => { const href = terminalObjectHref(location.search as Record<string, unknown>); if (href) throw redirect({ href, statusCode: 301 }); },
   loaderDeps: ({ search }) => ({ panel: resolveView(search.panel), sector: resolveSector(search.sector) }),

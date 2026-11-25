@@ -1,7 +1,7 @@
 // NEWSWORTHINESS — a 0–100 score from four named 0–25 components, then the publish threshold, dedupe, merges,
 // folding and the daily caps. Pure: same candidates and stored stories in, same plan out. Nothing is thrown away:
 // everything that doesn't run is kept as "held" with its reason.
-import { label, sectorName } from "../labels";
+import { label, storySectorName as sectorName } from "../labels";
 import type { Tier } from "../tiers";
 import type { Candidate, StoryKind } from "./types";
 import { STORY_TYPE_DEFS } from "./types";

@@ -20,7 +20,7 @@ const eventsOf = async (domain: string) => {
   const db = supabaseAnon(), rows = (must(await db.from("library_event_feed").select(EVENT_COLS).eq("domain", domain).eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(80)) ?? []) as EventRow[];
   return (await (await import("./integrity.server")).checkedEvents(db, rows)).tape;
 };
-const siteOf = async (domain: string) => must(await supabaseAnon().from("library_sites").select("domain,name,sector,active,last_snapshot_at").eq("domain", domain).maybeSingle());
+const siteOf = async (domain: string) => must(await supabaseAnon().from("library_sites").select("domain,name,sector,active,last_snapshot_at,category,subcategory").eq("domain", domain).maybeSingle());
 
 export type BrandSector = { field: FieldFig | null; contrast: { has: ContrastItem[]; lacks: ContrastItem[] } | null };
 

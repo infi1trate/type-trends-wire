@@ -4,7 +4,7 @@
 // against-the-grain roundup; outside news keeps its own rules. Changes to one brand inside seven days are one story.
 import type { NotSteady } from "./steady";
 import { HOME_FOLLOW_DAYS, quietCandidates, withFollowFacts, type QuietFollow, type QuietVerdict } from "./quiet";
-import { basis, label, sectorName, stageName } from "../labels";
+import { basis, label, storySectorName as sectorName, stageName } from "../labels";
 import type { EventRow } from "../agency/changes";
 import { brandName, nameText, siteKind, type SiteKind } from "../brand-names";
 import { brandPath, patternPath, signalPath } from "../ia";

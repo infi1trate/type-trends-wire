@@ -4,7 +4,7 @@
 import type { EventRow } from "../agency/changes";
 import { hexName } from "../agency/changes";
 import { brandName } from "../brand-names";
-import { label, sectorName } from "../labels";
+import { label, storySectorName as sectorName } from "../labels";
 import { STORY_TYPE_DEFS, AI_EVENTS, type Fact, type StoryKind } from "./types";
 import type { WriterChange, WriterFacts, WriterNumber, WrittenText } from "./writer";
 import { howWeKnow, quotesOf } from "./writer";

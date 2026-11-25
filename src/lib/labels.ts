@@ -1,3 +1,4 @@
+import { CATEGORY_SECTOR_LABELS } from "@/lib/categories";
 // One human label map for every trait key the app knows. Pure (only the site URL constant is imported):
 // UI, brief context, chart cards, alerts and MCP all format trait names through this module only.
 import { SITE_URL } from "./site";
@@ -141,7 +142,10 @@ export const tagPhrase = (token: string) => VIBE_SHORT[token] ?? (token.split(":
 export const inSentence = (name: string) => (/^[A-Z][a-z]/.test(name) && !/^(Next|Framer|Webflow|Tailwind|Shopify|Wix|Nuxt|Gatsby|Astro|Squarespace|WordPress|SvelteKit|Lottie|Y2K|Inter)\b/.test(name) ? name[0]!.toLowerCase() + name.slice(1) : name);
 export const scopeText = (scope: string | null | undefined) => (!scope || scope === "all" ? "all sectors" : scope);
 /** Library sector names for the sector lens and brand pages. */
-export const SECTOR_NAMES: Record<string, string> = { all: "All sectors", ai: "AI", "dev-tools": "Dev tools", fintech: "Fintech", "consumer-apps": "Consumer apps", "commerce-dtc": "Commerce & DTC", media: "Media", studios: "Studios", hardware: "Hardware", health: "Health", "enterprise-saas": "Enterprise SaaS" };
+export const SECTOR_NAMES: Record<string, string> = { all: "All sectors", ...CATEGORY_SECTOR_LABELS };
+/** Frozen names used inside story, study, census and Digest text so R1's reader labels cannot rewrite written copy. */
+export const STORY_SECTOR_NAMES: Record<string, string> = { all: "All sectors", ai: "AI", "dev-tools": "Dev tools", fintech: "Fintech", "consumer-apps": "Consumer apps", "commerce-dtc": "Commerce & DTC", media: "Media", studios: "Studios", hardware: "Hardware", health: "Health", "enterprise-saas": "Enterprise SaaS" };
+export const storySectorName = (s: string | null | undefined) => (!s ? "All sectors" : STORY_SECTOR_NAMES[s] ?? s.replace(/-/g, " ").replace(/^./, c => c.toUpperCase()));
 export const sectorName = (s: string | null | undefined) => (!s ? "All sectors" : SECTOR_NAMES[s] ?? s.replace(/-/g, " ").replace(/^./, c => c.toUpperCase()));
 
 // STAGES — exactly five words, shown as outlined badges.

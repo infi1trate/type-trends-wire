@@ -11,7 +11,7 @@ import { brandField } from "./templates/field";
 import { beforeAfter, strip, typeWord, type CaptureRaw } from "./templates/frames";
 import { SOFTWARE, BIG_TYPE, softwareFigures } from "./checks";
 import { COMPOSITES } from "../composites";
-import { label, sectorName, basis as basisOf } from "../labels";
+import { label, storySectorName as sectorName, basis as basisOf } from "../labels";
 import { SECTORS } from "../library";
 import { qIndex } from "../forecast";
 import { multiplesChart } from "../chart/forms"; // L2 · the study builder reads the chart registry

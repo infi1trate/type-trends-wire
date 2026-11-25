@@ -5,7 +5,7 @@
 import { VOICE_RULES, bannedFailures, flatShareFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
 import { CAUSAL, RANKING_WORDS, SPELLED_FREE, STUDY_BANNED, factsHash, plain, quartersIn, sectorsNamed, spelledNumbers } from "../data-stories/writer";
 import { brandName } from "../brand-names";
-import { sectorName } from "../labels";
+import { storySectorName as sectorName } from "../labels";
 import { pctText, qText } from "../data-stories/text";
 import { CAPTION_WORDS, CHANGE_WORDS, DIGEST_WORDS, USE_WORDS, editionParts, finishEdition, issueWords, subjectOf, whenOf, type Edition, type EditionParts, type EditionRows } from "./edition";
 

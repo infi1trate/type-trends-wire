@@ -1,7 +1,7 @@
 // U2b · one count per claim. A story's numbers for a signal and scope come from one place: the forecast run's latest-quarter sample
 // (the same sample that gives the signal its stage). The writer's facts sheet and the story page's evidence list are both built here,
 // so the text and the list can never carry two counts for one thing. Pure.
-import { basis as basisOf, canonical, label, sectorName, stageName } from "../labels";
+import { basis as basisOf, canonical, label, storySectorName as sectorName, stageName } from "../labels";
 import type { Fact } from "./types";
 
 export type ShareBase = { count: number; base: number };

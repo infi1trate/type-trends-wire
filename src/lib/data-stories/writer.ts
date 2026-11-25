@@ -4,7 +4,7 @@
 // lists and brand check (stories/writer.ts); the I/O lives in writer.server.ts.
 import { AI_MODELS } from "../ai-models";
 import { SECTORS } from "../library";
-import { sectorName } from "../labels";
+import { storySectorName as sectorName } from "../labels";
 import { VOICE_RULES, bannedFailures, flatShareFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
 import { capText, isNum, isRef } from "./text";
 import type { StoryModel, StudyScene, StudyText } from "./types";

@@ -18,7 +18,7 @@ import { equalField, isBlockedHeadline } from "./library-diff";
 import { oneHeadline } from "./headline-text";
 import { saleSignal } from "./promo";
 import { brandName } from "./brand-names";
-import { sectorName } from "./labels";
+import { storySectorName as sectorName } from "./labels";
 import { brandPath } from "./ia";
 import { isoWeek } from "./digest/week";
 import { tapeDate, tapeLine } from "./tape";

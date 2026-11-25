@@ -1,6 +1,6 @@
 // Story candidates from what already exists: library events, rebrands, real forecast runs, alerts, wire items, launches,
 // the current library sample and its archive. Pure and deterministic: same rows in, same candidates (and ids) out.
-import { basis, canonical, label, sectorName, stageName, untick, type Basis } from "../labels";
+import { basis, canonical, label, storySectorName as sectorName, stageName, untick, type Basis } from "../labels";
 import type { Check } from "../integrity";
 import { eventSentence, EVENT_KIND, REBRAND_WORDS, type EventRow, type RebrandRow } from "../agency/changes";
 import { siteTraits, type SiteRow } from "../forecast-signals";

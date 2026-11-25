@@ -1,7 +1,7 @@
 // Read-time views over stored stories with the editor's overlay applied: cards, the Live stream, the story page. Pure.
 import { launchBox, type LaunchRow } from "../launches";
 import { deLegacy } from "../brand";
-import { STAGES, basis as basisOf, label, sectorName, type Basis } from "../labels";
+import { STAGES, basis as basisOf, label, storySectorName as sectorName, type Basis } from "../labels";
 import { brandPath, patternPath, signalPath } from "../ia";
 import { brandName } from "../brand-names";
 import { STORIES_PER_PAGE, type Story } from "../stories";

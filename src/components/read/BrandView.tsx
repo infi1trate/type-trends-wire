@@ -16,6 +16,7 @@ import type { TraitRef } from "@/lib/agency/audit";
 import { storyTime } from "@/lib/stories";
 import { pct } from "@/lib/digest/copy";
 import { label as traitLabel, sectorName } from "@/lib/labels";
+import { categoryLabel, classOf } from "@/lib/categories";
 import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/Editorial";
 import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
@@ -75,7 +76,7 @@ const NO_HISTORY = {} as BrandPage["history"];
 function IdentityCard({ b }: { b: CardIn }) {
   const i = b.identity;
   return <Card as="section" aria-labelledby="ed-brand-title" className="p-5 md:p-8" data-identity-card="">
-    <p className="ed-kicker">Brand · {b.sectorName}</p>
+    <BrandKicker b={b} />
     <h1 id="ed-brand-title" className="ed-h1 brand-title mt-3 break-words"><BrandMark icon={b.icon} name={b.name} size={72} mobileSize={56} eager /><span className="min-w-0">{b.name}</span></h1>
     <p className="mt-2 max-sm:min-h-[2lh]"><a href={`https://${b.domain}`} target="_blank" rel="noopener" className="ed-code ed-tap" {...pr(`https://${b.domain}`)}>{b.domain}</a> <span className="ed-caption">· last captured {b.captured ? storyTime(b.captured) : "not yet"}</span></p>
     {b.cover && <div className="mt-5"><CoverFigure c={b.cover} /></div>}
@@ -229,4 +230,16 @@ export function BrandPageWithoutCard({ domain, name, line }: { domain: string; n
       <BlockPart title="Stories about this brand"><Later shapes={[{ kind: "rows", n: 3, height: ROW.ledger }]}><StoriesPart b={b} /></Later></BlockPart>
     </>,
   }} />;
+}
+
+/** R1 · sector · category · sub-category, each a link to the sector page (filtered for the finer two). */
+function BrandKicker({ b: card }: { b: Pick<BrandCard, "domain" | "sector" | "sectorName"> & { category?: string | null; subcategory?: string | null } }) {
+  if (!card.sector) return <p className="ed-kicker">Brand · {card.sectorName}</p>;
+  // A stored card written before R1 has no pair; the owner's map fills it.
+  const sector = card.sector, b = { ...card, ...classOf(card) };
+  return <p className="ed-kicker" data-brand-kicker="">
+    <AppLink href={`/sectors/${sector}`} className="ed-tap">{b.sectorName}</AppLink>
+    {b.category && <> · <AppLink href={`/sectors/${sector}?category=${b.category}`} className="ed-tap">{categoryLabel(b.category)}</AppLink></>}
+    {b.category && b.subcategory && <> · <AppLink href={`/sectors/${sector}?category=${b.category}&sub=${b.subcategory}`} className="ed-tap">{categoryLabel(b.subcategory)}</AppLink></>}
+  </p>;
 }

@@ -3,7 +3,7 @@
 // 15 Nov"). When a later forecast run changes the stage of a signal that a story published in the last 14 days cites, the story gets one
 // dated update line under its list, written here from the facts (no model) and held to the copy desk's rules. The story's text is never
 // rewritten.
-import { canonical, label, sectorName, stageName } from "../labels";
+import { canonical, label, storySectorName as sectorName, stageName } from "../labels";
 import { lintLine } from "../newsroom/copy";
 import type { Fact } from "./types";
 import type { RowOf } from "./sheet";

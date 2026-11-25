@@ -17,7 +17,7 @@ import { AnnounceFirst } from "@/components/read/FirstPicture";
 const TITLE = `Brands — who is doing it · ${BRAND_NAME}`;
 const DESC = "Every tracked brand: identity, confirmed moves and rebrands, searchable by name and filtered by sector.";
 export const Route = createFileRoute("/brands/")({
-  validateSearch: (s: Record<string, unknown>): BrandsSearch & { all?: string } => Object.fromEntries((["tab", "q", "sector", "sort", "dir", "all"] as const).flatMap(k => (typeof s[k] === "string" ? [[k, (s[k] as string).slice(0, 80)]] : []))) as BrandsSearch & { all?: string },
+  validateSearch: (s: Record<string, unknown>): BrandsSearch & { all?: string } => Object.fromEntries((["tab", "q", "sector", "sort", "dir", "all", "category", "sub"] as const).flatMap(k => (typeof s[k] === "string" ? [[k, (s[k] as string).slice(0, 80)]] : []))) as BrandsSearch & { all?: string },
   // P2c · the directory comes from a stored record (about a second on a fresh instance), so the first response waits for it, up to
   // BRANDS_FIRST_WAIT_MS, and carries the whole page: no placeholder to swap. Slower than that (the record too old, a live build), the
   // title goes out first and the directory streams in as before.

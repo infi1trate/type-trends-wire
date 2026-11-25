@@ -10,7 +10,7 @@ import type { DataInput } from "./series";
 import { familyOf } from "./templates/drift";
 import { comparable, distance, groupOf, groups, nearestForSector, readyToShow, GROUP_MIN_WORKS, SECTOR_MIN_HOMEPAGES, SHOW_MIN_GROUPS, SHOW_MIN_WORKS, STUDY_MIN_SECTORS, VARIED_COLOUR_SHARE, VARIED_MAX_SHARE, VARIED_MIN_COLOURS, MEDIA_COVERAGE, type Colour, type Group, type Hero, type SectorMatch, type Swatch, type Work } from "../art/palette";
 import { MUSEUM_NAME, type ArtSource } from "../art/contract";
-import { sectorName } from "../labels";
+import { storySectorName as sectorName } from "../labels";
 import { SECTORS } from "../library";
 
 /** What the museum study reads, loaded beside the other study inputs (absent or empty: the study does not exist for readers). */

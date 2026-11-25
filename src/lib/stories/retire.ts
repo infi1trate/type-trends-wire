@@ -1,6 +1,6 @@
 // Which stored stories the current rules would not produce, and how stored wording maps onto the current templates. Pure.
 // Stories are insert-only: scripts/retire-stories.ts turns these answers into `kill` and `correct` rows in story_edits.
-import { sectorName } from "../labels";
+import { storySectorName as sectorName } from "../labels";
 import { gapOk, MIN_RUN_GAP_DAYS } from "../run-gap";
 import { deepEnough, firstSeenEligible, identityMove, inline, moveCandidate, noDollar, whiteSpaceGap, whiteSpaceText } from "./candidates";
 import { runBase, type SampleRow } from "./sheet";

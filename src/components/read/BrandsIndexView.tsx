@@ -17,6 +17,8 @@ import { longDay, type Pic } from "@/lib/pictures";
 const shortDay = (iso: string, year: string) => (iso.slice(0, 4) === year ? longDay(iso).replace(/ \d{4}$/, "") : longDay(iso));
 import { moveAfterName } from "@/lib/brand-tiles";
 import { BrandMark } from "./BrandMark";
+import { CategoryChips } from "./CategoryChips";
+import { CATEGORY_TOO_FEW, CATEGORY_SHARE_MIN, categoryChips, categoryLabel, classOf, subcategoryChips } from "@/lib/categories";
 
 type Moved = { domain: string; headline: string; at: string; hero: Pic };
 
@@ -67,7 +69,9 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
         <p className="ed-data mt-4 flex flex-wrap items-center gap-x-4 gap-y-1" aria-label="Sort by"><span className="ed-kicker">Sort</span>
           {BRAND_SORTS.map(s => { const on = v.sort === s.id; return <Link key={s.id} to="/brands" search={brandsSearch(sortBy(v, s.id))} resetScroll={false} aria-current={on ? "true" : undefined} className={`ed-tap ${on ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>{s.label}{on ? (v.dir === "asc" ? " ↑" : " ↓") : ""}</Link>; })}</p>
       </RuleBox>
-      <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}</p>
+      {v.sector !== "all" && <CategoryChips chips={categoryChips(data.sites, v.sector)} subs={v.category ? subcategoryChips(data.sites, v.sector, v.category) : []} value={{ category: v.category ?? null, sub: v.sub ?? null }}
+        href={n => ({ to: "/brands", search: brandsSearch({ ...v, category: n.category, sub: n.sub }) as Record<string, string | undefined> })} />}
+      <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}{v.category && idx.rows.length < CATEGORY_SHARE_MIN ? ` ${CATEGORY_TOO_FEW}` : ""}</p>
       {idx.empty ? <p className="ed-body mt-4 max-w-[60ch]">{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p>
         // S1 · the directory as tiles (a compact row under 480 px): logo plate, name, sector chip, moves and last change, the latest move.
         : <><ul className="brand-grid mt-3" aria-label="Tracked brands" data-brand-grid="">{(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map((s, i) => { const name = s.name ?? s.domain, moved = movedNow.has(s.domain);
@@ -77,6 +81,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
               <BrandMark icon={icons[s.domain]} name={name} size={72} mobileSize={56} eager={i < 10} />
               <span className="brand-tile-body">
                 <span className="brand-tile-name">{name}</span>
+                {(() => { const c = classOf(s); return c.subcategory ? <span className="ed-kicker brand-tile-sub" data-brand-sub="">{categoryLabel(c.subcategory)}</span> : null; })()}
                 <span className="brand-tile-chips"><span className="ledger-tag">{sectorName(s.sector)}</span></span>
                 <span className="ed-caption brand-tile-facts">{facts}</span>
                 {s.lastMove && <span className="ed-caption brand-tile-move">{moveAfterName(s.lastMove, name, s.domain)}</span>}
