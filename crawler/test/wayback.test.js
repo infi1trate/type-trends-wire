@@ -4,7 +4,7 @@ import http from "node:http";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { quarters, passOf, parseCdx, pickCapture, pickCaptures, blankArchive, buildQueue, tsFromArchiveUrl, tsToDate, archiveUrl } from "../src/wayback-lib.js";
+import { quarters, passOf, parseCdx, pickCapture, pickCaptures, blankArchive, buildQueue, archiveGaps, tsFromArchiveUrl, tsToDate, archiveUrl } from "../src/wayback-lib.js";
 const run = promisify(execFile);
 
 test("quarters stop before the current one", () => {
@@ -36,6 +36,18 @@ test("queue is coarse-first, sector-interleaved, and skips what exists", () => {
   const q = buildQueue(sites, have, ["2021Q1", "2021Q2", "2021Q3"], 3);
   assert.deepEqual(q.map((i) => `${i.domain}:${i.quarter}`), ["b.com:2021Q1", "c.com:2021Q1", "a.com:2021Q3", "c.com:2021Q3", "b.com:2021Q3", "a.com:2021Q2", "c.com:2021Q2", "b.com:2021Q2"]);
   assert.equal(buildQueue(sites, have, ["2021Q1", "2021Q2", "2021Q3"], 1).length, 2);
+});
+
+test("archive gaps: only what the index or two failed renders say, never a stored quarter", () => {
+  const sites = [{ domain: "a.com", sector: "ai" }, { domain: "b.com", sector: "ai" }, { domain: "c.com", sector: "ai" }];
+  const have = new Map([["a.com", new Set(["2021Q1"])]]);
+  const cache = { cdx: { "a.com": { picks: { "2021Q1": ["20210215000000"], "2021Q3": ["20210815000000"] } }, "b.com": { picks: { "2021Q2": ["20210515000000"] } } }, failed: { "a.com|2021Q3": 2, "b.com|2021Q2": 1 } };
+  assert.deepEqual(archiveGaps(sites, have, ["2021Q1", "2021Q2", "2021Q3"], cache, 2), [
+    { domain: "a.com", quarter: "2021Q2", reason: "no_capture" },
+    { domain: "a.com", quarter: "2021Q3", reason: "unreadable" },
+    { domain: "b.com", quarter: "2021Q1", reason: "no_capture" },
+    { domain: "b.com", quarter: "2021Q3", reason: "no_capture" },
+  ]); // c.com: the index was never asked, so nothing is claimed; b.com 2021Q2 failed once and is still to try
 });
 
 test("wayback dry run against a fake archive", { timeout: 180000 }, async () => {

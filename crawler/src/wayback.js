@@ -16,7 +16,7 @@ import { VIEWPORTS, UA, makePoster, analyzePage, evalSettled, hideOverlays, erro
 import { extractLibraryExtras } from "./extract-library.js";
 import { extractStructure } from "./extract-structure.js";
 import { parseLibrary, contentHash, signalsHash } from "./library-lib.js";
-import { quarters, parseCdx, pickCaptures, blankArchive, archiveUrl, cdxUrl, tsFromArchiveUrl, tsToDate, ARCHIVE_ERROR, buildQueue } from "./wayback-lib.js";
+import { quarters, parseCdx, pickCaptures, blankArchive, archiveUrl, cdxUrl, tsFromArchiveUrl, tsToDate, ARCHIVE_ERROR, buildQueue, archiveGaps } from "./wayback-lib.js";
 
 const DRY = process.env.DRY_RUN === "1";
 const ENDPOINT = process.env.CRAWL_ENDPOINT;
@@ -266,6 +266,14 @@ async function main() {
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   await flush();
   progress(true);
+  // Tell the site which quarters will never arrive, so "archive fully read" can be decided for a brand. Captures stored
+  // in this run are not in `have`; a gap is only what the index or two failed renders say, so they cannot be among them.
+  const gaps = archiveGaps(sites, have, qs, cache, FAIL_LIMIT);
+  totals.gaps = gaps.length;
+  if (!DRY && process.env.ARCHIVE_GAPS !== "0") {
+    try { for (let i = 0; i < gaps.length; i += 2000) await post({ kind: "library_archive_gaps", run_id: RUN_ID, gaps: gaps.slice(i, i + 2000) }); }
+    catch (e) { console.log(`archive gaps not recorded (${String(e?.message ?? e).slice(0, 120)}); the next run sends them again`); }
+  }
   const summary = { run_id: RUN_ID, missing: all.length, queue: queue.length, ...totals, errors, minutes: Math.round((Date.now() - t0) / 60000) };
   if (DRY) writeFileSync(`out/${RUN_ID}.summary.json`, JSON.stringify(summary, null, 2));
   // Read by the workflow to decide whether to start the next run straight away.

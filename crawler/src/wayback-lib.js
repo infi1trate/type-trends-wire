@@ -82,6 +82,23 @@ export const tsFromArchiveUrl = (u) => /\/web\/(\d{14})/.exec(u || "")?.[1] ?? n
 /** Archive error/placeholder pages rather than the site. */
 export const ARCHIVE_ERROR = /wayback machine has not archived|got an http \d{3} response at crawl time|this url has been excluded|hrm\.|redirecting to\.\.\.|page not found|access denied|just a moment|attention required|captcha/i;
 
+/** Quarters this run knows will never arrive: the Archive's index holds no usable copy ("no_capture"), or a copy
+ * failed to render `failLimit` times ("unreadable"). Only for brands whose index answer is on file, and never for a
+ * quarter the site already stores. The site records them so a brand's archive can count as fully read. */
+export function archiveGaps(sites, have, quarterList, cache, failLimit = 2) {
+  const out = [];
+  for (const s of sites) {
+    const e = cache?.cdx?.[s.domain];
+    if (!e) continue;
+    for (const q of quarterList) {
+      if (have.get(s.domain)?.has(q)) continue;
+      if (!(e.picks?.[q]?.length)) out.push({ domain: s.domain, quarter: q, reason: "no_capture" });
+      else if ((cache.failed?.[`${s.domain}|${q}`] ?? 0) >= failLimit) out.push({ domain: s.domain, quarter: q, reason: "unreadable" });
+    }
+  }
+  return out;
+}
+
 /**
  * Work queue: every (site, quarter) not yet captured, ordered coarse-first (pass), then quarter,
  * then interleaved across sectors so an interrupted run still covers every sector.
