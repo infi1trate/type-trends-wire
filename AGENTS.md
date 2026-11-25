@@ -74,3 +74,4 @@ use the editor.
 - Designer-kit copy payloads stay pure in `src/lib/take-away.ts` over stored identity and structure fields; CSV exports reuse `tableCsv` and one shared copy control handles clipboard feedback.
 - Reference boards and comparison read `brand_kit_records`, built by a bounded designer-kit follow-up in the existing weekly forecast queue; membership and filters stay pure, and crop URLs are loaded separately through current public visibility rules.
 - Comparison rows and TSV stay pure in `src/lib/compare.ts`; directory and compare search share `BrandSearchInput`, so stored readings and keyboard search use one rule.
+- Onboarding brands are stored `active = false, onboarding = true` and never pass through the `library_sync` RPC (split in `src/lib/library-sync.ts`); only the panel step makes them active, because every view and reader already treats inactive as "not in the library".
