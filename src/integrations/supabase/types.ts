@@ -2593,6 +2593,7 @@ export type Database = {
         Row: {
           active: boolean | null
           added_at: string | null
+          category: string | null
           domain: string
           last_change_at: string | null
           last_snapshot_at: string | null
@@ -2600,10 +2601,12 @@ export type Database = {
           pages: Json | null
           sector: string
           site_kind: string
+          subcategory: string | null
         }
         Insert: {
           active?: boolean | null
           added_at?: string | null
+          category?: string | null
           domain: string
           last_change_at?: string | null
           last_snapshot_at?: string | null
@@ -2611,10 +2614,12 @@ export type Database = {
           pages?: Json | null
           sector: string
           site_kind?: string
+          subcategory?: string | null
         }
         Update: {
           active?: boolean | null
           added_at?: string | null
+          category?: string | null
           domain?: string
           last_change_at?: string | null
           last_snapshot_at?: string | null
@@ -2622,6 +2627,7 @@ export type Database = {
           pages?: Json | null
           sector?: string
           site_kind?: string
+          subcategory?: string | null
         }
         Relationships: []
       }

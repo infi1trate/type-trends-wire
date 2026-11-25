@@ -680,6 +680,13 @@
       "when": 1795466052007,
       "tag": "0096_app_icons",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1795575931242,
+      "tag": "0097_r1_library_sites_categories",
+      "breakpoints": true
     }
   ]
 }
