@@ -28,7 +28,7 @@ import { BeforeAfter, CoverFigure, CropFigure } from "./Evidence";
 import { Receipt } from "./StoryCard";
 import { ReadFooter } from "./Bits";
 import { STAFF_HREFS, useStaffKey } from "@/lib/staff-key";
-import { LeadFigureCompact, LeadFigureSlot } from "./Covers";
+import { LeadFigureSlot } from "./Covers";
 import { LeadPicture, planDraws } from "./LeadPicture";
 import { LEAD_SIZES } from "@/lib/first-paint";
 import { FiltersScope } from "@/components/brand/Illustration";
@@ -77,7 +77,8 @@ function Lead({ m, now }: { m: FrontTop; now: number }) {
       <div className="min-w-0 lg:col-span-7 lg:row-start-1">{kicker}{headline}{deck}</div>
       <div className="min-w-0 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:row-start-1 lg:self-center" data-evidence="plan"><LeadPicture plan={l.evidence.plan} compact stack tileSizes={LEAD_SIZES.frontMosaic} /></div>
       {receipts("lg:col-span-7 lg:row-start-2")}
-      {fig && <div className="min-w-0 lg:col-span-7 lg:row-start-3 lg:self-start"><div className="lg:hidden"><LeadFigureSlot f={fig} /></div><div className="max-lg:hidden"><LeadFigureCompact f={fig} /></div></div>}
+      {/* A2b · the figure keeps the phone's figure role at every width and stays inside its own column (its trail's end labels too). */}
+      {fig && <div className="min-w-0 overflow-hidden lg:col-span-7 lg:row-start-3 lg:self-start" data-lead-figure=""><LeadFigureSlot f={fig} /></div>}
     </div>
   </Plate></section>;
   return <section aria-labelledby="front-lead"><Plate className="md:p-10">

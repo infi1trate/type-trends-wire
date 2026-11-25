@@ -126,7 +126,7 @@ const COLUMNS: Row[] = [
   ["delta-week", "ΔWK", "How far the spread moved since last week's crawl.", "Big weekly moves are worth a closer look.", "m-crawler"],
   ["domain", "Domain", "The site's web address.", "Click to open its brand data.", "m-library"],
   ["sector", "Sector", "The industry group a site belongs to (one of ten).", "Use it to compare like with like.", "m-library"],
-  ["category", "Category", "The group within its sector a site belongs to, from the owner's category map.", "Compare a brand with its closest peers.", "m-library"],
+  ["brand-category", "Category", "The group within its sector a site belongs to, from the owner's category map.", "Compare a brand with its closest peers.", "m-library"],
   ["subcategory", "Sub-category", "The finest group within a category.", "Most hold fewer than 15 brands, so no shares are given for them yet.", "m-library"],
   ["h1-family", "H1 family", "Font used for the main page headline.", "From the latest confirmed capture.", "m-library"],
   ["body-family", "Body family", "Font used for paragraph text.", "From the latest confirmed capture.", "m-library"],
