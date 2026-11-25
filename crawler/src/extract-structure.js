@@ -22,17 +22,30 @@ export function extractStructure() {
   const isControl = (el) => el.matches(CONTROL) || (el.tagName === "A" && filled(el) && rect(el).h <= 80);
 
   // ---- sections, in the order a visitor scrolls through them ----
-  const cands = [];
-  for (const el of document.querySelectorAll("main > *, body > section, body > div > section, main > div > section, body > div > div > section, body > footer, body > div > footer, footer")) {
-    if (!shown(el)) continue;
+  // Sections are found by shape, not by tag: walk down through wrappers (an element with one wide, tall child) until an
+  // element has several wide children stacked down the page. Those children are the sections. A child taller than two
+  // and a half screens that itself holds several such children is opened one level further.
+  const band = (el) => {
+    if (!shown(el)) return null;
+    const p = cs(el).position;
+    if (p === "fixed") return null;
     const r = rect(el);
-    if (r.h < 120 || r.w < VW * 0.6) continue;
-    if (!cands.some((c) => c.el === el)) cands.push({ el, ...r });
-  }
-  // A wrapper that holds two or more other candidates is a container, not a section.
-  const containers = new Set(cands.filter((c) => cands.filter((o) => o !== c && c.el.contains(o.el)).length >= 2));
-  let kept = cands.filter((c) => !containers.has(c));
-  kept = kept.filter((c) => !kept.some((o) => o !== c && o.el.contains(c.el)));
+    if (r.w < VW * 0.6 || r.h < 80) return null;
+    return { el, ...r };
+  };
+  const isTopBar = (c) => c.y < 140 && c.h < 160 && (c.el.matches("header, nav, [role=banner], [role=navigation]") || !!c.el.querySelector("nav") || c.h < 100);
+  const bands = (el, depth) => {
+    const kids = [...el.children].map(band).filter(Boolean);
+    if (kids.length === 0) return [];
+    if (kids.length === 1) return depth < 10 ? (bands(kids[0].el, depth + 1).length >= 2 ? bands(kids[0].el, depth + 1) : kids) : kids;
+    const out = [];
+    for (const k of kids) {
+      if (k.h > VH * 2.5 && depth < 10) { const sub = bands(k.el, depth + 1); if (sub.length >= 2) { out.push(...sub); continue; } }
+      out.push(k);
+    }
+    return out;
+  };
+  let kept = bands(root, 0).filter((c) => !isTopBar(c));
   kept.sort((a, b) => a.y - b.y);
   const ROLE_BY_HEADING = [
     [/pricing|plans|choose your plan/i, "pricing"],
@@ -61,7 +74,7 @@ export function extractStructure() {
     const stats = [...el.querySelectorAll("p, span, div, strong, h2, h3, h4")].filter((n) => n.children.length === 0 && /^[$€£]?\d[\d,.]*\s?(%|\+|k|m|b|x|bn|ms|s)?\+?$/i.test((n.textContent || "").trim()) && parseFloat(cs(n).fontSize) >= 24).length;
     const hasVideo = !!el.querySelector("video, iframe[src*=youtube], iframe[src*=vimeo], iframe[src*=wistia], iframe[src*=loom]");
     const hasQuote = !!el.querySelector("blockquote, figure cite, [class*=testimonial i], [class*=quote i]");
-    const hasFaq = el.querySelectorAll("details, [class*=accordion i] button, [aria-expanded]").length >= 3;
+    const hasFaq = el.querySelectorAll("details, [class*=accordion i] button, [class*=faq i] button").length >= 3 || (el.querySelectorAll("[aria-expanded]").length >= 3 && (txt.match(/\?/g) || []).length >= 3);
     const hasEmail = !!el.querySelector("input[type=email], input[name*=email i], input[placeholder*=email i]");
     const hasCode = !!el.querySelector("pre, code");
     const inputs = [...el.querySelectorAll("input:not([type=hidden]), textarea, select")].filter(shown).length;
@@ -76,7 +89,7 @@ export function extractStructure() {
     let role = null;
     const isFooter = el.tagName === "FOOTER" || el.matches("[role=contentinfo]") || (i === kept.length - 1 && links >= 15 && media.length <= 3);
     if (isFooter) role = "footer";
-    else if (i === 0 || (el.querySelector("h1") && c.y < VH)) role = "hero";
+    else if (i === 0 || (el.querySelector("h1") && c.y < VH && !kept.slice(0, i).some((o) => o.el.querySelector("h1")))) role = "hero";
     // The heading names the section; a section with no heading is named by its opening words ("Trusted by teams at").
     const label = heading || clean(txt, 60);
     if (!role) for (const [re, r] of ROLE_BY_HEADING) if (label && re.test(label) && (heading || words < 40)) { role = r; break; }
@@ -101,7 +114,7 @@ export function extractStructure() {
   const ASK_KIND = [
     [/book (a )?demo|request (a )?demo|get (a )?demo|see (a )?demo|schedule (a )?(demo|call)|watch (a |the )?demo/i, "demo"],
     [/contact sales|talk to (sales|us|an expert)|get in touch|contact us/i, "sales"],
-    [/start (for )?free|try (it |.{0,20} )?(for )?free|get started|sign ?up|create (an |your )?account|start (building|now|your)|start trial|free trial|try now|open (an )?account/i, "start"],
+    [/start (for )?free|try (it |.{0,20} )?(for )?free|^try\b|get started|sign ?up|create (an |your )?account|start (building|now|your)|start trial|free trial|try now|open (an )?account/i, "start"],
     [/join (the )?wait ?list|request access|get early access|apply/i, "waitlist"],
     [/download|get the app|install/i, "download"],
     [/shop|buy|add to (cart|bag)|order now|pre-?order/i, "shop"],
@@ -110,6 +123,10 @@ export function extractStructure() {
     [/learn more|read more|explore|see how|how it works|view|discover/i, "learn"],
   ];
   const askKind = (label) => { for (const [re, k] of ASK_KIND) if (re.test(label)) return k; return "other"; };
+  // A button counts as primary when its fill differs from what it sits on (a nav link with the bar's own colour does not).
+  const bgOf = (el) => { let p = el; while (p && p !== document.documentElement) { const c = cs(p).backgroundColor; if (c && c !== "rgba(0, 0, 0, 0)" && c !== "transparent") return c; p = p.parentElement; } return "rgb(255, 255, 255)"; };
+  const primary = (el) => filled(el) && el.parentElement && cs(el).backgroundColor !== bgOf(el.parentElement);
+  const topNav = [...document.querySelectorAll("header, nav, [role=banner], [role=navigation]")].find((e) => e.getBoundingClientRect().top < 200) || null;
   const asks = [];
   const seenAsk = new Set();
   for (const el of document.querySelectorAll(CONTROL + ", a[href]")) {
@@ -119,9 +136,13 @@ export function extractStructure() {
     if (r.y >= VH || r.y < 0) continue;
     const label = clean(el.innerText || el.value || el.getAttribute("aria-label"), 32);
     if (!label || label.length < 2 || seenAsk.has(label.toLowerCase())) continue;
-    if (/^(menu|close|search|accept|reject|decline|ok|got it|skip|dismiss|allow|deny|manage|preferences)\b/i.test(label) || /cookie/i.test(label)) continue;
+    if (/^(menu|close|search|accept|reject|decline|ok|got it|skip|dismiss|allow|deny|manage|preferences|play|pause|next|previous|prev|go to|toggle|open|show|hide|mute|unmute)\b/i.test(label) || /cookie|navigation|slide \d/i.test(label)) continue;
+    const k = askKind(label), inNav = !!(topNav && topNav.contains(el)), p = primary(el) ? 1 : 0;
+    // In the navigation only real asks count (Sign up, Book a demo, Log in); in the page a plain link needs a fill to count.
+    if (k === "other" && (inNav || !p)) continue;
+    if (k === "learn" && inNav) continue;
     seenAsk.add(label.toLowerCase());
-    asks.push({ l: label, k: askKind(label), p: filled(el) ? 1 : 0, n: r.y < 100 ? 1 : 0 });
+    asks.push({ l: label, k, p, n: inNav ? 1 : 0 });
   }
 
   // ---- furniture ----
@@ -173,14 +194,20 @@ export function extractStructure() {
       const t = `${el.getAttribute("aria-label") || ""} ${el.className && typeof el.className === "string" ? el.className : ""} ${el.id || ""} ${clean(el.innerText, 20)}`;
       return /\b(menu|navigation|hamburger|burger|nav-toggle|navbar-toggle|toggle navigation)\b/i.test(t) || el.hasAttribute("aria-controls") && r.width <= 64 && r.height <= 64 && !clean(el.innerText, 20);
     });
-    const bottomBar = fixedEls.find((el) => { const r = el.getBoundingClientRect(); return r.bottom >= VH - 2 && r.top > VH * 0.6 && r.width >= VW * 0.9 && el.querySelectorAll("a[href], button").length >= 3; });
+    const bottomBar = fixedEls.find((el) => { const r = el.getBoundingClientRect(); return r.bottom >= VH - 2 && r.top > VH * 0.6 && r.width >= VW * 0.9 && el.querySelectorAll("a[href], button").length >= 3 && !/cookie|consent|privacy|accept/i.test(el.innerText || ""); });
+    // A small icon-only control in the top corner is a menu button even when it is not labelled.
+    const iconBtn = menuBtn ? null : [...document.querySelectorAll("button, [role=button], summary, label, a:not([href]), div[tabindex]")].find((el) => {
+      if (!shown(el)) return false;
+      const r = el.getBoundingClientRect();
+      return r.top < 100 && r.width <= 64 && r.height <= 64 && r.width >= 16 && (r.left > VW * 0.66 || r.right < 80) && !clean(el.innerText, 20) && !!el.querySelector("svg, span, i, img") && !/search|theme|cart|bag|close|account|language/i.test(`${el.getAttribute("aria-label") || ""} ${typeof el.className === "string" ? el.className : ""}`);
+    });
     const inlineLinks = header ? [...header.querySelectorAll("a[href]")].filter(shown).length : 0;
-    const nav = menuBtn ? (bottomBar ? "drawer+bar" : "drawer") : bottomBar ? "bar" : inlineLinks >= 3 ? "inline" : "none";
+    const nav = menuBtn || (iconBtn && inlineLinks < 4) ? (bottomBar ? "drawer+bar" : "drawer") : bottomBar ? "bar" : inlineLinks >= 3 ? "inline" : "none";
     const sticky = fixedEls.find((el) => { const r = el.getBoundingClientRect(); return el !== bottomBar && r.top > VH * 0.55 && r.width >= VW * 0.5 && r.height <= 140 && [...el.querySelectorAll(CONTROL + ", a[href]")].some((c) => shown(c) && isControl(c)); });
     const stickyLabel = sticky ? clean([...sticky.querySelectorAll(CONTROL + ", a[href]")].find((c) => shown(c) && isControl(c))?.innerText, 32) : null;
     const taps = [...document.querySelectorAll("a[href], button, [role=button], input, select, summary")].filter((el) => { if (!shown(el)) return false; const r = rect(el); return r.y < VH * 2; }).map((el) => { const r = el.getBoundingClientRect(); return Math.min(r.width, r.height); });
     taps.sort((a, b) => a - b);
-    const ps = [...document.querySelectorAll("p")].filter(shown).slice(0, 80).map((p) => parseFloat(cs(p).fontSize)).filter((n) => n > 0).sort((a, b) => a - b);
+    const ps = [...document.querySelectorAll("p")].filter((p) => shown(p) && (p.innerText || "").trim().length >= 40).slice(0, 80).map((p) => parseFloat(cs(p).fontSize)).filter((n) => n > 0).sort((a, b) => a - b);
     const h1 = document.querySelector("h1");
     const storeLinks = [...document.querySelectorAll("a[href*='apps.apple.com'], a[href*='itunes.apple.com'], a[href*='play.google.com'], a[href*='onelink.me'], a[href*='app.link'], a[href*='apps.microsoft.com']")].filter((a) => shown(a));
     const storeFirst = storeLinks.filter((a) => rect(a).y < VH * 2).length;
