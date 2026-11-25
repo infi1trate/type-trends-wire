@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeries, deriveRecord, desktopPhone, flagsOf, normLabel, pickRows, quarterBack, shareOf, STRUCTURE_FLOOR, STRUCTURE_SIGNALS, structureSummary, toRow, topLabels, type StructureInput } from "./structure";
+import { nearestRead, undouble, buildSeries, deriveRecord, desktopPhone, flagsOf, normLabel, pickRows, quarterBack, shareOf, STRUCTURE_FLOOR, STRUCTURE_SIGNALS, structureSummary, toRow, topLabels, type StructureInput } from "./structure";
 
 const nav = (labels: string[], deep = false) => [...labels.map(label => ({ label, href: "/", depth: 1, visible: true })), ...(deep ? [{ label: "Sub", href: "/s", depth: 2, visible: false }] : [])];
 const base: StructureInput = { id: 1, domain: "acme.com", viewport: "desktop", source: "live", captured_at: "2026-11-20T00:00:00Z" };
@@ -9,6 +9,7 @@ describe("navigation (history fields)", () => {
   it("normalises labels: lowercase, & → and, doubled labels once", () => {
     expect(normLabel("  Tools & APIs ")).toBe("tools and apis");
     expect(normLabel("Sign in Sign in")).toBe("sign in");
+    expect(undouble("Sign in Sign in")).toBe("Sign in");
   });
   it("reads top-level visible depth-1 items, drops logo links", () => {
     expect(topLabels(nav(["Acme homepage", "Solutions", "Pricing"]))).toEqual(["solutions", "pricing"]);
@@ -80,4 +81,31 @@ describe("quarters and counts", () => {
     expect(s.some(x => x.scope === "ai")).toBe(true);
   });
   it("quarter arithmetic", () => { expect(quarterBack("2026Q4", 20)).toBe("2021Q4"); expect(quarterBack("2026Q1", 1)).toBe("2025Q4"); });
+});
+
+describe("then quarters", () => {
+  it("uses the nearest well-read quarter within two of the target", () => {
+    const row = (quarter: string, n_read: number) => ({ signal: "navword:pricing", viewport: "desktop" as const, scope: "all", quarter, n_read, n_yes: 1 });
+    const rows = [row("2021Q3", 147), row("2021Q4", 11), row("2022Q1", 152)];
+    expect(nearestRead(rows, "navword:pricing", "desktop", "2021Q4")?.quarter).toBe("2021Q3");
+    expect(nearestRead([row("2021Q4", 11)], "navword:pricing", "desktop", "2021Q4")).toBeNull();
+  });
+});
+
+describe("desk and health lines", () => {
+  it("the data desk's weekly structure line", async () => {
+    const { structureDeskLine } = await import("./structure");
+    expect(structureDeskLine({ desktop: 283, phone: 279, fresh_desktop: 280, fresh_phone: 270, passing: 30, total: 36, changes: [{ signal: "page:long", from: 0.29, to: 0.37 }] }))
+      .toBe("Structure: 283 brands read on desktop, 279 on a phone; 30 of 36 structure signals pass the 15-brand floor; changed most over four quarters: A long homepage 29% → 37%.");
+  });
+  it("the health line counts brands read in the last 14 days", async () => {
+    const { structureHealthLine } = await import("./structure");
+    expect(structureHealthLine({ fresh_desktop: 283, fresh_phone: 0 })).toBe("structure read in the last 14 days: 283 brands on desktop, 0 on a phone");
+  });
+  it("biggest changes need both ends past the floor", async () => {
+    const { biggestChanges } = await import("./structure");
+    const row = (signal: string, quarter: string, n_read: number, n_yes: number) => ({ signal, viewport: "desktop" as const, scope: "all", quarter, n_read, n_yes });
+    const out = biggestChanges([row("page:long", "2025Q4", 20, 4), row("page:long", "2026Q4", 20, 10), row("nav:deep", "2025Q4", 10, 1), row("nav:deep", "2026Q4", 20, 20)], "2026Q4");
+    expect(out.map(x => x.signal)).toEqual(["page:long"]);
+  });
 });

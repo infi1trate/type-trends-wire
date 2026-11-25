@@ -528,3 +528,11 @@ export const weekDataQuery = (week: string) => queryOptions({ queryKey: ["week-d
 // L1 · the colophon: edition records, the leading brands' measured fields and today's dry run (reads only).
 import { getColophon } from "./living/living.functions";
 export const colophonQuery = () => queryOptions({ queryKey: ["colophon"], staleTime: 10 * 60_000, queryFn: () => getColophon() });
+// J1 + M1 · how pages are built (stored structure rows; no derivation per view).
+import { getBrandStructure, getStructureIndex, getStructureSignal, getNavPatterns, getScopeStructure, getStructureColumns } from "./read.functions";
+export const brandStructureQuery = (domain: string) => queryOptions({ queryKey: ["brand-structure", domain], staleTime: 10 * 60_000, queryFn: () => getBrandStructure({ data: { domain } }) });
+export const structureIndexQuery = (scope: string) => queryOptions({ queryKey: ["structure-index", scope], staleTime: 10 * 60_000, queryFn: () => getStructureIndex({ data: { scope } }) });
+export const structureSignalQuery = (key: string) => queryOptions({ queryKey: ["structure-signal", key], staleTime: 10 * 60_000, queryFn: () => getStructureSignal({ data: { key } }) });
+export const navPatternsQuery = () => queryOptions({ queryKey: ["nav-patterns"], staleTime: 10 * 60_000, queryFn: () => getNavPatterns() });
+export const scopeStructureQuery = (scope: string) => queryOptions({ queryKey: ["scope-structure", scope], staleTime: 10 * 60_000, queryFn: () => getScopeStructure({ data: { scope } }) });
+export const structureColumnsQuery = () => queryOptions({ queryKey: ["structure-columns"], staleTime: 10 * 60_000, queryFn: () => getStructureColumns() });

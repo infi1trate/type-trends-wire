@@ -12,7 +12,8 @@ import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
 import { SectorBrands } from "@/components/read/SectorBrands";
 import { resolveCategory } from "@/lib/categories";
-import { brandsQuery } from "@/lib/data";
+import { brandsQuery, scopeStructureQuery } from "@/lib/data";
+import { ScopeStructure } from "@/components/read/Structure";
 import { withShare, shareImageFor } from "@/lib/share/meta";
 
 export const Route = createFileRoute("/sectors/$sector")({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/sectors/$sector")({
     // P1 · shell first: title and basis come from two small reads; the report itself streams in.
     void context.queryClient.prefetchQuery(sectorReportQuery(params.sector));
     void context.queryClient.prefetchQuery(brandsQuery());
+    void context.queryClient.prefetchQuery(scopeStructureQuery(params.sector));
     const r = await context.queryClient.ensureQueryData(sectorHeadQuery(params.sector));
     if (!r) throw notFound();
     return { title: r.title, basis: r.basis, name: r.name };
@@ -43,6 +45,7 @@ function Report() {
       shapes={[{ kind: "rows", n: 5, height: ROW.ledger }, { kind: "block", height: 320 }, { kind: "rows", n: 5, height: ROW.ledger }]}>
       <SectorBrands sector={sector} category={cf.category} sub={cf.sub} />
       <Full sector={sector} />
+      <Later shapes={[{ kind: "rows", n: 6, height: ROW.compact }]}><ScopeStructure scope={cf.category ? `cat:${sector}/${cf.category}` : sector} /></Later>
     </Later>
   </DigestShell>;
 }

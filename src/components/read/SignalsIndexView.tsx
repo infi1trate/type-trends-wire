@@ -13,6 +13,8 @@ import { RuleBox } from "@/components/brand/Containers";
 import { ReadFooter } from "./Bits";
 import { Sparkline } from "@/components/chartkit";
 import { ScrollRow } from "./ScrollRow";
+import { StructureIndex } from "./Structure";
+import { Later, ROW } from "./Later";
 
 const TIER_NOTE: Record<SignalsGroup["tier"], string> = { headline: "Shown by default everywhere: visible, decision-worthy, well measured and moving.", supporting: "Evidence: shown inside headline signals, audits and drawers.", archive: "Collected, never deleted, not shown by default." };
 const signed = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pts`);
@@ -58,7 +60,7 @@ export function SignalsIndexView({ v }: { v: SignalsView }) {
       </RuleBox>
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine} Change is from the first to the latest well-covered quarter (15+ sites, 25% coverage), all sectors. <Link to="/what-we-show" className="ed-tap" {...pr("/what-we-show")}>What we show and why →</Link></p>
     </section>
-    {idx.groups.map(g => {
+    {v.tab === "structure" ? <Later id="structure-index" shapes={[{ kind: "rows", n: 12, height: ROW.ledger }]}><StructureIndex scope={v.sector} /></Later> : idx.groups.map(g => {
       const head = <><h2 id={`sig-${g.tier}`} className="ed-h3 inline">{g.title} · {g.count}</h2><p className="ed-caption mt-1">{TIER_NOTE[g.tier]}</p></>;
       const cut = g.unscoredFrom ?? g.rows.length, scored = g.rows.slice(0, cut), unscored = g.rows.slice(cut);
       const all = signalsSearch({ ...v, archive: true });

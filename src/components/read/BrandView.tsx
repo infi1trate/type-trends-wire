@@ -21,6 +21,7 @@ import { BasisWord, DigestShell, Dim, StageWord, pr } from "@/components/digest/
 import { AppLink } from "@/components/terminal/AppLink";
 import { ObjectPage, BlockPart } from "./ObjectPage";
 import { SurfacesPart } from "./Surfaces";
+import { StructurePart } from "./Structure";
 import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { Card, Raised } from "@/components/brand/Containers";
@@ -131,7 +132,7 @@ function SimilarList({ similar }: { similar: SimilarResult }) {
   return similar.items.length > 0 ? <Ledger label="Similar brands" rows={similar.items.map((x, k) => ({ key: x.domain, href: x.href, number: k + 1, title: <MarkedName icon={icons[x.domain]}>{x.name}</MarkedName>, line: `Shares ${x.shared.map(s => traitLabel(s).name).join(", ")}`, facts: [`${Math.round(x.overlap * 100)}% overlap`], tags: [x.sameSector ? "Same sector" : sectorName(x.sector)] }))} /> : null;
 }
 /** The parts that may arrive after the card; BrandView passes them ready, BrandPageView passes deferred slots. */
-type Parts = { surfaces?: ReactNode; moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
+type Parts = { structure?: ReactNode; surfaces?: ReactNode; moves: ReactNode; sections: ReactNode; sector: ReactNode; similarLine: ReactNode; similar: ReactNode; stories: ReactNode };
 function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?: boolean }) {
   const page = <ObjectPage kind="brand" id="ed-brand" blocks={{
       headline: <>
@@ -144,6 +145,7 @@ function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?:
         {parts.surfaces}
       </>,
       evidence: <>
+        {parts.structure && <BlockPart title="How the page is built" kicker="The homepage as its sections in order, what it asks you to do, its furniture and how it behaves on a phone. Measured from the page.">{parts.structure}</BlockPart>}
         <BlockPart title="Moves" kicker="Every dated, measured change, newest first, with the two captures either side. Rebrands are confirmed by the rebrand desk.">
           {parts.moves}
         </BlockPart>
@@ -202,6 +204,7 @@ export function BrandPageView({ card, section = null, bare = false }: { card: Ca
   const open = isCropSection(section) ? section : null;
   return <BrandBody b={card} bare={bare} parts={{
     surfaces: <Later id="ed-surfaces" shapes={[]}><SurfacesPart domain={card.domain} /></Later>,
+    structure: <Later id="ed-structure" shapes={[{ kind: "block", height: 384 }, { kind: "rows", n: 6, height: ROW.compact }]}><StructurePart domain={card.domain} /></Later>,
     moves: <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }, { kind: "picture", ratio: 2 * 1280 / 800, maxWidth: 1064 }, { kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={card} /></Later>,
     // D1b · the strip from the card's own latest crops when they came with it (no late arrival); the section history still arrives late.
     sections: <Later shapes={[{ kind: "picture", ratio: 1280 / 800, maxWidth: 640 }, { kind: "text", lines: 1 }]}
@@ -219,6 +222,7 @@ export function BrandPageWithoutCard({ domain, name, line }: { domain: string; n
   return <ObjectPage kind="brand" id="ed-brand" blocks={{
     headline: <><h1 id="ed-brand-title" className="ed-cover break-words">{name}</h1><div className="mt-6" data-card-failed="">{line}</div></>,
     evidence: <>
+      <BlockPart title="How the page is built" kicker="The homepage as its sections in order, what it asks you to do, its furniture and how it behaves on a phone. Measured from the page."><Later id="ed-structure" shapes={[{ kind: "block", height: 384 }, { kind: "rows", n: 6, height: ROW.compact }]}><StructurePart domain={domain} /></Later></BlockPart>
       <BlockPart title="Moves" kicker="Every dated, measured change, newest first, with the two captures either side. Rebrands are confirmed by the rebrand desk.">
         <Later id="ed-moves" shapes={[{ kind: "rows", n: 3, height: ROW.ledger }]}><MovesPart b={b} /></Later>
       </BlockPart>

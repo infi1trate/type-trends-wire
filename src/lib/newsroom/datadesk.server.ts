@@ -187,5 +187,8 @@ export async function runProposal(db: Admin, o: { now?: number; fixture?: boolea
   const { deskDoor } = await import("../stories/desk.server");
   for (const s of e.studies) { const r = await deskDoor("data", { action: "pitch", kind: "study", ref: `study:${s.measure}`, facts: [`Measure: ${s.measure}`, `Minimum: ${s.minimum}`], note: s.question.slice(0, 140) }); if (r.status < 300) out.filed++; }
   for (const s of e.signals) { const r = await deskDoor("data", { action: "propose", kind: "signal", text: `${s.question} Measure: ${s.measure}. Minimum: ${s.minimum}.`.slice(0, 600), subject: s.measure }); if (r.status < 300) out.filed++; }
+  // J1 · the weekly summary's structure line (stored counts only; a failed read leaves it out).
+  const sf = await import("../structure-read.server").then(m => m.structureFacts(now)).catch(() => null);
+  if (sf) { const { structureDeskLine } = await import("../structure"); await deskDoor("data", { action: "data_run", run: "proposal", summary: `Weekly proposal: ${out.why}. ${structureDeskLine(sf)}`.slice(0, 600), counts: { structure_desktop: sf.desktop, structure_phone: sf.phone, structure_passing: sf.passing } }).catch(() => null); }
   return out;
 }

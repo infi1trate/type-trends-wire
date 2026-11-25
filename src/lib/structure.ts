@@ -28,6 +28,7 @@ export type StructureInput = { id: number; domain: string; viewport: string; sou
 export type Section = { r: string; y: number; h: number; t: string | null };
 export type Ask = { l: string; k: string; p: boolean; n: boolean };
 export type PhoneFields = { nav: string | null; tap_n: number | null; tap_med: number | null; tap_small: number | null; body_px: number | null; h1_px: number | null; sticky: string | null; smart_banner: boolean; store_links: number | null; store_first: number | null; app_prompt: boolean; overflow_x: boolean };
+export type Furniture = Record<string, string | number | boolean | null>;
 export type StructureRecord = {
   /** H fields (from nav, page, skeleton): null when the capture did not carry them. */
   nav_items: number | null; nav_depth: 1 | 2 | null; nav_labels: string[] | null; nav_words: NavWord[] | null; signin: SigninWording | null; signin_read: boolean;
@@ -36,7 +37,7 @@ export type StructureRecord = {
   structure_read: boolean; roles: string[] | null; sections: Section[] | null; page_h: number | null;
   positions: Partial<Record<"logos" | "testimonials" | "pricing" | "faq" | "stats", number | null>> | null;
   primary_ask: string | null; asks: Ask[] | null; asks_n: number | null; start_and_demo: boolean | null;
-  furniture: Obj | null; mobile: PhoneFields | null; accent: string | null;
+  furniture: Furniture | null; mobile: PhoneFields | null; accent: string | null;
 };
 
 /** "Sign in Sign in" → "sign in"; "&" → "and"; lowercase, trimmed, single spaces. */
@@ -45,6 +46,8 @@ export function normLabel(raw: string): string {
   const half = s.split(" "); if (half.length % 2 === 0 && half.length > 0) { const a = half.slice(0, half.length / 2).join(" "), b = half.slice(half.length / 2).join(" "); if (a === b) s = a; }
   return s;
 }
+/** "Sign in Sign in" → "Sign in" (the crawler reads a visible and a hidden copy of some labels). Case kept. */
+export function undouble(l: string): string { const w = l.trim().split(/\s+/); if (w.length % 2 === 0) { const a = w.slice(0, w.length / 2).join(" "), b = w.slice(w.length / 2).join(" "); if (a.toLowerCase() === b.toLowerCase()) return a; } return w.join(" "); }
 const LOGO = /(^|\s)home(page)?$|^navigate to home|^skip to|^go to home|^logo$|^back to top/;
 /** Top-level navigation items: depth 1 and visible, logo/home and skip links left out. Fewer than two such items = not read. */
 export function topLabels(nav: unknown): string[] | null {
@@ -77,7 +80,7 @@ export function deriveRecord(s: StructureInput): StructureRecord {
   const words = labels ? [...new Set(labels.map(leadWord).filter((w): w is NavWord => !!w))] : null;
   const depth = Array.isArray(s.nav) ? (s.nav.some(n => isObj(n) && n["depth"] === 2) ? 2 : 1) : null;
   const st = isObj(s.structure) && s.structure["v"] != null ? s.structure : null;
-  const furniture = st && isObj(st["furniture"]) ? st["furniture"] : st ? {} : null;
+  const furniture: Furniture | null = st && isObj(st["furniture"]) ? Object.fromEntries(Object.entries(st["furniture"]).filter(([, v]) => v == null || ["string", "number", "boolean"].includes(typeof v)).map(([k, v]) => [k, typeof v === "string" ? v.slice(0, 120) : v as number | boolean | null])) : st ? {} : null;
   let signin: SigninWording | null = null;
   for (const l of labels ?? []) { signin = signinOf(l); if (signin) break; }
   const login = furniture ? str(furniture["login"]) : null;
@@ -89,7 +92,7 @@ export function deriveRecord(s: StructureInput): StructureRecord {
   const firstButtons = sk ? sk.filter(b => b["kind"] === "control" && (num(b["y"]) ?? 1e9) < screenPx).length : null;
   const bands = sk ? sk.filter(b => b["kind"] === "section").length : null;
   const sections: Section[] | null = st && Array.isArray(st["sections"]) ? st["sections"].filter(isObj).flatMap(x => { const r = str(x["r"]); return r ? [{ r, y: num(x["y"]) ?? 0, h: Math.max(0, num(x["h"]) ?? 0), t: str(x["t"])?.slice(0, 48) ?? null }] : []; }) : st ? [] : null;
-  const asks: Ask[] | null = st && Array.isArray(st["asks"]) ? st["asks"].filter(isObj).flatMap(x => { const l = str(x["l"]), k = str(x["k"]); return l && k ? [{ l: l.slice(0, 48), k, p: x["p"] === 1 || x["p"] === true, n: x["n"] === 1 || x["n"] === true }] : []; }).slice(0, 8) : st ? [] : null;
+  const asks: Ask[] | null = st && Array.isArray(st["asks"]) ? st["asks"].filter(isObj).flatMap(x => { const l = str(x["l"]), k = str(x["k"]); return l && k ? [{ l: undouble(l).slice(0, 48), k, p: x["p"] === 1 || x["p"] === true, n: x["n"] === 1 || x["n"] === true }] : []; }).slice(0, 8) : st ? [] : null;
   const pageH = sections && sections.length ? Math.max(ph ?? 0, ...sections.map(x => x.y + x.h)) : ph;
   const pos = (r: string) => { const x = sections?.find(y => y.r === r); return x && pageH ? Math.round((x.y / pageH) * 100) / 100 : null; };
   const primary = asks ? (asks.find(a => a.p) ?? asks[0] ?? null) : null;
@@ -236,7 +239,7 @@ export const quarterLabel = (q: string) => `Q${q.slice(5)} ${q.slice(0, 4)}`;
 export function biggestChanges(series: readonly SeriesRow[], latest: string, n = 3): { signal: string; from: number; to: number }[] {
   const at = new Map(series.filter(s => s.scope === "all" && s.viewport === "desktop").map(s => [`${s.signal}|${s.quarter}`, s]));
   const back = quarterBack(latest, 4);
-  return STRUCTURE_SIGNALS.flatMap(s => { const a = shareOf(at.get(`${s.key}|${back}`)), b = shareOf(at.get(`${s.key}|${latest}`)); return a != null && b != null ? [{ signal: s.key, from: a, to: b }] : []; })
+  return STRUCTURE_SIGNALS.flatMap(s => { const a = shareOf(nearestRead(series, s.key, "desktop", back)), b = shareOf(at.get(`${s.key}|${latest}`)); return a != null && b != null ? [{ signal: s.key, from: a, to: b }] : []; })
     .sort((x, y) => Math.abs(y.to - y.from) - Math.abs(x.to - x.from)).slice(0, n);
 }
 
@@ -245,3 +248,22 @@ export function structureSummary(r: StructureRecord | null | undefined) {
   if (!r) return null;
   return { read: r.structure_read, sections: r.roles, primary_ask: r.primary_ask, nav_items: r.nav_items, furniture: r.furniture ? Object.keys(r.furniture).filter(k => r.furniture![k]) : null, phone_nav: r.mobile?.nav ?? null };
 }
+
+const qIndex = (q: string) => Number(q.slice(0, 4)) * 4 + Number(q.slice(5)) - 1;
+/** Archive captures come about twice a year, so a "then" quarter is the nearest one with STRUCTURE_FLOOR brands read within two
+ *  quarters of the target (earlier first on a tie); null when none. */
+export function nearestRead(rows: readonly SeriesRow[], signal: string, vp: Viewport, target: string, within = 2): SeriesRow | null {
+  const t = qIndex(target);
+  return rows.filter(r => r.signal === signal && r.viewport === vp && r.scope === "all" && r.n_read >= STRUCTURE_FLOOR && Math.abs(qIndex(r.quarter) - t) <= within)
+    .sort((a, b) => Math.abs(qIndex(a.quarter) - t) - Math.abs(qIndex(b.quarter) - t) || a.quarter.localeCompare(b.quarter))[0] ?? null;
+}
+
+export type StructureFacts = { desktop: number; phone: number; fresh_desktop: number; fresh_phone: number; passing: number; total: number; changes: { signal: string; from: number; to: number }[] };
+export const STRUCTURE_FRESH_DAYS = 14;
+/** The data desk's weekly structure line (3.1). */
+export function structureDeskLine(f: StructureFacts): string {
+  const ch = f.changes.length ? f.changes.map(c => `${STRUCTURE_BY_KEY.get(c.signal)?.name ?? c.signal} ${pctText(c.from)} → ${pctText(c.to)}`).join("; ") : "none with four quarters of history past the floor";
+  return `Structure: ${f.desktop} brands read on desktop, ${f.phone} on a phone; ${f.passing} of ${f.total} structure signals pass the ${STRUCTURE_FLOOR}-brand floor; changed most over four quarters: ${ch}.`;
+}
+/** The health endpoint's library line addition (3.2). */
+export const structureHealthLine = (f: Pick<StructureFacts, "fresh_desktop" | "fresh_phone">) => `structure read in the last ${STRUCTURE_FRESH_DAYS} days: ${f.fresh_desktop} brands on desktop, ${f.fresh_phone} on a phone`;

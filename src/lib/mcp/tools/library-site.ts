@@ -11,6 +11,10 @@ export default defineTool({ name: "library_site", title: "Library site fingerpri
     const latest = [...new Map([...data.snapshots].reverse().map(s => [`${s.page_type}:${s.viewport}`, s])).values()];
     const { similarFor } = await import("@/lib/read.server");
     const sim = await similarFor(domain).catch(() => null);
+    // J1 · structure summary: section roles in order, primary ask kind, furniture keys, phone nav (null when not read yet).
+    const { loadBrandStructure } = await import("@/lib/structure-read.server"), { structureSummary } = await import("@/lib/structure");
+    const st = await loadBrandStructure(domain).catch(() => null);
+    const structure = st ? { desktop: structureSummary(st.desktop?.record), phone: structureSummary(st.phone?.record), quarter: st.quarter } : null;
     const similar = sim ? { line: sim.line, enough: sim.enough, brands: sim.items.map(b => ({ domain: b.domain, name: b.name, sector: b.sector, ...classOf({ domain: b.domain }), same_sector: b.sameSector, overlap: Math.round(b.overlap * 100) / 100, shared: b.shared, url: `${SITE_URL}${b.href}` })) } : null;
-    return json({ site: data.site && (data.site as { domain?: string }).domain ? withClass(data.site as typeof data.site & { domain: string }) : data.site, similar, fingerprint: fingerprint(data.snapshots.find(s => s.page_type === "home" && s.viewport === "desktop" && s.source === "live")?.signals), snapshots: latest.map(s => ({ id: s.id, page_type: s.page_type, viewport: s.viewport, source: s.source, captured_at: s.captured_at, url: s.url })), events: data.events.slice(0, 20), receipts: { source: `${BRAND_NAME} library crawler`, method: "trend://methodology", as_of: data.site.last_snapshot_at } });
+    return json({ structure, site: data.site && (data.site as { domain?: string }).domain ? withClass(data.site as typeof data.site & { domain: string }) : data.site, similar, fingerprint: fingerprint(data.snapshots.find(s => s.page_type === "home" && s.viewport === "desktop" && s.source === "live")?.signals), snapshots: latest.map(s => ({ id: s.id, page_type: s.page_type, viewport: s.viewport, source: s.source, captured_at: s.captured_at, url: s.url })), events: data.events.slice(0, 20), receipts: { source: `${BRAND_NAME} library crawler`, method: "trend://methodology", as_of: data.site.last_snapshot_at } });
   } });

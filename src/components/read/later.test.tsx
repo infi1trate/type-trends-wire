@@ -47,7 +47,7 @@ describe("brand page, first render", () => {
     expect(b.timeline.length).toBeGreaterThan(0);
     const { container } = await renderInRouter(() => createElement(BrandPageView, { card: cardOf(b) }), "/brands/vercel.com");
     expect(container.querySelector("h1")?.textContent).toContain(b.name);
-    expect(container.querySelectorAll("[data-later][aria-busy='true']").length).toBe(6);
+    expect(container.querySelectorAll("[data-later][aria-busy='true']").length).toBe(7);
     expect(container.querySelector("[data-pair-open]")).toBeNull();
     const moves = container.querySelector("#ed-moves")!;
     expect(moves.getAttribute("aria-busy")).toBe("true");

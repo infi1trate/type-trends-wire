@@ -159,3 +159,11 @@ export const getNewestStory = createServerFn({ method: "GET" }).handler(async ()
   const s = streamOf(await storyIndex())[0];
   return s ? { headline: s.headline, href: `/stories/${encodeURIComponent(s.id)}` } : null;
 });
+// J1 + M1 · stored structure rows only.
+const structureKey = z.string().min(3).max(60);
+export const getBrandStructure = createServerFn({ method: "GET" }).inputValidator(domainInput).handler(async ({ data }) => (await import("./structure-read.server")).loadBrandStructure(data.domain.toLowerCase()));
+export const getStructureIndex = createServerFn({ method: "GET" }).inputValidator(z.object({ scope: z.string().max(80).default("all") })).handler(async ({ data }) => (await import("./structure-read.server")).loadStructureIndex(data.scope));
+export const getStructureSignal = createServerFn({ method: "GET" }).inputValidator(z.object({ key: structureKey })).handler(async ({ data }) => (await import("./structure-read.server")).loadStructureSignal(data.key));
+export const getNavPatterns = createServerFn({ method: "GET" }).handler(async () => (await import("./structure-read.server")).loadNavPatterns());
+export const getScopeStructure = createServerFn({ method: "GET" }).inputValidator(z.object({ scope: z.string().max(80) })).handler(async ({ data }) => (await import("./structure-read.server")).loadScopeStructure(data.scope));
+export const getStructureColumns = createServerFn({ method: "GET" }).handler(async () => (await import("./structure-read.server")).loadStructureColumns());

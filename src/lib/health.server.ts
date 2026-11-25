@@ -136,7 +136,11 @@ async function loadPayload(): Promise<HealthPayload> {
   const library = await (async () => {
     const rows: { domain: string; sector: string | null; category: string | null; subcategory: string | null }[] = [];
     for (let f = 0; ; f += 1000) { const { data, error } = await supabaseAnon().from("library_sites").select("domain,sector,category,subcategory").eq("active", true).order("domain").range(f, f + 999); if (error) return null; rows.push(...(data ?? [])); if (!data || data.length < 1000) break; }
-    const { librarySummary, libraryLine } = await import("./categories"); const s = librarySummary(rows); return { ...s, line: libraryLine(s) };
+    const { librarySummary, libraryLine } = await import("./categories"); const s = librarySummary(rows);
+    // J1 · brands with a structure reading newer than 14 days (stored rows only); unreadable leaves the line as it was.
+    const sf = await import("./structure-read.server").then(m => m.structureFacts(now)).catch(() => null);
+    const sl = sf ? (await import("./structure")).structureHealthLine(sf) : null;
+    return { ...s, structure: sf ? { fresh_desktop: sf.fresh_desktop, fresh_phone: sf.fresh_phone } : null, line: sl ? `${libraryLine(s).replace(/\.$/, "")}; ${sl}.` : libraryLine(s) };
   })().catch(() => null);
   value = { ...value, brand_names: names, spend, art, icons, stored_pages, spend_week, library };
   cache = { at: now, value };

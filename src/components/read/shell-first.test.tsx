@@ -23,7 +23,7 @@ describe("split Read loaders never await deferred reads", { timeout: 30_000 }, (
     const c = client(() => ({ name: "GoPro", sectorName: "Consumer", soWhat: "x" }));
     const r = await within(Promise.resolve(loaderOf(Route)({ context: c, params: { domain: "netlify.com" }, deps: { data: false } })));
     expect(c.awaited).toEqual([]);
-    expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories", "brand-surfaces"]);
+    expect(c.started.sort()).toEqual(["brand-card", "brand-moves", "brand-sections", "brand-sector", "brand-similar", "brand-stories", "brand-structure", "brand-surfaces"]);
     // C1b · beside the name, only the card's announced picture, which waits at most FIRST_PAINT_DEADLINE_MS (well inside this test's limit).
     expect(r).toMatchObject({ name: "Netlify", data: false });
     expect(Object.keys(r as object).sort()).toEqual(["data", "first", "name"]);

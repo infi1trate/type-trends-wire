@@ -5,7 +5,8 @@ import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { brandCardQuery, brandSurfacesQuery, forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery } from "@/lib/data";
+import { brandCardQuery, brandSurfacesQuery, forecastDetailQuery, librarySiteQuery, patternsQuery, storyDataQuery, studyDataQuery, weekDataQuery, dataStoryQuery, signalsQuery, brandStructureQuery } from "@/lib/data";
+import { NOT_READ } from "@/lib/structure";
 import { LibraryBand, ChangeValues } from "@/components/terminal/LibraryShared";
 import { LibrarySite } from "@/components/terminal/LibrarySite";
 import { TraitDetail, BriefView } from "@/components/terminal/Forecast";
@@ -119,6 +120,8 @@ function BrandDataBody({ domain }: { domain: string }) {
         rows={s.rows.map(r => [r.page, ...s.fieldNames.map(f => r.fields[f] ?? "not measured"), r.at.slice(0, 10), r.url ? <Lnk key="u" href={r.url}>{r.url.replace(/^https?:\/\//, "")}</Lnk> : "–", r.match === "this is home" ? "–" : r.match])} />
       {s.productLine && <p className="p-3 text-compare-muted">{s.productLine}</p>}
     </Band>}
+    {/* J1 · the stored structure record, raw, desktop and phone (newest well-read quarter). */}
+    <Later shapes={rowsShape(4)}><StructureRaw domain={domain} /></Later>
     {s.history.length > 0 && <Band title="ICON AND CARD HISTORY">
       <DataTable caption="Every stored version of the site icon and social card, oldest first" head={["Picture", "Version", "First seen", "Last seen", "Against the previous version", "Receipt"]}
         rows={s.history.map(h => [h.kind, String(h.version), h.first.slice(0, 16).replace("T", " "), h.last.slice(0, 16).replace("T", " "), assetVerdictText(h.verdict), <Lnk key="r" href={h.src}>PICTURE →</Lnk>])} />
@@ -207,5 +210,16 @@ function WeekBrief({ week }: { week: string }) {
     <BriefView brief={data.brief} onTrait={id => void router.navigate({ href: dataHref({ type: "signal", id: id.replace(/:all$/, "") }) })} />
     <DataTable caption="Every item the brief cites" head={["Section", "Kind", "What", "Open"]} rows={movers.map(m => [m.section, m.kind, m.what, m.href ? <Lnk key="o" href={m.href}>OPEN →</Lnk> : "–"])} csv={{ name: `brief-${week}`, rows: movers.map(m => [m.section, m.kind, m.what, m.href ?? ""]) }} />
     <p className="label p-3 text-compare-muted">STORED {day(data.at)} · MODEL {show(data.model)}</p>
+  </Band>;
+}
+
+function StructureRaw({ domain }: { domain: string }) {
+  const { data } = useSuspenseQuery(brandStructureQuery(domain));
+  const rows = [["Desktop", data.desktop], ["Phone", data.phone]] as const;
+  return <Band title="PAGE STRUCTURE">
+    {!data.desktop && !data.phone ? <p className="p-3 text-compare-muted">{NOT_READ}</p> : rows.map(([k, v]) => v && <details key={k} className="border-b border-rule p-3" data-structure-raw={k}>
+      <summary className="label cursor-pointer">{k.toUpperCase()} · {v.source} · {v.captured_at.slice(0, 16).replace("T", " ")} UTC</summary>
+      <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-words text-label">{JSON.stringify(v.record, null, 1)}</pre>
+    </details>)}
   </Band>;
 }

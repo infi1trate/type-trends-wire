@@ -1,7 +1,7 @@
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { brandCardQuery, brandMovesQuery, brandSectionsQuery, brandSurfacesQuery, brandSectorQuery, brandSimilarQuery, brandStoriesQuery } from "@/lib/data";
+import { brandCardQuery, brandMovesQuery, brandSectionsQuery, brandSurfacesQuery, brandSectorQuery, brandSimilarQuery, brandStoriesQuery, brandStructureQuery } from "@/lib/data";
 import { fontLinks } from "@/lib/digest/meta";
 import { SITE_URL } from "@/lib/site";
 import { BrandFrame, BrandPageView, BrandPageWithoutCard } from "@/components/read/BrandView";
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/brands/$domain")({
     // C1 · every part starts first, the card with them; it streams into its slot (waiting for it before the first byte was measured:
     // it held the first byte to 0.75–0.85 s on a cold server and the card still missed the first HTML).
     void q.prefetchQuery(brandMovesQuery(d)); void q.prefetchQuery(brandSectionsQuery(d)); void q.prefetchQuery(brandSurfacesQuery(d)); void q.prefetchQuery(brandSectorQuery(d));
-    void q.prefetchQuery(brandSimilarQuery(d)); void q.prefetchQuery(brandStoriesQuery(d));
+    void q.prefetchQuery(brandSimilarQuery(d)); void q.prefetchQuery(brandStoriesQuery(d)); void q.prefetchQuery(brandStructureQuery(d));
     // C1b · the card's cover (the brand's largest picture) is announced in the first flush from one small read started when the request
     // arrived and shared with the card, waited for until FIRST_PAINT_DEADLINE_MS after arrival.
     const first = firstPaint("brand", d);

@@ -61,6 +61,7 @@ import { Route as MorningDateRouteImport } from './routes/morning.$date'
 import { Route as MorningRssDotxmlRouteImport } from './routes/morning.rss[.]xml'
 import { Route as PatternsIndexRouteImport } from './routes/patterns.index'
 import { Route as PatternsKeyRouteImport } from './routes/patterns.$key'
+import { Route as PatternsNavigationRouteImport } from './routes/patterns.navigation'
 import { Route as SectorsIndexRouteImport } from './routes/sectors.index'
 import { Route as SectorsSectorRouteImport } from './routes/sectors.$sector'
 import { Route as ShareSplatRouteImport } from './routes/share.$'
@@ -375,6 +376,11 @@ const PatternsKeyRoute = PatternsKeyRouteImport.update({
   path: '/patterns/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatternsNavigationRoute = PatternsNavigationRouteImport.update({
+  id: '/patterns/navigation',
+  path: '/patterns/navigation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SectorsIndexRoute = SectorsIndexRouteImport.update({
   id: '/sectors/',
   path: '/sectors/',
@@ -672,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/morning/$date': typeof MorningDateRoute
   '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
+  '/patterns/navigation': typeof PatternsNavigationRoute
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
@@ -775,6 +782,7 @@ export interface FileRoutesByTo {
   '/morning/$date': typeof MorningDateRoute
   '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
+  '/patterns/navigation': typeof PatternsNavigationRoute
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
@@ -879,6 +887,7 @@ export interface FileRoutesById {
   '/morning/$date': typeof MorningDateRoute
   '/morning/rss.xml': typeof MorningRssDotxmlRoute
   '/patterns/$key': typeof PatternsKeyRoute
+  '/patterns/navigation': typeof PatternsNavigationRoute
   '/sectors/$sector': typeof SectorsSectorRoute
   '/share/$': typeof ShareSplatRoute
   '/signals/$key': typeof SignalsKeyRoute
@@ -984,6 +993,7 @@ export interface FileRouteTypes {
     | '/morning/$date'
     | '/morning/rss.xml'
     | '/patterns/$key'
+    | '/patterns/navigation'
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
@@ -1087,6 +1097,7 @@ export interface FileRouteTypes {
     | '/morning/$date'
     | '/morning/rss.xml'
     | '/patterns/$key'
+    | '/patterns/navigation'
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
@@ -1190,6 +1201,7 @@ export interface FileRouteTypes {
     | '/morning/$date'
     | '/morning/rss.xml'
     | '/patterns/$key'
+    | '/patterns/navigation'
     | '/sectors/$sector'
     | '/share/$'
     | '/signals/$key'
@@ -1294,6 +1306,7 @@ export interface RootRouteChildren {
   MorningDateRoute: typeof MorningDateRoute
   MorningRssDotxmlRoute: typeof MorningRssDotxmlRoute
   PatternsKeyRoute: typeof PatternsKeyRoute
+  PatternsNavigationRoute: typeof PatternsNavigationRoute
   SectorsSectorRoute: typeof SectorsSectorRoute
   ShareSplatRoute: typeof ShareSplatRoute
   SignalsKeyRoute: typeof SignalsKeyRoute
@@ -1721,6 +1734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatternsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/patterns/navigation': {
+      id: '/patterns/navigation'
+      path: '/patterns/navigation'
+      fullPath: '/patterns/navigation'
+      preLoaderRoute: typeof PatternsNavigationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sectors/': {
       id: '/sectors/'
       path: '/sectors'
@@ -2110,6 +2130,7 @@ const rootRouteChildren: RootRouteChildren = {
   MorningDateRoute: MorningDateRoute,
   MorningRssDotxmlRoute: MorningRssDotxmlRoute,
   PatternsKeyRoute: PatternsKeyRoute,
+  PatternsNavigationRoute: PatternsNavigationRoute,
   SectorsSectorRoute: SectorsSectorRoute,
   ShareSplatRoute: ShareSplatRoute,
   SignalsKeyRoute: SignalsKeyRoute,

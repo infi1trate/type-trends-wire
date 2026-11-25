@@ -355,6 +355,7 @@ export const SURFACES: Record<string, Surface> = {
   "patterns.index": S("patterns", "read", "shown", "The pattern gallery: a wall of stored captures showing headline patterns, filters in the URL."),
   "collections.index": S("patterns", "read", "shown", "Numbered collections: saved gallery filters, live at 12 or more tiles."),
   "collections.$slug": S("patterns", "read", "shown", "One collection as a wall, paired with its study or signal."),
+  "patterns.navigation": S("patterns", "read", "shown", "The words in top navigation over five years, and how sign-in is worded (J1)."),
   "patterns.$key": S("patterns", "read", "shown", "Pattern object page: example brands as a grid, filterable by sector."),
   "digest.index": S("digest", "read", "shown", "Latest issue: the newest closed week with a published story (E5 edition model)."),
   "digest.$week": S("digest", "read", "shown", "One closed week's issue, assembled from its published stories; a week with no story has no issue."),
@@ -460,7 +461,7 @@ export type Density = (typeof DENSITIES)[number];
 export const DENSITY: Record<string, Density | "none"> = {
   index: "steady", "signals.index": "steady", "signals.leading": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
   "sectors.index": "steady", "data.index": "steady", tools: "steady", colophon: "quiet", "audit.index": "quiet", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
-  ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",
+  ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "patterns.navigation": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",
   "stories.$id": "quiet", "stories.no.$number": "quiet", "signals.$key": "quiet", "trait.$key": "quiet",
   "digest.index": "quiet", "digest.$week": "quiet", "sectors.$sector": "quiet", "data.$slug": "quiet", "data.where-you-sit": "quiet", welcome: "quiet",
   "brand.index": "quiet", "brand.mark": "quiet", "brand.colour": "quiet", "brand.type": "quiet", "brand.containers": "quiet", "brand.system": "quiet", "brand.space": "quiet",
@@ -496,12 +497,13 @@ export function whereThingsLive() {
 
 // SIGNAL INDEX TABS — /signals groups headline signals by dimension; Voice is the tone/positioning slice of VIBE (the old Lexicon panel's headline set).
 export const SIGNAL_TABS = [
-  { id: "all", label: "All" }, { id: "type", label: "Type" }, { id: "color", label: "Color" }, { id: "layout", label: "Layout" }, { id: "voice", label: "Voice" }, { id: "vibe", label: "Vibe" },
+  { id: "all", label: "All" }, { id: "type", label: "Type" }, { id: "color", label: "Color" }, { id: "layout", label: "Layout" }, { id: "voice", label: "Voice" }, { id: "vibe", label: "Vibe" }, { id: "structure", label: "Structure" },
 ] as const;
 export type SignalTab = (typeof SIGNAL_TABS)[number]["id"];
 const VOICE = (k: string) => /^(tone|ai_positioning):/.test(k) || k === "combo:ai_forward" || k === "combo:playful_brand";
 /** Which /signals tab a signal belongs to (besides All). */
 export function signalTabOf(key: string, dimension: string): Exclude<SignalTab, "all"> {
+  if (/^(nav|ask|furn|page|phone):/.test(key)) return "structure";
   if (dimension === "FONT") return "type";
   if (dimension === "COLOR") return "color";
   if (dimension === "LAYOUT") return "layout";

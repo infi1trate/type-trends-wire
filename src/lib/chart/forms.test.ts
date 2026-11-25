@@ -12,6 +12,7 @@ const NOT_CHARTS: Record<string, string> = {
   "src/components/brand/Illustration.tsx": "brand illustration", "src/components/brand/Wordmark.tsx": "the wordmark", "src/components/brand/mark.ts": "the mark",
   "src/components/brand/pages/BrandPages.tsx": "brand-book diagrams of the mark", "src/components/read/Treated.tsx": "image treatment filters",
   "src/components/terminal/LibraryWireframe.tsx": "a page's layout boxes", "src/components/terminal/LibraryArchiveStrip.tsx": "archive capture wireframes",
+  "src/components/read/Structure.tsx": "a homepage's sections as a strip, like the layout wireframe",
 };
 
 describe("the chart registry", () => {

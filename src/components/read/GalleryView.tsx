@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { line as voiced } from "@/lib/voice";
 // /patterns (Steady): the pattern gallery — a wall of stored captures that show a pattern, filtered by sector (the lens), pattern,
 // period, measured or AI estimate, and page section (offered only once crops exist). The server builds and caches the model.
@@ -27,6 +28,7 @@ export function GalleryView({ search }: { search: GallerySearch }) {
       <p className="ed-kicker">Patterns · {sectorName(sector)}</p>
       <h1 className="ed-cover mt-3">{p ? p.name : "Patterns, seen on the page"}</h1>
       <p className="ed-standfirst mt-5 max-w-[62ch]">{p ? `Every stored capture showing ${p.name.toLowerCase()}, newest first. Open a tile for the brand.` : "Stored captures of tracked homepages that show a headline pattern, newest first. Filter by pattern, period and how it was read; open a tile for the brand."}</p>
+      {!p && <p className="ed-small mt-3" data-nav-patterns-link=""><Link to="/patterns/navigation" className="ed-tap font-semibold">The words in top navigation, over five years →</Link></p>}
     </header>
     <section aria-label="Filters" className="ed-wrap mt-8">
       <RuleBox className="p-4">
