@@ -94,3 +94,14 @@ describe("R2a-2 · onboarding is inactive until the step", () => {
     expect(panelHealthLine({ panel: 1, onboarding: 0, ready: 0, unfiled: 0, last_step: null, invariant: panelInvariantProblems(bad) })).toMatch(/PANEL INVARIANT BROKEN/);
   });
 });
+
+// The archive crawler reads from 2021 Q1 (crawler/src/wayback-lib.js START_YEAR); a rule that asked for an earlier
+// quarter could never be met, and no brand would ever join.
+import { readFileSync } from "node:fs";
+import { PANEL_FROM_QUARTER } from "./panel";
+describe("the first archive quarter", () => {
+  it("is the first quarter the archive crawler reads", () => {
+    const year = /export const START_YEAR = (\d{4});/.exec(readFileSync("crawler/src/wayback-lib.js", "utf8"))?.[1];
+    expect(PANEL_FROM_QUARTER).toBe(`${year}Q1`);
+  });
+});
