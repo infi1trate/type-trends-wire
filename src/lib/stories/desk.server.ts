@@ -137,7 +137,9 @@ export async function doorCall(d: DeskDeps, obj: Record<string, unknown>, inner:
   const base = { actor, action: b.action, level: def.level, subject_kind: subjectKind, subject_id: subjectOf(b) };
   if (verdict.kind === "refused") { await log({ ...base, decision: "refused", reason: verdict.reason }); return { status: 403, body: { error: "refused", level: def.level, reason: verdict.reason, ...(verdict.confirm ? { confirm: verdict.confirm } : {}) } }; }
   if (verdict.kind === "proposal") {
-    const detail = b.action === "propose" ? { kind: b.kind, text: b.text } : {};
+    // R1 · a brand candidate without a sector, category and sub-category from the map is refused here, before it is recorded.
+    if (b.action === "propose" && b.kind === "brand") { const { classificationProblem } = await import("../categories"); const cp = classificationProblem(b); if (cp) return refused(409, actor, b.action, `A brand candidate needs its sector, category and sub-category from the category map. ${cp}`, { error: "refused", reason: `A brand candidate needs its sector, category and sub-category from the category map. ${cp}` }); }
+    const detail = b.action === "propose" ? { kind: b.kind, text: b.text, ...(b.kind === "brand" ? { sector: b.sector, category: b.category, subcategory: b.subcategory } : {}) } : {};
     const id = await log({ ...base, decision: "proposed", reason: b.action === "propose" ? b.text.slice(0, 600) : null, detail });
     // N4 · the proposal's desk-log id, so a queue item can name it as its source.
     return { status: 202, body: { ok: true, proposed: true, level: def.level, note: "Recorded as a proposal; nothing live changed.", ...(id != null ? { log: id } : {}) } };

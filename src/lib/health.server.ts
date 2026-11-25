@@ -132,7 +132,13 @@ async function loadPayload(): Promise<HealthPayload> {
   }).catch(() => null);
   // T1 · this week's spend totals from the anonymous spend_week_facts() facade; unreadable reads as null and never changes the status.
   const spend_week = await import("./newsroom/ledger.server").then(m => m.healthSpend(supabaseAnon() as never)).catch(() => null);
-  value = { ...value, brand_names: names, spend, art, icons, stored_pages, spend_week };
+  // R1 · active brands by sector and the categories / sub-categories at the 15-brand floor (anonymous read of four columns, paged).
+  const library = await (async () => {
+    const rows: { domain: string; sector: string | null; category: string | null; subcategory: string | null }[] = [];
+    for (let f = 0; ; f += 1000) { const { data, error } = await supabaseAnon().from("library_sites").select("domain,sector,category,subcategory").eq("active", true).order("domain").range(f, f + 999); if (error) return null; rows.push(...(data ?? [])); if (!data || data.length < 1000) break; }
+    const { librarySummary, libraryLine } = await import("./categories"); const s = librarySummary(rows); return { ...s, line: libraryLine(s) };
+  })().catch(() => null);
+  value = { ...value, brand_names: names, spend, art, icons, stored_pages, spend_week, library };
   cache = { at: now, value };
   return value;
 }

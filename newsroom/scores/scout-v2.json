@@ -1,0 +1,153 @@
+{
+ "desk": "scout",
+ "version": "v2",
+ "prompt_hash": "18321df7",
+ "run_at": "2026-11-25T05:00:00Z",
+ "cases": 1,
+ "run": "R1-proof",
+ "against": "v1",
+ "note": "R1: candidates carry sector, category and sub-category from the category map; one fixture candidates call, nothing stored or filed.",
+ "call_id": 4,
+ "returned": 13,
+ "kept": [
+  {
+   "name": "Visa",
+   "domain": "visa.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing",
+   "why": "Visa’s global refresh introduces a standalone V and Visa Sans, two elements to watch for on its homepage.",
+   "cites": "wire:143855",
+   "id": -1,
+   "log": null
+  },
+  {
+   "name": "HOFF",
+   "domain": "thehoffbrand.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear",
+   "why": "HOFF’s colourful holiday installation turns its Madrid footwear flagship into a backdrop for art and coffee as well as shoes.",
+   "cites": "wire:144402",
+   "id": -2,
+   "log": null
+  },
+  {
+   "name": "Programa",
+   "domain": "programa.design",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects",
+   "why": "Programa’s redesign explains studio management through the details interior designers track, from product dimensions to material quantities.",
+   "cites": "wire:80469",
+   "id": -3,
+   "log": null
+  },
+  {
+   "name": "Volvo Cars",
+   "domain": "volvocars.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric",
+   "why": "Volvo Cars traces the EX60’s colours, materials and lighting to Scandinavian forests and seas.",
+   "cites": "wire:151823",
+   "id": -4,
+   "log": null
+  },
+  {
+   "name": "Mondaine",
+   "domain": "mondaine.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches",
+   "why": "A circular opening in Mondaine’s Solar Skeleton dial makes the solar plates a visible part of the watch’s design.",
+   "cites": "wire:129244",
+   "id": -5,
+   "log": null
+  },
+  {
+   "name": "Teemill",
+   "domain": "teemill.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "commerce-platforms",
+   "why": "Teemill pitches print-on-demand storefronts through concrete choices about how merchandise is made, powered and packaged.",
+   "cites": "wire:133101",
+   "id": -6,
+   "log": null
+  },
+  {
+   "name": "Burberry",
+   "domain": "burberry.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel",
+   "why": "Burberry’s V&A Christmas tree uses biscuit-tin lids and horse brasses to tell a holiday story through familiar British objects.",
+   "cites": "wire:144167",
+   "id": -7,
+   "log": null
+  },
+  {
+   "name": "Dior",
+   "domain": "dior.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel",
+   "why": "Dior chose animation director Sylvain Chomet to tell its holiday story in the short film Christian Dior’s Night in Color.",
+   "cites": "wire:150264",
+   "id": -8,
+   "log": null
+  },
+  {
+   "name": "Tiffany & Co.",
+   "domain": "tiffany.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "jewellery",
+   "why": "The Crystal Bridges exhibition places Tiffany & Co.’s orchid brooches alongside an Arkansas diamond to show how nature informs its jewellery.",
+   "cites": "wire:85332",
+   "id": -9,
+   "log": null
+  },
+  {
+   "name": "ruko",
+   "domain": "ruko.net",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "drones",
+   "why": "ruko presents its camera drone as a filmmaking tool for beginners, pairing a touchscreen controller with a 48-megapixel camera.",
+   "cites": "wire:143762",
+   "id": -10,
+   "log": null
+  }
+ ],
+ "dropped": [
+  {
+   "name": "teenage engineering",
+   "website": "teenage.engineering",
+   "sector": "hardware",
+   "cites": "wire:147825",
+   "reasons": [
+    "teenage.engineering is already in the library (tracked or inactive)"
+   ]
+  },
+  {
+   "name": "NIKE",
+   "website": "nike.com",
+   "sector": "commerce-dtc",
+   "cites": "wire:83592",
+   "reasons": [
+    "nike.com is already in the library (tracked or inactive)"
+   ]
+  },
+  {
+   "name": "Briku.io",
+   "website": "briku.io",
+   "sector": "enterprise-saas",
+   "cites": "wire:131036",
+   "reasons": [
+    "over the 10 kept a week"
+   ]
+  }
+ ]
+}

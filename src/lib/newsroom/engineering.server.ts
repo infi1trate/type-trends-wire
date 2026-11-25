@@ -178,7 +178,7 @@ export async function runHealth(db: Admin, o: { now?: number; write?: boolean; f
       if (res.status < 300) out.filed.push({ key: p.key, item: b.item ?? null, existing: !!b.existing }); else out.errors.push(`${p.key}: ${res.status}`);
     }
     for (const id of r.close) { const res = await deskDoor("engineering", { action: "queue_move", item: id, to: "declined", reason: q.NO_LONGER_FOUND }); if (res.status < 300) out.declined.push(id); }
-    await deskDoor("engineering", { action: "data_run", run: "health", summary: `Health run: ${found.length} problems; ${out.filed.filter(f => !f.existing).length} filed, ${out.filed.filter(f => f.existing).length} already open, ${out.declined.length} no longer found.`, counts: { found: found.length, filed: out.filed.filter(f => !f.existing).length, open: out.filed.filter(f => f.existing).length, declined: out.declined.length } });
+    await deskDoor("engineering", { action: "data_run", run: "health", summary: `Health run: ${found.length} problems; ${out.filed.filter(f => !f.existing).length} filed, ${out.filed.filter(f => f.existing).length} already open, ${out.declined.length} no longer found.${h?.library ? ` Library: ${h.library.line}` : ""}`.slice(0, 600), counts: { found: found.length, filed: out.filed.filter(f => !f.existing).length, open: out.filed.filter(f => f.existing).length, declined: out.declined.length } });
   } catch (err) { out.errors.push(err instanceof Error ? err.message.slice(0, 160) : "error"); }
   return out;
 }

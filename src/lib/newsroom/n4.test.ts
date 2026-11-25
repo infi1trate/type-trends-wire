@@ -202,4 +202,12 @@ describe("N4 · the door", () => {
     const r = await doorCall(d, { actor: "design review", action: "propose", kind: "layout", text: "Show four cards instead of six." });
     expect((r.body as { log?: number }).log).toBe(1);
   });
+  it("R1 · a brand candidate without sector, category and sub-category from the map is refused at the door; with them it is recorded", async () => {
+    const d = deps();
+    const bad = await doorCall(d, { actor: "scout", action: "propose", kind: "brand", subject: "brand:withplum.com", sector: "fintech", text: "Track Plum (withplum.com)." });
+    expect(bad.status).toBe(409);
+    expect((bad.body as { reason: string }).reason).toBe("A brand candidate needs its sector, category and sub-category from the category map. Choose a category in this sector.");
+    const ok = await doorCall(d, { actor: "scout", action: "propose", kind: "brand", subject: "brand:withplum.com", sector: "fintech", category: "investing", subcategory: "wealth", text: "Track Plum (withplum.com)." });
+    expect(ok.status).toBe(202);
+  });
 });

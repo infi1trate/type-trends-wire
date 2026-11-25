@@ -294,23 +294,23 @@ describe("B2 · the scout's register and candidates", () => {
   const opts = { tracked: new Set(["monzo.com", "netlify.com"]), optedOut: new Set(["optout.com"]), proposed: new Set(["seen.com"]), outlets: new Set(["itsnicethat.com"]) };
   it("keeps a well-formed, untracked candidate whose name is in its item; drops the rest with every reason", () => {
     const e = sc.enforceCandidates({ candidates: [
-      { name: "Plum", website: "https://www.withplum.com/", sector: "fintech", why: "A rebrand and new website.", cites: "wire:1" },
+      { name: "Plum", website: "https://www.withplum.com/", sector: "fintech", category: "investing", subcategory: "wealth", why: "A rebrand and new website.", cites: "wire:1" },
       { name: "Monzo", website: "monzo.com", sector: "fintech", why: "Named.", cites: "wire:1" },
       { name: "Glyphs", website: "glyphsapp.com", sector: "type", why: "A type tool.", cites: "wire:2" },
       { name: "Figma", website: "figma.com", sector: "dev-tools", why: "Tool.", cites: "wire:2" },
       { name: "Acme", website: "not a domain", sector: "ai", why: "Made up.", cites: "wire:9" },
       { name: "Quiet", website: "optout.com", sector: "media", why: "Opted out.", cites: "wire:1" },
     ] }, sheet, opts);
-    expect(e.kept).toEqual([{ name: "Plum", domain: "withplum.com", sector: "fintech", why: "A rebrand and new website.", cites: "wire:1" }]);
+    expect(e.kept).toEqual([{ name: "Plum", domain: "withplum.com", sector: "fintech", category: "investing", subcategory: "wealth", why: "A rebrand and new website.", cites: "wire:1" }]);
     const r = new Map(e.dropped.map(d => [d.name, d.reasons]));
     expect(r.get("Monzo")).toContain("monzo.com is already in the library (tracked or inactive)");
     expect(r.get("Glyphs")).toContain("“type” is not one of slug's ten sectors");
     expect(r.get("Figma")!.join()).toContain("not the brand's own website");
-    expect(r.get("Acme")).toEqual(["“not a domain” is not a well-formed domain", "it cites “wire:9”, which is not an item it was given"]);
+    expect(r.get("Acme")).toEqual(["“not a domain” is not a well-formed domain", "Choose a category in this sector.", "it cites “wire:9”, which is not an item it was given"]);
     expect(r.get("Quiet")).toEqual(expect.arrayContaining(["optout.com is on the opt-out list", "the name “Quiet” is not in the item it cites"]));
   });
   it("at most 10 kept and 15 read", () => {
-    const many = Array.from({ length: 16 }, (_, i) => ({ name: "Plum", website: `plum${i}.com`, sector: "fintech", why: "Rebrand.", cites: "wire:1" }));
+    const many = Array.from({ length: 16 }, (_, i) => ({ name: "Plum", website: `plum${i}.com`, sector: "fintech", category: "investing", subcategory: "wealth", why: "Rebrand.", cites: "wire:1" }));
     const e = sc.enforceCandidates({ candidates: many }, sheet, opts);
     expect(e.kept).toHaveLength(10);
     expect(e.dropped.map(d => d.reasons[0])).toEqual([...Array(5).fill("over the 10 kept a week"), "over the 15 the scout may return"]);
@@ -336,5 +336,20 @@ describe("the sources register (W3d-c)", () => {
       terms_link: "https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/index.html",
       provides: "Top free apps per category: names, makers, App Store links and icon colours we measure. No icon pictures kept",
       note: "Apple allows app icons only to promote store content, beside a store badge; slug shows none." });
+  });
+});
+
+describe("R1 · a brand candidate carries its place in the category map", () => {
+  it("a candidate without a category or sub-category from the tree is dropped with a plain reason", async () => {
+    const { enforceCandidates } = await import("./scout");
+    const sheet = { now: "2026-11-25", week: "2026-W48", items: [{ ref: "wire:1", kind: "wire", source: "x", date: "2026-11-24", title: "Plum's rebrand", excerpt: "" }], names: [] } as never;
+    const o = { tracked: new Set<string>(), optedOut: new Set<string>(), proposed: new Set<string>(), outlets: new Set<string>() };
+    const e = enforceCandidates({ candidates: [
+      { name: "Plum", website: "withplum.com", sector: "fintech", why: "A rebrand.", cites: "wire:1" },
+      { name: "Plum", website: "plum2.com", sector: "fintech", category: "investing", subcategory: "made-up", why: "A rebrand.", cites: "wire:1" },
+    ] }, sheet, o);
+    expect(e.kept).toEqual([]);
+    expect(e.dropped[0]!.reasons).toContain("Choose a category in this sector.");
+    expect(e.dropped[1]!.reasons).toContain("Choose a sub-category in this category.");
   });
 });

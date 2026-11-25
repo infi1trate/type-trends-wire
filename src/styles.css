@@ -203,8 +203,11 @@
 
 .library .label { letter-spacing: 0; }
 .library table td, .library table th { overflow-wrap: anywhere; }
+.library table td.lib-cat { overflow-wrap: break-word; hyphens: auto; }
+.library-table th .label { overflow-wrap: normal; word-break: keep-all; }
 .library select { max-width: 100%; }
 @media (max-width: 1279px) {
+  .library-table colgroup { display: none; }
   .library-table thead { display: none; }
   .library-table tbody { display: block; }
   .library-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -617,8 +620,9 @@
   .brand-tile-sub { display: block; margin-top: 2px; }
   .sector-brand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); column-gap: var(--tk-space-4); border-top: var(--tk-border-hairline) solid var(--sys-color-ink); }
   .sector-brand-list > li { border-bottom: var(--tk-border-hairline) solid var(--sys-color-rule); }
-  .sector-brand-row { display: flex; flex-direction: column; gap: 2px; padding: var(--tk-space-2) 0; min-height: 52px; justify-content: center; }
-  .cat-chip { padding: 2px 8px; } .cat-chip:not(.cat-chip-on) { background: transparent; color: var(--tk-text-primary); box-shadow: inset 0 0 0 1px var(--tk-text-primary); } .cat-chip .ed-muted { color: inherit; opacity: .7; }
+  .sector-brand-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--tk-space-2) 0; min-height: 52px; justify-content: center; }
+  .sector-brand-row > .ed-kicker { padding-left: calc(32px + var(--tk-space-2)); }
+  .cat-chip { padding: 2px 8px; } .cat-chip.cat-chip-on, .cat-chip.cat-chip-on:visited { background: var(--sys-color-ink); color: var(--sys-color-page); } .cat-chip:not(.cat-chip-on) { background: transparent; color: var(--tk-text-primary); box-shadow: inset 0 0 0 1px var(--tk-text-primary); } .cat-chip .ed-muted { color: inherit; opacity: .7; }
   .ledger-tag { display: inline-block; font-family: var(--sys-text-chip-family); font-weight: var(--sys-text-chip-weight); font-size: var(--sys-text-chip-size); line-height: var(--sys-text-chip-leading); letter-spacing: var(--sys-text-chip-tracking); text-transform: uppercase;
     background: var(--tk-surface-inverse); color: var(--tk-text-inverse); padding: 0 6px; white-space: nowrap; }
   @media (min-width: 768px) {

@@ -18,7 +18,7 @@ export function SectorBrands({ sector, category, sub }: { sector: string; catego
     <CategoryChips chips={categoryChips(data.sites, sector)} subs={category ? subcategoryChips(data.sites, sector, category) : []} value={{ category, sub }}
       href={n => ({ to: "/sectors/$sector", params: { sector }, search: { ...(n.category ? { category: n.category } : {}), ...(n.sub ? { sub: n.sub } : {}) } })} />
     <ul className="sector-brand-list mt-4">{rows.map(s => { const c = classOf(s); return <li key={s.domain}>
-      <Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap no-underline sector-brand-row">
+      <Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap no-underline sector-brand-row items-start">
         <MarkedName icon={icons[s.domain]} name={s.name ?? s.domain} reserve>{s.name ?? s.domain}</MarkedName>
         {c.subcategory && <span className="ed-kicker ed-muted">{categoryLabel(c.subcategory)}</span>}
       </Link></li>; })}</ul>

@@ -29,6 +29,8 @@ export type SpendFacts = { week_start: string | null; cap_set: boolean; reached:
 export type HealthPayload = { status: HealthStatus; checked_at: string; jobs: JobHealth[]; brand_names?: BrandNameFacts | null; spend?: SpendFacts | null; art?: { met: number; aic: number; newest_last_seen: string | null } | null;
   /** W3d · App Store icon colours: the newest stored week, its categories and apps (not removed), and when its rows were last written (an unchanged post writes nothing). */
   icons?: import("./icons/contract").IconHealth | null;
+  /** R1 · brands per sector and the categories / sub-categories holding at least 15 brands. */
+  library?: (import("./categories").LibraryClasses & { line: string }) | null;
   /** T1 · each stored page kind's age against its limit (never changes `status`). */
   stored_pages?: { line: string; past_limit: number; kinds: import("./records/records").StoredAge[] } | null;
   /** T1 · this Eastern-time week's model dollars, build credits and total dollars (totals only; the owner asked for these amounts). */

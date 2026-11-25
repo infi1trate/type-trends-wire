@@ -1,4 +1,5 @@
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
+import { classOf } from "@/lib/categories";
 import { z } from "zod";
 import { librarySector } from "@/lib/library-payload";
 import { AUDIT_MAX, AUDIT_MIN, parseAuditSites, type Audit } from "@/lib/agency/audit";
@@ -11,7 +12,7 @@ export function auditJson(a: Audit) {
   return {
     audit_url: a.url, note: "audit_url opens the printable audit page, which is public like the rest of slug.",
     domains: a.domains, sector: a.sector, sector_source: a.sectorSource, data_through: a.dataThrough, sections: a.sections, pending: a.pending,
-    glance: a.glance.map(g => ({ domain: g.domain, name: g.name, sector: g.sector, status: g.status, captured_at: g.captured, latest_change: g.latest, thumbnail: g.thumb ? { url: abs(g.thumb.src), caption: g.thumb.caption, live: g.thumb.live } : null, terminal: abs(g.terminal) })),
+    glance: a.glance.map(g => ({ domain: g.domain, name: g.name, sector: g.sector, ...classOf({ domain: g.domain }), status: g.status, captured_at: g.captured, latest_change: g.latest, thumbnail: g.thumb ? { url: abs(g.thumb.src), caption: g.thumb.caption, live: g.thumb.live } : null, terminal: abs(g.terminal) })),
     type: a.type, color: a.color,
     layout: a.layout ? { sites: a.layout.sites, components: a.layout.components, css_features: a.layout.css } : null,
     vibe: a.vibe ? { ...a.vibe, ai_estimate: true } : null,

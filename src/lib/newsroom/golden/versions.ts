@@ -79,6 +79,7 @@ export const DESK_VERSIONS: readonly DeskVersion[] = [
   { desk: "data", version: "v1", prompt_hash: "43d08926", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/data-v1.json", note: "Baseline, not yet run (see the score file)." },
   { desk: "publisher", version: "v1", prompt_hash: "82e9010a", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/publisher-v1.json", note: "Baseline (N5 proof): one fixture drafts call on Digest No. 1; three Digest drafts kept, none dropped." },
   { desk: "scout", version: "v1", prompt_hash: "61622a61", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/scout-v1.json", note: "Baseline (N5 proof): one fixture candidates call on the seven days to 22 Nov; nine kept, one dropped (already tracked)." },
+  { desk: "scout", version: "v2", prompt_hash: "18321df7", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], score_file: "newsroom/scores/scout-v2.json", note: "R1: candidates carry sector, category and sub-category from the category map (one fixture call: 10 kept, 3 dropped, every kept one classified)." },
 ];
 export const currentDeskVersion = (d: DeskPrompt) => DESK_VERSIONS.find(v => v.desk === d && v.prompt_hash === deskPromptHash(d)) ?? null;
 /** A desk score file's cases: for standards, whether each frozen story got its expected verdict (the checklist and the second reader

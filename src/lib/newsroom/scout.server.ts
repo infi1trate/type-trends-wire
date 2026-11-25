@@ -57,7 +57,7 @@ export async function runCandidates(db: Admin, o: { now?: number; fixture?: bool
   if (o.fixture) { out.kept = e.kept.map((k, i) => ({ ...k, id: -(i + 1), log: null })); out.why = `${e.kept.length} kept, ${e.dropped.length} dropped (fixture: nothing stored or filed)`; return out; }
   const { deskDoor } = await import("../stories/desk.server");
   for (const k of e.kept) {
-    const r = await deskDoor("scout", { action: "propose", kind: "brand", subject: `brand:${k.domain}`, text: `Track ${k.name} (${k.domain}, ${k.sector}): ${k.why} [${k.cites}]`.slice(0, 1000) });
+    const r = await deskDoor("scout", { action: "propose", kind: "brand", subject: `brand:${k.domain}`, sector: k.sector, category: k.category, subcategory: k.subcategory, text: `Track ${k.name} (${k.domain}, ${k.sector} · ${k.category} · ${k.subcategory}): ${k.why} [${k.cites}]`.slice(0, 1000) });
     const log = ((r.body as { log?: number }).log) ?? null;
     const { data, error } = await db.from("brand_candidates").insert({ week: sheet.week, name: k.name, domain: k.domain, sector: k.sector, why: k.why, cites: k.cites, call_id: c.call_id, log_id: log }).select("id").single();
     if (!error && data) out.kept.push({ ...k, id: data.id, log });
