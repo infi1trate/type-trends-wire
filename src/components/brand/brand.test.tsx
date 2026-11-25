@@ -84,7 +84,7 @@ describe("containers", () => {
     expect(rules.length).toBeGreaterThan(0);
     // S1 (owner's brief, 23 Nov): the brand tiles and "Moved this week" cards take the hard shadow on hover/focus (they are pressed),
     // and the front lead's picture stack wears it; nothing else.
-    for (const r of rules) expect(r[1]!.trim(), r[1]).toMatch(/^(\.c-(raised|sticker)\b|\.digest \.(brand-tile|moved-card|lead-stack)\b)/);
+    for (const r of rules) expect(r[1]!.trim(), r[1]).toMatch(/^(\.c-(raised|sticker)\b|\.digest \.(brand-tile|moved-card|study-card|empty-state|lead-stack)\b)/);
     const code = walk("src").filter(f => /\.(tsx?|css)$/.test(f) && !f.endsWith(".test.ts") && !f.endsWith(".test.tsx") && !f.includes("/theme/") && !f.endsWith("styles.css"));
     expect(code.filter(f => /--tk-shadow-(raised|sticker|pressed)|shadow\.(raised|sticker)/.test(readFileSync(f, "utf8")))).toEqual([]);
   });
@@ -140,7 +140,7 @@ describe("<Ledger>", () => {
     expect(a.querySelector(".ledger-time")!.textContent).toBe("2 h ago");
     const css = readFileSync("src/styles.css", "utf8");
     expect(css).toMatch(/\.ledger-link \{[^}]*min-height: var\(--tk-layout-tap\)/);
-    expect(css).toMatch(/\.ledger-link:hover, \.ledger-link:focus-visible \{ background: var\(--sys-color-highlight\)/);
+    expect(css).toMatch(/\.ledger-link:is\(:hover, :focus-visible\)[^{]*\{ background-size: 2px 100%; \}/);
     expect(css).toMatch(/\.ledger \{ border-top: var\(--tk-border-hairline\)/);
   });
   it("keeps the number, the title and one fact beside each other on narrow screens; the rest wraps under the title", () => {

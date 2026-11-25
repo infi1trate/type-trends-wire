@@ -1,3 +1,4 @@
+import { studyBand } from "@/lib/pop/rules";
 // A STUDY page (E4) reads as one piece of writing with pictures: the dark headline block, an opening, three to five scenes (on wide screens
 // the figure holds while the scene paragraphs scroll past and switch its state; below 1024 px each scene draws its figure state inline
 // above its paragraph), what to do with it, the limits, then 01 Evidence and 02 Related. Arrow keys and J / K move between scenes.
@@ -249,7 +250,7 @@ export function DataStoryView({ s, scene, onScene, allFigures = false, related }
   const t = s.text;
   return <DigestShell label="Studies" section="signals">
     <article className="digest-data pb-8" data-story={s.slug} data-study-text={t.source}>
-      <FiltersScope><StoryCover seed={s.number} headline={t.headline} long={t.headline.length > 48} deck={s.question} italicDeck object={null}
+      <FiltersScope><StoryCover band={studyBand(s.number)} seed={s.number} headline={t.headline} long={t.headline.length > 48} deck={s.question} italicDeck object={null}
         kicker={<Link to="/data" className="ed-tap no-underline hover:underline">{`${s.seriesTitle} · ${studyLabel(s.number)}`}</Link>}
         left={s.dataThrough ? <>Data through <time dateTime={s.dataThrough}>{dayText(s.dataThrough)}</time></> : null}
         right={t.stale && t.at ? <span data-text-from="">Text from {dayText(t.at)}</span> : null} /></FiltersScope>

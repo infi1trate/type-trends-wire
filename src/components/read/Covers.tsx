@@ -50,12 +50,12 @@ export type CoverObject =
   | null;
 /** The story cover: an ink slab the full width; the headline in Display crossing the one object; number and date pinned left,
  * sector and type pinned right at mid-height; the deck on its own ink backing. */
-export function StoryCover({ seed, headline, long, deck, left, right, object, kicker, italicDeck = false }: { seed: number | string; headline: string; long: boolean; deck: string | null | undefined; left: ReactNode; right: ReactNode; object: CoverObject; kicker: ReactNode; italicDeck?: boolean }) {
+export function StoryCover({ seed, headline, long, deck, left, right, object, kicker, italicDeck = false, band }: { band?: 0 | 1 | 2; seed: number | string; headline: string; long: boolean; deck: string | null | undefined; left: ReactNode; right: ReactNode; object: CoverObject; kicker: ReactNode; italicDeck?: boolean }) {
   const picture = object?.kind === "crop" ? <Treated crop={object.crop} treatment="print-ink" priority />
     : object?.kind === "frame" ? <CaptureFrame fr={object.frame} label={object.label} />
     : object?.kind === "text" ? <div className="ed-typo cover-typo" role="img" aria-label={`Before: ${object.before}. After: ${object.after}.`}><span className="ed-kicker">Before</span><span className="ed-h3 break-words">{object.before}</span><span className="ed-kicker">After</span><span className="ed-h3 break-words">{object.after}</span></div>
     : null;
-  return <header className="cover c-slab" data-container="slab" data-cover="story">
+  return <header className={band == null ? "cover c-slab" : "cover"} data-container={band == null ? "slab" : "plate"} data-cover="story" data-band={band}>
     <div className="ed-wrap cover-grid" data-has-object={object ? "" : undefined}>
       <p className="cover-kicker ed-kicker">{kicker}</p>
       <p className="cover-pin cover-pin-l ed-data" data-pin="left">{left}</p>

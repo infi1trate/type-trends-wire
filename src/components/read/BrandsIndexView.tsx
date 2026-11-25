@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/a4/Pop";
 import { line as voiced } from "@/lib/voice";
 // /brands (Steady): the tracked brands as a grid of tiles (S1; "Moved this week" cards above) — a search over the 300, the sector lens, columns for sector, last change and
 // recorded moves, sortable by each; every choice lives in the URL. A Moves tab lists recent confirmed changes across every brand.
@@ -41,7 +42,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Brands · {sectorName(v.sector)}</p>
       <h1 className="ed-cover mt-3">Who is doing it</h1>
-      <p className="ed-standfirst hold-brands-deck mt-5">{data.sites.length} tracked brands in ten sectors: their identity, every confirmed move and how each sits against its sector.</p>
+      <p className="ed-standfirst hold-brands-deck mt-5"><mark className="hl-mark" data-highlight="">{data.sites.length} tracked brands</mark> in ten sectors: their identity, every confirmed move and how each sits against its sector.</p>
     </header>
     <nav aria-label="Brand views" className="ed-wrap mt-8 border-y border-ed-ink"><ScrollRow className="ed-data gap-x-6 py-2">
       <Link to="/brands" search={brandsSearch({ ...v, tab: "directory" })} aria-current={v.tab === "directory" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "directory" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Directory <span className="ed-muted">{idx.rows.length}</span></Link>
@@ -72,7 +73,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       {v.sector !== "all" && <CategoryChips chips={categoryChips(data.sites, v.sector)} subs={v.category ? subcategoryChips(data.sites, v.sector, v.category) : []} value={{ category: v.category ?? null, sub: v.sub ?? null }}
         href={n => ({ to: "/brands", search: brandsSearch({ ...v, category: n.category, sub: n.sub }) as Record<string, string | undefined> })} />}
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}{v.category && idx.rows.length < CATEGORY_SHARE_MIN ? ` ${CATEGORY_TOO_FEW}` : ""}</p>
-      {idx.empty ? <p className="ed-body mt-4 max-w-[60ch]">{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p>
+      {idx.empty ? <div className="mt-4"><EmptyState mark="Nothing yet"><p>{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p></EmptyState></div>
         // S1 · the directory as tiles (a compact row under 480 px): logo plate, name, sector chip, moves and last change, the latest move.
         : <><ul className="brand-grid mt-3" aria-label="Tracked brands" data-brand-grid="">{(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map((s, i) => { const name = s.name ?? s.domain, moved = movedNow.has(s.domain);
           const facts = `${s.moves} ${s.moves === 1 ? "move" : "moves"} · ${s.lastChange ? `changed ${shortDay(s.lastChange, year)}` : voiced("read.brandsIndexView.1")}`;

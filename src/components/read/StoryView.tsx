@@ -1,3 +1,4 @@
+import { NewSticker } from "@/components/a4/Pop";
 import { quarterText } from "@/lib/labels";
 import { dataHref } from "@/lib/ia";
 import { line as voiced } from "@/lib/voice";
@@ -131,7 +132,7 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={cover} italicDeck
-          kicker={<>{s.brands.length === 1 && <BrandMark icon={s.icon} name={s.brands[0]?.name ?? ""} size={32} eager className="mr-2" />}<span>{s.kicker}</span></>}
+          kicker={<>{s.brands.length === 1 && <BrandMark icon={s.icon} name={s.brands[0]?.name ?? ""} size={32} eager className="mr-2" />}<span>{s.kicker}</span><NewSticker at={s.at} /></>}
           left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Updated {day(s.correctedAt)}</span>}</>}
           right={<>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}

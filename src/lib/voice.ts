@@ -155,6 +155,7 @@ export const VOICE = {
   "read.brandView.6": { kind: "empty", where: "Read · BrandView", text: "No story has named this brand yet.", next: [] },
   "read.brandView.7": { kind: "empty", where: "Read · BrandView", text: "No staged signal measured on this brand yet.", next: [] },
   "read.brandsIndexView.1": { kind: "empty", where: "Read · BrandsIndexView", text: "No recorded move", next: [] },
+  "read.emptyMark.nothing": { kind: "empty", where: "Read · EmptyState mark (A3)", text: "Nothing yet", next: [] },
   "read.deskView.1": { kind: "empty", where: "Read · DeskView", text: "Nothing ran.", next: [] },
   "read.deskView.2": { kind: "empty", where: "Read · DeskView", text: "Nothing was held.", next: [] },
   "read.deskView.3": { kind: "empty", where: "Read · DeskView", text: "Nothing was killed.", next: [] },

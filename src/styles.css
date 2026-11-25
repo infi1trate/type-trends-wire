@@ -340,8 +340,10 @@
 .digest .brand-tile { position: relative; display: flex; flex-direction: column; gap: var(--tk-space-3); height: 100%; padding: var(--tk-space-4); color: var(--sys-color-ink); text-decoration: none !important; border: var(--tk-border-hairline) solid var(--sys-color-rule); }
 .digest .brand-tile-body { display: flex; flex-direction: column; gap: var(--tk-space-1); min-width: 0; }
 .digest .brand-tile-chips { display: flex; flex-wrap: wrap; gap: var(--tk-space-1); }
-.digest .brand-tile:hover, .digest .brand-tile:focus-visible, .digest .moved-card:hover, .digest .moved-card:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); box-shadow: var(--tk-shadow-raised); }
-.digest .brand-tile:hover .ed-caption, .digest .brand-tile:focus-visible .ed-caption, .digest .moved-card:hover .ed-caption, .digest .moved-card:focus-visible .ed-caption { color: var(--tk-highlight-fg); }
+/* A4 · cards lift 2 px up-left onto the hard ink shadow (no fill: A3 restraint keeps yellow for stickers and the one highlight). */
+.digest .brand-tile, .digest .moved-card, .digest .study-card { transition: transform var(--tk-motion-tap) linear, box-shadow var(--tk-motion-tap) linear; }
+.digest .brand-tile:is(:hover, :focus-visible, [data-key-selected]), .digest .moved-card:is(:hover, :focus-visible, [data-key-selected]), .digest .study-card:is(:hover, :focus-visible, [data-key-selected]) { transform: translate(-2px, -2px); box-shadow: var(--tk-shadow-raised); }
+@media (prefers-reduced-motion: reduce) { .digest .brand-tile, .digest .moved-card, .digest .study-card { transition: none; } }
 .digest .brand-tile-sticker { position: absolute; top: var(--tk-space-2); right: var(--tk-space-2); pointer-events: none; min-height: 0; padding: var(--tk-space-1) var(--tk-space-3); }
 @media (max-width: 479px) {
   .digest .brand-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
@@ -365,7 +367,6 @@
 .digest .moved-card .brand-tile-name { margin-top: 1.75rem; }
 /* S1 · Studies: a study card (kicker, "No. 2" and the title on one baseline, the question on one line, the share picture in a 16:9 box). */
 .digest .study-card { display: flex; flex-direction: column; height: 100%; padding: var(--tk-space-3); color: var(--sys-color-ink); text-decoration: none !important; border-top: var(--tk-border-strong) solid var(--sys-color-rule); }
-.digest .study-card:hover, .digest .study-card:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }
 .digest .study-card-title { display: flex; align-items: baseline; gap: var(--tk-space-3); }
 .digest .study-card-title .ledger-no { flex: none; font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-row-number-size); line-height: 1; }
 .digest .study-card-q { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -586,8 +587,10 @@
      numbers has no number column at all (.ledger-plain): the title starts at the row's padding. */
   .ledger-link { display: grid; grid-template-columns: max-content minmax(0, 1fr) auto; column-gap: var(--tk-space-3); row-gap: var(--tk-space-1); align-items: baseline; min-height: var(--tk-layout-tap);
     padding: var(--tk-space-2) var(--tk-space-2); color: var(--sys-color-ink); text-decoration: none !important; }
-  .ledger-link:hover, .ledger-link:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }
-  .ledger-link:hover .ledger-muted, .ledger-link:focus-visible .ledger-muted { color: var(--tk-highlight-fg); }
+  .ledger-link { background-image: linear-gradient(var(--sys-color-ink), var(--sys-color-ink)); background-repeat: no-repeat; background-size: 0 100%; }
+  /* A4 · rows: a 2 px ink rule on the left and the headline underlined (no fill, no size change); keyboard selection looks the same. */
+  .ledger-link:is(:hover, :focus-visible), [data-key-selected] > .ledger-link, .ledger-link[data-key-selected] { background-size: 2px 100%; }
+  .ledger-link:is(:hover, :focus-visible) .ledger-title, [data-key-selected] > .ledger-link .ledger-title, .ledger-link[data-key-selected] .ledger-title { text-decoration: underline; text-decoration-thickness: var(--tk-border-hairline); text-underline-offset: 3px; }
   .ledger-num { text-align: right; font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ledger-fit { display: inline-grid; } .ledger-fit > * { grid-area: 1 / 1; } .ledger-ghost { visibility: hidden; }
   .ledger-plain .ledger-link { grid-template-columns: minmax(0, 1fr) auto; }
@@ -802,7 +805,7 @@ html[data-arrive] .m-arrive [data-letter] { transform-box: fill-box; transform-o
 .m-grow-on:not(svg), .m-grow-on .tk-svg-bar { transform-origin: left center; transform-box: fill-box; animation: slug-grow var(--tk-motion-move) var(--tk-motion-ooze) both; }
 /* Cut: page changes wipe with a hard edge through the View Transitions API (types "cut"), and simply change where it isn't. */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-html:active-view-transition-type(cut)::view-transition-new(root) { animation: slug-wipe var(--tk-motion-wipe) var(--tk-motion-cut) both; }
+
 html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(root) { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   html[data-arrive] .m-arrive [data-letter], .c-sticker[data-pop], .ledger-row[data-drop], .m-on .ill-draw, .m-on .ill-stick, .m-grow-on, .m-grow-on .tk-svg-bar { animation: none !important; }
@@ -1112,3 +1115,44 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 .ill-trail .trail-periods { position: absolute; inset: auto 0 0; }
 .chart-readout { overflow-y: auto; pointer-events: auto; }
 .chart-interaction:focus-visible { outline-color: var(--sys-color-ink) !important; }
+
+/* A4 · chips and buttons invert on hover (ink ground, paper type); stickers press into their shadow like Raised does. */
+@layer components {
+  .digest a.cat-chip:hover, .digest a.ledger-tag:hover, .digest .shell-switch a:hover { background: var(--sys-color-ink); color: var(--sys-color-page); }
+  .digest a.cat-chip:hover .ed-muted { color: var(--sys-color-page); }
+  .c-sticker:active, .c-sticker[data-pressed] { transform: rotate(-4deg) translate(3px, 3px); box-shadow: none; }
+  /* A4 · the keyboard selection (j/k) on cards and rows carries the focus ring too, so it reads on pink and yellow. */
+  [data-key-selected] { outline: var(--tk-focus-width) solid var(--sys-color-focus); outline-offset: var(--tk-focus-offset); }
+  /* A4 · keys panel ("?") */
+  .keys-panel { position: fixed; z-index: 60; right: var(--tk-space-4); bottom: var(--tk-space-4); max-width: min(22rem, calc(100vw - 2 * var(--tk-space-4))); }
+  .keys-panel kbd { font-family: var(--sys-text-data-family); font-size: var(--sys-text-data-size); border: var(--tk-border-hairline) solid var(--sys-color-rule); padding: 0 var(--tk-space-1); }
+  .digest .empty-state { display: grid; justify-items: center; text-align: center; row-gap: var(--tk-space-3); padding: var(--tk-space-6) var(--tk-space-4); background: var(--sys-color-surface); border: var(--tk-border-strong) solid var(--sys-color-rule); box-shadow: var(--tk-shadow-raised); }
+  .empty-state-mark { font-family: var(--sys-text-display-family); font-weight: 900; font-size: var(--sys-text-h1-size); line-height: 1; text-transform: uppercase; }
+  /* A3 · the one highlighter word per page. */
+  .hl-mark { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); padding: 0 .15em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  /* A3 · study cover bands: pink, yellow or green by study number mod 3, ink type. */
+  .study-band { padding: var(--tk-space-3); border: var(--tk-border-strong) solid var(--sys-color-rule); color: var(--sys-color-ink); }
+  .study-band[data-band="0"] { background: var(--tk-plate-bg); }
+  .study-band[data-band="1"] { background: var(--sys-color-highlight); }
+  .study-band[data-band="2"] { background: var(--sys-color-positive); }
+  .study-band-no { font-family: var(--sys-text-display-family); font-weight: 900; font-size: var(--sys-text-h1-size); line-height: 1; }
+}
+/* A4 · page to page: a 160 ms cross-fade of the main column; the bar and ticker hold still. No animation without the API; none with reduced motion. */
+.digest #ed-main { view-transition-name: ed-main; }
+.digest .shell-top { view-transition-name: shell-top; }
+html:active-view-transition-type(cut)::view-transition-group(shell-top) { animation: none; }
+html:active-view-transition-type(cut)::view-transition-old(ed-main) { animation: slug-fade-in 160ms linear reverse both; }
+html:active-view-transition-type(cut)::view-transition-new(ed-main) { animation: slug-fade-in 160ms linear both; }
+html:active-view-transition-type(cut)::view-transition-group(ed-main) { animation-duration: 160ms; }
+@keyframes slug-fade-in { from { opacity: 0; } to { opacity: 1; filter: none; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+@layer components {
+  .c-sticker.c-sticker-sm { min-height: 0; padding: 0 var(--tk-space-2); margin-left: var(--tk-space-2); vertical-align: middle; cursor: default; }
+  .cover[data-band] { color: var(--sys-color-ink); }
+  .cover[data-band="0"] { background: var(--tk-plate-bg); }
+  .cover[data-band="1"] { background: var(--sys-color-highlight); }
+  .cover[data-band="2"] { background: var(--sys-color-positive); }
+  .cover[data-band] a, .cover[data-band] .ed-data, .cover[data-band] .ed-kicker { color: var(--sys-color-ink); }
+}

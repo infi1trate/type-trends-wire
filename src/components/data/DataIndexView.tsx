@@ -1,3 +1,4 @@
+import { studyBand } from "@/lib/pop/rules";
 // /data, the Studies home (E4; S1 shelf): a heading, the lead study, one "All studies" shelf of cards with the series key, "In the works" and the
 // brand tool, and nothing else. Template names, draft tags and draft reasons stay off this page (the study page's basis carries them).
 import { Link } from "@tanstack/react-router";
@@ -31,8 +32,8 @@ function Lead({ s }: { s: HomeStudy }) {
 function StudyCard({ x }: { x: HomeStudy & { seriesTitle: string } }) {
   return <li className="min-w-0" data-study-card={x.slug}>
     <Link to="/data/$slug" params={{ slug: x.slug }} className="study-card">
-      <span className="ed-kicker block">{x.seriesTitle}</span>
-      <span className="study-card-title mt-2"><StoryNo n={x.number} /><span className="ed-row-headline">{x.headline}</span></span>
+      <span className="study-band block" data-band={studyBand(x.number)}><span className="ed-kicker block">{x.seriesTitle}</span>
+      <span className="study-card-title mt-2"><span className="study-band-no">{x.number}</span><span className="ed-row-headline">{x.headline}</span></span></span>
       <span className="ed-small study-card-q mt-2 block">{x.question}</span>
       <span className="study-card-pic mt-3"><img src={`/data/${x.slug}.png`} alt="" width={1200} height={630} loading="lazy" decoding="async" /></span>
       {x.dataThrough && <span className="ed-data mt-2 block">{`Data through ${dayText(x.dataThrough)}`}</span>}

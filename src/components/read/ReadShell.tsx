@@ -1,3 +1,4 @@
+import { KeyNav } from "@/components/a4/KeyNav";
 // The shared Read shell: ONE ink slab bar (the drawn mark on its pink slab, the bar's items and More (E3: lib/ia.ts READ_BAR, MORE_MENU),
 // the live dot with UTC time, the Read / Terminal switch and Lock; below 1024 px what does not fit moves into one Menu sheet), then ONE line under it: the lens note
 // (only when a sector is chosen), the freshness line (one line, truncating) and the sector select. Rows per width live in lib/shell.ts.
@@ -123,7 +124,7 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
       if (e.key === "Escape") { close(); setOpen(false); return; }
       if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
       if (e.key === "`") { e.preventDefault(); mode.go(); }
-      else if (e.key === "?") { e.preventDefault(); setOverlay("glossary"); }
+      // A4 · "?" opens the keys panel (KeyNav); the glossary stays in More.
       // U3 · the terminal's keys in Read: 1–7 open the seven sections, / goes to search (the page's own search field, else the directory's).
       else { const href = readKeyHref(e.key, !!document.querySelector('input[type="search"]')); if (href === "focus-search") { e.preventDefault(); document.querySelector<HTMLInputElement>('input[type="search"]')?.focus(); } else if (href) { e.preventDefault(); const search = e.key === "/"; void router.navigate({ href }).then(() => { if (search) requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[type="search"]')?.focus()); }); } }
     };
@@ -195,6 +196,7 @@ function ReadShellFrame({ children, label, section, lens = false, note: ownNote 
       {sub}
       <PrintMark />
       <main id="ed-main" aria-label={label}><ShellCtx.Provider value={ctx}>{children}</ShellCtx.Provider></main>
+      <KeyNav />
       <PrintFrame path={loc.pathname} />
     </div>
     {/* Glossary, methodology and tour are terminal-density overlays: they keep the dark mode on Read pages. */}

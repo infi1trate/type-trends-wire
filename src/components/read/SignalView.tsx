@@ -1,3 +1,4 @@
+import { UseSticker } from "@/components/a4/Pop";
 import { line as voiced } from "@/lib/voice";
 // SIGNAL object page (/signals/<key>), Quiet density: the name in Display; ONE figure (share now) with Momentum and Confidence as
 // facts beside it; the stored share series as the trail (the page's one large picture); "Where it leads" and members as rule
@@ -59,7 +60,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
       </header>,
       evidence: <>
         <BlockPart title="Share by quarter" kicker="Solid line measured, band forecast (80% interval). Only quarters with at least 15 sites and 25% archive coverage are drawn.">
-          {p.card ? <><QuarterLine look="read" card={p.card} label={`${p.name}: share of tracked homepages by quarter, with the forecast band`} caption={<>Source: forecast run {p.runId ?? "—"}, data through {p.dataThrough ?? "—"}.</>} /><div className="mt-4"><EmbedPanel target={{ kind: "trait", key: p.key }} title={`${p.name} [${p.dimension}]`} /></div></> : <p className="ed-body">{p.chartNote}</p>}
+          {p.card ? <>{p.card.forecast.length > 0 && <p className="mb-3" data-forecast-legend=""><UseSticker use="forecast-legend" /></p>}<QuarterLine look="read" card={p.card} label={`${p.name}: share of tracked homepages by quarter, with the forecast band`} caption={<>Source: forecast run {p.runId ?? "—"}, data through {p.dataThrough ?? "—"}.</>} /><div className="mt-4"><EmbedPanel target={{ kind: "trait", key: p.key }} title={`${p.name} [${p.dimension}]`} /></div></> : <p className="ed-body">{p.chartNote}</p>}
         </BlockPart>
         {p.sectors.length > 0 && <BlockPart title="Where it leads" kicker="Sectors whose share is above the all-sector share.">
           <RuleBox><ul className="grid grid-cols-1 gap-6 md:grid-cols-3">{p.sectors.map(s => <li key={s.sector} className="min-w-0"><p className="ed-h3">{sectorName(s.sector)}</p><p className="ed-data mt-1 flex flex-wrap items-center gap-2">{pct(s.share, 1)} <span className="ed-muted">(+{(s.lead * 100).toFixed(1)} pts vs all)</span><StageWord stage={s.stage} /></p></li>)}</ul></RuleBox>

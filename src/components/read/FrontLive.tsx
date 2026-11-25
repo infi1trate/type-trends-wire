@@ -8,6 +8,7 @@ import { createPoller, browserPollEnv, type PollResult } from "@/lib/front/poll"
 import { announcement, insertPending, newStoriesText, pendingStories, sinceVisit, visitStore } from "@/lib/front/new-stories";
 import { UPDATES_PATH } from "@/lib/front/updates";
 import { numberLabel } from "@/lib/stories/numbers";
+import { NewSticker } from "@/components/a4/Pop";
 import { storyTime } from "@/lib/stories";
 import { pct } from "@/lib/digest/copy";
 import { TickerTrack } from "@/components/kit/TickerTrack";
@@ -61,7 +62,7 @@ export function FrontTicker({ items }: { items: TickerItem[] }) {
 /** One live-column item: a Ledger row with the story's number, its type and sector as tags, one line, the basis mark and a relative time. */
 export function LiveItem({ s, now, drop = false, digits = 2 }: { s: FrontStory; now: number; drop?: boolean; digits?: number }) {
   const num = s.number != null ? <StoryNo n={s.number} /> : <StoryNo n="·" blank />;
-  return <LedgerItem r={{ key: s.id, id: `fs-${s.id}`, href: s.href, number: num, title: <>{s.domain && <BrandMark icon={s.icon} name={s.domain} size={28} className="mr-2" />}{s.headline}</>, line: s.line,
+  return <LedgerItem r={{ key: s.id, id: `fs-${s.id}`, href: s.href, number: num, title: <>{s.domain && <BrandMark icon={s.icon} name={s.domain} size={28} className="mr-2" />}{s.headline}<NewSticker at={s.at} now={now} /></>, line: s.line,
     tags: [s.typeName, ...(s.sectorName ? [s.sectorName] : [])], time: <time dateTime={s.at} title={storyTime(s.at)}>{relTime(s.at, now)}</time>, drop }} digits={digits} story />;
 }
 
