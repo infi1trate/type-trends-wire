@@ -1,6 +1,7 @@
 // Read-mode loaders (Live, brands, patterns, signal series): anonymous SELECT-only reads assembled by pure models. No AI per view.
 import { panelHistoryRows } from "./history.server";
 import { supabaseAnon } from "./mcp/supabase";
+import { activeRowsOnly } from "./active-sites.server";
 import { memo } from "./memo";
 import { stored, storedBy } from "./records/store.server";
 import { pageKey } from "./records/records";
@@ -43,7 +44,7 @@ export const siteTraitIndex = stored("site-index", async (): Promise<PatternSite
 }, { ttl: 10 * 60_000 });
 const CROP_COLS = "domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash";
 /** Every visible section crop (opted-out sites are hidden by policy). Zero rows until the crawler sends crops. */
-export const allCrops = memo(10 * 60_000, () => pages<CropRow>((f, t) => supabaseAnon().from("site_crops").select(CROP_COLS).order("id").range(f, t) as never));
+export const allCrops = memo(10 * 60_000, async () => activeRowsOnly(await pages<CropRow>((f, t) => supabaseAnon().from("site_crops").select(CROP_COLS).order("id").range(f, t) as never)));
 /** Crops of a few domains (brand and story pages), read fresh rather than from the all-crops memo. */
 export async function cropsFor(domains: string[]): Promise<CropRow[]> {
   if (!domains.length) return [];
@@ -52,9 +53,9 @@ export async function cropsFor(domains: string[]): Promise<CropRow[]> {
 /** /status: crop coverage (brands with a crop, versions stored, newest capture). */
 export async function loadCropCoverage() {
   const rows = await pages<Pick<CropRow, "domain" | "captured_at">>((f, t) => supabaseAnon().from("site_crops").select("domain,captured_at").order("id").range(f, t) as never, 1000);
-  return cropCoverage(rows);
+  return cropCoverage(await activeRowsOnly(rows));
 }
-export const allThumbs = memo(10 * 60_000, () => pages<ThumbRow>((f, t) => supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").order("id").range(f, t) as never));
+export const allThumbs = memo(10 * 60_000, async () => activeRowsOnly(await pages<ThumbRow>((f, t) => supabaseAnon().from("site_thumbs").select("domain,captured_at,viewport,path,width,height,bytes,variants").order("id").range(f, t) as never)));
 
 /** Brand moves and rebrands as thin Stories (the Brands › Moves tab lists every confirmed change, not only the ones that ran as stories). */
 export const allStories = memo(TTL, async (): Promise<{ stories: Story[]; partial?: true }> => {

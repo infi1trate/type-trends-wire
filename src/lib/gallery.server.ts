@@ -45,7 +45,7 @@ async function drawableStamps(db: Db): Promise<Stamp[]> {
     out.push(...(data ?? []).map(r => ({ id: r.id, domain: r.domain, at: r.captured_at, source: src(r.source) })));
     if (!data || data.length < STAMP_PAGE) break;
   }
-  return out;
+  return (await import("./active-sites.server")).activeRowsOnly(out); // brands in the library only
 }
 /** The two drawable captures either side of a change: the change's own snapshot (or the first capture at/after it) and the one before. */
 export function changePairs(events: { domain: string; type: string; source: string; at: string; snapshot_id: number | null }[], stamps: Stamp[]): GalleryChange[] {
@@ -99,7 +99,7 @@ async function pagedEvents(db: Db) {
     const { data, error } = await db.from("library_events").select(EVENT_COLS).eq("page_type", "home").eq("viewport", "desktop").in("type", [...MEASURED_EVENT_TYPES]).order("id").range(from, from + 999);
     if (error) throw error;
     for (const e of data ?? []) { const at = e.effective_at ?? e.detected_at; if (at) out.push({ domain: e.domain, type: e.type, source: e.source, at, snapshot_id: e.snapshot_id }); }
-    if (!data || data.length < 1000) return out;
+    if (!data || data.length < 1000) return (await import("./active-sites.server")).activeRowsOnly(out); // brands in the library only
   }
 }
 /** The gallery's input for one view: changes and stamps only when the view (or a collection count) needs them. */

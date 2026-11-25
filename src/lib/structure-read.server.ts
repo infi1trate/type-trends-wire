@@ -74,10 +74,12 @@ export async function loadStructureSignal(key: string): Promise<StructureSignalP
   if (q) {
     const r = await pagedRows((f, t) => db.from("library_structure_records").select("domain,viewport,labels:record->nav_labels").eq("quarter", q).eq(`flags->>${key}`, "true").order("domain").order("viewport").range(f, t));
     if (!r.error && r.data.length) {
-      const names = await db.from("library_sites").select("domain,name").in("domain", [...new Set(r.data.map(x => x.domain))]);
+      // Only brands in the library (active): the share above counts those, so the list under it must name no one else
+      // (a brand still onboarding, or one no longer tracked, has stored records too). Paged: the list outgrows one request.
+      const names = await pagedRows((f, t) => db.from("library_sites").select("domain,name").eq("active", true).order("domain").range(f, t));
       const nm = new Map((names.data ?? []).map(x => [x.domain, x.name ?? x.domain]));
       const seen = new Set<string>();
-      brands = (r.data as { domain: string; viewport: string; labels: unknown }[]).filter(x => x.viewport === vp || !seen.has(x.domain)).filter(x => { if (seen.has(x.domain)) return false; seen.add(x.domain); return true; })
+      brands = (r.data as { domain: string; viewport: string; labels: unknown }[]).filter(x => nm.has(x.domain)).filter(x => x.viewport === vp || !seen.has(x.domain)).filter(x => { if (seen.has(x.domain)) return false; seen.add(x.domain); return true; })
         .map(x => ({ domain: x.domain, name: nm.get(x.domain) ?? x.domain, viewport: x.viewport, words: sig.group === "nav" && Array.isArray(x.labels) ? (x.labels as string[]).slice(0, 12) : null })).sort((a, b) => a.name.localeCompare(b.name));
     }
   }
@@ -126,7 +128,8 @@ export async function structureFacts(now = Date.now()): Promise<import("./struct
   const since = new Date(now - st.STRUCTURE_FRESH_DAYS * 864e5).toISOString();
   const r = await pagedRows((f, t) => db.from("library_structure_records").select("domain,viewport,captured_at").eq("structure_read", true).gte("quarter", st.quarterBack(st.quarterOf(new Date(now).toISOString()), 1)).order("domain").order("viewport").order("captured_at").range(f, t));
   if (r.error) throw new Error("structure facts read failed");
-  const brands = (vp: string, fresh: boolean) => new Set(r.data.filter(x => x.viewport === vp && (!fresh || x.captured_at >= since)).map(x => x.domain)).size;
+  const active = await (await import("./active-sites.server")).activeDomains(); // counted brands only, like the series
+  const brands = (vp: string, fresh: boolean) => new Set(r.data.filter(x => active.has(x.domain) && x.viewport === vp && (!fresh || x.captured_at >= since)).map(x => x.domain)).size;
   const all = await scopeSeries("all"), q = all.map(x => x.quarter).sort().at(-1) ?? null;
   const passing = q ? st.STRUCTURE_SIGNALS.filter(sg => all.some(x => x.signal === sg.key && x.quarter === q && x.n_read >= st.STRUCTURE_FLOOR)).length : 0;
   return { desktop: brands("desktop", false), phone: brands("mobile", false), fresh_desktop: brands("desktop", true), fresh_phone: brands("mobile", true), passing, total: st.STRUCTURE_SIGNALS.length, changes: q ? st.biggestChanges(all, q) : [] };

@@ -13,7 +13,7 @@ export const pictures = memo(2 * 60_000, async (): Promise<Map<string, BrandPics
     out.push(...((data ?? []) as PictureRow[]));
     if (!data || data.length < 1000) break;
   }
-  return pictureIndex(out);
+  return pictureIndex(await (await import("./active-sites.server")).activeRowsOnly(out)); // brands in the library only
 });
 /** The index, or an empty one when the read fails. */
 export const picturesSafe = () => pictures().catch(() => new Map<string, BrandPics>());

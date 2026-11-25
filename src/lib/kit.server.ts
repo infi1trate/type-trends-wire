@@ -12,8 +12,10 @@ export async function loadKit() {
   const db = supabaseAnon();
   const [{ snap, signals }, all, runId, crops] = await Promise.all([
     latestSignals("all"), storyIndex(), readerRunId(db),
-    db.from("site_crops").select("domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash").order("captured_at", { ascending: false }).limit(1),
+    db.from("site_crops").select("domain,section,viewport,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash").order("captured_at", { ascending: false }).limit(200),
   ]);
+  // The newest crop of a brand in the library: a brand still onboarding has crops too, and must not be the kit's picture.
+  const newest = (await (await import("./active-sites.server")).activeRowsOnly((crops.data ?? []) as CropRow[]))[0] ?? null;
   const composites = signals.filter(s => isComposite(s.key));
   const { data: q, error } = await db.from("forecasts").select("dimension,value,quarters:evidence->quarters").eq("run_id", runId).eq("scope", "all").eq("dimension", "combo").limit(100);
   if (error) throw error;
@@ -25,7 +27,7 @@ export async function loadKit() {
   return {
     run_id: snap.run_id, computed_at: snap.computed_at, published: stream.length,
     charts: kitCharts(composites, series, types), composites: composites.length,
-    stories, signals: headline, crop: crops.data?.[0] ? toCrop(crops.data[0] as CropRow) : null,
+    stories, signals: headline, crop: newest ? toCrop(newest) : null,
     brand: stories.find(s => s.domains[0])?.domains[0] ?? null,
   };
 }

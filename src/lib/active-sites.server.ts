@@ -25,3 +25,10 @@ export async function panelRowsOnly<T extends { domain?: string | null }>(rows: 
   const p = await panelDomains();
   return rows.filter(r => !!r.domain && p.has(r.domain));
 }
+
+/** Rows of brands in the library only. Pictures, crops, thumbnails and stored records exist for every brand the crawler reads,
+ *  including brands still onboarding and brands no longer tracked; a list that spans brands must show none of those. */
+export async function activeRowsOnly<T extends { domain: string }>(rows: readonly T[]): Promise<T[]> {
+  const active = await activeDomains();
+  return rows.filter(r => active.has(r.domain));
+}

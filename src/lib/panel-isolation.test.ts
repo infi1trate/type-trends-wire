@@ -80,3 +80,33 @@ describe("R2a-2 · one onboarding brand, with snapshots and events, appears nowh
     expect(db.get("new.com")).toMatchObject({ active: false, onboarding: true });
   });
 });
+
+// Wave 1 (25 Nov 2026): the crawler stores crops, thumbnails, pictures and structure records for brands that are still
+// onboarding. Every loader that spans brands must drop rows of brands outside the library before a page can show them.
+import { readFileSync as readSource } from "node:fs";
+describe("lists that span brands show only brands in the library", () => {
+  const has = (file: string, needle: RegExp) => expect(readSource(file, "utf8"), `${file} lost its library filter`).toMatch(needle);
+  it("crops, thumbnails and crop coverage", () => {
+    has("src/lib/read.server.ts", /export const allCrops = memo\([^\n]*activeRowsOnly\(/);
+    has("src/lib/read.server.ts", /export const allThumbs = memo\([^\n]*activeRowsOnly\(/);
+    has("src/lib/read.server.ts", /cropCoverage\(await activeRowsOnly\(rows\)\)/);
+  });
+  it("brand pictures, the kit's newest crop, the gallery's stamps and changes", () => {
+    has("src/lib/pictures.server.ts", /pictureIndex\(await \(await import\("\.\/active-sites\.server"\)\)\.activeRowsOnly\(out\)\)/);
+    has("src/lib/kit.server.ts", /activeRowsOnly\(\(crops\.data \?\? \[\]\) as CropRow\[\]\)/);
+    expect(readSource("src/lib/gallery.server.ts", "utf8").match(/activeRowsOnly\(out\)/g)?.length).toBe(2);
+  });
+  it("the structure pages name only brands the share counts", () => {
+    has("src/lib/structure-read.server.ts", /from\("library_sites"\)\.select\("domain,name"\)\.eq\("active", true\)/);
+    has("src/lib/structure-read.server.ts", /filter\(x => nm\.has\(x\.domain\)\)/);
+    has("src/lib/structure-read.server.ts", /active\.has\(x\.domain\) && x\.viewport === vp/);
+  });
+  it("activeRowsOnly keeps only rows of active domains", async () => {
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    vi.doMock("./mcp/supabase", () => ({ supabaseAnon: () => ({ from: () => ({ select: () => ({ eq: () => ({ order: () => ({ range: async () => ({ data: [{ domain: "in.com" }], error: null }) }) }) }) }) }) }));
+    const { activeRowsOnly } = await import("./active-sites.server");
+    expect(await activeRowsOnly([{ domain: "in.com", x: 1 }, { domain: "onboarding.com", x: 2 }])).toEqual([{ domain: "in.com", x: 1 }]);
+    vi.doUnmock("./mcp/supabase");
+  });
+});
