@@ -87,7 +87,7 @@ const subjectOf = (b: DeskBody): string | null =>
     : b.action === "note" ? (b.subject_kind === "story" || b.subject_kind === "study" ? b.subject : `${b.subject_kind}:${b.subject}`) : b.action === "proposal_status" ? `log:${b.log}` : b.action === "copy_sweep" ? b.page
     : b.action === "wire_pick" ? `item:${b.item}` : b.action === "wire_drop" ? `pick:${b.pick}` : b.action === "finding" ? b.key : b.action === "finding_close" ? `finding:${b.finding}` : b.action === "data_run" ? (b.ref ?? b.run)
     : b.action === "review" ? `${b.run}:${b.page}@${b.width}` : b.action === "queue_add" ? (b.key ?? b.title) : b.action === "queue_move" || b.action === "gate_result" ? `item:${b.item}` : b.action === "job_hold" || b.action === "job_release" ? `job:${b.job}`
-    : b.action === "draft_status" ? `draft:${b.draft}` : b.action === "audience" ? b.week : b.action === "source_note" ? `source:${b.source}` : b.action === "candidate_status" ? `candidate:${b.candidate}` : b.action === "art_remove" ? `art:${b.source}:${b.source_id}` : b.action === "icon_remove" ? `app:${b.app_id}` : null;
+    : b.action === "draft_status" ? `draft:${b.draft}` : b.action === "audience" ? b.week : b.action === "source_note" ? `source:${b.source}` : b.action === "dossier" ? `signal:${b.signal}` : b.action === "candidate_status" ? `candidate:${b.candidate}` : b.action === "art_remove" ? `art:${b.source}:${b.source_id}` : b.action === "icon_remove" ? `app:${b.app_id}` : null;
 
 /**
  * N1 · THE DOOR. Every authenticated call is logged in the desk log (allowed, proposed, refused or failed) with its actor, level,
@@ -294,6 +294,7 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     const r = await d.store.audience({ ...a, test: a.test ?? false, actor });
     return { status: 201, body: { ok: true, audience: r.id, replaces: r.replaces }, decision: "done", reason: `${b.week}: ${b.visitors} visitors, ${b.pageviews} pageviews${b.test ? " (test)" : ""}`, detail: { week: b.week, row: r.id, replaces: r.replaces, paths: b.top.length, sources: b.sources.length, test: b.test ?? false } };
   }
+  if (b.action === "dossier") return { status: 201, body: { ok: true, signal: b.signal, entries: b.entries }, decision: "done", reason: `${b.signal}: ${b.entries} entries · ${b.note}`.slice(0, 600), detail: { signal: b.signal, entries: b.entries } };
   if (b.action === "source_note") {
     if (!d.store.sourceNote) return missing;
     const r = await d.store.sourceNote({ source: b.source, status: b.status, read_on: b.read_on ?? null, link: b.link ?? null, note: b.note, actor });

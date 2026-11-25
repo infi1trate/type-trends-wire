@@ -49,6 +49,8 @@ export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   audience: ["publisher", "owner"], source_note: ["scout", "owner"], candidate_status: ["engineering", "owner"],
   // L2b · a desk asks for a published story's rewrite at the writer's next allowance.
   rewrite: ["standards", "copy desk", "editor in chief", "owner"],
+  // Y1 · the evidence desk files a signal's dossier (stored by the desk's own pass; the door records its one-line note).
+  dossier: ["evidence", "owner"],
   // V3 · restoring the pre-rewrite text: the copy desk, the editor in chief or the owner.
   text_restore: ["copy desk", "editor in chief", "owner"],
   // W3a · a museum work is removed on request by the owner only.
@@ -129,6 +131,7 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("draft_status"), draft: z.number().int().min(1), status: z.enum(["approved", "posted", "declined"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),
   audienceBody.extend({ action: z.literal("audience") }).strict(),
   sourceNoteBody.extend({ action: z.literal("source_note") }).strict(),
+  z.object({ action: z.literal("dossier"), signal: z.string().trim().min(3).max(80), entries: z.number().int().min(0).max(500), note: z.string().trim().min(3).max(300) }).strict(),
   artRemoveBody.extend({ action: z.literal("art_remove") }).strict(),
   iconRemoveBody.extend({ action: z.literal("icon_remove") }).strict(),
   z.object({ action: z.literal("candidate_status"), candidate: z.number().int().min(1), status: z.enum(["accepted", "declined", "added"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),

@@ -1385,6 +1385,36 @@ export type Database = {
         }
         Relationships: []
       }
+      evidence_dossiers: {
+        Row: {
+          built_at: string
+          counts: Json
+          entries: Json
+          name: string
+          rise_end: string | null
+          rise_start: string | null
+          signal: string
+        }
+        Insert: {
+          built_at?: string
+          counts?: Json
+          entries?: Json
+          name: string
+          rise_end?: string | null
+          rise_start?: string | null
+          signal: string
+        }
+        Update: {
+          built_at?: string
+          counts?: Json
+          entries?: Json
+          name?: string
+          rise_end?: string | null
+          rise_start?: string | null
+          signal?: string
+        }
+        Relationships: []
+      }
       font_catalog: {
         Row: {
           category: string
@@ -4678,6 +4708,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      why_now_blocks: {
+        Row: {
+          block: Json
+          dossier_at: string | null
+          failures: string[]
+          id: number
+          model: string | null
+          status: string
+          subject_id: string
+          subject_kind: string
+          written_at: string
+        }
+        Insert: {
+          block?: Json
+          dossier_at?: string | null
+          failures?: string[]
+          id?: number
+          model?: string | null
+          status: string
+          subject_id: string
+          subject_kind: string
+          written_at?: string
+        }
+        Update: {
+          block?: Json
+          dossier_at?: string | null
+          failures?: string[]
+          id?: number
+          model?: string | null
+          status?: string
+          subject_id?: string
+          subject_kind?: string
+          written_at?: string
+        }
+        Relationships: []
       }
       wire_items: {
         Row: {

@@ -1,0 +1,165 @@
+{
+ "note": "Month each CSS feature slug tracks shipped in Chrome, Safari and Firefox, and the month it was in all three (Baseline newly available). From MDN browser-compat-data release dates and the web-features Baseline record behind web.dev; read 25 Nov 2026. Null = not verified.",
+ "rows": [
+  {
+   "trait": "css:container_queries",
+   "feature": "Container queries (size)",
+   "chrome": "2022-09",
+   "safari": "2022-09",
+   "firefox": "2023-02",
+   "all_three": "2023-02",
+   "source": "https://developer.mozilla.org/docs/Web/API/CSSContainerRule",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201ccontainer-queries\u201d)"
+  },
+  {
+   "trait": "css:has_selector",
+   "feature": ":has()",
+   "chrome": "2022-09",
+   "safari": "2022-03",
+   "firefox": "2023-12",
+   "all_three": "2023-12",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Reference/Selectors/:has",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201chas\u201d)"
+  },
+  {
+   "trait": "css:subgrid",
+   "feature": "Subgrid",
+   "chrome": "2023-09",
+   "safari": "2022-09",
+   "firefox": "2019-12",
+   "all_three": "2023-09",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Guides/Grid_layout/Subgrid",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201csubgrid\u201d)"
+  },
+  {
+   "trait": "css:view_transitions",
+   "feature": "View transitions",
+   "chrome": "2023-03",
+   "safari": "2024-09",
+   "firefox": "2025-10",
+   "all_three": "2025-10",
+   "source": "https://developer.mozilla.org/docs/Web/API/Document/startViewTransition",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cview-transitions\u201d)"
+  },
+  {
+   "trait": "css:scroll_timeline",
+   "feature": "Scroll-driven animations",
+   "chrome": "2023-07",
+   "safari": "2025-09",
+   "firefox": "2026-10",
+   "all_three": "2026-10",
+   "source": "https://developer.mozilla.org/docs/Web/API/ScrollTimeline",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cscroll-driven-animations\u201d)"
+  },
+  {
+   "trait": "css:color_mix",
+   "feature": "color-mix()",
+   "chrome": "2023-03",
+   "safari": "2022-12",
+   "firefox": "2023-05",
+   "all_three": "2023-05",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Reference/Values/color_value/color-mix",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201ccolor-mix\u201d)"
+  },
+  {
+   "trait": "css:oklch",
+   "feature": "Oklab and OkLCh",
+   "chrome": "2023-03",
+   "safari": "2022-03",
+   "firefox": "2023-05",
+   "all_three": "2023-05",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Reference/Values/color_value/oklab",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201coklab\u201d)"
+  },
+  {
+   "trait": "css:cascade_layers",
+   "feature": "Cascade layers",
+   "chrome": "2022-03",
+   "safari": "2022-03",
+   "firefox": "2022-02",
+   "all_three": "2022-03",
+   "source": "https://developer.mozilla.org/docs/Web/API/CSSImportRule/layerName",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201ccascade-layers\u201d)"
+  },
+  {
+   "trait": "css:nesting",
+   "feature": "Nesting",
+   "chrome": "2023-12",
+   "safari": "2023-12",
+   "firefox": "2023-08",
+   "all_three": "2023-12",
+   "source": "https://developer.mozilla.org/docs/Web/API/CSSNestedDeclarations",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cnesting\u201d)"
+  },
+  {
+   "trait": "css:text_wrap_balance",
+   "feature": "text-wrap: balance",
+   "chrome": "2023-05",
+   "safari": "2024-05",
+   "firefox": "2023-12",
+   "all_three": "2024-05",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/text-wrap",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201ctext-wrap-balance\u201d)"
+  },
+  {
+   "trait": "css:clamp",
+   "feature": "min(), max(), and clamp()",
+   "chrome": "2019-12",
+   "safari": "2020-03",
+   "firefox": "2020-04",
+   "all_three": "2020-07",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Reference/Values/clamp",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cmin-max-clamp\u201d)"
+  },
+  {
+   "trait": "css:dvh_units",
+   "feature": "Small, large, and dynamic viewport units",
+   "chrome": "2022-11",
+   "safari": "2022-03",
+   "firefox": "2022-05",
+   "all_three": "2022-12",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/length",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cviewport-unit-variants\u201d)"
+  },
+  {
+   "trait": "css:backdrop_filter",
+   "feature": "backdrop-filter",
+   "chrome": "2019-07",
+   "safari": "2024-09",
+   "firefox": "2022-07",
+   "all_three": "2024-09",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/backdrop-filter",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cbackdrop-filter\u201d)"
+  },
+  {
+   "trait": "css:variable_fonts",
+   "feature": "font-variation-settings",
+   "chrome": "2017-10",
+   "safari": "2017-09",
+   "firefox": "2018-09",
+   "all_three": "2018-09",
+   "source": "https://developer.mozilla.org/docs/Web/CSS/Reference/At-rules/@font-face/font-variation-settings",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cfont-variation-settings\u201d)"
+  },
+  {
+   "trait": "css:starting_style",
+   "feature": "@starting-style",
+   "chrome": "2023-09",
+   "safari": "2024-05",
+   "firefox": "2024-08",
+   "all_three": "2024-08",
+   "source": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201cstarting-style\u201d)"
+  },
+  {
+   "trait": "css:anchor_positioning",
+   "feature": "Anchor positioning",
+   "chrome": "2026-11",
+   "safari": "2026-09",
+   "firefox": null,
+   "all_three": null,
+   "source": "https://developer.mozilla.org/docs/Web/API/CSSPositionTryDescriptors",
+   "baseline_source": "https://web.dev/baseline (web-features id \u201canchor-positioning\u201d)"
+  }
+ ]
+}

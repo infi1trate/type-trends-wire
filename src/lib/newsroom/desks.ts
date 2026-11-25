@@ -1,6 +1,6 @@
 // N1 · who acts in the newsroom. The desks are the agent sessions of the roadmap (none is switched on in N1); `owner` is the person
 // holding the editor key. The pipeline names (engine and the three writers) appear in the state history and the log, never as callers.
-export const DESKS = ["editor in chief", "copy desk", "standards", "news", "data", "graphics", "design review", "engineering", "publisher", "scout"] as const;
+export const DESKS = ["editor in chief", "copy desk", "standards", "news", "data", "graphics", "design review", "engineering", "publisher", "scout", "evidence"] as const;
 export type Desk = (typeof DESKS)[number];
 export const OWNER = "owner" as const;
 /** Who may call the door: one of the desks, or the owner. */

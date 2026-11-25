@@ -146,6 +146,11 @@ Keeps the sources register (31 sources: 19 read, 0 needs permission, 11 closed b
 - **`candidate_status`** (ships alone): Moves a brand candidate: accepted or declined (the owner only), then added (engineering, once the crawler's seed list carries it, or the owner). Nothing is added to the library by the product.
 - **`draft_status`** (needs the owner): Sets a social draft's status: approved, posted or declined (from draft: approved or declined; from approved: posted or declined). There is no posting code: outbound posts stay the owner's.
 
+## The evidence desk
+
+For every headline signal that is rising, fading or breaking out, and every signal a story published in the last 30 days is about, it builds a dossier of dated outside facts in four drawers: platform (browser feature dates from `src/data/platform-dates.json` for css:* traits, download-count turns from the indicators table), business (news-wire and Product Hunt items naming a brand that shows the trait), culture (news-wire items whose own title or summary carries one of the trait's keywords) and calendar (the same quarter in earlier years of slug's own history). Structure signals use business and calendar only. Matching is by rule; a model-proposed entry is marked and keeps the words it quoted. Each entry is timed against the signal's rise (before, during, after); an entry after the rise is never offered as a cause. Weekly, in the forecast's page-structure follow-up. It writes nothing reader-facing; `dossier` records its one-line note.
+
+
 ## The census
 
 A census counts what homepages say now: a brand counts when its newest capture and one at least 6 hours older are both inside the last 8 days. It runs with at least 8 members and names at most 6.

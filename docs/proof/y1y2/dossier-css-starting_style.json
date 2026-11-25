@@ -1,0 +1,37 @@
+{
+ "signal": "css:starting_style",
+ "name": "Entry animations",
+ "rise_start": "2025Q1",
+ "rise_end": "2026Q4",
+ "entries": [
+  {
+   "id": "p:css:starting_style:first",
+   "date": "2023-09",
+   "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+   "brand": null,
+   "match": "rule",
+   "phase": "before",
+   "drawer": "platform",
+   "source": "MDN",
+   "sentence": "@starting-style first shipped in Chrome in September 2023."
+  },
+  {
+   "id": "p:css:starting_style:all",
+   "date": "2024-08",
+   "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+   "brand": null,
+   "match": "rule",
+   "phase": "during",
+   "drawer": "platform",
+   "source": "MDN",
+   "sentence": "@starting-style reached all three major browsers (Chrome, Safari and Firefox) in August 2024."
+  }
+ ],
+ "counts": {
+  "culture": 0,
+  "business": 0,
+  "calendar": 0,
+  "platform": 2
+ },
+ "built_at": "2026-11-25T06:31:19.521+00:00"
+}
