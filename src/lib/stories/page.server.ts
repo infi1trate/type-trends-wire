@@ -69,7 +69,7 @@ export async function colourEventsOf(s: StoryRecord): Promise<import("./recolour
 export async function loadStory(id: string) {
   const s = await storyById(id); if (!s) return null;
   const [{ latestSignals }, { isPatternSignal }, read] = await Promise.all([import("../signals.server"), import("../patterns"), import("../read.server")]);
-  const [all, { signals }, thumbs, series] = await Promise.all([storyIndex().catch(() => []), latestSignals("all"), read.allThumbs().catch(() => []), s.signal_keys.length ? read.loadSignalSeries("all").catch(() => ({})) : Promise.resolve({} as Record<string, number[]>)]);
+  const [all, { signals }, thumbs, series] = await Promise.all([storyIndex().catch(() => []), latestSignals("all"), read.allThumbs().catch(() => []), s.signal_keys.length ? read.loadSignalSeriesDetail("all").catch(() => null) : Promise.resolve(null)]);
   const byKey = new Map(signals.map(x => [x.key, x])), key = s.signal_keys[0];
   const type = isKind(s.type) ? s.type : "news";
   const earlier = storiesAbout(all, { signals: s.signal_keys, domain: s.domains.length === 1 ? s.domains[0] : undefined, exclude: s.id, limit: 6 }).filter(x => x.at <= s.happened_at || s.type === "white_space");
@@ -78,7 +78,7 @@ export async function loadStory(id: string) {
   const thumb = (type === "move" || type === "rebrand" || type === "counter_move") && s.domains[0] ? pickThumb(thumbs, s.domains[0], s.happened_at) : null;
   const crops = await evidenceOf(s, type);
   const lead = await leadOf(s, crops, { census: page.census?.lines ?? null, names: new Map(page.brands.map(b => [b.domain, b.name])) }).catch(() => null);
-  return { ...page, lead, thumb, crops, frames: crops.compare ? null : await framesOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: (series as Record<string, number[]>)[key] ?? [] } : null };
+  return { ...page, lead, thumb, crops, frames: crops.compare ? null : await framesOf(s, type), series: key ? { key, name: page.signals[0]?.name ?? key, points: series?.values[key] ?? [], quarters: series?.quarters[key] ?? [] } : null };
 }
 
 /** P1 · shell first, critical: the story with its cover evidence (crops, redrawn frames, the signal's trail and the latest capture),

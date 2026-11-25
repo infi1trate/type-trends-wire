@@ -14,6 +14,7 @@ import { label as traitLabel, type StageName } from "@/lib/labels";
 import { EDITIONS } from "@/lib/ia";
 import { MCP_TOOL_COUNT } from "@/lib/site";
 import { signalSeriesQuery } from "@/lib/data";
+import { quarterText } from "@/lib/labels";
 import type { MorningItem } from "@/lib/editions/morning";
 import { numberLabel } from "@/lib/stories/numbers";
 import { noDid } from "@/lib/stories/reader";
@@ -50,7 +51,7 @@ const Item = ({ s, lead = false }: { s: MorningItem; lead?: boolean }) => <artic
 
 function LeadSpark({ k }: { k: string }) {
   const { data } = useQuery(signalSeriesQuery("all"));
-  return <p className="ed-data mt-3 flex flex-wrap items-center gap-3"><Sparkline look="read" values={data?.[k]} label={traitLabel(k).name} /><Link to="/signals/$key" params={{ key: k }} className="ed-tap">{traitLabel(k).name} →</Link></p>;
+  return <p className="ed-data mt-3 flex flex-wrap items-center gap-3"><Sparkline look="read" values={data?.values[k]} periods={data?.quarters[k]} counts={data?.counts[k]} label={traitLabel(k).name} /><Link to="/signals/$key" params={{ key: k }} className="ed-tap">{traitLabel(k).name} →</Link></p>;
 }
 
 export type MorningData = NonNullable<Awaited<ReturnType<typeof loadMorning>>>;
@@ -125,11 +126,11 @@ function SmallMultiples({ r }: { r: SectorReport }) {
   return <section aria-labelledby="sr-multiples" className="ed-wrap d-air">
     <SectionHead n="··" id="sr-multiples" title="Small multiples" kicker={`Share of ${r.name} homepages by quarter, one signal each; the figure is the latest quarter.`} />
     <ul className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6" data-small-multiples="">{r.signals.slice(0, 12).map(s => <li key={s.key} className="c-rulebox" data-container="rulebox">
-      <ChartInteraction label={`${s.name} in ${r.name}`} width={100} height={100} points={(data?.[s.key] ?? []).map((v,i,a) => ({ x: 12 + i / Math.max(1,a.length-1)*76, y: 70 - v/Math.max(.01,...a)*20, period: `Quarter ${i+1}`, lines: [`${s.name} ${(v*100).toFixed(1)}%`] }))}>
+      <ChartInteraction label={`${s.name} in ${r.name}`} width={100} height={100} points={(data?.values[s.key] ?? []).map((v,i,a) => ({ x: 12 + i / Math.max(1,a.length-1)*76, y: 70 - v/Math.max(.01,...a)*20, period: quarterText(data?.quarters[s.key]?.[i] ?? ""), lines: [[s.name, `${(v*100).toFixed(1)}%`, data?.counts[s.key]?.[i]].filter(Boolean).join(" · ")] }))}>
       <Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="block no-underline">
         <span className="ed-kicker block truncate">{s.name}</span>
         <span className="ed-stat block">{share(s.here.share)}</span>
-        <Sparkline look="read" values={data?.[s.key]} label={`${s.name} in ${r.name}`} />
+        <Sparkline look="read" values={data?.values[s.key]} periods={data?.quarters[s.key]} counts={data?.counts[s.key]} label={`${s.name} in ${r.name}`} />
       </Link>
     </ChartInteraction></li>)}</ul>
   </section>;

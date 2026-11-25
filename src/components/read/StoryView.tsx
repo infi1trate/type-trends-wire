@@ -1,3 +1,4 @@
+import { quarterText } from "@/lib/labels";
 import { dataHref } from "@/lib/ia";
 import { line as voiced } from "@/lib/voice";
 // STORY object page (/stories/<id>), Quiet density: a cover (an ink slab the full width, the headline in Display crossing ONE
@@ -48,7 +49,7 @@ export function coverObject(s: StoryPageData): CoverObject {
   if (kind === "crop") return { kind: "crop", crop: s.crops!.after!, note };
   if (kind === "frames") return frameObject(s.frames!.after, note);
   if (kind === "text") return { kind: "text", before: s.beforeAfter!.before, after: s.beforeAfter!.after, note };
-  if (s.series && s.series.points.length >= 2) return { kind: "trail", name: s.series.name, points: s.series.points.map((y, i) => ({ x: `Quarter ${i + 1}`, y })) };
+  if (s.series && s.series.points.length >= 2) return { kind: "trail", name: s.series.name, points: s.series.points.map((y, i) => ({ x: quarterText(("quarters" in s.series! ? (s.series as { quarters?: string[] }).quarters?.[i] : undefined) ?? "") || `${i + 1}`, y })) };
   return null;
 }
 

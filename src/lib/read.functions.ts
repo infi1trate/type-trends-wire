@@ -83,8 +83,8 @@ export const getSignalsIndex = createServerFn({ method: "GET" }).inputValidator(
   return loadSignalsIndex(parseSignalsSearch(data));
 });
 export const getSignalSeries = createServerFn({ method: "GET" }).inputValidator(z.object({ scope: sector })).handler(async ({ data }) => {
-  const { loadSignalSeries } = await import("./read.server");
-  return loadSignalSeries(data.scope);
+  const { loadSignalSeriesDetail } = await import("./read.server");
+  return loadSignalSeriesDetail(data.scope);
 });
 export const getModelCard = createServerFn({ method: "GET" }).handler(async () => {
   const [{ supabaseAnon }, { readerRunId }] = await Promise.all([import("./mcp/supabase"), import("./real-runs")]);

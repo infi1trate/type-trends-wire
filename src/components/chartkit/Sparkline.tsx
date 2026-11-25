@@ -2,7 +2,7 @@
 // leading indicators). Data: the terminal's 64×16 rank line, inverted so climbing goes up, with a highlighter square at the end when it
 // rose; `large` is the same rank line at panel size with its axis labels. Every look carries its values for screen readers.
 import { ChartInteraction } from "./Interaction";
-import { pctText } from "@/lib/labels";
+import { pctText, quarterText } from "@/lib/labels";
 import { ChartTable } from "./ChartTable";
 import { CHART, lw, pt } from "./ink";
 
@@ -68,15 +68,15 @@ function RankLine({ points }: { points: { date: string; rank: number }[] }) {
 
 
 export type SparklineProps =
-  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean; interactive?: boolean }
+  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean; interactive?: boolean; periods?: string[] | undefined; counts?: (string | null)[] | undefined }
   | { look: "data"; values: number[] | undefined; label?: string }
   | { look: "data"; large: true; points: { date: string; rank: number }[] };
 /** A sparkline in either look. */
 export function Sparkline(p: SparklineProps) {
   if (p.look === "read") {
-    const { look: _l, values, format = pctText, interactive = false, ...rest } = p;
+    const { look: _l, values, format = pctText, interactive = false, periods, counts, ...rest } = p;
     const valuesList = values ?? [], W = rest.w ?? 96, H = rest.h ?? 24, max = Math.max(...valuesList, .01), min = Math.min(...valuesList, 0);
-    return <><ChartInteraction enabled={Boolean(interactive || rest.stretch || W > 240)} width={W} height={H} label={rest.label} points={valuesList.map((v, i) => ({ x: 2 + i / Math.max(1,valuesList.length - 1) * (W - 4), y: H - 2 - (v - min) / Math.max(.0001,max-min)*(H-4), period: `Quarter ${i + 1}`, lines: [`${rest.label} ${format(v)}`] }))}><ReadSpark points={values} {...rest} /></ChartInteraction>{values && values.length >= 2 && <span className="sr-only">{values.map(format).join(", ")}</span>}</>;
+    return <><ChartInteraction enabled={Boolean(interactive || rest.stretch || W > 240)} width={W} height={H} label={rest.label} points={valuesList.map((v, i) => ({ x: 2 + i / Math.max(1,valuesList.length - 1) * (W - 4), y: H - 2 - (v - min) / Math.max(.0001,max-min)*(H-4), period: quarterText(periods?.[i] ?? ""), lines: [[rest.label, format(v), counts?.[i]].filter(Boolean).join(" · ")] }))}><ReadSpark points={values} {...rest} /></ChartInteraction>{values && values.length >= 2 && <span className="sr-only">{values.map(format).join(", ")}</span>}</>;
   }
   if ("large" in p) {
     const ranks = p.points.map(p => p.rank), min = Math.min(...ranks), max = Math.max(...ranks);

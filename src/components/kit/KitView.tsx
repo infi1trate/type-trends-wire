@@ -110,7 +110,7 @@ export function KitView() {
         {lead ? <StoryCard s={lead} lead /> : <p className="ed-small">{voiced("kit.kitView.1")}</p>}
         {standard && <StoryCard s={standard} />}
         {rest.length > 0 && <ul className="border-y border-rule">{rest.slice(0, 3).map((s, i) => <StoryRow key={s.id} s={s} n={i + 1} />)}</ul>}
-        <ul>{d.signals.map(s => <SignalLine key={s.key} k={s.key} name={s.name} stage={s.stage} share={s.share} points={series?.[s.key]} />)}</ul>
+        <ul>{d.signals.map(s => <SignalLine key={s.key} k={s.key} name={s.name} stage={s.stage} share={s.share} points={series?.values[s.key]} />)}</ul>
         {d.brand && <div className="ed-hair pt-3"><p className="tk-t-kicker tk-c-muted">Brand</p><p className="tk-t-h3"><Receipt href={brandPath(d.brand)} className="no-underline hover:underline">{d.brand}</Receipt></p></div>}
         <LiveStamp at={d.computed_at} /><p className="ed-caption"><NextCheck /></p>
       </div>}</ModePanels>

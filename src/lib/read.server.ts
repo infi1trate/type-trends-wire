@@ -210,6 +210,18 @@ export async function loadPattern(key: string, sector: string) {
 }
 
 /** Quarterly share points for every forecast row in one scope (sparklines on /signals). */
+/** B1b: the same rows as loadSignalSeries, with each kept point's quarter ("2026Q3") and its count ("5 of 30"), for chart readouts. */
+export async function loadSignalSeriesDetail(scope: string) {
+  const db = supabaseAnon(), runId = await readerRunId(db);
+  const rows = await pages<{ dimension: string; value: string; quarters: { q: string; s: number | null; n: number; c: number; k?: number }[] | null }>((f, t) => db.from("forecasts").select("dimension,value,quarters:evidence->quarters").eq("run_id", runId).eq("scope", resolveSector(scope)).order("dimension").order("value").range(f, t) as never, 200);
+  const values: Record<string, number[]> = {}, quarters: Record<string, string[]> = {}, counts: Record<string, (string | null)[]> = {};
+  for (const r of rows) {
+    const kept = (r.quarters ?? []).filter(p => p.s != null && p.n >= 15 && p.c >= 0.25), key = `${r.dimension}:${r.value}`;
+    values[key] = kept.map(p => p.s as number); quarters[key] = kept.map(p => p.q);
+    counts[key] = kept.map(p => (typeof p.k === "number" ? `${p.k} of ${p.n}` : `${Math.round((p.s as number) * p.n)} of ${p.n}`));
+  }
+  return { values, quarters, counts };
+}
 export async function loadSignalSeries(scope: string) {
   const db = supabaseAnon(), runId = await readerRunId(db);
   const rows = await pages<{ dimension: string; value: string; quarters: { q: string; s: number | null; n: number; c: number }[] | null }>((f, t) => db.from("forecasts").select("dimension,value,quarters:evidence->quarters").eq("run_id", runId).eq("scope", resolveSector(scope)).order("dimension").order("value").range(f, t) as never, 200);

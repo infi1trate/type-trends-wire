@@ -14,5 +14,5 @@ export function keyboardPoint(key: string, at: number, length: number): number |
   if (key === 'ArrowLeft' || key === 'ArrowUp') return Math.max(0, at - 1);
   return undefined;
 }
-export const readoutWords = (p: ReadPoint) => [p.period, ...p.lines].join('. ');
+export const readoutWords = (p: ReadPoint) => [p.period, ...p.lines].filter(Boolean).join('. ');
 export const decimalLabel = (s: string) => s.replace(/(-?\d+(?:\.\d+)?)(\s*(?:%|px|pts|points|rank)\b|%)/g, (_, n: string, u: string) => `${Number(n).toFixed(1)}${u}`);
