@@ -1,5 +1,5 @@
 // Read-mode loaders (Live, brands, patterns, signal series): anonymous SELECT-only reads assembled by pure models. No AI per view.
-import { historyRows } from "./history.server";
+import { panelHistoryRows } from "./history.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { memo } from "./memo";
 import { stored, storedBy } from "./records/store.server";
@@ -36,7 +36,7 @@ export const siteTraitIndex = stored("site-index", async (): Promise<PatternSite
   const db = supabaseAnon();
   const [sites, hist] = await Promise.all([
     pages<{ domain: string; name: string | null; sector: string; active: boolean; last_snapshot_at: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_snapshot_at").order("domain").range(f, t) as never),
-    historyRows<SiteRow & { captured_at: string | null }>(db, "domain,quarter,sector,captured_at,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags,h1_size_px,cta_radius_bucket,whitespace_ratio", { now: true }),
+    panelHistoryRows<SiteRow & { captured_at: string | null }>(db, "domain,quarter,sector,captured_at,theme,h1_family,webfont,h1_tracking,css_features,frameworks,hero_media,ai_tags,h1_size_px,cta_radius_bucket,whitespace_ratio", { now: true }),
   ]);
   const h = new Map(hist.map(r => [r.domain, r]));
   return sites.filter(s => s.active).map(s => { const r = h.get(s.domain); return { domain: s.domain, name: s.name, sector: s.sector, captured: r?.captured_at ?? s.last_snapshot_at, traits: r ? [...new Set(forecastSiteTraits({ ...r, sector: s.sector }))] : [] }; });

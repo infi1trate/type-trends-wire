@@ -70,6 +70,7 @@ export type NewsroomStore = {
   artRemove?: (r: import("../art/contract").ArtRemove) => Promise<{ removed: true; thumb_deleted: boolean; copies?: import("../removal.server").RemovalCopies } | { refused: string } | null>;
   /** W3d · the owner removes an app from the icon study (rows kept with the reason; refused forever). */
   iconRemove?: (r: import("../icons/contract").IconRemove) => Promise<{ removed: true; rows: number; copies?: import("../removal.server").RemovalCopies } | { refused: string } | null>;
+  panelStep?: (who: string) => Promise<{ step: { at: string; brands_before: number; brands_after: number; domains: string[] } } | { refused: string }>;
   candidateStatus?: (r: { candidate: number; status: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
   /** L2b · a rewrite request for a published story (refused while one for the same story is still open). */
   rewrite?: (r: { story_id: string; actor: string; reason: string }) => Promise<{ id: number } | { refused: string }>;
@@ -316,6 +317,13 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     const copies = "copies" in r ? r.copies : undefined;
     return { status: 201, body: { ok: true, app_id: b.app_id, removed: true, rows: r.rows, ...(copies ? { copies } : {}) }, decision: "done", reason: b.reason, detail: { app_id: b.app_id, rows: r.rows, ...(copies ? { copies } : {}) } };
   }
+  if (b.action === "panel_step") {
+    if (actor !== "engineering" && actor !== "owner") return { status: 409, body: { error: "refused", reason: "panel_step is engineering's or the owner's." }, decision: "refused", reason: "panel_step is engineering's or the owner's." };
+    if (!d.store.panelStep) return missing;
+    const r = await d.store.panelStep(actor);
+    if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
+    return { status: 201, body: { ok: true, ...r.step }, decision: "done", reason: `${r.step.brands_before} to ${r.step.brands_after}${b.reason ? `: ${b.reason}` : ""}`.slice(0, 600), detail: { before: r.step.brands_before, after: r.step.brands_after, joined: r.step.domains.length } };
+  }
   if (b.action === "candidate_status") {
     if (!d.store.candidateStatus) return missing;
     const r = await d.store.candidateStatus({ candidate: b.candidate, status: b.status, actor, reason: b.reason ?? null });
@@ -445,6 +453,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       // W3d-c · a removal rewrites the stored copies that can show the work or the app and clears this server's copies at once.
       artRemove: async r => { const out = await (await import("../art/ingest.server")).removeArtWork(r); return out && "removed" in out ? { ...out, copies: await (await import("../removal.server")).afterRemoval("art") } : out; },
       iconRemove: async r => { const out = await (await import("../icons/ingest.server")).removeIconApp(r); return out && "removed" in out ? { ...out, copies: await (await import("../removal.server")).afterRemoval("icon") } : out; },
+      panelStep: async who => (await import("../panel.server")).runPanelStep(db, who),
       candidateStatus: async r => (await import("../newsroom/scout.server")).insertCandidateStatus(db, r),
       rewrite: async r => (await import("./rewrite.server")).insertRewriteRequest(db, r),
       textRestore: async id => (await import("./rewrite.server")).restoreTexts(db, id),

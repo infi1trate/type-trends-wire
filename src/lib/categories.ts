@@ -9,6 +9,12 @@ const LABEL_OVERRIDES: Readonly<Record<string, string>> = {
   crm: 'CRM', hr: 'HR', it: 'IT', apis: 'APIs', css: 'CSS',
   'api-tools': 'API tools', 'communications-apis': 'Communications APIs',
   'womens-health': "Women's health", 'direct-to-patient': 'Direct to patient',
+  // R2a · v2 map slugs that read badly in title case.
+  'ai-observability': 'AI observability', 'data-and-evals': 'Data and evals', 'spirits-and-wine': 'Spirits and wine',
+  'baby-and-kids': 'Baby and kids', 'glasses-and-pendants': 'Glasses and pendants', 'social-and-seo': 'Social and SEO',
+  'air-and-water': 'Air and water', 'audio-and-video': 'Audio and video', 'bikes-and-scooters': 'Bikes and scooters',
+  'games-and-music': 'Games and music', 'jobs-and-workflows': 'Jobs and workflows', 'motion-and-3d': 'Motion and 3D',
+  'photo-and-video': 'Photo and video', 'studios-and-stores': 'Studios and stores',
 };
 export const categoryLabel = (slug: string) => LABEL_OVERRIDES[slug] ?? slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 export const categoriesForSector = (sector: string) => Object.keys(CATEGORY_TREE[sector] ?? {});

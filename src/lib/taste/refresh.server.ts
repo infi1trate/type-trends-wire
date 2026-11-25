@@ -1,4 +1,4 @@
-import { historyRows } from "../history.server";
+import { panelHistoryRows as historyRows } from "../history.server";
 import {supabaseAnon} from "../mcp/supabase";
 import {loadTasteSites,pages,measuredPalette,WIDE_PAGE} from "./store.server";
 import {buildFontCatalog,isNonType} from "./fonts";

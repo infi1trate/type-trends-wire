@@ -6,7 +6,7 @@ import type { DataInput, EventRow, HistRow, SiteInfo, SnapMeta } from "./series"
 import { MEASURED_EVENT_TYPES } from "../rebrands";
 import type { CropRow } from "../crops";
 import { memo, memoBy } from "../memo";
-import { historyRows } from "../history.server";
+import { panelHistoryRows as historyRows } from "../history.server";
 import { truthEvents, type RawEvent } from "./truth";
 
 type Db = ReturnType<typeof supabaseAnon>;

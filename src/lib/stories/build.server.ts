@@ -1,6 +1,6 @@
 // One bounded, idempotent story build: load what exists (anonymous public reads), make candidates, score, plan, write
 // at most a few "why it matters" lines inside the AI budget, and insert with ON CONFLICT DO NOTHING. Never runs in DEV runs.
-import { historyRows as readHistory } from "../history.server";
+import { panelHistoryRows as readHistory } from "../history.server";
 import { decodeEntities } from "../entities";
 import { forecastSiteTraits, type SiteRow } from "../forecast-signals";
 import { canonical } from "../labels";
@@ -252,7 +252,7 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
     // PH1 · only launches over the line (votes floor and slug's beat, launches.ts) are candidates; the rest stay wire items.
     db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt,votes,topics").eq("source_kind", "producthunt").gte("published_at", since).order("id").limit(200)
       .then(async r => ({ ...r, data: r.data ? r.data.filter((await import("../launches")).onTheLine) : r.data })),
-    pages<{ domain: string; name: string | null; sector: string; active: boolean; last_snapshot_at: string | null; site_kind: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_snapshot_at,site_kind").order("domain").range(f, t) as never),
+    pages<{ domain: string; name: string | null; sector: string; active: boolean; last_snapshot_at: string | null; site_kind: string | null; panel_since: string | null }>((f, t) => db.from("library_sites").select("domain,name,sector,active,last_snapshot_at,site_kind,panel_since").order("domain").range(f, t) as never),
     readHistory<SiteRow & { captured_at: string | null }>(db, HIST, { now: true }),
     readHistory<SiteRow>(db, HIST, { now: false }),
     latest == null ? Promise.resolve({ data: [], error: null }) : db.from("trendsetters").select("domain,rank").eq("run_id", latest).order("rank"),
@@ -260,7 +260,8 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   ]);
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
   // I3b: changes count only for brands tracked now (an inactive brand is never a story candidate).
-  const sectorOf = new Map(sites.filter(x => x.active).map(x => [x.domain, x.sector]));
+  // R2a: and only for panel brands; an onboarding brand's changes are stored but never enter the story queue (first-run noise).
+  const sectorOf = new Map(sites.filter(x => x.active && x.panel_since).map(x => [x.domain, x.sector]));
   const history = historyRows.filter(e => sectorOf.has(e.domain)).map(e => ({ ...e, sector: sectorOf.get(e.domain) ?? null })), events = history.filter(e => e.detected_at >= since);
   // E2e: every live change of the window (both viewports, every page) judged against the stored live captures. A failure fails the
   // build (fail closed: no change reaches a story unchecked).

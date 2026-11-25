@@ -2680,6 +2680,7 @@ export type Database = {
           last_snapshot_at: string | null
           name: string | null
           pages: Json | null
+          panel_since: string | null
           sector: string
           site_kind: string
           subcategory: string | null
@@ -2693,6 +2694,7 @@ export type Database = {
           last_snapshot_at?: string | null
           name?: string | null
           pages?: Json | null
+          panel_since?: string | null
           sector: string
           site_kind?: string
           subcategory?: string | null
@@ -2706,6 +2708,7 @@ export type Database = {
           last_snapshot_at?: string | null
           name?: string | null
           pages?: Json | null
+          panel_since?: string | null
           sector?: string
           site_kind?: string
           subcategory?: string | null
@@ -3329,6 +3332,36 @@ export type Database = {
           data?: Json
           domain?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      panel_steps: {
+        Row: {
+          at: string
+          brands_after: number
+          brands_before: number
+          by_sector: Json
+          domains: string[]
+          id: number
+          who: string
+        }
+        Insert: {
+          at?: string
+          brands_after: number
+          brands_before: number
+          by_sector?: Json
+          domains?: string[]
+          id?: number
+          who: string
+        }
+        Update: {
+          at?: string
+          brands_after?: number
+          brands_before?: number
+          by_sector?: Json
+          domains?: string[]
+          id?: number
+          who?: string
         }
         Relationships: []
       }

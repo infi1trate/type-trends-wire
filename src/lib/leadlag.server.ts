@@ -3,7 +3,7 @@
 import { leadLagRows } from "./leadlag";
 
 export async function refreshLeadLag(): Promise<{ ok: boolean; signals: number; rows: number; code?: string }> {
-  const [{ supabaseAdmin: db }, { supabaseAnon }, { historyRows }, { loadVanguard }, { latestSignals }] = await Promise.all([
+  const [{ supabaseAdmin: db }, { supabaseAnon }, { panelHistoryRows: historyRows }, { loadVanguard }, { latestSignals }] = await Promise.all([
     import("@/integrations/supabase/client.server"), import("./mcp/supabase"), import("./history.server"), import("./vanguard.server"), import("./signals.server")]);
   const [history, sites, vanguard, sig] = await Promise.all([historyRows<import("./data-stories/series").HistRow>(supabaseAnon(), "*"), db.from("library_sites").select("domain,name,sector,active"), loadVanguard(), latestSignals("all")]);
   if (sites.error) return { ok: false, signals: 0, rows: 0, code: "sites_read_failed" };

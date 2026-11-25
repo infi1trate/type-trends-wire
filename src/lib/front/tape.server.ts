@@ -16,7 +16,7 @@ async function load(): Promise<FrontTape> {
     if (!data || data.length < 1000) break;
   }
   // I3b: only brands tracked now (an address that turned out to be another business leaves the latest changes).
-  const active = await (await import("../active-sites.server")).activeDomains();
+  const active = await (await import("../active-sites.server")).panelDomains(); // R2a: panel brands only
   events.splice(0, events.length, ...events.filter(e => active.has(e.domain)));
   const [{ latestChecks }, { reversalIds }] = await Promise.all([import("../integrity.server"), import("../reversal")]);
   const checks = await latestChecks(db, events.map(e => e.id));

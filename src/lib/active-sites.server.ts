@@ -13,3 +13,9 @@ export const activeDomains = memo(60_000, async (): Promise<ReadonlySet<string>>
   }
   return out;
 });
+
+/** R2a · the panel: active brands with panel_since. Latest changes, the story queue, briefs and RSS read only these. */
+export const panelDomains = memo(60_000, async (): Promise<ReadonlySet<string>> => {
+  const { panelDomainSet } = await import("./history.server");
+  return panelDomainSet(supabaseAnon());
+});

@@ -36,3 +36,20 @@ export async function historyRows<T>(db: Db, cols: string, o: { now?: boolean } 
   }
   return out;
 }
+
+/** R2a · the domains in the panel (active, with panel_since). Shares and trends read only these; brand pages read everything. */
+export async function panelDomainSet(db: Db): Promise<Set<string>> {
+  const out = new Set<string>();
+  for (let f = 0; ; f += HISTORY_PAGE) {
+    const { data, error } = await db.from("library_sites").select("domain").eq("active", true).not("panel_since", "is", null).order("domain").range(f, f + HISTORY_PAGE - 1);
+    if (error) throw error;
+    for (const r of data ?? []) out.add(r.domain);
+    if (!data || data.length < HISTORY_PAGE) break;
+  }
+  return out;
+}
+/** History over the panel only: every share, trend, forecast and story input reads this, so an onboarding brand changes none of them. */
+export async function panelHistoryRows<T>(db: Db, cols: string, o: { now?: boolean } = {}): Promise<T[]> {
+  const [rows, panel] = await Promise.all([historyRows<T & { domain: string }>(db, cols, o), panelDomainSet(db)]);
+  return rows.filter(r => panel.has(r.domain));
+}

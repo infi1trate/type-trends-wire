@@ -1,5 +1,5 @@
 // Weekly vibe-map job (service-role writes) and anonymous reads shared by F7 and the MCP `vibe_map` tool.
-import { historyRows } from "./history.server";
+import { panelHistoryRows as historyRows } from "./history.server";
 import { supabaseAnon } from "./mcp/supabase";
 import { fitVibe, siteTokens, clusterMomentum, axisLabel, tagPhrase, type VibeSite, type VibeModel } from "./vibe";
 const qKey = (iso: string) => { const d = new Date(iso); return `${d.getUTCFullYear()}Q${Math.floor(d.getUTCMonth() / 3) + 1}`; };

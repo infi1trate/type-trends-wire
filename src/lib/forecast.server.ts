@@ -1,5 +1,5 @@
 // Weekly forecast job: loads public aggregates, runs pure models, persists a run. Service-role writes only.
-import { historyRows } from "./history.server";
+import { panelHistoryRows as historyRows } from "./history.server";
 import type { Database } from "@/integrations/supabase/types";
 import { forecastSeries, backtestSeries, median, qIndex, usablePoints, type SeriesPoint } from "./forecast";
 import { crossingQuarter, nextWaveIneligibleReason, trendsetterScores, trendsetterGap, leadLag, keywordCount, nextWaveScores, forecastSiteTraits, siteTraits, emptyComponents, presentComponents, COMPONENT_KEYS, type SiteRow, type Components } from "./forecast-signals";

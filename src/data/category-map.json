@@ -1,5 +1,4 @@
 {
- "written": "2026-11-24",
  "labels": {
   "ai": "AI",
   "commerce-dtc": "Consumer products & retail",
@@ -1980,281 +1979,8890 @@
    "sector": "studios",
    "category": "art",
    "subcategory": "collective"
+  },
+  {
+   "domain": "deepseek.com",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "frontier-models"
+  },
+  {
+   "domain": "ssi.inc",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "frontier-models"
+  },
+  {
+   "domain": "reka.ai",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "frontier-models"
+  },
+  {
+   "domain": "sakana.ai",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "frontier-models"
+  },
+  {
+   "domain": "ai21.com",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "enterprise-models"
+  },
+  {
+   "domain": "aleph-alpha.com",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "enterprise-models"
+  },
+  {
+   "domain": "liquid.ai",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "enterprise-models"
+  },
+  {
+   "domain": "blackforestlabs.ai",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "open-models"
+  },
+  {
+   "domain": "nousresearch.com",
+   "sector": "ai",
+   "category": "labs",
+   "subcategory": "open-models"
+  },
+  {
+   "domain": "sambanova.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "chips-and-inference"
+  },
+  {
+   "domain": "coreweave.com",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "chips-and-inference"
+  },
+  {
+   "domain": "crusoe.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "chips-and-inference"
+  },
+  {
+   "domain": "lambda.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "chips-and-inference"
+  },
+  {
+   "domain": "fireworks.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "model-hosting"
+  },
+  {
+   "domain": "modal.com",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "model-hosting"
+  },
+  {
+   "domain": "baseten.co",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "model-hosting"
+  },
+  {
+   "domain": "runpod.io",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "model-hosting"
+  },
+  {
+   "domain": "openrouter.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "model-hosting"
+  },
+  {
+   "domain": "anyscale.com",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "model-hosting"
+  },
+  {
+   "domain": "scale.com",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "labelbox.com",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "wandb.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "pinecone.io",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "weaviate.io",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "langchain.com",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "llamaindex.ai",
+   "sector": "ai",
+   "category": "infrastructure",
+   "subcategory": "data-and-evals"
+  },
+  {
+   "domain": "leonardo.ai",
+   "sector": "ai",
+   "category": "creative-tools",
+   "subcategory": "image"
+  },
+  {
+   "domain": "recraft.ai",
+   "sector": "ai",
+   "category": "creative-tools",
+   "subcategory": "image"
+  },
+  {
+   "domain": "freepik.com",
+   "sector": "ai",
+   "category": "creative-tools",
+   "subcategory": "image"
+  },
+  {
+   "domain": "captions.ai",
+   "sector": "ai",
+   "category": "creative-tools",
+   "subcategory": "video"
+  },
+  {
+   "domain": "udio.com",
+   "sector": "ai",
+   "category": "creative-tools",
+   "subcategory": "voice-and-audio"
+  },
+  {
+   "domain": "cartesia.ai",
+   "sector": "ai",
+   "category": "creative-tools",
+   "subcategory": "voice-and-audio"
+  },
+  {
+   "domain": "you.com",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "search"
+  },
+  {
+   "domain": "exa.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "search"
+  },
+  {
+   "domain": "chatgpt.com",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "chat"
+  },
+  {
+   "domain": "claude.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "chat"
+  },
+  {
+   "domain": "pi.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "chat"
+  },
+  {
+   "domain": "meta.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "chat"
+  },
+  {
+   "domain": "grok.com",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "chat"
+  },
+  {
+   "domain": "replika.com",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "companions"
+  },
+  {
+   "domain": "genspark.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "agents"
+  },
+  {
+   "domain": "lindy.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "agents"
+  },
+  {
+   "domain": "dust.tt",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "agents"
+  },
+  {
+   "domain": "sierra.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "agents"
+  },
+  {
+   "domain": "decagon.ai",
+   "sector": "ai",
+   "category": "assistants",
+   "subcategory": "agents"
+  },
+  {
+   "domain": "hebbia.com",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "enterprise-search"
+  },
+  {
+   "domain": "otter.ai",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "meetings"
+  },
+  {
+   "domain": "fireflies.ai",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "meetings"
+  },
+  {
+   "domain": "grammarly.com",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "writing"
+  },
+  {
+   "domain": "gamma.app",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "presentations"
+  },
+  {
+   "domain": "beautiful.ai",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "presentations"
+  },
+  {
+   "domain": "cresta.com",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "sales"
+  },
+  {
+   "domain": "abridge.com",
+   "sector": "ai",
+   "category": "work-tools",
+   "subcategory": "health"
+  },
+  {
+   "domain": "drunkelephant.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "theordinary.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "cerave.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "tatcha.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "summerfridays.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "topicals.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "starface.world",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "kiehls.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "paulaschoice.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "glowrecipe.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "skincare"
+  },
+  {
+   "domain": "fentybeauty.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "rarebeauty.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "milkmakeup.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "meritbeauty.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "kosas.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "tower28beauty.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "charlottetilbury.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "patmcgrath.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "narscosmetics.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "makeup"
+  },
+  {
+   "domain": "olaplex.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "haircare"
+  },
+  {
+   "domain": "theouai.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "haircare"
+  },
+  {
+   "domain": "prose.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "haircare"
+  },
+  {
+   "domain": "functionofbeauty.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "haircare"
+  },
+  {
+   "domain": "crownaffair.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "haircare"
+  },
+  {
+   "domain": "vegamour.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "haircare"
+  },
+  {
+   "domain": "harrys.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "grooming"
+  },
+  {
+   "domain": "dollarshaveclub.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "grooming"
+  },
+  {
+   "domain": "mybillie.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "grooming"
+  },
+  {
+   "domain": "nativecos.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "grooming"
+  },
+  {
+   "domain": "byhumankind.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "grooming"
+  },
+  {
+   "domain": "drsquatch.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "grooming"
+  },
+  {
+   "domain": "lelabofragrances.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "fragrance"
+  },
+  {
+   "domain": "byredo.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "fragrance"
+  },
+  {
+   "domain": "dsanddurga.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "fragrance"
+  },
+  {
+   "domain": "phlur.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "fragrance"
+  },
+  {
+   "domain": "diptyqueparis.com",
+   "sector": "commerce-dtc",
+   "category": "beauty",
+   "subcategory": "fragrance"
+  },
+  {
+   "domain": "stussy.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "streetwear"
+  },
+  {
+   "domain": "palaceskateboards.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "streetwear"
+  },
+  {
+   "domain": "carhartt-wip.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "streetwear"
+  },
+  {
+   "domain": "noahny.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "streetwear"
+  },
+  {
+   "domain": "fearofgod.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "streetwear"
+  },
+  {
+   "domain": "thereformation.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "cos.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "uniqlo.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "arket.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "aritzia.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "madewell.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "jcrew.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "buckmason.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "toddsnyder.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "taylorstitch.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "cuyana.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "sezane.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "ganni.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "acnestudios.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "goodamerican.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "abercrombie.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "apparel"
+  },
+  {
+   "domain": "arcteryx.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "thenorthface.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "cotopaxi.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "rei.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "yeti.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "fjallraven.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "snowpeak.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "outdoor"
+  },
+  {
+   "domain": "lululemon.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "aloyoga.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "outdoorvoices.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "tracksmith.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "satisfyrunning.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "districtvision.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "tenthousand.cc",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "activewear"
+  },
+  {
+   "domain": "adidas.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "sportswear"
+  },
+  {
+   "domain": "puma.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "sportswear"
+  },
+  {
+   "domain": "newbalance.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "sportswear"
+  },
+  {
+   "domain": "underarmour.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "sportswear"
+  },
+  {
+   "domain": "asics.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "sportswear"
+  },
+  {
+   "domain": "vans.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "converse.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "birkenstock.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "crocs.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "salomon.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "veja-store.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "drmartens.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear"
+  },
+  {
+   "domain": "catbirdnyc.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "jewellery"
+  },
+  {
+   "domain": "pandora.net",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "jewellery"
+  },
+  {
+   "domain": "tiffany.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "jewellery"
+  },
+  {
+   "domain": "missoma.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "jewellery"
+  },
+  {
+   "domain": "ray-ban.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "eyewear"
+  },
+  {
+   "domain": "oakley.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "eyewear"
+  },
+  {
+   "domain": "gentlemonster.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "eyewear"
+  },
+  {
+   "domain": "jacquesmariemage.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "eyewear"
+  },
+  {
+   "domain": "rimowa.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "monos.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "bellroy.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "baboontothemoon.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "calpak.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "dagnedover.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "telfar.net",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luggage"
+  },
+  {
+   "domain": "gucci.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "prada.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "louisvuitton.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "hermes.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "bottegaveneta.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "loewe.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "balenciaga.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "jacquemus.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "miumiu.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "celine.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "burberry.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "ysl.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "dior.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "chanel.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury"
+  },
+  {
+   "domain": "drinkpoppi.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "athleticbrewing.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "takearecess.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "drinkghia.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "bluebottlecoffee.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "lacolombe.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "onyxcoffeelab.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "nespresso.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "oatly.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "drinklmnt.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "celsius.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "redbull.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "drinkprime.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "drinkspindrift.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "beverages"
+  },
+  {
+   "domain": "momofuku.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "flybyjing.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "brightland.co",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "magicspoon.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "eatbanza.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "rxbar.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "chobani.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "sietefoods.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "primalkitchen.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "hukitchen.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "tonyschocolonely.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "pantry"
+  },
+  {
+   "domain": "thorne.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "supplements"
+  },
+  {
+   "domain": "livemomentous.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "supplements"
+  },
+  {
+   "domain": "olly.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "supplements"
+  },
+  {
+   "domain": "moonjuice.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "supplements"
+  },
+  {
+   "domain": "huel.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "supplements"
+  },
+  {
+   "domain": "kachava.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "supplements"
+  },
+  {
+   "domain": "hellofresh.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "meal-kits"
+  },
+  {
+   "domain": "blueapron.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "meal-kits"
+  },
+  {
+   "domain": "factor75.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "meal-kits"
+  },
+  {
+   "domain": "daily-harvest.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "meal-kits"
+  },
+  {
+   "domain": "sakara.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "meal-kits"
+  },
+  {
+   "domain": "hungryroot.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "meal-kits"
+  },
+  {
+   "domain": "drinkavaline.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "spirits-and-wine"
+  },
+  {
+   "domain": "casamigos.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "spirits-and-wine"
+  },
+  {
+   "domain": "whiteclaw.com",
+   "sector": "commerce-dtc",
+   "category": "food-and-drink",
+   "subcategory": "spirits-and-wine"
+  },
+  {
+   "domain": "tuftandneedle.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "bedding"
+  },
+  {
+   "domain": "saatva.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "bedding"
+  },
+  {
+   "domain": "purple.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "bedding"
+  },
+  {
+   "domain": "helixsleep.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "bedding"
+  },
+  {
+   "domain": "bollandbranch.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "bedding"
+  },
+  {
+   "domain": "coyuchi.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "bedding"
+  },
+  {
+   "domain": "carawayhome.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cookware"
+  },
+  {
+   "domain": "madeincookware.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cookware"
+  },
+  {
+   "domain": "greatjonesgoods.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cookware"
+  },
+  {
+   "domain": "hexclad.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cookware"
+  },
+  {
+   "domain": "lecreuset.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cookware"
+  },
+  {
+   "domain": "article.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "burrow.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "floydhome.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "hem.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "hermanmiller.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "knoll.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "vitra.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "dwr.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "westelm.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "cb2.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "ikea.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "muuto.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture"
+  },
+  {
+   "domain": "hawkinsnewyork.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "eastfork.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "heathceramics.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "schoolhouse.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "rejuvenation.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "areaware.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "fellowproducts.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "otherland.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "boysmells.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods"
+  },
+  {
+   "domain": "blueland.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cleaning"
+  },
+  {
+   "domain": "grove.co",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cleaning"
+  },
+  {
+   "domain": "methodproducts.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cleaning"
+  },
+  {
+   "domain": "publicgoods.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "cleaning"
+  },
+  {
+   "domain": "thesill.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "plants"
+  },
+  {
+   "domain": "bloomscape.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "plants"
+  },
+  {
+   "domain": "wildone.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "pets"
+  },
+  {
+   "domain": "thefarmersdog.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "pets"
+  },
+  {
+   "domain": "chewy.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "pets"
+  },
+  {
+   "domain": "barkbox.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "pets"
+  },
+  {
+   "domain": "fablepets.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "pets"
+  },
+  {
+   "domain": "lovevery.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "baby-and-kids"
+  },
+  {
+   "domain": "bugaboo.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "baby-and-kids"
+  },
+  {
+   "domain": "uppababy.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "baby-and-kids"
+  },
+  {
+   "domain": "hatch.co",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "baby-and-kids"
+  },
+  {
+   "domain": "primary.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "baby-and-kids"
+  },
+  {
+   "domain": "ebay.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "stockx.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "goat.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "depop.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "vinted.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "grailed.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "therealreal.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "vestiairecollective.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "poshmark.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "faire.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "1stdibs.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "chairish.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "marketplaces"
+  },
+  {
+   "domain": "mrporter.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "net-a-porter.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "farfetch.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "endclothing.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "nordstrom.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "target.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "sephora.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "ulta.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "goop.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "huckberry.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "multi-brand"
+  },
+  {
+   "domain": "bigcommerce.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "commerce-platforms"
+  },
+  {
+   "domain": "shop.app",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "commerce-platforms"
+  },
+  {
+   "domain": "whop.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "commerce-platforms"
+  },
+  {
+   "domain": "gumroad.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "commerce-platforms"
+  },
+  {
+   "domain": "threads.com",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "networks"
+  },
+  {
+   "domain": "bsky.app",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "networks"
+  },
+  {
+   "domain": "joinmastodon.org",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "networks"
+  },
+  {
+   "domain": "reddit.com",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "networks"
+  },
+  {
+   "domain": "tumblr.com",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "networks"
+  },
+  {
+   "domain": "nextdoor.com",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "networks"
+  },
+  {
+   "domain": "signal.org",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "messaging"
+  },
+  {
+   "domain": "twitch.tv",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "streaming"
+  },
+  {
+   "domain": "kick.com",
+   "sector": "consumer-apps",
+   "category": "social",
+   "subcategory": "streaming"
+  },
+  {
+   "domain": "feeld.co",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "grindr.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "okcupid.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "match.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "coffeemeetsbagel.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "getthursday.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "theleague.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "weareher.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "happn.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "eharmony.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "badoo.com",
+   "sector": "consumer-apps",
+   "category": "dating",
+   "subcategory": "dating"
+  },
+  {
+   "domain": "tidal.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "music"
+  },
+  {
+   "domain": "soundcloud.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "music"
+  },
+  {
+   "domain": "bandcamp.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "music"
+  },
+  {
+   "domain": "shazam.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "music"
+  },
+  {
+   "domain": "netflix.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "film"
+  },
+  {
+   "domain": "hbomax.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "film"
+  },
+  {
+   "domain": "disneyplus.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "film"
+  },
+  {
+   "domain": "hulu.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "film"
+  },
+  {
+   "domain": "mubi.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "film"
+  },
+  {
+   "domain": "criterionchannel.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "film"
+  },
+  {
+   "domain": "audible.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "reading"
+  },
+  {
+   "domain": "libbyapp.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "reading"
+  },
+  {
+   "domain": "thestorygraph.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "reading"
+  },
+  {
+   "domain": "goodreads.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "reading"
+  },
+  {
+   "domain": "resy.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "food-and-places"
+  },
+  {
+   "domain": "opentable.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "food-and-places"
+  },
+  {
+   "domain": "beliapp.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "food-and-places"
+  },
+  {
+   "domain": "yelp.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "food-and-places"
+  },
+  {
+   "domain": "pocketcasts.com",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "podcasts"
+  },
+  {
+   "domain": "overcast.fm",
+   "sector": "consumer-apps",
+   "category": "entertainment",
+   "subcategory": "podcasts"
+  },
+  {
+   "domain": "obsidian.md",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "notes-and-docs"
+  },
+  {
+   "domain": "bear.app",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "notes-and-docs"
+  },
+  {
+   "domain": "craft.do",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "notes-and-docs"
+  },
+  {
+   "domain": "evernote.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "notes-and-docs"
+  },
+  {
+   "domain": "goodnotes.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "notes-and-docs"
+  },
+  {
+   "domain": "notability.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "notes-and-docs"
+  },
+  {
+   "domain": "todoist.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "tasks"
+  },
+  {
+   "domain": "ticktick.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "tasks"
+  },
+  {
+   "domain": "hey.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "email"
+  },
+  {
+   "domain": "proton.me",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "email"
+  },
+  {
+   "domain": "brave.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "browser"
+  },
+  {
+   "domain": "vivaldi.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "browser"
+  },
+  {
+   "domain": "duckduckgo.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "browser"
+  },
+  {
+   "domain": "vsco.co",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "photo-and-video"
+  },
+  {
+   "domain": "darkroom.co",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "photo-and-video"
+  },
+  {
+   "domain": "halide.cam",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "photo-and-video"
+  },
+  {
+   "domain": "instapaper.com",
+   "sector": "consumer-apps",
+   "category": "productivity",
+   "subcategory": "reading"
+  },
+  {
+   "domain": "booking.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "stays"
+  },
+  {
+   "domain": "vrbo.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "stays"
+  },
+  {
+   "domain": "hoteltonight.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "stays"
+  },
+  {
+   "domain": "expedia.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "stays"
+  },
+  {
+   "domain": "acehotel.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "stays"
+  },
+  {
+   "domain": "waymo.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "rides"
+  },
+  {
+   "domain": "li.me",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "rides"
+  },
+  {
+   "domain": "citymapper.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "rides"
+  },
+  {
+   "domain": "transitapp.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "rides"
+  },
+  {
+   "domain": "turo.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "rides"
+  },
+  {
+   "domain": "hopper.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "kayak.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "skyscanner.net",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "tripit.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "delta.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "united.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "jetblue.com",
+   "sector": "consumer-apps",
+   "category": "travel-and-mobility",
+   "subcategory": "flights"
+  },
+  {
+   "domain": "ubereats.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "grubhub.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "deliveroo.co.uk",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "wolt.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "toogoodtogo.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "trycaviar.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "zomato.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "glovoapp.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "rappi.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "food-delivery"
+  },
+  {
+   "domain": "gopuff.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "misfitsmarket.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "thrivemarket.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "freshdirect.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "shipt.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "sayweee.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "getir.com",
+   "sector": "consumer-apps",
+   "category": "delivery",
+   "subcategory": "grocery"
+  },
+  {
+   "domain": "wakingup.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "meditation"
+  },
+  {
+   "domain": "insighttimer.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "meditation"
+  },
+  {
+   "domain": "balanceapp.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "meditation"
+  },
+  {
+   "domain": "endel.io",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "meditation"
+  },
+  {
+   "domain": "dayoneapp.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "journaling"
+  },
+  {
+   "domain": "getstoic.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "journaling"
+  },
+  {
+   "domain": "finchcare.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "journaling"
+  },
+  {
+   "domain": "howwefeel.org",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "journaling"
+  },
+  {
+   "domain": "sleepcycle.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "fitness-tracking"
+  },
+  {
+   "domain": "risescience.com",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "fitness-tracking"
+  },
+  {
+   "domain": "opal.so",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "focus"
+  },
+  {
+   "domain": "one-sec.app",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "focus"
+  },
+  {
+   "domain": "thefabulous.co",
+   "sector": "consumer-apps",
+   "category": "wellbeing",
+   "subcategory": "focus"
+  },
+  {
+   "domain": "babbel.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "languages"
+  },
+  {
+   "domain": "busuu.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "languages"
+  },
+  {
+   "domain": "memrise.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "languages"
+  },
+  {
+   "domain": "brilliant.org",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "khanacademy.org",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "coursera.org",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "masterclass.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "skillshare.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "udemy.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "codecademy.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "outschool.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "courses"
+  },
+  {
+   "domain": "quizlet.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "study"
+  },
+  {
+   "domain": "photomath.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "study"
+  },
+  {
+   "domain": "blinkist.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "study"
+  },
+  {
+   "domain": "imprintapp.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "study"
+  },
+  {
+   "domain": "chess.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "games-and-music"
+  },
+  {
+   "domain": "lichess.org",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "games-and-music"
+  },
+  {
+   "domain": "elevateapp.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "games-and-music"
+  },
+  {
+   "domain": "lumosity.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "games-and-music"
+  },
+  {
+   "domain": "yousician.com",
+   "sector": "consumer-apps",
+   "category": "learning",
+   "subcategory": "games-and-music"
+  },
+  {
+   "domain": "lu.ma",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "invitations"
+  },
+  {
+   "domain": "paperlesspost.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "invitations"
+  },
+  {
+   "domain": "evite.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "invitations"
+  },
+  {
+   "domain": "withjoy.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "invitations"
+  },
+  {
+   "domain": "zola.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "invitations"
+  },
+  {
+   "domain": "theknot.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "invitations"
+  },
+  {
+   "domain": "eventbrite.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "dice.fm",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "ticketmaster.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "seatgeek.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "stubhub.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "ra.co",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "songkick.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "bandsintown.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "feverup.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "posh.vip",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "tickets"
+  },
+  {
+   "domain": "meetup.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "meeting-people"
+  },
+  {
+   "domain": "timeleft.com",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "meeting-people"
+  },
+  {
+   "domain": "222.place",
+   "sector": "consumer-apps",
+   "category": "events",
+   "subcategory": "meeting-people"
+  },
+  {
+   "domain": "heroku.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "app-platforms"
+  },
+  {
+   "domain": "digitalocean.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "app-platforms"
+  },
+  {
+   "domain": "northflank.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "app-platforms"
+  },
+  {
+   "domain": "koyeb.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "app-platforms"
+  },
+  {
+   "domain": "porter.run",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "app-platforms"
+  },
+  {
+   "domain": "sst.dev",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "frontend-cloud"
+  },
+  {
+   "domain": "coolify.io",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "frontend-cloud"
+  },
+  {
+   "domain": "zeabur.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "frontend-cloud"
+  },
+  {
+   "domain": "fastly.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "edge-and-network"
+  },
+  {
+   "domain": "hetzner.com",
+   "sector": "dev-tools",
+   "category": "hosting",
+   "subcategory": "edge-and-network"
+  },
+  {
+   "domain": "turso.tech",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "redis.io",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "upstash.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "prisma.io",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "xata.io",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "cockroachlabs.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "clickhouse.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "motherduck.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "tinybird.co",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "auth0.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "auth"
+  },
+  {
+   "domain": "workos.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "auth"
+  },
+  {
+   "domain": "stytch.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "auth"
+  },
+  {
+   "domain": "postmarkapp.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "email"
+  },
+  {
+   "domain": "sendgrid.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "email"
+  },
+  {
+   "domain": "inngest.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "jobs-and-workflows"
+  },
+  {
+   "domain": "trigger.dev",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "jobs-and-workflows"
+  },
+  {
+   "domain": "temporal.io",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "jobs-and-workflows"
+  },
+  {
+   "domain": "firebase.google.com",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "backend-platforms"
+  },
+  {
+   "domain": "appwrite.io",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "backend-platforms"
+  },
+  {
+   "domain": "pocketbase.io",
+   "sector": "dev-tools",
+   "category": "backend",
+   "subcategory": "backend-platforms"
+  },
+  {
+   "domain": "svelte.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "vuejs.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "react.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "remix.run",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "nuxt.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "solidjs.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "vite.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "tanstack.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "expo.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "flutter.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "htmx.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "laravel.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "rubyonrails.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "djangoproject.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "web-frameworks"
+  },
+  {
+   "domain": "ui.shadcn.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "css"
+  },
+  {
+   "domain": "radix-ui.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "css"
+  },
+  {
+   "domain": "nodejs.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "rust-lang.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "go.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "typescriptlang.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "python.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "kotlinlang.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "swift.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "runtimes"
+  },
+  {
+   "domain": "threejs.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "motion-and-3d"
+  },
+  {
+   "domain": "motion.dev",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "motion-and-3d"
+  },
+  {
+   "domain": "gsap.com",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "motion-and-3d"
+  },
+  {
+   "domain": "storybook.js.org",
+   "sector": "dev-tools",
+   "category": "frameworks",
+   "subcategory": "motion-and-3d"
+  },
+  {
+   "domain": "windsurf.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "cline.bot",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "continue.dev",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "aider.chat",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "cognition.ai",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "factory.ai",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "sourcegraph.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "tabnine.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-coding"
+  },
+  {
+   "domain": "code.visualstudio.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "editors"
+  },
+  {
+   "domain": "jetbrains.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "editors"
+  },
+  {
+   "domain": "neovim.io",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "editors"
+  },
+  {
+   "domain": "sublimetext.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "editors"
+  },
+  {
+   "domain": "nova.app",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "editors"
+  },
+  {
+   "domain": "ghostty.org",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "terminals"
+  },
+  {
+   "domain": "iterm2.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "terminals"
+  },
+  {
+   "domain": "bolt.new",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-app-builders"
+  },
+  {
+   "domain": "v0.app",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "ai-app-builders"
+  },
+  {
+   "domain": "docker.com",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "containers"
+  },
+  {
+   "domain": "orbstack.dev",
+   "sector": "dev-tools",
+   "category": "editors",
+   "subcategory": "containers"
+  },
+  {
+   "domain": "bitbucket.org",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "source-control"
+  },
+  {
+   "domain": "graphite.dev",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "source-control"
+  },
+  {
+   "domain": "gitbutler.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "source-control"
+  },
+  {
+   "domain": "gitkraken.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "source-control"
+  },
+  {
+   "domain": "git-tower.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "source-control"
+  },
+  {
+   "domain": "shortcut.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "planning"
+  },
+  {
+   "domain": "plane.so",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "planning"
+  },
+  {
+   "domain": "readme.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "docs"
+  },
+  {
+   "domain": "mintlify.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "docs"
+  },
+  {
+   "domain": "gitbook.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "docs"
+  },
+  {
+   "domain": "docusaurus.io",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "docs"
+  },
+  {
+   "domain": "codesandbox.io",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "playgrounds"
+  },
+  {
+   "domain": "stackblitz.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "playgrounds"
+  },
+  {
+   "domain": "codepen.io",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "playgrounds"
+  },
+  {
+   "domain": "stackoverflow.com",
+   "sector": "dev-tools",
+   "category": "collaboration",
+   "subcategory": "playgrounds"
+  },
+  {
+   "domain": "grafana.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "newrelic.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "honeycomb.io",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "axiom.co",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "betterstack.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "checklyhq.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "incident.io",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "pagerduty.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "rootly.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "monitoring"
+  },
+  {
+   "domain": "amplitude.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "mixpanel.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "logrocket.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "statsig.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "launchdarkly.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "plausible.io",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "usefathom.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "product-analytics"
+  },
+  {
+   "domain": "langfuse.com",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "ai-observability"
+  },
+  {
+   "domain": "braintrust.dev",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "ai-observability"
+  },
+  {
+   "domain": "helicone.ai",
+   "sector": "dev-tools",
+   "category": "observability",
+   "subcategory": "ai-observability"
+  },
+  {
+   "domain": "usebruno.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "insomnia.rest",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "hoppscotch.io",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "speakeasy.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "stainless.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "scalar.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "hookdeck.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "svix.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "api-tools"
+  },
+  {
+   "domain": "appsmith.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "internal-tools"
+  },
+  {
+   "domain": "tooljet.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "internal-tools"
+  },
+  {
+   "domain": "budibase.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "internal-tools"
+  },
+  {
+   "domain": "zapier.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "automation"
+  },
+  {
+   "domain": "make.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "automation"
+  },
+  {
+   "domain": "n8n.io",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "automation"
+  },
+  {
+   "domain": "pipedream.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "automation"
+  },
+  {
+   "domain": "algolia.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "mapbox.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "cloudinary.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "imgix.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "liveblocks.io",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "pusher.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "ably.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "getstream.io",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "knock.app",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "novu.co",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "uploadthing.com",
+   "sector": "dev-tools",
+   "category": "apis",
+   "subcategory": "building-blocks"
+  },
+  {
+   "domain": "twist.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "messaging"
+  },
+  {
+   "domain": "front.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "messaging"
+  },
+  {
+   "domain": "missiveapp.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "messaging"
+  },
+  {
+   "domain": "tuple.app",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "video"
+  },
+  {
+   "domain": "gather.town",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "video"
+  },
+  {
+   "domain": "whereby.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "video"
+  },
+  {
+   "domain": "mural.co",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "whiteboards"
+  },
+  {
+   "domain": "prezi.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "presentations"
+  },
+  {
+   "domain": "slite.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "docs"
+  },
+  {
+   "domain": "basecamp.com",
+   "sector": "enterprise-saas",
+   "category": "collaboration",
+   "subcategory": "docs"
+  },
+  {
+   "domain": "clickup.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "trello.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "smartsheet.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "wrike.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "teamwork.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "productboard.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "aha.io",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "fibery.io",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects"
+  },
+  {
+   "domain": "rows.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "getgrist.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "baserow.io",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "nocodb.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "smartsuite.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "databases"
+  },
+  {
+   "domain": "harvestapp.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "time"
+  },
+  {
+   "domain": "toggl.com",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "time"
+  },
+  {
+   "domain": "clockify.me",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "time"
+  },
+  {
+   "domain": "sketch.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "adobe.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "penpot.app",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "spline.design",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "rive.app",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "lottiefiles.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "zeplin.io",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "protopie.io",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "jitter.video",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "procreate.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "pixelmator.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "linearity.io",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "kittl.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "maze.co",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "design-tools"
+  },
+  {
+   "domain": "wix.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "readymag.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "cargo.site",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "carrd.co",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "wordpress.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "super.so",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "softr.io",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "bubble.io",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "glideapps.com",
+   "sector": "enterprise-saas",
+   "category": "design",
+   "subcategory": "site-builders"
+  },
+  {
+   "domain": "pipedrive.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "crm"
+  },
+  {
+   "domain": "close.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "crm"
+  },
+  {
+   "domain": "outreach.io",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "prospecting"
+  },
+  {
+   "domain": "salesloft.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "prospecting"
+  },
+  {
+   "domain": "gong.io",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "prospecting"
+  },
+  {
+   "domain": "zoominfo.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "prospecting"
+  },
+  {
+   "domain": "mailchimp.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "email-marketing"
+  },
+  {
+   "domain": "klaviyo.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "email-marketing"
+  },
+  {
+   "domain": "braze.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "email-marketing"
+  },
+  {
+   "domain": "iterable.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "email-marketing"
+  },
+  {
+   "domain": "customer.io",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "email-marketing"
+  },
+  {
+   "domain": "activecampaign.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "email-marketing"
+  },
+  {
+   "domain": "typeform.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "forms"
+  },
+  {
+   "domain": "tally.so",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "forms"
+  },
+  {
+   "domain": "jotform.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "forms"
+  },
+  {
+   "domain": "semrush.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "ahrefs.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "hootsuite.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "buffer.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "sproutsocial.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "later.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "unbounce.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "optimizely.com",
+   "sector": "enterprise-saas",
+   "category": "sales-and-marketing",
+   "subcategory": "social-and-seo"
+  },
+  {
+   "domain": "freshworks.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "helpscout.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "gorgias.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "kustomer.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "plain.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "usepylon.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "crisp.chat",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "ada.cx",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "forethought.ai",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "zoho.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "gladly.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "tidio.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "livechat.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "customer-service"
+  },
+  {
+   "domain": "canny.io",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "feedback"
+  },
+  {
+   "domain": "featurebase.app",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "feedback"
+  },
+  {
+   "domain": "uservoice.com",
+   "sector": "enterprise-saas",
+   "category": "support",
+   "subcategory": "feedback"
+  },
+  {
+   "domain": "fivetran.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "getdbt.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "airbyte.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "starburst.io",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "dremio.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "confluent.io",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "elastic.co",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "data-platforms"
+  },
+  {
+   "domain": "tableau.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "analytics"
+  },
+  {
+   "domain": "metabase.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "analytics"
+  },
+  {
+   "domain": "mode.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "analytics"
+  },
+  {
+   "domain": "hex.tech",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "analytics"
+  },
+  {
+   "domain": "sigmacomputing.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "analytics"
+  },
+  {
+   "domain": "thoughtspot.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "analytics"
+  },
+  {
+   "domain": "getcensus.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "customer-data"
+  },
+  {
+   "domain": "hightouch.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "customer-data"
+  },
+  {
+   "domain": "segment.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "customer-data"
+  },
+  {
+   "domain": "rudderstack.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "customer-data"
+  },
+  {
+   "domain": "montecarlodata.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "governance"
+  },
+  {
+   "domain": "atlan.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "governance"
+  },
+  {
+   "domain": "collibra.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "governance"
+  },
+  {
+   "domain": "alation.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "governance"
+  },
+  {
+   "domain": "sendbird.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "communications-apis"
+  },
+  {
+   "domain": "vonage.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "communications-apis"
+  },
+  {
+   "domain": "bird.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "communications-apis"
+  },
+  {
+   "domain": "plivo.com",
+   "sector": "enterprise-saas",
+   "category": "data",
+   "subcategory": "communications-apis"
+  },
+  {
+   "domain": "bitwarden.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "passwords"
+  },
+  {
+   "domain": "dashlane.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "passwords"
+  },
+  {
+   "domain": "lastpass.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "passwords"
+  },
+  {
+   "domain": "duo.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "jumpcloud.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "yubico.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "crowdstrike.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "wiz.io",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "snyk.io",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "paloaltonetworks.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "zscaler.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "sentinelone.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "semgrep.dev",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "socket.dev",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "chainguard.dev",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "island.io",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "abnormal.ai",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "material.security",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "hackerone.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "tines.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "cloud-security"
+  },
+  {
+   "domain": "vanta.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "compliance"
+  },
+  {
+   "domain": "drata.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "compliance"
+  },
+  {
+   "domain": "secureframe.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "compliance"
+  },
+  {
+   "domain": "tailscale.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "networking"
+  },
+  {
+   "domain": "twingate.com",
+   "sector": "enterprise-saas",
+   "category": "security",
+   "subcategory": "networking"
+  },
+  {
+   "domain": "egnyte.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "storage"
+  },
+  {
+   "domain": "mega.io",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "storage"
+  },
+  {
+   "domain": "sync.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "storage"
+  },
+  {
+   "domain": "pcloud.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "storage"
+  },
+  {
+   "domain": "backblaze.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "storage"
+  },
+  {
+   "domain": "wetransfer.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "storage"
+  },
+  {
+   "domain": "pandadoc.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "signing"
+  },
+  {
+   "domain": "ironcladapp.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "signing"
+  },
+  {
+   "domain": "juro.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "signing"
+  },
+  {
+   "domain": "docsend.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "signing"
+  },
+  {
+   "domain": "papermark.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "signing"
+  },
+  {
+   "domain": "smallpdf.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "signing"
+  },
+  {
+   "domain": "air.inc",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "assets"
+  },
+  {
+   "domain": "frame.io",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "assets"
+  },
+  {
+   "domain": "bynder.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "assets"
+  },
+  {
+   "domain": "brandfolder.com",
+   "sector": "enterprise-saas",
+   "category": "files",
+   "subcategory": "assets"
+  },
+  {
+   "domain": "remote.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "bamboohr.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "oysterhr.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "personio.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "hibob.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "justworks.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "trinet.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "adp.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hr"
+  },
+  {
+   "domain": "cultureamp.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "performance"
+  },
+  {
+   "domain": "15five.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "performance"
+  },
+  {
+   "domain": "leapsome.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "performance"
+  },
+  {
+   "domain": "pave.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "performance"
+  },
+  {
+   "domain": "greenhouse.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "lever.co",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "ashbyhq.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "gem.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "checkr.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "wellfound.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "indeed.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "welcometothejungle.com",
+   "sector": "enterprise-saas",
+   "category": "people",
+   "subcategory": "hiring"
+  },
+  {
+   "domain": "cal.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "doodle.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "savvycal.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "reclaim.ai",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "usemotion.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "getclockwise.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "acuityscheduling.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "zcal.co",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "tidycal.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "chilipiper.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "youcanbook.me",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "vimcal.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "morgen.so",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "amie.so",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "sunsama.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "akiflow.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "setmore.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "fresha.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "booksy.com",
+   "sector": "enterprise-saas",
+   "category": "scheduling",
+   "subcategory": "scheduling"
+  },
+  {
+   "domain": "freshservice.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "service-management"
+  },
+  {
+   "domain": "jamf.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "device-management"
+  },
+  {
+   "domain": "kandji.io",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "device-management"
+  },
+  {
+   "domain": "fleetdm.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "device-management"
+  },
+  {
+   "domain": "ninjaone.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "device-management"
+  },
+  {
+   "domain": "teamviewer.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "remote-access"
+  },
+  {
+   "domain": "anydesk.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "remote-access"
+  },
+  {
+   "domain": "splashtop.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "remote-access"
+  },
+  {
+   "domain": "zluri.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "software-spend"
+  },
+  {
+   "domain": "toriihq.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "software-spend"
+  },
+  {
+   "domain": "vendr.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "software-spend"
+  },
+  {
+   "domain": "zylo.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "software-spend"
+  },
+  {
+   "domain": "productiv.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "software-spend"
+  },
+  {
+   "domain": "bettercloud.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "software-spend"
+  },
+  {
+   "domain": "lansweeper.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "connectwise.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "kaseya.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "solarwinds.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "manageengine.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "spiceworks.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "n-able.com",
+   "sector": "enterprise-saas",
+   "category": "it",
+   "subcategory": "operations"
+  },
+  {
+   "domain": "checkout.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "mollie.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "paddle.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "lemonsqueezy.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "gocardless.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "sumup.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "toasttab.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "clover.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "worldpay.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "airwallex.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "rapyd.net",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "dlocal.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "flutterwave.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "paystack.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "razorpay.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing"
+  },
+  {
+   "domain": "zellepay.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "wallets"
+  },
+  {
+   "domain": "afterpay.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "pay-later"
+  },
+  {
+   "domain": "sezzle.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "pay-later"
+  },
+  {
+   "domain": "zip.co",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "pay-later"
+  },
+  {
+   "domain": "remitly.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "transfers"
+  },
+  {
+   "domain": "payoneer.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "transfers"
+  },
+  {
+   "domain": "worldremit.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "transfers"
+  },
+  {
+   "domain": "westernunion.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "transfers"
+  },
+  {
+   "domain": "starlingbank.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "current.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "varomoney.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "ally.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "capitalone.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "chase.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "dave.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "moneylion.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "step.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "greenlight.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "bunq.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "consumer"
+  },
+  {
+   "domain": "qonto.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "business"
+  },
+  {
+   "domain": "novo.co",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "business"
+  },
+  {
+   "domain": "bluevine.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "business"
+  },
+  {
+   "domain": "relayfi.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "business"
+  },
+  {
+   "domain": "rho.co",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "business"
+  },
+  {
+   "domain": "unit.co",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "infrastructure"
+  },
+  {
+   "domain": "treasuryprime.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "infrastructure"
+  },
+  {
+   "domain": "moderntreasury.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "infrastructure"
+  },
+  {
+   "domain": "marqeta.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "infrastructure"
+  },
+  {
+   "domain": "lithic.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "infrastructure"
+  },
+  {
+   "domain": "increase.com",
+   "sector": "fintech",
+   "category": "banking",
+   "subcategory": "infrastructure"
+  },
+  {
+   "domain": "etoro.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "webull.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "fidelity.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "schwab.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "m1.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "traderepublic.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "freetrade.io",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "interactivebrokers.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "tradingview.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "composer.trade",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "brokerage"
+  },
+  {
+   "domain": "acorns.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "wealth"
+  },
+  {
+   "domain": "stash.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "wealth"
+  },
+  {
+   "domain": "titan.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "wealth"
+  },
+  {
+   "domain": "altruist.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "wealth"
+  },
+  {
+   "domain": "range.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "wealth"
+  },
+  {
+   "domain": "binance.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "gemini.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "phantom.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "metamask.io",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "ledger.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "uniswap.org",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "opensea.io",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "rainbow.me",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "zerion.io",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "moonpay.com",
+   "sector": "fintech",
+   "category": "investing",
+   "subcategory": "crypto"
+  },
+  {
+   "domain": "airbase.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "navan.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "spendesk.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "pleo.io",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "payhawk.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "expensify.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "bill.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "tipalti.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "meliopayments.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "spend"
+  },
+  {
+   "domain": "angellist.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "equity"
+  },
+  {
+   "domain": "pulley.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "equity"
+  },
+  {
+   "domain": "quickbooks.intuit.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "bookkeeping"
+  },
+  {
+   "domain": "xero.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "bookkeeping"
+  },
+  {
+   "domain": "freshbooks.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "bookkeeping"
+  },
+  {
+   "domain": "waveapps.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "bookkeeping"
+  },
+  {
+   "domain": "puzzle.io",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "bookkeeping"
+  },
+  {
+   "domain": "digits.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "bookkeeping"
+  },
+  {
+   "domain": "paychex.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "payroll"
+  },
+  {
+   "domain": "mosaic.tech",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "planning"
+  },
+  {
+   "domain": "runway.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "planning"
+  },
+  {
+   "domain": "causal.app",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "planning"
+  },
+  {
+   "domain": "vouch.us",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "insurance"
+  },
+  {
+   "domain": "embroker.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "insurance"
+  },
+  {
+   "domain": "lemonade.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "insurance"
+  },
+  {
+   "domain": "next-insurance.com",
+   "sector": "fintech",
+   "category": "business-finance",
+   "subcategory": "insurance"
+  },
+  {
+   "domain": "lenovo.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "dell.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "hp.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "asus.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "oneplus.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "system76.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "raspberrypi.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "phones-and-computers"
+  },
+  {
+   "domain": "supernote.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "focused-devices"
+  },
+  {
+   "domain": "xreal.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "headsets"
+  },
+  {
+   "domain": "viture.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "headsets"
+  },
+  {
+   "domain": "logitech.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "nuphy.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "elgato.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "wacom.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "anker.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "belkin.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "nativeunion.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "twelvesouth.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "nomadgoods.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "peakdesign.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "dbrand.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "casetify.com",
+   "sector": "hardware",
+   "category": "computing",
+   "subcategory": "peripherals"
+  },
+  {
+   "domain": "sennheiser.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "bowerswilkins.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "jbl.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "beatsbydre.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "masterdynamic.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "audio-technica.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "marshall.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "klipsch.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "kef.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "devialet.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "skullcandy.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "shokz.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "jabra.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "audeze.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "tivoliaudio.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "audioengine.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "speakers-and-headphones"
+  },
+  {
+   "domain": "elektron.se",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "moogmusic.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "korg.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "roland.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "fender.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "gibson.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "ableton.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "native-instruments.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "arturia.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "yamaha.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "instruments"
+  },
+  {
+   "domain": "shure.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "recording"
+  },
+  {
+   "domain": "rode.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "recording"
+  },
+  {
+   "domain": "focusrite.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "recording"
+  },
+  {
+   "domain": "uaudio.com",
+   "sector": "hardware",
+   "category": "audio",
+   "subcategory": "recording"
+  },
+  {
+   "domain": "hasselblad.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "polaroid.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "lomography.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "kodak.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "blackmagicdesign.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "red.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "sigma-global.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "zeiss.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "cameras"
+  },
+  {
+   "domain": "insta360.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "action"
+  },
+  {
+   "domain": "skydio.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "drones"
+  },
+  {
+   "domain": "ring.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "home-cameras"
+  },
+  {
+   "domain": "arlo.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "home-cameras"
+  },
+  {
+   "domain": "wyze.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "home-cameras"
+  },
+  {
+   "domain": "eufy.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "home-cameras"
+  },
+  {
+   "domain": "reolink.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "home-cameras"
+  },
+  {
+   "domain": "opalcamera.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "home-cameras"
+  },
+  {
+   "domain": "shopmoment.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "accessories"
+  },
+  {
+   "domain": "profoto.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "accessories"
+  },
+  {
+   "domain": "smallrig.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "accessories"
+  },
+  {
+   "domain": "atomos.com",
+   "sector": "hardware",
+   "category": "cameras",
+   "subcategory": "accessories"
+  },
+  {
+   "domain": "polar.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "suunto.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "coros.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "withings.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "casio.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "swatch.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "rolex.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "omegawatches.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "tudorwatch.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "seikowatches.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "nomos-glashuette.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "timex.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches"
+  },
+  {
+   "domain": "ultrahuman.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "rings-and-bands"
+  },
+  {
+   "domain": "ringconn.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "rings-and-bands"
+  },
+  {
+   "domain": "amazfit.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "rings-and-bands"
+  },
+  {
+   "domain": "evenrealities.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "glasses-and-pendants"
+  },
+  {
+   "domain": "spectacles.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "glasses-and-pendants"
+  },
+  {
+   "domain": "brilliant.xyz",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "glasses-and-pendants"
+  },
+  {
+   "domain": "limitless.ai",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "glasses-and-pendants"
+  },
+  {
+   "domain": "plaud.ai",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "glasses-and-pendants"
+  },
+  {
+   "domain": "friend.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "glasses-and-pendants"
+  },
+  {
+   "domain": "therabody.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "recovery"
+  },
+  {
+   "domain": "hyperice.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "recovery"
+  },
+  {
+   "domain": "steamdeck.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "consoles"
+  },
+  {
+   "domain": "ayaneo.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "consoles"
+  },
+  {
+   "domain": "backbone.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "consoles"
+  },
+  {
+   "domain": "anbernic.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "consoles"
+  },
+  {
+   "domain": "evercade.co.uk",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "consoles"
+  },
+  {
+   "domain": "8bitdo.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "razer.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "logitechg.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "steelseries.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "corsair.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "hyperx.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "secretlab.co",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "scufgaming.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "turtlebeach.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "gear"
+  },
+  {
+   "domain": "epicgames.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "roblox.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "ea.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "riotgames.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "blizzard.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "itch.io",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "gog.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "panic.com",
+   "sector": "hardware",
+   "category": "gaming",
+   "subcategory": "studios-and-stores"
+  },
+  {
+   "domain": "scoutmotors.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric"
+  },
+  {
+   "domain": "slate.auto",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric"
+  },
+  {
+   "domain": "aptera.us",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric"
+  },
+  {
+   "domain": "byd.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric"
+  },
+  {
+   "domain": "nio.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric"
+  },
+  {
+   "domain": "zeekr.eu",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "electric"
+  },
+  {
+   "domain": "bmw.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "mercedes-benz.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "audi.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "porsche.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "volvocars.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "ford.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "hyundai.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "kia.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "toyota.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "honda.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "mini.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "lotuscars.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "ferrari.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "lamborghini.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "mclaren.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "astonmartin.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "jaguar.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "landrover.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "genesis.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "cadillac.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "lexus.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "mazda.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "subaru.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "jeep.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "vw.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers"
+  },
+  {
+   "domain": "ridecake.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "zeromotorcycles.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "livewire.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "super73.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "radpowerbikes.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "vanmoof.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "cowboy.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "specialized.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "trekbikes.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "canyon.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "brompton.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "ternbicycles.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "gocycle.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "onewheel.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "segway.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "niu.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "harley-davidson.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "ducati.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "bikes-and-scooters"
+  },
+  {
+   "domain": "zoox.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "jobyaviation.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "archer.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "arcboats.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "candela.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "smeg.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "breville.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "kitchenaid.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "vitamix.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "balmuda.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "miele.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "bosch-home.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "lg.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "sharkninja.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "instantpot.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "zojirushi.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "moccamaster.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "lamarzocco.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "baratza.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "oxo.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "josephjoseph.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "muji.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "braun.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "sodastream.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "aarke.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "appliances"
+  },
+  {
+   "domain": "irobot.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "roborock.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "ecobee.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "philips-hue.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "nanoleaf.me",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "lifx.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "august.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "level.co",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "smart-home"
+  },
+  {
+   "domain": "tonal.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "hydrow.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "tempo.fit",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "ergatta.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "concept2.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "roguefitness.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "nordictrack.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "bowflex.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "fitness-equipment"
+  },
+  {
+   "domain": "ooni.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "outdoor-cooking"
+  },
+  {
+   "domain": "traeger.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "outdoor-cooking"
+  },
+  {
+   "domain": "weber.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "outdoor-cooking"
+  },
+  {
+   "domain": "solostove.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "outdoor-cooking"
+  },
+  {
+   "domain": "biggreenegg.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "outdoor-cooking"
+  },
+  {
+   "domain": "molekule.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "blueair.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "levoit.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "simplehuman.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "kohler.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "hellotushy.com",
+   "sector": "hardware",
+   "category": "home",
+   "subcategory": "air-and-water"
+  },
+  {
+   "domain": "galileohealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "khealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "plushcare.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "sesamecare.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "oscar.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "includedhealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "transcarent.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "primary-care"
+  },
+  {
+   "domain": "goodrx.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "pharmacy"
+  },
+  {
+   "domain": "capsule.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "pharmacy"
+  },
+  {
+   "domain": "alto.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "pharmacy"
+  },
+  {
+   "domain": "hellowisp.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "direct-to-patient"
+  },
+  {
+   "domain": "curology.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "direct-to-patient"
+  },
+  {
+   "domain": "keeps.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "direct-to-patient"
+  },
+  {
+   "domain": "withcove.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "direct-to-patient"
+  },
+  {
+   "domain": "henrymeds.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "direct-to-patient"
+  },
+  {
+   "domain": "allarahealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "womens-health"
+  },
+  {
+   "domain": "joinmidi.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "womens-health"
+  },
+  {
+   "domain": "evernow.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "womens-health"
+  },
+  {
+   "domain": "myalloy.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "womens-health"
+  },
+  {
+   "domain": "get-carrot.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "fertility"
+  },
+  {
+   "domain": "naturalcycles.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "cycle-tracking"
+  },
+  {
+   "domain": "swordhealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "musculoskeletal"
+  },
+  {
+   "domain": "summerhealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "children"
+  },
+  {
+   "domain": "brightline.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "children"
+  },
+  {
+   "domain": "littleotterhealth.com",
+   "sector": "health",
+   "category": "care",
+   "subcategory": "children"
+  },
+  {
+   "domain": "headway.co",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "growtherapy.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "helloalma.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "rula.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "twochairs.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "findoctave.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "sondermind.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "charliehealth.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "talkiatry.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "brightside.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "cerebral.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "therapy"
+  },
+  {
+   "domain": "modernhealth.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "employer"
+  },
+  {
+   "domain": "unmind.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "employer"
+  },
+  {
+   "domain": "wysa.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "self-guided"
+  },
+  {
+   "domain": "talktoash.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "self-guided"
+  },
+  {
+   "domain": "equip.health",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "recovery"
+  },
+  {
+   "domain": "joinmonument.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "recovery"
+  },
+  {
+   "domain": "oarhealth.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "recovery"
+  },
+  {
+   "domain": "reframeapp.com",
+   "sector": "health",
+   "category": "mental-health",
+   "subcategory": "recovery"
+  },
+  {
+   "domain": "ancestry.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "genetics"
+  },
+  {
+   "domain": "nebula.org",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "genetics"
+  },
+  {
+   "domain": "mynucleus.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "genetics"
+  },
+  {
+   "domain": "color.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "genetics"
+  },
+  {
+   "domain": "letsgetchecked.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "home-tests"
+  },
+  {
+   "domain": "questhealth.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "home-tests"
+  },
+  {
+   "domain": "siphoxhealth.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "home-tests"
+  },
+  {
+   "domain": "insidetracker.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "lab-panels"
+  },
+  {
+   "domain": "superpower.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "lab-panels"
+  },
+  {
+   "domain": "mylifeforce.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "lab-panels"
+  },
+  {
+   "domain": "mitohealth.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "lab-panels"
+  },
+  {
+   "domain": "honehealth.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "lab-panels"
+  },
+  {
+   "domain": "wildhealth.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "lab-panels"
+  },
+  {
+   "domain": "ezra.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "scans"
+  },
+  {
+   "domain": "nekohealth.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "scans"
+  },
+  {
+   "domain": "fountainlife.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "scans"
+  },
+  {
+   "domain": "biograph.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "scans"
+  },
+  {
+   "domain": "natera.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "precision-medicine"
+  },
+  {
+   "domain": "invitae.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "precision-medicine"
+  },
+  {
+   "domain": "nutrisense.io",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "signos.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "viome.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "zoe.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "hellolingo.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "stelo.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "dexcom.com",
+   "sector": "health",
+   "category": "testing",
+   "subcategory": "metabolic"
+  },
+  {
+   "domain": "soulcycle.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "studios"
+  },
+  {
+   "domain": "orangetheory.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "studios"
+  },
+  {
+   "domain": "f45training.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "studios"
+  },
+  {
+   "domain": "solidcore.co",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "studios"
+  },
+  {
+   "domain": "corepoweryoga.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "studios"
+  },
+  {
+   "domain": "purebarre.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "studios"
+  },
+  {
+   "domain": "planetfitness.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "memberships"
+  },
+  {
+   "domain": "crunch.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "memberships"
+  },
+  {
+   "domain": "lifetime.life",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "memberships"
+  },
+  {
+   "domain": "caliberstrong.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "centr.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "fitbod.me",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "hevyapp.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "runna.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "trainingpeaks.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "zwift.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "alomoves.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "lesmills.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "coaching"
+  },
+  {
+   "domain": "komoot.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "outdoors"
+  },
+  {
+   "domain": "gaiagps.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "outdoors"
+  },
+  {
+   "domain": "onxmaps.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "outdoors"
+  },
+  {
+   "domain": "crossfit.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "events"
+  },
+  {
+   "domain": "hyrox.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "events"
+  },
+  {
+   "domain": "spartan.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "events"
+  },
+  {
+   "domain": "ironman.com",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "events"
+  },
+  {
+   "domain": "nyrr.org",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "events"
+  },
+  {
+   "domain": "parkrun.org",
+   "sector": "health",
+   "category": "fitness",
+   "subcategory": "events"
+  },
+  {
+   "domain": "loseit.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "cronometer.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "macrofactorapp.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "carbmanager.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "lifesum.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "yazio.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "calai.app",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "tracking"
+  },
+  {
+   "domain": "weightwatchers.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "weight"
+  },
+  {
+   "domain": "joinfound.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "weight"
+  },
+  {
+   "domain": "joincalibrate.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "weight"
+  },
+  {
+   "domain": "faynutrition.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "dietitians"
+  },
+  {
+   "domain": "usenourish.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "dietitians"
+  },
+  {
+   "domain": "culinahealth.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "dietitians"
+  },
+  {
+   "domain": "seasonhealth.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "dietitians"
+  },
+  {
+   "domain": "zerolongevity.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "fasting"
+  },
+  {
+   "domain": "fastic.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "fasting"
+  },
+  {
+   "domain": "simple.life",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "fasting"
+  },
+  {
+   "domain": "mealime.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "meal-planning"
+  },
+  {
+   "domain": "eatthismuch.com",
+   "sector": "health",
+   "category": "nutrition",
+   "subcategory": "meal-planning"
+  },
+  {
+   "domain": "arstechnica.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "platformer.news",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "stratechery.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "engadget.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "gizmodo.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "cnet.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "restofworld.org",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "technologyreview.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "thenextweb.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "9to5mac.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "macrumors.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "daringfireball.net",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "techmeme.com",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "every.to",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "sifted.eu",
+   "sector": "media",
+   "category": "technology",
+   "subcategory": "technology"
+  },
+  {
+   "domain": "vanityfair.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "gq.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "vogue.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "esquire.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "monocle.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "kinfolk.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "apartamentomagazine.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "i-d.co",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "dazeddigital.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "interviewmagazine.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "highsnobiety.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "hypebeast.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "thecut.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "airmail.news",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "culture"
+  },
+  {
+   "domain": "harpers.org",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "newrepublic.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "noemamag.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "nplusonemag.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "theparisreview.org",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "lrb.co.uk",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "nybooks.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "granta.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "mcsweeneys.net",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "thebaffler.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "longreads.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "ideas"
+  },
+  {
+   "domain": "nautil.us",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "science"
+  },
+  {
+   "domain": "scientificamerican.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "science"
+  },
+  {
+   "domain": "newscientist.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "science"
+  },
+  {
+   "domain": "nationalgeographic.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "science"
+  },
+  {
+   "domain": "smithsonianmag.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "science"
+  },
+  {
+   "domain": "atlasobscura.com",
+   "sector": "media",
+   "category": "magazines",
+   "subcategory": "science"
+  },
+  {
+   "domain": "creativeboom.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "eyeondesign.aiga.org",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "designweek.co.uk",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "creativereview.co.uk",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "printmag.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "the-brandidentity.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "wallpaper.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "architecturaldigest.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "archdaily.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "core77.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "yankodesign.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "smashingmagazine.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "siteinspire.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "godly.website",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "minimal.gallery",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "bpando.org",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "typewolf.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "design"
+  },
+  {
+   "domain": "frieze.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "artforum.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "artnews.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "hyperallergic.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "artsy.net",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "juxtapoz.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "booooooom.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "anothermag.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "032c.com",
+   "sector": "media",
+   "category": "design-and-art",
+   "subcategory": "art"
+  },
+  {
+   "domain": "rollingstone.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "thefader.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "stereogum.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "nme.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "billboard.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "crackmagazine.net",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "mixmag.net",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "djmag.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "kexp.org",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "nts.live",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "music"
+  },
+  {
+   "domain": "complex.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "espn.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "bleacherreport.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "si.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "variety.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "hollywoodreporter.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "deadline.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "indiewire.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "avclub.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "vulture.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "sport-and-pop"
+  },
+  {
+   "domain": "ign.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "games"
+  },
+  {
+   "domain": "kotaku.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "games"
+  },
+  {
+   "domain": "eurogamer.net",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "games"
+  },
+  {
+   "domain": "pcgamer.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "games"
+  },
+  {
+   "domain": "rockpapershotgun.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "games"
+  },
+  {
+   "domain": "bonappetit.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "punchdrink.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "tastecooking.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "food52.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "seriouseats.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "theinfatuation.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "curbed.com",
+   "sector": "media",
+   "category": "culture",
+   "subcategory": "food"
+  },
+  {
+   "domain": "ghost.org",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "wordpress.org",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "patreon.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "buttondown.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "kit.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "flipboard.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "feedly.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "micro.blog",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "bearblog.dev",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "write.as",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "publishing"
+  },
+  {
+   "domain": "vimeo.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "audio-and-video"
+  },
+  {
+   "domain": "transistor.fm",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "audio-and-video"
+  },
+  {
+   "domain": "simplecast.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "audio-and-video"
+  },
+  {
+   "domain": "buzzsprout.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "audio-and-video"
+  },
+  {
+   "domain": "riverside.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "audio-and-video"
+  },
+  {
+   "domain": "circle.so",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "mightynetworks.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "discourse.org",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "memberful.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "ko-fi.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "buymeacoffee.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "kajabi.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "teachable.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "podia.com",
+   "sector": "media",
+   "category": "platforms",
+   "subcategory": "communities"
+  },
+  {
+   "domain": "movingbrands.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "interbrand.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "siegelgale.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "lippincott.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "designbridge.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "design.studio",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "how.studio",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "gretelny.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "motherdesign.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "redantler.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "charactersf.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "manualcreative.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "wearemucho.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "basedesign.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "portorocha.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "triborodesign.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "2x4.org",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "brucemaudesign.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "cghnyc.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "sagmeister.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "andwalsh.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "heystudio.es",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "bureauborsche.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "northdesign.co.uk",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "spin.co.uk",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "madethought.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "apracticeforeverydaylife.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "franklyn.co",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "smith-diction.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "kurppahosk.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "snask.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "kontrapunkt.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "e-types.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "bleed.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "heydays.no",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "anagrama.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "byfutura.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "saffron-consultants.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "johnsonbanks.co.uk",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "venturethree.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "futurebrand.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "prophet.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "omse.co",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "nomadstudio.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "acceptandproceed.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "identity"
+  },
+  {
+   "domain": "pearlfisher.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "packaging"
+  },
+  {
+   "domain": "turnerduckworth.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "packaging"
+  },
+  {
+   "domain": "wearebulletproof.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "packaging"
+  },
+  {
+   "domain": "robot-food.com",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "packaging"
+  },
+  {
+   "domain": "heredesign.co.uk",
+   "sector": "studios",
+   "category": "brand",
+   "subcategory": "packaging"
+  },
+  {
+   "domain": "b-reel.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "digital-product"
+  },
+  {
+   "domain": "stinkstudios.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "digital-product"
+  },
+  {
+   "domain": "resn.co.nz",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "activetheory.net",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "unseen.co",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "immersive-g.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "lusion.co",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "obys.agency",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "basement.studio",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "dogstudio.co",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "buildinamsterdam.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "exoape.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "14islands.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "makemepulse.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "northkingdom.com",
+   "sector": "studios",
+   "category": "product",
+   "subcategory": "web-craft"
+  },
+  {
+   "domain": "wk.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "droga5.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "anomaly.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "72andsunny.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "tbwa.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "ogilvy.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "uncommon.london",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "mischiefusa.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "gut.agency",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "johannesleonardo.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "translationllc.com",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "preacher.co",
+   "sector": "studios",
+   "category": "advertising",
+   "subcategory": "creative"
+  },
+  {
+   "domain": "giantant.ca",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "gunner.work",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "oddfellows.tv",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "goldenwolf.tv",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "themill.com",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "tendril.ca",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "futuredeluxe.com",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "animation"
+  },
+  {
+   "domain": "field.io",
+   "sector": "studios",
+   "category": "motion",
+   "subcategory": "kinetic-identity"
+  },
+  {
+   "domain": "smartdesignworldwide.com",
+   "sector": "studios",
+   "category": "innovation",
+   "subcategory": "design-consulting"
+  },
+  {
+   "domain": "fuseproject.com",
+   "sector": "studios",
+   "category": "innovation",
+   "subcategory": "design-consulting"
+  },
+  {
+   "domain": "ammunitiongroup.com",
+   "sector": "studios",
+   "category": "innovation",
+   "subcategory": "design-consulting"
+  },
+  {
+   "domain": "layerdesign.com",
+   "sector": "studios",
+   "category": "innovation",
+   "subcategory": "design-consulting"
+  },
+  {
+   "domain": "mapprojectoffice.com",
+   "sector": "studios",
+   "category": "innovation",
+   "subcategory": "design-consulting"
+  },
+  {
+   "domain": "momentfactory.com",
+   "sector": "studios",
+   "category": "art",
+   "subcategory": "collective"
+  },
+  {
+   "domain": "teamlab.art",
+   "sector": "studios",
+   "category": "art",
+   "subcategory": "collective"
+  },
+  {
+   "domain": "universaleverything.com",
+   "sector": "studios",
+   "category": "art",
+   "subcategory": "collective"
+  },
+  {
+   "domain": "onformative.com",
+   "sector": "studios",
+   "category": "art",
+   "subcategory": "collective"
   }
  ],
  "tree": {
   "ai": {
    "labs": {
-    "frontier-models": 4,
-    "enterprise-models": 1,
-    "open-models": 1
+    "frontier-models": 8,
+    "enterprise-models": 4,
+    "open-models": 3
    },
    "infrastructure": {
-    "chips-and-inference": 2,
-    "model-hosting": 3
+    "chips-and-inference": 6,
+    "model-hosting": 9,
+    "data-and-evals": 7
    },
    "creative-tools": {
-    "image": 3,
-    "video": 3,
+    "image": 6,
+    "video": 4,
     "avatars": 2,
-    "voice-and-audio": 3
+    "voice-and-audio": 5
    },
    "assistants": {
-    "search": 1,
-    "chat": 1,
-    "companions": 1,
-    "agents": 1
+    "search": 3,
+    "chat": 6,
+    "companions": 2,
+    "agents": 6
    },
    "work-tools": {
-    "enterprise-search": 1,
-    "meetings": 1,
+    "enterprise-search": 2,
+    "meetings": 3,
     "legal": 1,
-    "writing": 2
+    "writing": 3,
+    "presentations": 2,
+    "sales": 1,
+    "health": 1
    }
   },
   "commerce-dtc": {
    "beauty": {
-    "skincare": 2,
-    "makeup": 2
+    "skincare": 12,
+    "makeup": 11,
+    "haircare": 6,
+    "grooming": 6,
+    "fragrance": 5
    },
    "fashion": {
-    "streetwear": 3,
-    "apparel": 2,
-    "outdoor": 1,
-    "activewear": 2,
-    "sportswear": 1,
-    "footwear": 4,
-    "jewellery": 1,
-    "eyewear": 1,
-    "luggage": 1
+    "streetwear": 8,
+    "apparel": 18,
+    "outdoor": 8,
+    "activewear": 9,
+    "sportswear": 6,
+    "footwear": 11,
+    "jewellery": 5,
+    "eyewear": 5,
+    "luggage": 8,
+    "luxury": 14
    },
    "food-and-drink": {
-    "beverages": 2,
-    "pantry": 2,
-    "supplements": 3
+    "beverages": 16,
+    "pantry": 13,
+    "supplements": 9,
+    "meal-kits": 6,
+    "spirits-and-wine": 3
    },
    "home": {
-    "bedding": 3,
-    "cookware": 1
+    "bedding": 9,
+    "cookware": 6,
+    "furniture": 12,
+    "home-goods": 9,
+    "cleaning": 4,
+    "plants": 2,
+    "pets": 5,
+    "baby-and-kids": 5
    },
    "retail": {
-    "marketplaces": 2,
-    "multi-brand": 1,
-    "commerce-platforms": 1
+    "marketplaces": 14,
+    "multi-brand": 11,
+    "commerce-platforms": 5
    }
   },
   "consumer-apps": {
    "social": {
-    "networks": 5,
+    "networks": 11,
     "collecting": 2,
-    "messaging": 3
+    "messaging": 4,
+    "streaming": 2
    },
    "dating": {
-    "dating": 3
+    "dating": 14
    },
    "entertainment": {
-    "music": 1,
-    "film": 1,
-    "reading": 1,
-    "food-and-places": 1
+    "music": 5,
+    "film": 7,
+    "reading": 5,
+    "food-and-places": 5,
+    "podcasts": 2
    },
    "productivity": {
-    "notes-and-docs": 1,
-    "tasks": 1,
-    "email": 1,
-    "browser": 1,
-    "design": 1
+    "notes-and-docs": 7,
+    "tasks": 3,
+    "email": 3,
+    "browser": 4,
+    "design": 1,
+    "photo-and-video": 3,
+    "reading": 1
    },
    "travel-and-mobility": {
-    "stays": 1,
-    "rides": 2,
-    "flights": 1
+    "stays": 6,
+    "rides": 7,
+    "flights": 8
    },
    "delivery": {
-    "food-delivery": 1,
-    "grocery": 1
+    "food-delivery": 10,
+    "grocery": 8
    },
    "wellbeing": {
-    "meditation": 2,
-    "fitness-tracking": 1
+    "meditation": 6,
+    "fitness-tracking": 3,
+    "journaling": 4,
+    "focus": 3
    },
    "learning": {
-    "languages": 1
+    "languages": 4,
+    "courses": 8,
+    "study": 4,
+    "games-and-music": 5
    },
    "events": {
-    "invitations": 1
+    "invitations": 7,
+    "tickets": 10,
+    "meeting-people": 3
    }
   },
   "dev-tools": {
    "hosting": {
-    "frontend-cloud": 2,
-    "app-platforms": 3,
-    "edge-and-network": 1
+    "frontend-cloud": 5,
+    "app-platforms": 8,
+    "edge-and-network": 3
    },
    "backend": {
-    "databases": 4,
-    "auth": 1,
-    "email": 1
+    "databases": 13,
+    "auth": 4,
+    "email": 3,
+    "jobs-and-workflows": 3,
+    "backend-platforms": 3
    },
    "frameworks": {
-    "web-frameworks": 1,
-    "css": 1,
-    "runtimes": 2
+    "web-frameworks": 15,
+    "css": 3,
+    "runtimes": 9,
+    "motion-and-3d": 4
    },
    "editors": {
-    "ai-coding": 2,
-    "editors": 1,
-    "terminals": 1,
-    "ai-app-builders": 1,
-    "launchers": 1
+    "ai-coding": 10,
+    "editors": 6,
+    "terminals": 3,
+    "ai-app-builders": 3,
+    "launchers": 1,
+    "containers": 2
    },
    "collaboration": {
-    "source-control": 2,
-    "planning": 1
+    "source-control": 7,
+    "planning": 3,
+    "docs": 4,
+    "playgrounds": 4
    },
    "observability": {
-    "monitoring": 2,
-    "product-analytics": 1
+    "monitoring": 11,
+    "product-analytics": 8,
+    "ai-observability": 3
    },
    "apis": {
-    "api-tools": 1,
-    "internal-tools": 1
+    "api-tools": 9,
+    "internal-tools": 4,
+    "automation": 4,
+    "building-blocks": 11
    }
   },
   "enterprise-saas": {
    "collaboration": {
-    "messaging": 1,
-    "video": 2,
-    "whiteboards": 1,
-    "presentations": 1,
-    "docs": 1
+    "messaging": 4,
+    "video": 5,
+    "whiteboards": 2,
+    "presentations": 2,
+    "docs": 3
    },
    "work-management": {
-    "projects": 3,
-    "databases": 1
+    "projects": 11,
+    "databases": 6,
+    "time": 3
    },
    "design": {
-    "design-tools": 1,
-    "site-builders": 2
+    "design-tools": 15,
+    "site-builders": 11
    },
    "sales-and-marketing": {
-    "crm": 3,
-    "prospecting": 1
+    "crm": 5,
+    "prospecting": 5,
+    "email-marketing": 6,
+    "forms": 3,
+    "social-and-seo": 8
    },
    "support": {
-    "customer-service": 2
+    "customer-service": 15,
+    "feedback": 3
    },
    "data": {
-    "data-platforms": 2,
+    "data-platforms": 9,
     "databases": 1,
-    "communications-apis": 1
+    "communications-apis": 5,
+    "analytics": 6,
+    "customer-data": 4,
+    "governance": 4
    },
    "security": {
-    "passwords": 1,
-    "identity": 1
+    "passwords": 4,
+    "identity": 4,
+    "cloud-security": 14,
+    "compliance": 3,
+    "networking": 2
    },
    "files": {
-    "storage": 2,
-    "signing": 1
+    "storage": 8,
+    "signing": 7,
+    "assets": 4
    },
    "people": {
-    "hr": 2
+    "hr": 10,
+    "performance": 4,
+    "hiring": 8
    },
    "scheduling": {
-    "scheduling": 1
+    "scheduling": 20
    },
    "it": {
-    "service-management": 1
+    "service-management": 2,
+    "device-management": 4,
+    "remote-access": 3,
+    "software-spend": 6,
+    "operations": 7
    }
   },
   "fintech": {
    "payments": {
-    "processing": 3,
-    "wallets": 3,
-    "pay-later": 2,
-    "transfers": 1
+    "processing": 18,
+    "wallets": 4,
+    "pay-later": 5,
+    "transfers": 5
    },
    "banking": {
-    "consumer": 6,
-    "business": 1,
-    "infrastructure": 2
+    "consumer": 17,
+    "business": 6,
+    "infrastructure": 8
    },
    "investing": {
-    "brokerage": 2,
-    "wealth": 2,
-    "crypto": 2
+    "brokerage": 12,
+    "wealth": 7,
+    "crypto": 12
    },
    "business-finance": {
-    "spend": 2,
-    "equity": 1,
-    "bookkeeping": 1,
-    "payroll": 3
+    "spend": 11,
+    "equity": 3,
+    "bookkeeping": 7,
+    "payroll": 4,
+    "planning": 3,
+    "insurance": 4
    }
   },
   "hardware": {
    "computing": {
-    "phones-and-computers": 5,
-    "focused-devices": 4,
-    "headsets": 1,
-    "peripherals": 1
+    "phones-and-computers": 12,
+    "focused-devices": 5,
+    "headsets": 3,
+    "peripherals": 13
    },
    "audio": {
-    "speakers-and-headphones": 3,
-    "instruments": 1
+    "speakers-and-headphones": 19,
+    "instruments": 11,
+    "recording": 4
    },
    "cameras": {
-    "cameras": 2,
-    "action": 1,
-    "drones": 1
+    "cameras": 10,
+    "action": 2,
+    "drones": 2,
+    "home-cameras": 6,
+    "accessories": 4
    },
    "wearables": {
-    "watches": 1,
-    "rings-and-bands": 2
+    "watches": 13,
+    "rings-and-bands": 5,
+    "glasses-and-pendants": 6,
+    "recovery": 2
    },
    "gaming": {
-    "consoles": 3
+    "consoles": 8,
+    "gear": 9,
+    "studios-and-stores": 8
    },
    "vehicles": {
-    "electric": 4
+    "electric": 10,
+    "makers": 25,
+    "bikes-and-scooters": 18,
+    "air-and-water": 5
    },
    "home": {
-    "appliances": 2,
+    "appliances": 22,
     "sleep": 1,
-    "fitness-equipment": 1
+    "fitness-equipment": 9,
+    "smart-home": 8,
+    "outdoor-cooking": 5,
+    "air-and-water": 6
    }
   },
   "health": {
    "care": {
-    "primary-care": 3,
+    "primary-care": 10,
     "telehealth": 1,
     "booking": 1,
-    "direct-to-patient": 5,
-    "womens-health": 2,
-    "fertility": 1,
-    "cycle-tracking": 2,
-    "musculoskeletal": 1
+    "direct-to-patient": 10,
+    "womens-health": 6,
+    "fertility": 2,
+    "cycle-tracking": 3,
+    "musculoskeletal": 2,
+    "pharmacy": 3,
+    "children": 3
    },
    "mental-health": {
-    "therapy": 2,
-    "employer": 1
+    "therapy": 13,
+    "employer": 3,
+    "self-guided": 2,
+    "recovery": 4
    },
    "testing": {
-    "genetics": 1,
-    "home-tests": 1,
-    "lab-panels": 1,
-    "scans": 1,
-    "precision-medicine": 1,
-    "metabolic": 1
+    "genetics": 5,
+    "home-tests": 4,
+    "lab-panels": 7,
+    "scans": 5,
+    "precision-medicine": 3,
+    "metabolic": 8
    },
    "fitness": {
-    "studios": 2,
-    "memberships": 1,
-    "coaching": 2,
-    "outdoors": 1
+    "studios": 8,
+    "memberships": 4,
+    "coaching": 11,
+    "outdoors": 4,
+    "events": 6
    },
    "nutrition": {
-    "tracking": 1,
-    "weight": 1
+    "tracking": 8,
+    "weight": 4,
+    "dietitians": 4,
+    "fasting": 3,
+    "meal-planning": 2
    }
   },
   "media": {
@@ -2263,48 +10871,51 @@
     "business": 7
    },
    "technology": {
-    "technology": 5
+    "technology": 20
    },
    "magazines": {
-    "culture": 3,
-    "ideas": 1,
-    "science": 1
+    "culture": 17,
+    "ideas": 12,
+    "science": 7
    },
    "design-and-art": {
-    "design": 3,
-    "art": 1
+    "design": 20,
+    "art": 10
    },
    "culture": {
-    "music": 1,
-    "sport-and-pop": 2,
-    "games": 1,
-    "food": 1
+    "music": 11,
+    "sport-and-pop": 12,
+    "games": 6,
+    "food": 8
    },
    "platforms": {
-    "publishing": 2
+    "publishing": 12,
+    "audio-and-video": 5,
+    "communities": 9
    }
   },
   "studios": {
    "brand": {
-    "identity": 15
+    "identity": 60,
+    "packaging": 5
    },
    "product": {
-    "digital-product": 6,
+    "digital-product": 8,
     "digital-agency": 4,
-    "web-craft": 2
+    "web-craft": 15
    },
    "advertising": {
-    "creative": 2
+    "creative": 14
    },
    "motion": {
-    "animation": 1,
-    "kinetic-identity": 1
+    "animation": 8,
+    "kinetic-identity": 2
    },
    "innovation": {
-    "design-consulting": 2
+    "design-consulting": 7
    },
    "art": {
-    "collective": 1
+    "collective": 5
    }
   }
  }
