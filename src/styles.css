@@ -297,8 +297,11 @@
 @media (min-width: 1024px) {
   .digest .lead-stack { display: block; }
   .digest .lead-stack .lead-box { box-shadow: var(--tk-shadow-raised); }
-  .digest .lead-stack > :nth-child(2) { position: relative; z-index: 1; width: 58%; margin-left: calc(-1 * var(--tk-space-5)); margin-top: -16%; }
-  .digest .lead-stack-cap { margin-left: calc(-1 * var(--tk-space-5)); }
+  .digest .lead-stack > :nth-child(2) { position: relative; z-index: 1; width: 58%; margin-left: 0; margin-top: -16%; }
+  .digest .lead-stack-cap { margin-left: 0; }
+  /* A3 · beside the pictures the trail keeps a capped height so the lead card stays short; the number keeps its size. */
+  .digest [data-lead-layout="picture"] .lead-fig { min-height: 0 !important; height: auto !important; }
+  .digest [data-lead-layout="picture"] .lead-trail { flex: none !important; min-height: 0 !important; height: 9rem !important; }
 }
 /* S1 polish · the stack's one caption block: under the whole stack, starting at its left edge (the second picture's, from 1024 px). */
 .digest .lead-stack-cap { display: block; margin-top: var(--tk-space-2); }
@@ -620,6 +623,7 @@
   .brand-tile-sub { display: block; margin-top: 2px; }
   .sector-brand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); column-gap: var(--tk-space-4); border-top: var(--tk-border-hairline) solid var(--sys-color-ink); }
   .sector-brand-list > li { border-bottom: var(--tk-border-hairline) solid var(--sys-color-rule); }
+  @media (max-width: 767px) { .sector-brand-list:not([data-all]) > li:nth-child(n+11) { display: none; } }
   .sector-brand-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--tk-space-2) 0; min-height: 52px; justify-content: center; }
   .sector-brand-row > .ed-kicker { padding-left: calc(32px + var(--tk-space-2)); }
   .cat-chip { padding: 2px 8px; } .cat-chip.cat-chip-on, .cat-chip.cat-chip-on:visited { background: var(--sys-color-ink); color: var(--sys-color-page); } .cat-chip:not(.cat-chip-on) { background: transparent; color: var(--tk-text-primary); box-shadow: inset 0 0 0 1px var(--tk-text-primary); } .cat-chip .ed-muted { color: inherit; opacity: .7; }

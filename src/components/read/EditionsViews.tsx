@@ -138,7 +138,7 @@ function SmallMultiples({ r }: { r: SectorReport }) {
 const Block = ({ n, id, title, kicker, children }: { n: string; id: string; title: string; kicker?: string; children: ReactNode }) =>
   <section aria-labelledby={id} className="ed-wrap mt-14"><SectionHead n={n} id={id} title={title} kicker={kicker} />{children}</section>;
 
-export function SectorReportView({ r }: { r: SectorReport }) {
+export function SectorReportView({ r, chips, brands }: { r: SectorReport; chips?: ReactNode; brands?: ReactNode }) {
   const nav = useNavigate();
   const onChange = (s: string) => { if (s === "all") void nav({ to: "/sectors" }); else void nav({ to: "/sectors/$sector", params: { sector: s } }); };
   const num = (b: (typeof r.blocks)[number]) => String(r.blocks.indexOf(b)).padStart(2, "0");
@@ -151,7 +151,8 @@ export function SectorReportView({ r }: { r: SectorReport }) {
         left={<><span className="cover-num block" data-figure="">{r.brands}</span><span className="block">brands tracked</span></>}
         right={<><span className="block">{r.quarter.label}</span><span className="block">{r.storiesInQuarter} {r.storiesInQuarter === 1 ? "story" : "stories"}</span></>}
         deck={<>
-          <p className="ed-standfirst">{r.title}. {r.coverage.enough ? `${r.signals.length} headline signals measured here, ${r.contrast.risingHere.length} rising here and not elsewhere, ${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.` : `${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.`}</p>
+          <p className="ed-standfirst">{r.title}. {r.coverage.enough ? <><mark className="hl-mark" data-highlight="">{r.signals.length} headline signals</mark>{` measured here, ${r.contrast.risingHere.length} rising here and not elsewhere, ${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.`}</> : `${r.storiesInQuarter} ${r.storiesInQuarter === 1 ? "story" : "stories"} this quarter.`}</p>
+          {chips && <div data-sector-chips="">{chips}</div>}
           {r.note && <p className="ed-small mt-3 font-semibold">{r.note}</p>}
           <p className="ed-caption mt-3">{r.basis}</p>
           <p className="print-only ed-caption mt-3" {...pr(r.href)}>{r.href}</p>
@@ -159,6 +160,7 @@ export function SectorReportView({ r }: { r: SectorReport }) {
       </FiltersScope>
       {r.signals.length > 0 && <SmallMultiples r={r} />}
       </div>
+      {brands}
       <Block n={num("signals")} id="sr-signals" title="Headline signals" kicker={`Stage and share in ${r.name} against all sectors. Momentum is computed across all sectors only, so it appears once.`}>
         {r.signals.length ? <div className="overflow-x-auto"><table className="ed-data w-full min-w-[720px] border-collapse text-left">
           <caption className="sr-only">Headline signals in {r.name} against all sectors</caption>

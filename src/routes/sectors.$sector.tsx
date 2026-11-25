@@ -1,3 +1,4 @@
+import type React from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -10,7 +11,7 @@ import { LENS_SECTORS } from "@/lib/sector-lens";
 import { SectorReportView } from "@/components/read/EditionsViews";
 import { DigestNotFound } from "@/components/digest/NotFound";
 import { BRAND_NAME } from "@/lib/brand";
-import { SectorBrands } from "@/components/read/SectorBrands";
+import { SectorBrands, SectorChips } from "@/components/read/SectorBrands";
 import { resolveCategory } from "@/lib/categories";
 import { brandsQuery, scopeStructureQuery } from "@/lib/data";
 import { ScopeStructure } from "@/components/read/Structure";
@@ -43,13 +44,12 @@ function Report() {
   return <DigestShell label={h.title} edition="sectors" fixedSector={{ value: sector, onChange }}>
     <Later id="sector-later" before={<TitleBlock kicker="Sector report" title={h.title} deck={<p className="ed-caption mt-5 max-w-[62ch]">{h.basis}</p>} />}
       shapes={[{ kind: "rows", n: 5, height: ROW.ledger }, { kind: "block", height: 320 }, { kind: "rows", n: 5, height: ROW.ledger }]}>
-      <SectorBrands sector={sector} category={cf.category} sub={cf.sub} />
-      <Full sector={sector} />
+      <Full sector={sector} chips={<SectorChips sector={sector} category={cf.category} sub={cf.sub} />} brands={<SectorBrands sector={sector} sectorName={h.name} category={cf.category} sub={cf.sub} />} />
       <Later shapes={[{ kind: "rows", n: 6, height: ROW.compact }]}><ScopeStructure scope={cf.category ? `cat:${sector}/${cf.category}` : sector} /></Later>
     </Later>
   </DigestShell>;
 }
-function Full({ sector }: { sector: string }) {
+function Full({ sector, chips, brands }: { sector: string; chips: React.ReactNode; brands: React.ReactNode }) {
   const { data } = useSuspenseQuery(sectorReportQuery(sector));
-  return data ? <SectorReportView r={data} /> : null;
+  return data ? <SectorReportView r={data} chips={chips} brands={brands} /> : null;
 }
