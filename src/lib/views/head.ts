@@ -5,8 +5,9 @@ import { SITE_URL } from "../site";
 import { objectPath, type ObjectRef } from "../ia";
 
 export const readUrl = (o: ObjectRef) => `${SITE_URL}${objectPath(o)}`;
-export function dataViewHead(o: ObjectRef, name: string) {
-  const title = `${name} — data · ${BRAND_NAME}`, desc = `The data behind ${name} on ${BRAND_NAME}: every measured field, score and record, with its receipts.`, url = readUrl(o);
+/** `path` names the Read address for pages that are not one of the four object types (reference boards, compare). */
+export function dataViewHead(o: ObjectRef, name: string, path?: string) {
+  const title = `${name} — data · ${BRAND_NAME}`, desc = `The data behind ${name} on ${BRAND_NAME}: every measured field, score and record, with its receipts.`, url = path ? `${SITE_URL}${path}` : readUrl(o);
   return {
     meta: [{ title }, { name: "description", content: desc }, { name: "robots", content: "noindex" }, { property: "og:title", content: title }, { property: "og:description", content: desc }, { property: "og:type", content: "website" }, { property: "og:url", content: url }, { name: "twitter:card", content: "summary" }],
     links: [{ rel: "canonical", href: url }],
