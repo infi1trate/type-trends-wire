@@ -34,6 +34,8 @@
   --color-ed-rule: var(--sys-color-rule);
 
   /* Terminal density sizes. */
+  --text-xs: var(--sys-text-caption-size);
+  --text-sm: var(--sys-text-small-size);
   --text-label: var(--sys-text-caption-size);
   --text-label--line-height: var(--sys-text-caption-leading);
   --text-body: var(--sys-text-reading-size);
@@ -253,7 +255,7 @@
 .digest .ed-h2 { font-family: var(--sys-text-h2-family); font-size: var(--sys-text-h2-size); line-height: var(--sys-text-h2-leading); font-weight: var(--sys-text-h2-weight); text-transform: var(--sys-text-h2-case); letter-spacing: var(--sys-text-h2-tracking); text-wrap: balance; }
 .digest .ed-h3 { font-family: var(--sys-text-h3-family); font-size: var(--sys-text-h3-size); line-height: var(--sys-text-h3-leading); font-weight: var(--sys-text-h3-weight); text-transform: var(--sys-text-h3-case); letter-spacing: var(--sys-text-h3-tracking); text-wrap: balance; }
 .digest .ed-h4 { font-family: var(--tk-type-h4-family); font-size: var(--tk-type-h4-size); line-height: var(--tk-type-h4-leading); font-weight: var(--tk-type-h4-weight); text-transform: var(--tk-type-h4-case); letter-spacing: var(--tk-type-h4-tracking); text-wrap: balance; }
-.digest .ed-standfirst { font-family: var(--sys-text-deck-family); font-size: var(--sys-text-deck-size); line-height: var(--sys-text-deck-leading); font-weight: var(--sys-text-deck-weight); max-width: 40ch; text-wrap: pretty; }
+.digest .ed-standfirst { font-family: var(--sys-text-deck-family); font-size: var(--sys-text-deck-size); line-height: var(--sys-text-deck-leading); font-weight: var(--sys-text-deck-weight); max-width: var(--sys-deck-measure); text-wrap: balance; }
 /* P2b · fixed-copy headings hold their height in lines while the web fonts load, so the stand-in fonts' extra line never pushes what
    follows. Each range is where the real fonts give that line count (measured at every width from 320 to 1100 px and every 20 px to
    1920), kept at least 4 px from where the count changes; outside the ranges the height is the text's own. Screen only. */
@@ -365,7 +367,7 @@
 .digest .study-card { display: flex; flex-direction: column; height: 100%; padding: var(--tk-space-3); color: var(--sys-color-ink); text-decoration: none !important; border-top: var(--tk-border-strong) solid var(--sys-color-rule); }
 .digest .study-card:hover, .digest .study-card:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }
 .digest .study-card-title { display: flex; align-items: baseline; gap: var(--tk-space-3); }
-.digest .study-card-title .ledger-no { flex: none; font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; }
+.digest .study-card-title .ledger-no { flex: none; font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-row-number-size); line-height: 1; }
 .digest .study-card-q { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .digest .study-card-pic { display: block; aspect-ratio: 16 / 9; overflow: hidden; border: var(--tk-border-hairline) solid var(--sys-color-rule); background: var(--sys-color-page); }
 .digest .study-card-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -586,7 +588,7 @@
     padding: var(--tk-space-2) var(--tk-space-2); color: var(--sys-color-ink); text-decoration: none !important; }
   .ledger-link:hover, .ledger-link:focus-visible { background: var(--sys-color-highlight); color: var(--tk-highlight-fg); }
   .ledger-link:hover .ledger-muted, .ledger-link:focus-visible .ledger-muted { color: var(--tk-highlight-fg); }
-  .ledger-num { font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ledger-num { text-align: right; font-family: var(--sys-text-h3-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .ledger-fit { display: inline-grid; } .ledger-fit > * { grid-area: 1 / 1; } .ledger-ghost { visibility: hidden; }
   .ledger-plain .ledger-link { grid-template-columns: minmax(0, 1fr) auto; }
   .ledger-plain .ledger-rest { grid-column: 1 / -1; }
@@ -601,7 +603,9 @@
   .ledger-hang .ledger-tags { margin-right: 0; }
   .ledger-hang-text { min-width: 0; }
   .ledger-num-sm { font-size: var(--sys-text-kicker-size); letter-spacing: var(--sys-text-kicker-tracking); text-transform: uppercase; font-weight: 700; }
-  .ledger-title { font-family: var(--sys-text-reading-family); font-size: var(--sys-text-small-size); line-height: 1.35; text-wrap: pretty; min-width: 0; }
+  .ledger-title { font-family: var(--sys-text-reading-family); font-size: var(--sys-text-row-size); font-weight: var(--sys-text-row-weight); line-height: var(--sys-text-row-leading); text-wrap: balance; min-width: 0; }
+  .digest :is([data-front-tape], [data-front-wire], [data-front-rail]) .ledger-title { font-size: var(--sys-text-small-size); font-weight: var(--sys-text-small-weight); line-height: var(--sys-text-small-leading); }
+  .digest .ledger-line { font-size: var(--sys-text-small-size); line-height: var(--sys-text-small-leading); }
   .ledger-line { display: block; margin-top: var(--tk-space-1); font-family: var(--sys-text-caption-family); font-size: var(--sys-text-caption-size); line-height: var(--sys-text-caption-leading); color: var(--sys-color-ink-muted); }
   .ledger-muted { color: var(--sys-color-ink-muted); }
   .ledger-fact { font-family: var(--sys-text-kicker-family); font-weight: 700; font-size: var(--sys-text-kicker-size); line-height: var(--sys-text-kicker-leading); letter-spacing: .02em; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
@@ -723,7 +727,7 @@
   .cover-num { font-family: var(--sys-text-figure-family); font-weight: 900; font-size: var(--sys-text-h3-size); line-height: 1; }
   .cover-object { grid-area: obj; min-width: 0; margin-right: calc(-1 * var(--tk-layout-gutter) - 12vw); }
   .cover-head { grid-area: head; position: relative; z-index: 2; margin-top: calc(-1 * var(--tk-space-6)); }
-  .cover-deck { grid-area: deck; position: relative; z-index: 2; max-width: 40ch; }
+  .cover-deck { grid-area: deck; position: relative; z-index: 2; max-width: var(--sys-deck-measure); }
   .cover-deck > span { background: var(--tk-slab-bg); color: var(--tk-slab-fg); box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0 .15em; }
   .cover-grid:not([data-has-object]) .cover-head { margin-top: 0; }
   .cover-typo { aspect-ratio: 16 / 10; background: var(--sys-color-surface); color: var(--sys-color-ink); }
@@ -861,7 +865,7 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   /* "No. 45": the figure never wraps; the column is sized for four digits, so titles align. */
   .ledger-no { display: inline-flex; align-items: baseline; gap: .18em; white-space: nowrap; }
   .ledger-no-label { font-family: var(--sys-text-kicker-family); font-weight: 700; font-size: var(--sys-text-kicker-size); letter-spacing: var(--sys-text-kicker-tracking); text-transform: uppercase; }
-  .ledger-no-fig { font-family: var(--sys-text-h3-family); font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ledger-no-fig { font-size: var(--sys-text-row-number-size); font-family: var(--sys-text-h3-family); font-weight: 900; font-variant-numeric: tabular-nums; }
 
   /* Form fields: one 3 px ink border at rest; the focus ring only on keyboard focus. Errors sit under the field in plain words. */
   .form-field { border: var(--tk-border-strong) solid var(--sys-color-rule); border-radius: 0; outline: none; }
@@ -1047,3 +1051,25 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 /* D1 Part 5 · the quiet line on a page sent as its last good copy: fixed at the bottom (nothing moves), small, the page's own colours. */
 .copy-age { position: fixed; inset: auto 0 0 0; z-index: 90; margin: 0; padding: var(--tk-space-1) var(--tk-space-3); font-size: var(--sys-text-caption-size);
   color: var(--sys-color-ink-muted); background: var(--sys-color-page); border-top: 1px solid var(--sys-color-rule); }
+
+/* A2 · role-driven editorial type and one section rhythm; the dark terminal keeps its density. */
+@layer components {
+  .digest .ed-row-headline { font-family: var(--sys-font-text); font-size: var(--sys-text-row-size); font-weight: var(--sys-text-row-weight); line-height: var(--sys-text-row-leading); text-transform: none; text-wrap: balance; }
+  .digest :is(h1,h2,h3,h4) { text-wrap: balance; }
+  .digest p { text-wrap: pretty; }
+  .digest p.ed-standfirst { text-wrap: balance; }
+  .digest .ed-figure-num .figure-percent { display: inline-block; font-size: var(--sys-figure-percent-size); vertical-align: top; line-height: 1; }
+  .digest .sig-fig { font-size: var(--sys-text-small-size); font-variant-numeric: tabular-nums; text-align: right; }
+  .digest .brand-data-grid dd { font-size: var(--sys-text-small-size); line-height: var(--sys-text-small-leading); }
+  .digest .brand-data-grid :is(.ed-h3,.ed-data) { font-size: var(--sys-text-small-size); line-height: var(--sys-text-small-leading); }
+  .digest .brand-data-grid .ed-data { font-variant-numeric: tabular-nums; text-align: right; }
+  .digest .front-stack > * + * { margin-top: var(--sys-gap-section); }
+  .digest [data-front-cols] { row-gap: var(--sys-gap-section); }
+  .digest :is([data-front-left],[data-front-rail]) > * + * { margin-top: var(--sys-gap-section); }
+  .digest [data-front-rail] .space-y-10 > * + *, .digest [data-front-left] .space-y-10 > * + * { margin-top: var(--sys-gap-section); }
+  .digest :is([data-object],[data-story]) > [data-block]:not(:first-child) { margin-top: var(--sys-gap-section); }
+  .digest :is([data-object],[data-story]) [data-block] > header { margin-bottom: var(--sys-gap-heading); }
+  .digest section > :is(h2,h3) + :is(ul,.ledger,[data-signal-rows]), .digest section > :is(h2,h3) + p + :is(ul,.ledger,[data-signal-rows]) { margin-top: var(--sys-gap-heading); }
+  .digest :is([data-front-tape],[data-front-wire]) .ledger { margin-top: var(--sys-gap-heading); }
+  .digest .ed-wrap.mt-12, .digest .ed-wrap.mt-14, .digest .ed-wrap.mt-16 { margin-top: var(--sys-gap-section); }
+}

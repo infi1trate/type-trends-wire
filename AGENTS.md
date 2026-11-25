@@ -32,6 +32,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Editorial row type, display percentage signs and section rhythm use the theme/system roles; the Read gap snaps to the existing density ladder without modifying shipped editions, while Terminal retains its own spacing.
 - Brand identity tiles use the shared read/BrandMark at the token scale, with stored-dimension eligibility and neutral initials; this keeps loading boxes and missing marks aligned in both views.
 - Band classification lives only in `src/lib/bands.ts` (pure, dependency-free) so the phase-3 MCP server can mirror it; covered by `src/lib/bands.test.ts`.
 - All frontend Supabase reads go through query options in `src/lib/data.ts`; the front end only SELECTs and paginates past 1000 rows with `.range()`.

@@ -44,7 +44,7 @@ describe("settings register", () => {
   it("the tokens the live site writes are the live values, and each is inside its range", () => {
     const css = themeCss(slug);
     expect(tok(css, "--tk-radius-sm")).toEqual([`${LIVE_VALUES.radius}px`]);
-    expect(tok(css, "--sys-gap-section")).toEqual([sectionGap(LIVE_VALUES.density).base, sectionGap(LIVE_VALUES.density).lg]);
+    expect(tok(css, "--sys-gap-section")).toEqual([sectionGap(LIVE_VALUES.density).base, sectionGap(4.25).base, sectionGap(LIVE_VALUES.density).lg, sectionGap(4.25).lg]);
     expect(tok(css, "--tk-motion-move")).toContain(`${LIVE_VALUES.motion}ms`);
     expect(tok(css, "--sys-chart-grid")).toEqual([String(1.5 * LIVE_VALUES.chart)]);
     expect(tok(css, "--sys-color-accent")).toContain(K.color[LIVE_VALUES.accent]);

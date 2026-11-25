@@ -79,7 +79,7 @@ function IdentityCard({ b }: { b: CardIn }) {
     <h1 id="ed-brand-title" className="ed-h1 brand-title mt-3 break-words"><BrandMark icon={b.icon} name={b.name} size={72} mobileSize={56} eager /><span className="min-w-0">{b.name}</span></h1>
     <p className="mt-2 max-sm:min-h-[2lh]"><a href={`https://${b.domain}`} target="_blank" rel="noopener" className="ed-code ed-tap" {...pr(`https://${b.domain}`)}>{b.domain}</a> <span className="ed-caption">· last captured {b.captured ? storyTime(b.captured) : "not yet"}</span></p>
     {b.cover && <div className="mt-5"><CoverFigure c={b.cover} /></div>}
-    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="brand-data-grid mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       <dl className="min-w-0 space-y-4"><Fact k="Headline type" receipt={i.receipt}><FaceValue f={i.h1} /></Fact><Fact k="Body type" receipt={i.receipt}><FaceValue f={i.body} /></Fact></dl>
       <dl className="min-w-0"><div><dt className="ed-kicker">Palette · share of the first screen</dt>
         <dd className="mt-2">{i.palette.length ? <ul className="space-y-1" aria-label={`${b.name} palette, largest first`}>{i.palette.map((p, k) => <li key={`${p.hex}${k}`}>

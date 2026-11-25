@@ -1,0 +1,1345 @@
+[
+  {
+    "page": "today",
+    "mode": "read",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "slug \u2014 the live newsroom for how brands look and sound on the web",
+    "headings": [
+      "slug: Today, the front page",
+      "MORE HOMEPAGES ANIMATE THEIR ENTRANCES",
+      "THE TAPE",
+      "THE WIRE\n: LINKS A DESIGNER SHOULD SEE, PICKED FROM THE PUBLICATIONS WE READ",
+      "EARLIER THIS WEEK \u00b7 5",
+      "STUDIES",
+      "EDITIONS",
+      "CHART OF THE DAY"
+    ],
+    "shifts": [
+      {
+        "v": 0.0002645177469135802,
+        "t": 6098.5
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "brands",
+    "mode": "read",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Brands \u2014 who is doing it \u00b7 slug",
+    "headings": [
+      "WHO IS DOING IT",
+      "MOVED THIS WEEK"
+    ],
+    "shifts": [
+      {
+        "v": 0.002126421531394676,
+        "t": 969.8999999999942
+      },
+      {
+        "v": 0.0002645177469135802,
+        "t": 3486.300000000003
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "netlify",
+    "mode": "read",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Netlify \u2014 brand \u00b7 slug",
+    "headings": [
+      "NETLIFY",
+      "EVIDENCE",
+      "BEFORE \u2192 AFTER",
+      "",
+      "DEV TOOLS: WHERE EACH BRAND SITS NOW",
+      "SO WHAT",
+      "RELATED"
+    ],
+    "shifts": [
+      {
+        "v": 0.0031838800953052663,
+        "t": 1784
+      },
+      {
+        "v": 0.0002645177469135802,
+        "t": 3463.100000000006
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 32,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "signals",
+    "mode": "read",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Signals \u2014 what deserves your attention \u00b7 slug",
+    "headings": [
+      "WHAT DESERVES YOUR ATTENTION",
+      "HEADLINE \u00b7 57",
+      "SUPPORTING \u00b7 48",
+      "ARCHIVE \u00b7 21"
+    ],
+    "shifts": [
+      {
+        "v": 0.0009054256863064237,
+        "t": 476.8000000000029
+      },
+      {
+        "v": 0.0002645177469135802,
+        "t": 1429.800000000003
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "studies",
+    "mode": "read",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Studies \u2014 longer answers, built from five years of captures \u00b7 slug",
+    "headings": [
+      "LONGER ANSWERS, BUILT FROM FIVE YEARS OF CAPTURES",
+      "SOFTWARE HOMEPAGES PUT AI UP FRONT",
+      "ALL STUDIES",
+      "IN THE WORKS"
+    ],
+    "shifts": [
+      {
+        "v": 0.0009054256863064237,
+        "t": 647
+      },
+      {
+        "v": 0.0002645177469135802,
+        "t": 1726.3999999999942
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "study",
+    "mode": "read",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Study No. 8: No App Store category is mostly one colour \u00b7 slug",
+    "headings": [
+      "NO APP STORE CATEGORY IS MOSTLY ONE COLOUR\nNO APP STORE\nCATEGORY IS\nMOSTLY ONE COLOUR",
+      "EACH CATEGORY'S TOP FREE APPS, ONE SWATCH PER ICON",
+      "Each category's top free apps, one swatch per icon",
+      "LIMITS",
+      "EVIDENCE",
+      "RELATED"
+    ],
+    "shifts": [
+      {
+        "v": 0.014867114935980901,
+        "t": 401.79999999998836
+      },
+      {
+        "v": 0.0002645177469135802,
+        "t": 1814.8999999999942
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "today",
+    "mode": "terminal",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "TODAY\ni",
+      "STORIES \u00b7 LAST 7 DAYS \u00b7 6 RAN \u00b7 149 HELD",
+      "WEEKLY BRIEF \u00b7 2026-W47 \u00b7 AI"
+    ],
+    "shifts": [
+      {
+        "v": 0.010564774275414737,
+        "t": 1046.9000000000233
+      },
+      {
+        "v": 0.00010555019802517361,
+        "t": 1060.9000000000233
+      },
+      {
+        "v": 0.0008570264274691358,
+        "t": 3142.600000000006
+      },
+      {
+        "v": 0.0004086540316358024,
+        "t": 3194.2000000000116
+      },
+      {
+        "v": 0.0049229745370370365,
+        "t": 3712.5
+      },
+      {
+        "v": 7.692349657600309e-05,
+        "t": 4793.600000000006
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "brands",
+    "mode": "terminal",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "THE TAPE\ni",
+      "SEEN ONCE OR ALTERNATING\ni",
+      "SECTOR GRID\ni",
+      "AI \u00b7 TAGS \u00b7 289 / 300 TAGGED\ni",
+      "AI \u00b7 PRICING\ni",
+      "AI \u00b7 FEATURE THEMES\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.004597179045500579,
+        "t": 420.8999999999942
+      },
+      {
+        "v": 7.692349657600309e-05,
+        "t": 3284
+      },
+      {
+        "v": 0.005493938078703704,
+        "t": 3907.7000000000116
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "netlify",
+    "mode": "terminal",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Netlify \u2014 data \u00b7 slug",
+    "headings": [
+      "",
+      "Netlify",
+      "FINGERPRINT \u00b7 HOME / DESKTOP\ni",
+      "AI \u00b7 TAGS\ni",
+      "AI \u00b7 PRICING",
+      "AI \u00b7 CHANGELOG",
+      "AI \u00b7 PRODUCT FEATURES",
+      "WIREFRAME\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.002110238233024691,
+        "t": 2492.899999999994
+      },
+      {
+        "v": 0.004398533950617283,
+        "t": 4396.899999999994
+      },
+      {
+        "v": 8.680555555555555e-08,
+        "t": 6600.399999999994
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "signals",
+    "mode": "terminal",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "MODEL CARD\ni",
+      "NEXT WAVE \u00b7 HEADLINE \u00b7 TOP 15 \u00b7 ALL SECTORS\ni",
+      "STAGE BOARD \u00b7 HEADLINE \u00b7 ALL SECTORS\ni",
+      "TRENDSETTERS \u00b7 TOP 20 \u00b7 ALL SECTORS\ni",
+      "LEAD\u2013LAG \u00b7 FIRST QUARTER \u226510% BY SECTOR\ni",
+      "CHART OF THE WEEK \u00b7 2026-W47\ni",
+      "BRIEF \u00b7 2026-W47 \u00b7 AI VIA LOVABLE AI\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.024395512408974727,
+        "t": 2053.8000000000175
+      },
+      {
+        "v": 7.692349657600309e-05,
+        "t": 3055.600000000006
+      },
+      {
+        "v": 0.0043097173996913575,
+        "t": 3790
+      },
+      {
+        "v": 0.016551388888888886,
+        "t": 3956.600000000006
+      },
+      {
+        "v": 7.812499999999999e-08,
+        "t": 7022.5
+      },
+      {
+        "v": 7.812499999999999e-08,
+        "t": 8022.400000000023
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "studies",
+    "mode": "terminal",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Studies \u2014 longer answers, built from five years of captures \u00b7 slug",
+    "headings": [
+      "LONGER ANSWERS, BUILT FROM FIVE YEARS OF CAPTURES",
+      "SOFTWARE HOMEPAGES PUT AI UP FRONT",
+      "ALL STUDIES",
+      "IN THE WORKS"
+    ],
+    "shifts": [
+      {
+        "v": 0.0009054256863064237,
+        "t": 290.20000000001164
+      },
+      {
+        "v": 0.0002645177469135802,
+        "t": 1171
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "study",
+    "mode": "terminal",
+    "width": 1440,
+    "status": 200,
+    "errors": [],
+    "title": "Study No. 8: No App Store category is mostly one colour \u2014 data \u00b7 slug",
+    "headings": [
+      "",
+      "No. 8No App Store category is mostly one colour",
+      "FACTS SHEET",
+      "THE DATA BEHIND EACH FIGURE",
+      "THE CHECK THAT KEEPS IT LIVE",
+      "TEXT VERSIONS"
+    ],
+    "shifts": [
+      {
+        "v": 0.020662233253761573,
+        "t": 253
+      },
+      {
+        "v": 7.812499999999999e-08,
+        "t": 2331.7000000000116
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "today",
+    "mode": "read",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "slug \u2014 the live newsroom for how brands look and sound on the web",
+    "headings": [
+      "slug: Today, the front page",
+      "MORE HOMEPAGES ANIMATE THEIR ENTRANCES",
+      "THE TAPE",
+      "THE WIRE\n: LINKS A DESIGNER SHOULD SEE, PICKED FROM THE PUBLICATIONS WE READ",
+      "EARLIER THIS WEEK \u00b7 5",
+      "STUDIES",
+      "EDITIONS",
+      "CHART OF THE DAY"
+    ],
+    "shifts": [
+      {
+        "v": 0.002214755310058594,
+        "t": 1146.3999999999942
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 2101.100000000006
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "brands",
+    "mode": "read",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Brands \u2014 who is doing it \u00b7 slug",
+    "headings": [
+      "WHO IS DOING IT",
+      "MOVED THIS WEEK"
+    ],
+    "shifts": [
+      {
+        "v": 0.0007897083333333333,
+        "t": 553.3999999999942
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 1472.5
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "netlify",
+    "mode": "read",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Netlify \u2014 brand \u00b7 slug",
+    "headings": [
+      "NETLIFY",
+      "EVIDENCE",
+      "BEFORE \u2192 AFTER",
+      "",
+      "DEV TOOLS: WHERE EACH BRAND SITS NOW",
+      "SO WHAT",
+      "RELATED"
+    ],
+    "shifts": [
+      {
+        "v": 0.00044656249999999997,
+        "t": 1302
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 2575
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 32,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "signals",
+    "mode": "read",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Signals \u2014 what deserves your attention \u00b7 slug",
+    "headings": [
+      "WHAT DESERVES YOUR ATTENTION",
+      "HEADLINE \u00b7 57",
+      "SUPPORTING \u00b7 48",
+      "ARCHIVE \u00b7 21"
+    ],
+    "shifts": [
+      {
+        "v": 0.0018156770833333332,
+        "t": 490.8999999999942
+      },
+      {
+        "v": 0.0025995059407552083,
+        "t": 516.3000000000175
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 1349.3000000000175
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "studies",
+    "mode": "read",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Studies \u2014 longer answers, built from five years of captures \u00b7 slug",
+    "headings": [
+      "LONGER ANSWERS, BUILT FROM FIVE YEARS OF CAPTURES",
+      "SOFTWARE HOMEPAGES PUT AI UP FRONT",
+      "ALL STUDIES",
+      "IN THE WORKS"
+    ],
+    "shifts": [
+      {
+        "v": 0.0035376074829101566,
+        "t": 396.30000000001746
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 1692.1000000000058
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "study",
+    "mode": "read",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Study No. 8: No App Store category is mostly one colour \u00b7 slug",
+    "headings": [
+      "NO APP STORE CATEGORY IS MOSTLY ONE COLOUR\nNO APP STORE\nCATEGORY IS\nMOSTLY ONE COLOUR",
+      "EACH CATEGORY'S TOP FREE APPS, ONE SWATCH PER ICON",
+      "LIMITS",
+      "EVIDENCE",
+      "RELATED"
+    ],
+    "shifts": [
+      {
+        "v": 0.0005785625,
+        "t": 297.8999999999942
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 1786.1999999999825
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "today",
+    "mode": "terminal",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "TODAY\ni",
+      "STORIES \u00b7 LAST 7 DAYS \u00b7 6 RAN \u00b7 149 HELD",
+      "WEEKLY BRIEF \u00b7 2026-W47 \u00b7 AI"
+    ],
+    "shifts": [
+      {
+        "v": 0.02257252176920573,
+        "t": 676.1999999999825
+      },
+      {
+        "v": 0.00016009295654296877,
+        "t": 698.6000000000058
+      },
+      {
+        "v": 0.00041521911621093756,
+        "t": 3292.399999999994
+      },
+      {
+        "v": 2.109375e-07,
+        "t": 6909.399999999994
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "brands",
+    "mode": "terminal",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "THE TAPE\ni",
+      "SEEN ONCE OR ALTERNATING\ni",
+      "SECTOR GRID\ni",
+      "AI \u00b7 TAGS \u00b7 289 / 300 TAGGED\ni",
+      "AI \u00b7 PRICING\ni",
+      "AI \u00b7 FEATURE THEMES\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.004842160644531249,
+        "t": 361.29999999998836
+      },
+      {
+        "v": 0.00041521911621093756,
+        "t": 1538.5999999999767
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "netlify",
+    "mode": "terminal",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Netlify \u2014 data \u00b7 slug",
+    "headings": [
+      "",
+      "Netlify",
+      "FINGERPRINT \u00b7 HOME / DESKTOP\ni",
+      "AI \u00b7 TAGS\ni",
+      "AI \u00b7 PRICING",
+      "AI \u00b7 CHANGELOG",
+      "AI \u00b7 PRODUCT FEATURES",
+      "WIREFRAME\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.0034234505208333333,
+        "t": 1670.7999999999884
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "signals",
+    "mode": "terminal",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "MODEL CARD\ni",
+      "NEXT WAVE \u00b7 HEADLINE \u00b7 TOP 15 \u00b7 ALL SECTORS\ni",
+      "STAGE BOARD \u00b7 HEADLINE \u00b7 ALL SECTORS\ni",
+      "TRENDSETTERS \u00b7 TOP 20 \u00b7 ALL SECTORS\ni",
+      "LEAD\u2013LAG \u00b7 FIRST QUARTER \u226510% BY SECTOR\ni",
+      "CHART OF THE WEEK \u00b7 2026-W47\ni",
+      "BRIEF \u00b7 2026-W47 \u00b7 AI VIA LOVABLE AI\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.0820426471150716,
+        "t": 1928.8999999999942
+      },
+      {
+        "v": 0.00041521911621093756,
+        "t": 3005.5999999999767
+      },
+      {
+        "v": 0.044520000000000004,
+        "t": 3975.7000000000116
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "studies",
+    "mode": "terminal",
+    "width": 768,
+    "status": 200,
+    "errors": [],
+    "title": "Studies \u2014 longer answers, built from five years of captures \u00b7 slug",
+    "headings": [
+      "LONGER ANSWERS, BUILT FROM FIVE YEARS OF CAPTURES",
+      "SOFTWARE HOMEPAGES PUT AI UP FRONT",
+      "ALL STUDIES",
+      "IN THE WORKS"
+    ],
+    "shifts": [
+      {
+        "v": 0.0035376074829101566,
+        "t": 347.80000000004657
+      },
+      {
+        "v": 0.0008907708333333334,
+        "t": 1273.9000000000233
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "study",
+    "mode": "terminal",
+    "width": 768,
+    "status": 200,
+    "errors": [
+      "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <main id=\"tk-main\" aria-label=\"Study data\" className=\"library mi...\" data-tsd-source=\"/src/compo...\">\n      <StudyData slug=\"the-colour...\" data-tsd-source=\"/src/route...\">\n        <Later id=\"study-data...\" shapes={[...]} data-tsd-source=\"/src/compo...\">\n          <QueryErrorResetBoundary data-tsd-source=\"/src/compo...\">\n            <Catch onReset={function onReset} waiting={<div>} failed={function failed} data-tsd-source=\"/src/compo...\">\n              <Suspense fallback={<div>} data-tsd-source=\"/src/compo...\">\n                <Ready id=\"study-data...\" className={undefined} data-tsd-source=\"/src/compo...\">\n                  <div ref={{current:null}} data-later=\"\" data-later-ready=\"\" id=\"study-data...\" className={undefined} ...>\n                    <StudyDataBody slug=\"the-colour...\" data-tsd-source=\"/src/compo...\">\n                      <Band>\n                      <Band>\n                      <Band title=\"THE CHECK ...\" data-tsd-source=\"/src/compo...\">\n                        <LibraryBand title=\"THE CHECK ...\" data-tsd-source=\"/src/compo...\">\n                          <section className=\"min-w-0 sh...\" data-tsd-source=\"/src/compo...\">\n                            <h2>\n                            <p\n+                             className=\"p-3\"\n-                             className=\"p-3 text-compare-muted\"\n+                             data-tsd-source=\"/src/components/dataview/Views.tsx:180:9\"\n-                             data-tsd-source=\"/src/components/dataview/Views.tsx:35:54\"\n                            >\n+                             Passes on current data.\n-                             Loading the check\u2026\n                            ...\n                      ...\n"
+    ],
+    "title": "Study No. 8: No App Store category is mostly one colour \u2014 data \u00b7 slug",
+    "headings": [
+      "",
+      "No. 8No App Store category is mostly one colour",
+      "FACTS SHEET",
+      "THE DATA BEHIND EACH FIGURE",
+      "THE CHECK THAT KEEPS IT LIVE",
+      "TEXT VERSIONS"
+    ],
+    "shifts": [
+      {
+        "v": 0.060910474039713544,
+        "t": 234.59999999997672
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "today",
+    "mode": "read",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "slug \u2014 the live newsroom for how brands look and sound on the web",
+    "headings": [
+      "slug: Today, the front page",
+      "MORE HOMEPAGES ANIMATE THEIR ENTRANCES",
+      "THE TAPE",
+      "THE WIRE\n: LINKS A DESIGNER SHOULD SEE, PICKED FROM THE PUBLICATIONS WE READ",
+      "EARLIER THIS WEEK \u00b7 5",
+      "STUDIES",
+      "EDITIONS",
+      "CHART OF THE DAY"
+    ],
+    "shifts": [
+      {
+        "v": 5.8218749999999995e-05,
+        "t": 1773.399999999965
+      },
+      {
+        "v": 0.0006189879807692308,
+        "t": 2978.899999999965
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "brands",
+    "mode": "read",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Brands \u2014 who is doing it \u00b7 slug",
+    "headings": [
+      "WHO IS DOING IT",
+      "MOVED THIS WEEK"
+    ],
+    "shifts": [
+      {
+        "v": 0.0004480936298076923,
+        "t": 361.79999999998836
+      },
+      {
+        "v": 0.0006189879807692308,
+        "t": 1286.600000000035
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "netlify",
+    "mode": "read",
+    "width": 390,
+    "status": 200,
+    "errors": [
+      "redacted",
+      "Switched to client rendering because the server rendering errored:\n\nread_timeout: getBrandCard took over 4000 ms",
+      "Switched to client rendering because the server rendering errored:\n\nread_timeout: getBrandCard took over 4000 ms"
+    ],
+    "title": "Netlify \u2014 brand \u00b7 slug",
+    "headings": [
+      "NETLIFY",
+      "EVIDENCE",
+      "BEFORE \u2192 AFTER",
+      "",
+      "DEV TOOLS: WHERE EACH BRAND SITS NOW",
+      "SO WHAT",
+      "RELATED"
+    ],
+    "shifts": [
+      {
+        "v": 5.8218749999999995e-05,
+        "t": 4310.600000000035
+      },
+      {
+        "v": 0.0006189879807692308,
+        "t": 5458.900000000023
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 32,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      },
+      {
+        "size": 20,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "signals",
+    "mode": "read",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Signals \u2014 what deserves your attention \u00b7 slug",
+    "headings": [
+      "WHAT DESERVES YOUR ATTENTION",
+      "HEADLINE \u00b7 57",
+      "SUPPORTING \u00b7 48",
+      "ARCHIVE \u00b7 21"
+    ],
+    "shifts": [
+      {
+        "v": 0.004219593830128205,
+        "t": 538.7000000000116
+      },
+      {
+        "v": 0.0006189879807692308,
+        "t": 1746.2999999999884
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "studies",
+    "mode": "read",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Studies \u2014 longer answers, built from five years of captures \u00b7 slug",
+    "headings": [
+      "LONGER ANSWERS, BUILT FROM FIVE YEARS OF CAPTURES",
+      "SOFTWARE HOMEPAGES PUT AI UP FRONT",
+      "ALL STUDIES",
+      "IN THE WORKS"
+    ],
+    "shifts": [
+      {
+        "v": 5.8218749999999995e-05,
+        "t": 344.4000000000233
+      },
+      {
+        "v": 0.0006189879807692308,
+        "t": 1875.5
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "study",
+    "mode": "read",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Study No. 8: No App Store category is mostly one colour \u00b7 slug",
+    "headings": [
+      "NO APP STORE CATEGORY IS MOSTLY ONE COLOUR\nNO APP STORE\nCATEGORY IS\nMOSTLY ONE COLOUR",
+      "EACH CATEGORY'S TOP FREE APPS, ONE SWATCH PER ICON",
+      "LIMITS",
+      "EVIDENCE",
+      "RELATED"
+    ],
+    "shifts": [
+      {
+        "v": 0.00011733317307692307,
+        "t": 327
+      },
+      {
+        "v": 0.00308221875,
+        "t": 353.70000000001164
+      },
+      {
+        "v": 0.0006189879807692308,
+        "t": 1593.9000000000233
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "today",
+    "mode": "terminal",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "TODAY\ni",
+      "STORIES \u00b7 LAST 7 DAYS \u00b7 6 RAN \u00b7 149 HELD",
+      "WEEKLY BRIEF \u00b7 2026-W47 \u00b7 AI"
+    ],
+    "shifts": [
+      {
+        "v": 0.009719969951923077,
+        "t": 1002.7999999999884
+      },
+      {
+        "v": 4.1538461538461544e-07,
+        "t": 5675.799999999988
+      },
+      {
+        "v": 4.6153846153846156e-07,
+        "t": 6677.5
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "brands",
+    "mode": "terminal",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "THE TAPE\ni",
+      "SEEN ONCE OR ALTERNATING\ni",
+      "SECTOR GRID\ni",
+      "AI \u00b7 TAGS \u00b7 289 / 300 TAGGED\ni",
+      "AI \u00b7 PRICING\ni",
+      "AI \u00b7 FEATURE THEMES\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.0009493496794871795,
+        "t": 427.5
+      },
+      {
+        "v": 4.1538461538461544e-07,
+        "t": 6812.399999999965
+      }
+    ],
+    "overflow": false,
+    "marks": [
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      },
+      {
+        "size": 16,
+        "image": true
+      }
+    ]
+  },
+  {
+    "page": "netlify",
+    "mode": "terminal",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Netlify \u2014 data \u00b7 slug",
+    "headings": [
+      "",
+      "Netlify",
+      "FINGERPRINT \u00b7 HOME / DESKTOP\ni",
+      "AI \u00b7 TAGS\ni",
+      "AI \u00b7 PRICING",
+      "AI \u00b7 CHANGELOG",
+      "AI \u00b7 PRODUCT FEATURES",
+      "WIREFRAME\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.0005692020833333334,
+        "t": 1346.6999999999534
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "signals",
+    "mode": "terminal",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Terminal \u2014 slug",
+    "headings": [
+      "",
+      "MODEL CARD\ni",
+      "NEXT WAVE \u00b7 HEADLINE \u00b7 TOP 15 \u00b7 ALL SECTORS\ni",
+      "STAGE BOARD \u00b7 HEADLINE \u00b7 ALL SECTORS\ni",
+      "TRENDSETTERS \u00b7 TOP 20 \u00b7 ALL SECTORS\ni",
+      "LEAD\u2013LAG \u00b7 FIRST QUARTER \u226510% BY SECTOR\ni",
+      "CHART OF THE WEEK \u00b7 2026-W47\ni",
+      "BRIEF \u00b7 2026-W47 \u00b7 AI VIA LOVABLE AI\ni"
+    ],
+    "shifts": [
+      {
+        "v": 0.0019120334134615385,
+        "t": 2105.5999999999767
+      },
+      {
+        "v": 0.06085275,
+        "t": 4108.399999999965
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "studies",
+    "mode": "terminal",
+    "width": 390,
+    "status": 200,
+    "errors": [],
+    "title": "Studies \u2014 longer answers, built from five years of captures \u00b7 slug",
+    "headings": [
+      "LONGER ANSWERS, BUILT FROM FIVE YEARS OF CAPTURES",
+      "SOFTWARE HOMEPAGES PUT AI UP FRONT",
+      "ALL STUDIES",
+      "IN THE WORKS"
+    ],
+    "shifts": [
+      {
+        "v": 5.8218749999999995e-05,
+        "t": 333.79999999998836
+      },
+      {
+        "v": 0.0006106024038461538,
+        "t": 1299.100000000035
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  },
+  {
+    "page": "study",
+    "mode": "terminal",
+    "width": 390,
+    "status": 200,
+    "errors": [
+      "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <main id=\"tk-main\" aria-label=\"Study data\" className=\"library mi...\" data-tsd-source=\"/src/compo...\">\n      <StudyData slug=\"the-colour...\" data-tsd-source=\"/src/route...\">\n        <Later id=\"study-data...\" shapes={[...]} data-tsd-source=\"/src/compo...\">\n          <QueryErrorResetBoundary data-tsd-source=\"/src/compo...\">\n            <Catch onReset={function onReset} waiting={<div>} failed={function failed} data-tsd-source=\"/src/compo...\">\n              <Suspense fallback={<div>} data-tsd-source=\"/src/compo...\">\n                <Ready id=\"study-data...\" className={undefined} data-tsd-source=\"/src/compo...\">\n                  <div ref={{current:null}} data-later=\"\" data-later-ready=\"\" id=\"study-data...\" className={undefined} ...>\n                    <StudyDataBody slug=\"the-colour...\" data-tsd-source=\"/src/compo...\">\n                      <Band>\n                      <Band>\n                      <Band title=\"THE CHECK ...\" data-tsd-source=\"/src/compo...\">\n                        <LibraryBand title=\"THE CHECK ...\" data-tsd-source=\"/src/compo...\">\n                          <section className=\"min-w-0 sh...\" data-tsd-source=\"/src/compo...\">\n                            <h2>\n                            <p\n+                             className=\"p-3\"\n-                             className=\"p-3 text-compare-muted\"\n+                             data-tsd-source=\"/src/components/dataview/Views.tsx:180:9\"\n-                             data-tsd-source=\"/src/components/dataview/Views.tsx:35:54\"\n                            >\n+                             Passes on current data.\n-                             Loading the check\u2026\n                            ...\n                      ...\n"
+    ],
+    "title": "Study No. 8: No App Store category is mostly one colour \u2014 data \u00b7 slug",
+    "headings": [
+      "",
+      "No. 8No App Store category is mostly one colour",
+      "FACTS SHEET",
+      "THE DATA BEHIND EACH FIGURE",
+      "THE CHECK THAT KEEPS IT LIVE",
+      "TEXT VERSIONS"
+    ],
+    "shifts": [
+      {
+        "v": 0.012778228485576922,
+        "t": 642.0999999999767
+      }
+    ],
+    "overflow": false,
+    "marks": []
+  }
+]

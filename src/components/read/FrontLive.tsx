@@ -110,9 +110,9 @@ export function LiveColumn({ initial, serverNow, sector, format, quiet, onUpdate
     {heading?.note}
     <p className="sr-only" aria-live="polite">{spoken}</p>
     {pending.length > 0 && <div className="mt-4"><Sticker onClick={insert} data-pop="">{newStoriesText(pending.length)} · show {pending.length === 1 ? "it" : "them"}</Sticker></div>}
-    {groups.length ? groups.map(g => <section key={g.id} aria-labelledby={single ? heading!.id : `fg-${g.id}`} className="mt-6">
+    {groups.length ? groups.map(g => <section key={g.id} aria-labelledby={single ? heading!.id : `fg-${g.id}`} className="mt-[var(--sys-gap-heading)]">
       {!single && <h3 id={`fg-${g.id}`} className="ed-kicker">{g.title} <span className="ed-muted">· {g.items.length}</span></h3>}
-      <ul className="ledger mt-2" data-ledger="">{g.items.map(s => [since?.beforeId === s.id ? marker : null, <LiveItem key={s.id} s={s} now={now} drop={s.id === dropId} digits={ledgerDigits(g.items.map(x => x.number))} />])}</ul>
+      <ul className="ledger mt-[var(--sys-gap-heading)]" data-ledger="">{g.items.map(s => [since?.beforeId === s.id ? marker : null, <LiveItem key={s.id} s={s} now={now} drop={s.id === dropId} digits={ledgerDigits(g.items.map(x => x.number))} />])}</ul>
     </section>) : <p className="ed-small mt-4">{empty}</p>}
     {since && since.beforeId === null && flat.length > 0 && <ul className="mt-2">{marker}</ul>}
   </div>;

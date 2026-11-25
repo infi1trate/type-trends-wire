@@ -24,7 +24,7 @@ export function Receipt({ href, children, drawer, receipt, onClick, ...rest }: {
 export function StoryCard({ s, lead = false, tour }: { s: Story; lead?: boolean; tour?: string | undefined }) {
   return <article className={lead ? "" : "ed-hair pt-4"} data-tour={tour}>
     <p className="ed-kicker flex flex-wrap items-center gap-2">{s.kicker}</p>
-    <h3 className={`${lead ? "ed-h1" : "ed-h3"} mt-2`}><Receipt href={s.evidence} className="no-underline hover:underline">{s.headline}</Receipt></h3>
+    <h3 className={`${lead ? "ed-h1" : "ed-row-headline"} mt-2`}><Receipt href={s.evidence} className="no-underline hover:underline">{s.headline}</Receipt></h3>
     {s.deck && <p className={`${lead ? "ed-standfirst mt-4" : "ed-small mt-2"}`}>{s.deck}</p>}
     <p className="ed-data ed-muted mt-2 flex flex-wrap gap-x-3">{s.number != null && <span>{numberLabel(s.number)}</span>}<time dateTime={s.at}>{storyTime(s.at)}</time>{s.corrected && <span>Corrected {s.corrected.slice(0, 10)}</span>}<Receipt href={s.evidence} className="ed-tap" drawer>{s.evidence.startsWith("/") ? "Receipts →" : "Source ↗"}</Receipt></p>
   </article>;

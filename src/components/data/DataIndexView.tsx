@@ -7,6 +7,7 @@ import { DigestShell } from "@/components/digest/Editorial";
 import { ReadFooter } from "@/components/read/Bits";
 import { StoryNo } from "@/components/brand/Ledger";
 import { FiltersScope, Trail } from "@/components/brand/Illustration";
+import { FigureNumber } from "@/components/brand/FigureNumber";
 import { line as voiced } from "@/lib/voice";
 
 export const STUDIES_TITLE = "Longer answers, built from five years of captures";
@@ -20,7 +21,7 @@ function Lead({ s }: { s: HomeStudy }) {
       <p className="ed-kicker">{`${s.seriesTitle} · ${s.label}`}</p>
       <h2 id="studies-lead" className="ed-h1 mt-3 max-w-[22ch] break-words"><Link to="/data/$slug" params={{ slug: s.slug }} className="no-underline hover:underline">{s.headline}</Link></h2>
       <p className="ed-standfirst mt-4 max-w-[60ch]">{s.deck}</p>
-      <p className="mt-6"><span className="ed-stat block" data-key-figure="">{s.key.n}</span><span className="ed-small mt-1 block max-w-[40ch]">{s.key.label}</span></p>
+      <p className="mt-6"><span className="ed-stat block" data-key-figure=""><FigureNumber text={String(s.key.n)} /></span><span className="ed-small mt-1 block max-w-[40ch]">{s.key.label}</span></p>
       <p className="ed-data mt-6"><Link to="/data/$slug" params={{ slug: s.slug }} className="ed-tap inline-flex min-h-[44px] items-center">Read the study →</Link></p>
     </div>
   </section>;
@@ -31,7 +32,7 @@ function StudyCard({ x }: { x: HomeStudy & { seriesTitle: string } }) {
   return <li className="min-w-0" data-study-card={x.slug}>
     <Link to="/data/$slug" params={{ slug: x.slug }} className="study-card">
       <span className="ed-kicker block">{x.seriesTitle}</span>
-      <span className="study-card-title mt-2"><StoryNo n={x.number} /><span className="ed-h3">{x.headline}</span></span>
+      <span className="study-card-title mt-2"><StoryNo n={x.number} /><span className="ed-row-headline">{x.headline}</span></span>
       <span className="ed-small study-card-q mt-2 block">{x.question}</span>
       <span className="study-card-pic mt-3"><img src={`/data/${x.slug}.png`} alt="" width={1200} height={630} loading="lazy" decoding="async" /></span>
       {x.dataThrough && <span className="ed-data mt-2 block">{`Data through ${dayText(x.dataThrough)}`}</span>}

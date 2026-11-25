@@ -3,6 +3,7 @@
 // script runs) everything is already in place and readable; motion only ever replays toward that frame.
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { MotionLock, MOTION_MS, arriveMs, countFrame, motionAllowed } from "@/lib/motion";
+import { FigureNumber } from "./FigureNumber";
 import { Wordmark } from "./Wordmark";
 
 /** The page's one lock: a second animation that wants to start while another plays simply rests on its last frame. */
@@ -49,8 +50,8 @@ export function Count({ text, className = "" }: { text: string; className?: stri
   // way to "8.5%") can never pull the unit beside it up a line and back: the roll moves no layout.
   const rolling = shown !== text;
   return <span ref={ref} className={`relative inline-block ${className}`} data-motion-pattern="count"><span className="sr-only">{text}</span>
-    <span aria-hidden="true" className={rolling ? "invisible" : undefined}>{text}</span>
-    {rolling && <span aria-hidden="true" className="absolute left-0 top-0 whitespace-nowrap" data-count-frame="">{shown}</span>}
+    <span aria-hidden="true" className={rolling ? "invisible" : undefined}><FigureNumber text={text} /></span>
+    {rolling && <span aria-hidden="true" className="absolute left-0 top-0 whitespace-nowrap" data-count-frame=""><FigureNumber text={shown} /></span>}
   </span>;
 }
 

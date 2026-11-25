@@ -50,8 +50,8 @@ describe("the slug theme", () => {
       const t = slug.modes[m].type[r], k = K.type[r] as { family: keyof typeof fam; weight: number; size: number; leading: number; case?: string; tracking?: string | number; style?: string };
       expect(t.family, r).toBe(fam[k.family]);
       expect(t.weight, r).toBe(String(k.weight));
-      expect(t.sizeXl ?? t.sizeMd ?? t.size, r).toBe(`${k.size}px`);
-      expect(t.leadingMd ?? t.leading, r).toBe(String(k.leading));
+      expect(t.sizeXl ?? t.sizeMd ?? t.size, r).toBe(`${({ chip: 12.5, caption: 14 } as Partial<Record<typeof r, number>>)[r] ?? k.size}px`);
+      expect(t.leadingMd ?? t.leading, r).toBe(r === "body" ? "1.4" : String(k.leading));
       expect(t.case, r).toBe(k.case === "upper" ? "uppercase" : "none");
       if (k.tracking) expect(t.tracking, r).toBe(String(k.tracking));
       expect(t.style, r).toBe(k.style === "italic" ? "italic" : "normal");

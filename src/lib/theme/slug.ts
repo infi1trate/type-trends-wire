@@ -46,16 +46,16 @@ const readTypeOf = (trk: string): Record<TypeRoleName, TypeRole> => ({
   deck: kit("deck", { base: 20, md: 23 }),
   // CHOSEN: a lead paragraph between Deck and Body.
   "body-lg": role("text", "400", "20px", "1.4", { sizeMd: "22px" }),
-  body: kit("body", { base: 17 }),
+  body: { ...kit("body", { base: 17 }), leading: "1.4", leadingMd: "1.4" },
   // CHOSEN: card decks and notes, between Body and Caption.
-  small: role("text", "400", "16px", "1.45"),
-  caption: kit("caption"),
+  small: role("text", "400", "16px", "1.4", { sizeMd: "17px" }),
+  caption: { ...kit("caption"), size: "14px" },
   quote: kit("quote", { base: 24, md: 30 }),
   figure: kit("figure", { base: 56, md: 72 }),
   // CHOSEN: a second figure size (H2 scale) for stat rows.
   stat: role("display", "900", "32px", "0.95", { sizeMd: "44px", case: "uppercase", numeric: "tabular-nums" }),
   data: kit("data"),
-  chip: kit("chip"),
+  chip: { ...kit("chip"), size: "12.5px" },
   // CHOSEN: specimens render a measured font in its own face; the fallback is the text face.
   specimen: role("text", "400", "clamp(36px, 7vw, 72px)", "1.05"),
 });
@@ -69,12 +69,12 @@ const terminalTypeOf = (trk: string): Record<TypeRoleName, TypeRole> => ({
   h3: role("display", "900", "16px", "1.1", { case: "uppercase", tracking: trk }),
   h4: role("display", "700", "13px", "16px", caps),
   kicker: role("display", "700", "13px", "16px", caps),
-  chip: role("display", "700", "11px", "14px", caps),
+  chip: role("display", "700", "12px", "14px", caps),
   deck: role("text", "400", "15px", "1.4"),
   "body-lg": role("mono", "400", "16px", "20px"),
   body: role("mono", "400", "13px", "1.5", { numeric: "tabular-nums" }),
   small: role("text", "400", "14px", "1.45"),
-  caption: role("mono", "400", "11px", "16px", { numeric: "tabular-nums" }),
+  caption: role("mono", "400", "12px", "16px", { numeric: "tabular-nums" }),
   quote: role("text", "400", "15px", "1.4", { style: "italic" }),
   figure: role("display", "900", "48px", "0.9", { numeric: "tabular-nums" }),
   stat: role("display", "900", "32px", "0.95", { numeric: "tabular-nums" }),

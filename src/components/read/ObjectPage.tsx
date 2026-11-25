@@ -24,4 +24,4 @@ export function ObjectPage({ kind, id, blocks, quiet = false }: { kind: ObjectTy
 }
 /** A sub-heading inside a block. */
 export const BlockPart = ({ title, kicker, children }: { title: string; kicker?: string | undefined; children: ReactNode }) =>
-  <div className="mt-10 first:mt-0"><h3 className="ed-kicker">{title}</h3>{kicker && <p className="ed-caption mt-1 max-w-[72ch]">{kicker}</p>}<div className="mt-3">{children}</div></div>;
+  <div className="mt-[var(--sys-gap-section)] first:mt-0"><h3 className="ed-kicker">{title}</h3>{kicker && <p className="ed-caption mt-1 max-w-[72ch]">{kicker}</p>}<div className="mt-[var(--sys-gap-heading)]">{children}</div></div>;

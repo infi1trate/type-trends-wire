@@ -7,7 +7,7 @@
 import { flatten, type Mode, type Theme, type TypeRoleName } from "./contract";
 // L1 · section gaps, the accent role and the chart weights are living settings: their values come from the register.
 import { LIVE_VALUES } from "../living/editions";
-import { PALETTE, chartWeights, sectionGap, type LivingValues } from "../living/settings";
+import { PALETTE, SETTINGS, chartWeights, sectionGap, type LivingValues } from "../living/settings";
 
 export const SYSTEM_VIEWS = ["read", "data", "cover"] as const;
 export type SystemView = (typeof SYSTEM_VIEWS)[number];
@@ -53,6 +53,7 @@ export type TypeValue = { family: "display" | "text" | "mono"; weight: string; s
 const READING_MEASURE = "68ch";
 
 export type SystemTokens = {
+  editorial: { rowSize: string; rowSizeMd: string; rowLeading: string; rowWeight: string; numberSize: string; numberSizeMd: string; headingGap: string; section: { base: string; lg: string }; deckMeasure: string; percentSize: string };
   mark: { sizes: readonly number[]; smallPadding: string; largePadding: string; border: string; tapeRow: string };
   theme: string;
   color: Record<ColorRole, { what: string } & Record<SystemView, string>>;
@@ -65,6 +66,12 @@ export type SystemTokens = {
 
 /** The design system of a theme: every named value, Read and Data side by side. */
 /** `values`: the living settings (L1); the live site passes nothing and gets LIVE_VALUES, the edition gate passes a proposal. */
+/** A2's requested 56px gap is snapped to the existing register, without changing an edition or its limits. */
+function nearestReadDensity() {
+  const s = SETTINGS.density;
+  if (s.kind !== "number") return LIVE_VALUES.density;
+  return Math.max(s.floor, Math.min(s.ceiling, s.floor + Math.round((56 / 13 - s.floor) / s.step) * s.step));
+}
 export function systemOf(theme: Theme, values: LivingValues = LIVE_VALUES): SystemTokens {
   const flat = Object.fromEntries(SYSTEM_VIEWS.map(v => [v, flatten(theme, VIEW_MODE[v])])) as Record<SystemView, Record<string, string>>;
   const color = Object.fromEntries(COLOR_ROLES.map(r => { const s = COLOR_SOURCE[r]; return [r, { what: s.what, read: flat.read[s.read]!, data: flat.data[s.data]!, cover: flat.cover[s.cover]! }]; })) as SystemTokens["color"];
@@ -79,6 +86,7 @@ export function systemOf(theme: Theme, values: LivingValues = LIVE_VALUES): Syst
   const type = Object.fromEntries(TYPE_STEPS.map(s => [s, { role: STEP_ROLE[s], read: typeOf(s, "read"), data: typeOf(s, "data"), cover: typeOf(s, "cover") }])) as SystemTokens["type"];
   const sh = theme.shared, m = sh.motion;
   return {
+    editorial: { rowSize: "18px", rowSizeMd: "20px", rowLeading: "1.25", rowWeight: "600", numberSize: "14px", numberSizeMd: "16px", headingGap: "16px", section: sectionGap(nearestReadDensity()), deckMeasure: "62ch", percentSize: "0.55em" },
     mark: { sizes: [20, 28, 32, 48, 56, 72], smallPadding: "2px", largePadding: "6px", border: "1px", tapeRow: "52px" },
     theme: theme.name, color, type,
     font: { display: flat.read["--tk-font-display"]!, text: flat.read["--tk-font-text"]!, mono: flat.read["--tk-font-mono"]! },
@@ -111,7 +119,13 @@ export function systemVars(sys: SystemTokens, view: SystemView): Record<string, 
   out["--sys-mark-paper"] = sys.color.page.read; out["--sys-mark-ink"] = sys.color.ink.read;
   out["--sys-font-display"] = sys.font.display; out["--sys-font-text"] = sys.font.text; out["--sys-font-mono"] = sys.font.mono;
   for (const [k, v] of Object.entries(sys.space.scale)) out[`--sys-space-${k}`] = v;
-  out["--sys-gap-section"] = sys.space.section.base; out["--sys-gutter"] = sys.space.gutter; out["--sys-tap"] = sys.space.tap;
+  const ed = sys.editorial;
+  out["--sys-text-row-size"] = view === "read" ? ed.rowSize : sys.type.small[view].size;
+  out["--sys-text-row-leading"] = ed.rowLeading; out["--sys-text-row-weight"] = ed.rowWeight;
+  out["--sys-text-row-number-size"] = view === "read" ? ed.numberSize : sys.type.kicker[view].size;
+  out["--sys-gap-heading"] = ed.headingGap; out["--sys-deck-measure"] = ed.deckMeasure;
+  out["--sys-figure-percent-size"] = ed.percentSize;
+  out["--sys-gap-section"] = view === "read" ? ed.section.base : sys.space.section.base; out["--sys-gutter"] = sys.space.gutter; out["--sys-tap"] = sys.space.tap;
   out["--sys-radius"] = sys.shape.radius.sm; out["--sys-radius-round"] = sys.shape.radius.sticker;
   out["--sys-rule-hairline"] = sys.shape.rule.hairline; out["--sys-rule-strong"] = sys.shape.rule.strong; out["--sys-measure"] = sys.shape.measure; out["--sys-chart-grid"] = String(sys.shape.chart.grid);
   for (const [k, v] of Object.entries(sys.motion.duration)) out[`--sys-motion-${k}`] = v;
@@ -121,7 +135,8 @@ export function systemVars(sys: SystemTokens, view: SystemView): Record<string, 
 /** Properties that change at a breakpoint for one view (type steps at md 768 px and xl 1440 px; section gap and gutter at 1024 px). */
 export function systemSteps(sys: SystemTokens, view: SystemView, bp: "md" | "lg" | "xl"): Record<string, string> {
   const out: Record<string, string> = {};
-  if (bp === "lg") { out["--sys-gap-section"] = sys.space.section.lg; out["--sys-gutter"] = sys.space.gutterLg; return out; }
+  if (bp === "lg") { out["--sys-gap-section"] = view === "read" ? sys.editorial.section.lg : sys.space.section.lg; out["--sys-gutter"] = sys.space.gutterLg; return out; }
+  if (bp === "md" && view === "read") { out["--sys-text-row-size"] = sys.editorial.rowSizeMd; out["--sys-text-row-number-size"] = sys.editorial.numberSizeMd; }
   for (const s of TYPE_STEPS) {
     const t = sys.type[s][view];
     if (bp === "md" && t.sizeMd) out[sysText(s, "size")] = t.sizeMd;

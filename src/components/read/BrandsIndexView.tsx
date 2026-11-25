@@ -45,7 +45,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       <Link to="/brands" search={brandsSearch({ ...v, tab: "directory" })} aria-current={v.tab === "directory" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "directory" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Directory <span className="ed-muted">{idx.rows.length}</span></Link>
       <Link to="/brands" search={brandsSearch({ ...v, tab: "moves" })} aria-current={v.tab === "moves" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "moves" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Moves <span className="ed-muted">{moves.length}</span></Link>
     </ScrollRow></nav>
-    {v.tab === "directory" && band.length >= 3 && <section aria-labelledby="brands-moved" className="ed-wrap mt-8" data-moved-band="">
+    {v.tab === "directory" && band.length >= 3 && <section aria-labelledby="brands-moved" className="ed-wrap mt-[var(--sys-gap-section)]" data-moved-band="">
       <h2 id="brands-moved" className="ed-kicker">Moved this week</h2>
       <ul className="moved-band mt-3">{band.map((m, i) => { const x = siteOf.get(m.domain), name = x?.name ?? m.domain; return <li key={m.domain}>
         <Link to="/brands/$domain" params={{ domain: m.domain }} className="moved-card" aria-label={`${name}: ${moveAfterName(m.headline, name, m.domain)}`}>
@@ -55,7 +55,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
         </Link></li>; })}</ul>
       <p className="ed-caption mt-2">First screens as captured; each links to the brand.</p>
     </section>}
-    {v.tab === "directory" ? <section aria-label="Brand directory" className="ed-wrap mt-6">
+    {v.tab === "directory" ? <section aria-label="Brand directory" className="ed-wrap mt-[var(--sys-gap-section)]">
       <RuleBox className="p-4">
         <form role="search" method="get" action="/brands" className="flex flex-col gap-3 md:flex-row md:items-end" onSubmit={e => { e.preventDefault(); go(v); }}>
           <div className="flex min-w-0 flex-1 flex-col gap-1"><label htmlFor="brands-q" className="ed-kicker">Search the tracked brands</label>
@@ -85,7 +85,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
             </Link></li>; })}</ul>
           {!all && !more && idx.rows.length > BRANDS_FIRST && <p className="ed-data mt-4"><Link to="/brands" search={{ ...brandsSearch(v), all: "1" }} resetScroll={false} className="c-raised ed-kicker no-underline" data-container="raised" data-show-all=""
             onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-brand-tile]")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}
-    </section> : <section aria-label="Recent moves" className="ed-wrap mt-6">
+    </section> : <section aria-label="Recent moves" className="ed-wrap mt-[var(--sys-gap-section)]">
       <p className="ed-caption">Confirmed changes (two captures agree) and rebrands in the last 30 days, newest first.</p>
       {moves.length ? <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 lg:grid-cols-3">{moves.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-body mt-4">No confirmed move{v.sector !== "all" ? ` in ${sectorName(v.sector)}` : ""} in the last 30 days. Moves land here as soon as two captures agree on a change.</p>}
     </section>}

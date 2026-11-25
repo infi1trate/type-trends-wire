@@ -1,7 +1,8 @@
 # A1 + A2 · Brand marks, type and space (25 Nov)
-- [ ] A1 Shared fixed-scale marks, neutral fallback, all brand lists; before pictures
-- [ ] A2 Token floors, row headlines, percentage signs, section rhythm
-- [ ] Proof at 390/768/1440 in Read and Terminal; CLS comparison; full tests; report; no deployment
+- [x] A1 Shared fixed-scale marks, neutral fallback, existing mark call sites and targeted brand lists; before pictures
+- [x] A2 Token floors, row headlines, display percentage signs and shared section rhythm
+- [x] Proof at 390/768/1440 in both available views; full tests and report; not deployed
+- [ ] Release sign-off: CLS non-regression not established; further matched measurements needed (report names remaining visual audit gaps)
 
 # Phase E3 · The front page and the navigation
 
