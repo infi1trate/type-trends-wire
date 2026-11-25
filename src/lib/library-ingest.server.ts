@@ -78,6 +78,11 @@ function syncStore(): import("./library-sync").SyncStore {
       const out: string[] = [];
       for (let from = 0; ; from += 1000) { const { data, error } = await db.from("library_sites").select("domain").eq("onboarding", true).order("domain").range(from, from + 999); if (error) fail("Onboarding read failed"); out.push(...(data ?? []).map(r => r.domain)); if ((data ?? []).length < 1000) return out; }
     },
+    async activeDomains() {
+      const out: string[] = [];
+      for (let from = 0; ; from += 1000) { const { data, error } = await db.from("library_sites").select("domain").eq("active", true).order("domain").range(from, from + 999); if (error) fail("Active read failed"); out.push(...(data ?? []).map(r => r.domain)); if (!data || data.length < 1000) break; }
+      return out;
+    },
     async insertOnboarding(rows) { for (let i = 0; i < rows.length; i += 200) { const { error } = await db.from("library_sites").insert(rows.slice(i, i + 200).map(r => ({ ...r }))); if (error) fail("Onboarding insert failed"); } },
     async updateOnboarding(domain, patch) { const { error } = await db.from("library_sites").update(patch).eq("domain", domain).is("panel_since", null); if (error) fail("Onboarding update failed"); },
     async clearOnboarding(domains) { for (let i = 0; i < domains.length; i += 200) { const { error } = await db.from("library_sites").update({ onboarding: false }).in("domain", domains.slice(i, i + 200)).eq("onboarding", true); if (error) fail("Onboarding clear failed"); } },

@@ -8,6 +8,7 @@ function memory(rows: Row[]) {
   const store: SyncStore = {
     async read(ds) { expect(ds.length).toBeLessThanOrEqual(200); return ds.flatMap(d => (db.has(d) ? [db.get(d)!] : [])); },
     async onboardingDomains() { return [...db.values()].filter(r => r.onboarding).map(r => r.domain); },
+    async activeDomains() { return [...db.values()].filter(r => r.active).map(r => r.domain); },
     async insertOnboarding(rs) { for (const r of rs) db.set(r.domain, { ...r }); },
     async updateOnboarding(d, p) { Object.assign(db.get(d)!, p); },
     async clearOnboarding(ds) { for (const d of ds) db.get(d)!.onboarding = false; },
@@ -63,5 +64,18 @@ describe("R2a-2 sync split", () => {
     const m = memory(panel);
     await splitSync(m.store, payload, () => ({ category: "c", subcategory: "s" }));
     expect(m.db.get("n1.com")).toMatchObject({ category: "c", subcategory: "s", name: "N1" });
+  });
+  it("a list that would switch off many brands at once is refused and writes nothing; a handful of removals pass", async () => {
+    const m = memory(panel);
+    // A short read or a wrong file: only 250 of the 300 panel brands arrive.
+    const short = await splitSync(m.store, payload.filter(s => !/^p(2[5-9]\d)\.com$/.test(s.domain)), none);
+    expect(short).toMatchObject({ ok: false, error: expect.stringContaining("50 of 300") });
+    expect(m.rpcCalls.length).toBe(0);
+    expect([...m.db.values()].filter(r => r.active).length).toBe(300);
+    expect([...m.db.values()].some(r => r.onboarding)).toBe(false);
+    // Ten removals are a decision, not an accident.
+    const ten = await splitSync(m.store, payload.filter(s => !/^p(29\d)\.com$/.test(s.domain)), none);
+    expect(ten).toMatchObject({ ok: true, panel: 290 });
+    expect([...m.db.values()].filter(r => r.active).length).toBe(290);
   });
 });

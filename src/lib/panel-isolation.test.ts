@@ -72,6 +72,7 @@ describe("R2a-2 · one onboarding brand, with snapshots and events, appears nowh
     const db = new Map(sites.map(s => [s.domain, { ...s, sector: s.sector, active: s.active ?? null, onboarding: !!s.onboarding, panel_since: s.panel_since ?? null }]));
     const store: SyncStore = {
       async read(ds) { return ds.flatMap(d => (db.has(d) ? [db.get(d)!] : [])); }, async onboardingDomains() { return [...db.values()].filter(r => r.onboarding).map(r => r.domain); },
+      async activeDomains() { return [...db.values()].filter(r => r.active).map(r => r.domain); },
       async insertOnboarding() {}, async updateOnboarding(d, p) { Object.assign(db.get(d)!, p); }, async clearOnboarding() {},
       async rpcSync(list) { for (const s of list) db.get(s.domain)!.active = true; },
     };
