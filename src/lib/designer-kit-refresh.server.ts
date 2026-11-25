@@ -1,3 +1,4 @@
+import type { BrandTag } from "./brand-page";
 import { forecastSiteTraits, type SiteRow } from "./forecast-signals";
 import { classOf } from "./categories";
 import { plainFace, type Face } from "./brand-page";
@@ -51,7 +52,7 @@ export async function refreshDesignerKit(): Promise<{ ok: boolean; brands: numbe
     const desktop=latest.get(`${s.domain}|desktop`), phone=latest.get(`${s.domain}|mobile`);
     const traits=[...new Set([...traitsFor(h), ...[desktop,phone].flatMap(r=>r?Object.entries(r.flags).filter(([k,v])=>v===true&&STRUCTURE_BY_KEY.get(k)?.viewports.includes(r.viewport)).map(([k])=>k):[])])];
     const h1=face("h1",h.h1_family??null,h.h1_size_px??null), body=face("body",h.body_family,null);
-    const tags = traits.flatMap(key => { const kind = key.split(":")[0]; return kind === "aesthetic" || kind === "imagery" || kind === "tone" || kind === "theme" ? [{ key, name: label(key).name, basis: basis(key), kind }] : []; });
+    const tags = traits.flatMap(key => { const kind = key.split(":")[0]; return kind === "aesthetic" || kind === "imagery" || kind === "tone" || kind === "theme" ? [{ key, name: label(key).name, basis: basis(key), kind: kind as BrandTag["kind"] }] : []; });
     const last=changes.stories.filter(c=>c.domains.includes(s.domain)).sort((a,b)=>b.at.localeCompare(a.at))[0];
     return [{name:s.name??s.domain,domain:s.domain,sector:s.sector,...classOf(s),headline:h1?.family??null,body:body?.family??null,theme:h.theme??null,accent:h.accent,ask:desktop?.record.primary_ask??null,captured:h.captured_at,identity:{h1,body,theme:h.theme??null,accent:h.accent?{hex:h.accent,name:h.accent}:null,palette,tags,layout:[],receipt:`/brands/${s.domain}?view=data`},traits,firstSeen:first.get(s.domain)??{},structure:desktop?.record??null,phone:phone?.record??null,lastChange:last?{at:last.at,text:last.headline}:s.last_change_at?{at:s.last_change_at,text:"Latest recorded change"}:null,collections:COLLECTIONS.filter(c=>(!c.filter.sectors.length||c.filter.sectors.includes(s.sector))&&(!c.filter.pattern||history.some(x=>x.domain===s.domain&&traitsFor(x).includes(c.filter.pattern??"")))&&(!c.filter.changed||!!s.last_change_at&&Date.parse(s.last_change_at)>=Date.now()-c.filter.changed*864e5)).map(c=>c.slug)}];
   });
