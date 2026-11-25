@@ -1144,7 +1144,7 @@ html:active-view-transition-type(cut)::view-transition-group(shell-top) { animat
 html:active-view-transition-type(cut)::view-transition-old(ed-main) { animation: slug-fade-in 160ms linear reverse both; }
 html:active-view-transition-type(cut)::view-transition-new(ed-main) { animation: slug-fade-in 160ms linear both; }
 html:active-view-transition-type(cut)::view-transition-group(ed-main) { animation-duration: 160ms; }
-@keyframes slug-fade-in { from { opacity: 0; } to { opacity: 1; filter: none; } }
+@keyframes slug-fade-in { from { opacity: 0; } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
