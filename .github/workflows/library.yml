@@ -21,6 +21,9 @@ on:
       vanguard:
         description: "1 = full mode on the vanguard list only"
         default: "0"
+      force_home:
+        description: "1 = store every home snapshot even if unchanged (fills a newly added reading, e.g. structure)"
+        default: "0"
 # Hourly slices queue among themselves; the long full runs queue among themselves. A slice may overlap a full run: it only
 # refetches server HTML for about a dozen sites.
 concurrency: { group: "library-${{ github.event.schedule == '41 * * * *' && 'slice' || 'full' }}", cancel-in-progress: false }
@@ -53,6 +56,7 @@ jobs:
           VANGUARD: ${{ inputs.vanguard || (github.event.schedule == '17 7 * * *' && '1' || '0') }}
           LIMIT: ${{ inputs.limit || '0' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
+          LIBRARY_FORCE_HOME: ${{ inputs.force_home || '0' }}
           CONCURRENCY: "8"
           SLICE_INPUT: ${{ inputs.slice }}
         run: |
