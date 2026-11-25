@@ -23,5 +23,8 @@ export async function loadReferenceKit() {
     crops.push(...r.data as import("./crops").CropRow[]);
     if (r.data.length < 1000) break;
   }
-  return { rows, crops, icons: iconsFor(pics, rows.map(r => r.domain)) };
+  // Only crops of brands on the boards: the table also holds crops of brands still onboarding or no longer tracked, and
+  // everything returned here is sent to the reader's browser with the page.
+  const inKit = new Set(rows.map(r => r.domain));
+  return { rows, crops: crops.filter(c => inKit.has(c.domain)), icons: iconsFor(pics, rows.map(r => r.domain)) };
 }

@@ -7,21 +7,26 @@
 import { pathToFileURL } from "node:url";
 
 export const SECTORS = ["ai", "dev-tools", "fintech", "consumer-apps", "commerce-dtc", "media", "studios", "hardware", "health", "enterprise-saas"];
-export const FIXED = ["/", "/signals", "/brands", "/brands?view=data", "/boards", "/patterns", "/data", "/digest", "/morning", "/stories", "/terminal", "/kit",
-  "/status", "/library", "/collections", "/crops", "/thumbs", "/compare", "/tools", "/watch", "/editions", "/sectors", "/colophon", "/what-we-show",
-  "/digest.rss.xml", "/morning.rss.xml", ...SECTORS.map((s) => `/sectors/${s}`)];
+export const FIXED = ["/", "/signals", "/brands", "/brands?view=data", "/boards", "/boards?view=data", "/patterns", "/data", "/digest", "/morning", "/terminal",
+  "/status", "/collections", "/compare", "/tools", "/editions", "/sectors", "/colophon", "/what-we-show",
+  "/digest/rss.xml", "/morning/rss.xml", ...SECTORS.map((s) => `/sectors/${s}`)];
+// Tool pages that need a query to mean anything are not followed.
+const SKIP = /^\/data\/(where-you-sit|embed)(\/|$)/;
 // Sections whose own pages are worth following from their index (a handful each).
 const FOLLOW = [/^\/signals\/[^"#?]+/, /^\/boards\/[^"#?]+/, /^\/stories\/[^"#?]+/, /^\/data\/[^"#?]+/, /^\/patterns\/[^"#?]+/, /^\/collections\/[^"#?]+/];
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Pure: what one page's text says about one onboarding domain. "link" and "picture" are leaks; "mention" is the bare
+/** Pure: what one page's text says about one onboarding domain. "link", "picture" and "data" are leaks; "mention" is the bare
  *  domain somewhere else (a news item can name a company slug does not track yet), reported but not failed on. */
 export function findings(text, domain) {
   const d = esc(domain), out = [];
   if (new RegExp(`/brands/${d}(?![a-z0-9.-])`, "i").test(text) || new RegExp(`/brands/${esc(encodeURIComponent(domain))}(?![a-z0-9.%-])`, "i").test(text)) out.push("link");
   // Stored pictures carry the brand's domain as a path segment (crops, thumbnails, pictures).
   if (new RegExp(`(?:src|srcset|href|content|url)\\s*[=:(]\\s*["']?[^"'\\s>)]*/(?:crops|thumbs|pictures|assets|site-crops|site-thumbs|brand-pictures)[^"'\\s>)]*/${d}/`, "i").test(text)) out.push("picture");
+  // The page's own data naming the brand (a stored row or a stored picture's path sent along with the page), even when
+  // nothing on screen shows it: readers' browsers receive it, so it counts.
+  if (!out.length && (new RegExp(`\\\\?["']${d}\\\\?["']`, "i").test(text) || new RegExp(`(?<![a-z0-9./-])${d}/(?:[a-z-]+/)?\\d{4}-\\d{2}-\\d{2}`, "i").test(text))) out.push("data");
   if (!out.length && new RegExp(`(?<![a-z0-9.-])${d}(?![a-z0-9-]|\\.[a-z])`, "i").test(text)) out.push("mention");
   return out;
 }
@@ -30,7 +35,7 @@ export function findings(text, domain) {
 export function follow(html, perSection = 6) {
   const hrefs = [...html.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
   const out = [];
-  for (const re of FOLLOW) { const seen = new Set(); for (const h of hrefs) { const m = re.exec(h); if (m && !seen.has(m[0]) && seen.size < perSection) { seen.add(m[0]); out.push(m[0]); } } }
+  for (const re of FOLLOW) { const seen = new Set(); for (const h of hrefs) { const m = re.exec(h); if (m && !SKIP.test(m[0]) && !seen.has(m[0]) && seen.size < perSection) { seen.add(m[0]); out.push(m[0]); } } }
   return out;
 }
 

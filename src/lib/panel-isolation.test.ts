@@ -96,6 +96,9 @@ describe("lists that span brands show only brands in the library", () => {
     has("src/lib/kit.server.ts", /activeRowsOnly\(\(crops\.data \?\? \[\]\) as CropRow\[\]\)/);
     expect(readSource("src/lib/gallery.server.ts", "utf8").match(/activeRowsOnly\(out\)/g)?.length).toBe(2);
   });
+  it("the boards page sends only crops of brands on the boards", () => {
+    has("src/lib/designer-kit.server.ts", /crops: crops\.filter\(c => inKit\.has\(c\.domain\)\)/);
+  });
   it("the structure pages name only brands the share counts", () => {
     has("src/lib/structure-read.server.ts", /from\("library_sites"\)\.select\("domain,name"\)\.eq\("active", true\)/);
     has("src/lib/structure-read.server.ts", /filter\(x => nm\.has\(x\.domain\)\)/);
