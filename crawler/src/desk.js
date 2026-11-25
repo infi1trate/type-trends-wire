@@ -30,6 +30,9 @@ export function summary(status, text) {
   return `door answered ${status} ${JSON.stringify(pick)}`;
 }
 
+/** Pure: statuses with which the door answers "no" to a well-carried request. Not a failure of the carrier. */
+export const isRefusal = (status) => status === 400 || status === 409 || status === 422;
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const p = prepare(process.env.ACTOR, process.env.BODY ?? "");
   if (p.error) { console.error(`refused here: ${p.error}`); process.exit(2); }
@@ -38,7 +41,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const key = process.env.CRAWL_SECRET;
   if (!key) { console.error("no key in this run"); process.exit(2); }
   const r = await fetch(process.env.DESK_URL ?? "https://slug.global/api/public/desk", { method: "POST", headers: { authorization: `Bearer ${key}`, "content-type": "application/json" }, body: JSON.stringify(p.send) });
-  console.log(summary(r.status, await r.text()));
-  // 202 is a proposal recorded; anything else outside 2xx is a failure the caller should see.
-  process.exit(r.ok ? 0 : 1);
+  const line = summary(r.status, await r.text());
+  console.log(line);
+  // 202 is a proposal recorded. A refusal is the door doing its job (an action out of order, an owner-only step, a
+  // malformed request): the caller reads it from the line above, and the run ends green so nobody is emailed about it.
+  // What still fails the run is the door being unreachable or the key being wrong.
+  if (isRefusal(r.status)) console.log(`::notice title=The door said no::${line}`);
+  process.exit(r.ok || isRefusal(r.status) ? 0 : 1);
 }

@@ -20,6 +20,9 @@ export function healthVerdict(httpStatus, payload, checkedAt = new Date().toISOS
   }
   if (payload.status === "ok") return { state: "ok", status: "ok" };
   const bad = (payload.jobs ?? []).filter((j) => j.stale || j.last_status === "error" || (j.consecutive_failures ?? 0) > 0);
+  // A server that has just woken answers "starting" before it has looked at any job. That is no news either way:
+  // ask again in a moment, and if it is still waking, leave the issue as it is.
+  if (payload.status === "starting" && !bad.length) return { state: "wait", status: "starting" };
   const rows = bad.map((j) => `| ${j.job} | ${j.last_status ?? "—"} | ${j.last_ok_at ?? "never"} | ${j.expected_every ?? "—"} | ${j.consecutive_failures ?? 0} | ${(j.note ?? "").replace(/\|/g, "/")} |`);
   const body = [
     `Overall: **${payload.status.toUpperCase()}** (checked ${payload.checked_at ?? checkedAt})`,
@@ -33,11 +36,24 @@ export function healthVerdict(httpStatus, payload, checkedAt = new Date().toISOS
   return { state: "alert", status: payload.status, body };
 }
 
+/** Pure: GitHub itself being briefly unavailable. Asked again for reads and edits; never a reason to email anyone. */
+export const githubBusy = (status) => status === 0 || status >= 500;
+export class GithubBusy extends Error {}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function gh(path, init = {}) {
   if (DRY) { console.log("DRY", init.method ?? "GET", path, init.body ? JSON.parse(init.body).title ?? "" : ""); return init.method ? {} : []; }
-  const r = await fetch(`${API}${path}`, { ...init, headers: { authorization: `Bearer ${TOKEN}`, accept: "application/vnd.github+json", "content-type": "application/json", ...(init.headers ?? {}) } });
-  if (!r.ok) throw new Error(`GitHub ${init.method ?? "GET"} ${path} → ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  return r.status === 204 ? {} : r.json();
+  const method = init.method ?? "GET", again = method === "GET" || method === "PATCH" ? 3 : 1; // a repeated POST could open two issues
+  for (let attempt = 1; ; attempt++) {
+    let status = 0, text = "";
+    try {
+      const r = await fetch(`${API}${path}`, { ...init, headers: { authorization: `Bearer ${TOKEN}`, accept: "application/vnd.github+json", "content-type": "application/json", ...(init.headers ?? {}) }, signal: AbortSignal.timeout(20000) });
+      if (r.ok) return r.status === 204 ? {} : r.json();
+      status = r.status; text = (await r.text()).slice(0, 200);
+    } catch (e) { text = String(e?.message ?? e).slice(0, 200); }
+    if (githubBusy(status) && attempt < again) { await sleep(4000 * attempt * attempt); continue; }
+    throw new (githubBusy(status) ? GithubBusy : Error)(`GitHub ${method} ${path} → ${status || "network error"}: ${text}`);
+  }
 }
 
 async function findOpen(label, title) {
@@ -70,13 +86,20 @@ async function main() {
   if (!DRY && (!REPO || !TOKEN)) throw new Error("Set GITHUB_TOKEN and GITHUB_REPOSITORY");
   const mode = process.env.WATCH_MODE ?? "health";
   if (mode === "health") {
-    let status = 0, payload = null;
-    try {
-      const r = await fetch(process.env.HEALTH_URL ?? "https://slug.global/api/public/health", { signal: AbortSignal.timeout(20000) });
-      status = r.status; payload = r.ok ? await r.json().catch(() => null) : null;
-    } catch { status = 0; }
-    const v = healthVerdict(status, payload);
+    let v;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      let status = 0, payload = null;
+      try {
+        const r = await fetch(process.env.HEALTH_URL ?? "https://slug.global/api/public/health", { signal: AbortSignal.timeout(20000) });
+        status = r.status; payload = r.ok ? await r.json().catch(() => null) : null;
+      } catch { status = 0; }
+      v = healthVerdict(status, payload);
+      // One slow answer or a waking server is not a failure: ask again before saying anything.
+      if (!(v.state === "wait" || v.status === "unreachable") || attempt === 4 || DRY) break;
+      await sleep(20000);
+    }
     if (v.state === "skip") { console.log(v.reason); return; }
+    if (v.state === "wait") { console.log("health: the server is still starting after four tries; the issue is left as it is"); return; }
     console.log(`health: ${v.status} →`, await reconcile({ label: "health", title: HEALTH_TITLE, failing: v.state === "alert", body: v.body ?? "" }));
     return;
   }
@@ -88,4 +111,8 @@ async function main() {
   console.log(`${name}: ${conclusion} →`, await reconcile({ label: "workflow-failure", title: workflowTitle(name), failing, body }));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main().catch((e) => { console.error(e); process.exit(1); });
+if (import.meta.url === `file://${process.argv[1]}`) main().catch((e) => {
+  // GitHub's own API being down is not something this repo can fix, and the next run reconciles the issues.
+  if (e instanceof GithubBusy) { console.log(`::warning title=GitHub was busy::${e.message.slice(0, 200)}`); process.exit(0); }
+  console.error(e); process.exit(1);
+});

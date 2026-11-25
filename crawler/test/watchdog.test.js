@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { healthVerdict, workflowTitle, HEALTH_TITLE } from "../src/watchdog.js";
+import { healthVerdict, workflowTitle, HEALTH_TITLE, githubBusy } from "../src/watchdog.js";
 
 test("health verdicts", () => {
   assert.equal(healthVerdict(404, null).state, "skip");
@@ -23,4 +23,12 @@ test("health verdicts", () => {
 test("issue titles are stable", () => {
   assert.equal(HEALTH_TITLE, "slug health check failing");
   assert.equal(workflowTitle("crawl"), "Workflow failing: crawl");
+});
+
+test("a waking server is not an alert; a flagged job while starting still is; GitHub being busy is told apart", () => {
+  assert.equal(healthVerdict(200, { status: "starting", jobs: [] }).state, "wait");
+  assert.equal(healthVerdict(200, { status: "starting", jobs: [{ job: "wire", stale: true }] }).state, "alert");
+  assert.equal(healthVerdict(200, { status: "degraded", jobs: [] }).state, "alert");
+  for (const st of [0, 500, 502, 503]) assert.equal(githubBusy(st), true);
+  for (const st of [401, 403, 404, 422]) assert.equal(githubBusy(st), false);
 });

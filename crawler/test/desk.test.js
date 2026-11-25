@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DESKS, CARRIED, prepare, summary } from "../src/desk.js";
+import { DESKS, CARRIED, prepare, summary, isRefusal } from "../src/desk.js";
 
 test("desk carrier: desks only, carried actions only, the actor comes from the input", () => {
   assert.deepEqual(prepare("Standards", '{"action":"kill","id":"news:1","reason":"Not about the tracked brand"}'),
@@ -31,4 +31,9 @@ test("desk carrier: only the verdict of the door's answer is printed", () => {
   const s = summary(200, JSON.stringify({ ok: true, decision: "done", level: "ships alone", queue: [{ id: "secret-ish" }], log: ["x"], note: "internal" }));
   assert.equal(s, 'door answered 200 {"ok":"true","decision":"done","level":"ships alone"}');
   assert.equal(summary(403, "<html>nope</html>"), "door answered 403 {}");
+});
+
+test("a refusal by the door is an answer, not a failed run; a wrong key or a dead door still fails", () => {
+  for (const st of [400, 409, 422]) assert.equal(isRefusal(st), true);
+  for (const st of [200, 201, 202, 401, 403, 404, 429, 500, 502, 503]) assert.equal(isRefusal(st), false);
 });
