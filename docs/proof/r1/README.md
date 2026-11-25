@@ -4,10 +4,17 @@ Not deployed. MUSEUM_SHOWN false, ICONS_SHOWN true. Nothing in crawler/ or .gith
 
 ## Migration (8a5ff5e, applied once, exactly these statements; BEGIN/COMMIT left to the tool)
 ```sql
-ALTER TABLE public.library_sites ADD COLUMN IF NOT EXISTS category text;
-ALTER TABLE public.library_sites ADD COLUMN IF NOT EXISTS subcategory text;
-CREATE INDEX IF NOT EXISTS library_sites_sector_category_subcategory_idx ON public.library_sites (sector, category, subcategory);
--- fill of only the two new columns for the 328 mapped domains (see additive-migration.sql for the full VALUES list)
+ALTER TABLE public.library_sites
+  ADD COLUMN category text,
+  ADD COLUMN subcategory text;
+CREATE INDEX library_sites_sector_category_subcategory_idx
+  ON public.library_sites (sector, category, subcategory);
+UPDATE public.library_sites AS site
+SET category = mapped.category, subcategory = mapped.subcategory
+FROM (VALUES
+  -- 328 rows ('domain', 'category', 'subcategory'), listed in additive-migration.sql
+) AS mapped(domain, category, subcategory)
+WHERE site.domain = mapped.domain;
 ```
 Rows filled: 328 of 328 (read query after the migration). No existing column, row value, policy or grant changed. No further database change in this turn.
 
