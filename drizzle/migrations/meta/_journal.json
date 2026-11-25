@@ -722,6 +722,13 @@
       "when": 1795608343665,
       "tag": "0102_r2a_panel_entry",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1795617376596,
+      "tag": "0103_r2a_onboarding_and_archive_gaps",
+      "breakpoints": true
     }
   ]
 }

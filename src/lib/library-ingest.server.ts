@@ -19,10 +19,11 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
     // I3b: a wrong address on file is replaced by the brand's real one, so the wrong one stays inactive whatever the seeds say.
     // R2a · the RPC is unchanged and gets the fields it always got; categories are filled after it, in server code.
     const sites = correctSites(payload.sites);
-    const { error } = await db.rpc("library_sync", { p_sites: sites.map(({ category: _c, subcategory: _s, ...s }) => s) });
-    if (error) throw new Error("Library sync failed");
+    const [{ splitSync }, { fillClassification }] = await Promise.all([import("./library-sync"), import("./categories")]);
+    const res = await splitSync(syncStore(), sites, s => fillClassification({ domain: s.domain, sector: s.sector }, { ...(s.category ? { category: s.category } : {}), ...(s.subcategory ? { subcategory: s.subcategory } : {}) }));
+    if (!res.ok) return Response.json({ error: res.error }, { status: 422 });
     await fillCategories(db, sites).catch(() => undefined);
-    return Response.json({ ok: true, inserted: 0, events: 0 });
+    return Response.json({ ok: true, inserted: 0, events: 0, panel: res.panel, onboarding_new: res.onboarding_new, onboarding_kept: res.onboarding_kept, onboarding_cleared: res.onboarding_cleared });
   }
   let inserted = 0, events = 0;
   // Sort archive/backfill batches so each key compares to its immediately earlier capture.
@@ -66,4 +67,20 @@ async function fillCategories(db: { from: (t: "library_sites") => any }, sites: 
       if (fill) await db.from("library_sites").update(fill).eq("domain", r.domain).or("category.is.null,subcategory.is.null");
     }
   }
+}
+
+/** R2a-2 · the store behind splitSync: paged reads (200 domains, 1,000-row pages), the RPC unchanged. */
+function syncStore(): import("./library-sync").SyncStore {
+  const fail = (m: string) => { throw new Error(m); };
+  return {
+    async read(domains) { const { data, error } = await db.from("library_sites").select("domain,sector,active,onboarding,panel_since").in("domain", [...domains]).range(0, 999); if (error) fail("Library site read failed"); return data ?? []; },
+    async onboardingDomains() {
+      const out: string[] = [];
+      for (let from = 0; ; from += 1000) { const { data, error } = await db.from("library_sites").select("domain").eq("onboarding", true).order("domain").range(from, from + 999); if (error) fail("Onboarding read failed"); out.push(...(data ?? []).map(r => r.domain)); if ((data ?? []).length < 1000) return out; }
+    },
+    async insertOnboarding(rows) { for (let i = 0; i < rows.length; i += 200) { const { error } = await db.from("library_sites").insert(rows.slice(i, i + 200).map(r => ({ ...r }))); if (error) fail("Onboarding insert failed"); } },
+    async updateOnboarding(domain, patch) { const { error } = await db.from("library_sites").update(patch).eq("domain", domain).is("panel_since", null); if (error) fail("Onboarding update failed"); },
+    async clearOnboarding(domains) { for (let i = 0; i < domains.length; i += 200) { const { error } = await db.from("library_sites").update({ onboarding: false }).in("domain", domains.slice(i, i + 200)).eq("onboarding", true); if (error) fail("Onboarding clear failed"); } },
+    async rpcSync(sites) { const { error } = await db.rpc("library_sync", { p_sites: sites as never }); if (error) fail("Library sync failed"); },
+  };
 }

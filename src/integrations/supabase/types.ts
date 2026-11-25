@@ -2197,6 +2197,30 @@ export type Database = {
           },
         ]
       }
+      library_archive_gaps: {
+        Row: {
+          domain: string
+          noted_at: string
+          quarter: string
+          reason: string
+          run_id: string | null
+        }
+        Insert: {
+          domain: string
+          noted_at?: string
+          quarter: string
+          reason: string
+          run_id?: string | null
+        }
+        Update: {
+          domain?: string
+          noted_at?: string
+          quarter?: string
+          reason?: string
+          run_id?: string | null
+        }
+        Relationships: []
+      }
       library_baselines: {
         Row: {
           confirmed_at: string
@@ -2679,6 +2703,7 @@ export type Database = {
           last_change_at: string | null
           last_snapshot_at: string | null
           name: string | null
+          onboarding: boolean
           pages: Json | null
           panel_since: string | null
           sector: string
@@ -2693,6 +2718,7 @@ export type Database = {
           last_change_at?: string | null
           last_snapshot_at?: string | null
           name?: string | null
+          onboarding?: boolean
           pages?: Json | null
           panel_since?: string | null
           sector: string
@@ -2707,6 +2733,7 @@ export type Database = {
           last_change_at?: string | null
           last_snapshot_at?: string | null
           name?: string | null
+          onboarding?: boolean
           pages?: Json | null
           panel_since?: string | null
           sector?: string

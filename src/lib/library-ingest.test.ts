@@ -11,7 +11,23 @@ const marks = vi.hoisted(() => ({ topics: [] as string[][] }));
 vi.mock("./jobs/marks.server", () => ({ markWork: async (t: string[]) => { marks.topics.push([...t]); } }));
 vi.mock("./vanguard.server", () => ({ loadVanguard: async () => ["linear.app", "vercel.com"] }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: {
-  from() { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; },
+  from(table: string) {
+    if (table !== "library_sites") { const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { secret_sha256: state.hash }, error: null }) }; return chain; }
+    // R2a-2 · a small library_sites table for the sync split (in / eq / is filters, insert, update).
+    const f: ((r: Record<string, unknown>) => boolean)[] = []; let patch: Record<string, unknown> | null = null;
+    const run = () => { const rows = [...state.sites.values()].filter(r => f.every(x => x(r))); if (patch) for (const r of rows) Object.assign(r, patch); return { data: patch ? null : rows.map(r => ({ onboarding: false, panel_since: null, ...r })), error: null }; };
+    const chain: Record<string, unknown> = {
+      select: () => chain, order: () => chain, or: () => chain,
+      in: (k: string, v: unknown[]) => { f.push(r => v.includes(r[k])); return chain; },
+      eq: (k: string, v: unknown) => { f.push(r => (r[k] ?? false) === v); return chain; },
+      is: (k: string, v: unknown) => { f.push(r => (r[k] ?? null) === v); return chain; },
+      range: async () => run(),
+      update: (p: Record<string, unknown>) => { patch = p; return chain; },
+      insert: async (rows: Record<string, unknown>[]) => { for (const r of rows) state.sites.set(String(r["domain"]), { ...r }); return { error: null }; },
+      then: (ok: (v: unknown) => unknown) => Promise.resolve(run()).then(ok),
+    };
+    return chain;
+  },
   async rpc(name: string, args: Record<string, unknown> = {}) {
     const row = args['p_snapshot'] as Record<string, unknown>;
     const context = () => {
@@ -56,7 +72,8 @@ const request = (body: unknown) => new Request("http://localhost/api/public/inge
 const snapshot = { domain: "example.com", page_type: "home", viewport: "desktop", source: "live", captured_at: "2026-11-11T01:00:00Z", url: "https://example.com", html_hash: "hash-1", signals: { color: { theme: "light" } }, raw_text: "private text" };
 beforeEach(async () => { state.hash = await sha256Hex(credential); state.sites.clear(); state.snapshots = []; state.events = []; state.text.clear(); state.retry = false; state.baselines.clear(); });
 it("authenticated sync → snapshots → events → state, duplicates are no-op", async () => {
-  expect(await (await handleCrawlIngest(request({ kind: "library_sync", sites: [{ domain: "example.com", sector: "ai" }] }))).json()).toEqual({ ok: true, inserted: 0, events: 0 });
+  state.sites.set("example.com", { domain: "example.com", sector: "ai", active: true, panel_since: "2025-01-01T00:00:00Z" });
+  expect(await (await handleCrawlIngest(request({ kind: "library_sync", sites: [{ domain: "example.com", sector: "ai" }] }))).json()).toMatchObject({ ok: true, inserted: 0, events: 0, panel: 1 });
   const post = (value: unknown) => handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [value] }));
   expect(await (await post(snapshot)).json()).toEqual({ ok: true, inserted: 1, events: 0 });
   state.retry = true;
@@ -80,7 +97,9 @@ it("quarterly state returns only active domains and capture/quarter pairs",async
  expect(await response.json()).toEqual({sites:[{domain:"example.com",wayback:[{captured_at:"2021-04-03T00:00:00Z",quarter:"2021Q2"}]}]});
 });
 it("state rejects absent/wrong credentials with 401", async () => { for (const key of ["", "wrong"]) expect((await handleLibraryState(new Request("http://localhost/api/public/library-state", { headers: { "x-crawl-secret": key } }))).status).toBe(401); });
-it("sync deactivates omitted sites", async () => { state.sites.set("old.com", { domain: "old.com", active: true }); await handleCrawlIngest(request({ kind: "library_sync", sites: [] })); expect(state.sites.get("old.com")?.['active']).toBe(false); });
+it("sync deactivates omitted panel sites", async () => { for (const d of ["old.com", "kept.com"]) state.sites.set(d, { domain: d, sector: "ai", active: true, panel_since: "2025-01-01T00:00:00Z" }); await handleCrawlIngest(request({ kind: "library_sync", sites: [{ domain: "kept.com", sector: "ai" }] })); expect(state.sites.get("old.com")?.['active']).toBe(false); expect(state.sites.get("kept.com")?.['active']).toBe(true); });
+it("R2a-2 · a sync with no panel row is refused and the library stays active", async () => { state.sites.set("old.com", { domain: "old.com", sector: "ai", active: true, panel_since: "2025-01-01T00:00:00Z" }); const res = await handleCrawlIngest(request({ kind: "library_sync", sites: [{ domain: "brand-new.com", sector: "ai" }] })); expect(res.status).toBe(422); expect(state.sites.get("old.com")?.['active']).toBe(true); expect(state.sites.has("brand-new.com")).toBe(false); });
+it("R2a-2 · a new domain is stored inactive and onboarding, never through the RPC", async () => { state.sites.set("old.com", { domain: "old.com", sector: "ai", active: true, panel_since: "2025-01-01T00:00:00Z" }); await handleCrawlIngest(request({ kind: "library_sync", sites: [{ domain: "old.com", sector: "ai" }, { domain: "brand-new.com", sector: "ai" }] })); expect(state.sites.get("brand-new.com")).toMatchObject({ active: false, onboarding: true, panel_since: null }); });
 it("new page type emits exactly one new_surface across viewports", async () => {
   await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [snapshot] }));
   expect(await (await handleCrawlIngest(request({ kind: "library_snapshots", snapshots: [{ ...snapshot, page_type: "pricing", captured_at: "2026-11-12T01:00:01Z" }, { ...snapshot, page_type: "pricing", viewport: "mobile", captured_at: "2026-11-12T01:00:01Z" }] }))).json()).toEqual({ ok: true, inserted: 2, events: 1 });
