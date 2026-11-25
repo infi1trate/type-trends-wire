@@ -205,6 +205,8 @@
 .library table td, .library table th { overflow-wrap: anywhere; }
 .library table td.lib-cat { overflow-wrap: break-word; hyphens: auto; }
 .library-table th .label { overflow-wrap: normal; word-break: keep-all; }
+/* A3 · headings hold one line, so the stand-in font cannot wrap one to two lines and jump the rows below (1440 px measurement). */
+@media (min-width: 1280px) { .library-table thead th, .library-table thead th * { white-space: nowrap; } }
 .library select { max-width: 100%; }
 @media (max-width: 1279px) {
   .library-table colgroup { display: none; }
