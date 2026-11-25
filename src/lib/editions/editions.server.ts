@@ -1,5 +1,6 @@
 // Editions loaders (Morning Line, sector reports, /editions, /welcome): anonymous SELECT-only reads assembled by the pure models in
 // editions/*.ts. No AI per view; short per-instance memo like the other public reads.
+import { pagedRows } from "../paged";
 import { supabaseAnon } from "../mcp/supabase";
 import { memoBy } from "../memo";
 import { storyIndex, storyRaw } from "../stories/read.server";
@@ -76,7 +77,7 @@ const sectorBase = memo(TTL, async (_: null) => {
   const db = supabaseAnon(), reader = await fetchReaderRuns(db), run = reader.latest;
   const [{ snap, tiers, signals }, sites, setters, stories] = await Promise.all([
     latestSignals("all"),
-    db.from("library_sites").select("domain,sector,name").eq("active", true).range(0, 999).then(must),
+    pagedRows((f, t) => db.from("library_sites").select("domain,sector,name").eq("active", true).order("domain").range(f, t)).then(must),
     db.from("trendsetters").select("domain,rank,sector").eq("run_id", run?.id ?? -1).order("rank").limit(200).then(must),
     storyIndex().catch(() => []),
   ]);

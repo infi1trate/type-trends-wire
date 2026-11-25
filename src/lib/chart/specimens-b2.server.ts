@@ -1,6 +1,7 @@
 // B2 · rows for the three proposed forms' specimens on /brand/system (anonymous SELECT-only, stored rows only; nothing is computed
 // from raw history): Study No. 2's stored "who went first" figure and today's vanguard list (adoption wake); the stored lead-and-lag
 // counts (lead and lag, and the held study "Do the leaders lead?"); the stored structure records of the newest quarter (page anatomy).
+import { pagedRows } from "../paged";
 import { supabaseAnon } from "../mcp/supabase";
 import type { AdoptionFig } from "../data-stories/types";
 import type { Section } from "../structure";
@@ -19,7 +20,7 @@ export async function loadB2Specimens(): Promise<B2Specimens> {
   const [{ storedStudy }, { loadVanguard }] = await Promise.all([import("../newsroom/graphics.server"), import("../vanguard.server")]);
   const [study, vanguard, ll, sites] = await Promise.all([storedStudy("who-went-big-first").catch(() => ({ error: "x" })), loadVanguard(),
     db.from("library_lead_lag_series").select("signal,quarter,van_n,van_yes,rest_n,rest_yes,vanguard_size").order("signal").order("quarter").limit(5000),
-    db.from("library_sites").select("domain,name,sector,category,active")]);
+    pagedRows((f, t) => db.from("library_sites").select("domain,name,sector,category,active").order("domain").range(f, t))]);
   if (ll.error) throw ll.error;
   if (sites.error) throw sites.error;
   const fig = "page" in study ? (Object.values(study.page.story.figures).find(f => f.kind === "adoption") as AdoptionFig | undefined) ?? null : null;

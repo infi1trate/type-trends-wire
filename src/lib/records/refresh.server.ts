@@ -6,6 +6,7 @@
 // Deadline rules: each step has a cost estimate (the last run's duration on this instance, else STEP_ESTIMATE_MS). A step whose
 // estimate does not fit in the time left is skipped (the next sweep picks it up), and a step that starts is still cut off at the
 // deadline, so no call runs past it by more than a timer tick. Card loops check the per-chunk estimate before each chunk.
+import { pagedRows } from "../paged";
 import { SHARED, brandKey, cardsDue, due, everyOf, isUrgent, lastLook, maxAgeOf, pageKey, PAGES, type PageKind, type RecordMeta, type SharedKey } from "./records";
 import { CALL_BUDGET_MS } from "../jobs/steps";
 
@@ -78,7 +79,7 @@ const DEFAULT_DEPS: RefreshDeps = {
   shared: sharedBody,
   sites: async () => {
     const { supabaseAnon } = await import("../mcp/supabase");
-    const { data, error } = await supabaseAnon().from("library_sites").select("domain,sector,active,last_snapshot_at").eq("active", true).order("domain").limit(2000);
+    const { data, error } = await pagedRows((f, t) => supabaseAnon().from("library_sites").select("domain,sector,active,last_snapshot_at").eq("active", true).order("domain").range(f, t));
     if (error) throw new Error("site list read failed");
     return (data ?? []) as Site[];
   },

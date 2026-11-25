@@ -1,8 +1,9 @@
+import { pagedRows } from "./paged";
 import { supabaseAdmin as db } from "@/integrations/supabase/client.server";
 import { replayLibrary, type ReplaySnapshot } from "./library-replay";
 import type { Json } from "@/integrations/supabase/types";
 export async function rebuildLibraryHistory() {
-  const { data: sites, error: siteError } = await db.from("library_sites").select("domain,sector").range(0, 999);
+  const { data: sites, error: siteError } = await pagedRows((f, t) => db.from("library_sites").select("domain,sector").order("domain").range(f, t));
   if (siteError) throw new Error("Replay sites failed");
   const sectors = new Map((sites ?? []).map(s => [s.domain, s.sector]));
   const rows: ReplaySnapshot[] = [];

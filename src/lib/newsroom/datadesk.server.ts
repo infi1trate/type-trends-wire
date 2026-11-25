@@ -60,6 +60,7 @@ type Ev = { id: number; domain: string; type: string; before: Record<string, unk
 async function tapeEvents(db: Admin, days: number) {
   const since = new Date(Date.now() - days * 864e5).toISOString();
   const rows = await pages<Ev>((f, t) => db.from("library_event_feed").select("id,domain,type,before,after,detected_at,effective_at,source,page_type,viewport,snapshot_id,prev_snapshot_id").eq("source", "live").neq("type", "new_surface").gte("detected_at", since).order("id").range(f, t), 5000);
+  rows.splice(0, rows.length, ...(await (await import("../active-sites.server")).panelRowsOnly(rows))); // R2a-2 · panel brands only
   const { latestChecks } = await import("../integrity.server");
   const checks = await latestChecks(db, rows.map(r => r.id)).catch(() => new Map());
   return { rows, checks, tape: rows.filter(r => checks.get(r.id)?.verdict === "pass") };

@@ -1,3 +1,4 @@
+import { pagedRows } from "./paged";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -28,7 +29,7 @@ export const getWatchOptions = createServerFn({ method: "GET" }).handler(async (
   const { label } = await import("./labels");
   const db = supabaseAnon(), { readerRunId } = await import("./real-runs"), runId = await readerRunId(db);
   const [sites, traits] = await Promise.all([
-    db.from("library_sites").select("domain,sector").eq("active", true).order("domain").range(0, 999),
+    pagedRows((f, t) => db.from("library_sites").select("domain,sector").eq("active", true).order("domain").range(f, t)),
     db.from("forecasts").select("dimension,value").eq("run_id", runId).eq("scope", "all").order("dimension").order("value").range(0, 999),
   ]);
   if (sites.error || traits.error) throw sites.error ?? traits.error;

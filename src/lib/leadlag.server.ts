@@ -1,11 +1,12 @@
 // B2 · stores lead and lag counts for every headline signal (service role), run inside the weekly structure follow-up, never in a
 // request. Reads the stored site history, the active sites, the vanguard list and the newest reader run's headline signals.
+import { pagedRows } from "./paged";
 import { leadLagRows } from "./leadlag";
 
 export async function refreshLeadLag(): Promise<{ ok: boolean; signals: number; rows: number; code?: string }> {
   const [{ supabaseAdmin: db }, { supabaseAnon }, { panelHistoryRows: historyRows }, { loadVanguard }, { latestSignals }] = await Promise.all([
     import("@/integrations/supabase/client.server"), import("./mcp/supabase"), import("./history.server"), import("./vanguard.server"), import("./signals.server")]);
-  const [history, sites, vanguard, sig] = await Promise.all([historyRows<import("./data-stories/series").HistRow>(supabaseAnon(), "*"), db.from("library_sites").select("domain,name,sector,active"), loadVanguard(), latestSignals("all")]);
+  const [history, sites, vanguard, sig] = await Promise.all([historyRows<import("./data-stories/series").HistRow>(supabaseAnon(), "*"), pagedRows((f, t) => db.from("library_sites").select("domain,name,sector,active").order("domain").range(f, t)), loadVanguard(), latestSignals("all")]);
   if (sites.error) return { ok: false, signals: 0, rows: 0, code: "sites_read_failed" };
   if (!vanguard.length) return { ok: false, signals: 0, rows: 0, code: "no_vanguard" };
   const keys = sig.signals.filter(s => s.tier === "headline").map(s => s.key);

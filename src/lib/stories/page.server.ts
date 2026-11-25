@@ -1,4 +1,5 @@
 // Story page + queue loaders (anonymous SELECT-only). No AI per view.
+import { pagedRows } from "../paged";
 import { storyById, storyIndex, deskIndex } from "./read.server";
 import { memoBy } from "../memo";
 import { queueHead, queueModel, storiesAbout, storyPage, isKind, type StoryRecord } from "./view";
@@ -264,7 +265,7 @@ export async function newsWindow(days = 7): Promise<{ kept: number; dropped: num
     const db = supabaseAnon(), since = new Date(Date.now() - days * 864e5).toISOString();
     const [wire, sites, { signals }] = await Promise.all([
       db.from("wire_items").select("id,title,url,source,source_kind,published_at,excerpt").in("source_kind", ["rss", "hn", "bluesky"]).gte("published_at", since).order("id").range(0, 999),
-      db.from("library_sites").select("domain,name,active").order("domain").range(0, 999),
+      pagedRows((f, t) => db.from("library_sites").select("domain,name,active").order("domain").range(f, t)),
       latestSignals("all"),
     ]);
     if (wire.error || sites.error) return null;

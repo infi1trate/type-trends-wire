@@ -1,3 +1,4 @@
+import { pagedRows } from "./paged";
 // Loads the pattern gallery and collections: anonymous SELECT-only reads of stored captures, cached (settled values only, memo.ts); the
 // pure models in gallery.ts and collections/registry.ts decide everything. Frames are drawn from stored skeletons only for the tiles on
 // the requested page. A cold view reads only what it needs: no change stamps unless it is a "changed" view.
@@ -71,7 +72,7 @@ const galleryBase = memo(TTL, async (): Promise<Base> => {
     ? await Promise.all([latestSignals("all"), have.sites, have.history, have.crops])
     : await Promise.all([
       latestSignals("all"),
-      db.from("library_sites").select("domain,name,sector,active").order("domain").limit(1000).then(r => { if (r.error) throw r.error; return r.data ?? []; }),
+      pagedRows((f, t) => db.from("library_sites").select("domain,name,sector,active").order("domain").range(f, t)).then(r => { if (r.error) throw r.error; return r.data ?? []; }),
       import("./history.server").then(m => m.historyRows<HistRow>(db, HIST)),
       allCrops(),
     ]);

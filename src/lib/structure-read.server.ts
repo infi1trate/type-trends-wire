@@ -1,5 +1,6 @@
 // J1 + M1 · page reads of the stored structure rows (anonymous SELECT only; nothing is derived per view). Library-wide counts are
 // held in memory for ten minutes so a page view costs at most one small read.
+import { pagedRows } from "./paged";
 import { supabaseAnon } from "./mcp/supabase";
 import { covered, STRUCTURE_SIGNALS, STRUCTURE_BY_KEY, isStructureKey, shareOf, type SeriesRow, type StructureRecord, type Viewport } from "./structure";
 
@@ -71,7 +72,7 @@ export async function loadStructureSignal(key: string): Promise<StructureSignalP
   const sectors = ((sec.data ?? []) as { scope: string; viewport: string; n_read: number; n_yes: number }[]).filter(r => r.viewport === vp).map(r => ({ sector: r.scope, share: shareOf(r), n: r.n_read })).sort((a, b) => (b.share ?? -1) - (a.share ?? -1));
   let brands: StructureSignalPage["brands"] = [];
   if (q) {
-    const r = await db.from("library_structure_records").select("domain,viewport,labels:record->nav_labels").eq("quarter", q).eq(`flags->>${key}`, "true").order("domain").limit(400);
+    const r = await pagedRows((f, t) => db.from("library_structure_records").select("domain,viewport,labels:record->nav_labels").eq("quarter", q).eq(`flags->>${key}`, "true").order("domain").order("viewport").range(f, t));
     if (!r.error && r.data.length) {
       const names = await db.from("library_sites").select("domain,name").in("domain", [...new Set(r.data.map(x => x.domain))]);
       const nm = new Map((names.data ?? []).map(x => [x.domain, x.name ?? x.domain]));
@@ -123,7 +124,7 @@ export async function loadStructureColumns(): Promise<Record<string, { ask: stri
 export async function structureFacts(now = Date.now()): Promise<import("./structure").StructureFacts> {
   const st = await import("./structure"), db = supabaseAnon();
   const since = new Date(now - st.STRUCTURE_FRESH_DAYS * 864e5).toISOString();
-  const r = await db.from("library_structure_records").select("domain,viewport,captured_at").eq("structure_read", true).gte("quarter", st.quarterBack(st.quarterOf(new Date(now).toISOString()), 1)).limit(5000);
+  const r = await pagedRows((f, t) => db.from("library_structure_records").select("domain,viewport,captured_at").eq("structure_read", true).gte("quarter", st.quarterBack(st.quarterOf(new Date(now).toISOString()), 1)).order("domain").order("viewport").order("captured_at").range(f, t));
   if (r.error) throw new Error("structure facts read failed");
   const brands = (vp: string, fresh: boolean) => new Set(r.data.filter(x => x.viewport === vp && (!fresh || x.captured_at >= since)).map(x => x.domain)).size;
   const all = await scopeSeries("all"), q = all.map(x => x.quarter).sort().at(-1) ?? null;

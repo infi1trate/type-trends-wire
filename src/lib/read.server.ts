@@ -66,7 +66,7 @@ export const allStories = memo(TTL, async (): Promise<{ stories: Story[]; partia
   // P2c · `partial`: the change checks could not be read (no live change story then, fail closed) or the rebrands list says the same.
   let partial = !!rebrandAll.partial;
   const stories = [
-    ...(await (async () => { const active = await (await import("./active-sites.server")).activeDomains(); const checked = await (await import("./integrity.server")).checkedEvents(db, ((events ?? []) as EventRow[]).filter(e => active.has(e.domain))); if (checked.failed) partial = true; const evs = checked.tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
+    ...(await (async () => { const active = await (await import("./active-sites.server")).panelDomains(); const checked = await (await import("./integrity.server")).checkedEvents(db, ((events ?? []) as EventRow[]).filter(e => active.has(e.domain))); if (checked.failed) partial = true; const evs = checked.tape, { reversalIds } = await import("./reversal"); const rev = reversalIds(evs.map(e => ({ ...e, page_type: e.page_type ?? null, viewport: e.viewport ?? null }))); const car = new Set(await import("./carousel.server").then(m => m.carouselIds(supabaseAnon(), evs))); return evs.map(e => fromEvent(e, { reversed: rev.has(e.id), carousel: car.has(e.id) })); })()),
     ...rebrandAll.rows.filter(x => x.source === "live" && Date.parse(x.confirmed_at) >= now - 120 * day).map(x => fromRebrand(x as RebrandRow)),
   ];
   return partial ? { stories, partial: true } : { stories };
@@ -143,7 +143,7 @@ const moveCounts = memo(TTL, async () => {
   const db = supabaseAnon();
   const [events, rebrandAll] = await Promise.all([
     pages<{ id: number; type: string; domain: string; detected_at: string }>((f, t) => db.from("library_event_feed").select("id,type,domain,detected_at").eq("source", "live").eq("viewport", "desktop").neq("type", "new_surface").order("id").range(f, t) as never, 1000)
-      .then(async evs => { const c = await (await import("./integrity.server")).checkedEvents(db, evs); if (c.failed) throw new Error("move_counts_unchecked"); return c.tape; }),
+      .then(async all => { const evs = await (await import("./active-sites.server")).panelRowsOnly(all); const c = await (await import("./integrity.server")).checkedEvents(db, evs); if (c.failed) throw new Error("move_counts_unchecked"); return c.tape; }),
     // P2c · a count read without the checks or without the rebrands is short (31 words and 157 px of /brands at 390 px on a fresh
     // instance): it fails instead, so it is never kept, and /brands falls back to the stored record.
     import("./rebrands.server").then(m => m.readerRebrands()).then(r => { if (r.partial) throw new Error("move_counts_rebrands_incomplete"); return r.rows; }),

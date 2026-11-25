@@ -1,6 +1,7 @@
 // J1 · the weekly structure pass (a forecast follow-up step, never a request or the wire job): reads HOME captures newer than its
 // bookmark by JSON path, keeps the better capture per brand, viewport and quarter, then rebuilds the per-quarter counts. Pages only
 // read the stored rows (structure-read.server.ts). Service role; bounded by a time budget, resuming from the bookmark next time.
+import { pagedRows } from "./paged";
 import { buildSeries, pickRows, toRow, quarterOf, type RecordRow, type StructureInput } from "./structure";
 
 const COLS = "id,domain,viewport,source,captured_at,nav:signals->nav,page:signals->page,skeleton:signals->skeleton,structure:signals->structure,accent:signals->color->>accent";
@@ -49,7 +50,7 @@ async function rebuildSeries(db: Admin, now: () => number): Promise<number | nul
     rows.push(...((r.data ?? []) as unknown as typeof rows));
     if ((r.data ?? []).length < 1000) break;
   }
-  const sites = await db.from("library_sites").select("domain,sector,category,active");
+  const sites = await pagedRows((f, t) => db.from("library_sites").select("domain,sector,category,active").order("domain").range(f, t));
   if (sites.error) return null;
   const { classOf } = await import("./categories");
   const active = new Set((sites.data ?? []).filter(s => s.active !== false).map(s => s.domain));

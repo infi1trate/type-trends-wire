@@ -60,7 +60,7 @@ export async function tapeChanges(domains: string[], around: number) {
   const [{ supabaseAnon }, { latestChecks }, { splitChecked }] = await Promise.all([import("../mcp/supabase"), import("../integrity.server"), import("../integrity")]);
   const db = supabaseAnon(), lo = new Date(around - 15 * 864e5).toISOString(), hi = new Date(around + 15 * 864e5).toISOString();
   const { data } = await db.from("library_event_feed").select("id,domain,type,before,after,detected_at,source").eq("source", "live").in("domain", domains).gte("detected_at", lo).lte("detected_at", hi).limit(200);
-  const evs = (data ?? []).filter((e): e is typeof e & { id: number; domain: string; type: string; detected_at: string } => e.id != null && !!e.domain && !!e.type && !!e.detected_at);
+  const evs = (await (await import("../active-sites.server")).panelRowsOnly(data ?? [])).filter((e): e is typeof e & { id: number; domain: string; type: string; detected_at: string } => e.id != null && !!e.domain && !!e.type && !!e.detected_at);
   const checks = await latestChecks(db, evs.map(e => e.id)).catch(() => new Map());
   return splitChecked(evs, checks).tape.map(e => ({ id: e.id, domain: e.domain, type: e.type, detected_at: e.detected_at }));
 }

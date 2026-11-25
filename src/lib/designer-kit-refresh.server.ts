@@ -1,3 +1,4 @@
+import { pagedRows } from "./paged";
 import type { BrandTag } from "./brand-page";
 import { forecastSiteTraits, type SiteRow } from "./forecast-signals";
 import { classOf } from "./categories";
@@ -15,7 +16,7 @@ type History = SiteRow & { now: boolean; captured_at: string | null; snapshot_id
 export async function refreshDesignerKit(): Promise<{ ok: boolean; brands: number; code?: string }> {
   const [{ supabaseAdmin: db }, { supabaseAnon }, { historyRows }] = await Promise.all([import("@/integrations/supabase/client.server"), import("./mcp/supabase"), import("./history.server")]);
   const anon = supabaseAnon(), start = Date.now();
-  const [history, sites, changes] = await Promise.all([historyRows<History>(anon, "*"), anon.from("library_sites").select("domain,name,sector,category,subcategory,active,last_change_at").order("domain").limit(1000), allStories()]);
+  const [history, sites, changes] = await Promise.all([historyRows<History>(anon, "*"), pagedRows((f, t) => anon.from("library_sites").select("domain,name,sector,category,subcategory,active,last_change_at").order("domain").range(f, t)), allStories()]);
   if (sites.error) return { ok: false, brands: 0, code: "kit_sites_failed" };
   const structure: RecordRow[] = [];
   for (let from = 0; from < 20000; from += 1000) {

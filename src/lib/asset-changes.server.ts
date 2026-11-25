@@ -1,6 +1,7 @@
 // W1b · icon and card changes: measure each stored version once (asset_grids, at intake while the request has time, else the AI worker's
 // sweep), and read every brand's versions with their verdicts (pure asset-diff.ts) for the latest changes, the brand page and the story engine.
 // Reads are anonymous SELECTs (brand_assets hides opted-out brands by policy); writes use the service role. Nothing is logged.
+import { pagedRows } from "./paged";
 import { assetComparisons, assetGrid, decodeGrid, encodeGrid, gridSpread, type AssetComparison, type AssetVersion, type Grid } from "./asset-diff";
 import { memo } from "./memo";
 
@@ -41,7 +42,7 @@ export const assetHistory = memo(10 * 60_000, async (): Promise<AssetHistory> =>
     versions.push(...((data ?? []) as AssetVersion[]));
     if (!data || data.length < 1000) break;
   }
-  const { data: sites, error } = await db.from("library_sites").select("domain,sector,active");
+  const { data: sites, error } = await pagedRows((f, t) => db.from("library_sites").select("domain,sector,active").order("domain").range(f, t));
   if (error) throw error;
   const active = new Set((sites ?? []).filter(s => s.active).map(s => s.domain)), editorial = new Set((sites ?? []).filter(s => s.sector === "media").map(s => s.domain));
   const mine = versions.filter(v => active.has(v.domain)), count = new Map<string, number>();

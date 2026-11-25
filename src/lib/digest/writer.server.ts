@@ -3,6 +3,7 @@
 // digest_texts apart from the story writer's twelve and the studies' four, through the story writer's own budget-guarded gateway call
 // under the same cost-ledger purpose. The plan is the shared one (writer, writer again with its failures, text model) carried across
 // days for one sheet; one insert-only version per attempt. Injected I/O so tests run in memory; nothing here ever throws into a job.
+import { pagedRows } from "../paged";
 import { AI_MODELS } from "../ai-models";
 import { retryGuard, structuredAttempts } from "../ai-retries";
 import { WRITER_PLAN, tryModels, type Attempt, type Known } from "../stories/writer";
@@ -101,7 +102,7 @@ export async function digestJobs(now = Date.now()): Promise<{ jobs: DigestJob[];
     const f = j.parts.fallback;
     jobs.push({ week: w, sheet: j.sheet, hash: j.edition.hash, subject: j.edition.cover.terms, fallback: { headline: f.headline, deck: f.deck, argument: f.argument, changes: f.changes, chart_caption: f.chart_caption ?? "", use: "" } });
   }
-  const sites = await supabaseAnon().from("library_sites").select("name").not("name", "is", null).limit(2000);
+  const sites = await pagedRows((f, t) => supabaseAnon().from("library_sites").select("name").not("name", "is", null).order("domain").range(f, t));
   return { jobs, known: { names: [...new Set([...seededNames(), ...((sites.data ?? []) as { name: string | null }[]).map(s => s.name).filter((n): n is string => !!n)])] } };
 }
 /** The end of a job: write what is owed while the time allows, then rewrite the issue records that got a checked text. Never throws. */

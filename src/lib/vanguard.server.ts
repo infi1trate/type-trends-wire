@@ -1,4 +1,5 @@
 // Loads the vanguard list from public reads (reader-run trendsetters, overlaid stories, active sites). Never throws: [] on failure.
+import { pagedRows } from "./paged";
 import { vanguardList } from "./vanguard";
 export async function loadVanguard(): Promise<string[]> {
   try {
@@ -6,7 +7,7 @@ export async function loadVanguard(): Promise<string[]> {
     const db = supabaseAnon(), run = await readerRunId(db);
     const [ts, sites, stories] = await Promise.all([
       db.from("trendsetters").select("domain,rank").eq("run_id", run).order("rank").limit(100),
-      db.from("library_sites").select("domain").eq("active", true).range(0, 999),
+      pagedRows((f, t) => db.from("library_sites").select("domain").eq("active", true).order("domain").range(f, t)),
       storyIndex(),
     ]);
     if (ts.error || sites.error) throw ts.error ?? sites.error;

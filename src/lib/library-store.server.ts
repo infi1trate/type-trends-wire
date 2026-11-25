@@ -22,7 +22,7 @@ export async function libraryEvents(opts: { sector?: string | undefined; type?: 
   if (opts.domain) q = q.eq("domain", opts.domain);
   const { data, error } = await q.order("detected_at", { ascending: false }).order("id", { ascending: false }).range(0, opts.limit - 1);
   if (error) throw error;
-  return data ?? [];
+  return (await import("./active-sites.server")).panelRowsOnly(data ?? []); // R2a-2 · the feed view has no active filter
 }
 /** Sector summaries; cached per instance until the next crawl (`byCrawl`). */
 export const librarySectors = byCrawl(async () => {

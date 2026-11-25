@@ -1,6 +1,7 @@
 // Y1 · the evidence desk's weekly pass (service role; in the weekly forecast's page-structure follow-up, never a request or the wire
 // job): for each signal that really moved, load stored rows (signal quarters from the reader run, outlet wire items, brands showing
 // the trait, indicator weeks for its topic), build the dossier by rule, store it and file the desk's one-line note through the door.
+import { pagedRows } from "../paged";
 import { buildDossier, DRAWERS, type BrandIn, type IndicatorIn, type WireIn } from "./dossier";
 import type { Quarter } from "./timing";
 
@@ -14,7 +15,7 @@ export async function buildDossiers(o: { budgetMs?: number; only?: string[]; fil
   const storyKeys = new Set((recent.data ?? []).flatMap(r => r.signal_keys ?? []));
   const wanted = signals.filter(s => o.only ? o.only.includes(s.key) : (s.tier === "headline" && s.stage != null && MOVED_STAGES.includes(s.stage)) || storyKeys.has(s.key));
   const wireQ = await db.from("wire_items").select("id,title,excerpt,url,source,source_kind,published_at").in("source_kind", ["rss", "hn", "producthunt"]).order("published_at", { ascending: false }).limit(5000);
-  const sites = await db.from("library_sites").select("domain,name,active");
+  const sites = await pagedRows((f, t) => db.from("library_sites").select("domain,name,active").order("domain").range(f, t));
   const wire = (wireQ.data ?? []) as WireIn[], names = new Map((sites.data ?? []).map(s => [s.domain, s.name ?? s.domain]));
   const out = { built: 0, entries: Object.fromEntries(DRAWERS.map(d => [d, 0])) as Record<string, number>, model: 0, errors: [] as string[], signals: [] as string[] };
   for (const s of wanted) {

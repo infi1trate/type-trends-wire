@@ -367,13 +367,15 @@ export const todayQuery = () => queryOptions({
       latest ? supabase.from("wire_items").select("title,url,source,published_at,ref").eq("source_kind", "alert").gte("published_at", new Date(Date.parse(latest.computed_at) - 36e5).toISOString()).order("published_at", { ascending: false }).order("id").limit(10) : Promise.resolve({ data: [], error: null }),
       supabase.from("wire_items").select("id", { count: "exact", head: true }).neq("source_kind", "alert").gte("published_at", since),
       supabase.from("wire_items").select("title,url,source,published_at").neq("source_kind", "alert").lte("published_at", now).order("published_at", { ascending: false }).limit(1),
-      supabase.from("library_event_feed").select("domain,summary,detected_at,sector").eq("source", "live").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(1),
+      // R2a-2 · the feed view has no active filter: the newest few, then the newest whose brand is in the panel (below).
+      supabase.from("library_event_feed").select("domain,summary,detected_at,sector").eq("source", "live").neq("type", "new_surface").order("detected_at", { ascending: false }).limit(25),
       supabase.from("crawl_runs").select("finished_at,stats").eq("status", "finished").order("finished_at", { ascending: false }).limit(1),
     ]);
     for (const r of [alerts, count, wireLatest, event, crawl]) if (r.error) throw r.error;
     const c = crawl.data?.[0], stats = (c?.stats ?? {}) as Record<string, { ok?: number } | unknown>;
     const sites = Object.values(stats).reduce<number>((n, v) => n + (v && typeof v === "object" && typeof (v as { ok?: unknown }).ok === "number" ? (v as { ok: number }).ok : 0), 0);
-    const e = event.data?.[0];
+    const cand = event.data ?? [], inPanel = cand.length ? new Set(((await supabase.from("library_sites").select("domain,active,panel_since").in("domain", [...new Set(cand.map(x => x.domain).filter((d): d is string => !!d))]).range(0, 999)).data ?? []).filter(x => x.active === true && x.panel_since).map(x => x.domain)) : new Set<string>();
+    const e = cand.find(x => !!x.domain && inPanel.has(x.domain));
     return {
       now,
       runs: { latest: latest ?? null, previous: previous ?? null },

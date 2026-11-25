@@ -1,5 +1,6 @@
 // Reads and writes precomputed page inputs (`read_records`). Pages read with the shared anonymous SELECT-only client (one query);
 // only scheduled jobs write, with the service role loaded inside the call. See records.ts for the age rules.
+import { pagedRows } from "../paged";
 import { supabaseAnon } from "../mcp/supabase";
 import { memo, memoBy } from "../memo";
 import { STALE_SERVE_MS, within } from "../deadline";
@@ -143,7 +144,7 @@ export async function changedAt(key: string): Promise<string | null> {
 }
 /** D1c · the brands still tracked (health leaves stored rows of other brands out of its ages). */
 export async function trackedDomains(): Promise<Set<string>> {
-  const { data, error } = await supabaseAnon().from("library_sites").select("domain").eq("active", true).limit(5000);
+  const { data, error } = await pagedRows((f, t) => supabaseAnon().from("library_sites").select("domain").eq("active", true).order("domain").range(f, t));
   if (error) throw error;
   return new Set((data ?? []).map(r => String(r.domain).toLowerCase()));
 }

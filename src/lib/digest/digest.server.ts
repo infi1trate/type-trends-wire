@@ -52,8 +52,9 @@ async function leadPictureOf(id: string): Promise<Picture | null> {
 }
 /** The week's live changes split by the integrity rule: confirmed (passed) and seen once (still unconfirmed). */
 async function weekCounts(db: Db, startIso: string, endIso: string): Promise<{ confirmed: number; unconfirmed: number }> {
-  const events = await pages<{ id: number; type: string; before: unknown; after: unknown; source: string | null }>((f, t) => db.from("library_event_feed").select("id,type,before,after,source").eq("source", "live").gte("detected_at", startIso).lt("detected_at", endIso).order("id").range(f, t) as never, 1000);
+  const events = await pages<{ id: number; domain: string | null; type: string; before: unknown; after: unknown; source: string | null }>((f, t) => db.from("library_event_feed").select("id,domain,type,before,after,source").eq("source", "live").gte("detected_at", startIso).lt("detected_at", endIso).order("id").range(f, t) as never, 1000);
   const [{ latestChecks }, { splitChecked }] = await Promise.all([import("../integrity.server"), import("../integrity")]);
+  events.splice(0, events.length, ...(await (await import("../active-sites.server")).panelRowsOnly(events))); // R2a-2 · panel brands only
   const checks = await latestChecks(db, events.map(e => e.id));
   const split = splitChecked(events, checks);
   return { confirmed: split.tape.length, unconfirmed: split.unconfirmed.length };
