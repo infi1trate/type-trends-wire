@@ -23,7 +23,7 @@ test("slices cover every library site exactly once and stay put", () => {
   assert.equal(parts.flat().length, all.length);
   assert.equal(new Set(parts.flat().map((s) => s.domain)).size, all.length);
   // Roughly even: no hour is empty and none carries more than three times its share.
-  assert.ok(parts.every((p) => p.length >= 1 && p.length <= 38), parts.map((p) => p.length).join(","));
+  assert.ok(parts.every((p) => p.length >= 1 && p.length <= Math.ceil(all.length / 24 * 3)), parts.map((p) => p.length).join(","));
   // Stable: fixed values, case-insensitive, independent of list order.
   assert.equal(sliceOf("stripe.com", 24), sliceOf("STRIPE.com", 24));
   assert.deepEqual(inSlice([...all].reverse(), { i: 5, n: 24 }).map((s) => s.domain).sort(), parts[5].map((s) => s.domain).sort());

@@ -24,6 +24,9 @@ on:
       library_file:
         description: "seed list to read instead of seeds/library.csv (path under crawler/), e.g. seeds/candidates/wave-01.csv; use with dry_run=1 to check candidates"
         default: ""
+      onboarding:
+        description: "1 = only the brands the site holds as onboarding (a new wave's first reading)"
+        default: "0"
       force_home:
         description: "1 = store every home snapshot even if unchanged (fills a newly added reading, e.g. structure)"
         default: "0"
@@ -60,6 +63,7 @@ jobs:
           LIBRARY_MODE: ${{ inputs.mode || (github.event.schedule == '41 * * * *' && 'check' || 'full') }}
           VANGUARD: ${{ inputs.vanguard || (github.event.schedule == '17 7 * * *' && '1' || '0') }}
           LIMIT: ${{ inputs.limit || '0' }}
+          ONBOARDING: ${{ inputs.onboarding || '0' }}
           DRY_RUN: ${{ inputs.dry_run || '0' }}
           LIBRARY_FORCE_HOME: ${{ inputs.force_home || '0' }}
           LIBRARY_FILE: ${{ inputs.library_file || '' }}

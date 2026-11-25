@@ -3,7 +3,7 @@
 //      LIBRARY_MODE=full|check  full = weekly: discover pages, snapshot everything (desktop all pages, mobile home)
 //                               check = daily: fetch server HTML, snapshot only pages whose html_hash moved
 //                               tag   = one-off: re-snapshot every home page (desktop) and send it for AI tagging
-//      LIBRARY_FILE (default seeds/library.csv), LIMIT (first N sites), STATE_FILE (dry-run state), ALLOW_HTTP=1 (tests)
+//      LIBRARY_FILE (default seeds/library.csv), LIMIT (first N sites), ONBOARDING=1 (only brands the site holds as onboarding), STATE_FILE (dry-run state), ALLOW_HTTP=1 (tests)
 //      SLICE=i/n  only the sites in slice i of n (stable hash of the domain). The hourly check uses SLICE=<UTC hour>/24, so
 //                 every site is checked once a day at its own hour and something is always arriving.
 //      VANGUARD=1 (full mode) only the brands in library-state's `vanguard` list: the daily full look at the brands that
@@ -38,6 +38,7 @@ const ENDPOINT = process.env.CRAWL_ENDPOINT;
 const SECRET = process.env.CRAWL_SECRET;
 const ALLOW_HTTP = process.env.ALLOW_HTTP === "1";
 const LIMIT = Number(process.env.LIMIT ?? 0);
+const ONBOARDING = process.env.ONBOARDING === "1";
 const SLICE = parseSlice(process.env.SLICE);
 const VANGUARD = process.env.VANGUARD === "1" && MODE === "full";
 // The site reads the run-id prefix: lib-full- is the weekly full crawl, lib-check- the rolling check. Vanguard runs are neither.
@@ -271,8 +272,11 @@ async function main() {
     vanguardListed = v.listed; sites = v.sites;
     if (!v.listed) console.log("vanguard: library-state returned no vanguard list; nothing to crawl");
   }
-  if (LIMIT) sites = sites.slice(0, LIMIT);
   const byDomain = Object.fromEntries((state.sites ?? []).map((s) => [s.domain, s]));
+  // ONBOARDING=1: only the brands the site holds as onboarding (added to the seed list, not yet in the panel), so a new
+  // wave gets its first full reading without re-reading the whole library.
+  if (ONBOARDING) sites = sites.filter((s) => byDomain[s.domain]?.onboarding === true);
+  if (LIMIT) sites = sites.slice(0, LIMIT);
   console.log(`run ${RUN_ID}: mode=${MODE}${VANGUARD ? ` vanguard (${vanguardListed} listed)` : ""}${SLICE ? ` slice ${SLICE.i}/${SLICE.n}` : ""}, ${sites.length} sites, state for ${Object.keys(byDomain).length}`);
 
   if (DRY) mkdirSync("out", { recursive: true });

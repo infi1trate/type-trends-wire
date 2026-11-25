@@ -10,8 +10,9 @@ const run = promisify(execFile);
 
 test("library csv", () => {
   const all = parseLibrary(readFileSync("seeds/library.csv", "utf8"));
-  assert.equal(all.length, 300);
-  assert.equal(new Set(all.map((s) => s.domain)).size, 300);
+  assert.ok(all.length >= 300, `the seed list shrank to ${all.length}`); // it grows by waves; the site refuses a sync that drops many brands
+  assert.equal(new Set(all.map((s) => s.domain)).size, all.length);
+  assert.ok(all.every((s) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(s.domain)), "a seed row is not a bare domain");
   assert.throws(() => parseLibrary("domain,sector\nx.com,toys"));
 });
 
