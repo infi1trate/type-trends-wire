@@ -19,7 +19,7 @@ function memStore(rows: StepRow[] = []): StepStore & { rows: StepRow[] } {
 
 describe("follow-up steps", () => {
   it("queues the forecast's derived outputs in the original order", async () => {
-    expect(FORECAST_FOLLOW_UPS).toEqual(["taste", "brief", "vibe", "chart", "ledger", "stories"]);
+    expect(FORECAST_FOLLOW_UPS).toEqual(["structure", "taste", "brief", "vibe", "chart", "ledger", "stories"]);
     const s = memStore();
     await queueFollowUps("forecast", "16", FORECAST_FOLLOW_UPS, s);
     await queueFollowUps("forecast", "16", FORECAST_FOLLOW_UPS, s); // idempotent
