@@ -130,7 +130,7 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
     <ObjectPage kind="story" id="ed-story" quiet blocks={{
       headline: <>
         <StoryCover seed={seed} headline={s.headline} long={s.headline.length > LONG_HEADLINE} deck={s.deck} object={cover} italicDeck
-          kicker={<>{s.icon && <BrandMark icon={s.icon} size={24} eager className="mr-2" />}<span>{s.kicker}</span></>}
+          kicker={<>{s.brands.length === 1 && <BrandMark icon={s.icon} name={s.brands[0]?.name ?? ""} size={32} eager className="mr-2" />}<span>{s.kicker}</span></>}
           left={<>{s.number != null && <Link to="/stories/no/$number" params={{ number: String(s.number) }} className="cover-num block no-underline hover:underline" title="Short link to this story by its number">{numberLabel(s.number)}</Link>}<time dateTime={s.at} className="block">{storyTime(s.at)}</time>{s.correctedAt && <span className="block">Updated {day(s.correctedAt)}</span>}</>}
           right={<>{s.pinnedUntil && <span className="block">Pinned to the front page</span>}</>} />
         {notRun && <p className="ed-wrap ed-small mt-6 border-l-2 border-ed-ink pl-3" role="note">{notRun}</p>}
@@ -142,7 +142,7 @@ export function StoryView({ s, related, bare = false }: { s: StoryPageData; rela
         <p className="ed-small max-w-[62ch]" data-how-we-know=""><span className="ed-kicker mr-2">How we know</span>{s.howWeKnow}</p>
         {s.census && <BlockPart title="The lines" kicker={s.census.sectors ? `By sector: ${s.census.sectors}.` : undefined}>
           <ul className="ledger" data-story-lines="">{s.census.lines.map((l, i) => <li key={i} className="ledger-row flex flex-col gap-1 px-2 py-3 md:flex-row md:items-baseline md:gap-4">
-            {l.href ? <Link to="/brands/$domain" params={{ domain: decodeURIComponent(l.href.replace(/^\/brands\//, "")) }} className="ed-tap ed-kicker inline-flex min-h-11 shrink-0 items-center md:w-40">{l.name}</Link> : <span className="ed-kicker shrink-0 md:w-40">{l.name}</span>}
+            {l.href ? <Link to="/brands/$domain" params={{ domain: decodeURIComponent(l.href.replace(/^\/brands\//, "")) }} className="ed-tap ed-kicker inline-flex min-h-11 shrink-0 items-center md:w-40"><BrandMark icon={null} name={l.name} size={32} className="mr-2" />{l.name}</Link> : <span className="ed-kicker shrink-0 md:w-40">{l.name}</span>}
             <span className="ed-small min-w-0 break-words">{l.line}{l.isNew && <span className="ed-kicker ml-2 whitespace-nowrap" data-census-new="">{CENSUS_NEW_MARK}</span>}</span>
           </li>)}</ul>
         </BlockPart>}
@@ -172,7 +172,7 @@ export function RetiredStoryView({ s, tape, note, bare = false }: { s: Pick<Stor
       </p>
       <h1 className="ed-h1 mt-4 max-w-[24ch] break-words">{s.headline}</h1>
       <p className="ed-small mt-6 max-w-[62ch] border-l-2 border-ed-ink pl-3" role="note" data-retired-note=""><span className="ed-kicker mr-2">Retired</span>{note ? note.replace(/^Retired:\s*/, "").replace(/^./, c => c.toUpperCase()) : "Taken down by the editor."}</p>
-      {s.brands.length > 0 && <p className="ed-data mt-10 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap inline-flex min-h-11 items-center">{b.name} →</Link>)}</p>}
+      {s.brands.length > 0 && <p className="ed-data mt-10 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap inline-flex min-h-11 items-center"><BrandMark icon={null} name={b.name} size={32} className="mr-2" />{b.name} →</Link>)}</p>}
       {tape.length > 0 && <BlockPart title="The changes it was built from" kicker={tape.every(t => t.confirmed !== false) ? "They stay on the tape." : "A change marked Seen once, Alternating or Not compared is not on the tape; the rest stay there."}>
         <ul className="ledger" data-retired-tape="">{tape.map(t => <li key={t.id} className="ledger-row px-2 py-3"><span className="ed-small break-words"><Receipt href={t.href} receipt={`change:${t.id}`} {...pr(t.href)}>{t.text}</Receipt></span></li>)}</ul>
       </BlockPart>}
@@ -188,7 +188,7 @@ export function StoryRelated({ s }: { s: Pick<StoryPageData, "signals" | "patter
         {(s.next || s.study || s.brands.length > 0) && <nav aria-label="A way on" className="ed-data flex flex-col gap-3" data-story-way-on="">
           {s.next && <p><span className="ed-kicker mr-2">Next</span><Link to="/stories/$id" params={{ id: s.next.id }} className="ed-tap">{s.next.headline} →</Link></p>}
           {s.study && <p><span className="ed-kicker mr-2">Part of the study</span><Receipt href={s.study.href} className="ed-tap">{s.study.title} →</Receipt></p>}
-          {s.brands.length > 0 && <p className="flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap">{b.name}</Link>)}</p>}
+          {s.brands.length > 0 && <p className="flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap"><BrandMark icon={null} name={b.name} size={32} className="mr-2" />{b.name}</Link>)}</p>}
         </nav>}
         {(s.signals.length > 0 || s.patterns.length > 0) && <BlockPart title="Signals and patterns">
           <Ledger small label="Signals and patterns in this story" rows={[...s.signals.map(x => ({ key: `s:${x.key}`, href: x.href, title: x.name, facts: [x.dimension], tags: ["Signal"] })), ...s.patterns.map(p => ({ key: `p:${p.key}`, href: p.href, title: `${p.name} examples`, tags: ["Pattern"] }))]} />

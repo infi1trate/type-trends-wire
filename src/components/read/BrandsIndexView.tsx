@@ -15,17 +15,9 @@ import { ScrollRow } from "./ScrollRow";
 import { longDay, type Pic } from "@/lib/pictures";
 /** "21 Nov", with the year kept when it is not the year of the directory's newest change (deterministic, so SSR and hydration agree). */
 const shortDay = (iso: string, year: string) => (iso.slice(0, 4) === year ? longDay(iso).replace(/ \d{4}$/, "") : longDay(iso));
-import { moveAfterName, plateOf, type Plate } from "@/lib/brand-tiles";
-import { SYSTEM } from "@/lib/theme";
+import { moveAfterName } from "@/lib/brand-tiles";
+import { BrandMark } from "./BrandMark";
 
-const PLATE_COLORS = { ink: SYSTEM.color.ink.read, page: SYSTEM.color.page.read };
-/** S1 · the logo plate: the stored icon on the plate, or the brand's monogram on its measured accent; never empty. */
-function LogoPlate({ p, size, eager = false }: { p: Plate; size: 44 | 48 | 64; eager?: boolean }) {
-  return <span className={`brand-plate brand-plate-${size}`} aria-hidden="true" data-plate={p.kind}>
-    {p.kind === "icon" ? <img src={p.src} alt="" width={size} height={size} loading={eager ? "eager" : "lazy"} decoding="async" />
-      : <span className="brand-mono" style={{ ...(p.bg ? { background: p.bg } : {}), color: `var(--sys-color-${p.bg ? p.fg : "page"})` }}>{p.letter}</span>}
-  </span>;
-}
 type Moved = { domain: string; headline: string; at: string; hero: Pic };
 
 /** Rows in the first response; "Show all" draws the rest from data already on the page (a link with ?all=1 without scripts). */
@@ -41,7 +33,6 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
   const band = (extra.moved ?? []).filter(m => v.sector === "all" || data.sites.find(x => x.domain === m.domain)?.sector === v.sector);
   const year = useMemo(() => data.sites.reduce((y, x) => (x.lastChange && x.lastChange.slice(0, 4) > y ? x.lastChange.slice(0, 4) : y), ""), [data.sites]);
   const siteOf = useMemo(() => new Map(data.sites.map(x => [x.domain, x])), [data.sites]);
-  const plate = (domain: string) => { const x = siteOf.get(domain); return plateOf({ icon: icons[domain], accent: (x as { accent?: string | null } | undefined)?.accent, name: x?.name, domain }, PLATE_COLORS); };
   const moves = data.moves.filter(m => v.sector === "all" || m.sector === v.sector);
   const go = (next: BrandsView, replace = false) => navigate({ to: "/brands", search: brandsSearch(next), replace, resetScroll: false });
   return <DigestShell label="Brands" section="brands" lens>
@@ -58,7 +49,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       <h2 id="brands-moved" className="ed-kicker">Moved this week</h2>
       <ul className="moved-band mt-3">{band.map((m, i) => { const x = siteOf.get(m.domain), name = x?.name ?? m.domain; return <li key={m.domain}>
         <Link to="/brands/$domain" params={{ domain: m.domain }} className="moved-card" aria-label={`${name}: ${moveAfterName(m.headline, name, m.domain)}`}>
-          <span className="moved-crop"><img src={m.hero.src} alt="" width={m.hero.width} height={m.hero.height} loading={i < 2 ? "eager" : "lazy"} decoding="async" /><LogoPlate p={plate(m.domain)} size={48} /></span>
+          <span className="moved-crop"><img src={m.hero.src} alt="" width={m.hero.width} height={m.hero.height} loading={i < 2 ? "eager" : "lazy"} decoding="async" /><BrandMark icon={icons[m.domain]} name={name} size={48} /></span>
           <span className="brand-tile-name">{name}</span>
           <span className="ed-caption brand-tile-move">{moveAfterName(m.headline, name, m.domain)}</span>
         </Link></li>; })}</ul>
@@ -83,7 +74,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
           const facts = `${s.moves} ${s.moves === 1 ? "move" : "moves"} · ${s.lastChange ? `changed ${shortDay(s.lastChange, year)}` : voiced("read.brandsIndexView.1")}`;
           return <li key={s.domain} className="brand-grid-item">
             <Link to="/brands/$domain" params={{ domain: s.domain }} className="brand-tile" data-brand-tile="" aria-label={`${name}, ${sectorName(s.sector)}, ${facts}${moved ? ", moved this week" : ""}`}>
-              <LogoPlate p={plate(s.domain)} size={64} eager={i < 10} />
+              <BrandMark icon={icons[s.domain]} name={name} size={72} mobileSize={56} eager={i < 10} />
               <span className="brand-tile-body">
                 <span className="brand-tile-name">{name}</span>
                 <span className="brand-tile-chips"><span className="ledger-tag">{sectorName(s.sector)}</span></span>

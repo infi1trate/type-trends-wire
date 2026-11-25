@@ -32,6 +32,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Brand identity tiles use the shared read/BrandMark at the token scale, with stored-dimension eligibility and neutral initials; this keeps loading boxes and missing marks aligned in both views.
 - Band classification lives only in `src/lib/bands.ts` (pure, dependency-free) so the phase-3 MCP server can mirror it; covered by `src/lib/bands.test.ts`.
 - All frontend Supabase reads go through query options in `src/lib/data.ts`; the front end only SELECTs and paginates past 1000 rows with `.range()`.
 - Terminal UI components live in `src/components/terminal/`; the terminal uses `/` and library detail uses `/library/$domain` so site records are shareable and SSR-safe.

@@ -175,7 +175,7 @@ export function TapeBlock({ t }: { t: FrontTape }) {
     <h2 id="front-tape" className="ed-h2">{FRONT_TAPE_TITLE}</h2>
     <p className="ed-caption mt-1">{FRONT_TAPE_SUB}</p>
     {t.lines.length > 0
-      ? <Ledger className="mt-3" small inlineTags label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, lead: <BrandMark icon={l.icon} size={20} />, title: <>{l.name} · {l.what}{l.pair && <TapePairPics p={l.pair} />}</>, tags: l.marks, time: l.when }))} />
+      ? <Ledger className="mt-3" small inlineTags label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, lead: <BrandMark icon={l.icon} name={l.name} size={32} />, title: <>{l.name} · {l.what}{l.pair && <TapePairPics p={l.pair} />}</>, tags: l.marks, time: l.when }))} />
       : <p className="ed-small mt-3">No confirmed change in the last {t.days} days.</p>}
     <p className="ed-data mt-3" data-tape-counts="">{confirmedText(t.confirmed, t.days)}; <a href={UNCONFIRMED_HREF} className="ed-tap">{unconfirmedText(t.unconfirmed)}</a> (seen once or alternating).</p>
     <p className="ed-data mt-2"><a href={WHOLE_TAPE_HREF} className="ed-tap">The whole tape →</a></p>
@@ -207,7 +207,7 @@ class WireQuiet extends Component<{ children: ReactNode }, { failed: boolean }> 
 function WireLater() { return <WireQuiet><Suspense fallback={null}><WireRows /></Suspense></WireQuiet>; }
 
 type Slots = { archive: ReactNode; aside: ReactNode; asideRest: ReactNode; lower: ReactNode; also: ReactNode; tape: ReactNode };
-const exploreRow = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
+const exploreRow = (x: FrontModel["explore"][number]) => ({ key: `${x.kind}:${x.key}`, href: x.kind === "brand" ? `/brands/${encodeURIComponent(x.key)}` : `/patterns/${encodeURIComponent(x.key)}`, lead: x.kind === "brand" ? <BrandMark icon={null} name={x.name} size={32} /> : undefined, title: x.name, line: <>In “{x.via}” · <time dateTime={x.at}>{storyTime(x.at)}</time></>, tags: [x.kind === "brand" ? "Brand" : "Pattern"] });
 
 function FrontArchive({ r }: { r: Pick<FrontRest, "archive" | "sections"> }) {
   if (!r.sections.archive) return null;

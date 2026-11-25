@@ -53,6 +53,7 @@ export type TypeValue = { family: "display" | "text" | "mono"; weight: string; s
 const READING_MEASURE = "68ch";
 
 export type SystemTokens = {
+  mark: { sizes: readonly number[]; smallPadding: string; largePadding: string; border: string; tapeRow: string };
   theme: string;
   color: Record<ColorRole, { what: string } & Record<SystemView, string>>;
   type: Record<TypeStep, { role: TypeRoleName } & Record<SystemView, TypeValue>>;
@@ -78,6 +79,7 @@ export function systemOf(theme: Theme, values: LivingValues = LIVE_VALUES): Syst
   const type = Object.fromEntries(TYPE_STEPS.map(s => [s, { role: STEP_ROLE[s], read: typeOf(s, "read"), data: typeOf(s, "data"), cover: typeOf(s, "cover") }])) as SystemTokens["type"];
   const sh = theme.shared, m = sh.motion;
   return {
+    mark: { sizes: [20, 28, 32, 48, 56, 72], smallPadding: "2px", largePadding: "6px", border: "1px", tapeRow: "52px" },
     theme: theme.name, color, type,
     font: { display: flat.read["--tk-font-display"]!, text: flat.read["--tk-font-text"]!, mono: flat.read["--tk-font-mono"]! },
     space: { scale: sh.space, section: sectionGap(values.density), gutter: sh.layout.gutter, gutterLg: sh.layout.gutterLg, tap: sh.layout.tap },
@@ -103,6 +105,10 @@ export function systemVars(sys: SystemTokens, view: SystemView): Record<string, 
     out[sysText(s, "family")] = FONT_VAR[t.family]; out[sysText(s, "weight")] = t.weight; out[sysText(s, "size")] = t.size;
     out[sysText(s, "leading")] = t.leading; out[sysText(s, "tracking")] = t.tracking; out[sysText(s, "case")] = t.case;
   }
+  for (const n of sys.mark.sizes) out[`--sys-mark-${n}`] = `${n}px`;
+  out["--sys-mark-padding-small"] = sys.mark.smallPadding; out["--sys-mark-padding-large"] = sys.mark.largePadding;
+  out["--sys-mark-border"] = sys.mark.border; out["--sys-mark-tape-row"] = sys.mark.tapeRow;
+  out["--sys-mark-paper"] = sys.color.page.read; out["--sys-mark-ink"] = sys.color.ink.read;
   out["--sys-font-display"] = sys.font.display; out["--sys-font-text"] = sys.font.text; out["--sys-font-mono"] = sys.font.mono;
   for (const [k, v] of Object.entries(sys.space.scale)) out[`--sys-space-${k}`] = v;
   out["--sys-gap-section"] = sys.space.section.base; out["--sys-gutter"] = sys.space.gutter; out["--sys-tap"] = sys.space.tap;

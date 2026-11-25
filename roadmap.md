@@ -1,3 +1,8 @@
+# A1 + A2 · Brand marks, type and space (25 Nov)
+- [ ] A1 Shared fixed-scale marks, neutral fallback, all brand lists; before pictures
+- [ ] A2 Token floors, row headlines, percentage signs, section rhythm
+- [ ] Proof at 390/768/1440 in Read and Terminal; CLS comparison; full tests; report; no deployment
+
 # Phase E3 · The front page and the navigation
 
 - [x] 0.1 Sale-mode census counts sale wording only (not seasonal); recount No. 90 as a correction

@@ -66,13 +66,13 @@ export function LeadPicture({ plan, eager = true, className = "", tileSizes = LE
     {plan.items.map((i, k) => <li key={i.asset} className="min-w-0"><LeadFigure i={i} sizes={tileSizes} eager={eager && k < 2} compact={compact} /></li>)}
   </ul>);
   if (plan.kind === "words" && plan.words) return wrap("words", <ul className="ledger" data-lead-words="">{plan.words.map((w, k) => <li key={k} className="ledger-row flex flex-col gap-1 px-2 py-3 md:flex-row md:items-baseline md:gap-4">
-    {w.href ? <Link to="/brands/$domain" params={{ domain: w.domain ?? "" }} className="ed-tap ed-kicker inline-flex min-h-11 shrink-0 items-center md:w-40">{w.name}</Link> : <span className="ed-kicker shrink-0 md:w-40">{w.name}</span>}
+    {w.href ? <Link to="/brands/$domain" params={{ domain: w.domain ?? "" }} className="ed-tap ed-kicker inline-flex min-h-11 shrink-0 items-center md:w-40"><BrandMark icon={null} name={w.name} size={32} className="mr-2" />{w.name}</Link> : <span className="ed-kicker shrink-0 md:w-40">{w.name}</span>}
     <span className="ed-h3 min-w-0 break-words">{w.line}</span>
   </li>)}</ul>);
   if (plan.kind === "swatches" && plan.swatches) return wrap("swatches", <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
     {(["before", "after"] as const).map(k => <div key={k} className="min-w-0"><p className="ed-kicker mb-2">{k === "before" ? "Before" : "After"}</p>
       <Swatches colors={plan.swatches![k].map(hex => ({ hex, name: hexName(hex) }))} label={`${plan.swatches!.domain} colours ${k}`} /></div>)}
   </div>);
-  if (plan.kind === "marks" && plan.marks) return wrap("marks", <ul className="flex flex-wrap gap-4">{plan.marks.map(m => <li key={m.domain} className="ed-kicker inline-flex items-center gap-2"><BrandMark icon={m.icon} size={24} />{m.name}</li>)}</ul>);
+  if (plan.kind === "marks" && plan.marks) return wrap("marks", <ul className="flex flex-wrap gap-4">{plan.marks.map(m => <li key={m.domain} className="ed-kicker inline-flex items-center gap-2"><BrandMark icon={m.icon} name={m.name} size={32} />{m.name}</li>)}</ul>);
   return null;
 }

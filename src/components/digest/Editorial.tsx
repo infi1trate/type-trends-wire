@@ -9,6 +9,7 @@ import { GATE_ENABLED } from "@/lib/gate";
 import type { SectionId } from "@/lib/ia";
 import { ReadShell } from "@/components/read/ReadShell";
 import { ScrollRow } from "@/components/read/ScrollRow";
+import { BrandMark } from "@/components/read/BrandMark";
 import { Wordmark } from "@/components/brand/Wordmark";
 
 /** Absolute URL printed after a link in the print stylesheet. */
@@ -64,7 +65,7 @@ export function SiteCard({ domain, name, sector, lines, thumb, sizes = "(min-wid
       <span className="ed-h3 break-words">{domain}</span>
       <span className="ed-caption">{lines.join(" · ")}</span>
     </div>}
-    <h3 className="ed-small font-medium">{name ?? domain}</h3>
+    <h3 className="ed-small font-medium flex items-center gap-2"><BrandMark icon={null} name={name ?? domain} size={32} />{name ?? domain}</h3>
     {thumb && <p className="ed-caption">{lines.join(" · ")}</p>}
     <p className="ed-data flex flex-wrap gap-x-3"><Link to="/brands/$domain" params={{ domain }} className="ed-tap" data-tour="r-brand" {...pr(`/brands/${domain}`)}>Brand page →</Link><a href={`https://${domain}`} target="_blank" rel="noopener" className="ed-tap" {...pr(`https://${domain}`)}>Live site ↗</a></p>
   </article>;

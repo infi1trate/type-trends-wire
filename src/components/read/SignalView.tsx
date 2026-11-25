@@ -17,6 +17,7 @@ import { RelatedStories } from "./StoryCard";
 import { Raised, RuleBox } from "@/components/brand/Containers";
 import { FiltersScope, Trail } from "@/components/brand/Illustration";
 import { Count } from "@/components/brand/Motion";
+import { BrandMark } from "./BrandMark";
 import { QuarterLine } from "@/components/chartkit";
 
 export function SignalView({ page: p, sector }: { page: TraitPage; sector: string }) {
@@ -92,7 +93,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
           <Ledger small label="Signals in the same dimension" rows={p.related.map(r => ({ key: r.key, href: r.href, title: r.name, facts: [r.share != null ? pct(r.share, 0) : "—"], tags: r.stage ? [r.stage] : [] }))} />
         </BlockPart>}
         <BlockPart title="Brands showing it" kicker={p.showingTotal ? `${p.showingTotal} tracked brands show it on their current homepage; the latest captures first.` : undefined}>
-          {p.showing.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-1">{p.showing.map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap">{s.name ?? s.domain}</Link> <span className="ed-muted">{sectorName(s.sector)}</span></li>)}</ul> : <p className="ed-small">{voiced("read.signalView.2")}</p>}
+          {p.showing.length ? <ul className="ed-data flex flex-wrap gap-x-5 gap-y-1">{p.showing.map(s => <li key={s.domain}><Link to="/brands/$domain" params={{ domain: s.domain }} className="ed-tap"><BrandMark icon={null} name={s.name ?? s.domain} size={32} className="mr-2" />{s.name ?? s.domain}</Link> <span className="ed-muted">{sectorName(s.sector)}</span></li>)}</ul> : <p className="ed-small">{voiced("read.signalView.2")}</p>}
         </BlockPart>
         <BlockPart title="Recent stories">
           <RelatedStories stories={p.stories} empty={voiced("read.signalView.3")} />

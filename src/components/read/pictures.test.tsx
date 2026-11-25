@@ -19,8 +19,8 @@ const setReduced = (on: boolean) => {
 };
 
 describe("BrandMark", () => {
-  it("renders nothing without an icon", () => {
-    expect(renderToStaticMarkup(<BrandMark icon={null} />)).toBe("");
+  it("uses the neutral initial without an icon", () => {
+    expect(renderToStaticMarkup(<BrandMark icon={null} name="Netlify" />)).toContain("data-mark-fallback");
   });
   it("has explicit width and height, empty alt and lazy loading with an icon", () => {
     const html = renderToStaticMarkup(<BrandMark icon={pic("/crops/assets/gopro.com/icon/x.webp", 180, 180)} size={32} />);
@@ -30,7 +30,7 @@ describe("BrandMark", () => {
   it("a list reserves the icon's width only when most rows have one", () => {
     expect(reserveIconSpace(26, 50)).toBe(true);
     expect(reserveIconSpace(25, 50)).toBe(false);
-    expect(renderToStaticMarkup(<BrandMark icon={null} reserve size={16} />)).toContain("data-brand-mark-space");
+    expect(renderToStaticMarkup(<BrandMark icon={null} name="Netlify" reserve size={20} />)).toContain("data-mark-fallback");
   });
   it("iconsFor returns only brands that have an icon", () => {
     const idx = pictureIndex([{ domain: "a.com", kind: "icon", path: "assets/a.com/icon/1.webp", width: 64, height: 64, captured_at: "2026-11-20T00:00:00Z" }]);

@@ -358,8 +358,8 @@
 @media (min-width: 1440px) { .digest .moved-band { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .digest .moved-card { display: flex; flex-direction: column; gap: var(--tk-space-1); height: 100%; padding: var(--tk-space-2); color: var(--sys-color-ink); text-decoration: none !important; }
 .digest .moved-crop { position: relative; display: block; aspect-ratio: 16 / 10; border: var(--tk-border-strong) solid var(--sys-color-rule); background: var(--sys-color-page); }
-.digest .moved-crop img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.digest .moved-crop .brand-plate { position: absolute; left: var(--tk-space-2); bottom: -1.25rem; }
+.digest .moved-crop > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.digest .moved-crop .brand-mark { position: absolute; left: var(--tk-space-2); bottom: -1.25rem; }
 .digest .moved-card .brand-tile-name { margin-top: 1.75rem; }
 /* S1 · Studies: a study card (kicker, "No. 2" and the title on one baseline, the question on one line, the share picture in a 16:9 box). */
 .digest .study-card { display: flex; flex-direction: column; height: 100%; padding: var(--tk-space-3); color: var(--sys-color-ink); text-decoration: none !important; border-top: var(--tk-border-strong) solid var(--sys-color-rule); }
@@ -895,7 +895,20 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   @media print { .reveal-layer { display: none; } }
 
   /* I1 · BrandMark: the brand's own icon on a neutral tile, as published (no filter, no recolouring, square). */
-  .brand-mark { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; overflow: hidden; background: var(--sys-color-surface); box-shadow: inset 0 0 0 1px var(--sys-color-rule); }
+  .brand-mark { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; overflow: hidden; flex: none; width: var(--mark-size); height: var(--mark-size); padding: var(--sys-mark-padding-small); background: var(--sys-mark-paper); color: var(--sys-mark-ink); border: var(--sys-mark-border) solid var(--sys-mark-ink); }
+  .brand-mark-20 { --mark-size: var(--sys-mark-20); }
+  .brand-mark-28 { --mark-size: var(--sys-mark-28); }
+  .brand-mark-32 { --mark-size: var(--sys-mark-32); }
+  .brand-mark-48 { --mark-size: var(--sys-mark-48); }
+  .brand-mark-56 { --mark-size: var(--sys-mark-56); }
+  .brand-mark-72 { --mark-size: var(--sys-mark-72); }
+  .brand-mark:is(.brand-mark-48,.brand-mark-56,.brand-mark-72) { padding: var(--sys-mark-padding-large); }
+  .brand-mark-initial { font-family: var(--sys-font-display); font-weight: var(--sys-text-h1-weight); font-size: calc(var(--mark-size) * .65); line-height: 1; }
+  .brand-title { display: flex; align-items: center; gap: var(--sys-space-3); }
+  @media (max-width: 767px) { .brand-mark-mobile-56 { --mark-size: var(--sys-mark-56); } }
+  [data-front-tape] .ledger-link { min-height: var(--sys-mark-tape-row); }
+  .ledger-hang-head { align-self: start; }
+  .ledger-title > .brand-mark { vertical-align: -.35em; }
   .brand-mark > img { display: block; width: 100%; height: 100%; object-fit: contain; filter: none; }
 
   /* I1 · the brand page cover: the stored ratio, never upscaled, height capped so the moves list stays on a laptop's first screen. */

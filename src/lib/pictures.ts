@@ -20,7 +20,7 @@ export function pictureIndex(rows: PictureRow[]): Map<string, BrandPics> {
   for (const r of rows) {
     if (r.kind !== "icon" && r.kind !== "card" && r.kind !== "hero") continue;
     const cur = out.get(r.domain) ?? { ...NO_PICS }, have = cur[r.kind];
-    if (!have || r.captured_at > have.at) cur[r.kind] = { src: cropSrc(r.path), width: r.width, height: r.height, at: r.captured_at };
+    if (!have || (r.kind === "icon" ? Math.min(r.width, r.height) > Math.min(have.width, have.height) || (Math.min(r.width, r.height) === Math.min(have.width, have.height) && r.captured_at > have.at) : r.captured_at > have.at)) cur[r.kind] = { src: cropSrc(r.path), width: r.width, height: r.height, at: r.captured_at };
     out.set(r.domain, cur);
   }
   return out;
