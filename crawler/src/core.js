@@ -26,13 +26,20 @@ export function describeBatch(body, bytes) {
   return `${body?.kind ?? "batch"}, ${Array.isArray(items) ? items.length : 0} items, ${Math.round(bytes / 1024)} KB${domains.length ? `, ${domains.slice(0, 30).join(" ")}` : ""}`;
 }
 
+/** JSON.stringify replacer: text the database cannot hold is removed before it is sent. Postgres refuses a NUL in jsonb
+ *  text and half of a surrogate pair is not valid Unicode; archived pages contain both now and then, and one such
+ *  character would otherwise fail the whole batch it travels in. */
+export const cleanText = (_key, value) => (typeof value === "string" && /[\u0000\ud800-\udfff]/.test(value)
+  ? (value.toWellFormed ? value.toWellFormed() : value.replace(/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g, "\ufffd")).replace(/\u0000/g, "")
+  : value);
+
 export function makePoster({ endpoint, secret, dry, runId }) {
   const ready = dry ? async () => {} : () => gateFor(endpoint)();   // made on first post: the endpoint may not be set when this module loads
   return async function post(body) {
     if (dry) { mkdirSync("out", { recursive: true }); appendFileSync(`out/${runId}.jsonl`, JSON.stringify(body) + "\n"); return {}; }
     // What failed is printed per attempt (status, time taken, the server's own short message; never the secret or the payload),
     // so a failing run says why. `describe` lets a caller name the batch (kind, size, domains).
-    const payload = JSON.stringify(body), what = describeBatch(body, payload.length);
+    const payload = JSON.stringify(body, cleanText), what = describeBatch(body, payload.length);
     let last = "";
     for (let attempt = 1; attempt <= 4; attempt++) {
       await ready();   // ask the site first, and keep the gap between posts (gate.js)

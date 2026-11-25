@@ -203,8 +203,26 @@ async function main() {
   const flush = async () => {
     if (!buffer.length) return;
     const snapshots = buffer; buffer = []; bufBytes = 0;
-    await post({ kind: "library_snapshots", run_id: RUN_ID, snapshots });
-    for (const r of snapshots) { await tagOne(r, pendingImages.get(r)); pendingImages.delete(r); }
+    let stored = snapshots;
+    try { await post({ kind: "library_snapshots", run_id: RUN_ID, snapshots }); }
+    catch (e) {
+      // One reading the site cannot store must not cost the run (and the readings queued behind it). Send them one by
+      // one; a reading that still fails is set aside as unreadable and named in the log. If none can be stored the site
+      // itself is in trouble, and that does stop the run.
+      if (snapshots.length < 2) throw e;
+      stored = [];
+      for (const r of snapshots) {
+        try { await post({ kind: "library_snapshots", run_id: RUN_ID, snapshots: [r] }); stored.push(r); }
+        catch (one) {
+          const q = r.signals?.archive?.quarter;
+          console.log(`not stored: ${r.domain} ${q ?? ""} (${String(one?.message ?? one).replace(/\s+/g, " ").slice(0, 160)})`);
+          if (q) cache.failed[`${r.domain}|${q}`] = FAIL_LIMIT;
+          totals.unstored = (totals.unstored ?? 0) + 1; totals.captured--; pendingImages.delete(r);
+        }
+      }
+      if (!stored.length) throw e;
+    }
+    for (const r of stored) { await tagOne(r, pendingImages.get(r)); pendingImages.delete(r); }
   };
   const emit = async (rec, imgs) => {
     const size = JSON.stringify(rec).length;
