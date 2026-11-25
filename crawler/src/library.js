@@ -260,7 +260,7 @@ async function crawlSite(browser, site, st, emitRaw, errors) {
 
 async function main() {
   if (!DRY && (!ENDPOINT || !SECRET)) throw new Error("Set CRAWL_ENDPOINT and CRAWL_SECRET, or DRY_RUN=1");
-  let sites = parseLibrary(readFileSync(process.env.LIBRARY_FILE ?? new URL("../seeds/library.csv", import.meta.url).pathname, "utf8"));
+  let sites = parseLibrary(readFileSync(process.env.LIBRARY_FILE || new URL("../seeds/library.csv", import.meta.url).pathname, "utf8"));
   await post({ kind: "library_sync", sites });
   if (SECTOR) sites = sites.filter((s) => s.sector === SECTOR);
   sites = inSlice(sites, SLICE);
