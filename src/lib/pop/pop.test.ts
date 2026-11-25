@@ -62,3 +62,10 @@ describe("focus outline", () => {
     expect(css).toMatch(/\[data-key-selected\] \{ outline: var\(--tk-focus-width\)/);
   });
 });
+
+describe("A3 · Signals and sector pages carry their one highlight", () => {
+  it("on the existing count words", () => {
+    expect(readFileSync("src/components/read/SignalsIndexView.tsx", "utf8")).toContain("<mark className=\"hl-mark\" data-highlight=\"\">{m[1]}</mark>");
+    expect(readFileSync("src/components/read/EditionsViews.tsx", "utf8")).toMatch(/data-highlight="">\{r\.signals\.length\} headline signals<\/mark>/);
+  });
+});
