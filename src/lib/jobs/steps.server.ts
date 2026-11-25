@@ -55,7 +55,8 @@ export async function advanceFollowUps(callStartedAt: number, runners: Record<st
 /** The weekly forecast's follow-ups, each the same call the single long request used to make. */
 export const forecastRunners: Record<string, StepRunner> = {
   // J1 · structure records and counts from new HOME captures (no AI; resumes from its bookmark).
-  structure: async () => (await import("../structure.server")).refreshStructure(),
+  // B2 · then the lead-and-lag counts (stored site history, no AI); a failure there never fails the structure step.
+  structure: async () => { const s = await (await import("../structure.server")).refreshStructure(); const leadlag = await (await import("../leadlag.server")).refreshLeadLag().catch(() => ({ ok: false, code: "leadlag_failed" })); return { ...s, leadlag }; },
   taste: async () => { const { refreshTaste } = await import("../taste/refresh.server"); await refreshTaste(); return { ok: true }; },
   brief: async k => (await import("../forecast-brief.server")).generateWeeklyBrief(Number(k)),
   vibe: async k => (await import("../vibe.server")).computeVibe(Number(k)),

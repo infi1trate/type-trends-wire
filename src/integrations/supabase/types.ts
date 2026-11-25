@@ -2514,6 +2514,39 @@ export type Database = {
         }
         Relationships: []
       }
+      library_lead_lag_series: {
+        Row: {
+          computed_at: string
+          quarter: string
+          rest_n: number
+          rest_yes: number
+          signal: string
+          van_n: number
+          van_yes: number
+          vanguard_size: number
+        }
+        Insert: {
+          computed_at?: string
+          quarter: string
+          rest_n?: number
+          rest_yes?: number
+          signal: string
+          van_n?: number
+          van_yes?: number
+          vanguard_size?: number
+        }
+        Update: {
+          computed_at?: string
+          quarter?: string
+          rest_n?: number
+          rest_yes?: number
+          signal?: string
+          van_n?: number
+          van_yes?: number
+          vanguard_size?: number
+        }
+        Relationships: []
+      }
       library_site_history_store: {
         Row: {
           accent: string | null
