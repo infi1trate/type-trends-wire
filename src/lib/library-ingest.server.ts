@@ -17,8 +17,11 @@ const resultSchema = z.object({ retry: z.boolean().optional(), inserted: z.numbe
 export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> | z.infer<typeof librarySnapshotsPayload>): Promise<Response> {
   if (payload.kind === "library_sync") {
     // I3b: a wrong address on file is replaced by the brand's real one, so the wrong one stays inactive whatever the seeds say.
-    const { error } = await db.rpc("library_sync", { p_sites: correctSites(payload.sites) });
+    // R2a · the RPC is unchanged and gets the fields it always got; categories are filled after it, in server code.
+    const sites = correctSites(payload.sites);
+    const { error } = await db.rpc("library_sync", { p_sites: sites.map(({ category: _c, subcategory: _s, ...s }) => s) });
     if (error) throw new Error("Library sync failed");
+    await fillCategories(db, sites).catch(() => undefined);
     return Response.json({ ok: true, inserted: 0, events: 0 });
   }
   let inserted = 0, events = 0;
@@ -51,4 +54,16 @@ export async function ingestLibrary(payload: z.infer<typeof librarySyncPayload> 
   // No history refresh here: the insert triggers mark the domain dirty (library_history_dirty_domains) and the scheduled
   // library-history-refresh job replaces its stored rows, so a stored batch always answers with its counts.
   return Response.json({ ok: true, inserted, events });
+}
+/** R2a · rows whose category or sub-category is null get them from the sync payload (when valid) or the category map, by domain. */
+async function fillCategories(db: { from: (t: "library_sites") => any }, sites: readonly { domain: string; category?: string | undefined; subcategory?: string | undefined }[]) {
+  const { fillClassification } = await import("./categories");
+  const want = new Map(sites.map(s => [s.domain, s]));
+  for (let i = 0; i < sites.length; i += 200) {
+    const { data } = await db.from("library_sites").select("domain,sector,category,subcategory").in("domain", sites.slice(i, i + 200).map(s => s.domain)).or("category.is.null,subcategory.is.null");
+    for (const r of (data ?? []) as { domain: string; sector: string; category: string | null; subcategory: string | null }[]) {
+      const p = want.get(r.domain), fill = fillClassification(r, p ? { ...(p.category ? { category: p.category } : {}), ...(p.subcategory ? { subcategory: p.subcategory } : {}) } : undefined);
+      if (fill) await db.from("library_sites").update(fill).eq("domain", r.domain).or("category.is.null,subcategory.is.null");
+    }
+  }
 }

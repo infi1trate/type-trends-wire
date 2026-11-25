@@ -33,7 +33,7 @@ export const librarySnapshot = z.object({
 }).strict();
 export const librarySyncPayload = z.object({
   kind: z.literal("library_sync"),
-  sites: z.array(z.object({ domain: libraryDomain, sector: librarySector, name: z.string().max(300).optional() }).strict()).max(1000),
+  sites: z.array(z.object({ domain: libraryDomain, sector: librarySector, name: z.string().max(300).optional(), category: z.string().max(60).optional(), subcategory: z.string().max(60).optional() }).strict()).max(1000),
 }).strict().refine(value => new Set(value.sites.map(site => site.domain)).size === value.sites.length, "Duplicate domains");
 export const librarySnapshotsPayload = z.object({
   kind: z.literal("library_snapshots"),

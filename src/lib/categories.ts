@@ -28,6 +28,13 @@ export function classificationProblem(row: { sector?: string | null | undefined;
 }
 const byDomain = new Map(map.brands.map(b => [b.domain, b]));
 export const classificationForDomain = (domain: string): Classification | null => byDomain.get(domain) ?? null;
+/** R2a · the two R1 columns for a row the sync left empty: the payload's pair when valid for the tree, else the map's, else null (unfiled). */
+export function fillClassification(row: { domain: string; sector: string; category?: string | null; subcategory?: string | null }, payload?: { category?: string | undefined; subcategory?: string | undefined }): { category: string; subcategory: string } | null {
+  if (row.category && row.subcategory) return null;
+  if (payload?.category && payload.subcategory && !classificationProblem({ sector: row.sector, ...payload })) return { category: payload.category, subcategory: payload.subcategory };
+  const m = byDomain.get(row.domain);
+  return m && m.sector === row.sector ? { category: m.category, subcategory: m.subcategory } : null;
+}
 export const CATEGORY_SHARE_MIN = 15;
 export const CATEGORY_TOO_FEW = 'Too few brands here to give a percentage yet.';
 /** Count well-covered distinct brands, not captures; duplicate captures cannot meet the floor. */

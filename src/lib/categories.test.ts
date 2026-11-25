@@ -64,3 +64,18 @@ describe("R1 · chips, filters, the 15-brand floor, outputs and the summary", ()
     expect(libraryLine(s)).toBe("19 brands: fintech 18, ai 1; 1 of 1 categories and 1 of 2 sub-categories hold at least 15 brands; 1 unclassified.");
   });
 });
+
+import { fillClassification } from "./categories";
+import { librarySyncPayload as libraryPayloadSchema } from "./library-payload";
+describe("R2a · categories for new rows", () => {
+  it("fills null columns from the map, lets a valid payload pair win, and leaves an unknown domain unfiled", () => {
+    expect(fillClassification({ domain: "stripe.com", sector: "fintech" })).toEqual({ category: "payments", subcategory: "processing" });
+    expect(fillClassification({ domain: "stripe.com", sector: "fintech" }, { category: "payments", subcategory: "wallets" })).toEqual({ category: "payments", subcategory: "wallets" });
+    expect(fillClassification({ domain: "stripe.com", sector: "fintech" }, { category: "payments", subcategory: "skincare" })).toEqual({ category: "payments", subcategory: "processing" });
+    expect(fillClassification({ domain: "nobody.example", sector: "fintech" })).toBeNull();
+    expect(fillClassification({ domain: "stripe.com", sector: "fintech", category: "banking", subcategory: "consumer" })).toBeNull();
+  });
+  it("the sync payload may carry category and subcategory", () => {
+    expect(libraryPayloadSchema.safeParse({ kind: "library_sync", sites: [{ domain: "stripe.com", sector: "fintech", category: "payments", subcategory: "processing" }] }).success).toBe(true);
+  });
+});
