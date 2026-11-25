@@ -134,7 +134,7 @@ export const deskBody = z.discriminatedUnion("action", [
   z.object({ action: z.literal("dossier"), signal: z.string().trim().min(3).max(80), entries: z.number().int().min(0).max(500), note: z.string().trim().min(3).max(300) }).strict(),
   artRemoveBody.extend({ action: z.literal("art_remove") }).strict(),
   iconRemoveBody.extend({ action: z.literal("icon_remove") }).strict(),
-  z.object({ action: z.literal("panel_step"), reason: z.string().trim().min(3).max(300).optional() }).strict(),
+  z.object({ action: z.literal("panel_step"), dry: z.boolean().optional(), reason: z.string().trim().min(3).max(300).optional() }).strict(),
   z.object({ action: z.literal("candidate_status"), candidate: z.number().int().min(1), status: z.enum(["accepted", "declined", "added"]), reason: z.string().trim().min(3).max(300).optional() }).strict(),
 ]);
 /** N1 · the call envelope every desk call carries beside its action: who is acting, and the owner's confirmation phrase when needed. */

@@ -141,7 +141,8 @@ async function loadPayload(): Promise<HealthPayload> {
     const sf = await import("./structure-read.server").then(m => m.structureFacts(now)).catch(() => null);
     const sl = sf ? (await import("./structure")).structureHealthLine(sf) : null;
     // R2a · panel, onboarding (and how many are ready), unfiled brands and the last panel step; unreadable leaves the line as it was.
-    const pf = await import("./panel.server").then(m => m.panelFacts(supabaseAnon() as never)).catch(() => null);
+    // R2a-2 · the service client: onboarding readiness reads the private archive-gap rows.
+    const pf = await Promise.all([import("./panel.server"), import("@/integrations/supabase/client.server")]).then(([m, a]) => m.panelFacts(a.supabaseAdmin)).catch(() => null);
     const pl = pf ? (await import("./panel")).panelHealthLine(pf) : null;
     const base = sl ? `${libraryLine(s).replace(/\.$/, "")}; ${sl}.` : libraryLine(s);
     return { ...s, structure: sf ? { fresh_desktop: sf.fresh_desktop, fresh_phone: sf.fresh_phone } : null, panel: pf, line: pl ? `${base} ${pl}` : base };

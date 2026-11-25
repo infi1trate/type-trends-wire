@@ -1,5 +1,5 @@
 /** R2a · the panel entry rule. Pure: one place decides who counts in shares and trends. */
-export type PanelSite = { domain: string; sector: string; active?: boolean | null; panel_since?: string | null };
+export type PanelSite = { domain: string; sector: string; active?: boolean | null; panel_since?: string | null; onboarding?: boolean | null };
 export type Readiness = { domain: string; liveHomeCaptures: readonly string[]; archiveComplete: boolean; latestWellRead: boolean };
 
 export const PANEL_FROM_QUARTER = '2020Q4';
@@ -7,8 +7,9 @@ export const PANEL_HOLD_DAYS = 7;
 export const MIN_CAPTURE_GAP_MS = 24 * 3600_000;
 
 /** In the panel: active and dated. Everything that is a share or a trend filters through this. */
-export const inPanel = (s: PanelSite) => s.active !== false && !!s.panel_since;
-export const onboarding = (s: PanelSite) => s.active !== false && !s.panel_since;
+export const inPanel = (s: PanelSite) => s.active === true && !!s.panel_since;
+/** R2a-2 · onboarding is its own stored flag; such rows are inactive and invisible to readers until a panel step. */
+export const onboarding = (s: PanelSite) => s.onboarding === true;
 export const panelOnly = <T extends PanelSite>(rows: readonly T[]) => rows.filter(inPanel);
 export const panelDomains = (rows: readonly PanelSite[]) => new Set(panelOnly(rows).map(r => r.domain));
 
@@ -40,7 +41,7 @@ export function planPanelStep(sites: readonly PanelSite[], ready: ReadonlySet<st
 }
 export function applyPanelStep<T extends PanelSite>(sites: readonly T[], plan: PanelStepPlan): T[] {
   const j = new Set(plan.domains);
-  return sites.map(s => (j.has(s.domain) ? { ...s, panel_since: plan.at } : s));
+  return sites.map(s => (j.has(s.domain) ? { ...s, active: true, onboarding: false, panel_since: plan.at } : s));
 }
 
 /** The follow-up topics a step marks for a full recompute over the larger panel. */
@@ -84,7 +85,36 @@ export function howThePanelGrows(steps: readonly (PanelStepRow & { by_sector?: R
 }
 
 /** The health / engineering summary line. */
-export function panelHealthLine(f: { panel: number; onboarding: number; ready: number; unfiled: number; last_step: PanelStepRow | null }): string {
+export function panelHealthLine(f: { panel: number; onboarding: number; ready: number; unfiled: number; last_step: PanelStepRow | null; invariant?: readonly string[] }): string {
   const step = f.last_step ? `last panel step ${fmt(f.last_step.at)} (${f.last_step.brands_before} to ${f.last_step.brands_after})` : "no panel step yet";
-  return `Panel ${f.panel} brands; ${f.onboarding} onboarding (${f.ready} ready); ${f.unfiled} unfiled; ${step}.`;
+  const broken = f.invariant?.length ? ` PANEL INVARIANT BROKEN: ${f.invariant.join("; ")}.` : "";
+  return `Panel ${f.panel} brands; ${f.onboarding} onboarding (${f.ready} ready); ${f.unfiled} unfiled; ${step}.${broken}`;
+}
+
+export function prevQuarter(q: string): string {
+  const y = Number(q.slice(0, 4)), n = Number(q.slice(5));
+  return n <= 1 ? `${y - 1}Q4` : `${y}Q${n - 1}`;
+}
+export type ReadinessInput = { liveHomeCaptures: readonly string[]; archiveQuarters: ReadonlySet<string>; gapQuarters: ReadonlySet<string>; latestWellRead: boolean };
+/** R2a-2 · readiness with its reasons. Archive quarters 2020Q4 up to the quarter before `now` are settled by a stored archive copy
+ *  or a recorded gap; the current quarter is settled by the live captures. */
+export function readiness(r: ReadinessInput, now: Date): { ready: boolean; missing: string[] } {
+  const missing: string[] = [];
+  const t = r.liveHomeCaptures.map(x => Date.parse(x)).filter(Number.isFinite).sort((a, b) => a - b);
+  if (t.length < 2) missing.push(`live home captures: ${t.length} of 2`);
+  else if (t[t.length - 1]! - t[0]! <= MIN_CAPTURE_GAP_MS) missing.push("live home captures are not more than 24 hours apart");
+  const upTo = prevQuarter(quarterOf(now.toISOString())), quarters: string[] = [];
+  for (let q = PANEL_FROM_QUARTER; q <= upTo; q = nextQuarter(q)) if (!r.archiveQuarters.has(q) && !r.gapQuarters.has(q)) quarters.push(q);
+  if (quarters.length) missing.push(`archive quarters not settled: ${quarters.join(", ")}`);
+  if (t.length && !r.latestWellRead) missing.push("latest live capture does not read clearly");
+  return { ready: !missing.length, missing };
+}
+/** R2a-2 · invariants the health line checks loudly. */
+export function panelInvariantProblems(rows: readonly PanelSite[]): string[] {
+  const p: string[] = [];
+  const noDate = rows.filter(r => r.active === true && !r.panel_since).map(r => r.domain);
+  const both = rows.filter(r => r.active === true && r.onboarding === true).map(r => r.domain);
+  if (noDate.length) p.push(`active without panel_since: ${noDate.slice(0, 10).join(", ")}${noDate.length > 10 ? ` (+${noDate.length - 10})` : ""}`);
+  if (both.length) p.push(`active and onboarding: ${both.slice(0, 10).join(", ")}${both.length > 10 ? ` (+${both.length - 10})` : ""}`);
+  return p;
 }

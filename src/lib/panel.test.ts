@@ -3,7 +3,7 @@ import { applyPanelStep, archiveComplete, eventVisible, holdForStep, howThePanel
 import { categoryChips, CATEGORY_BRANDS } from "./categories";
 
 type Row = PanelSite & { quarter: string; has: boolean };
-const site = (domain: string, sector: string, panel_since: string | null): PanelSite => ({ domain, sector, active: true, panel_since });
+const site = (domain: string, sector: string, panel_since: string | null): PanelSite => ({ domain, sector, active: !!panel_since, onboarding: !panel_since, panel_since });
 const QUARTERS = ["2025Q3", "2025Q4", "2026Q1"];
 // 20 panel brands (8 have the trait in every quarter), 10 onboarding brands that all have it.
 const sites: PanelSite[] = [...Array.from({ length: 20 }, (_, i) => site(`p${i}.com`, "fintech", "2024-01-01T00:00:00Z")), ...Array.from({ length: 10 }, (_, i) => site(`n${i}.com`, "health", null))];
@@ -65,5 +65,32 @@ import { panelHealthLine } from "./panel";
 describe("R2a · health line", () => {
   it("names panel, onboarding, ready, unfiled and the last step", () => {
     expect(panelHealthLine({ panel: 328, onboarding: 0, ready: 0, unfiled: 0, last_step: null })).toBe("Panel 328 brands; 0 onboarding (0 ready); 0 unfiled; no panel step yet.");
+  });
+});
+
+import { panelInvariantProblems, readiness } from "./panel";
+describe("R2a-2 · onboarding is inactive until the step", () => {
+  const now = new Date("2026-11-25T12:00:00Z");
+  const allQ = () => { const s = new Set<string>(); for (let y = 2020; y <= 2026; y++) for (let q = 1; q <= 4; q++) s.add(`${y}Q${q}`); return s; };
+  const live = ["2026-11-20T00:00:00Z", "2026-11-22T00:00:00Z"];
+  it("an archive quarter is settled by a copy or a gap row; the current quarter by live captures", () => {
+    const arch = allQ(); arch.delete("2021Q3"); arch.delete("2026Q4");
+    expect(readiness({ liveHomeCaptures: live, archiveQuarters: arch, gapQuarters: new Set(), latestWellRead: true }, now)).toEqual({ ready: false, missing: ["archive quarters not settled: 2021Q3"] });
+    expect(readiness({ liveHomeCaptures: live, archiveQuarters: arch, gapQuarters: new Set(["2021Q3"]), latestWellRead: true }, now).ready).toBe(true);
+  });
+  it("names every missing condition", () => {
+    expect(readiness({ liveHomeCaptures: ["2026-11-20T00:00:00Z"], archiveQuarters: new Set(), gapQuarters: new Set(["2020Q4"]), latestWellRead: false }, now).missing).toEqual([
+      "live home captures: 1 of 2", expect.stringMatching(/^archive quarters not settled: 2021Q1, /), "latest live capture does not read clearly"]);
+  });
+  it("the step makes joiners active, not onboarding, dated", () => {
+    const plan = planPanelStep(sites, new Set(["n0.com"]), "2026-11-25T00:00:00Z")!;
+    expect(applyPanelStep(sites, plan).find(s => s.domain === "n0.com")).toMatchObject({ active: true, onboarding: false, panel_since: "2026-11-25T00:00:00Z" });
+    expect(planPanelStep(sites, new Set(), "x")).toBeNull();
+  });
+  it("invariants fail loudly", () => {
+    expect(panelInvariantProblems(sites)).toEqual([]);
+    const bad = [{ domain: "a.com", sector: "ai", active: true, panel_since: null }, { domain: "b.com", sector: "ai", active: true, onboarding: true, panel_since: "2024-01-01" }];
+    expect(panelInvariantProblems(bad)).toHaveLength(2);
+    expect(panelHealthLine({ panel: 1, onboarding: 0, ready: 0, unfiled: 0, last_step: null, invariant: panelInvariantProblems(bad) })).toMatch(/PANEL INVARIANT BROKEN/);
   });
 });
