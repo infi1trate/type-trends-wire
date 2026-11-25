@@ -22,6 +22,7 @@ import { gateFor } from "./gate.js";
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { VIEWPORTS, UA, makePoster, robotsOk, openPage, analyzePage, evalSettled, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
+import { extractStructure } from "./extract-structure.js";
 import { parseLibrary, discoverPages, choosePages, htmlHash, contentHash, signalsHash, pickCaptures, parseSlice, inSlice, pickVanguard } from "./library-lib.js";
 import sharp from "sharp";
 import { encodeThumb, captureBody, makeThumbSender } from "./thumbs.js";
@@ -29,6 +30,8 @@ import { captureCrops, capturePageTop, makeCropSender } from "./crops.js";
 import { captureBrandAssets } from "./assets.js";
 
 const MODE = process.env.LIBRARY_MODE ?? "full";
+// LIBRARY_FORCE_HOME=1 stores every home snapshot once even when nothing changed (used to fill a newly added reading such as structure).
+const FORCE_HOME = process.env.LIBRARY_FORCE_HOME === "1";
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 6);
 const DRY = process.env.DRY_RUN === "1";
 const ENDPOINT = process.env.CRAWL_ENDPOINT;
@@ -125,7 +128,10 @@ async function snapshot(page, { domain, page_type, viewport, url, archive = null
     if (!a.ok) return { error: a.error };
     const x = await evalSettled(page, extractLibraryExtras);
     const { ok, final_url, ...fields } = a;
-    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h }, ...(archive ? { archive } : {}) };
+    // Structure (sections in order, first-screen asks, furniture, phone reading): home pages only. Not part of signals_hash,
+    // so adding it never reads as a change. A failure here leaves the snapshot as it was before this field existed.
+    const structure = page_type === "home" ? await evalSettled(page, extractStructure).catch(() => null) : null;
+    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav: x.nav, skeleton: x.skeleton, page: { w: x.page_w, h: x.page_h }, ...(structure ? { structure } : {}), ...(archive ? { archive } : {}) };
     const images = TAG && page_type === "home" && viewport === "desktop" ? await captureImages(page).catch(() => null) : null;
     if (thumbs && !archive && page_type === "home") await captureThumb(page, domain, viewport).catch(() => {});
     // captureImages has already walked the page (lazy images loaded) when it ran; otherwise captureCrops walks it.
@@ -207,7 +213,7 @@ async function crawlSite(browser, site, st, emitRaw, errors) {
   // Unchanged since the last stored snapshot (same design signals and same text): don't store a duplicate.
   const emit = async (rec, images) => {
     const prev = st?.latest?.[`${rec.page_type}:${rec.viewport}`];
-    if (MODE !== "tag" && prev && prev.signals_hash === rec.signals_hash && prev.content_hash === rec.content_hash && !rec.discovered_pages) return emitRaw(null);
+    if (MODE !== "tag" && prev && prev.signals_hash === rec.signals_hash && prev.content_hash === rec.content_hash && !rec.discovered_pages && !(FORCE_HOME && rec.page_type === "home")) return emitRaw(null);
     return emitRaw(rec, images);
   };
   const { discover, jobs: planned, known } = await plan(site, st?.latest, st?.pages, origin);

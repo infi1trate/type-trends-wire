@@ -14,6 +14,7 @@ import os from "node:os";
 import sharp from "sharp";
 import { VIEWPORTS, UA, makePoster, analyzePage, evalSettled, hideOverlays, errorCode } from "./core.js";
 import { extractLibraryExtras } from "./extract-library.js";
+import { extractStructure } from "./extract-structure.js";
 import { parseLibrary, contentHash, signalsHash } from "./library-lib.js";
 import { quarters, parseCdx, pickCaptures, blankArchive, archiveUrl, cdxUrl, tsFromArchiveUrl, tsToDate, ARCHIVE_ERROR, buildQueue } from "./wayback-lib.js";
 
@@ -114,12 +115,13 @@ async function renderCapture(browser, item, ts) {
     const a = await analyzePage(page, { started });
     if (!a.ok) return { error: a.error };
     const x = await evalSettled(page, extractLibraryExtras);
+    const structure = await evalSettled(page, extractStructure).catch(() => null);
     const fonts = await page.evaluate(() => { const f = [...(document.fonts || [])]; return { fonts_total: f.length, fonts_failed: f.filter((x) => x.status === "error").length }; }).catch(() => ({ fonts_total: 0, fonts_failed: 0 }));
     const realTs = tsFromArchiveUrl(page.url()) ?? ts;
     const { ok, final_url, ...fields } = a;
     // Nav hrefs point into the archive; keep the original paths.
     const nav = x.nav.map((n) => ({ ...n, href: n.href.replace(/^https?:\/\/[^/]+\/web\/\d+[a-z_]*\//, "") }));
-    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav, skeleton: x.skeleton.slice(0, 250), page: { w: x.page_w, h: x.page_h },
+    const signals = { ...fields, css_features: x.css_features, prices: x.prices, nav, skeleton: x.skeleton.slice(0, 250), page: { w: x.page_w, h: x.page_h }, ...(structure ? { structure } : {}),
       archive: { timestamp: realTs, quarter: item.quarter, ...fonts } };
     const record = {
       domain: item.domain, page_type: "home", viewport: "desktop", source: "wayback",
