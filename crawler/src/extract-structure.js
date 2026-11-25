@@ -95,7 +95,8 @@ export function extractStructure() {
     if (!role) for (const [re, r] of ROLE_BY_HEADING) if (label && re.test(label) && (heading || words < 40)) { role = r; break; }
     if (!role) {
       if (hasFaq) role = "faq";
-      else if (prices >= 2) role = "pricing";
+      // Prices scattered through a page are not a pricing section: it takes several prices laid out as plans.
+      else if (prices >= 3 && cards >= 2) role = "pricing";
       else if (hasQuote) role = "testimonials";
       else if (smallImgs >= 5 && words < 60) role = "logos";
       else if (stats >= 3) role = "stats";
@@ -166,6 +167,9 @@ export function extractStructure() {
   const cmdk = /(⌘|ctrl)\s?\+?\s?k\b/i.test(headText) || !!document.querySelector("kbd");
   const hreflang = document.querySelectorAll("link[rel=alternate][hreflang]").length;
   const langSwitch = !!document.querySelector("[aria-label*=language i], [class*=lang-switch i], [class*=language-s i], [class*=locale i] select, select[name*=lang i], select[name*=locale i], [data-testid*=language i]");
+  // Top-level navigation items that open a menu are often buttons, not links, so the stored nav (links only) misses
+  // words such as "Products" and "Solutions". They are kept here, apart from nav, so the change hash is untouched.
+  const navButtons = header ? [...new Set([...header.querySelectorAll("button, [role=button], summary, [aria-haspopup]")].filter((b) => shown(b) && b.getBoundingClientRect().top < 160).map((b) => clean(b.innerText || b.getAttribute("aria-label"), 32)).filter((t) => t && t.length >= 2 && t.split(" ").length <= 3 && !/^(menu|open|close|search|toggle|skip|sign|log|get|start|try|book|contact|download|subscribe|join|buy|shop now)\b/i.test(t)))].slice(0, 12) : [];
   const login = navLabels.find((l) => /^(log ?in|sign ?in|login|my account|account)$/i.test(l)) ?? null;
   const pricingNav = navLabels.some((l) => /^(pricing|plans|plans (&|and) pricing)$/i.test(l));
   const themeToggle = !!document.querySelector("button[aria-label*=theme i], button[aria-label*='dark mode' i], button[aria-label*='light mode' i], [class*=theme-toggle i]");
@@ -180,7 +184,7 @@ export function extractStructure() {
   const furniture = {
     ...(search ? { search: 1 } : {}), ...(cmdk ? { cmdk: 1 } : {}), ...(chat ? { chat } : {}), ...(askAi ? { ask_ai: askAi } : {}), ...(promptBox ? { prompt_box: 1 } : {}),
     ...(hreflang ? { hreflang: Math.min(hreflang, 200) } : {}), ...(langSwitch ? { lang_switch: 1 } : {}), ...(login ? { login } : {}), ...(pricingNav ? { pricing_nav: 1 } : {}),
-    ...(themeToggle ? { theme_toggle: 1 } : {}), ...(bar ? { bar } : {}),
+    ...(themeToggle ? { theme_toggle: 1 } : {}), ...(bar ? { bar } : {}), ...(navButtons.length ? { nav_buttons: navButtons } : {}),
   };
 
   // ---- phone-width reading ----

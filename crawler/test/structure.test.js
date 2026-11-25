@@ -23,6 +23,7 @@ test("structure: a desktop page reads as ordered sections, asks and furniture", 
     assert.equal(s.furniture.hreflang, 2);
     assert.equal(s.furniture.login, "Log in");
     assert.equal(s.furniture.pricing_nav, 1);
+    assert.deepEqual(s.furniture.nav_buttons, ["Solutions"], "menu buttons in the navigation are kept beside the link labels");
     assert.match(s.furniture.bar, /Acme 3\.0 is out today/);
     assert.equal(s.mobile, undefined, "no phone reading on a desktop capture");
     assert.ok(JSON.stringify(s).length < 2500, `stays small (${JSON.stringify(s).length} bytes)`);
