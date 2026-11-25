@@ -1,6 +1,7 @@
 // L2 · PROPOSED FORM, specimen only (src/lib/chart/forms.ts "slope"): each row at two points in time, lines labelled at both ends,
 // the row that moved most drawn in the highlighter. No reader page imports this file until the owner accepts the form and a gated
 // build makes it live. Tokens only; the frame ships its table for screen readers and each line takes keyboard focus.
+import { ChartInteraction } from "./Interaction";
 import { linear } from "@/lib/charts/scale";
 import { pctText, ptsText, quarterText } from "@/lib/labels";
 import type { SlopeModel } from "@/lib/chart/specimens";
@@ -47,13 +48,13 @@ export function SlopeChart({ m, look = "read", ...frame }: FrameProps & { m: Slo
     if (!m) return <p className="tk-t-data">No rows.</p>;
     const t = tableOf(m);
     return <figure className="min-w-0" data-chart="slope">
-      <svg viewBox={`0 0 ${W} ${heightOf(true)}`} className="tk-svg" role="img" aria-label={`${frame.title}: ${frame.note}`}><Lines m={m} dense /></svg>
+      <ChartInteraction label={frame.title}><svg viewBox={`0 0 ${W} ${heightOf(true)}`} className="tk-svg" role="img" aria-label={`${frame.title}: ${frame.note}`}><Lines m={m} dense /></svg></ChartInteraction>
       <ChartTable caption={`${frame.title}: the data behind the chart`} columns={t.columns} rows={t.rows} />
       <figcaption className="tk-t-caption tk-c-muted mt-1">Source: {frame.source}</figcaption>
     </figure>;
   }
   return <ChartFrame {...frame} isEmpty={!m || m.rows.length < 2} table={m ? tableOf(m) : { columns: [], rows: [] }}>
-    {ids => <svg viewBox={`0 0 ${W} ${heightOf(false)}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note} data-chart="slope"><Lines m={m!} dense={false} /></svg>}
+    {ids => <svg viewBox={`0 0 ${W} ${heightOf(false)}`} className="tk-svg" role="img" aria-labelledby={ids.title} aria-describedby={ids.note} data-chart="slope"><Lines m={m!} dense={false} /></svg>}
   </ChartFrame>;
 }
 

@@ -1,3 +1,4 @@
+import { ChartInteraction } from "./Interaction";
 import { line as voiced } from "@/lib/voice";
 // THE CHART KIT (U3) · the frame every kit chart sits in, its gumballs and focusable marks, and the two framed Read charts that have no
 // Data look (scatter, donut). Shared chart primitives: one frame (title, one-line note, source line, receipt link, screen-reader table, empty state) and
@@ -12,7 +13,7 @@ import { GUMBALLS, type GumballName } from "@/lib/theme/contract";
 import { pt } from "./ink";
 
 export type Cell = string | number;
-export type FrameProps = { /** Heading level of the title: 3 under a section heading (default), 2 when the chart sits directly under the page h1. */ level?: 2 | 3; title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
+export type FrameProps = { /** Heading level of the title: 3 under a section heading (default), 2 when the chart sits directly under the page h1. */ interaction?: boolean; level?: 2 | 3; title: string; note: string; source: string; receipt?: { href: string; label: string } | undefined; empty?: string };
 type Frame = FrameProps & { isEmpty: boolean; table: { columns: string[]; rows: Cell[][] }; children: (ids: { title: string; note: string }) => ReactNode };
 /** E4 · inside this provider a chart's title and note stay for screen readers only (a study scene repeating the figure above it). */
 export const ChartTitleQuiet = createContext(false);
@@ -32,13 +33,13 @@ export function Gumball({ id, ball, cx, cy, r }: { id: string; ball: GumballName
 }
 export const ballId = (raw: string) => `gb${raw.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-export function ChartFrame({ level = 3, title, note, source, receipt, empty = voiced("chart.empty"), isEmpty, table, children }: Frame) {
+export function ChartFrame({ interaction = true, level = 3, title, note, source, receipt, empty = voiced("chart.empty"), isEmpty, table, children }: Frame) {
   const id = useId(), ids = { title: `${id}-t`, note: `${id}-n` }, H = level === 2 ? "h2" : "h3", quiet = useContext(ChartTitleQuiet);
   return <figure className="tk-chart min-w-0" aria-labelledby={ids.title} data-chart="">
     <H id={ids.title} className={quiet ? "sr-only" : "tk-t-h3"}>{title}</H>
     <p id={ids.note} className={quiet ? "sr-only" : "tk-t-small tk-c-secondary mt-1"}>{note}</p>
     {isEmpty ? <p className="tk-t-data tk-chart-empty mt-3" role="status" data-chart-empty="">{empty}</p> : <>
-      <div className="mt-3">{children(ids)}</div>
+      <ChartInteraction enabled={interaction} label={title}><div className="mt-3">{children(ids)}</div></ChartInteraction>
       <div className="sr-only"><table data-chart-table="">
         <caption>{title}: the data behind the chart</caption>
         <thead><tr>{table.columns.map(c => <th key={c} scope="col">{c}</th>)}</tr></thead>
@@ -54,7 +55,7 @@ export const Axis = ({ y0, x0, x1, label }: { y0: number; x0: number; x1: number
   <line x1={x0} x2={x1} y1={y0} y2={y0} className="tk-svg-axis" />{label && <text x={x1} y={y0 + 26} textAnchor="end" className="tk-svg-text tk-svg-muted">{label}</text>}
 </g>;
 /** A focusable mark: keyboard users tab through points; the name is its accessible label and its tip shows on focus or hover. */
-export const Mark = ({ label, tip, x, y, children }: { label: string; tip?: string | undefined; x: number; y: number; children: ReactNode }) => <g tabIndex={0} role="img" aria-label={label} className="tk-mark">
+export const Mark = ({ label, tip, x, y, children }: { label: string; tip?: string | undefined; x: number; y: number; children: ReactNode }) => <g tabIndex={-1} role="img" aria-label={label} data-read-x={x} data-read-y={y} className="tk-mark">
   {children}{tip && <text x={Math.min(x + 8, W - 4)} y={Math.max(12, y - 8)} textAnchor={x > W - 120 ? "end" : "start"} className="tk-svg-text tk-tip" aria-hidden="true">{tip}</text>}
 </g>;
 
@@ -73,7 +74,7 @@ export function ScatterChart({ points, x, y, ...frame }: FrameProps & { points: 
     if (!others.some(o => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1]) && box[0] >= 0 && box[2] <= W) { boxes.push(box); labelled.add(p.id); }
   }
   return <ChartFrame {...frame} isEmpty={!points.length} table={{ columns: ["Signal", x.label, y.label, "Stage"], rows: points.map(p => [p.label, x.format(p.x), y.format(p.y), p.stage ?? "Not staged"]) }}>
-    {ids => <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
+    {ids => <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="img" aria-labelledby={ids.title} aria-describedby={ids.note}>
       <GumballDefs id={gid} />
       {ticks(dy[0], dy[1], 4).map(t => <g key={t} aria-hidden="true"><line x1={m.l} x2={W - m.r} y1={sy(t)} y2={sy(t)} className="tk-svg-grid" /><text x={m.l - 6} y={sy(t) + 4} textAnchor="end" className="tk-svg-text tk-svg-muted">{y.format(t)}</text></g>)}
       <Axis y0={H - m.b} x0={m.l} x1={W - m.r} label={x.label} />
@@ -96,7 +97,7 @@ export function DonutChart({ slices, unit, ...frame }: FrameProps & { slices: Sl
   const pctOf = (v: number) => `${Math.round((v / Math.max(1, total)) * 100)}%`, small = slices.filter((_, i) => a[i]!.share > 0 && a[i]!.share < DONUT_LABEL_MIN);
   return <ChartFrame {...frame} isEmpty={!total} table={{ columns: ["Type", unit, "Share"], rows: slices.map(s => [s.label, s.value, pctOf(s.value)]) }}>
     {ids => <>
-      <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-labelledby={ids.title} aria-describedby={ids.note}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="img" aria-labelledby={ids.title} aria-describedby={ids.note}>
         {slices.map((s, i) => { const g = a[i]!, [lx, ly] = point(cx, cy, r1 + 12, g.mid), right = Math.sin(g.mid) >= 0; return g.share > 0 && <Mark key={s.id} label={`${s.label}: ${s.value} ${unit}, ${pctOf(s.value)}`} tip={g.share < DONUT_LABEL_MIN ? `${s.label} · ${s.value}` : undefined} x={lx} y={ly}>
           <path d={arcPath(cx, cy, r0, r1, g.start, g.end)} style={{ fill: SLICE_INK[i % SLICE_INK.length] }} className="tk-svg-slice" />
           {g.share >= DONUT_LABEL_MIN && <text x={lx} y={ly + 4} textAnchor={right ? "start" : "end"} className="tk-svg-text" aria-hidden="true">{s.label} {s.value}</text>}

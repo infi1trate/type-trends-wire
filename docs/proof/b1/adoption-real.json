@@ -1,0 +1,831 @@
+{
+  "quarters": [
+    "2021Q1",
+    "2021Q3",
+    "2022Q1",
+    "2022Q3",
+    "2023Q1",
+    "2024Q1",
+    "2025Q1",
+    "2026Q1",
+    "2026Q4"
+  ],
+  "adopters": [
+    {
+      "domain": "motherlondon.com",
+      "name": "Mother",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "rga.com",
+      "name": "R/GA",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "brex.com",
+      "name": "Brex",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "wolffolins.com",
+      "name": "Wolff Olins",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "databricks.com",
+      "name": "Databricks",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "basicagency.com",
+      "name": "BASIC/DEPT",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "framer.com",
+      "name": "Framer",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "ramp.com",
+      "name": "Ramp",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "ritual.com",
+      "name": "Ritual",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "ssense.com",
+      "name": "SSENSE",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "kraken.com",
+      "name": "Kraken",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "vercel.com",
+      "name": "Vercel",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "figma.com",
+      "name": "Figma",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "github.com",
+      "name": "GitHub",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "medium.com",
+      "name": "Medium",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "dropbox.com",
+      "name": "Dropbox",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "shopify.com",
+      "name": "Shopify",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "airbnb.com",
+      "name": "Airbnb",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "sofi.com",
+      "name": "SoFi",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "carbonhealth.com",
+      "name": "Carbon Health",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "dia.tv",
+      "name": "DIA",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "canva.com",
+      "name": "Canva",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "area17.com",
+      "name": "AREA 17",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "cash.app",
+      "name": "Cash App",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "tailwindcss.com",
+      "name": "Tailwind CSS",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "1password.com",
+      "name": "1Password",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "fly.io",
+      "name": "Fly.io",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "analogue.co",
+      "name": "Analogue",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "work.co",
+      "name": "Work & Co",
+      "first": "2021Q1",
+      "dropped": false
+    },
+    {
+      "domain": "nubank.com.br",
+      "name": "Nubank",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "instrument.com",
+      "name": "Instrument",
+      "first": "2021Q1",
+      "dropped": true
+    },
+    {
+      "domain": "attio.com",
+      "name": "Attio",
+      "first": "2021Q3",
+      "dropped": true
+    },
+    {
+      "domain": "headspace.com",
+      "name": "Headspace",
+      "first": "2021Q3",
+      "dropped": false
+    },
+    {
+      "domain": "wealthfront.com",
+      "name": "Wealthfront",
+      "first": "2021Q3",
+      "dropped": false
+    },
+    {
+      "domain": "webflow.com",
+      "name": "Webflow",
+      "first": "2021Q3",
+      "dropped": true
+    },
+    {
+      "domain": "doordash.com",
+      "name": "DoorDash",
+      "first": "2021Q3",
+      "dropped": true
+    },
+    {
+      "domain": "clay.com",
+      "name": "Clay",
+      "first": "2021Q3",
+      "dropped": false
+    },
+    {
+      "domain": "netlify.com",
+      "name": "Netlify",
+      "first": "2021Q3",
+      "dropped": false
+    },
+    {
+      "domain": "parsleyhealth.com",
+      "name": "Parsley Health",
+      "first": "2022Q1",
+      "dropped": false
+    },
+    {
+      "domain": "twilio.com",
+      "name": "Twilio",
+      "first": "2022Q1",
+      "dropped": false
+    },
+    {
+      "domain": "posthog.com",
+      "name": "PostHog",
+      "first": "2022Q1",
+      "dropped": true
+    },
+    {
+      "domain": "planetscale.com",
+      "name": "PlanetScale",
+      "first": "2022Q1",
+      "dropped": true
+    },
+    {
+      "domain": "bun.sh",
+      "name": "Bun",
+      "first": "2022Q1",
+      "dropped": true
+    },
+    {
+      "domain": "astro.build",
+      "name": "Astro",
+      "first": "2022Q3",
+      "dropped": true
+    },
+    {
+      "domain": "docusign.com",
+      "name": "DocuSign",
+      "first": "2022Q3",
+      "dropped": true
+    },
+    {
+      "domain": "column.com",
+      "name": "Column",
+      "first": "2022Q3",
+      "dropped": false
+    },
+    {
+      "domain": "public.com",
+      "name": "Public",
+      "first": "2022Q3",
+      "dropped": true
+    },
+    {
+      "domain": "koto.studio",
+      "name": "Koto",
+      "first": "2023Q1",
+      "dropped": true
+    },
+    {
+      "domain": "hugeinc.com",
+      "name": "Huge",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "coda.io",
+      "name": "Coda",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "linear.app",
+      "name": "Linear",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "fantasy.co",
+      "name": "Fantasy",
+      "first": "2023Q1",
+      "dropped": true
+    },
+    {
+      "domain": "slack.com",
+      "name": "Slack",
+      "first": "2023Q1",
+      "dropped": true
+    },
+    {
+      "domain": "okta.com",
+      "name": "Okta",
+      "first": "2023Q1",
+      "dropped": true
+    },
+    {
+      "domain": "betterhelp.com",
+      "name": "BetterHelp",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "ouraring.com",
+      "name": "Oura",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "mercury.com",
+      "name": "Mercury",
+      "first": "2023Q1",
+      "dropped": true
+    },
+    {
+      "domain": "clerk.com",
+      "name": "Clerk",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "wearecollins.com",
+      "name": "Collins",
+      "first": "2023Q1",
+      "dropped": false
+    },
+    {
+      "domain": "future.co",
+      "name": "Future",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "pitch.com",
+      "name": "Pitch",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "ustwo.com",
+      "name": "ustwo",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "runwayml.com",
+      "name": "Runway",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "replicate.com",
+      "name": "Replicate",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "revolut.com",
+      "name": "Revolut",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "resend.com",
+      "name": "Resend",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "together.ai",
+      "name": "Together AI",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "rivian.com",
+      "name": "Rivian",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "rippling.com",
+      "name": "Rippling",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "anthropic.com",
+      "name": "Anthropic",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "openai.com",
+      "name": "OpenAI",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "render.com",
+      "name": "Render",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "zed.dev",
+      "name": "Zed",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "lattice.com",
+      "name": "Lattice",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "arc.net",
+      "name": "Arc",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "glean.com",
+      "name": "Glean",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "hims.com",
+      "name": "Hims",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "elevenlabs.io",
+      "name": "ElevenLabs",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "convex.dev",
+      "name": "Convex",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "equinox.com",
+      "name": "Equinox",
+      "first": "2024Q1",
+      "dropped": false
+    },
+    {
+      "domain": "dixonbaxi.com",
+      "name": "DixonBaxi",
+      "first": "2024Q1",
+      "dropped": true
+    },
+    {
+      "domain": "jasper.ai",
+      "name": "Jasper",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "granola.ai",
+      "name": "Granola",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "chime.com",
+      "name": "Chime",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "cohere.com",
+      "name": "Cohere",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "vuoriclothing.com",
+      "name": "Vuori",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "cerebras.ai",
+      "name": "Cerebras",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "retool.com",
+      "name": "Retool",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "thisiscolossal.com",
+      "name": "Colossal",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "bereal.com",
+      "name": "BeReal",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "intercom.com",
+      "name": "Intercom",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "whatsapp.com",
+      "name": "WhatsApp",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "notion.com",
+      "name": "Notion",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "synthesia.io",
+      "name": "Synthesia",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "partiful.com",
+      "name": "Partiful",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "cursor.com",
+      "name": "Cursor",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "warp.dev",
+      "name": "Warp",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "workday.com",
+      "name": "Workday",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "graza.co",
+      "name": "Graza",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "daylightcomputer.com",
+      "name": "Daylight",
+      "first": "2025Q1",
+      "dropped": false
+    },
+    {
+      "domain": "allbirds.com",
+      "name": "Allbirds",
+      "first": "2025Q1",
+      "dropped": true
+    },
+    {
+      "domain": "awaytravel.com",
+      "name": "Away",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "levels.com",
+      "name": "Levels",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "stripe.com",
+      "name": "Stripe",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "monday.com",
+      "name": "monday.com",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "neon.com",
+      "name": "Neon",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "railway.com",
+      "name": "Railway",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "affirm.com",
+      "name": "Affirm",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "seed.com",
+      "name": "Seed",
+      "first": "2026Q1",
+      "dropped": true
+    },
+    {
+      "domain": "venmo.com",
+      "name": "Venmo",
+      "first": "2026Q1",
+      "dropped": true
+    },
+    {
+      "domain": "writer.com",
+      "name": "Writer",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "metalab.com",
+      "name": "MetaLab",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "iliabeauty.com",
+      "name": "Ilia",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "cosmos.so",
+      "name": "Cosmos",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "lumalabs.ai",
+      "name": "Luma",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "carta.com",
+      "name": "Carta",
+      "first": "2026Q1",
+      "dropped": false
+    },
+    {
+      "domain": "groq.com",
+      "name": "Groq",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "ideogram.ai",
+      "name": "Ideogram",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "gitlab.com",
+      "name": "GitLab",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "replit.com",
+      "name": "Replit",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "postman.com",
+      "name": "Postman",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "deno.com",
+      "name": "Deno",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "lovable.dev",
+      "name": "Lovable",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "cloudflare.com",
+      "name": "Cloudflare",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "plaid.com",
+      "name": "Plaid",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "gusto.com",
+      "name": "Gusto",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "readwise.io",
+      "name": "Readwise",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "23andme.com",
+      "name": "23andMe",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "atlassian.com",
+      "name": "Atlassian",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "asana.com",
+      "name": "Asana",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "miro.com",
+      "name": "Miro",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "calendly.com",
+      "name": "Calendly",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "tinder.com",
+      "name": "Tinder",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "designboom.com",
+      "name": "Designboom",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "mistral.ai",
+      "name": "Mistral",
+      "first": "2026Q4",
+      "dropped": false
+    },
+    {
+      "domain": "hingehealth.com",
+      "name": "Hinge Health",
+      "first": "2026Q4",
+      "dropped": false
+    }
+  ]
+}

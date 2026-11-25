@@ -14,12 +14,12 @@ const cases = [
 
 describe("chart primitives", () => {
   for (const [name, el] of cases) {
-    it(`${name}: named figure, focusable marks, table fallback and source line`, () => {
+    it(`${name}: named figure, one chart tab stop, table fallback and source line`, () => {
       const { container } = render(el(false));
       const fig = screen.getByRole("figure", { name: "Test chart" });
-      expect(within(fig).getByRole("group", { name: "Test chart" })).toHaveAccessibleDescription("One line about it.");
+      expect(fig.querySelector("svg")).toHaveAccessibleDescription("One line about it.");
       const marks = container.querySelectorAll('[tabindex="0"][aria-label]');
-      expect(marks.length).toBeGreaterThanOrEqual(2);
+      expect(marks.length).toBe(1);
       const table = container.querySelector("table[data-chart-table]")!;
       expect(table).not.toBeNull();
       expect(table.closest(".sr-only")).not.toBeNull();

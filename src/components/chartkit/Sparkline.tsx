@@ -1,6 +1,7 @@
 // THE CHART KIT (U3) · the sparkline. Read: a 96×24 share line in the text colour with an end dot (signal lists, editions,
 // leading indicators). Data: the terminal's 64×16 rank line, inverted so climbing goes up, with a highlighter square at the end when it
 // rose; `large` is the same rank line at panel size with its axis labels. Every look carries its values for screen readers.
+import { ChartInteraction } from "./Interaction";
 import { pctText } from "@/lib/labels";
 import { ChartTable } from "./ChartTable";
 import { CHART, lw, pt } from "./ink";
@@ -67,15 +68,19 @@ function RankLine({ points }: { points: { date: string; rank: number }[] }) {
 
 
 export type SparklineProps =
-  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean }
+  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean; interactive?: boolean }
   | { look: "data"; values: number[] | undefined; label?: string }
   | { look: "data"; large: true; points: { date: string; rank: number }[] };
 /** A sparkline in either look. */
 export function Sparkline(p: SparklineProps) {
   if (p.look === "read") {
-    const { look: _l, values, format = pctText, ...rest } = p;
-    return <><ReadSpark points={values} {...rest} />{values && values.length >= 2 && <span className="sr-only">{values.map(format).join(", ")}</span>}</>;
+    const { look: _l, values, format = pctText, interactive = false, ...rest } = p;
+    const valuesList = values ?? [], W = rest.w ?? 96, H = rest.h ?? 24, max = Math.max(...valuesList, .01), min = Math.min(...valuesList, 0);
+    return <><ChartInteraction enabled={Boolean(interactive || rest.stretch || W > 240)} width={W} height={H} label={rest.label} points={valuesList.map((v, i) => ({ x: 2 + i / Math.max(1,valuesList.length - 1) * (W - 4), y: H - 2 - (v - min) / Math.max(.0001,max-min)*(H-4), period: `Quarter ${i + 1}`, lines: [`${rest.label} ${format(v)}`] }))}><ReadSpark points={values} {...rest} /></ChartInteraction>{values && values.length >= 2 && <span className="sr-only">{values.map(format).join(", ")}</span>}</>;
   }
-  if ("large" in p) return <><RankLine points={p.points} />{p.points.length >= 2 && <ChartTable caption="Popularity rank by day" columns={["Day", "Rank"]} rows={p.points.map(x => [x.date, `#${x.rank}`])} />}</>;
+  if ("large" in p) {
+    const ranks = p.points.map(p => p.rank), min = Math.min(...ranks), max = Math.max(...ranks);
+    return <><ChartInteraction width={456} height={160} label="Popularity rank by day" points={p.points.map((p,i) => ({ x: 36 + i / Math.max(1,ranks.length-1)*416, y: 6 + (p.rank-min)/Math.max(1,max-min)*136, period: p.date, lines: [`Rank ${p.rank.toFixed(1)}`] }))}><RankLine points={p.points} /></ChartInteraction>{p.points.length >= 2 && <ChartTable caption="Popularity rank by day" columns={["Day", "Rank"]} rows={p.points.map(x => [x.date, `#${x.rank}`])} />}</>;
+  }
   return <><RankSpark ranks={p.values} />{p.values && p.values.length >= 2 && <span className="sr-only">{`${p.label ?? "Rank"}: ${p.values.map(r => `#${r}`).join(", ")}`}</span>}</>;
 }

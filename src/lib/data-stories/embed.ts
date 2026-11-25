@@ -21,6 +21,9 @@ export const EMBED_UTILITIES: Record<string, string> = {
   "text-left": "text-align:left", truncate: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap", underline: "text-decoration:underline", "underline-offset-2": "text-underline-offset:2px",
   "sr-only": "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0",
   "no-print": "", "ed-swatch": "",
+  "adoption-scroll": "overflow-x:auto;max-width:100%;scroll-snap-type:x proximity",
+  "adoption-strip": "position:relative",
+  "adoption-snap": "position:absolute;top:0;bottom:0;pointer-events:none;scroll-snap-align:center",
 };
 export const RESPONSIVE: Record<string, [string, string]> = { "sm:grid-cols-2": ["640px", "grid-template-columns:repeat(2,minmax(0,1fr))"], "sm:grid-cols-3": ["640px", "grid-template-columns:repeat(3,minmax(0,1fr))"], "xl:grid-cols-4": ["1280px", "grid-template-columns:repeat(4,minmax(0,1fr))"], "sm:grid-cols-[repeat(100,minmax(0,1fr))]": ["640px", "grid-template-columns:repeat(100,minmax(0,1fr))"], "sm:h-8": ["640px", "height:32px"], "hover:underline": ["", "text-decoration:underline"] };
 const escCls = (c: string) => c.replace(/([[\]_.:(),])/g, "\\$1");
@@ -28,7 +31,7 @@ const TK = `.tk-chart{color:var(--tk-text-primary);font-variant-numeric:tabular-
 export function utilityCss() {
   const base = Object.entries(EMBED_UTILITIES).filter(([, v]) => v).map(([k, v]) => `.${escCls(k)}{${v}}`).join("");
   const resp = Object.entries(RESPONSIVE).map(([k, [bp, v]]) => (k.startsWith("hover:") ? `.${escCls(k)}:hover{${v}}` : `@media (min-width:${bp}){.${escCls(k)}{${v}}}`)).join("");
-  return base + resp + TK;
+  return base + resp + TK + ".chart-interaction{position:relative;min-width:0;max-width:100%;touch-action:pan-y}.adoption-strip .tk-svg{max-width:none}.adoption-strip .chart-interaction{max-width:none}.tk-svg-text{font-size:12.5px}";
 }
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 export function embedHtml(o: { story: { slug: string; number: number; question: string; steps: StoryModel["steps"]; headline?: string }; step: number; caption: string; figure: string; themeCss: string }) {

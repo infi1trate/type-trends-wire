@@ -53,6 +53,7 @@ export type TypeValue = { family: "display" | "text" | "mono"; weight: string; s
 const READING_MEASURE = "68ch";
 
 export type SystemTokens = {
+  chartFeedback: { labelFloor: number; border: string; marker: string; readoutWidth: number; gap: number; shadow: string };
   editorial: { rowSize: string; rowSizeMd: string; rowLeading: string; rowWeight: string; numberSize: string; numberSizeMd: string; headingGap: string; section: { base: string; lg: string }; deckMeasure: string; percentSize: string };
   mark: { sizes: readonly number[]; smallPadding: string; largePadding: string; border: string; tapeRow: string };
   theme: string;
@@ -86,6 +87,7 @@ export function systemOf(theme: Theme, values: LivingValues = LIVE_VALUES): Syst
   const type = Object.fromEntries(TYPE_STEPS.map(s => [s, { role: STEP_ROLE[s], read: typeOf(s, "read"), data: typeOf(s, "data"), cover: typeOf(s, "cover") }])) as SystemTokens["type"];
   const sh = theme.shared, m = sh.motion;
   return {
+    chartFeedback: { labelFloor: 12.5, border: "1px", marker: "8px", readoutWidth: 230, gap: 14, shadow: "3px 3px 0" },
     editorial: { rowSize: "18px", rowSizeMd: "20px", rowLeading: "1.25", rowWeight: "600", numberSize: "14px", numberSizeMd: "16px", headingGap: "16px", section: sectionGap(nearestReadDensity()), deckMeasure: "62ch", percentSize: "0.55em" },
     mark: { sizes: [20, 28, 32, 48, 56, 72], smallPadding: "2px", largePadding: "6px", border: "1px", tapeRow: "52px" },
     theme: theme.name, color, type,
@@ -119,6 +121,11 @@ export function systemVars(sys: SystemTokens, view: SystemView): Record<string, 
   out["--sys-mark-paper"] = sys.color.page.read; out["--sys-mark-ink"] = sys.color.ink.read;
   out["--sys-font-display"] = sys.font.display; out["--sys-font-text"] = sys.font.text; out["--sys-font-mono"] = sys.font.mono;
   for (const [k, v] of Object.entries(sys.space.scale)) out[`--sys-space-${k}`] = v;
+  out["--sys-chart-label-floor"] = `${sys.chartFeedback.labelFloor}px`;
+  out["--sys-chart-readout-width"] = `${sys.chartFeedback.readoutWidth}px`;
+  out["--sys-chart-feedback-border"] = sys.chartFeedback.border;
+  out["--sys-chart-feedback-marker"] = sys.chartFeedback.marker;
+  out["--sys-chart-feedback-shadow"] = sys.chartFeedback.shadow;
   const ed = sys.editorial;
   out["--sys-text-row-size"] = view === "read" ? ed.rowSize : sys.type.small[view].size;
   out["--sys-text-row-leading"] = ed.rowLeading; out["--sys-text-row-weight"] = ed.rowWeight;

@@ -5,6 +5,8 @@
 // at most 900 × 600; filters are never animated; Save-Data / reduced data draw flat; the number, the brand and the date stay in
 // type, undistorted, outside the filtered group; light from the top left.
 import { createContext, useContext, useId, type CSSProperties, type ReactNode } from "react";
+import { ChartInteraction } from "@/components/chartkit/Interaction";
+import { quarterText } from "@/lib/labels";
 import { FILTER_DEFS } from "./filters.gen";
 import { ILLUSTRATION_MAX, seedOf, softSize, stripShifts, stripsOf, tapeOf, tiltOf, trailGeom, type TrailPoint } from "@/lib/illustration";
 import { MOTION_MS } from "@/lib/motion";
@@ -50,6 +52,7 @@ export function Trail({ points, label, format, w = 640, h = 360, ink = "green", 
   if (!motifOn("trail")) return null;
   return <figure ref={ref} className={`ill ill-trail relative min-w-0 ${on ? "m-on" : ""} ${className}`.trim()} data-illustration="trail" style={{ maxWidth: ILLUSTRATION_MAX.w }}>
     <OwnDefs />
+    <ChartInteraction label={label} width={Math.min(w, ILLUSTRATION_MAX.w)} height={Math.min(h, ILLUSTRATION_MAX.h)} points={g.pts.map(([x, y], i) => ({ x, y, period: quarterText(points[i]?.x ?? ""), lines: [`${label}: ${format(points[i]?.y ?? 0)}`] }))}>
     <svg viewBox={`0 0 ${g.pts.length ? Math.min(w, ILLUSTRATION_MAX.w) : w} ${Math.min(h, ILLUSTRATION_MAX.h)}`} className="block h-full w-full overflow-visible" role="img" aria-label={`${label}: ${points.map(p => `${p.x} ${format(p.y)}`).join(", ")}`} preserveAspectRatio="xMidYMid meet">
       {g.d && <>
         {/* A real, soft contact shadow below the trail (light from the top left). */}
@@ -60,7 +63,10 @@ export function Trail({ points, label, format, w = 640, h = 360, ink = "green", 
           <circle cx={x} cy={y} r={11} fill={`url(#${ball})`} stroke="var(--tk-shadow-ink)" strokeWidth={2} />
         </g>)}
       </>}
+      {points[0] && g.pts[0] && <g aria-hidden="true" transform={`translate(${g.pts[0][0]}, ${Math.max(32, g.pts[0][1] - 28)})`}><rect x="-6" y="-26" width="76" height="34" rx="17" fill="var(--sys-color-page)" stroke="var(--sys-color-ink)" strokeWidth="3" /><text x="32" y="0" textAnchor="middle" className="tk-svg-text">{format(points[0].y)}</text></g>}
     </svg>
+    <div className="trail-periods tk-t-kicker" aria-hidden="true"><span>{quarterText(points[0]?.x ?? "")}</span><span>{quarterText(last?.x ?? "")}</span></div>
+    </ChartInteraction>
     {sticker && last && head && (() => {
       // E5 · a value near the right edge is anchored by its right side, so the label never runs past the chart (or the page) on phones.
       const fx = head[0] / Math.min(w, ILLUSTRATION_MAX.w), end = fx > STICKER_END_FROM;

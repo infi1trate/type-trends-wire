@@ -1,0 +1,374 @@
+[
+  {
+    "page": "signal",
+    "width": 390,
+    "url": "http://localhost:8080/signals/css:starting_style",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Q1 2022Share 0.0%0 of 241"
+    ],
+    "live": "Q1 2022. Share 0.0%. 0 of 241",
+    "escape": true,
+    "mouse": [
+      "Q1 2025Share 1.1%3 of 261"
+    ],
+    "bounds": [
+      {
+        "x": 145.515625,
+        "right": 229.234375,
+        "bottom": 634.296875,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "study",
+    "width": 390,
+    "url": "http://localhost:8080/data/who-went-big-first",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "R/GAQ1 2021still shows it"
+    ],
+    "live": "R/GA. Q1 2021. still shows it",
+    "escape": true,
+    "cells": 136,
+    "overlaps": 0,
+    "mouse": [
+      "BASIC/DEPTQ1 2021since dropped"
+    ],
+    "bounds": [
+      {
+        "x": 83,
+        "right": 186.71875,
+        "bottom": 636.421875,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "sector",
+    "width": 390,
+    "url": "http://localhost:8080/sectors/fintech",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Quarter 2Entry animations 0.0%"
+    ],
+    "live": "Quarter 2. Entry animations 0.0%",
+    "escape": true,
+    "mouse": [
+      "Quarter 5Entry animations 0.0%"
+    ],
+    "bounds": [
+      {
+        "x": 47,
+        "right": 164.75,
+        "bottom": 586.5,
+        "height": 72.0625
+      }
+    ]
+  },
+  {
+    "page": "brand",
+    "width": 390,
+    "url": "http://localhost:8080/brands/netlify.com",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "BunHeadline size 76.3pxWhite space 60.9%"
+    ],
+    "live": "Bun. Headline size 76.3px. White space 60.9%",
+    "escape": true,
+    "mouse": [
+      "LinearHeadline size 64.0pxWhite space 56.1%"
+    ],
+    "bounds": [
+      {
+        "x": 84.65625,
+        "right": 224.796875,
+        "bottom": 608.9375,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "forecast",
+    "width": 390,
+    "url": "http://localhost:8080/terminal?panel=forecast&q=&sort=domain&desc=false&page=0",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "page": "signal-data",
+    "width": 390,
+    "url": "http://localhost:8080/signals/css:starting_style?view=data",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Q1 2022Share 0.0%0 of 241ai 0.0%0 of 16commerce-dtc 0.0%0 of 27consumer-apps 0.0%0 of 27dev-tools 0.0%0 of 24enterprise-saas 0.0%0 of 26fintech 0.0%0 of 23hardware 0.0%0 of 16health 0.0%0 of 26media 0.0%0 of 28studios 0.0%0 of 28"
+    ],
+    "live": "Q1 2022. Share 0.0%. 0 of 241. ai 0.0%. 0 of 16. commerce-dtc 0.0%. 0 of 27. consumer-apps 0.0%. 0 of 27. dev-tools 0.0%. 0 of 24. enterprise-saas 0.0%. 0 of 26. fintech 0.0%. 0 of 23. hardware 0.0%. 0 of 16. health 0.0%. 0 of 26. media 0.0%. 0 of 28. studios 0.0%. 0 of 28",
+    "escape": true,
+    "mouse": [
+      "Q1 2025Share 1.1%3 of 261ai 3.6%1 of 28commerce-dtc 0.0%0 of 27consumer-apps 0.0%0 of 26dev-tools 3.7%1 of 27enterprise-saas 0.0%0 of 26fintech 0.0%0 of 24hardware 5.3%1 of 19health 0.0%0 of 27media 0.0%0 of 29studios 0.0%0 of 28"
+    ],
+    "bounds": [
+      {
+        "x": 75.84375,
+        "right": 215.25,
+        "bottom": 752.5,
+        "height": 208
+      }
+    ]
+  },
+  {
+    "page": "signal",
+    "width": 768,
+    "url": "http://localhost:8080/signals/css:starting_style",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Q1 2022Share 0.0%0 of 241"
+    ],
+    "live": "Q1 2022. Share 0.0%. 0 of 241",
+    "escape": true,
+    "mouse": [
+      "Q1 2025Share 1.1%3 of 261"
+    ],
+    "bounds": [
+      {
+        "x": 370.171875,
+        "right": 453.890625,
+        "bottom": 648.1875,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "study",
+    "width": 768,
+    "url": "http://localhost:8080/data/who-went-big-first",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "R/GAQ1 2021still shows it"
+    ],
+    "live": "R/GA. Q1 2021. still shows it",
+    "escape": true,
+    "cells": 136,
+    "overlaps": 0,
+    "mouse": [
+      "BASIC/DEPTQ1 2021since dropped"
+    ],
+    "bounds": [
+      {
+        "x": 83,
+        "right": 186.71875,
+        "bottom": 636.46875,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "sector",
+    "width": 768,
+    "url": "http://localhost:8080/sectors/fintech",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Quarter 2Entry animations 0.0%"
+    ],
+    "live": "Quarter 2. Entry animations 0.0%",
+    "escape": true,
+    "mouse": [
+      "Quarter 5Entry animations 0.0%"
+    ],
+    "bounds": [
+      {
+        "x": 47,
+        "right": 170.125,
+        "bottom": 580.78125,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "brand",
+    "width": 768,
+    "url": "http://localhost:8080/brands/netlify.com",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "BunHeadline size 76.3pxWhite space 60.9%"
+    ],
+    "live": "Bun. Headline size 76.3px. White space 60.9%",
+    "escape": true,
+    "mouse": [
+      "LinearHeadline size 64.0pxWhite space 56.1%"
+    ],
+    "bounds": [
+      {
+        "x": 255.84375,
+        "right": 395.984375,
+        "bottom": 587.546875,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "forecast",
+    "width": 768,
+    "url": "http://localhost:8080/terminal?panel=forecast&q=&sort=domain&desc=false&page=0",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "page": "signal-data",
+    "width": 768,
+    "url": "http://localhost:8080/signals/css:starting_style?view=data",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Q1 2022Share 0.0%0 of 241ai 0.0%0 of 16commerce-dtc 0.0%0 of 27consumer-apps 0.0%0 of 27dev-tools 0.0%0 of 24enterprise-saas 0.0%0 of 26fintech 0.0%0 of 23hardware 0.0%0 of 16health 0.0%0 of 26media 0.0%0 of 28studios 0.0%0 of 28"
+    ],
+    "live": "Q1 2022. Share 0.0%. 0 of 241. ai 0.0%. 0 of 16. commerce-dtc 0.0%. 0 of 27. consumer-apps 0.0%. 0 of 27. dev-tools 0.0%. 0 of 24. enterprise-saas 0.0%. 0 of 26. fintech 0.0%. 0 of 23. hardware 0.0%. 0 of 16. health 0.0%. 0 of 26. media 0.0%. 0 of 28. studios 0.0%. 0 of 28",
+    "escape": true,
+    "mouse": [
+      "Q2 2025ai 0.0%0 of 2commerce-dtc 0.0%0 of 2consumer-apps 0.0%0 of 1dev-tools 0.0%0 of 1enterprise-saas 0.0%0 of 1hardware 0.0%0 of 2media 0.0%0 of 3studios 0.0%0 of 1"
+    ],
+    "bounds": [
+      {
+        "x": 303.546875,
+        "right": 442.953125,
+        "bottom": 622,
+        "height": 208
+      }
+    ]
+  },
+  {
+    "page": "signal",
+    "width": 1440,
+    "url": "http://localhost:8080/signals/css:starting_style",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Q1 2022Share 0.0%0 of 241"
+    ],
+    "live": "Q1 2022. Share 0.0%. 0 of 241",
+    "escape": true,
+    "mouse": [
+      "Q1 2025Share 1.1%3 of 261"
+    ],
+    "bounds": [
+      {
+        "x": 944.234375,
+        "right": 1027.953125,
+        "bottom": 663.375,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "study",
+    "width": 1440,
+    "url": "http://localhost:8080/data/who-went-big-first",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "R/GAQ1 2021still shows it"
+    ],
+    "live": "R/GA. Q1 2021. still shows it",
+    "escape": true,
+    "cells": 136,
+    "overlaps": 0,
+    "mouse": [
+      "BASIC/DEPTQ1 2021since dropped"
+    ],
+    "bounds": [
+      {
+        "x": 143,
+        "right": 246.71875,
+        "bottom": 306.15625,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "sector",
+    "width": 1440,
+    "url": "http://localhost:8080/sectors/fintech",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Quarter 2Entry animations 0.0%"
+    ],
+    "live": "Quarter 2. Entry animations 0.0%",
+    "escape": true,
+    "mouse": [
+      "Quarter 5Entry animations 0.0%"
+    ],
+    "bounds": [
+      {
+        "x": 107,
+        "right": 260.109375,
+        "bottom": 561.890625,
+        "height": 54.375
+      }
+    ]
+  },
+  {
+    "page": "brand",
+    "width": 1440,
+    "url": "http://localhost:8080/brands/netlify.com",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "BunHeadline size 76.3pxWhite space 60.9%"
+    ],
+    "live": "Bun. Headline size 76.3px. White space 60.9%",
+    "escape": true,
+    "mouse": [
+      "LinearHeadline size 64.0pxWhite space 56.1%"
+    ],
+    "bounds": [
+      {
+        "x": 315.84375,
+        "right": 455.984375,
+        "bottom": 587.3125,
+        "height": 72.5625
+      }
+    ]
+  },
+  {
+    "page": "forecast",
+    "width": 1440,
+    "url": "http://localhost:8080/terminal?panel=forecast&q=&sort=domain&desc=false&page=0",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "page": "signal-data",
+    "width": 1440,
+    "url": "http://localhost:8080/signals/css:starting_style?view=data",
+    "overflow": false,
+    "errors": [],
+    "keyboard": [
+      "Q1 2022Share 0.0%0 of 241ai 0.0%0 of 16commerce-dtc 0.0%0 of 27consumer-apps 0.0%0 of 27dev-tools 0.0%0 of 24enterprise-saas 0.0%0 of 26fintech 0.0%0 of 23hardware 0.0%0 of 16health 0.0%0 of 26media 0.0%0 of 28studios 0.0%0 of 28"
+    ],
+    "live": "Q1 2022. Share 0.0%. 0 of 241. ai 0.0%. 0 of 16. commerce-dtc 0.0%. 0 of 27. consumer-apps 0.0%. 0 of 27. dev-tools 0.0%. 0 of 24. enterprise-saas 0.0%. 0 of 26. fintech 0.0%. 0 of 23. hardware 0.0%. 0 of 16. health 0.0%. 0 of 26. media 0.0%. 0 of 28. studios 0.0%. 0 of 28",
+    "escape": true,
+    "mouse": [
+      "Q1 2026Share 6.1%16 of 263ai 11.1%3 of 27commerce-dtc 0.0%0 of 27consumer-apps 7.1%2 of 28dev-tools 15.4%4 of 26enterprise-saas 7.4%2 of 27fintech 8.0%2 of 25hardware 5.6%1 of 18health 0.0%0 of 28media 3.4%1 of 29studios 3.6%1 of 28"
+    ],
+    "bounds": [
+      {
+        "x": 701.734375,
+        "right": 841.140625,
+        "bottom": 602,
+        "height": 208
+      }
+    ]
+  }
+]

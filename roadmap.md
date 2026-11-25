@@ -1,3 +1,10 @@
+# B1 · Chart repair (25 Nov)
+- [ ] Shared pointer, touch and keyboard readouts across chart kit, study figures and Terminal
+- [ ] Container fit, readable axes and soft-object endpoint labels
+- [x] Adoption columns, scrolling quarters and square readouts
+- [x] Interaction/layout tests, responsive proof, full suite and report; no deploy
+- [ ] B1 sign-off: small readouts can obscure/clip content; some period labels remain ordinal; full Terminal chart audit and pre-data height verification remain
+
 # A1 + A2 · Brand marks, type and space (25 Nov)
 - [x] A1 Shared fixed-scale marks, neutral fallback, existing mark call sites and targeted brand lists; before pictures
 - [x] A2 Token floors, row headlines, display percentage signs and shared section rhythm

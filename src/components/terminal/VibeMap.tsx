@@ -1,3 +1,4 @@
+import { ChartInteraction } from "@/components/chartkit/Interaction";
 import { line as voiced } from "@/lib/voice";
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -31,19 +32,6 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
   const focused = points.find(p => p.domain === focus) ?? null;
   const sel = clusters.find(c => c.id === selected) ?? null;
   const members = selected == null ? [] : order(selected).filter(p => sector === "all" || p.sector === sector);
-  const move = (dir: 1 | -1) => {
-    const list = order(selected ?? focused?.cluster ?? null);
-    if (!list.length) return;
-    const i = focused ? list.findIndex(p => p.domain === focused.domain) : -1;
-    const next = list[(i + dir + list.length) % list.length]!;
-    setFocus(next.domain); if (selected == null) setSelected(next.cluster);
-  };
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); move(1); }
-    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); move(-1); }
-    else if (e.key === "Enter" && focused) { e.preventDefault(); void navigate({ to: "/brands/$domain", params: { domain: focused.domain }, search: { view: "data" } }); }
-    else if (e.key === "Escape" && selected != null) { e.stopPropagation(); setSelected(null); setFocus(null); }
-  };
   const [ax, ay] = data.axes;
   return <section aria-label="Vibe map" className="flex min-h-0 flex-1 flex-col">
     <PanelHeader g="p-vibe-map" title="F7 VIBE MAP" meta={<span className="num">{data.n} SITES · {data.k} CLUSTERS · {data.quarter}</span>} />
@@ -57,16 +45,17 @@ export function VibeMap({ sector, onSector, onMethod }: { sector: string; onSect
       <div className="min-w-0 border-rule p-3 md:overflow-y-auto md:border-r">
         <div className="label mb-1 text-compare-muted">Y · {ay ? `↓ ${ay.negative.map(tagPhrase).join(" · ")}   ${ay.positive.map(tagPhrase).join(" · ")} ↑` : "—"}</div>
         <div className="mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-260px))] max-md:max-w-full">
-          <svg ref={svgRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full border border-rule outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-ink" tabIndex={0} role="group" aria-label={`Vibe map of ${data.n} sites in ${data.k} clusters. Use arrow keys to move between sites, Enter to open.`} aria-describedby="vibe-readout" onKeyDown={onKey}>
+          <ChartInteraction label="Vibe map" spatial width={SIZE} height={SIZE} points={points.map(p => ({ x: scale.X(p.x), y: scale.Y(p.y), period: p.domain, lines: [p.sector, tagText(p.tags)] }))} onSelect={i => { const p = points[i]; if (p) setFocus(p.domain); }} onActivate={() => { if (focused) void navigate({ to: "/brands/$domain", params: { domain: focused.domain }, search: { view: "data" } }); }}>
+          <svg ref={svgRef} viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-full w-full border border-rule outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-ink" tabIndex={-1} role="img" aria-label={`Vibe map of ${data.n} sites in ${data.k} clusters. Use arrow keys to move between sites, Enter to open.`} aria-describedby="vibe-readout">
             <line x1={SIZE / 2} y1={0} x2={SIZE / 2} y2={SIZE} stroke="var(--sys-color-rule)" strokeWidth={1} />
             <line x1={0} y1={SIZE / 2} x2={SIZE} y2={SIZE / 2} stroke="var(--sys-color-rule)" strokeWidth={1} />
             {points.map(p => {
               const dim = sector !== "all" && p.sector !== sector, on = selected == null || p.cluster === selected, isFocus = p.domain === focus;
               return <rect key={p.domain} x={scale.X(p.x) - DOT / 2} y={scale.Y(p.y) - DOT / 2} width={DOT} height={DOT}
                 fill={isFocus ? "var(--sys-color-highlight)" : on && selected != null ? "var(--sys-color-ink)" : "var(--sys-color-ink-muted)"} opacity={dim ? 0.12 : on ? 1 : 0.3}
-                onMouseEnter={() => setFocus(p.domain)} onClick={() => { setFocus(p.domain); setSelected(p.cluster); svgRef.current?.focus(); }} className="cursor-pointer"><title>{p.domain}</title></rect>;
+                onMouseEnter={() => setFocus(p.domain)} onClick={() => { setFocus(p.domain); setSelected(p.cluster); svgRef.current?.closest<HTMLElement>("[data-chart-interaction]")?.focus(); }} className="cursor-pointer"><title>{p.domain}</title></rect>;
             })}
-          </svg>
+          </svg></ChartInteraction>
         </div>
         <div className="label mt-1 text-right text-compare-muted">X · {ax ? `← ${ax.negative.map(tagPhrase).join(" · ")}   ${ax.positive.map(tagPhrase).join(" · ")} →` : "—"}</div>
         <div id="vibe-readout" aria-live="polite" className="mt-2 min-h-[3lh] border border-rule p-2 text-body">

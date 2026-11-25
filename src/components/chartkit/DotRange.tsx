@@ -1,6 +1,7 @@
 // L2 · PROPOSED FORM, specimen only (src/lib/chart/forms.ts "dot-range"): one dot per row with a line for its range, sorted, at most
 // twelve rows; the widest range in the highlighter. No reader page imports this file until the owner accepts the form and a gated
 // build makes it live. Tokens only; the frame ships its table for screen readers and each row takes keyboard focus.
+import { ChartInteraction } from "./Interaction";
 import { linear, ticks } from "@/lib/charts/scale";
 import { pctText, quarterText } from "@/lib/labels";
 import type { DotRangeModel } from "@/lib/chart/specimens";
@@ -15,7 +16,7 @@ const hlLabel = { ...hlSvgText, fill: "var(--tk-highlight-fg)" } as const;
 function Rows({ m, dense, label }: { m: DotRangeModel; dense: boolean; label: string }) {
   const row = dense ? 18 : 26, pad = { l: dense ? 120 : 150, r: dense ? 110 : 24, t: 8, b: 22 }, H = pad.t + pad.b + m.rows.length * row;
   const max = Math.max(...m.rows.map(r => r.hi), 0.01), sx = linear([0, max], [pad.l, W - pad.r]);
-  return <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="group" aria-label={label}>
+  return <svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="img" aria-label={label}>
     {ticks(0, max, 4).map(t => <g key={t} aria-hidden="true"><line x1={sx(t)} x2={sx(t)} y1={pad.t} y2={H - pad.b} stroke={RULE} strokeDasharray="2 3" /><text x={sx(t)} y={H - 6} textAnchor="middle" className="tk-svg-text tk-svg-muted">{pctText(t).replace(".0%", "%")}</text></g>)}
     {m.rows.map((r, i) => { const y = pad.t + i * row + row / 2, hot = r.id === m.widest;
       return <Mark key={r.id} label={`${r.label}: ${pctText(r.value)} now; next quarter between ${pctText(r.lo)} and ${pctText(r.hi)}`} x={sx(r.hi)} y={y}>
@@ -31,7 +32,7 @@ export function DotRange({ m, look = "read", ...frame }: FrameProps & { m: DotRa
   if (look === "data") {
     const t = tableOf(m);
     return <figure className="min-w-0" data-chart="dot-range" role="img" aria-label={`${frame.title}: ${frame.note}`}>
-      <Rows m={m} dense label={frame.title} />
+      <ChartInteraction spatial label={frame.title}><Rows m={m} dense label={frame.title} /></ChartInteraction>
       <ChartTable caption={`${frame.title}: the data behind the chart`} columns={t.columns} rows={t.rows} />
       <figcaption className="tk-t-caption tk-c-muted mt-1">Source: {frame.source}</figcaption>
     </figure>;

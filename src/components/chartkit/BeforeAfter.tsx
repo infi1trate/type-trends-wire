@@ -43,7 +43,7 @@ function BeforeAfter({ f, v, live, pair = false }: { f: BeforeAfterFig; v: View;
   const wipe = <><div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}><CaptureFrame fr={f.before} label={`${f.name}, ${bStamp}`} /></div>
     {pos > 0 && pos < 100 && <span className="absolute inset-y-0 w-0.5" style={{ left: `${pos}%`, background: INK }} />}</>;
   const on = new Set(v.highlight);
-  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={false} table={{ columns: ["Field", "Before", "After"], rows: f.diffs.map(d => [d.field, d.before, d.after]) }}>
+  return <ChartFrame interaction={false} level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={false} table={{ columns: ["Field", "Before", "After"], rows: f.diffs.map(d => [d.field, d.before, d.after]) }}>
     {() => <div data-figure="before-after" data-pos={pos} data-layout={pair ? "pair" : "wipe"}>
       {pair ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <figure className="m-0 min-w-0 max-w-[520px]"><CaptureFrame fr={f.before} label={`${f.name}, ${bStamp}`} />
@@ -80,7 +80,7 @@ function Strip({ f, v, live }: { f: StripFig; v: View; live: boolean; look?: Loo
   useEffect(() => { setK(start); setPlay(false); }, [start]);
   useEffect(() => { if (!play) return; const t = setInterval(() => setK(x => (x + 1 >= f.frames.length ? (setPlay(false), x) : x + 1)), STRIP_TICK_MS); return () => clearInterval(t); }, [play, f.frames.length]);
   const cur = f.frames[k], on = new Set(v.highlight), markAt = new Map(f.marks.filter(m => m.after).map(m => [m.after!, m]));
-  return <ChartFrame level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={!f.frames.length} table={{ columns: ["Capture", "Source", "Changes marked"], rows: f.frames.map(fr => [dayText(fr.at), fr.source, f.marks.filter(m => m.after === fr.id).map(m => m.label).join("; ") || "—"]) }}>
+  return <ChartFrame interaction={false} level={2} title={f.title} note={f.note} source={FIGURE_SOURCE} receipt={{ href: f.href, label: f.name }} isEmpty={!f.frames.length} table={{ columns: ["Capture", "Source", "Changes marked"], rows: f.frames.map(fr => [dayText(fr.at), fr.source, f.marks.filter(m => m.after === fr.id).map(m => m.label).join("; ") || "—"]) }}>
     {() => <div data-figure="strip" data-frame-index={k}>
       {cur && <div className="strip-current mx-auto max-w-[520px]"><CaptureFrame fr={cur} label={`${f.name}, ${dayText(cur.at)}`} />
         <p className="tk-t-caption tk-c-muted mt-1 flex flex-wrap items-center gap-2"><Swatches fr={cur} />{k + 1} of {f.frames.length} · {frameCaption(cur)}{markAt.get(cur.id) && <span style={hlText}>· {markAt.get(cur.id)!.label}</span>}</p></div>}

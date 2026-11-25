@@ -136,7 +136,7 @@
     background: var(--tk-selection-bg);
     color: var(--tk-selection-text);
   }
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar { width: var(--sys-chart-feedback-marker); height: var(--sys-chart-feedback-marker); }
   ::-webkit-scrollbar-track { background: var(--tk-scrollbar-track); }
   ::-webkit-scrollbar-thumb { background: var(--tk-scrollbar-thumb); }
 }
@@ -859,7 +859,7 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   /* The cue: a solid page-coloured tab with an arrow, shown only while items sit off that edge (no gradient). */
   .scroll-cue { position: absolute; top: 0; bottom: 0; display: none; align-items: center; padding: 0 var(--tk-space-1); background: var(--sys-color-page); color: var(--sys-color-ink); font-family: var(--sys-font-display); font-weight: 900; pointer-events: none; }
   .scroll-cue-start { left: 0; border-right: var(--tk-border-hairline) solid var(--sys-color-rule); }
-  .scroll-cue-end { right: 0; border-left: var(--tk-border-hairline) solid var(--sys-color-rule); }
+  .scroll-cue-end { right: 0; border-left: var(--sys-chart-feedback-border) solid var(--sys-color-rule); }
   .scroll-row-wrap[data-more-start] .scroll-cue-start, .scroll-row-wrap[data-more-end] .scroll-cue-end { display: inline-flex; }
 
   /* "No. 45": the figure never wraps; the column is sized for four digits, so titles align. */
@@ -1073,3 +1073,37 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
   .digest :is([data-front-tape],[data-front-wire]) .ledger { margin-top: var(--sys-gap-heading); }
   .digest .ed-wrap.mt-12, .digest .ed-wrap.mt-14, .digest .ed-wrap.mt-16 { margin-top: var(--sys-gap-section); }
 }
+
+/* B1: chart feedback uses existing paper, ink and hard-shadow roles. */
+.chart-interaction { position: relative; min-width: 0; max-width: 100%; touch-action: pan-y; }
+.chart-interaction:focus-visible { outline: var(--tk-border-hairline) solid var(--sys-color-ink); outline-offset: 3px; }
+.chart-interaction-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.chart-crosshair { position: absolute; top: 0; bottom: 0; border-left: var(--sys-chart-feedback-border) solid var(--sys-color-ink); }
+.chart-marker { position: absolute; width: var(--sys-chart-feedback-marker); height: var(--sys-chart-feedback-marker); transform: translate(-50%, -50%); background: var(--sys-color-page); border: var(--tk-border-hairline) solid var(--sys-color-ink); border-radius: 50%; }
+.chart-readout { position: absolute; width: max-content; max-width: min(var(--sys-chart-readout-width), 100%); padding: var(--tk-space-2); background: var(--sys-color-page); color: var(--sys-color-ink); border: var(--sys-chart-feedback-border) solid var(--sys-color-ink); box-shadow: var(--sys-chart-feedback-shadow) var(--sys-color-ink); font-family: var(--sys-text-small-family); font-size: var(--sys-text-data-size); line-height: 1.4; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chart-interaction svg { max-width: 100%; }
+.chart-interaction svg text { font-variant-numeric: tabular-nums; }
+.ed-figure { min-width: 0; max-width: 100%; }
+.ed-figure.ed-bleed { margin-left: 0; margin-right: 0; width: 100%; }
+.ed-figure .digest-figure { display: block; width: 100%; height: auto; }
+.adoption-scroll { overflow-x: auto; max-width: 100%; scroll-snap-type: x proximity; }
+.adoption-strip { position: relative; }
+.adoption-strip .tk-svg { width: 100%; max-width: none; }
+.adoption-strip .chart-interaction { max-width: none; }
+.adoption-scroll .chart-interaction { touch-action: pan-x pan-y; }
+.adoption-snap { position: absolute; top: 0; bottom: 0; pointer-events: none; scroll-snap-align: center; }
+@media (max-width: 767px) {
+  .adoption-scroll { mask-image: linear-gradient(to right, var(--sys-color-ink) 96%, transparent); }
+}
+.editorial-labels { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.editorial-labels text { font-size: 28px; fill: var(--sys-color-ink); }
+.trail-periods { display: flex; justify-content: space-between; gap: var(--tk-space-2); }
+.trail-first-value { fill: var(--sys-color-ink); paint-order: stroke; stroke: var(--sys-color-page); stroke-width: 10; stroke-linejoin: round; }
+.chart-interaction svg text:not(.tk-svg-big) { font-size: max(var(--chart-label-floor, var(--sys-chart-label-floor)), var(--sys-text-kicker-size)); }
+.chart-interaction .editorial-labels text { font-size: max(var(--chart-label-floor, 28px), 28px); }
+
+.chart-readout strong { display: block; font-weight: 600; }
+.ill-trail .chart-interaction { height: 100%; }
+.ill-trail .trail-periods { position: absolute; inset: auto 0 0; }
+.chart-readout { overflow-y: auto; pointer-events: auto; }
+.chart-interaction:focus-visible { outline-color: var(--sys-color-ink) !important; }
