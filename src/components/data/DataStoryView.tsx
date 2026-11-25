@@ -1,3 +1,4 @@
+import { WhyNow } from "@/components/read/WhyNow";
 import { studyBand } from "@/lib/pop/rules";
 // A STUDY page (E4) reads as one piece of writing with pictures: the dark headline block, an opening, three to five scenes (on wide screens
 // the figure holds while the scene paragraphs scroll past and switch its state; below 1024 px each scene draws its figure state inline
@@ -207,6 +208,7 @@ export function Scenes({ s, scene, onScene, allFigures = false }: { s: StudyPage
 export function StudyEvidence({ s }: { s: StudyPage }) {
   const nums = numbersInText(s.text, factsSheet(s));
   return <>
+    <WhyNow kind="study" id={s.slug} />
     <h3 className="ed-kicker">What the numbers are based on</h3>
     <dl className="ed-data mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-3">
       <div><dt className="ed-muted">Brands</dt><dd>{s.basis.brands}</dd></div><div><dt className="ed-muted">Captures</dt><dd>{s.basis.captures}</dd></div><div><dt className="ed-muted">Period</dt><dd>{s.basis.period}</dd></div>

@@ -1,5 +1,6 @@
 // U1 · the Data view of each object type (`?view=data` on its one address), inside DataShell. Dark and dense, built from the terminal's
 // own parts; tables load after the frame (Later skeletons). Every table, score and field the terminal showed for the object is here.
+import { WhyNow } from "@/components/read/WhyNow";
 import { MUSEUM_SHOWN } from "@/lib/site";
 import { changeDates } from "@/lib/views/receipts";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -137,7 +138,7 @@ export function SignalData({ k }: { k: string }) {
 /** The drawer content once its rows are in (suspends first, so the server and the browser draw the same thing). */
 function Detail({ dimension, value }: { dimension: string; value: string }) {
   useSuspenseQuery(forecastDetailQuery(dimension, value)); useSuspenseQuery(signalsQuery());
-  return <TraitDetail dimension={dimension} value={value} explainer={false} />;
+  return <><TraitDetail dimension={dimension} value={value} explainer={false} /><WhyNow kind="signal" id={`${dimension}:${value}`} data /></>;
 }
 
 // PATTERN ------------------------------------------------------------------------------------------------------------------------

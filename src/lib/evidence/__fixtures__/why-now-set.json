@@ -1,0 +1,357 @@
+{
+ "note": "Y2 \u00b7 ten frozen Why-now examples over one frozen dossier: three that must pass and seven the standards desk must refuse.",
+ "dossier": [
+  {
+   "id": "p1",
+   "drawer": "platform",
+   "date": "2024-08",
+   "sentence": "@starting-style reached all three major browsers in August 2024.",
+   "source": "MDN",
+   "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+   "brand": null,
+   "match": "rule",
+   "phase": "during"
+  },
+  {
+   "id": "c1",
+   "drawer": "culture",
+   "date": "2024-03-02",
+   "sentence": "Smashing Magazine published \u201cMotion that greets you\u201d.",
+   "source": "Smashing Magazine",
+   "link": "https://www.smashingmagazine.com/",
+   "brand": null,
+   "match": "rule",
+   "phase": "before"
+  },
+  {
+   "id": "late",
+   "drawer": "culture",
+   "date": "2026-10-01",
+   "sentence": "Dezeen published \u201cMotion everywhere\u201d.",
+   "source": "Dezeen",
+   "link": "https://www.dezeen.com/",
+   "brand": null,
+   "match": "rule",
+   "phase": "after"
+  },
+  {
+   "id": "k1",
+   "drawer": "calendar",
+   "date": "2023-10",
+   "sentence": "More common in the fourth quarter.",
+   "source": "slug",
+   "link": null,
+   "brand": null,
+   "match": "rule",
+   "phase": "before"
+  }
+ ],
+ "figures": [
+  {
+   "id": "share",
+   "text": "13% of homepages in Q4 2026"
+  }
+ ],
+ "cases": [
+  {
+   "id": "pass-full",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": null
+  },
+  {
+   "id": "pass-known-only",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     }
+    ],
+    "likely": [],
+    "read": []
+   },
+   "expect": null
+  },
+  {
+   "id": "pass-two-known",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     },
+     {
+      "entry": "c1",
+      "sentence": "Smashing Magazine published a piece on motion that greets the reader in March 2024.",
+      "date": "2024-03-02",
+      "link": "https://www.smashingmagazine.com/",
+      "source": "Smashing Magazine"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": null
+  },
+  {
+   "id": "refuse-after-rise",
+   "block": {
+    "known": [
+     {
+      "entry": "late",
+      "sentence": "Dezeen published a piece on motion in October 2026.",
+      "date": "2026-10-01",
+      "link": "https://www.dezeen.com/",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": "after the rise"
+  },
+  {
+   "id": "refuse-likely-no-ref",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "It probably spread from tools.",
+      "refs": []
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": "no reference"
+  },
+  {
+   "id": "refuse-read-number",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: about 13 percent of teams care now."
+    ]
+   },
+   "expect": "number"
+  },
+  {
+   "id": "refuse-known-no-link",
+   "block": {
+    "known": [
+     {
+      "entry": "k1",
+      "sentence": "It has been more common in the fourth quarter since 2023.",
+      "date": "2023-10",
+      "link": "",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": "no link"
+  },
+  {
+   "id": "refuse-because",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "It likely rose because browsers shipped it.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": "causal"
+  },
+  {
+   "id": "refuse-read-name",
+   "block": {
+    "known": [
+     {
+      "entry": "p1",
+      "sentence": "The CSS feature behind entry animations reached all three major browsers in August 2024.",
+      "date": "2024-08",
+      "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+      "source": "MDN"
+     }
+    ],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: the taste of Jony Ive has won the argument."
+    ]
+   },
+   "expect": "names someone"
+  },
+  {
+   "id": "refuse-no-known",
+   "block": {
+    "known": [],
+    "likely": [
+     {
+      "sentence": "The rise is consistent with the feature becoming safe to use in every major browser.",
+      "refs": [
+       {
+        "kind": "entry",
+        "id": "p1"
+       },
+       {
+        "kind": "figure",
+        "id": "share"
+       }
+      ]
+     }
+    ],
+    "read": [
+     "Our read: motion on arrival has become a sign of a page built with care."
+    ]
+   },
+   "expect": "no Known entry"
+  }
+ ]
+}

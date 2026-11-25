@@ -1,3 +1,4 @@
+import { WhyNow } from "./WhyNow";
 import { UseSticker } from "@/components/a4/Pop";
 import { line as voiced } from "@/lib/voice";
 // SIGNAL object page (/signals/<key>), Quiet density: the name in Display; ONE figure (share now) with Momentum and Confidence as
@@ -84,6 +85,7 @@ export function SignalView({ page: p, sector }: { page: TraitPage; sector: strin
             <dt className="ed-kicker">{r.term}</dt><dd className="ed-small">{r.text} <a href={`/#${r.anchor}`} className="ed-data whitespace-nowrap" {...pr(`/#${r.anchor}`)}>Method →</a></dd>
           </div>)}</dl>
         </details>}
+        <WhyNow kind="signal" id={p.key} />
       </>,
       "so-what": <div className="ed-body">
         {p.soWhat ? <p className="ed-pull">{p.soWhat}</p> : <p className="ed-small">Not a headline signal, so we don't write a so-what line for it. {p.tierReasons.join(" ")}</p>}

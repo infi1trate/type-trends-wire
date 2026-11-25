@@ -24,7 +24,7 @@ import { buildSignals, tiersFrom, type SignalSnapshot } from "./signals";
 import { unpackSnapshot, type PackedSnapshot } from "./signal-pack";
 import { getLedger } from "./ledger.functions";
 import { getBrandCard, getBrandMoves, getBrandSections, getBrandSurfaces, getBrandSector, getBrandSimilar, getBrandStories, getFrontTop, getFrontRest, getFrontAlso, getFrontTape, getFrontWire, getWirePicks, getStoryHead, getStoryLead, getStoryRelated, getPatternHead, getSectorHead } from "./read.functions";
-import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getStoryQueueHead, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getChartSpecimens, getB2Specimens, getFront, getGallery, getCollections, getCollection } from "./read.functions";
+import { getLive, getBrand, getBrands, getPatterns, getPattern, getSignalSeries, getSignalsIndex, getAmbient, getModelCard, getStory, getStoryQueue, getStoryQueueHead, getRunComparison, getCropCoverage, getFreshness, getMorning, getSectorReport, getSectorIndex, getEditions, getKit, getChartSpecimens, getB2Specimens, getWhyNow, getFront, getGallery, getCollections, getCollection } from "./read.functions";
 import type { SignalsView } from "./signals-index";
 import { comparisonPair } from "./run-gap";
 import type { GallerySearch } from "./gallery";
@@ -492,6 +492,7 @@ export const modelCardQuery = () => queryOptions({ queryKey: ["model-card"], sta
 /** /kit: every shared component on live data (composites, stories, crops). */
 export const kitQuery = () => queryOptions({ queryKey: ["kit"], staleTime: 5 * 60_000, queryFn: () => getKit() });
 /** L2 · /brand/system: the proposed chart forms' specimens on real rows. */
+export const whyNowQuery = (kind: "signal" | "study" | "story", id: string) => queryOptions({ queryKey: ["why-now", kind, id], staleTime: 10 * 60_000, queryFn: () => getWhyNow({ data: { kind, id } }) });
 export const b2SpecimensQuery = () => queryOptions({ queryKey: ["b2-specimens"], staleTime: 10 * 60_000, queryFn: () => getB2Specimens() });
 export const chartSpecimensQuery = () => queryOptions({ queryKey: ["chart-specimens"], staleTime: 10 * 60_000, queryFn: () => getChartSpecimens() });
 

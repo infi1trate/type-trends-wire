@@ -1,9 +1,10 @@
 // Y1 · THE EVIDENCE DESK'S DOSSIER (pure). For a signal that really moved, dated outside facts in four drawers, matched by rule first:
 // Platform (browser feature dates from platform-dates.json for css:* traits; download-count turns from the indicators table for the
 // signal's topic), Business (news-wire and Product Hunt items naming a brand that shows the trait), Culture (news-wire items whose own
-// title or summary carries one of the trait's keywords), Calendar (the same quarter's share in earlier years, from slug's own history).
+// title or summary carries one of the trait's keywords), Calendar (the same quarter's share in earlier years, from our own history).
 // A model may propose wire matches; those are marked "model" and must quote matching words found in the item's title or summary.
 // Structure signals (nav/ask/furn/page/phone) use Business and Calendar only; furn:ask_ai matches wire items about AI assistants/agents.
+import { BRAND_NAME } from "../brand";
 import platform from "@/data/platform-dates.json";
 import { timing, type Phase, type Quarter } from "./timing";
 
@@ -102,5 +103,5 @@ function calendarEntries(i: DossierIn): Entry[] {
   const avg = (xs: Quarter[]) => xs.reduce((t, x) => t + x.s!, 0) / xs.length;
   if (avg(same) < avg(other) * 1.5) return [];
   const season = { Q1: "first", Q2: "second", Q3: "third", Q4: "fourth" }[qn] ?? qn;
-  return [{ id: `k:${i.signal}:${qn}`, drawer: "calendar", date: `${same[0]!.q.slice(0, 4)}-${String((Number(qn.slice(1)) - 1) * 3 + 1).padStart(2, "0")}`, sentence: `In slug's own history, ${i.name} has been more common in the ${season} quarter of the year than in the others since ${same[0]!.q.slice(0, 4)}.`, source: "slug", link: `/signals/${encodeURIComponent(i.signal)}`, brand: null, match: "rule" }];
+  return [{ id: `k:${i.signal}:${qn}`, drawer: "calendar", date: `${same[0]!.q.slice(0, 4)}-${String((Number(qn.slice(1)) - 1) * 3 + 1).padStart(2, "0")}`, sentence: `In ${BRAND_NAME}'s own history, ${i.name} has been more common in the ${season} quarter of the year than in the others since ${same[0]!.q.slice(0, 4)}.`, source: BRAND_NAME, link: `/signals/${encodeURIComponent(i.signal)}`, brand: null, match: "rule" }];
 }

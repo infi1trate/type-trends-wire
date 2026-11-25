@@ -75,7 +75,8 @@ export async function deskWriterCallsToday(db: Pick<Admin, "from">): Promise<num
   return count ?? 0;
 }
 export type GatewayRequest = { model: string; system: string; user: string; schema: Record<string, unknown>; schemaName: string; tool: { type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } };
-  /** Writer-model output cap; the text model is capped at `textMaxTokens` (default 1500). */ maxTokens: number; textMaxTokens?: number };
+  /** Writer-model output cap; the text model is capped at `textMaxTokens` (default 1500). */ maxTokens: number; textMaxTokens?: number;
+  /** Y2 · the ledger kind (default the story writer's); "why_now" keeps the Why-now block's spend apart. */ kind?: string };
 /**
  * One budget-guarded call on the configured provider (the story writer's and the study writer's): reserve under the writer's ledger
  * purpose, call once (the writer model with a strict JSON schema, the text model with one forced tool call), settle; unknown outcomes are
@@ -89,7 +90,7 @@ export async function gatewayCall(admin: Admin, req: GatewayRequest, signal: Abo
   // N1 · the owner's weekly cap: while it is reached no writer call is made (the template text stands) and the refusal is logged.
   if (await capRefused(admin, req.schemaName)) return null;
   const writer = m === AI_MODELS.writer, estimate = estimateCost({ provider, model: m, input_tokens: 6000, output_tokens: writer ? 2500 : 1200 });
-  const res = await admin.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: WRITER_KIND, p_model: m, p_estimate: estimate });
+  const res = await admin.rpc("ai_reserve", { p_snapshot_id: null as unknown as number, p_kind: req.kind ?? WRITER_KIND, p_model: m, p_estimate: estimate });
   const r = res.data as { ok?: boolean; id?: number } | null;
   if (res.error || !r?.ok || typeof r.id !== "number") return null;
   const uid = r.id;

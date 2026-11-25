@@ -15,12 +15,14 @@ import { DESIGN_SCHEMA, DESIGN_SYSTEM } from "../design-review";
 import { PUBLISHER_SCHEMA, PUBLISHER_SYSTEM } from "../publisher";
 import { SCOUT_SCHEMA, SCOUT_SYSTEM } from "../scout";
 
-export const WRITERS = ["story", "study", "digest"] as const;
+import { WHY_SCHEMA, WHY_SYSTEM } from "../../evidence/whynow";
+export const WRITERS = ["story", "study", "digest", "why"] as const;
 export type Writer = (typeof WRITERS)[number];
 /** Bump when that writer's facts-built (template) text changes. */
-export const TEMPLATE_VERSIONS: Record<Writer, string> = { story: "t1", study: "t1", digest: "t1" };
+export const TEMPLATE_VERSIONS: Record<Writer, string> = { story: "t1", study: "t1", digest: "t1", why: "t1" };
 const PARTS: Record<Writer, { system: string; schema: unknown }> = {
   story: { system: WRITER_SYSTEM, schema: WRITER_SCHEMA }, study: { system: STUDY_SYSTEM, schema: STUDY_SCHEMA }, digest: { system: DIGEST_SYSTEM, schema: DIGEST_SCHEMA },
+  why: { system: WHY_SYSTEM, schema: WHY_SCHEMA },
 };
 /** The writer model, then the fallback text model (both writers' calls go through one gateway path). */
 export const writerModels = () => [AI_MODELS.writer, AI_MODELS.text];
