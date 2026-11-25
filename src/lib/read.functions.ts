@@ -123,6 +123,10 @@ export const getKit = createServerFn({ method: "GET" }).handler(async () => {
   return loadKit();
 });
 /** L2 · /brand/system: real rows for the proposed chart forms' specimens (anonymous reads). */
+export const getB2Specimens = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadB2Specimens } = await import("./chart/specimens-b2.server");
+  return loadB2Specimens();
+});
 export const getChartSpecimens = createServerFn({ method: "GET" }).handler(async () => {
   const { loadSpecimens } = await import("./chart/specimens.server");
   return loadSpecimens();

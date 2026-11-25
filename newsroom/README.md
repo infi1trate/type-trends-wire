@@ -74,7 +74,7 @@ Checks each story's picture before standards: the rule's choice and up to 3 rank
 
 One registry (src/lib/chart/forms.ts) lists every form the product can draw; the desk's choice and the study builder read it. Live: Quarter line, Small multiples, Bars, Sparkline, Before-and-after strip, Two-axis scatter, Donut, Bands over quarters, Whitespace scatter, Vibe map, Library history, Font-rank flow, Palette strip, Score bars.
 
-Proposed, shown only as specimens on /brand/system: Slope chart (two points per row; 2 rows at both points), Dot with range (value with range per row; 2 rows with a range). A figure no live form shows whole is filed with `propose` naming the proposed form that would fit; only the owner accepts, an accepted form goes on the build queue as a feature, and it becomes live only in a build that passed the gate.
+Proposed, shown only as specimens on /brand/system: Slope chart (two points per row; 2 rows at both points), Dot with range (value with range per row; 2 rows with a range), Adoption wake (adopters by first quarter; 15 dated adopters), Lead and lag (two groups over quarters; 4 quarters with both groups read), Page anatomy (sections of a page; 1 page read (15 for many pages)). A figure no live form shows whole is filed with `propose` naming the proposed form that would fit; only the owner accepts, an accepted form goes on the build queue as a feature, and it becomes live only in a build that passed the gate.
 
 ### The data desk
 

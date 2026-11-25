@@ -26,10 +26,10 @@ describe("the chart registry", () => {
       expect(f.status === "live" ? f.liveIn != null : f.liveIn == null, f.id).toBe(true);
     }
   });
-  it("lists the five kit forms, the six special forms and the two proposed ones", () => {
+  it("lists the five kit forms, the six special forms and the proposed ones", () => {
     const ids = FORMS.map(f => f.id);
     for (const id of ["quarter-line", "small-multiples", "bars", "sparkline", "before-after-strip", "whitespace-scatter", "vibe-map", "library-history", "font-rank-flow", "palette-strip", "score-bars"]) expect(ids).toContain(id);
-    expect(FORMS.filter(f => f.status === "proposed").map(f => f.id)).toEqual(["slope", "dot-range"]);
+    expect(FORMS.filter(f => f.status === "proposed").map(f => f.id)).toEqual(["slope", "dot-range", "adoption-wake", "lead-lag", "page-anatomy"]);
   });
   it("is N3's figure table (one table, not two): the same shapes and live forms in the same order", () => {
     expect(SHAPE_FORMS).toEqual({ "series per panel": ["line", "bars"], "share over quarters": ["quarter line"], "brands on two axes": ["scatter"], "bands over quarters": ["bands"], "two captures": ["before and after"], "frames in time": ["strip"] });

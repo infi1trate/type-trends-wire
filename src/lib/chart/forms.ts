@@ -11,6 +11,7 @@ export const SHAPES = [
   "series per panel", "share over quarters", "brands on two axes", "bands over quarters", "two captures", "frames in time",
   "values per row", "one series inline", "parts of a whole", "sites on two measures", "sites in tag space", "counts over years",
   "ranks over years", "colours of one site", "scores per row", "two points per row", "value with range per row",
+  "adopters by first quarter", "two groups over quarters", "sections of a page",
 ] as const;
 export type Shape = (typeof SHAPES)[number];
 export type ChartForm = {
@@ -94,6 +95,19 @@ export const FORMS: readonly ChartForm[] = [
     use: "One value per row with its range (a share with next quarter's forecast low and high); breakouts, stage shifts.", avoid: "Rows without a range, or more than twelve.", least: "2 rows with a range", most: 12,
     looks: { read: "Sorted dots on range lines, labels on the left", data: "The same rows with low, value and high printed" },
     access: { table: "Row, value, low, high", alt: "Name the value, what the range is and the widest range." }, modules: [`${K}DotRange.tsx`], liveIn: null },
+  // PROPOSED (B2): specimens on /brand/system only; each is filed as a graphics-desk proposal for the owner to accept -------------------
+  { id: "adoption-wake", name: "Adoption wake", status: "proposed", fits: [{ shape: "adopters by first quarter", desk: "adoption wake" }],
+    use: "Who showed a trait first and how big the crowd that followed was: one dot per brand at its first quarter, the share line behind.", avoid: "Fewer than 15 dated adopters, or a trait most brands had before slug read them.", least: "15 dated adopters", most: 400,
+    looks: { read: "Stacked dots per quarter, vanguard filled, first three named, quiet share line on the right axis", data: "The same dots, smaller, with the adopter table" },
+    access: { table: "Brand, first seen, vanguard, still there", alt: "Name the trait, how many dated adopters, who was first and how many were already there." }, modules: [`${K}AdoptionWake.tsx`, `${K}wake-layout.ts`], liveIn: null },
+  { id: "lead-lag", name: "Lead and lag", status: "proposed", fits: [{ shape: "two groups over quarters", desk: "lead and lag" }],
+    use: "Whether the vanguard leads everyone else on a trait, by how much and for how long (the lag written as a bracket).", avoid: "Fewer than four quarters with both groups read, or groups other than the vanguard and the rest.", least: "4 quarters with both groups read", most: 1,
+    looks: { read: "Two lines, the gap filled green ahead and pink behind, the lag bracket labelled", data: "The same lines with both shares per quarter" },
+    access: { table: "Quarter, vanguard share and count, everyone else share and count", alt: "Name the trait, the measured lag and both latest shares." }, modules: [`${K}LeadLag.tsx`, `${K}leadlag-layout.ts`], liveIn: null },
+  { id: "page-anatomy", name: "Page anatomy", status: "proposed", fits: [{ shape: "sections of a page", desk: "page anatomy" }],
+    use: "How homepages are built: one page as a strip of its sections, many pages side by side under the typical page, or the typical page per year.", avoid: "Fewer than 15 pages read for the many-page view, or quarters before structure was read.", least: "1 page read (15 for many pages)", most: 300,
+    looks: { read: "Vertical strips of role-filled bands, hero solid ink, labels beside the bands", data: "The same strips, thinner, with the section table" },
+    access: { table: "Brand, sections top to bottom with share", alt: "Name the pages shown, the sort role and the typical page's order." }, modules: [`${K}PageAnatomy.tsx`, `${K}anatomy-layout.ts`], liveIn: null },
 ];
 
 export const formById = (id: string) => FORMS.find(f => f.id === id) ?? null;
