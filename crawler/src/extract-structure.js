@@ -141,6 +141,8 @@ export function extractStructure() {
     // In the navigation only real asks count (Sign up, Book a demo, Log in); in the page a plain link needs a fill to count.
     if (k === "other" && (inNav || !p)) continue;
     if (k === "learn" && inNav) continue;
+    // Filled chips that are not asks (tabs, filters, product pickers) are capped so they cannot crowd out the real ones.
+    if (k === "other" && asks.filter((a) => a.k === "other").length >= 2) continue;
     seenAsk.add(label.toLowerCase());
     asks.push({ l: label, k, p, n: inNav ? 1 : 0 });
   }
