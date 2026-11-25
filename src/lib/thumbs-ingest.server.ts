@@ -116,7 +116,7 @@ async function adminStore(): Promise<ThumbStore> {
   return {
     authenticate: authenticateCrawler,
     async activeDomains(domains) {
-      const lib = await db.from("library_sites").select("domain").in("domain", domains).eq("active", true);
+      const lib = await db.from("library_sites").select("domain").in("domain", domains).or("active.eq.true,onboarding.eq.true"); // R2a-2 · onboarding brands are stored like any brand
       if (lib.error) fail("Library lookup failed");
       const run = await db.from("crawl_runs").select("id").eq("status", "finished").order("finished_at", { ascending: false }).limit(1).maybeSingle();
       if (run.error) fail("Crawl lookup failed");

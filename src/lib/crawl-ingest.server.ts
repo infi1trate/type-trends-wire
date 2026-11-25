@@ -22,13 +22,16 @@ export async function authenticateCrawler(request: Request): Promise<boolean> {
   return !!configured && constantTimeHashEqual(await sha256Hex(secret), configured.secret_sha256);
 }
 
-export async function handleLibraryState(request: Request, deps: { vanguard?: () => Promise<string[]> } = {}): Promise<Response> {
+export async function handleLibraryState(request: Request, deps: { vanguard?: () => Promise<string[]>; onboarding?: (source: string | null) => Promise<{ domain: string }[]> } = {}): Promise<Response> {
   try {
     if (!await authenticateCrawler(request)) return Response.json({ error: "unauthorized" }, { status: 401 });
     const source=new URL(request.url).searchParams.get("source");
     if(source!==null&&source!=="live"&&source!=="wayback")return Response.json({error:"Invalid source"},{status:400});
-    const { data, error } = await db.rpc(source==="wayback"?"library_archive_state":"library_state");
+    let { data, error } = await db.rpc(source==="wayback"?"library_archive_state":"library_state");
     if (error) throw new Error("Library state lookup failed");
+    // R2a-2 · onboarding brands (inactive, never through the RPCs) are added in the RPCs' own shape, marked onboarding: true.
+    const [{ withOnboarding }, extra] = await Promise.all([import("./onboarding-state"), (deps.onboarding ?? (async (s: string | null) => { const m = await import("./onboarding-state.server"); return s === "wayback" ? m.onboardingArchiveEntries() : m.onboardingLiveEntries(); }))(source)]);
+    data = withOnboarding(data, extra) as typeof data;
     if (source === "wayback") return Response.json(data, { headers: { "cache-control": "no-store" } });
     // Additive: the brands worth a full daily look (vanguard.ts). Existing fields are unchanged.
     const vanguard = await (deps.vanguard ?? (async () => (await import("./vanguard.server")).loadVanguard()))();
@@ -113,6 +116,10 @@ async function crawlWork(payload: import("zod").infer<typeof crawlPayload>, _sta
         return out;
       }
       return res;
+    }
+    if (payload.kind === "library_archive_gaps") {
+      const { storeArchiveGaps } = await import("./archive-gaps.server");
+      return Response.json({ ok: true, ...(await storeArchiveGaps(payload.run_id, payload.gaps)) });
     }
     if (payload.kind === "start") {
       const { error } = await db.from("crawl_runs").upsert({ id: payload.run_id, started_at: payload.started_at,

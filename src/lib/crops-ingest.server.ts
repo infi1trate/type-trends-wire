@@ -188,7 +188,7 @@ async function adminCropStore(): Promise<CropStore> {
   const ACOLS = "id,domain,kind,captured_at,first_seen_at,last_seen_at,path,width,height,bytes,hash,run_id";
   return {
     authenticate: authenticateCrawler,
-    async trackedDomains(domains) { const r = await db.from("library_sites").select("domain").in("domain", domains).eq("active", true); if (r.error) fail("Library lookup failed"); return new Set((r.data ?? []).map(x => x.domain)); },
+    async trackedDomains(domains) { const r = await db.from("library_sites").select("domain").in("domain", domains).or("active.eq.true,onboarding.eq.true"); if (r.error) fail("Library lookup failed"); return new Set((r.data ?? []).map(x => x.domain)); },
     async optedOut(domains) { const r = await db.from("thumb_optouts").select("domain").in("domain", domains); if (r.error) fail("Opt-out lookup failed"); return new Set((r.data ?? []).map(x => x.domain)); },
     async versions(domain, section, viewport) {
       const r = await db.from("site_crops").select(COLS).eq("domain", domain).eq("section", section).eq("viewport", viewport).order("captured_at", { ascending: false }).limit(100);

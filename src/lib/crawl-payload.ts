@@ -27,6 +27,8 @@ export const crawlPayload = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("start"), run_id: runId, started_at: iso,
     seeds_meta: object.nullable(), target_per_index: z.number().int() }).strict(),
   z.object({ kind: z.literal("sites"), run_id: runId, sites: z.array(site).min(1).max(100) }).strict(),
+  // R2a-2 · quarters the Archive has no readable copy of, so readiness can settle them.
+  z.object({ kind: z.literal("library_archive_gaps"), run_id: runId, gaps: z.array(z.object({ domain: z.string().min(1).max(253), quarter: z.string().regex(/^20\d\dQ[1-4]$/), reason: z.enum(["no_capture", "unreadable"]) }).strict()).min(1).max(2000) }).strict(),
   z.object({ kind: z.literal("finish"), run_id: runId, finished_at: iso, stats: object }).strict(),
 ]).superRefine((payload, ctx) => {
   if (payload.kind !== "sites") return;
