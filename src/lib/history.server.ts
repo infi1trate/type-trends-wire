@@ -41,9 +41,9 @@ export async function historyRows<T>(db: Db, cols: string, o: { now?: boolean } 
 export async function panelDomainSet(db: Db): Promise<Set<string>> {
   const out = new Set<string>();
   for (let f = 0; ; f += HISTORY_PAGE) {
-    const { data, error } = await db.from("library_sites").select("domain").eq("active", true).not("panel_since", "is", null).order("domain").range(f, f + HISTORY_PAGE - 1);
+    const { data, error } = await db.from("library_sites").select("domain,panel_since").eq("active", true).order("domain").range(f, f + HISTORY_PAGE - 1);
     if (error) throw error;
-    for (const r of data ?? []) out.add(r.domain);
+    for (const r of (data ?? []) as { domain: string; panel_since: string | null }[]) if (r.panel_since != null) out.add(r.domain);
     if (!data || data.length < HISTORY_PAGE) break;
   }
   return out;

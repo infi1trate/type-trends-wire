@@ -39,7 +39,7 @@ export function Today({ go, onTour, onGlossary, focus }: { go: (p: PanelId) => v
         </ol>
       </div>
       <div className="grid grid-cols-1 border-b border-rule md:grid-cols-3">
-        {([["overview", "F2 SIGNALS", "Headline signals, crawl spread and the wire on one screen."], ["brief", "F2 › FORECAST", "Every signal's stage, momentum and next-wave score."], ["library", "F3 BRANDS", "300 brands, their fingerprints and confirmed changes."]] as const).map(([id, k, d]) => (
+        {([["overview", "F2 SIGNALS", "Headline signals, crawl spread and the wire on one screen."], ["brief", "F2 › FORECAST", "Every signal's stage, momentum and next-wave score."], ["library", "F3 BRANDS", "Every brand slug reads, its fingerprints and confirmed changes."]] as const).map(([id, k, d]) => (
           <button key={id} type="button" onClick={() => go(id)} className="flex min-h-11 flex-col items-start gap-1 border-b border-rule p-3 text-left hover:bg-g900 md:border-b-0 md:border-r md:last:border-r-0">
             <span className="label font-semibold text-ink">{k} →</span><span className="text-g500">{d}</span>
           </button>

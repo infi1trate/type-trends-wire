@@ -61,3 +61,9 @@ describe("R2a · the panel entry rule", () => {
     expect(splitCounts(sites)).toEqual({ panel: 20, onboarding: 10 }); expect(onboardingNote(10)).toBe("+10 onboarding"); expect(onboardingNote(0)).toBe("");
   });
 });
+import { panelHealthLine } from "./panel";
+describe("R2a · health line", () => {
+  it("names panel, onboarding, ready, unfiled and the last step", () => {
+    expect(panelHealthLine({ panel: 328, onboarding: 0, ready: 0, unfiled: 0, last_step: null })).toBe("Panel 328 brands; 0 onboarding (0 ready); 0 unfiled; no panel step yet.");
+  });
+});

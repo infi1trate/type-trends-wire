@@ -140,7 +140,11 @@ async function loadPayload(): Promise<HealthPayload> {
     // J1 · brands with a structure reading newer than 14 days (stored rows only); unreadable leaves the line as it was.
     const sf = await import("./structure-read.server").then(m => m.structureFacts(now)).catch(() => null);
     const sl = sf ? (await import("./structure")).structureHealthLine(sf) : null;
-    return { ...s, structure: sf ? { fresh_desktop: sf.fresh_desktop, fresh_phone: sf.fresh_phone } : null, line: sl ? `${libraryLine(s).replace(/\.$/, "")}; ${sl}.` : libraryLine(s) };
+    // R2a · panel, onboarding (and how many are ready), unfiled brands and the last panel step; unreadable leaves the line as it was.
+    const pf = await import("./panel.server").then(m => m.panelFacts(supabaseAnon() as never)).catch(() => null);
+    const pl = pf ? (await import("./panel")).panelHealthLine(pf) : null;
+    const base = sl ? `${libraryLine(s).replace(/\.$/, "")}; ${sl}.` : libraryLine(s);
+    return { ...s, structure: sf ? { fresh_desktop: sf.fresh_desktop, fresh_phone: sf.fresh_phone } : null, panel: pf, line: pl ? `${base} ${pl}` : base };
   })().catch(() => null);
   value = { ...value, brand_names: names, spend, art, icons, stored_pages, spend_week, library };
   cache = { at: now, value };

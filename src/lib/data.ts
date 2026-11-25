@@ -540,3 +540,18 @@ export const structureSignalQuery = (key: string) => queryOptions({ queryKey: ["
 export const navPatternsQuery = () => queryOptions({ queryKey: ["nav-patterns"], staleTime: 10 * 60_000, queryFn: () => getNavPatterns() });
 export const scopeStructureQuery = (scope: string) => queryOptions({ queryKey: ["scope-structure", scope], staleTime: 10 * 60_000, queryFn: () => getScopeStructure({ data: { scope } }) });
 export const structureColumnsQuery = () => queryOptions({ queryKey: ["structure-columns"], staleTime: 10 * 60_000, queryFn: () => getStructureColumns() });
+
+/** R2a · the recorded panel steps and the panel's size, for "How the panel grows" and chart ticks. */
+export const panelStepsQuery = () => queryOptions({
+  queryKey: ["panel-steps"],
+  staleTime: 10 * 60_000,
+  queryFn: async () => {
+    await ready();
+    const [steps, count] = await Promise.all([
+      supabase!.from("panel_steps").select("at,brands_before,brands_after,by_sector").order("at"),
+      supabase!.from("library_sites").select("domain", { count: "exact", head: true }).eq("active", true).not("panel_since", "is", null),
+    ]);
+    if (steps.error) throw steps.error;
+    return { steps: (steps.data ?? []) as { at: string; brands_before: number; brands_after: number; by_sector: Record<string, number> }[], panel: count.count ?? null };
+  },
+});

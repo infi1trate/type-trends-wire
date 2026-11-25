@@ -73,12 +73,18 @@ export function splitCounts(rows: readonly PanelSite[]) {
 export const onboardingNote = (n: number) => (n > 0 ? `+${n} onboarding` : '');
 
 /** The methodology section, generated from the stored steps. */
-export function howThePanelGrows(steps: readonly (PanelStepRow & { by_sector?: Record<string, number> })[], panel: number): string[] {
+export function howThePanelGrows(steps: readonly (PanelStepRow & { by_sector?: Record<string, number> })[], panel: number | null): string[] {
   const lines = [
-    `Every share on slug is a count over the panel: the ${panel} homepages slug reads that have joined it. A brand added to the library starts as onboarding. Its own pages are readable at once, but it counts in no share, trend, forecast or story until it joins.`,
+    `Every share on slug is a count over the panel: the ${panel != null ? `${panel} ` : ""}homepages slug reads that have joined it. A brand added to the library starts as onboarding. Its own pages are readable at once, but it counts in no share, trend, forecast or story until it joins.`,
     'A brand is ready when slug has two live readings of its homepage more than a day apart, every quarter back to the end of 2020 is read from archived copies or recorded as not available, and its latest reading is clear. Ready brands join together, on one dated step, and every quarter of every series is then recomputed over the larger panel.',
   ];
   if (!steps.length) lines.push('The panel has not grown since slug began reading.');
   for (const s of steps) lines.push(`${fmt(s.at)}: ${s.brands_before} to ${s.brands_after} brands.`);
   return lines;
+}
+
+/** The health / engineering summary line. */
+export function panelHealthLine(f: { panel: number; onboarding: number; ready: number; unfiled: number; last_step: PanelStepRow | null }): string {
+  const step = f.last_step ? `last panel step ${fmt(f.last_step.at)} (${f.last_step.brands_before} to ${f.last_step.brands_after})` : "no panel step yet";
+  return `Panel ${f.panel} brands; ${f.onboarding} onboarding (${f.ready} ready); ${f.unfiled} unfiled; ${step}.`;
 }
