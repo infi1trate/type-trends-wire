@@ -31,7 +31,7 @@ describe("R2a · the panel entry rule", () => {
     expect(isReady({ ...base, archiveComplete: false, liveHomeCaptures: ["2026-11-20T00:00:00Z", "2026-11-22T00:00:00Z"] })).toBe(false);
     expect(isReady({ ...base, latestWellRead: false, liveHomeCaptures: ["2026-11-20T00:00:00Z", "2026-11-22T00:00:00Z"] })).toBe(false);
     const all = new Set<string>(); for (let y = 2020; y <= 2026; y++) for (let q = 1; q <= 4; q++) all.add(`${y}Q${q}`);
-    expect(archiveComplete(all, "2026Q4")).toBe(true); all.delete("2022Q2"); expect(archiveComplete(all, "2026Q4")).toBe(false);
+    expect(archiveComplete(all, "2026Q4")).toBe(true); all.delete("2022Q2"); expect(archiveComplete(all, "2026Q4")).toBe(true); all.delete("2022Q1"); expect(archiveComplete(all, "2026Q4")).toBe(false);
   });
   it("a step moves every ready brand at once and every quarter is recomputed over the same panel", () => {
     const ready = new Set(sites.filter(s => s.domain.startsWith("n")).map(s => s.domain));
@@ -74,13 +74,16 @@ describe("R2a-2 · onboarding is inactive until the step", () => {
   const allQ = () => { const s = new Set<string>(); for (let y = 2020; y <= 2026; y++) for (let q = 1; q <= 4; q++) s.add(`${y}Q${q}`); return s; };
   const live = ["2026-11-20T00:00:00Z", "2026-11-22T00:00:00Z"];
   it("an archive quarter is settled by a copy or a gap row; the current quarter by live captures", () => {
-    const arch = allQ(); arch.delete("2021Q3"); arch.delete("2026Q4");
-    expect(readiness({ liveHomeCaptures: live, archiveQuarters: arch, gapQuarters: new Set(), latestWellRead: true }, now)).toEqual({ ready: false, missing: ["archive quarters not settled: 2021Q3"] });
-    expect(readiness({ liveHomeCaptures: live, archiveQuarters: arch, gapQuarters: new Set(["2021Q3"]), latestWellRead: true }, now).ready).toBe(true);
+    const arch = allQ(); arch.delete("2022Q1"); arch.delete("2026Q4");
+    expect(readiness({ liveHomeCaptures: live, archiveQuarters: arch, gapQuarters: new Set(), latestWellRead: true }, now)).toEqual({ ready: false, missing: ["archive quarters not settled: 2022Q1"] });
+    expect(readiness({ liveHomeCaptures: live, archiveQuarters: arch, gapQuarters: new Set(["2022Q1"]), latestWellRead: true }, now).ready).toBe(true);
+    // Only the yearly readings are asked for (the crawler's first pass, which is what the panel itself has).
+    const yearly = new Set([...allQ()].filter(q => q.endsWith("Q1")));
+    expect(readiness({ liveHomeCaptures: live, archiveQuarters: yearly, gapQuarters: new Set(), latestWellRead: true }, now).ready).toBe(true);
   });
   it("names every missing condition", () => {
     expect(readiness({ liveHomeCaptures: ["2026-11-20T00:00:00Z"], archiveQuarters: new Set(), gapQuarters: new Set(["2020Q4"]), latestWellRead: false }, now).missing).toEqual([
-      "live home captures: 1 of 2", expect.stringMatching(/^archive quarters not settled: 2021Q1, /), "latest live capture does not read clearly"]);
+      "live home captures: 1 of 2", expect.stringMatching(/^archive quarters not settled: 2021Q1, 2022Q1, /), "latest live capture does not read clearly"]);
   });
   it("the step makes joiners active, not onboarding, dated", () => {
     const plan = planPanelStep(sites, new Set(["n0.com"]), "2026-11-25T00:00:00Z")!;
@@ -98,10 +101,15 @@ describe("R2a-2 · onboarding is inactive until the step", () => {
 // The archive crawler reads from 2021 Q1 (crawler/src/wayback-lib.js START_YEAR); a rule that asked for an earlier
 // quarter could never be met, and no brand would ever join.
 import { readFileSync } from "node:fs";
-import { PANEL_FROM_QUARTER } from "./panel";
+import { PANEL_FROM_QUARTER, panelArchiveQuarter } from "./panel";
 describe("the first archive quarter", () => {
   it("is the first quarter the archive crawler reads", () => {
     const year = /export const START_YEAR = (\d{4});/.exec(readFileSync("crawler/src/wayback-lib.js", "utf8"))?.[1];
     expect(PANEL_FROM_QUARTER).toBe(`${year}Q1`);
+  });
+  it("asks for the quarters of the archive crawler's first pass, no more", () => {
+    const src = readFileSync("crawler/src/wayback-lib.js", "utf8");
+    expect(src).toMatch(/passOf = \(quarter\) => \(\{ 1: 1, 3: 2, 2: 3, 4: 3 \}\)/);
+    expect(["2021Q1", "2021Q2", "2021Q3", "2021Q4"].filter(panelArchiveQuarter)).toEqual(["2021Q1"]);
   });
 });

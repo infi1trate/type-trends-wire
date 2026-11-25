@@ -4,6 +4,10 @@ export type Readiness = { domain: string; liveHomeCaptures: readonly string[]; a
 
 export const PANEL_FROM_QUARTER = '2021Q1'; // the archive crawler (START_YEAR) and every series begin here
 export const PANEL_HOLD_DAYS = 7;
+/** The archive readings a brand needs before it joins: the first quarter of each year, which is the archive crawler's
+ *  first pass (crawler/src/wayback-lib.js passOf) and what every panel brand has. The crawler's later passes fill the
+ *  other quarters for all brands alike; asking for them here would hold a new brand to more than the panel itself holds. */
+export const panelArchiveQuarter = (q: string) => q.endsWith('Q1');
 export const MIN_CAPTURE_GAP_MS = 24 * 3600_000;
 
 /** In the panel: active and dated. Everything that is a share or a trend filters through this. */
@@ -22,7 +26,7 @@ export function isReady(r: Readiness): boolean {
 
 /** Every quarter from 2021 Q1 to `upTo` is read or recorded as not available. */
 export function archiveComplete(settled: ReadonlySet<string>, upTo: string): boolean {
-  for (let q = PANEL_FROM_QUARTER; q <= upTo; q = nextQuarter(q)) if (!settled.has(q)) return false;
+  for (let q = PANEL_FROM_QUARTER; q <= upTo; q = nextQuarter(q)) if (panelArchiveQuarter(q) && !settled.has(q)) return false;
   return true;
 }
 export function nextQuarter(q: string): string {
@@ -77,7 +81,7 @@ export const onboardingNote = (n: number) => (n > 0 ? `+${n} onboarding` : '');
 export function howThePanelGrows(steps: readonly (PanelStepRow & { by_sector?: Record<string, number> })[], panel: number | null): string[] {
   const lines = [
     `Every share on slug is a count over the panel: the ${panel != null ? `${panel} ` : ""}homepages slug reads that have joined it. A brand added to the library starts as onboarding. Its own pages are readable at once, but it counts in no share, trend, forecast or story until it joins.`,
-    'A brand is ready when slug has two live readings of its homepage more than a day apart, every quarter back to the start of 2021 is read from archived copies or recorded as not available, and its latest reading is clear. Ready brands join together, on one dated step, and every quarter of every series is then recomputed over the larger panel.',
+    'A brand is ready when slug has two live readings of its homepage more than a day apart, the first quarter of every year back to 2021 is read from an archived copy or recorded as not available, and its latest reading is clear. Ready brands join together, on one dated step, and every quarter of every series is then recomputed over the larger panel.',
   ];
   if (!steps.length) lines.push('The panel has not grown since slug began reading.');
   for (const s of steps) lines.push(`${fmt(s.at)}: ${s.brands_before} to ${s.brands_after} brands.`);
@@ -96,7 +100,7 @@ export function prevQuarter(q: string): string {
   return n <= 1 ? `${y - 1}Q4` : `${y}Q${n - 1}`;
 }
 export type ReadinessInput = { liveHomeCaptures: readonly string[]; archiveQuarters: ReadonlySet<string>; gapQuarters: ReadonlySet<string>; latestWellRead: boolean };
-/** R2a-2 · readiness with its reasons. Archive quarters 2021Q1 up to the quarter before `now` are settled by a stored archive copy
+/** R2a-2 · readiness with its reasons. The first quarter of each year from 2021Q1 up to the quarter before `now` is settled by a stored archive copy
  *  or a recorded gap; the current quarter is settled by the live captures. */
 export function readiness(r: ReadinessInput, now: Date): { ready: boolean; missing: string[] } {
   const missing: string[] = [];
@@ -104,7 +108,7 @@ export function readiness(r: ReadinessInput, now: Date): { ready: boolean; missi
   if (t.length < 2) missing.push(`live home captures: ${t.length} of 2`);
   else if (t[t.length - 1]! - t[0]! <= MIN_CAPTURE_GAP_MS) missing.push("live home captures are not more than 24 hours apart");
   const upTo = prevQuarter(quarterOf(now.toISOString())), quarters: string[] = [];
-  for (let q = PANEL_FROM_QUARTER; q <= upTo; q = nextQuarter(q)) if (!r.archiveQuarters.has(q) && !r.gapQuarters.has(q)) quarters.push(q);
+  for (let q = PANEL_FROM_QUARTER; q <= upTo; q = nextQuarter(q)) if (panelArchiveQuarter(q) && !r.archiveQuarters.has(q) && !r.gapQuarters.has(q)) quarters.push(q);
   if (quarters.length) missing.push(`archive quarters not settled: ${quarters.join(", ")}`);
   if (t.length && !r.latestWellRead) missing.push("latest live capture does not read clearly");
   return { ready: !missing.length, missing };
