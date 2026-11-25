@@ -1119,6 +1119,8 @@ html[data-mode="dark"]:active-view-transition-type(cut)::view-transition-new(roo
 .chart-interaction .editorial-labels text { font-size: max(var(--chart-label-floor, 28px), 28px); }
 
 .chart-readout strong { display: block; font-weight: 600; }
+/* B1c · the shared strip above a group of small charts: one reserved line, so filling it never moves the grid. */
+.chart-strip { min-height: calc(1lh + 2 * var(--tk-space-2)); padding-block: var(--tk-space-2); margin-bottom: var(--tk-space-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .ill-trail .chart-interaction { height: 100%; }
 .ill-trail .trail-periods { position: absolute; inset: auto 0 0; }
 .chart-readout { overflow-y: auto; pointer-events: auto; }

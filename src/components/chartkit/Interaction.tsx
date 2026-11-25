@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useReadoutStrip } from './ReadoutStrip';
 import { SYSTEM } from '@/lib/theme';
-import { decimalLabel, keyboardPoint, nearestPoint, readoutWords, type ReadPoint } from './interaction';
+import { decimalLabel, keyboardPoint, nearestPoint, pointLine, readoutWords, type ReadPoint } from './interaction';
 export type ChartDatum = ReadPoint;
 /** Data may be supplied explicitly, or obtained from the chart's existing named SVG marks on intent only. */
-export function ChartInteraction({ children, points, width, height, spatial = false, onSelect, label = 'Chart', enabled = true, onActivate }: { children: ReactNode; points?: ReadPoint[]; width?: number; height?: number; spatial?: boolean; onSelect?: (i: number) => void; label?: string; enabled?: boolean; onActivate?: () => void }) {
+export function ChartInteraction({ children, points, width, height, spatial = false, onSelect, label = 'Chart', enabled = true, onActivate, name }: { name?: string; children: ReactNode; points?: ReadPoint[]; width?: number; height?: number; spatial?: boolean; onSelect?: (i: number) => void; label?: string; enabled?: boolean; onActivate?: () => void }) {
   const ref = useRef<HTMLDivElement>(null), tip = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const [active, setActive] = useState(-1), [live, setLive] = useState(''), [data, setData] = useState<ReadPoint[]>([]), [box, setBox] = useState({ w: 0, h: 0 });
-  const pinned = useRef(false);
+  const pinned = useRef(false), strip = useReadoutStrip(), armed = useRef(false);
   useEffect(() => {
     const outside = (e: PointerEvent) => { if (e.target instanceof Node && !ref.current?.contains(e.target)) { setActive(-1); pinned.current = false; } };
     document.addEventListener('pointerdown', outside);
@@ -49,6 +50,7 @@ export function ChartInteraction({ children, points, width, height, spatial = fa
   };
   const select = (i: number, list: ReadPoint[], keyboard = false) => {
     setData(list); setActive(i); const p = list[i]; if (keyboard) setLive(p ? readoutWords({ ...p, lines: spatial ? p.lines : list.filter(d => Math.abs(d.x - p.x) < 1).flatMap(d => d.lines) }) : ''); if (p) onSelect?.(i);
+    if (strip) { if (p) strip.show(label, pointLine(name ?? label, p)); }
   };
   const p = data[active], same = p ? (spatial ? [p] : data.filter(d => Math.abs(d.x - p.x) < 1)) : [];
   const tw = Math.min(tip.current?.offsetWidth ?? SYSTEM.chartFeedback.readoutWidth, visible.right - visible.left || box.w), th = tip.current?.offsetHeight ?? 100;
@@ -56,16 +58,17 @@ export function ChartInteraction({ children, points, width, height, spatial = fa
   const top = p ? Math.max(visible.top, Math.min(visible.bottom - th, p.y > (visible.top + visible.bottom) / 2 ? p.y - th - SYSTEM.chartFeedback.gap : p.y + SYSTEM.chartFeedback.gap)) : 0;
   if (!enabled) return <>{children}</>;
   return <div ref={ref} className="chart-interaction" data-chart-interaction="" tabIndex={0} role="group" aria-label={label}
-    onPointerDown={e => { pinned.current = e.pointerType !== 'mouse'; const b = e.currentTarget.getBoundingClientRect(), list = collect(); select(nearestPoint(list, e.clientX - b.left, (spatial || ref.current?.querySelector('.tk-svg-bar')) ? e.clientY - b.top : undefined), list); }}
+    onClickCapture={e => { if (strip && armed.current) { e.preventDefault(); armed.current = false; } }}
+    onPointerDown={e => { pinned.current = e.pointerType !== 'mouse'; if (strip) armed.current = e.pointerType !== 'mouse' && strip.owner !== label; const b = e.currentTarget.getBoundingClientRect(), list = collect(); select(nearestPoint(list, e.clientX - b.left, (spatial || ref.current?.querySelector('.tk-svg-bar')) ? e.clientY - b.top : undefined), list); }}
     onPointerMove={e => { if (e.pointerType !== 'mouse' && e.buttons === 0) return; const b = e.currentTarget.getBoundingClientRect(), list = collect(); select(nearestPoint(list, e.clientX - b.left, (spatial || ref.current?.querySelector('.tk-svg-bar')) ? e.clientY - b.top : undefined), list); }}
-    onPointerLeave={() => { if (!pinned.current) setActive(-1); }}
+    onPointerLeave={() => { if (!pinned.current) { setActive(-1); strip?.clear(label); } }}
     onKeyDown={e => { if (e.target !== e.currentTarget) return; if (e.key === 'Enter' && onActivate) { e.preventDefault(); onActivate(); return; } const list = collect(); let next = keyboardPoint(e.key, active, list.length);
       if (!spatial && active >= 0 && next !== undefined && next >= 0 && /^Arrow/.test(e.key)) { const direction = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1; const here = list[active]; while (here && next>=0 && next<list.length && Math.abs((list[next]?.x ?? Infinity)-here.x)<1) next+=direction; next=Math.max(0,Math.min(list.length-1,next)); } if (next === undefined) return; e.preventDefault(); e.stopPropagation(); pinned.current = true; select(next, list, true); }}>
     {children}
     {p && <div className="chart-interaction-overlay" aria-hidden="true">
       <span className="chart-crosshair" style={{ left: p.x }} />
       {same.map((d, i) => <span key={i} className="chart-marker" style={{ left: d.x, top: d.y }} />)}
-      <div ref={tip} className="chart-readout" style={{ left, top, maxWidth: Math.max(0, visible.right - visible.left), maxHeight: Math.max(0, visible.bottom - visible.top) }} data-chart-readout=""><strong>{p.period}</strong>{same.flatMap(d => d.lines).map((line, i) => <div key={i}>{line}</div>)}</div>
+      {!strip && <div ref={tip} className="chart-readout" style={{ left, top, maxWidth: Math.max(0, visible.right - visible.left), maxHeight: Math.max(0, visible.bottom - visible.top) }} data-chart-readout=""><strong>{p.period}</strong>{same.flatMap(d => d.lines).map((line, i) => <div key={i}>{line}</div>)}</div>}
     </div>}
     <span className="sr-only" aria-live="polite" aria-atomic="true" data-chart-live="">{live}</span>
   </div>;

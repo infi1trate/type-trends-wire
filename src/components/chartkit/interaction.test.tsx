@@ -22,3 +22,15 @@ describe('B1 shared chart interaction', () => {
   expect(ps).toHaveLength(3);for(const p of ps){expect(p.x).toBeGreaterThanOrEqual(0);expect(p.x).toBeLessThanOrEqual(640);expect(p.y).toBeGreaterThanOrEqual(0);expect(p.y).toBeLessThanOrEqual(480);}expect(ps[0]?.lines).toContain('33 of 299');
  });
 });
+
+import { readoutLine as _rl, pointLine as _pl } from "./interaction";
+import { describe as _d, it as _it, expect as _e } from "vitest";
+_d("B1c · one readout structure", () => {
+  _it("reads what · when · value · count · forecast", () => {
+    _e(_rl({ what: "Entry animations", when: "Q3 2026", value: "16.7%", count: "5 of 30" })).toBe("Entry animations · Q3 2026 · 16.7% · 5 of 30");
+    _e(_rl({ what: "Entry animations", when: "Q1 2027", value: "18.0%", forecast: true })).toBe("Entry animations · Q1 2027 · 18.0% · forecast");
+  });
+  _it("a tile point names the tile first", () => {
+    _e(_pl("Entry animations", { x: 0, y: 0, period: "Q3 2026", lines: [], value: "16.7%", count: "5 of 30" })).toBe("Entry animations · Q3 2026 · 16.7% · 5 of 30");
+  });
+});

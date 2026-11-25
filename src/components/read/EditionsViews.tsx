@@ -24,6 +24,7 @@ import type { loadWelcome } from "@/lib/editions/welcome.server";
 import { BasisWord, DigestShell, SectionHead, StageWord, pr } from "@/components/digest/Editorial";
 import { CropFigure, CropFallback } from "./Evidence";
 import { ReadFooter } from "./Bits";
+import { ReadoutGroup } from "@/components/chartkit/ReadoutStrip";
 import { ChartInteraction } from "@/components/chartkit/Interaction";
 import { Sparkline } from "@/components/chartkit";
 import { EditionCover } from "./Covers";
@@ -125,14 +126,14 @@ function SmallMultiples({ r }: { r: SectorReport }) {
   const { data } = useQuery(signalSeriesQuery(r.sector));
   return <section aria-labelledby="sr-multiples" className="ed-wrap d-air">
     <SectionHead n="··" id="sr-multiples" title="Small multiples" kicker={`Share of ${r.name} homepages by quarter, one signal each; the figure is the latest quarter.`} />
-    <ul className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6" data-small-multiples="">{r.signals.slice(0, 12).map(s => <li key={s.key} className="c-rulebox" data-container="rulebox">
-      <ChartInteraction label={`${s.name} in ${r.name}`} width={100} height={100} points={(data?.values[s.key] ?? []).map((v,i,a) => ({ x: 12 + i / Math.max(1,a.length-1)*76, y: 70 - v/Math.max(.01,...a)*20, period: quarterText(data?.quarters[s.key]?.[i] ?? ""), lines: [[s.name, `${(v*100).toFixed(1)}%`, data?.counts[s.key]?.[i]].filter(Boolean).join(" · ")] }))}>
+    <ReadoutGroup><ul className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6" data-small-multiples="">{r.signals.slice(0, 12).map(s => <li key={s.key} className="c-rulebox" data-container="rulebox">
+      <ChartInteraction name={s.name} label={`${s.name} in ${r.name}`} width={100} height={100} points={(data?.values[s.key] ?? []).map((v,i,a) => { const c = data?.counts[s.key]?.[i]; return { x: 12 + i / Math.max(1,a.length-1)*76, y: 70 - v/Math.max(.01,...a)*20, period: quarterText(data?.quarters[s.key]?.[i] ?? ""), value: `${(v*100).toFixed(1)}%`, ...(c != null && c !== "" ? { count: typeof c === "number" ? `${c} of ${r.brands}` : String(c) } : {}), lines: [[s.name, `${(v*100).toFixed(1)}%`, c].filter(Boolean).join(" · ")] }; })}>
       <Link to="/signals/$key" params={{ key: s.key }} search={{ sector: r.sector }} className="block no-underline">
         <span className="ed-kicker block truncate">{s.name}</span>
         <span className="ed-stat block">{share(s.here.share)}</span>
         <Sparkline look="read" values={data?.values[s.key]} periods={data?.quarters[s.key]} counts={data?.counts[s.key]} label={`${s.name} in ${r.name}`} />
       </Link>
-    </ChartInteraction></li>)}</ul>
+    </ChartInteraction></li>)}</ul></ReadoutGroup>
   </section>;
 }
 const Block = ({ n, id, title, kicker, children }: { n: string; id: string; title: string; kicker?: string; children: ReactNode }) =>
