@@ -66,7 +66,7 @@ export function ChartInteraction({ children, points, width, height, spatial = fa
       if (!spatial && active >= 0 && next !== undefined && next >= 0 && /^Arrow/.test(e.key)) { const direction = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1; const here = list[active]; while (here && next>=0 && next<list.length && Math.abs((list[next]?.x ?? Infinity)-here.x)<1) next+=direction; next=Math.max(0,Math.min(list.length-1,next)); } if (next === undefined) return; e.preventDefault(); e.stopPropagation(); pinned.current = true; select(next, list, true); }}>
     {children}
     {p && <div className="chart-interaction-overlay" aria-hidden="true">
-      <span className="chart-crosshair" style={{ left: p.x }} />
+      {!strip && <span className="chart-crosshair" style={{ left: p.x }} />}
       {same.map((d, i) => <span key={i} className="chart-marker" style={{ left: d.x, top: d.y }} />)}
       {!strip && <div ref={tip} className="chart-readout" style={{ left, top, maxWidth: Math.max(0, visible.right - visible.left), maxHeight: Math.max(0, visible.bottom - visible.top) }} data-chart-readout=""><strong>{p.period}</strong>{same.flatMap(d => d.lines).map((line, i) => <div key={i}>{line}</div>)}</div>}
     </div>}
