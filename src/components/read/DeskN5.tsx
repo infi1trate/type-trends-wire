@@ -33,7 +33,7 @@ function Table({ caption, head, children, min = 560 }: { caption: string; head: 
 function Copy({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   return <button type="button" className="ed-tap min-h-11 border border-ed-ink px-3" aria-label="Copy this draft"
-    onClick={() => { void navigator.clipboard?.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 2000); }).catch(() => {}); }}>
+    onClick={() => { void navigator.clipboard?.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1200); }).catch(() => {}); }}>
     <span aria-live="polite">{done ? "Copied" : "Copy"}</span>
   </button>;
 }

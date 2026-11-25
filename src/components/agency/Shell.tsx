@@ -38,7 +38,7 @@ export function CopyField({ label, value, note }: { label: string; value: string
   const id = `cf-${label.replace(/\W+/g, "-").toLowerCase()}`;
   const ref = useRef<HTMLInputElement>(null);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(value); setDone(true); setTimeout(() => setDone(false), 1600); }
+    try { await navigator.clipboard.writeText(value); setDone(true); setTimeout(() => setDone(false), 1200); }
     catch { ref.current?.select(); }
   };
   return <div className="flex flex-col gap-1">

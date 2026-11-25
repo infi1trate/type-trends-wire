@@ -3,11 +3,14 @@ import { forwardRef, type InputHTMLAttributes } from "react";
 import type { Band } from "@/lib/bands";
 import { Info, StageBadge } from "./Info";
 
-export function Loading({ className = "" }: { className?: string }) {
+/** A4 · a Terminal part still arriving: rows of the final row height with the slow light sweep (static under reduced motion);
+ *  the busy words stay for screen readers. */
+export function Loading({ className = "", rows = 6 }: { className?: string; rows?: number }) {
   return (
-    <span className={`text-g500 ${className}`} role="status">
-      {line("busy.terminal")} <span className="animate-blink text-ink" aria-hidden="true">▍</span>
-    </span>
+    <div className={`grid gap-px p-3 ${className}`} role="status" aria-busy="true" data-placeholder="">
+      <span className="sr-only">{line("busy.terminal")}</span>
+      {Array.from({ length: rows }, (_, i) => <span key={i} aria-hidden="true" className="ph-b block" style={{ height: "var(--tk-row-h, 28px)", width: i === rows - 1 ? "60%" : "100%" }} />)}
+    </div>
   );
 }
 

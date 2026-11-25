@@ -174,7 +174,7 @@ export function RetiredStoryView({ s, tape, note, bare = false }: { s: Pick<Stor
         <time dateTime={s.at} className="whitespace-nowrap">{storyTime(s.at)}</time>
         <span>{s.kicker}</span>
       </p>
-      <h1 className="ed-h1 mt-4 max-w-[24ch] break-words">{s.headline}</h1>
+      <h1 className="ed-h1 vt-head mt-4 max-w-[24ch] break-words">{s.headline}</h1>
       <p className="ed-small mt-6 max-w-[62ch] border-l-2 border-ed-ink pl-3" role="note" data-retired-note=""><span className="ed-kicker mr-2">Retired</span>{note ? latestChangesWords(note).replace(/^Retired:\s*/, "").replace(/^./, c => c.toUpperCase()) : "Taken down by the editor."}</p>
       {s.brands.length > 0 && <p className="ed-data mt-10 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="ed-kicker">{s.brands.length === 1 ? "The brand" : "The brands"}</span>{s.brands.map(b => <Link key={b.domain} to="/brands/$domain" params={{ domain: b.domain }} className="ed-tap inline-flex min-h-11 items-center"><BrandMark icon={null} name={b.name} size={32} className="mr-2" />{b.name} →</Link>)}</p>}
       {tape.length > 0 && <BlockPart title="The changes it was built from" kicker={tape.every(t => t.confirmed !== false) ? "They stay in the latest changes." : "A change marked Seen once, Alternating or Not compared is not in the latest changes; the rest stay there."}>

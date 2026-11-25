@@ -18,7 +18,7 @@ export function CopyCsv({ getTable, className = "" }: { getTable: () => HTMLTabl
   const copy = async () => {
     const t = getTable(); if (!t) return;
     try { await navigator.clipboard.writeText(tableCsv(tableCells(t))); setDone("ok"); } catch { setDone("fail"); }
-    window.setTimeout(() => setDone(null), 2000);
+    window.setTimeout(() => setDone(null), 1200);
   };
   return <button type="button" onClick={() => void copy()} className={`label inline-flex min-h-11 cursor-pointer items-center text-ink underline underline-offset-2 md:min-h-6 ${className}`} data-csv-copy="">
     {done === "ok" ? "Copied" : done === "fail" ? "Could not copy" : "Copy as CSV"}<span className="sr-only" aria-live="polite">{done === "ok" ? " The table is on the clipboard." : ""}</span>

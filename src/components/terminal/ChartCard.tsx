@@ -15,7 +15,7 @@ export function ChartOfWeek({ card, heading = true }: { card: { week: string; mo
   const [copied, setCopied] = useState(false);
   if (!card) return <p className="p-3 text-compare-muted">{voiced("terminal.chartCard.1")}</p>;
   const m = card.model, u = cardUrls(card.week), t = cardText(m);
-  const copy = async () => { try { await navigator.clipboard.writeText(u.page); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { setCopied(false); } };
+  const copy = async () => { try { await navigator.clipboard.writeText(u.page); setCopied(true); setTimeout(() => setCopied(false), 1200); } catch { setCopied(false); } };
   return <div className="flex flex-col gap-3 p-3">
     {heading && <p className="text-body text-ink">{t.call}</p>}
     <a href={u.png} target="_blank" rel="noopener" className="block w-full max-w-[1200px] border border-rule">

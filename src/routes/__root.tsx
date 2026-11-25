@@ -1,3 +1,4 @@
+import { SharedHead } from "@/components/read/SharedHead";
 import { line as voiced } from "@/lib/voice";
 import { ReceiptDrawer } from "@/components/receipts/ReceiptDrawer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -163,6 +164,7 @@ function RootComponent() {
       <ReceiptDrawer />
       <RouteFocus />
       <NavProgress />
+      <SharedHead />
       <CopyAge />
     </QueryClientProvider>
   );

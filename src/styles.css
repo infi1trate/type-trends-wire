@@ -1166,3 +1166,9 @@ html:active-view-transition-type(cut)::view-transition-group(ed-main) { animatio
   .cover[data-band="2"] { background: var(--sys-color-positive); }
   .cover[data-band] a, .cover[data-band] .ed-data, .cover[data-band] .ed-kicker { color: var(--sys-color-ink); }
 }
+
+/* A4 · the destination headline of a shared-element transition (see SharedHead.tsx). */
+.vt-head { view-transition-name: shared-head; }
+@media (prefers-reduced-motion: reduce) { .vt-head { view-transition-name: none; } }
+/* A3 · every table in Read and Terminal sets its figures in tabular numerals, so columns of numbers line up digit for digit. */
+@layer components { table td, table th { font-variant-numeric: tabular-nums; } }

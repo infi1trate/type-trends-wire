@@ -18,7 +18,7 @@ export function EmbedPanel({ target, title, scope, variant = "editorial" }: { ta
       <label className={ed ? "ed-kicker block" : "label block text-g500"} htmlFor={`${id}-code`}>Snippet</label>
       <textarea id={`${id}-code`} readOnly value={snippet} rows={4} onFocus={e => e.currentTarget.select()} className={`w-full resize-none border p-2 font-mono text-chip leading-4 ${ed ? "border-ed-ink bg-transparent" : "border-rule bg-void text-ink"}`} />
       <div className="flex flex-wrap items-center gap-x-3">
-        <button type="button" className={btn} onClick={async () => { try { await navigator.clipboard.writeText(snippet); setCopied("ok"); setTimeout(() => setCopied("idle"), 2000); } catch { setCopied("failed"); } }}>{copied === "ok" ? "Copied" : "Copy snippet"}</button>
+        <button type="button" className={btn} onClick={async () => { try { await navigator.clipboard.writeText(snippet); setCopied("ok"); setTimeout(() => setCopied("idle"), 1200); } catch { setCopied("failed"); } }}>{copied === "ok" ? "Copied" : "Copy snippet"}</button>
         <span role="status" className={ed ? "ed-caption" : "label text-g500"}>{copied === "failed" ? "Copy failed: select the snippet and copy it." : "Responsive from 280 to 800 px wide, 4:3."}</span>
       </div>
       <p className={ed ? "ed-kicker" : "label text-g500"}>Preview</p>

@@ -78,7 +78,7 @@ function IdentityCard({ b }: { b: CardIn }) {
   const i = b.identity;
   return <Card as="section" aria-labelledby="ed-brand-title" className="p-5 md:p-8" data-identity-card="">
     <BrandKicker b={b} />
-    <h1 id="ed-brand-title" className="ed-h1 brand-title mt-3 break-words"><BrandMark icon={b.icon} name={b.name} size={72} mobileSize={56} eager /><span className="min-w-0">{b.name}</span></h1>
+    <h1 id="ed-brand-title" className="ed-h1 vt-head brand-title mt-3 break-words"><BrandMark icon={b.icon} name={b.name} size={72} mobileSize={56} eager /><span className="min-w-0">{b.name}</span></h1>
     <p className="mt-2 max-sm:min-h-[2lh]"><a href={`https://${b.domain}`} target="_blank" rel="noopener" className="ed-code ed-tap" {...pr(`https://${b.domain}`)}>{b.domain}</a> <span className="ed-caption">· last captured {b.captured ? storyTime(b.captured) : "not yet"}</span></p>
     {b.cover && <div className="mt-5"><CoverFigure c={b.cover} /></div>}
     <div className="brand-data-grid mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -220,7 +220,7 @@ export function BrandPageView({ card, section = null, bare = false }: { card: Ca
 export function BrandPageWithoutCard({ domain, name, line }: { domain: string; name: string; line: ReactNode }) {
   const b = { domain, name };
   return <ObjectPage kind="brand" id="ed-brand" blocks={{
-    headline: <><h1 id="ed-brand-title" className="ed-cover break-words">{name}</h1><div className="mt-6" data-card-failed="">{line}</div></>,
+    headline: <><h1 id="ed-brand-title" className="ed-cover vt-head break-words">{name}</h1><div className="mt-6" data-card-failed="">{line}</div></>,
     evidence: <>
       <BlockPart title="How the page is built" kicker="The homepage as its sections in order, what it asks you to do, its furniture and how it behaves on a phone. Measured from the page."><Later id="ed-structure" shapes={[{ kind: "block", height: 384 }, { kind: "rows", n: 6, height: ROW.compact }]}><StructurePart domain={domain} /></Later></BlockPart>
       <BlockPart title="Moves" kicker="Every dated, measured change, newest first, with the two captures either side. Rebrands are confirmed by the rebrand desk.">

@@ -64,7 +64,7 @@ export function StoryCover({ seed, headline, long, deck, left, right, object, ki
         {object.kind === "trail" ? <div className="cover-trail"><Trail points={object.points} label={`${object.name}: share of tracked homepages by quarter`} format={pctFmt} w={760} h={420} seed={seed} /></div>
           : <CutAndPaste seed={seed} picture={picture} note={object.note} />}
       </div>}
-      <h1 id="ed-story-title" className={`cover-head ${long ? "ed-h1" : "ed-cover"} break-words`}><HeadlineStrips text={headline} seed={seed} /></h1>
+      <h1 id="ed-story-title" className={`cover-head vt-head ${long ? "ed-h1" : "ed-cover"} break-words`}><HeadlineStrips text={headline} seed={seed} /></h1>
       {deck && <p className={`cover-deck ed-standfirst${italicDeck ? " italic" : ""}`}><span>{deck}</span></p>}
     </div>
   </header>;
@@ -81,7 +81,7 @@ export function EditionCover({ seed, object, objectLabel, kicker, title, titleId
       <p className="cover-pin cover-pin-l ed-data" data-pin="left">{left}</p>
       <p className="cover-pin cover-pin-r ed-data" data-pin="right">{right}</p>
       <div className="ecover-object no-print"><SoftObject text={object} seed={seed} ink={ink} print={ink === "pink" ? "yellow" : "pink"} label={objectLabel} />{isNew && <Sticker className="ecover-new" data-pop="">New</Sticker>}</div>
-      <h1 id={titleId} className="ecover-title ed-cover break-words">{title}</h1>
+      <h1 id={titleId} className="ecover-title vt-head ed-cover break-words">{title}</h1>
       {deck && <div className="ecover-deck">{deck}</div>}
       {children}
     </div>
