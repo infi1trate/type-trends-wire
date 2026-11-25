@@ -1,0 +1,24 @@
+name: leak-check
+# Brands that are still onboarding (added to the seed list, read by the crawler, not yet in the panel) must not appear on
+# any page a reader can open. This reads the live site's public pages from outside and looks for them.
+# Run by hand after a wave is added or a release ships, and once a day while brands are onboarding.
+on:
+  schedule:
+    - cron: "23 13 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: { group: leak-check, cancel-in-progress: false }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Look for onboarding brands on public pages
+        env:
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+        run: node crawler/src/leakcheck.js
