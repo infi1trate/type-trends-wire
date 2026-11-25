@@ -43,7 +43,7 @@ export async function runForecast(opts: RunOptions = {}, mode: { defer?: boolean
     }
     if (mode.defer) {
       const { FORECAST_FOLLOW_UPS } = await import("./jobs/steps");
-      const wanted = FORECAST_FOLLOW_UPS.filter(x => (x === "taste" || x === "vibe" ? steps.derived : x === "brief" || x === "chart" ? steps.brief : x === "ledger" ? steps.ledger : true));
+      const wanted = FORECAST_FOLLOW_UPS.filter(x => (x === "structure" || x === "taste" || x === "vibe" ? steps.derived : x === "brief" || x === "chart" ? steps.brief : x === "ledger" ? steps.ledger : true));
       const { queueFollowUps } = await import("./jobs/steps.server");
       const queued = await queueFollowUps("forecast", String(runId), wanted).catch(e => { console.error("forecast follow-up queue failed:", runErrorText("queue", e)); return [] as string[]; });
       return { ok: true, run_id: runId, steps, model_card: result.card, alerts, taste: null, brief: null, vibe: null, chart: null, ledger: null, queued };

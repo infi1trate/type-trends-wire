@@ -2754,6 +2754,96 @@ export type Database = {
           },
         ]
       }
+      library_structure_records: {
+        Row: {
+          captured_at: string
+          derived_at: string
+          domain: string
+          flags: Json
+          quarter: string
+          record: Json
+          snapshot_id: number
+          source: string
+          structure_read: boolean
+          viewport: string
+        }
+        Insert: {
+          captured_at: string
+          derived_at?: string
+          domain: string
+          flags?: Json
+          quarter: string
+          record?: Json
+          snapshot_id: number
+          source: string
+          structure_read?: boolean
+          viewport: string
+        }
+        Update: {
+          captured_at?: string
+          derived_at?: string
+          domain?: string
+          flags?: Json
+          quarter?: string
+          record?: Json
+          snapshot_id?: number
+          source?: string
+          structure_read?: boolean
+          viewport?: string
+        }
+        Relationships: []
+      }
+      library_structure_series: {
+        Row: {
+          computed_at: string
+          n_read: number
+          n_yes: number
+          quarter: string
+          scope: string
+          signal: string
+          viewport: string
+        }
+        Insert: {
+          computed_at?: string
+          n_read?: number
+          n_yes?: number
+          quarter: string
+          scope: string
+          signal: string
+          viewport: string
+        }
+        Update: {
+          computed_at?: string
+          n_read?: number
+          n_yes?: number
+          quarter?: string
+          scope?: string
+          signal?: string
+          viewport?: string
+        }
+        Relationships: []
+      }
+      library_structure_state: {
+        Row: {
+          id: number
+          last_snapshot_id: number
+          series_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          last_snapshot_id?: number
+          series_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          last_snapshot_id?: number
+          series_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       library_tags: {
         Row: {
           carried_from: string | null

@@ -9,9 +9,9 @@ export const FOLLOW_UP_START_MS = 12_000;
 export const STEP_LEASE_MS = 3 * 60_000;
 export const STEP_MAX_ATTEMPTS = 2;
 /** The weekly forecast's work after the run is stored, in the order the single long call used to do it. */
-export const FORECAST_FOLLOW_UPS = ["taste", "brief", "vibe", "chart", "ledger", "stories"] as const;
+export const FORECAST_FOLLOW_UPS = ["structure", "taste", "brief", "vibe", "chart", "ledger", "stories"] as const;
 export type ForecastFollowUp = (typeof FORECAST_FOLLOW_UPS)[number];
-export const FOLLOW_UP_NAME: Record<ForecastFollowUp, string> = { taste: "taste tables", brief: "weekly brief", vibe: "vibe map", chart: "chart of the week", ledger: "forecast ledger", stories: "story build" };
+export const FOLLOW_UP_NAME: Record<ForecastFollowUp, string> = { structure: "page structure", taste: "taste tables", brief: "weekly brief", vibe: "vibe map", chart: "chart of the week", ledger: "forecast ledger", stories: "story build" };
 
 export type StepStatus = "pending" | "running" | "done" | "error" | "skipped";
 export type StepRow = { job: string; run_key: string; step: string; position: number; status: StepStatus; attempts: number; queued_at: string; started_at: string | null; finished_at: string | null; lease_until: string | null; detail: string | null };
