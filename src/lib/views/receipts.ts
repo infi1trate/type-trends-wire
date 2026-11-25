@@ -98,7 +98,7 @@ export function changeDates(c: { before?: string | null | undefined; after?: str
 }
 /** `at`: when the change was recorded (its confirmation); `seen`: the captures either side, when known. */
 export type TapeRow = { id: number; text: string; at: string | null; confirmed: boolean; seen?: { before: string | null; after: string | null } | null };
-/** A story's changes: the tape lines it was built from, and its stored facts. */
+/** A story's changes: the lines in the latest changes it was built from, and its stored facts. */
 export function storyReceipt(s: { id: string; number: number | null; headline: string; kicker: string }, tape: readonly TapeRow[], facts: readonly { text: string; basis: Basis | null }[]): ReceiptModel {
   return {
     type: "story", title: s.headline, kicker: `${s.number != null ? `NO. ${s.number} · ` : ""}${s.kicker.toUpperCase()} · THE CHANGES`,

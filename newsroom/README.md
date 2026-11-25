@@ -64,7 +64,7 @@ candidate → drafted → checked → picture checked (graphics) → standards (
 
 ### The news desk
 
-Picks at most 5 links a day from the wire's publications (outlet items only, published in the last 36 hours, never picked before, one per story keeping the earliest; at most 40 shown to the model, and only when at least 3 are new since its last call). Each line is checked in code: at most 120 characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than 6 words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within 14 days either side files a pitch for the editor in chief. Readers see the picks of the last 24 hours as THE WIRE on the front page, after THE TAPE.
+Picks at most 5 links a day from the wire's publications (outlet items only, published in the last 36 hours, never picked before, one per story keeping the earliest; at most 40 shown to the model, and only when at least 3 are new since its last call). Each line is checked in code: at most 120 characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than 6 words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within 14 days either side files a pitch for the editor in chief. Readers see the picks of the last 24 hours as THE WIRE on the front page, after LATEST CHANGES.
 
 ### The graphics desk
 

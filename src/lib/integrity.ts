@@ -1,12 +1,12 @@
 // MEASUREMENT INTEGRITY (E2e) — a change must be seen twice on each side. Judged per brand, page, viewport and field over the stored live
-// captures, a change may become a tape line or feed a story only when all three hold:
+// captures, a change may become a line in the latest changes or feed a story only when all three hold:
 //   1. Two before: the earlier value was seen in at least two consecutive captures, at least six hours apart.
 //   2. Two after: the new value was seen in at least two consecutive captures, at least six hours apart.
 //   3. One transition: the field changed value once in the 14 days before its newest capture (two or more is alternation:
 //      a rotation, an experiment or a loading race).
 // Headline text, font, size and alignment are comparable only between captures whose headline source is `h1`; otherwise those fields
 // are not compared at all (no change, no tape line, no story). A change that fails shows only in the Data view, marked "Seen once" or
-// "Alternating", and moves to the tape when later captures confirm it. Pure: same captures in, same verdicts out.
+// "Alternating", and moves to the latest changes when later captures confirm it. Pure: same captures in, same verdicts out.
 import { equalField, extractFields, normalizeFont, type Comparable, type DiffContext } from "./library-diff";
 import { eventMarks, type Mark, type MarkKind } from "./reread";
 
@@ -24,7 +24,7 @@ export const CONDITION_TEXT: Record<Condition, string> = {
 export type StoredVerdict = "pass" | "seen_once" | "alternating" | "headline_element";
 export type Verdict = StoredVerdict | MarkKind;
 export const VERDICT_LABEL: Record<"seen_once" | "alternating", string> = { seen_once: "Seen once", alternating: "Alternating" };
-export const INTEGRITY_RULE = `A change counts only when the earlier value was seen in two captures at least ${MIN_SPAN_HOURS} hours apart, the new value was seen in two captures at least ${MIN_SPAN_HOURS} hours apart, and the value changed once in ${TRANSITION_DAYS} days; more than once is alternation (a rotating slide, an experiment or a loading race). The headline's text, font, size and alignment are compared only when both captures read the page's h1. A change that fails stays out of the tape and the stories, listed in the Data view as "Seen once" or "Alternating" until later captures confirm it.`;
+export const INTEGRITY_RULE = `A change counts only when the earlier value was seen in two captures at least ${MIN_SPAN_HOURS} hours apart, the new value was seen in two captures at least ${MIN_SPAN_HOURS} hours apart, and the value changed once in ${TRANSITION_DAYS} days; more than once is alternation (a rotating slide, an experiment or a loading race). The headline's text, font, size and alignment are compared only when both captures read the page's h1. A change that fails stays out of the latest changes and the stories, listed in the Data view as "Seen once" or "Alternating" until later captures confirm it.`;
 
 /** One stored capture of one page and viewport: its comparable fields (library-diff) and its headline source. */
 export type Capture = { id: number; at: string; fields: Comparable; source: string | null };
@@ -157,7 +157,7 @@ export function unconfirmedPart<E extends { id: number; type: string; before?: u
   const alt = bad.some(([, f]) => f.verdict === "alternating");
   return { ...e, before: strip(e.before), after: strip(e.after), label: alt ? VERDICT_LABEL.alternating : VERDICT_LABEL.seen_once, failed: [...new Set(bad.flatMap(([, f]) => f.failed))] };
 }
-/** Split changes into the tape (what passed) and the Data view's unconfirmed list. A live change with no check yet is neither. */
+/** Split changes into the latest changes (what passed) and the Data view's unconfirmed list. A live change with no check yet is neither. */
 export function splitChecked<E extends { id: number; type: string; before?: unknown; after?: unknown; source?: string | null }>(events: E[], checks: ReadonlyMap<number, Check>): { tape: E[]; unconfirmed: (E & { label: string; failed: Condition[] })[]; rereads: (E & { reason: string; kind: MarkKind })[] } {
   const tape: E[] = [], unconfirmed: (E & { label: string; failed: Condition[] })[] = [], rereads: (E & { reason: string; kind: MarkKind })[] = [];
   for (const e of events) {

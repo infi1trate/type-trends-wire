@@ -99,7 +99,7 @@ const asComponents = (v: unknown): { id: ComponentId; label: string; value: numb
   const o = (v && typeof v === "object" ? v : {}) as Partial<Components>;
   return (Object.keys(COMPONENT_LABEL) as ComponentId[]).map(id => ({ id, label: COMPONENT_LABEL[id], value: typeof o[id]?.value === "number" ? o[id]!.value : 0, why: typeof o[id]?.why === "string" ? o[id]!.why : "" }));
 };
-/** The changes on the Read side: the tape lines the story is built from (and its numbers), each with its receipt. The headline call, the
+/** The changes on the Read side: the lines in the latest changes the story is built from (and its numbers), each with its receipt. The headline call, the
  *  confirmation line and other source lines are machinery: they stay in the Data view. */
 export const readFacts = (facts: Fact[]) => {
   const members = facts.filter(f => f.kind === "member");

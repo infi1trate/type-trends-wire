@@ -14,7 +14,7 @@ import { firstPaint } from "@/lib/first-paint.iso";
 import { linkHeader } from "@/lib/first-paint";
 
 const TITLE = `${BRAND_NAME} — ${BRAND_LINE}`;
-const DESC = `Today on ${BRAND_NAME}: what is changing in how brands look and sound on the web: the lead story, the day's other stories, the tape of every confirmed change, the chart of the day and the editions, every number with receipts.`;
+const DESC = `Today on ${BRAND_NAME}: what is changing in how brands look and sound on the web: the lead story, the day's other stories, the latest confirmed changes, the chart of the day and the editions, every number with receipts.`;
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): { sector?: string | undefined; format?: Format | undefined } => ({
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
   },
   loaderDeps: ({ search }) => ({ sector: resolveSector(search.sector), format: resolveFormat(search.format) }),
   // E3b · nothing is awaited: the frame goes out first and every read (the lead and live column, the side column and lower lists,
-  // Also today's pictures, the tape) starts now and streams into its sized slot.
+  // Also today's pictures, the latest changes) starts now and streams into its sized slot.
   // C1b · the one exception: the lead's stored picture address (one small read, started when the request arrived, waited for at most
   // FIRST_PAINT_DEADLINE_MS after arrival), so the first flush announces the picture Today paints largest and its request leaves with the first byte.
   loader: async ({ context, deps }) => {

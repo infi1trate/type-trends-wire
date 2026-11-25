@@ -73,6 +73,8 @@ export type NewsroomStore = {
   candidateStatus?: (r: { candidate: number; status: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
   /** L2b · a rewrite request for a published story (refused while one for the same story is still open). */
   rewrite?: (r: { story_id: string; actor: string; reason: string }) => Promise<{ id: number } | { refused: string }>;
+  /** V3 · store the pre-rewrite text again as the newest version; "all" for every story with a V3 rewrite. */
+  textRestore?: (id: string) => Promise<{ restored: string[] }>;
 };
 export type DeskStore = NewsroomStore & { living?: LivingStore; pitch?: (p: import("./pitch").PitchInput) => Promise<unknown>; exists: (id: string) => Promise<boolean>; insertEdit: (e: Omit<EditRow, "id" | "at">) => Promise<EditRow>; queue: (day: string | null) => Promise<unknown>; staff?: (page: StaffPage) => Promise<unknown> };
 export type DeskDeps = { authorize: (r: Request) => Promise<boolean>; store: DeskStore; allow: (ip: string) => boolean; now: () => number };
@@ -204,6 +206,12 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     const r = await d.store.rewrite({ story_id: b.id, actor, reason: b.reason });
     if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
     return { status: 201, body: { ok: true, request: r.id }, decision: "done", reason: b.reason, detail: { request: r.id } };
+  }
+  if (b.action === "text_restore") {
+    if (!d.store.textRestore) return missing;
+    if (b.id !== "all" && !(await d.store.exists(b.id))) return { ...missing, reason: "No such story." };
+    const r = await d.store.textRestore(b.id);
+    return { status: 201, body: { ok: true, restored: r.restored }, decision: "done", reason: b.reason, detail: { id: b.id, restored: r.restored.length } };
   }
   if (b.action === "wire_pick") {
     if (!d.store.wirePick) return missing;
@@ -436,6 +444,7 @@ export async function prodDeps(): Promise<DeskDeps> {
       iconRemove: async r => { const out = await (await import("../icons/ingest.server")).removeIconApp(r); return out && "removed" in out ? { ...out, copies: await (await import("../removal.server")).afterRemoval("icon") } : out; },
       candidateStatus: async r => (await import("../newsroom/scout.server")).insertCandidateStatus(db, r),
       rewrite: async r => (await import("./rewrite.server")).insertRewriteRequest(db, r),
+      textRestore: async id => (await import("./rewrite.server")).restoreTexts(db, id),
       living: {
         records: async () => (await import("../living/living.server")).loadEditions(db),
         insertStatus: async row => { const { error } = await db.from("living_edition_status").insert(row); if (error) throw new Error("status_insert_failed"); },

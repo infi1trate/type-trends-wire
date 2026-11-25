@@ -20,6 +20,7 @@ export const BODY_MIN_WORDS = 60, BODY_MAX_WORDS = 140, BODY_MIN_PARAS = 2, BODY
 export const HEADLINE_MIN_WORDS = 4, HEADLINE_MAX_WORDS = 9;
 
 import { allowedColourWords, colourWordsIn } from "../colour-names";
+import { voiceFailures, withoutOurRead } from "./voice-guide";
 // FACTS ---------------------------------------------------------------------------------------------------------------------------
 export type Basis = "measured" | "ai";
 /** `since` (E2g): the last capture that showed the old value; `date`: the first capture that showed the new one. */
@@ -32,7 +33,7 @@ export type WriterFacts = {
   type: string; kind: string; sector: string | null;
   /** Brands of the story by their stored names: the subjects and any cited (going the other way). */
   brands: { name: string; role: "subject" | "cited" }[];
-  /** The tape lines the story is built from. */
+  /** Latest changes lines the story is built from. */
   changes: WriterChange[];
   /** Captured homepage copy (headlines, sub-headlines, button labels) exactly as stored; quotes must match it. */
   copy: string[];
@@ -47,43 +48,62 @@ export type WriterFacts = {
   rebrand: boolean;
   /** E2g · at most this many brands named in the text (a census names six; the rest are counted). */
   max_brands?: number;
+  /** V2 · the continuity ledger: earlier published stories on the same signal or brand (voice-guide.ts `continuityLines`). */
+  continuity?: string[];
 };
 export type WrittenText = { headline: string; deck: string; body: string[]; how_we_know: string };
 export const hasOurRead = (f: WriterFacts) => f.changes.some(c => c.basis === "ai") || f.numbers.some(n => n.basis === "ai") || f.lines.some(l => l.basis === "ai");
 
 // PROMPT --------------------------------------------------------------------------------------------------------------------------
 /** The approved voice rules, verbatim (owner, 20 Nov 2026). */
-export const VOICE_RULES = `slug sounds like a sharp colleague who actually looked at the page: dry, specific, a little wry, never a consultant.
+export const VOICE_RULES = `Voice guide 2 (owner, 25 Nov 2026). Who is speaking: a design editor who has the numbers on the desk and has actually looked at the pages. Dry, curious, a little amused. Talks to you like a colleague across the table, not like a report. Never breathless, never selling.
 
-Headlines
-- Four to nine words. The subject is the brand or the pattern. The verb is what it did.
-- Say the thing. "DocuSign took 'AI-powered' out of its headline", not "docusign.com rebranded: new accent".
-- No colons, no labels in front, no "(AI estimate)" inside the headline.
-- Brands by name. The domain appears once, as the link.
+The ten rules
+1. Open on what you would see, not what we counted. The number comes second.
+2. Two numbers in an opening paragraph, at most. The rest live in the chart.
+3. Name names. "Vercel, Letterboxd and Netlify" beats "several brands".
+4. One thing a person would notice, drawn only from the sheet (capture copy, measured values, the before and after). Never invent a detail.
+5. Say how we know once, plainly, at the end, in how_we_know. "From two captures." When any fact on the sheet has basis "ai", how_we_know must also say which part is "by AI estimate" (for example "Measured from captures on 11 and 14 November; the imagery read is by AI estimate.").
+6. Guess out loud, and label it. At most one sentence may begin exactly "Our read:", as the body's last sentence; it is the only place for opinion, cause or intent, and it has no number, date, quotation or named person. Everything else is fact.
+7. One light touch per piece, in the headline or the last line only. Never at a brand's or a person's expense, never invented detail.
+8. Same words every time (the list below).
+9. Refer back. Stories are a serial: when the sheet gives an earlier story on the same signal or brand, refer to it once ("the same shift as No. 93").
+10. End when you are done. No moral, no "time will tell".
 
-Decks
-- One or two sentences with the specifics: from what, to what, between which dates.
-- Quote homepage copy exactly, in quotation marks.
-- Colours get a plain word, and at most one hex in the Data view. "Deep indigo to electric violet", not "Vivid light gold → Vivid magenta".
-- Fonts are named as the foundry names them.
+Headlines: written last, active, under 60 characters where possible, four to nine words, no colon, no parentheses, a named brand or a concrete noun in it.
 
-Numbers
-- Always with their base: "one of 30 dev tools homepages", "23.1% of studios, up from 8.7%".
-- One number per sentence where possible. Round only when the base is small.
-
-How we know: one line under the story.
-- Measured: "Measured from captures on 11 and 14 November."
-- Our read: "Our read of the imagery, an AI estimate."
+Words slug always uses (say, not)
+- "the homepages slug reads" on first mention, then "homepages"; never "tracked homepages", "sites", "websites".
+- Brands by name ("Coinbase", "The New Yorker"), never the domain.
+- "changed", never "moved" or "shifted"; "latest changes", never "the tape".
+- "rebrand" only when the name, the logo or three things at once change.
+- "33 of 299" on first use, then the percentage; never both in one sentence.
+- "by AI estimate", once, at the end; never "(AI estimate)" in a headline.
+- "early 2024", "late 2026" in prose; never "Q1 2024" in prose.
+- Never open a deck or a paragraph with "In the latest quarter" or "X appeared on N of M". The body is 60 to 140 words: count them.
+- Quote homepage copy exactly, in quotation marks. Colours get the sheet's plain colour words.
 
 Never
 - Advice nobody asked for: "audit your", "consider", "you should".
-- Stock endings: "worth watching", "a data point, not a trend", "belongs in briefs and templates".
+- Stock endings: "worth watching", "a data point, not a trend", "belongs in briefs and templates", "time will tell".
 - Trend-speak: "effectively dead", "the end of", "the rise of", "game-changing".
 - Our own labels as prose: "Corporate polish, Luxury → Editorial, Luxury".
-- Method words on the Read side: score, threshold, run number, deterministic.
-- "Rebrand" for anything less than type, colour and layout changing together, or a new name or logo.`;
+- Method words: score, threshold, run number, deterministic.
+- Calling a share flat, unchanged, stable or level (or "levelled off") when the sheet gives its momentum as 0.5 points a quarter or more.
+- Whimsy in numbers, dates, anything a reader might quote, or about a named person.`;
 
-/** The approved examples: headline, then the deck. */
+/** Voice guide 2's worked examples (owner, 25 Nov 2026): what the writer is asked to sound like. Headline, then the opening. */
+export const VOICE_EXAMPLES: { headline: string; deck: string }[] = [
+  { headline: "Homepages have started making an entrance", deck: "Open Vercel, Letterboxd or Netlify and the page does not just load, it arrives: text slides up, pictures ease in. At the start of 2024 none of the homepages slug reads did this. Now 33 of 299 do." },
+  { headline: "Fintech has discovered the third dimension", deck: "A bank's homepage is not where you expect to find something you can spin. Yet five of the 30 fintech homepages slug reads now open on a 3D scene, about one in six. Across the whole library it is fewer than one in ten." },
+  { headline: "Fintech is animating faster than everyone else", deck: "Adyen, Mercury and Monzo now ease their homepages in instead of simply showing them. Five of 30 fintech homepages do, against 33 of 299 overall: the same shift as No. 93, moving quickest here. Our read: when the product is trust, a page that moves with care is part of the pitch." },
+  { headline: "Sixteen homepages are now talking to your agents", deck: "A homepage headline used to be written for the person reading it. On 16 of them it is now also written for the software acting on that person's behalf: “agent”, “agents” or “agentic” sits in the biggest type on the page. Slack, Linear and Coinbase are among them." },
+  { headline: "The sale has reached the buttons", deck: "It is that week. On 20 November eleven homepages were in full sale voice, and not only in the headline: the sale had made it onto the buttons too. Equinox, Brooklinen and Casper were among them." },
+  { headline: "Coinbase's homepage is now for you and your agents", deck: "Coinbase's biggest line used to be a head count: “Trusted by millions worldwide.” Sometime between 11 and 14 November it became “The trusted financial account for you and your agents.” The millions are gone and the agents have arrived." },
+  { headline: "Developers, apparently, do not need to see people", deck: "Just over half the homepages outside the sector show somebody living their best life. Among developer tools, exactly one of 30 does. Everyone else shows you the terminal and trusts you to imagine the person." },
+  { headline: "Your home screen is mostly white, blue and black", deck: "Look at the top 100 free apps in any App Store category and no single colour owns it. But the same three keep winning." },
+];
+/** The approved examples of 20 Nov (voice guide 1), kept as check fixtures: the writer no longer sees them (Voice guide 2 replaced them). */
 export const APPROVED_EXAMPLES: { headline: string; deck: string }[] = [
   { headline: "DocuSign took “AI-powered” out of its headline", deck: "The line went from “AI-powered agreement management” to “Everything you need to agree”. The accent moved from deep indigo to electric violet." },
   { headline: "HubSpot now calls itself “The Customer Relationship Harness”", deck: "The headline replaced “Build demand, win deals, and delight customers — all on one platform”. The words changed; type, colour and layout did not." },
@@ -103,15 +123,15 @@ export const APPROVED_STORIES: (WrittenText & { name: string })[] = [
   { name: "docusign", headline: "DocuSign took “AI-powered” out of its headline", deck: "The homepage line is now “Everything you need to agree”.",
     body: ["On 11 November DocuSign's homepage opened with “AI-powered agreement management”. By 14 November it read “Everything you need to agree”.", "The accent colour changed at the same time, from a deep indigo to an electric violet. Type and layout stayed where they were.", "It fits what the library shows. Homepages that lead with AI as the product have levelled off at 29.2%, while those that list AI as one feature among others are rising, at 14.6%."],
     how_we_know: "Headline and accent measured from captures on 11 and 14 November. The AI shares are our read of homepage copy." },
-  { name: "black-friday", headline: "The Black Friday skins are up", deck: "The loudest changes on the tape this week are promotions, not redesigns.",
-    body: ["Brooklinen's headline was “48-Hours Only Singles' Day Sale” on 11 November, “The Gift Guide's Here!” on 14 November and “25% Off Sitewide Black Friday Sale” by 20 November. Its palette changed with each one.", "Lucid replaced “Lucid Gravity” with “Black Friday Exclusive Offers”. Peloton swapped “Movement that takes you far” for “Up to $1,300 off Peloton equipment”. GoPro now leads with “Up to $200 off top cameras”, set in a condensed face with pill buttons.", "We keep these out of the rebrand count. When the sales end, the tape will show which changes stay."],
+  { name: "black-friday", headline: "The Black Friday skins are up", deck: "The loudest changes this week are promotions, not redesigns.",
+    body: ["Brooklinen's headline was “48-Hours Only Singles' Day Sale” on 11 November, “The Gift Guide's Here!” on 14 November and “25% Off Sitewide Black Friday Sale” by 20 November. Its palette changed with each one.", "Lucid replaced “Lucid Gravity” with “Black Friday Exclusive Offers”. Peloton swapped “Movement that takes you far” for “Up to $1,300 off Peloton equipment”. GoPro now leads with “Up to $200 off top cameras”, set in a condensed face with pill buttons.", "We keep these out of the rebrand count. When the sales end, the latest changes will show which ones stay."],
     how_we_know: "Measured from captures between 11 and 20 November." },
 ];
 
 export const WRITER_SYSTEM = [
   "You are the writer for slug, a newsroom that watches how brands' homepages look and sound. Write the Read-side text of one story.",
   "", "VOICE RULES (approved; follow them exactly):", VOICE_RULES,
-  "", "APPROVED EXAMPLES (headline, then the deck):", ...APPROVED_EXAMPLES.map((e, i) => `${i + 1}. ${e.headline}. ${e.deck}`),
+  "", "WORKED EXAMPLES (headline, then the opening):", ...VOICE_EXAMPLES.map((e, i) => `${i + 1}. ${e.headline}. ${e.deck}`),
   "", "TWO FULL STORIES, for length and tone:", ...APPROVED_STORIES.map(s => [`Headline: ${s.headline}`, `Deck: ${s.deck}`, ...s.body.map(b => `Body: ${b}`), `How we know: ${s.how_we_know}`].join("\n")),
   "", "WHAT TO RETURN: headline (four to nine words, no colon, no parentheses), deck (one or two sentences), body (two to four short paragraphs, 60 to 140 words in all), how_we_know (one sentence).",
   "No \"why it matters\" line and no advice.",
@@ -188,7 +208,7 @@ const factNumbers = (f: WriterFacts) => {
 };
 
 export const ADVICE = ["audit your", "consider", "you should", "make sure", "it's time to", "brands should"];
-export const STOCK_ENDINGS = ["worth watching", "a data point, not a trend", "belongs in briefs and templates"];
+export const STOCK_ENDINGS = ["worth watching", "a data point, not a trend", "belongs in briefs and templates", "time will tell"];
 export const TREND_SPEAK = ["effectively dead", "the end of", "the rise of", "game-changing"];
 /** W1b · what a change "says" about intent is never on a facts sheet: the quiet-change story may say only that we found no mention. */
 export const INTENT_CLAIMS: readonly { name: string; re: RegExp }[] = [
@@ -380,8 +400,10 @@ export function checkText(t: Partial<WrittenText> & { headline: string; deck: st
   }
   // U2b · colour words are facts: a hue or named shade outside quoted copy must be one of the sheet's colour names for this story.
   fail.push(...colourFailures(free, f, mine));
-  // Banned words and phrases (outside quoted homepage copy).
-  fail.push(...bannedFailures(free));
+  // Banned words and phrases (outside quoted homepage copy). V2: a claim about intent is allowed only inside the "Our read:" sentence.
+  fail.push(...bannedFailures(free).filter(x => !x.startsWith("claim about intent")), ...bannedFailures(withoutOurRead(free)).filter(x => x.startsWith("claim about intent")));
+  // V2 · Voice guide 2: the word list, the "Our read:" rules, no jab at a brand, and (with a body) the opening's shape.
+  fail.push(...voiceFailures(t, { kind: "story", brands: mine, unquote: unquoted, requireShape: !!o.requireBody }));
   // N5 · a moving share is never called flat.
   fail.push(...flatShareFailures(free, sheetLinesOf(f)));
   if (!f.rebrand && rebrandClaim(free)) fail.push("“rebrand” without type, colour and layout changing together");
@@ -421,8 +443,8 @@ export type WriteOutcome = { text: WrittenText; model: string; checked: boolean;
  * made while `canCall(model)` says the limits allow it; a story never waits on the writer (the template is always there).
  */
 export async function writeWithFallback(f: WriterFacts, template: WrittenText, known: Known,
-  call: (model: string, failures: string[]) => Promise<{ raw: unknown; cost: number } | null>, canCall: (model: string) => boolean): Promise<WriteOutcome> {
-  const r = await tryModels(WRITER_PLAN, call, parseWritten, t => checkText(t, f, known, { requireBody: true }), canCall);
+  call: (model: string, failures: string[]) => Promise<{ raw: unknown; cost: number } | null>, canCall: (model: string) => boolean, extra?: (t: WrittenText) => string[]): Promise<WriteOutcome> {
+  const r = await tryModels(WRITER_PLAN, call, parseWritten, t => [...checkText(t, f, known, { requireBody: true }), ...(extra?.(t) ?? [])], canCall);
   return r.text ? { ...r, text: r.text, checked: true } : { ...r, text: template, model: "template", checked: false };
 }
 /** The writer, the writer again with its failures listed, then the text model (story and study writers alike). */

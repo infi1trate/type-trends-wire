@@ -276,7 +276,7 @@ export function editionParts(r: EditionRows): EditionParts | null {
     numbers: numbersLine(r.numbers),
     corrections: corrections(withdrawn, rebuiltOn),
     briefWithdrawn: r.briefDomains?.length ? withdrawnCited(r.briefDomains, withdrawnBrands({ briefDomains: r.briefDomains, retired, published: mine })) : 0,
-    keep: [{ label: "Signals", href: "/signals" }, { label: "The tape", href: KEEP_READING_TAPE }, ...(r.study ? [{ label: r.study.headline, href: r.study.href }] : [])],
+    keep: [{ label: "Signals", href: "/signals" }, { label: "Latest changes", href: KEEP_READING_TAPE }, ...(r.study ? [{ label: r.study.headline, href: r.study.href }] : [])],
     next: nextIssue(r.week),
   };
   return { base, cover, rows, chart, fallback: fallbackText(cover, rows, chart), extra: { numbers: numbersText(base.numbers), corrections: base.corrections?.text ?? null, quiet: base.quiet } };

@@ -72,7 +72,7 @@ describe("E2c · a share sits beside the base it was counted on", () => {
   const text = (deck: string) => ({ headline: "Health homepages rarely sound technical", deck, body, how_we_know: "Our read of homepage copy, an AI estimate." });
   it("rejects “13.8% of the 30 tracked health homepages” (13.8% is 4 of 29) and accepts it beside 29", () => {
     expect(checkText(text("On 16 November, 13.8% of the 30 tracked health homepages used a technical voice."), facts, { names: [] }, { requireBody: true })).toContain("a share beside the wrong base: 13.8% of 30");
-    expect(checkText(text("On 16 November, 13.8% of the 29 tracked health homepages used a technical voice."), facts, { names: [] }, { requireBody: true })).toEqual([]);
+    expect(checkText(text("On 16 November, 13.8% of the 29 tracked health homepages used a technical voice."), facts, { names: [] }, { requireBody: true }).filter(x => !x.startsWith("voice:"))).toEqual([]);
   });
   it("reads the base on either side and at the precision written", () => {
     expect(shareBaseFailures("Across all 300 tracked homepages, 51.6% use a technical voice.")).toEqual(["a share beside the wrong base: 51.6% of 300"]);

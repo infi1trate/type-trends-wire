@@ -43,9 +43,9 @@ export const SUB_VIEWS: Record<"composition", TabId> = { composition: "layout" }
 
 /** U3 · the seven sections, in one order for both modes: the Read bar and the terminal's F-keys both come from here. */
 export const SECTIONS: readonly Section[] = [
-  { id: "live", label: "Today", purpose: "The front page: today's stories, the tape of confirmed changes and the rest of the week.", read: "/", terminal: "today", key: "F1" },
+  { id: "live", label: "Today", purpose: "The front page: today's stories, the latest confirmed changes and the rest of the week.", read: "/", terminal: "today", key: "F1" },
   { id: "signals", label: "Signals", purpose: "The design signals worth a decision, ranked, each with its receipts.", read: "/signals", terminal: "overview", key: "F2" },
-  { id: "brands", label: "Brands", purpose: "Who is doing it: tracked brands, their identity and every confirmed move.", read: "/brands", terminal: "library", key: "F3" },
+  { id: "brands", label: "Brands", purpose: "Who is doing it: the brands slug reads, their identity and every confirmed change.", read: "/brands", terminal: "library", key: "F3" },
   { id: "patterns", label: "Patterns", purpose: "Signals seen as examples: the brands that show each layout pattern.", read: "/patterns", terminal: "patterns", key: "F4" },
   { id: "studies", label: "Studies", purpose: "Longer arguments from the stored history: each study, its figures and the check that keeps it live.", read: "/data", terminal: "studies", key: "F5" },
   { id: "digest", label: "Digest", purpose: "The editions: the daily Morning Line, the weekly Digest and quarterly sector reports.", read: "/digest", terminal: "digest", key: "F6" },

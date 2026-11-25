@@ -3,7 +3,7 @@
 /** "arrivals" is the existing control on Today ("3 new stories · show them"), kept as it was before A3. */
 export const STICKER_USES = ["moved", "arrivals", "new-story", "forecast-legend"] as const;
 export type StickerUse = (typeof STICKER_USES)[number];
-export const STICKER_WORD: Record<StickerUse, string> = { moved: "Moved", arrivals: "New stories", "new-story": "New", "forecast-legend": "Forecast" };
+export const STICKER_WORD: Record<StickerUse, string> = { moved: "Changed", arrivals: "New stories", "new-story": "New", "forecast-legend": "Forecast" };
 export const NEW_WINDOW_MS = 24 * 3600_000;
 /** A story is new for 24 hours after it was published. */
 export const isNewStory = (at: string, now: number) => { const t = Date.parse(at); return Number.isFinite(t) && now - t >= 0 && now - t < NEW_WINDOW_MS; };

@@ -2,9 +2,73 @@
 
 How slug writes, in plain words. A desk session reads this before it writes or edits anything. The rules come first, each with one good and one bad example from stories that ran or were retired; then every word and phrase list the code refuses, written from the code itself (a test fails when this file and the check disagree).
 
-The voice: a sharp colleague who actually looked at the page. Dry, specific, a little wry, never a consultant.
+## Voice guide 2 (owner, 25 Nov 2026)
 
-## The editorial rules
+This replaces the editorial rules of 20 Nov where they overlap. The truth rules below and everything in “What the check refuses” still hold.
+
+### Who is speaking
+A design editor who has the numbers on the desk and has actually looked at the pages. Dry, curious, a little amused. Talks to you like a colleague across the table, not like a report. Never breathless, never selling.
+
+### The ten rules
+1. Open on what you would see, not what we counted. The number comes second.
+2. Two numbers in an opening paragraph, at most. The rest live in the chart.
+3. Name names. “Vercel, Letterboxd and Netlify” beats “several brands”.
+4. One thing a person would notice. A machine counts. An editor says what it looks like (from the sheet only: capture copy, measured values, the before and after; never invented).
+5. Say how we know once, plainly, at the end. “By AI estimate.” “From two captures.” Never “tracked homepages whose headline we can read” in a first sentence.
+6. Guess out loud, and label it. A line that begins “Our read:” is opinion. Everything else is fact.
+7. One light touch per piece. Never at a brand's expense, never invented detail.
+8. Same words every time (the list below).
+9. Refer back. Stories are a serial: “the same shift as No. 93”.
+10. End when you are done. No moral, no “time will tell”.
+
+### “Our read:”
+At most one sentence per story, beginning exactly “Our read:”, as the last sentence before How we know. It is the only place opinion, cause or intent may appear. It carries no number, no date, no quotation and names no person. Stories under 60 words get none. Studies and the Digest may carry up to three.
+
+### Where whimsy goes
+| Welcome | Never |
+|---|---|
+| Headlines and last lines | Numbers, dates and anything a reader might quote |
+| Empty states and quiet days | Method notes and corrections |
+| Labels and section names | Removal notices |
+| A study's opening paragraph | Anything about a named person |
+
+One light touch per piece, in the headline or the last line only. If a line could embarrass a named brand or person, it is over the limit. Examples 7 and 12 below are as far as it goes.
+
+### Headlines
+Written last, active, under 60 characters where possible, no colon constructions, a named brand or a concrete noun in it. The light touch may live here.
+
+### Words slug always uses
+| Say | Not |
+|---|---|
+| “the homepages slug reads” on first mention, then “homepages” | “tracked homepages”, “sites”, “websites” |
+| “Coinbase”, “GoPro”, “The New Yorker” | “coinbase.com”, “gopro.com”, “newyorker.com” (domains stay in links, receipts and the Terminal) |
+| “changed” | “moved”, “shifted” (CHANGED sticker, “Changed this week”, “N changes”) |
+| “latest changes” | “the tape” |
+| “rebrand” only when the name, the logo or three things at once change | “rebrand” for a new accent colour |
+| “33 of 299” on first use, then the percentage | both at once |
+| “by AI estimate”, once, at the end | “(AI estimate)” in a headline |
+| “early 2024”, “late 2026” in prose | “Q1 2024” in prose (quarters are fine in charts, tables and readouts) |
+
+### Worked examples (the voice set in the golden set)
+1. Lead, No. 93. Not: “More homepages animate their entrances. Entry animations appeared on 33 of 299 tracked homepages in the latest quarter, including Vercel, Letterboxd and Netlify.” Write: “Homepages have started making an entrance. Open Vercel, Letterboxd or Netlify and the page does not just load, it arrives: text slides up, pictures ease in. At the start of 2024 none of the homepages slug reads did this. Now 33 of 299 do.”
+2. No. 94. Not: “Fintech homepages are using immersive 3D. Immersive 3D appeared on 5 of 30 tracked fintech homepages in the latest quarter, compared with 28 of 299 tracked homepages overall.” Write: “Fintech has discovered the third dimension. A bank's homepage is not where you expect to find something you can spin. Yet five of the 30 fintech homepages slug reads now open on a 3D scene, about one in six. Across the whole library it is fewer than one in ten.”
+3. No. 95. “Fintech is animating faster than everyone else. Adyen, Mercury and Monzo now ease their homepages in instead of simply showing them. Five of 30 fintech homepages do, against 33 of 299 overall: the same shift as No. 93, moving quickest here. Our read: when the product is trust, a page that moves with care is part of the pitch.”
+4. No. 89. “Sixteen homepages are now talking to your agents. A homepage headline used to be written for the person reading it. On 16 of them it is now also written for the software acting on that person's behalf: “agent”, “agents” or “agentic” sits in the biggest type on the page. Slack, Linear and Coinbase are among them. Counted on the 162 homepages whose headline slug can read.”
+5. No. 90. “The sale has reached the buttons. It is that week. On 20 November eleven homepages were in full sale voice, and not only in the headline: the sale had made it onto the buttons too. Equinox, Brooklinen and Casper were among them.”
+6. No. 88. “Coinbase's homepage is now for you and your agents. Coinbase's biggest line used to be a head count: “Trusted by millions worldwide.” Sometime between 11 and 14 November it became “The trusted financial account for you and your agents.” The millions are gone and the agents have arrived. The video behind the headline went too, swapped for a still.”
+7. No. 45. “Developers, apparently, do not need to see people. Just over half the homepages outside the sector show somebody living their best life. Among developer tools, exactly one of 30 does. Everyone else shows you the terminal and trusts you to imagine the person.”
+8. Change-list line. Not: “Netlify · headline font, Figtree to Systemia; body font, Instrument Sans to Systemia (about page)”. Write: “Netlify's about page now speaks in one typeface, Systemia, where it used to use two: Figtree for headlines and Instrument Sans for text.”
+9. Change-list line. Not: “Rhode · button corners, pill to 9–24 px (product page)”. Write: “Rhode squared off its buttons a little. The pill on its product page is now a rounded rectangle.”
+10. Study No. 2 opening. “Who went big first? We cannot say, and that is the interesting part. By the time the archive opens, 44 brands were already shouting. Webflow, Netlify and Parsley Health are the first ones we catch in the act. What the record does show is how far it spread: big type nearly doubled its share of homepages in five years, even while early adopters such as Mother and Wolff Olins went back to speaking at a normal volume.”
+11. Study No. 8. “Your home screen is mostly white, blue and black. Look at the top 100 free apps in any App Store category and no single colour owns it. But the same three keep winning. White takes seven of 18 categories. Blue takes five, Travel, Business and Finance among them. Black takes the ones you open at night: Music, Entertainment and Social Networking.”
+12. Quiet day on Today. Not: “Quiet: no new story in the last 24 hours. Below is the rest of this week, then the same week from the archive, each with the date it happened.” Write: “Nothing new today. The brands are behaving. Here is the rest of the week, and what was happening this same week in years past.”
+
+### Story shapes (every story type's writer brief)
+An opening sentence on something seen on the page; at most two numbers in the opening paragraph, the rest left to the figure and receipts; at least one named brand where the sheet has names; one observation of what it looks like, from fields on the sheet only; the how-we-know line once, last. A story on a signal or brand already covered by a published story in the last 90 days refers back to it once (the continuity ledger on the sheet).
+
+## The editorial rules of 20 Nov (still in force where Voice guide 2 does not replace them)
+
+The voice: a sharp colleague who actually looked at the page. Dry, specific, a little wry, never a consultant.
 
 ### 1 · A story is a claim
 Say what happened, as a sentence a reader could check.
@@ -113,7 +177,7 @@ Refused as “banned phrase”. Source: `ADVICE (stories/writer.ts)`.
 
 Refused as “banned phrase”. Source: `STOCK_ENDINGS (stories/writer.ts)`.
 
-“worth watching”, “a data point, not a trend”, “belongs in briefs and templates”
+“worth watching”, “a data point, not a trend”, “belongs in briefs and templates”, “time will tell”
 
 ### Trend-speak
 
@@ -186,6 +250,16 @@ Refused as “banned phrase”. Source: `DIGEST_BANNED (digest/writer.ts)`.
 Refused as “a claim about the future without a forecast call”. Source: `FUTURE (digest/writer.ts)`.
 
 “will”, “won't”, “is set to”, “are set to”, “is going to”, “are going to”, “is dead”, “are dead”, “is over”, “are over”
+
+### Voice guide 2 (refused as “voice”)
+
+Source: `VOICE_REFUSALS`, `SENTENCE_REFUSALS` and `AT_A_BRAND` (stories/voice-guide.ts). Outside quotations: “tracked homepages”, “appeared on N of M as the opening clause”, “in the latest quarter as the opening clause”, “moved or shifted for a change”, “a quarter label in prose”, “the count and the percentage in one sentence”, “a sentence that is only a count”, “(AI estimate) in a headline”, “a domain used as a brand name in prose”.
+
+With a body, the opening paragraph's first sentence carries no figure (something seen, not a count) and the paragraph holds at most 2 numbers.
+
+“Our read:” is the only place opinion, cause or intent may appear: at most 1 per story (its last sentence before How we know), 3 per study or Digest edition, none in a piece under 60 words, and never with a number, a date, a quotation or a named person. A claim about intent outside it is still refused.
+
+A light touch may never be aimed at a named brand: in a sentence that names one, “embarrassing”, “embarrassed”, “lazy”, “copying”, “copied”, “copycat”, “desperate”, “cringe”, “cringeworthy”, “lame”, “sad”, “pathetic”, “tired”, “boring”, “ugly”, “dated” are refused.
 
 ### Also refused by the shared check
 

@@ -3,6 +3,7 @@
 // sheet, fingerprint, prompt, schema, parse, check. It reuses the story writer's voice rules, readers, banned lists and brand check and the
 // study writer's number, quarter, sector, cause and ranking checks (stories/writer.ts, data-stories/writer.ts); I/O is in writer.server.ts.
 import { VOICE_RULES, bannedFailures, flatShareFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
+import { voiceFailures, withoutOurRead } from "../stories/voice-guide";
 import { CAUSAL, RANKING_WORDS, SPELLED_FREE, STUDY_BANNED, factsHash, plain, quartersIn, sectorsNamed, spelledNumbers } from "../data-stories/writer";
 import { brandName } from "../brand-names";
 import { storySectorName as sectorName } from "../labels";
@@ -167,13 +168,15 @@ export function checkDigestText(t: DigestWritten, f: DigestSheet, subject: reado
   const mySectors = new Set(sectorsNamed(strings.join("\n")));
   for (const s of sectorsNamed(free)) if (!mySectors.has(s)) fail.push(`sector not on the sheet: ${s}`);
   // Claims: cause only when measured, rankings only when the sheet carries them, the future only with a forecast call.
-  if (!f.links.length) for (const c of CAUSAL) if (has(free, c)) fail.push(`a causal claim: ${c}`);
+  if (!f.links.length) for (const c of CAUSAL) if (has(withoutOurRead(free), c)) fail.push(`a causal claim: ${c}`);
   for (const w of RANKING_WORDS) if (!f.rankings.includes(w) && has(free, w)) fail.push(`a superlative the sheet does not carry: ${w}`);
   if (!f.forecast) for (const w of futureClaims(free)) fail.push(`a claim about the future without a forecast call: ${w}`);
   // Voice.
   if (/\?/.test(free)) fail.push("a question in the text");
   for (const p of DIGEST_BANNED) if (has(free, p)) fail.push(`banned phrase: ${p}`);
-  fail.push(...bannedFailures(free));
+  fail.push(...bannedFailures(free).filter(x => !x.startsWith("claim about intent")), ...bannedFailures(withoutOurRead(free)).filter(x => x.startsWith("claim about intent")));
+  // V2 · Voice guide 2: the word list and up to three "Our read:" lines.
+  fail.push(...voiceFailures({ headline: "", deck: "", body: [free] }, { kind: "digest", brands: [], unquote: x => x }));
   // N5 · a moving share is never called flat.
   fail.push(...flatShareFailures(free, strings));
   return [...new Set(fail)];

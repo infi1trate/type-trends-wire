@@ -6,6 +6,7 @@ import { AI_MODELS } from "../ai-models";
 import { SECTORS } from "../library";
 import { storySectorName as sectorName } from "../labels";
 import { VOICE_RULES, bannedFailures, flatShareFailures, datesIn, has, norm, numbersIn, quotesOf, shareBaseFailures, stripDates, unknownBrands, unquoted, words, type Known } from "../stories/writer";
+import { voiceFailures, withoutOurRead } from "../stories/voice-guide";
 import { capText, isNum, isRef } from "./text";
 import type { StoryModel, StudyScene, StudyText } from "./types";
 
@@ -185,13 +186,15 @@ export function checkStudyText(t: StudyWritten, f: FactsSheet, known: Known): st
   const mySectors = new Set([...sectorsNamed(strings.join("\n")), ...SECTORS.filter(x => linked.has(sectorName(x).toLowerCase()) || names.some(n => n.kind === "sector" && n.href.endsWith(`/${x}`)))]);
   for (const s of sectorsNamed(free)) if (!mySectors.has(s)) fail.push(`sector not on the sheet: ${sectorName(s)}`);
   // Claims: cause only when measured, rankings only when the sheet carries them.
-  if (!f.links.length) for (const c of CAUSAL) if (has(free, c)) fail.push(`a causal claim: ${c}`);
+  if (!f.links.length) for (const c of CAUSAL) if (has(withoutOurRead(free), c)) fail.push(`a causal claim: ${c}`);
   for (const w of RANKING_WORDS) if (!f.rankings.includes(w) && has(free, w) && !rankedEndClaim(free, w, f.ranked)) fail.push(`a superlative the sheet does not carry: ${w}`);
   // Voice.
   if (/\?/.test(free)) fail.push("a question in the text");
   if (/(?<![\p{L}])(you|your|yours|you're)(?![\p{L}])/iu.test(free)) fail.push("second person");
   for (const p of STUDY_BANNED) if (has(free, p)) fail.push(`banned phrase: ${p}`);
-  fail.push(...bannedFailures(free));
+  fail.push(...bannedFailures(free).filter(x => !x.startsWith("claim about intent")), ...bannedFailures(withoutOurRead(free)).filter(x => x.startsWith("claim about intent")));
+  // V2 · Voice guide 2: the word list and up to three "Our read:" lines.
+  fail.push(...voiceFailures({ headline: "", deck: "", body: [free] }, { kind: "study", brands: [], unquote: x => x }));
   // N5 · a moving share is never called flat.
   fail.push(...flatShareFailures(free, strings));
   return [...new Set(fail)];

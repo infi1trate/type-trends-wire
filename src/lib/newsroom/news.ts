@@ -12,7 +12,7 @@ export const NEWS_PICKS_PER_DAY = 5, NEWS_WINDOW_HOURS = 36, NEWS_MAX_CANDIDATES
 export const LINE_MAX = 120, COPY_RUN_MAX = 6;
 /** The front page's THE WIRE block: picks from the last 24 hours, at most five rows. */
 export const WIRE_BLOCK_HOURS = 24, WIRE_BLOCK_MAX = 5;
-/** A pick tagged with a brand that has a measured change on the tape this close (either side) becomes a pitch. */
+/** A pick tagged with a brand that has a measured change in the latest changes this close (either side) becomes a pitch. */
 export const PITCH_WINDOW_DAYS = 14;
 export const SUBJECTS = ["brand", "web", "type"] as const;
 export type Subject = (typeof SUBJECTS)[number];

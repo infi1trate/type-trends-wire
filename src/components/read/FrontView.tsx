@@ -164,26 +164,26 @@ export function AlsoCards({ items, pictures }: { items: FrontStory[]; pictures: 
 }
 function AlsoLater({ m }: { m: FrontTop }) { const { data } = useSuspenseQuery(frontAlsoQuery(m.sector, m.format)); return <AlsoCards items={m.also} pictures={data} />; }
 
-/** W1b · the old and new icon or card on a tape line: two small fixed boxes (no layout shift), lazy, the brand's own pictures. */
+/** W1b · the old and new icon or card on a line in the latest changes: two small fixed boxes (no layout shift), lazy, the brand's own pictures. */
 function TapePairPics({ p }: { p: TapePair }) {
   const box = p.kind === "icon" ? { w: 24, h: 24 } : { w: 42, h: 24 };
   const img = (x: TapePair["before"], label: string) => <img src={x.src} alt={`${label}: ${p.alt}`} width={box.w} height={box.h} loading="lazy" decoding="async" className="tape-pair-img" style={{ width: box.w, height: box.h }} />;
   return <span className="tape-pair" data-tape-pair="">{img(p.before, "Before")}<span aria-hidden="true">·</span>{img(p.after, "After")}</span>;
 }
-// THE TAPE (E3): the eight newest confirmed changes as a ruled list, one line each, linking to the brand page; then the count line.
+// LATEST CHANGES (E3): the eight newest confirmed changes as a ruled list, one line each, linking to the brand page; then the count line.
 export function TapeBlock({ t }: { t: FrontTape }) {
   return <section aria-labelledby="front-tape" data-front-tape="">
     <h2 id="front-tape" className="ed-h2">{FRONT_TAPE_TITLE}</h2>
     <p className="ed-caption mt-1">{FRONT_TAPE_SUB}</p>
     {t.lines.length > 0
-      ? <Ledger className="mt-3" small inlineTags label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, lead: <BrandMark icon={l.icon} name={l.name} size={32} />, title: <>{l.name} · {l.what}{l.pair && <TapePairPics p={l.pair} />}</>, tags: l.marks, time: l.when }))} />
+      ? <Ledger className="mt-3" small inlineTags label={FRONT_TAPE_TITLE} rows={t.lines.map(l => ({ key: String(l.id), href: l.href, lead: <BrandMark icon={l.icon} name={l.name} size={32} />, title: <>{l.sentence ?? <>{l.name} · {l.what}</>}{l.pair && <TapePairPics p={l.pair} />}</>, tags: l.marks, time: l.when }))} />
       : <p className="ed-small mt-3">No confirmed change in the last {t.days} days.</p>}
     <p className="ed-data mt-3" data-tape-counts="">{confirmedText(t.confirmed, t.days)}; <a href={UNCONFIRMED_HREF} className="ed-tap">{unconfirmedText(t.unconfirmed)}</a> (seen once or alternating).</p>
-    <p className="ed-data mt-2"><a href={WHOLE_TAPE_HREF} className="ed-tap">The whole tape →</a></p>
+    <p className="ed-data mt-2"><a href={WHOLE_TAPE_HREF} className="ed-tap">All changes →</a></p>
   </section>;
 }
 function TapeLater() { const { data } = useSuspenseQuery(frontTapeQuery()); return <TapeBlock t={data} />; }
-// N3 · THE WIRE: up to five links the news desk picked from the publications on the wire in the last 24 hours, built from the tape's own
+// N3 · THE WIRE: up to five links the news desk picked from the publications on the wire in the last 24 hours, built from the latest changes' own
 // rows and type steps: the outlet, the line (the outlet's page, in a new tab), the date, and the tracked brand it names. No block when empty.
 export function WireBlock({ rows }: { rows: WireBlockRow[] }) {
   if (!rows.length) return null;
@@ -199,7 +199,7 @@ export function WireBlock({ rows }: { rows: WireBlockRow[] }) {
   </section>;
 }
 function WireRows() { const { data } = useSuspenseQuery(frontWireQuery()); return <WireBlock rows={data.rows} />; }
-/** THE WIRE never holds up or takes down THE TAPE: it waits silently and, if its read fails, the block is simply not shown. */
+/** THE WIRE never holds up or takes down LATEST CHANGES: it waits silently and, if its read fails, the block is simply not shown. */
 class WireQuiet extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
@@ -278,7 +278,7 @@ function RestArchive({ m }: { m: FrontTop }) { return <FrontArchive r={useRest(m
 function RestAside({ m }: { m: FrontTop }) { return <FrontAside r={useRest(m)} />; }
 function RestAsideRest({ m }: { m: FrontTop }) { return <FrontAsideRest m={m} r={useRest(m)} />; }
 function RestLower({ m }: { m: FrontTop }) { return <FrontLower r={useRest(m)} />; }
-/** The deferred slots of one top model: archive, side column, lower lists, Also today's pictures and the tape. */
+/** The deferred slots of one top model: archive, side column, lower lists, Also today's pictures and the latest changes. */
 function laterSlots(m: FrontTop): Slots {
   return {
     archive: m.sections.archive ? <Later id="front-archive-later" shapes={[{ kind: "block", height: 28 }, { kind: "rows", n: 4, height: ROW.ledger }]}><RestArchive m={m} /></Later> : null,
@@ -361,7 +361,7 @@ function FrontBody({ m, slots }: { m: FrontTop; slots: Slots }) {
           {m.format === "explore"
             ? <><h2 id="front-live" className="ed-h2">Explore</h2><Ledger className="mt-4" rows={m.explore.map(exploreRow)} label="Brand and pattern pages" /></>
             : <LiveColumn initial={m.column.items} serverNow={m.now} sector={m.sector} format={m.format} quiet={m.column.quiet} onUpdates={onUpdates} empty={empty}
-                heading={{ id: "front-live", title: EARLIER_TITLE, note: m.state === "quiet" ? <p className="ed-caption mt-1" role="note">Quiet: no new story in the last 24 hours. Below is the rest of this week{m.sections.archive ? ", then the same week from the archive" : ""}, each with the date it happened.</p> : null }} />}
+                heading={{ id: "front-live", title: EARLIER_TITLE, note: m.state === "quiet" ? <p className="ed-caption mt-1" role="note">Nothing new today. The brands are behaving. Here is the rest of the week{m.sections.archive ? ", and what was happening this same week in years past" : ""}.</p> : null }} />}
           {m.format === "explore" && !m.sections.explore && <p className="ed-small mt-3">{voiced("read.frontView.4")}</p>}
           {slots.archive}
           {m.format === "all" && m.more.length > 0 && <BeforeThisWeek items={m.more} now={now} />}

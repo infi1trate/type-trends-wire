@@ -1,5 +1,5 @@
 // N1 · THE DOOR'S REGISTER: every action a desk can take through POST /api/public/desk, with its level of autonomy, in one place.
-//   ships alone       content inside existing formats (the tape, stories, the Digest, corrections), data label and bug fixes: it runs.
+//   ships alone       content inside existing formats (the latest changes, stories, the Digest, corrections), data label and bug fixes: it runs.
 //   ships to preview  anything that changes how a page looks or adds a format: recorded as a proposal, nothing live changes.
 //   needs the owner   navigation and sections, brand and voice, new outside sources, deleting or rewriting stored data, spend over the
 //                     cap, secrets, outbound posts: refused unless the actor is `owner` and the call carries the confirmation phrase.
@@ -51,10 +51,11 @@ export const REGISTER: readonly ActionDef[] = [
   A("source_note", "ships alone", "setting", "Appends a terms reading to a source in the sources register (the scout): status, date read, link, one line. It changes what the register shows and nothing else; reading a new source still needs the owner.", { since: "N5" }),
   A("candidate_status", "ships alone", "setting", "Moves a brand candidate: accepted or declined (the owner only), then added (engineering, once the crawler's seed list carries it, or the owner). Nothing is added to the library by the product.", { since: "N5" }),
   A("rewrite", "ships alone", "story", "Asks the story writer to rewrite a published story at its next allowance, first in its queue (standards, the copy desk or the editor in chief, with a reason). The new text goes through the writer's normal check; nothing is rewritten by hand and the story stays as it is until then.", { since: "L2b" }),
+  A("text_restore", "ships alone", "story", "Puts back the text a story had before the Voice guide 2 backlist rewrite, for one story or for all of them (the copy desk, the editor in chief or the owner, with a reason). The earlier text is stored again as the newest version; every version stays in the story's history.", { since: "V3" }),
   A("propose", "ships to preview", "setting", "Proposes something that changes how a page looks or adds a format (a chart type, a study series, a layout, a signal, a design edition). Recorded; nothing live changes.", { since: "N1" }),
   A("living_approve", "needs the owner", "edition", "Approves a proposed design edition after the gate. Going live still means shipping its values in code.", { since: "L1" }),
   A("living_rollback", "needs the owner", "edition", "Rolls an approved or live design edition back to the previous edition's values exactly.", { since: "L1" }),
-  A("wire_only", "needs the owner", "switch", "Turns “wire only” on or off: stories leave the front page; the tape, brands, signals, studies and the Digest stay as they are.", { since: "N1" }),
+  A("wire_only", "needs the owner", "switch", "Turns “wire only” on or off: stories leave the front page; the latest changes, brands, signals, studies and the Digest stay as they are.", { since: "N1" }),
   A("safe_mode", "needs the owner", "switch", "Turns safe mode on or off (D1): crawler posts are refused with “try later”, every job but the wire stands down and readers get last good copies. The site also enters it by itself when the database is bad and leaves after five good minutes.", { since: "D1" }),
   A("spend_cap", "needs the owner", "spend", "Sets or clears the weekly cap (model dollars, build credits).", { since: "N1" }),
   A("draft_status", "needs the owner", "setting", "Sets a social draft's status: approved, posted or declined (from draft: approved or declined; from approved: posted or declined). There is no posting code: outbound posts stay the owner's.", { since: "N5" }),

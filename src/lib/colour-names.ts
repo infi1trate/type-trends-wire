@@ -1,4 +1,4 @@
-// U2b · colour words are facts. One reader-facing name per hex (tape lines, story facts, the writer's sheet and its check), from the
+// U2b · colour words are facts. One reader-facing name per hex (lines in the latest changes, story facts, the writer's sheet and its check), from the
 // colour's OKLCH lightness, chroma and hue. A tinted pale colour is named by its tint ("Pale blue"), never "light grey". Pure. The taste
 // tickers (`colorTicker`, `colorName`) keep their own bins: they are aggregation keys, not words for one colour.
 import { oklch } from "./taste/color";

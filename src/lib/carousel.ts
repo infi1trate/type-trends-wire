@@ -1,18 +1,18 @@
 // THE CAROUSEL RULE (E2c, widened E2d) — when a homepage's first screen is a rotating hero (a carousel), the headline, hero image, hero
 // video and first-screen colours (palette, accent) we capture, and our AI reads of its imagery and style (E2g), belong to one slide of it: a change to them is a rotation, never a move.
-// Such changes stay on the tape, marked "Carousel" the way seasonal lines are marked "Seasonal", and cannot make or join a story; type
+// Such changes stay in the latest changes, marked "Carousel" the way seasonal lines are marked "Seasonal", and cannot make or join a story; type
 // (fonts) and layout (alignment, grid, button corners) on the same page are judged as before. The crawler reports the carousel as the
 // optional boolean `layout.hero_carousel` in a snapshot's signals; a change is on a carousel when either its before or its after snapshot
 // says so. A capture from before the flag existed takes the value of the page's nearest later flagged capture (E2f, inheritedCarousel).
 // THE STUDIO RULE (E2d) — a studio's first screen shows its newest or featured client work, so on homepages in the studios sector the
 // palette, accent, hero image and hero video follow that work, as a media homepage follows its lead story: for those fields a studio is
-// treated as an editorial homepage (tape lines only, with or without the carousel flag; editor.ts applies it). A studio's own type,
+// treated as an editorial homepage (lines in the latest changes only, with or without the carousel flag; editor.ts applies it). A studio's own type,
 // headline and layout changes are judged as before, and roundups gathering studios are unaffected. Decided from the sector. Pure.
 export const CAROUSEL_LABEL = "Carousel";
-export const CAROUSEL_RULE = "When the first screen is a carousel, a headline, hero image, hero video, palette or accent change, or our AI read of its imagery or style, is one slide replacing another: it stays on the tape, marked Carousel, and never makes or joins a story. Type and layout changes on such a page are judged as usual. A capture taken before we recorded carousels takes the answer of the page's next capture that has one.";
+export const CAROUSEL_RULE = "When the first screen is a carousel, a headline, hero image, hero video, palette or accent change, or our AI read of its imagery or style, is one slide replacing another: it stays in the latest changes, marked Carousel, and never makes or joins a story. Type and layout changes on such a page are judged as usual. A capture taken before we recorded carousels takes the answer of the page's next capture that has one.";
 /** Sectors whose homepages are showcases of client work (studio rule). */
 export const SHOWCASE_SECTORS: ReadonlySet<string> = new Set(["studios"]);
-export const SHOWCASE_RULE = "A studio's homepage shows its newest or featured client work, so its palette, accent, hero image and hero video follow that work: those changes stay on the tape and never make or join a story. A studio's own typeface, headline and layout changes are judged as usual.";
+export const SHOWCASE_RULE = "A studio's homepage shows its newest or featured client work, so its palette, accent, hero image and hero video follow that work: those changes stay in the latest changes and never make or join a story. A studio's own typeface, headline and layout changes are judged as usual.";
 /** Fields that follow the slide (carousel) or the featured work (studio): hero media and first-screen colours. */
 export const SLIDE_FIELDS: ReadonlySet<string> = new Set(["hero_media", "palette", "accent"]);
 /** Kept for callers of the E2c name: the layout fields that rotate with a slide. */

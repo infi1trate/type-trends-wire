@@ -29,6 +29,7 @@ import { CALL_FAIL_SHARE, CHECK_FAIL_SHARE, HISTORY_MAX_MS, LATE_FACTOR, NO_LATE
 import { HOLD_ACTORS, HOLD_JOBS, HOLD_MAX_DAYS, ITEM_LIMIT_MS, JOB_WINDOWS, PASS_FAILS_STOP, PASS_ITEMS_MAX, PASS_LIMIT_MS, PASS_SCHEDULE, PASS_SLOT_MIN, PASS_STALE_MS } from "./passes";
 import { BACKTEST_DAYS, COVERAGE_DAYS, DETECTOR_SAMPLE, FINDING_KINDS, PROPOSAL_MAX_SIGNALS, PROPOSAL_MAX_STUDIES, SECTOR_MIN } from "./datadesk";
 
+import { AT_A_BRAND, OPENING_NUMBERS_MAX, OUR_READ, OUR_READ_MAX, OUR_READ_MIN_WORDS, SENTENCE_REFUSALS, VOICE_REFUSALS } from "../stories/voice-guide";
 export const LISTS_START = "<!-- lists:start (written by scripts/newsroom-docs.ts from the code; do not edit by hand) -->";
 export const LISTS_END = "<!-- lists:end -->";
 const q = (xs: readonly string[]) => xs.map(x => `“${x}”`).join(", ");
@@ -53,6 +54,11 @@ export const STYLE_LISTS: readonly { title: string; source: string; check: strin
 export function styleListsBlock(): string {
   return [LISTS_START, "",
     ...STYLE_LISTS.flatMap(l => [`### ${l.title}`, "", `Refused as “${l.check}”. Source: \`${l.source}\`.`, "", q(l.items), ""]),
+    "### Voice guide 2 (refused as “voice”)", "",
+    `Source: \`VOICE_REFUSALS\`, \`SENTENCE_REFUSALS\` and \`AT_A_BRAND\` (stories/voice-guide.ts). Outside quotations: ${q([...VOICE_REFUSALS.map(r => r.name), ...SENTENCE_REFUSALS.map(r => r.name), "(AI estimate) in a headline", "a domain used as a brand name in prose"])}.`, "",
+    `With a body, the opening paragraph's first sentence carries no figure (something seen, not a count) and the paragraph holds at most ${OPENING_NUMBERS_MAX} numbers.`, "",
+    `“${OUR_READ}” is the only place opinion, cause or intent may appear: at most ${OUR_READ_MAX.story} per story (its last sentence before How we know), ${OUR_READ_MAX.study} per study or Digest edition, none in a piece under ${OUR_READ_MIN_WORDS} words, and never with a number, a date, a quotation or a named person. A claim about intent outside it is still refused.`, "",
+    `A light touch may never be aimed at a named brand: in a sentence that names one, ${q(AT_A_BRAND)} are refused.`, "",
     "### Also refused by the shared check", "",
     "An arrow (→ or ->) in our own words; a hex code in the text; “rebrand” as a claim unless the facts show type, colour and layout changing together, or a new name or logo.", "",
     "### Steady is not flat", "",
@@ -133,7 +139,7 @@ export function desksBlock(): string[] {
     ...DESK_LIMITS.map(l => `- **${l.desk}**, ${l.what}: ${l.cap} a day.`),
     ...WEEKLY_LIMITS.map(l => `- **${l.desk}**, ${l.what}: ${l.cap} a day (one call a week).`), "",
     "## The news desk", "",
-    `Picks at most ${NEWS_PICKS_PER_DAY} links a day from the wire's publications (outlet items only, published in the last ${NEWS_WINDOW_HOURS} hours, never picked before, one per story keeping the earliest; at most ${NEWS_MAX_CANDIDATES} shown to the model, and only when at least ${NEWS_MIN_NEW} are new since its last call). Each line is checked in code: at most ${LINE_MAX} characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than ${COPY_RUN_MAX} words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within ${PITCH_WINDOW_DAYS} days either side files a pitch for the editor in chief. Readers see the picks of the last ${WIRE_BLOCK_HOURS} hours as THE WIRE on the front page, after THE TAPE.`, "",
+    `Picks at most ${NEWS_PICKS_PER_DAY} links a day from the wire's publications (outlet items only, published in the last ${NEWS_WINDOW_HOURS} hours, never picked before, one per story keeping the earliest; at most ${NEWS_MAX_CANDIDATES} shown to the model, and only when at least ${NEWS_MIN_NEW} are new since its last call). Each line is checked in code: at most ${LINE_MAX} characters, one sentence, no number or proper name the item's title or excerpt does not carry, never more than ${COPY_RUN_MAX} words in a row taken from them, and the copy desk's and writers' word lists. The brand tag comes from the strict name matcher, never the model. A pick tagged with a brand that has a measured change within ${PITCH_WINDOW_DAYS} days either side files a pitch for the editor in chief. Readers see the picks of the last ${WIRE_BLOCK_HOURS} hours as THE WIRE on the front page, after LATEST CHANGES.`, "",
     "## The graphics desk", "",
     `Checks each story's picture before standards: the rule's choice and up to ${ALTERNATES_MAX} ranked alternates that pass the quality gate. Only a stored crop that passes the gate can be chosen; a before-and-after pair may become its after-crop alone, never mixed across dates; the caption is rebuilt by rule and no text changes. “No picture shows it” fails checklist item 3 for a type that needs a picture. For study figures it chooses a form only where more than one chart-kit form fits the data, and checks every published story, study and Digest share image daily (code).`, "",
     ...chartFormsBlock(),

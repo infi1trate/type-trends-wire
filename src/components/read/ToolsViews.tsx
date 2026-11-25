@@ -30,7 +30,7 @@ export function ToolsView() {
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Tools · act on what you see</p>
       <h1 className="ed-cover mt-3">Where the opening is</h1>
-      <p className="ed-standfirst mt-5">Turn signals and brand moves into a decision: audit competitors, watch what matters, and check our record.</p>
+      <p className="ed-standfirst mt-5">Turn signals and brand changes into a decision: audit competitors, watch what matters, and check our record.</p>
     </header>
     <ul className="ed-wrap ed-grid mt-12 gap-y-10">{TOOLS.map(t => <li key={t.title} className="ed-hair pt-4 md:col-span-6 lg:col-span-4">
       <h2 className="ed-h3">{t.title}</h2><p className="ed-small mt-2">{t.line}</p>

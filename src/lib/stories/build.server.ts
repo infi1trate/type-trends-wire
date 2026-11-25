@@ -56,6 +56,8 @@ export type BuildDeps = {
   /** E2b · the writer: its I/O, and the stories to write now (fresh ones first, then published in the last seven days without a version
    *  newer than their last correction). */
   writer?: WriterIO | null; toWrite?: (freshIds: string[], limit: number) => Promise<FactStory[]>;
+  /** V2 · published, numbered stories of the last 90 days, for the continuity ledger (read only when the writer runs). */
+  prior?: () => Promise<import("./voice-guide").PriorStory[]>;
   /** E2c · count and base per "key|scope" for the latest run's shares (writer facts). */
   bases?: (runId: number, keys: string[], scopes: string[]) => Promise<Map<string, ShareBase>>;
   /** E2c · keep the crops each published story cites (story_kept_crops); returns how many were kept. */
@@ -178,7 +180,9 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       const keys = [...new Set(stories.flatMap(st => st.signal_keys.slice(0, 3).map(canonical)))], scopes = [...new Set(["all", ...stories.map(st => st.sector).filter((x): x is string => !!x)])];
       const bases = ctx.cur && keys.length && deps.bases ? await deps.bases(ctx.cur.id, keys, scopes).catch(() => new Map<string, ShareBase>()) : new Map<string, ShareBase>();
       const src = factSource(input, ctx, bases);
-      const jobs = stories.map(st => ({ story: st, ...writerFacts(st, src) }));
+      const prior = deps.prior ? await deps.prior().catch(() => []) : [];
+      const { continuityLines } = await import("./voice-guide"), { brandName } = await import("../brand-names");
+      const jobs = stories.map(st => { const w = writerFacts(st, src), c = continuityLines(st, prior, clock(), d => brandName(d, null)); return { story: st, ...w, facts: c.length ? { ...w.facts, continuity: c } : w.facts }; });
       const r = await writeStories(jobs, deps.writer, { names: src.known }, { deadline: o.writeDeadline ?? start + budget, now: clock, ...(o.writerPerBuild != null ? { perBuild: o.writerPerBuild } : {}) });
       texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
       if (r.written && deps.writtenSheets) await deps.writtenSheets(r.rows.flatMap(x => { const j = jobs.find(y => y.story.id === x.story_id); return j ? [{ story_id: x.story_id, sheet: j.facts }] : []; })).catch(() => 0);
@@ -379,6 +383,12 @@ export function dbDeps(admin: Admin, withAi = true): BuildDeps {
     why: null,
     writer: withAi ? writerIO(admin) : null,
     toWrite: (fresh, limit) => storiesToWrite(admin, fresh, limit, writerIO(admin).runs(AI_MODELS.writer)),
+    prior: async () => {
+      const { data } = await admin.from("stories").select("id,headline,happened_at,signal_keys,domains,status").eq("status", "published").gte("happened_at", new Date(Date.now() - 90 * 864e5).toISOString()).limit(500);
+      const rows = data ?? [], nums = new Map<string, number>();
+      for (let i = 0; i < rows.length; i += 200) { const { data: n } = await admin.from("story_numbers").select("story_id,number").in("story_id", rows.slice(i, i + 200).map(r => r.id)); for (const x of n ?? []) nums.set(x.story_id, x.number); }
+      return rows.map(r => ({ id: r.id, number: nums.get(r.id) ?? null, headline: r.headline, at: r.happened_at, signal_keys: r.signal_keys ?? [], domains: r.domains ?? [], state: r.status }));
+    },
     lineless: async limit => {
       const since = new Date(Date.now() - 30 * 864e5).toISOString();
       const [st, have] = await Promise.all([
@@ -465,7 +475,9 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   // W1b: a correction that hid checked written text puts the story first in the queue, as soon as calls are available.
   const corrected = new Set(owed.filter(s => { const l = last.get(s.id); return !!l && l.checked && ((s.correctedAt != null && s.correctedAt > l.created_at) || followMissing(s, l)); }).map(s => s.id));
   return requestedFirst(writePriority(owed, { leadId, rank: rankScores(stream), corrected }), requested).slice(0, limit)
-    .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker }));
+    .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker,
+      // V3 · a requested rewrite carries the text shown now, so the writer's check refuses any changed number, date or brand.
+      ...(() => { const l = last.get(s.id); return requested.has(s.id) && l?.checked ? { previous: { headline: l.headline, deck: l.deck, body: l.body ?? [], how_we_know: l.how_we_know } } : {}; })() }));
 }
 
 /** Builds number stories first published in this many days (older ones were numbered by earlier builds or the backfill). */

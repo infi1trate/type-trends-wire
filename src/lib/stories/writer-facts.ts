@@ -1,4 +1,4 @@
-// The writer's facts block for one story (E2b), built from the story's own record only: its type, brand names, the tape lines it is built
+// The writer's facts block for one story (E2b), built from the story's own record only: its type, brand names, the lines in the latest changes it is built
 // from (what, from, to, date, page, basis, hex for colours), the captured copy of those captures, the headline call, the library numbers
 // with their bases, and its other stored fact lines. Pure.
 import type { EventRow } from "../agency/changes";
@@ -13,7 +13,9 @@ import { followPage } from "./follow";
 import { CENSUS_HOW, CENSUS_NAMED_MAX, SALE_KEY, censusKeyOf } from "../census";
 import { oneHeadline, oneHeadlineOf } from "../headline-text";
 
-export type FactStory = { id: string; type: string; headline: string; deck: string | null; facts: unknown; sector: string | null; signal_keys: string[]; domains: string[]; source_ids: string[]; basis: string | null; happened_at: string; kicker: string };
+export type FactStory = { id: string; type: string; headline: string; deck: string | null; facts: unknown; sector: string | null; signal_keys: string[]; domains: string[]; source_ids: string[]; basis: string | null; happened_at: string; kicker: string;
+  /** V3 · the text shown now, when the story is being rewritten on request: the rewrite may not change its numbers, dates or brands. */
+  previous?: { headline: string; deck: string; body: string[]; how_we_know: string } };
 export type FactSource = {
   events: ReadonlyMap<number, EventRow>;
   /** Headline, sub-headline and button texts per snapshot id. */

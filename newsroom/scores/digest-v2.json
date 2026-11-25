@@ -1,0 +1,16 @@
+{
+ "writer": "digest",
+ "version": "v2",
+ "prompt_hash": "aae4deec",
+ "models": [
+  "openai/gpt-6.2-astra",
+  "google/gemini-3.1-flash-lite"
+ ],
+ "template": "t1",
+ "source": "baseline with no frozen texts",
+ "note": "V2 \u00b7 Voice guide 2. No Digest text is frozen yet: the N1 frozen set holds stories only. The gate passes on an empty set until texts are frozen.",
+ "items": [],
+ "mean": 0,
+ "passed": 0,
+ "total": 0
+}

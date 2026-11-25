@@ -1,5 +1,5 @@
 // W1b · icon and card changes: measure each stored version once (asset_grids, at intake while the request has time, else the AI worker's
-// sweep), and read every brand's versions with their verdicts (pure asset-diff.ts) for the tape, the brand page and the story engine.
+// sweep), and read every brand's versions with their verdicts (pure asset-diff.ts) for the latest changes, the brand page and the story engine.
 // Reads are anonymous SELECTs (brand_assets hides opted-out brands by policy); writes use the service role. Nothing is logged.
 import { assetComparisons, assetGrid, decodeGrid, encodeGrid, gridSpread, type AssetComparison, type AssetVersion, type Grid } from "./asset-diff";
 import { memo } from "./memo";

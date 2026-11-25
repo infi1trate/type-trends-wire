@@ -37,6 +37,9 @@ export const VERSIONS: readonly VersionEntry[] = [
   { writer: "story", version: "v1", prompt_hash: "4f5cbcfb", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], template: "t1", score_file: "newsroom/scores/story-v1.json", note: "Baseline (N1): the prompt that wrote the frozen texts." },
   { writer: "study", version: "v1", prompt_hash: "e60d3efd", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], template: "t1", score_file: "newsroom/scores/study-v1.json", note: "Baseline (N1): no frozen study text yet (every shown study text was written for an earlier facts sheet)." },
   { writer: "digest", version: "v1", prompt_hash: "0afd9fce", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], template: "t1", score_file: "newsroom/scores/digest-v1.json", note: "Baseline (N1): no frozen Digest text yet (the frozen set holds stories only)." },
+  { writer: "story", version: "v2", prompt_hash: "41fa73c0", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], template: "t1", score_file: "newsroom/scores/story-v2.json", note: "V2 · Voice guide 2 (25 Nov): the guide's rules, word list and worked examples in the prompt; live calls on the frozen facts, scored with the voice checks." },
+  { writer: "study", version: "v2", prompt_hash: "02c976e3", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], template: "t1", score_file: "newsroom/scores/study-v2.json", note: "V2 · Voice guide 2 in the shared voice rules; still no frozen study text, so the gate passes on an empty set." },
+  { writer: "digest", version: "v2", prompt_hash: "aae4deec", models: ["openai/gpt-6.2-astra", "google/gemini-3.1-flash-lite"], template: "t1", score_file: "newsroom/scores/digest-v2.json", note: "V2 · Voice guide 2 in the shared voice rules; still no frozen Digest text, so the gate passes on an empty set." },
 ];
 export const currentVersion = (w: Writer) => {
   const h = promptHash(w), t = TEMPLATE_VERSIONS[w];

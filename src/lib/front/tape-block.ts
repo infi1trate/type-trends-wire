@@ -1,4 +1,4 @@
-// THE TAPE ON THE FRONT PAGE (E3) — "Every confirmed change, newest first": the eight newest tape lines (one per brand, change and day, as
+// LATEST CHANGES ON THE FRONT PAGE (E3) — "Every confirmed change, newest first": the eight newest lines in the latest changes (one per brand, change and day, as
 // the terminal's tape), each with the brand's icon, name, what changed from and to, and its date or range; then one count line: how many
 // changes were confirmed in the last 14 days and how many are still unconfirmed (Seen once or Alternating). Pure: same changes and
 // checks in, same block out. A change with no check yet is neither; archive changes are never on it (every public tape is live-only).
@@ -8,8 +8,8 @@ import type { Pic } from "../pictures";
 import type { EventRow } from "../agency/changes";
 
 export const FRONT_TAPE_MAX = 8, FRONT_TAPE_DAYS = 14;
-export const FRONT_TAPE_TITLE = "The tape", FRONT_TAPE_SUB = "Every confirmed change, newest first";
-/** Where the count line and "The whole tape" go: the terminal's library panel and its Seen once or alternating list. */
+export const FRONT_TAPE_TITLE = "Latest changes", FRONT_TAPE_SUB = "Every confirmed change, newest first";
+/** Where the count line and "All changes" go: the terminal's library panel and its Seen once or alternating list. */
 export const WHOLE_TAPE_HREF = "/terminal?panel=library", UNCONFIRMED_HREF = "/terminal?panel=library#seen-once";
 export type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at"> & { viewport?: string | null; source?: string | null };
 /** W1b · an icon or card change carries its old and new pictures as a pair (stored crops-bucket paths, served by /crops/). */
@@ -32,7 +32,7 @@ export function frontTape<E extends TapeEvent>(events: readonly E[], checks: Rea
   const lines = rows.slice(0, FRONT_TAPE_MAX).map(r => ({ ...r.parts, id: r.id, domain: r.domain, at: r.detected_at, href: `/brands/${encodeURIComponent(r.domain)}`, icon: o.icons?.[r.domain] ?? null }));
   return { lines, confirmed: rows.length, unconfirmed, days: FRONT_TAPE_DAYS };
 }
-/** W1b · confirmed icon and card changes join the tape like any confirmed change: newest first among the lines, counted with them. */
+/** W1b · confirmed icon and card changes join the latest changes like any confirmed change: newest first among the lines, counted with them. */
 export function withAssetLines(t: FrontTape, extra: readonly FrontTapeLine[]): FrontTape {
   if (!extra.length) return t;
   const lines = [...t.lines, ...extra].sort((a, b) => b.at.localeCompare(a.at) || b.id - a.id).slice(0, FRONT_TAPE_MAX);

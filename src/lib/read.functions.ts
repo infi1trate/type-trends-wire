@@ -24,7 +24,7 @@ export const getFront = createServerFn({ method: "GET" }).inputValidator(z.objec
 });
 export const getFrontTop = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => { await (await import("./dev-late.server")).devLate("front-top"); return (await import("./front/front.server")).loadFrontTop(data.sector, data.format); });
 export const getFrontRest = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => { await (await import("./dev-late.server")).devLate("front-rest"); return (await import("./front/front.server")).loadFrontRest(data.sector, data.format); });
-// E3 · the front page's two new deferred modules: Also today's pictures and the tape.
+// E3 · the front page's two new deferred modules: Also today's pictures and the latest changes.
 export const getFrontAlso = createServerFn({ method: "GET" }).inputValidator(z.object({ sector, format: z.string().max(20).default("all") })).handler(async ({ data }) => { await (await import("./dev-late.server")).devLate("front-also"); return (await import("./front/front.server")).loadFrontAlso(data.sector, data.format); });
 export const getFrontTape = createServerFn({ method: "GET" }).handler(async () => { await (await import("./dev-late.server")).devLate("front-tape"); return (await import("./front/tape.server")).loadFrontTape(); });
 /** N3 · THE WIRE block: the news desk's picks from the last 24 hours (anonymous public facade). */

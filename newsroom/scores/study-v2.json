@@ -1,0 +1,16 @@
+{
+ "writer": "study",
+ "version": "v2",
+ "prompt_hash": "02c976e3",
+ "models": [
+  "openai/gpt-6.2-astra",
+  "google/gemini-3.1-flash-lite"
+ ],
+ "template": "t1",
+ "source": "baseline with no frozen texts",
+ "note": "V2 \u00b7 Voice guide 2. No study text is frozen yet: every shown study text was written for an earlier facts sheet, and the sheet it was written from is not stored. The gate passes on an empty set until texts are frozen.",
+ "items": [],
+ "mean": 0,
+ "passed": 0,
+ "total": 0
+}

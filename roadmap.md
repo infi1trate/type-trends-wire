@@ -316,3 +316,9 @@
 - [ ] 3.3 highlight on Signals and sector pages; 3.6 full restraint audit
 - [ ] 4.5 placeholder audit; 4.6 count-up, line draw-in, Copied label
 - [ ] 5.1 before pictures and 768 px set
+
+## V2 + V3 · Voice (open)
+- [ ] Score story writer v2 on the frozen six (`bun scripts/golden-score.ts --live --writer story`) — blocked: today's 12 writer calls are used; run after 00:00 UTC. The gate stays red until then.
+- [ ] After the V2 build is deployed: `bun scripts/v3-backlist.ts --deployed` (11 stories shown as published; 114 retired and 21 held are not rewritten).
+- [ ] Eight study texts and the two Digest editions to Voice guide 2 — needs writer calls (same allowance).
+- [ ] Word-list pass on chart captions ("of tracked homepages"), 404/library-not-found, Data view, empty states.

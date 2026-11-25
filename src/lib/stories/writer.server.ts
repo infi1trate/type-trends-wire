@@ -2,6 +2,7 @@
 // story_texts. The orchestration takes injected I/O so tests run it in memory; a failure here never fails a build or delays a story.
 import { AI_MODELS, providerRuns } from "../ai-models";
 import { retryGuard } from "../ai-retries";
+import { rewriteFactFailures } from "./voice-guide";
 import type { FactStory } from "./writer-facts";
 import { WRITER_KIND, WRITER_MAX_TOKENS, WRITER_PER_BUILD, WRITER_PER_DAY, WRITER_SCHEMA, WRITER_SYSTEM, WRITER_TOOL, parseWritten, writeWithFallback, writerUser, type Known, type WriterFacts, type WrittenText } from "./writer";
 
@@ -46,7 +47,8 @@ export async function writeStories(jobs: WriteJob[], io: WriterIO, known: Known,
       // The text model is the fallback for a writer that failed, not for a writer that ran out of calls.
       if (o.deadline - clock() < WRITER_CALL_MIN_MS || (io.runs(AI_MODELS.writer) && (writerCalls >= perBuild || usedToday + writerCalls >= WRITER_PER_DAY))) { skipped++; continue; }
       const g = retryGuard("writer", parseWritten);
-      const r = await writeWithFallback(j.facts, j.template, known, (model, failures) => g.call(io.call(model, j.facts, failures, AbortSignal.timeout(Math.max(1000, o.deadline - clock())))), m => g.open() && canCall(m));
+      const prev = j.story.previous, extra = prev ? (t: WrittenText) => rewriteFactFailures(prev, t, [...j.facts.brands.map(b => b.name), ...(known.names ?? [])]) : undefined;
+      const r = await writeWithFallback(j.facts, j.template, known, (model, failures) => g.call(io.call(model, j.facts, failures, AbortSignal.timeout(Math.max(1000, o.deadline - clock())))), m => g.open() && canCall(m), extra);
       if (!r.attempts) { skipped++; continue; }
       const t = r.text;
       rows.push({ story_id: j.story.id, version: (versions.get(j.story.id) ?? 0) + 1, headline: t.headline, deck: t.deck, body: t.body, how_we_know: t.how_we_know, model: r.model, cost: Math.round(r.cost * 1e6) / 1e6, checked: r.checked, attempts: r.attempts, failures: r.failures.slice(0, 12), log: r.log });

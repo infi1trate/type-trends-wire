@@ -19,7 +19,7 @@
 // against any confirmed homepage identity change (or a confirmed rebrand) in the same window.
 // W1d · what a quiet change needs: a confirmed new site icon, a confirmed new social card, or a confirmed change of the headline or body
 // typeface on another page at the same address. An accent, palette or theme change alone on another page never qualifies; it stays a
-// line on the tape (it can still become a fact on the brand's own story, W1c). And a picture to lead with: the old and new icon or card,
+// line in the latest changes (it can still become a fact on the brand's own story, W1c). And a picture to lead with: the old and new icon or card,
 // or the page's first screen before and after (surface crops). With no picture it does not run.
 // Stored as a `move` row (the stored type list is a fixed check), told apart by its `quiet:` id and its "Quiet change" kicker.
 import { brandName } from "../brand-names";
@@ -47,13 +47,13 @@ export type QuietInput = { assets: QuietAsset[]; /** Address of each capture the
   /** W1d · stored first screens of the brands' other pages (surface crops), for the before-and-after picture (absent = none). */ shots?: PageShot[] };
 /** W1d · one stored first screen of another page: `page` is the QUIET_PAGES key (product, about, pricing). */
 export type PageShot = { domain: string; page: string; path: string; first_seen_at: string; last_seen_at: string };
-/** W1d · the event types that can make a quiet change on another page: a headline or body typeface change. Colour and theme stay on the tape. */
+/** W1d · the event types that can make a quiet change on another page: a headline or body typeface change. Colour and theme stay in the latest changes. */
 export const QUIET_STORY_TYPES = ["type_change"] as const;
 /** W1d · the typeface fields a qualifying change touches (headline or body). */
 const TYPEFACE_FIELDS = ["h1", "h1_family", "body", "body_family"];
 export const QUIET_NEEDS = {
   what: "a confirmed new site icon, a confirmed new social card, or a confirmed change of headline or body typeface on another page at the same address",
-  notAlone: "an accent, palette or theme change alone on another page stays a line on the tape",
+  notAlone: "an accent, palette or theme change alone on another page stays a line in the latest changes",
   picture: "the old and new icon or card, or the page's first screen before and after; with no picture it does not run",
 } as const;
 /** W1d · the page's stored first screens either side of a change: the latest first seen at or before the last old capture, and the
@@ -160,7 +160,7 @@ export function quietCandidates(o: { now: string; events: readonly EventRow[]; q
       follows.push({ domain: e.domain, at, home: followed, fact: { text: followFact(e, followed, when), href: b, basis: "measured", kind: "member" } });
       continue;
     }
-    // W1d · only a headline or body typeface change can be a quiet change on another page; colour and theme stay on the tape.
+    // W1d · only a headline or body typeface change can be a quiet change on another page; colour and theme stay in the latest changes.
     const typeface = (QUIET_STORY_TYPES as readonly string[]).includes(e.type) && TYPEFACE_FIELDS.some(k => k in after);
     if (!typeface) { verdicts.push({ id, domain: e.domain, what, when, outcome: "tape line", detail: QUIET_NEEDS.notAlone }); continue; }
     const pair = pagePair(o.quiet.shots, e.domain, e.page_type ?? "", e.seen?.before ?? null, at);

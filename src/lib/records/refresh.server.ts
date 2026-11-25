@@ -288,7 +288,7 @@ export async function refreshAfterJob(job: string, jobStartedAt: number, o: { do
 }
 
 /** E3b · the front page's records (C1: three, with the lead pictures), written by the story build right after it runs (it has just recorded the integrity checks and
- *  stored the day's stories): the tape block and Also today's card pictures. Each is cut off at the deadline; never throws. */
+ *  stored the day's stories): the latest changes block and Also today's card pictures. Each is cut off at the deadline; never throws. */
 export type FrontRecordDeps = { tape: () => Promise<unknown>; cards: () => Promise<unknown>; /** C1 · the lead pictures (optional so older callers keep their two). */ leads?: () => Promise<unknown>; /** C1b · the lead's announced picture (optional, like `leads`). */ first?: () => Promise<unknown>; write: (rows: { key: string; body: unknown; source: string }[]) => Promise<string[]>; fresh?: () => Promise<unknown>; now?: () => number };
 export async function writeFrontRecords(job: string, deadline: number, deps?: FrontRecordDeps): Promise<string[]> {
   try {

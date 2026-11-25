@@ -173,11 +173,11 @@ async function quietPagePair(sourceIds: string[]) {
   if (!a || !b || !kind || a.section !== b.section) return null;
   return { kind, before: { path: a.path, src: cropSrc(a.path), width: a.width, height: a.height, at: a.last_seen_at }, after: { path: b.path, src: cropSrc(b.path), width: b.width, height: b.height, at: b.first_seen_at } };
 }
-/** E2d · what a retired story's page shows: the editor's note and the tape lines it was built from (each linking to the library record). */
+/** E2d · what a retired story's page shows: the editor's note and the lines in the latest changes it was built from (each linking to the library record). */
 export type Retired = { note: string | null; tape: { id: number; text: string; href: string; confirmed: boolean }[] };
 /** Event ids a story was built from (`event:<id>`, and a folded move's `story:move:<id>`), at most 40. */
 export const sourceEventIds = (sourceIds: string[]) => [...new Set(sourceIds.flatMap(x => { const m = /^(?:event|story:move):(\d+)$/.exec(x); return m ? [Number(m[1])] : []; }))].slice(0, 40);
-/** A retired story keeps its page: its number, date, the headline it ran under, "Retired" with the note, the brand and its tape lines.
+/** A retired story keeps its page: its number, date, the headline it ran under, "Retired" with the note, the brand and its lines in the latest changes.
  *  No body, no picture, no way on (anonymous reads; a failed tape read shows the brand link alone). */
 async function retiredLead(s: StoryRecord) {
   const page = storyPage(s, { earlier: [], patterns: [] }), ids = sourceEventIds(s.source_ids);
@@ -197,7 +197,7 @@ export async function tapeOf(ids: number[]) {
   if (error) throw error;
   const rows = (data ?? []).flatMap(e => (e.detected_at ? [{ ...e, detected_at: e.detected_at }] : [])).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
   const [carousel, checks] = await Promise.all([carouselIds(db, rows).then(x => new Set(x)), import("../integrity.server").then(m => m.latestChecks(db, rows.map(e => e.id))).catch(() => new Map())]);
-  // E2e: a change that failed the integrity check is named as such (it is not on the tape). U2b: each line is dated by its captures
+  // E2e: a change that failed the integrity check is named as such (it is not in the latest changes). U2b: each line is dated by its captures
   // (the check's last-old and first-new capture), as the story's own facts are, not by the day it was confirmed.
   const { VERDICT_LABEL, seenOf } = await import("../integrity");
   const mark = (id: number) => { const c = checks.get(id); if (!c) return "Not checked"; if (c.verdict === "pass") return null; return c.verdict === "headline_element" ? "Not compared: the headline was not read from the page's h1" : VERDICT_LABEL[c.verdict as "seen_once" | "alternating"]; };

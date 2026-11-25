@@ -1,5 +1,5 @@
 // I3b · the brands tracked now (library_sites.active), read anonymously. Shares, history and signal pages already read only active
-// brands through their views; the tape, story candidates, rebrands, studies and lead pictures filter through this set.
+// brands through their views; the latest changes, story candidates, rebrands, studies and lead pictures filter through this set.
 import { supabaseAnon } from "./mcp/supabase";
 import { memo } from "./memo";
 

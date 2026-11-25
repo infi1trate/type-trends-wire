@@ -1,0 +1,129 @@
+{
+ "writer": "story",
+ "version": "v2",
+ "prompt_hash": "41fa73c0",
+ "models": [
+  "openai/gpt-6.2-astra",
+  "google/gemini-3.1-flash-lite"
+ ],
+ "scored_model": "google/gemini-3.1-flash-lite",
+ "template": "t1",
+ "source": "live google/gemini-3.1-flash-lite calls on the frozen facts (one call each, no retry)",
+ "scored_at": "2026-11-25T04:31:40.485Z",
+ "cost_usd": 0.006454,
+ "unanswered": 0,
+ "items": [
+  {
+   "id": "breakout:components:logo_wall:consumer-apps:13",
+   "number": 42,
+   "score": 80,
+   "failures": [
+    "voice: 3 numbers in the opening paragraph (at most 2)"
+   ]
+  },
+  {
+   "id": "breakout:css:scroll_timeline:all:13",
+   "number": 43,
+   "score": 80,
+   "failures": [
+    "voice: moved or shifted for a change"
+   ]
+  },
+  {
+   "id": "breakout:imagery:data_viz:dev-tools:13",
+   "number": 44,
+   "score": 80,
+   "failures": [
+    "voice: 3 numbers in the opening paragraph (at most 2)"
+   ]
+  },
+  {
+   "id": "brand:coinbase.com:2026-11-20",
+   "number": 88,
+   "score": 40,
+   "failures": [
+    "quote not in the captured copy: “The trusted financial account for you and your agents.”",
+    "voice: moved or shifted for a change",
+    "voice: the count and the percentage in one sentence"
+   ]
+  },
+  {
+   "id": "census:agents:2026-W47",
+   "number": 89,
+   "score": 40,
+   "failures": [
+    "quote not in the captured copy: “agentic”",
+    "quote not in the captured copy: “The trusted financial account for you and your agents.”",
+    "quote not in the captured copy: “Every scale. Every agent. One platform.”"
+   ]
+  },
+  {
+   "id": "census:sale:2026-W47",
+   "number": 90,
+   "score": 80,
+   "failures": [
+    "names 7 brands (at most 6)"
+   ]
+  }
+ ],
+ "mean": 66.7,
+ "passed": 0,
+ "total": 6,
+ "texts": {
+  "breakout:components:logo_wall:consumer-apps:13": {
+   "headline": "Logo walls are spreading across consumer apps",
+   "deck": "The familiar grid of partner logos is gaining ground in the consumer apps sector.",
+   "body": [
+    "Logo walls are appearing on more consumer apps. While 127 of 281 homepages slug reads feature these rows of partner or client badges, the trend is moving faster in the consumer sector. Eight of 29 consumer apps homepages now use them, an increase that is accelerating at 1.3 points a quarter.",
+    "Headspace, Readwise and Canva are among the brands currently displaying these grids. They serve as a quick visual shorthand for social proof, placing familiar names directly under the primary headline. Our read: when a product is meant for daily use, seeing who else is on board helps lower the barrier to entry."
+   ],
+   "how_we_know": "Data measured from captures on 15 November; the logo wall count is by AI estimate."
+  },
+  "breakout:css:scroll_timeline:all:13": {
+   "headline": "Scroll-driven animation is now everywhere",
+   "deck": "Nearly one in three homepages now use scroll-driven animation to guide the visitor.",
+   "body": [
+    "Scroll-driven animation is becoming a standard feature on the homepages slug reads. On 88 of 300 homepages, elements now react to the movement of your mouse wheel, shifting or fading as you navigate down the page. Netlify, Allbirds and R/GA are among those using the effect.",
+    "The trend is moving at a steady pace, with momentum of 1.3 points a quarter. While it is not a rebrand, the shift is consistent across the library. Our read: designers are using these animations to create a sense of depth and responsiveness that static layouts cannot match."
+   ],
+   "how_we_know": "Measured from captures on 15 November; the momentum and library counts are measured."
+  },
+  "breakout:imagery:data_viz:dev-tools:13": {
+   "headline": "Developer tools are choosing charts over text",
+   "deck": "Developer tools are adopting data visuals at a rate five times higher than the rest of the web.",
+   "body": [
+    "Developer tools are increasingly relying on charts and data visuals to explain their value. While only 6.0% of the homepages the homepages slug reads feature these elements, the sector is moving much faster. Among the 30 developer tools homepages slug reads, 30.0% now include charts or data visuals.",
+    "Tailwind CSS, Astro and Cloudflare are among the nine brands in the sector currently using these visuals to communicate. The trend is accelerating here, with momentum at 1.2 points a quarter, significantly outpacing the broader library. Our read: when the product is complex code, a clean chart is the fastest way to show performance gains."
+   ],
+   "how_we_know": "Measured from captures on 15 November; the identification of charts and data visuals is by AI estimate."
+  },
+  "brand:coinbase.com:2026-11-20": {
+   "headline": "Coinbase pivots to agents on its homepage",
+   "deck": "The homepage headline now highlights agents instead of millions of users.",
+   "body": [
+    "Coinbase has swapped its hero video for a still image. The change, which took place between 11 and 14 November, was accompanied by a shift in the homepage headline. The brand moved from “Trusted by millions worldwide” to “The trusted financial account for you and your agents.”",
+    "Across the homepages slug reads, AI as the product remains at 29.2%, or 82 of 281. Within fintech, that figure is 14.3%, or four of 28. Meanwhile, AI as a feature sits at 14.6% overall, with fintech homepages showing a higher concentration at 28.6%, or eight of 28.",
+    "Our read: the shift from a broad social proof to a specific, agent-focused utility suggests Coinbase is betting on a more technical user base."
+   ],
+   "how_we_know": "Measured from captures on 11 and 14 November; the AI shares are our read, an AI estimate."
+  },
+  "census:agents:2026-W47": {
+   "headline": "Homepages are now talking to your agents",
+   "deck": "Sixteen homepages now write their biggest headlines for software agents instead of just people.",
+   "body": [
+    "A homepage headline used to be written for the person reading it. On 16 of 162 homepages the homepages slug reads, it is now also written for the software acting on that person's behalf: “agent”, “agents” or “agentic” sits in the biggest type on the page. Slack, Linear, Coinbase, MongoDB, Notion and Snowflake are among them.",
+    "Coinbase changed its headline between 11 and 14 November, moving from “Trusted by millions worldwide” to “The trusted financial account for you and your agents.” MongoDB also updated its copy between 11 and 13 November, replacing “ONE DATA PLATFORM. UNLIMITED AI POTENTIAL.” with “Every scale. Every agent. One platform.” Our read: when the product is trust, a page that moves with care is part of the pitch."
+   ],
+   "how_we_know": "Measured from captures between 11 and 14 November; the classification of headline copy is by AI estimate."
+  },
+  "census:sale:2026-W47": {
+   "headline": "The Black Friday skins are up",
+   "deck": "The loudest changes this week are promotions, not redesigns.",
+   "body": [
+    "The sale has reached the buttons. On 20 November, 11 of 229 homepages slug reads were in full sale voice, and not only in the headline: the sale had made it onto the buttons too. Equinox, Brooklinen, Casper, GoPro, Olipop and Our Place were among them.",
+    "The copy varies from the direct “Shop sale” on Casper to the more descriptive “Black Friday Early Access” at Equinox. Brooklinen now leads with “25% Off Sitewide Black Friday Sale”, while Peloton offers “Up to $1,300 off Peloton equipment*”. Across the sectors, Commerce and DTC brands lead the count with seven homepages, followed by two in hardware and one each in consumer apps and health."
+   ],
+   "how_we_know": "Measured from captures on 20 November."
+  }
+ }
+}

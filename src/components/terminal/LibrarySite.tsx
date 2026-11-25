@@ -20,7 +20,7 @@ import { rereadLine } from "@/lib/reread";
 import { dayText } from "@/lib/labels";
 import { PitchButton } from "@/components/pitch/Pitch";
 
-/** E2e · a live change that failed the integrity check is not on the tape; the record says why. */
+/** E2e · a live change that failed the integrity check is not in the latest changes; the record says why. */
 const CHECK_BADGE: Record<string, string> = { seen_once: "SEEN ONCE", alternating: "ALTERNATING", headline_element: "NOT COMPARED: NO H1", unchecked: "NOT CHECKED", reread: "RE-READ", not_measured: "NOT MEASURED" };
 /** The brand record. U1: it is the brand's Data view (`/brands/<domain>?view=data`), embedded in the Data shell, which names the brand. */
 export function LibrarySite({ domain, embedded = false }: { domain: string; embedded?: boolean }) {

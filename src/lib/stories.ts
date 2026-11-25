@@ -44,7 +44,7 @@ export function fromAlert(a: { title: string; url: string; published_at: string;
     headline: key ? `${label(key).name} ${ALERT_VERB[kind] ?? "triggered an alert"}${where}` : display, ...(key ? { deck: display } : {}),
     at: a.published_at, sector: sector === "all" ? null : sector, signalKeys: key ? [key] : [], domains: [], evidence: key ? signalPath(key) : path || terminalHref("wire"), basis: key ? basis(key) : null };
 }
-/** A confirmed library change on one brand: a tape line (E2a), linking to the brand, never to a story page. */
+/** A confirmed library change on one brand: a line in the latest changes (E2a), linking to the brand, never to a story page. */
 export function fromEvent(e: EventRow, l: TapeLabels = {}): Story {
   return { id: `event:${e.id}`, type: "move", kicker: `${EVENT_KIND[e.type] ?? "Change"}${e.sector ? ` · ${sectorName(e.sector)}` : ""}`, headline: tapeLine(e, l), at: e.detected_at, sector: e.sector ?? null,
     signalKeys: [], domains: [e.domain], evidence: brandPath(e.domain), basis: AI_EVENTS.has(e.type) ? "ai" : "measured" };

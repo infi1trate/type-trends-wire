@@ -25,3 +25,21 @@ export async function insertRewriteRequest(db: Db, r: { story_id: string; actor:
   if (error || !data) throw new Error("rewrite_request_insert_failed");
   return { id: data.id };
 }
+
+/** V3 · store each story's pre-rewrite text again as its newest version (pure `restoreRows`); "all" for every V3-rewritten story. */
+export async function restoreTexts(db: Db, id: string): Promise<{ restored: string[] }> {
+  const { restoreRows, isV3Request } = await import("./restore");
+  let q = db.from("rewrite_requests").select("story_id,at,reason").like("reason", "V3 ·%").order("id").limit(1000);
+  if (id !== "all") q = q.eq("story_id", id);
+  const { data: asks, error } = await q;
+  if (error) throw new Error("rewrite_requests_read_failed");
+  const ids = [...new Set((asks ?? []).filter(a => isV3Request(a.reason)).map(a => a.story_id))], texts: import("./restore").TextVersion[] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error: e } = await db.from("story_texts").select("story_id,version,headline,deck,body,how_we_know,created_at,model,checked").in("story_id", ids.slice(i, i + 200));
+    if (e) throw new Error("story_texts_read_failed");
+    texts.push(...((data ?? []) as unknown as import("./restore").TextVersion[]));
+  }
+  const rows = restoreRows(texts, asks ?? []);
+  if (rows.length) { const { error: e } = await db.from("story_texts").insert(rows as never); if (e) throw new Error("story_texts_insert_failed"); }
+  return { restored: rows.map(r => r.story_id) };
+}

@@ -9,8 +9,8 @@ export const isSiteKind = (v: unknown): v is SiteKind => typeof v === "string" &
 /** What each kind means for the story engine (rules.ts, /what-we-show). */
 export const SITE_KIND_RULE = {
   standard: "Every kind of change can count toward a story.",
-  merchandised: "A storefront homepage: its accent, palette, hero and headline follow the top promotion or product, so changes to those go to the tape only. A change of typeface or layout can still count.",
-  editorial: "A media homepage: its palette and hero follow the day's lead story, so changes to those go to the tape only. A change of typeface or layout can still count.",
+  merchandised: "A storefront homepage: its accent, palette, hero and headline follow the top promotion or product, so changes to those go to the latest changes only. A change of typeface or layout can still count.",
+  editorial: "A media homepage: its palette and hero follow the day's lead story, so changes to those go to the latest changes only. A change of typeface or layout can still count.",
 } as const satisfies Record<SiteKind, string>;
 
 export type SeedRow = { domain: string; name: string; kind: SiteKind };

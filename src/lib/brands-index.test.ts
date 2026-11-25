@@ -10,10 +10,10 @@ describe("brands index", () => {
   it("defaults to last change, newest first, unchanged brands last", () => {
     const x = brandsIndex(B, parseBrandsSearch({}));
     expect(x.rows.map(r => r.domain)).toEqual(["neon.com", "ramp.com", "acme.com"]);
-    expect(x.countLine).toBe("3 tracked brands.");
+    expect(x.countLine).toBe("3 brands slug reads.");
   });
   it("search, lens and sorts", () => {
-    expect(brandsIndex(B, parseBrandsSearch({ q: "ne" })).countLine).toBe("1 of 3 tracked brands match “ne”.");
+    expect(brandsIndex(B, parseBrandsSearch({ q: "ne" })).countLine).toBe("1 of 3 brands match “ne”.");
     expect(brandsIndex(B, parseBrandsSearch({ sector: "fintech" })).rows.map(r => r.domain)).toEqual(["ramp.com", "acme.com"]);
     expect(brandsIndex(B, parseBrandsSearch({ sort: "moves" })).rows.map(r => r.moves)).toEqual([4, 1, 0]);
     expect(brandsIndex(B, parseBrandsSearch({ sort: "name" })).rows.map(r => r.domain)).toEqual(["acme.com", "neon.com", "ramp.com"]);

@@ -49,6 +49,8 @@ export const N3_ACTORS: Readonly<Record<string, readonly string[]>> = {
   audience: ["publisher", "owner"], source_note: ["scout", "owner"], candidate_status: ["engineering", "owner"],
   // L2b · a desk asks for a published story's rewrite at the writer's next allowance.
   rewrite: ["standards", "copy desk", "editor in chief", "owner"],
+  // V3 · restoring the pre-rewrite text: the copy desk, the editor in chief or the owner.
+  text_restore: ["copy desk", "editor in chief", "owner"],
   // W3a · a museum work is removed on request by the owner only.
   art_remove: ["owner"],
   // W3d · an app is removed from the icon study on its maker's request by the owner only, like a museum work.
@@ -113,6 +115,8 @@ export const deskBody = z.discriminatedUnion("action", [
   // and the owner sets a proposal's status.
   // L2b · a rewrite request (a reason is required); the writer honours it first at its next allowance.
   z.object({ action: z.literal("rewrite"), id, reason: z.string().trim().min(10).max(300).refine(noDollar) }).strict(),
+  // V3 · put back the text a story had before the Voice guide 2 backlist rewrite: one story, or every rewritten one ("all").
+  z.object({ action: z.literal("text_restore"), id: z.union([id, z.literal("all")]), reason: z.string().trim().min(10).max(300).refine(noDollar) }).strict(),
   z.object({ action: z.literal("hold"), id, reason: z.string().trim().min(3).max(300).refine(noDollar), note }).strict(),
   z.object({ action: z.literal("note"), subject_kind: z.enum(NOTE_SUBJECTS), subject: z.string().trim().min(1).max(200), text: z.string().trim().min(3).max(1000) }).strict(),
   // The copy desk's weekly sweep (inside the product only): one page's failing lines, or the week's closing summary (page "(week)").

@@ -257,7 +257,7 @@ export const ptsText = (d: number) => `${d >= 0 ? "+" : "−"}${Math.abs(d * 100
 export const quarterText = (q: string) => { const m = /^(\d{4})Q([1-4])$/.exec(q); return m ? `Q${m[2]} ${m[1]}` : q; };
 /** A day with its year: "14 Nov 2026". */
 export const dayText = (iso: string) => { const d = new Date(iso); return `${d.getUTCDate()} ${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
-/** A day without its year: "14 Nov" (the tape's date). */
+/** A day without its year: "14 Nov" (the latest changes' date). */
 export const shortDay = (iso: string) => { const d = new Date(iso); return Number.isNaN(+d) ? iso : `${d.getUTCDate()} ${MONTH_ABBR[d.getUTCMonth()]}`; };
 /** Two capture dates as one phrase: "14 Nov" on the same UTC day, "between 11 and 14 Nov", "between 30 Oct and 2 Nov". */
 export function betweenDays(before: string, after: string): string {

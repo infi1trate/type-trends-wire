@@ -52,7 +52,7 @@ export function promoWording(e: { after?: unknown }): string | null {
   const a = e.after && typeof e.after === "object" && !Array.isArray(e.after) ? (e.after as Record<string, unknown>)["headline"] : null;
   return typeof a === "string" ? promoSignal(a) : null;
 }
-export const SEASONAL_MEMBER_RULE = "A brand joins the weekly seasonal story only when a confirmed change carries the sale wording itself: its new headline reads as a promotion. Any other confirmed change on a seasonal page stays a tape line marked Seasonal.";
+export const SEASONAL_MEMBER_RULE = "A brand joins the weekly seasonal story only when a confirmed change carries the sale wording itself: its new headline reads as a promotion. Any other confirmed change on a seasonal page stays a line in the latest changes marked Seasonal.";
 
 // SALE WORDING (E3) -------------------------------------------------------------------------------------------------------------------
 /** Sale mode counts a sale only: a discount, "sale", "deal(s)", a percent or an amount off, Black Friday, Cyber Monday or "save" with an

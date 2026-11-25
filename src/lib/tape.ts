@@ -1,4 +1,4 @@
-// THE TAPE — every confirmed live change as one plain line: brand name, what changed, from and to, date, and its label (Seasonal,
+// LATEST CHANGES — every confirmed live change as one plain line: brand name, what changed, from and to, date, and its label (Seasonal,
 // Reversed, Carousel). No adjectives, no story page. "Rivian · hero, video to still · 11 Nov". Pure; names from brand-names.ts.
 // E2g: the date is when the change happened by its captures ("between 11 and 14 Nov"), never the day it was confirmed.
 import { hexName, type EventRow } from "./agency/changes";
@@ -8,6 +8,7 @@ import { SEASONAL_LABEL } from "./promo";
 import { REVERSED_LABEL } from "./reversal";
 import { CAROUSEL_LABEL } from "./carousel";
 import { oneHeadline } from "./headline-text";
+import { tapeSentence } from "./tape-sentence";
 
 // U3: the dates are formatted by labels.ts (one set of formats for both views); kept under their tape names.
 export { shortDay as tapeDate, betweenDays as betweenDates } from "./labels";
@@ -42,7 +43,8 @@ const tags = (dim: string, v: unknown) => (Array.isArray(v) ? v : typeof v === "
  *  "keep" (stories and their stored facts, unchanged), "drop" (the Read side's tape: the front page and the brand page leave it out),
  *  "hex" (the terminal: both plain names with their hex values). */
 export type SameColours = "keep" | "drop" | "hex";
-export type TapeOpts = { sameColours?: SameColours };
+/** V3 · `sentences`: the Read side also carries each line as one plain sentence where a rule exists (tape-sentence.ts). */
+export type TapeOpts = { sameColours?: SameColours; sentences?: boolean };
 const hexes = (v: unknown) => (Array.isArray(v) ? v : [v]).slice(0, 2).filter((x): x is string => typeof x === "string").map(x => x.toUpperCase()).join(", ");
 /** One colour part: "accent, Vivid indigo to Electric violet"; null when dropped. */
 function colourPart(what: string, before: unknown, after: unknown, name: (v: unknown) => string, mode: SameColours): string | null {
@@ -97,7 +99,7 @@ export function tapeWhat(e: Pick<EventRow, "type" | "before" | "after" | "page_t
   return `${parts.join("; ") || e.type.replace(/_/g, " ")}${page}`;
 }
 export type TapeLabels = { seasonal?: boolean; reversed?: boolean; carousel?: boolean };
-/** The labels a tape line carries. */
+/** The labels a line in the latest changes carries. */
 export const tapeLabels = (l: TapeLabels) => [...(l.seasonal ? [SEASONAL_LABEL] : []), ...(l.carousel ? [CAROUSEL_LABEL] : []), ...(l.reversed ? [REVERSED_LABEL] : [])];
 /** One tape line: "Rivian · hero, video to still · 11 Nov" (plus " · Seasonal" / " · Carousel" / " · Reversed"). */
 export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen">, l: TapeLabels = {}, name?: string | null, opts: TapeOpts = {}): string {
@@ -106,7 +108,7 @@ export function tapeLine(e: Pick<EventRow, "domain" | "type" | "before" | "after
 /** E3b · whether a change has a line on the Read side's tape: not when it is a colour change whose old and new colours share a plain name. */
 export const readTapeShows = (e: Pick<EventRow, "type" | "before" | "after" | "page_type" | "summary">) => tapeWhat(e, { sameColours: "drop" }) !== "";
 /** The Read side's tape options (front page, brand page). */
-export const READ_TAPE: TapeOpts = { sameColours: "drop" };
+export const READ_TAPE: TapeOpts = { sameColours: "drop", sentences: true };
 /** The terminal's tape options: both names with their hex values. */
 export const TERMINAL_TAPE: TapeOpts = { sameColours: "hex" };
 
@@ -114,11 +116,11 @@ export const TERMINAL_TAPE: TapeOpts = { sameColours: "hex" };
 type TapeEvent = Pick<EventRow, "id" | "domain" | "type" | "before" | "after" | "page_type" | "summary" | "detected_at" | "seen"> & { viewport?: string | null };
 const pageName = (p: string | null | undefined) => `${p && p !== "home" ? p : "home"} page`;
 /**
- * The tape keeps one line per brand, change and UTC day: the same change seen on two viewports or several pages is one line, the earliest
+ * Latest changes keeps one line per brand, change and UTC day: the same change seen on two viewports or several pages is one line, the earliest
  * sighting first, and when it was seen on more than one page the line ends with the pages ("home page, product page"). Pure; order kept.
  */
-/** E3: a tape line's parts, for lists that set them apart (the front page's tape): brand name, what changed, when, its marks. */
-export type TapeParts = { name: string; what: string; when: string; marks: string[] };
+/** E3: a line in the latest changes' parts, for lists that set them apart (the front page's tape): brand name, what changed, when, its marks. */
+export type TapeParts = { name: string; what: string; when: string; marks: string[]; sentence?: string };
 export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => TapeLabels = () => ({}), name?: (domain: string) => string | null | undefined, opts: TapeOpts = {}): (E & { tape: string; also: number[]; pages: string[]; parts: TapeParts })[] {
   const key = (e: E) => `${e.domain}|${e.detected_at.slice(0, 10)}|${tapeWhat({ ...e, page_type: "home" }, opts)}`;
   const groups = new Map<string, E[]>();
@@ -133,6 +135,7 @@ export function tapeRows<E extends TapeEvent>(events: E[], labels: (e: E) => Tap
     const base = pages.length > 1 ? { ...first, page_type: "home" } : first;
     const line = tapeLine(base, l, name?.(e.domain), opts);
     const parts: TapeParts = { name: brandName(base.domain, name?.(e.domain)), what: `${tapeWhat(base, opts)}${pages.length > 1 ? ` · ${pages.join(", ")}` : ""}`, when: changeWhen(base), marks: tapeLabels(l) };
+    if (opts.sentences) { const s = tapeSentence(base, parts.name, pages.length > 1 ? pages : undefined); if (s) parts.sentence = s; }
     out.push({ ...e, tape: pages.length > 1 ? `${line} · ${pages.join(", ")}` : line, also: g.filter(x => x.id !== e.id).map(x => x.id), pages, parts });
   }
   return out;

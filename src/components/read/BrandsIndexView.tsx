@@ -42,14 +42,14 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
     <header className="ed-wrap pt-8 md:pt-12">
       <p className="ed-kicker">Brands · {sectorName(v.sector)}</p>
       <h1 className="ed-cover mt-3">Who is doing it</h1>
-      <p className="ed-standfirst hold-brands-deck mt-5"><mark className="hl-mark" data-highlight="">{data.sites.length} tracked brands</mark> in ten sectors: their identity, every confirmed move and how each sits against its sector.</p>
+      <p className="ed-standfirst hold-brands-deck mt-5"><mark className="hl-mark" data-highlight="">{data.sites.length} brands slug reads</mark> in ten sectors: their identity, every confirmed change and how each sits in its sector.</p>
     </header>
     <nav aria-label="Brand views" className="ed-wrap mt-8 border-y border-ed-ink"><ScrollRow className="ed-data gap-x-6 py-2">
       <Link to="/brands" search={brandsSearch({ ...v, tab: "directory" })} aria-current={v.tab === "directory" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "directory" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Directory <span className="ed-muted">{idx.rows.length}</span></Link>
       <Link to="/brands" search={brandsSearch({ ...v, tab: "moves" })} aria-current={v.tab === "moves" ? "page" : undefined} className={`ed-tap no-underline ${v.tab === "moves" ? "font-semibold underline decoration-2 underline-offset-[6px]" : ""}`}>Moves <span className="ed-muted">{moves.length}</span></Link>
     </ScrollRow></nav>
     {v.tab === "directory" && band.length >= 3 && <section aria-labelledby="brands-moved" className="ed-wrap mt-[var(--sys-gap-section)]" data-moved-band="">
-      <h2 id="brands-moved" className="ed-kicker">Moved this week</h2>
+      <h2 id="brands-moved" className="ed-kicker">Changed this week</h2>
       <ul className="moved-band mt-3">{band.map((m, i) => { const x = siteOf.get(m.domain), name = x?.name ?? m.domain; return <li key={m.domain}>
         <Link to="/brands/$domain" params={{ domain: m.domain }} className="moved-card" aria-label={`${name}: ${moveAfterName(m.headline, name, m.domain)}`}>
           <span className="moved-crop"><img src={m.hero.src} alt="" width={m.hero.width} height={m.hero.height} loading={i < 2 ? "eager" : "lazy"} decoding="async" /><BrandMark icon={icons[m.domain]} name={name} size={48} /></span>
@@ -61,7 +61,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
     {v.tab === "directory" ? <section aria-label="Brand directory" className="ed-wrap mt-[var(--sys-gap-section)]">
       <RuleBox className="p-4">
         <form role="search" method="get" action="/brands" className="flex flex-col gap-3 md:flex-row md:items-end" onSubmit={e => { e.preventDefault(); go(v); }}>
-          <div className="flex min-w-0 flex-1 flex-col gap-1"><label htmlFor="brands-q" className="ed-kicker">Search the tracked brands</label>
+          <div className="flex min-w-0 flex-1 flex-col gap-1"><label htmlFor="brands-q" className="ed-kicker">Search the brands</label>
             <input id="brands-q" name="q" type="search" value={v.q} maxLength={80} onChange={e => go({ ...v, q: e.target.value }, true)} placeholder="Name or domain, e.g. linear" autoComplete="off" className="ed-data form-field min-h-11 w-full bg-transparent px-3" />
           </div>
           {v.sector !== "all" && <input type="hidden" name="sector" value={v.sector} />}
@@ -76,7 +76,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       {idx.empty ? <div className="mt-4"><EmptyState mark="Nothing yet"><p>{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p></EmptyState></div>
         // S1 · the directory as tiles (a compact row under 480 px): logo plate, name, sector chip, moves and last change, the latest move.
         : <><ul className="brand-grid mt-3" aria-label="Tracked brands" data-brand-grid="">{(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map((s, i) => { const name = s.name ?? s.domain, moved = movedNow.has(s.domain);
-          const facts = `${s.moves} ${s.moves === 1 ? "move" : "moves"} · ${s.lastChange ? `changed ${shortDay(s.lastChange, year)}` : voiced("read.brandsIndexView.1")}`;
+          const facts = `${s.moves} ${s.moves === 1 ? "change" : "changes"} · ${s.lastChange ? `changed ${shortDay(s.lastChange, year)}` : voiced("read.brandsIndexView.1")}`;
           return <li key={s.domain} className="brand-grid-item">
             <Link to="/brands/$domain" params={{ domain: s.domain }} className="brand-tile" data-brand-tile="" aria-label={`${name}, ${sectorName(s.sector)}, ${facts}${moved ? ", moved this week" : ""}`}>
               <BrandMark icon={icons[s.domain]} name={name} size={72} mobileSize={56} eager={i < 10} />
@@ -87,11 +87,11 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
                 <span className="ed-caption brand-tile-facts">{facts}</span>
                 {s.lastMove && <span className="ed-caption brand-tile-move">{moveAfterName(s.lastMove, name, s.domain)}</span>}
               </span>
-              {moved && <span className="c-sticker brand-tile-sticker" aria-hidden="true" data-container="sticker">Moved</span>}
+              {moved && <span className="c-sticker brand-tile-sticker" aria-hidden="true" data-container="sticker">Changed</span>}
             </Link></li>; })}</ul>
           {!all && !more && idx.rows.length > BRANDS_FIRST && <p className="ed-data mt-4"><Link to="/brands" search={{ ...brandsSearch(v), all: "1" }} resetScroll={false} className="c-raised ed-kicker no-underline" data-container="raised" data-show-all=""
             onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-brand-tile]")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}
-    </section> : <section aria-label="Recent moves" className="ed-wrap mt-[var(--sys-gap-section)]">
+    </section> : <section aria-label="Recent changes" className="ed-wrap mt-[var(--sys-gap-section)]">
       <p className="ed-caption">Confirmed changes (two captures agree) and rebrands in the last 30 days, newest first.</p>
       {moves.length ? <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 lg:grid-cols-3">{moves.map(s => <StoryCard key={s.id} s={s} />)}</div> : <p className="ed-body mt-4">No confirmed move{v.sector !== "all" ? ` in ${sectorName(v.sector)}` : ""} in the last 30 days. Moves land here as soon as two captures agree on a change.</p>}
     </section>}

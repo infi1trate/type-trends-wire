@@ -16,12 +16,12 @@ async function computeLibrary() {
   const valid = events.filter((e): e is typeof e & { id: number; domain: string; type: string; detected_at: string } => e.id != null && !!e.domain && !!e.type && !!e.detected_at);
   const [{ seasonalIds }, carouselMod, { reversalIds }, tapeMod, integrity] = await Promise.all([import("./promo.server"), import("./carousel.server"), import("./reversal"), import("./tape"), import("./integrity.server")]);
   const { tapeRows, tapeLine, TERMINAL_TAPE } = tapeMod;
-  // Changes made on a sale or seasonal capture keep their row on the tape with a plain "Seasonal" label (promo.ts); carousel slides
+  // Changes made on a sale or seasonal capture keep their row in the latest changes with a plain "Seasonal" label (promo.ts); carousel slides
   // likewise; changes undone within seven days (and the change back) carry a plain "Reversed" label (reversal.ts).
   const [seasonal, carousel, split] = await Promise.all([
     seasonalIds(supabaseAnon(), asIds).then(x => new Set(x)),
     carouselMod.carouselIds(supabaseAnon(), asIds).then(x => new Set(x)),
-    // E2e: the tape is the confirmed part of each change; what failed the integrity check is the Data view's own list (integrity.ts).
+    // E2e: the latest changes is the confirmed part of each change; what failed the integrity check is the Data view's own list (integrity.ts).
     integrity.checkedEvents(supabaseAnon(), valid),
   ]);
   const reversed = reversalIds(events.filter(e => e.id != null && e.domain && e.detected_at).map(e => ({ id: e.id as number, domain: e.domain as string, page_type: e.page_type, viewport: e.viewport, detected_at: e.detected_at as string, before: e.before, after: e.after })));

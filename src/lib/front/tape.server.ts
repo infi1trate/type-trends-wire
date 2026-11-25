@@ -15,7 +15,7 @@ async function load(): Promise<FrontTape> {
     for (const e of data ?? []) if (e.id != null && e.domain && e.type && e.detected_at) events.push(e as Row);
     if (!data || data.length < 1000) break;
   }
-  // I3b: only brands tracked now (an address that turned out to be another business leaves the tape).
+  // I3b: only brands tracked now (an address that turned out to be another business leaves the latest changes).
   const active = await (await import("../active-sites.server")).activeDomains();
   events.splice(0, events.length, ...events.filter(e => active.has(e.domain)));
   const [{ latestChecks }, { reversalIds }] = await Promise.all([import("../integrity.server"), import("../reversal")]);
@@ -31,7 +31,7 @@ async function load(): Promise<FrontTape> {
   ]);
   const reversed = reversalIds(events.map(e => ({ id: e.id, domain: e.domain, page_type: e.page_type ?? null, viewport: e.viewport ?? null, detected_at: e.detected_at, before: e.before, after: e.after })));
   const tape = frontTape(events, checks, { now, labels: e => ({ seasonal: seasonal.has(e.id), carousel: carousel.has(e.id), reversed: reversed.has(e.id) }), icons: iconsFor(pics, first.map(r => r.domain)) });
-  // W1b: confirmed icon and card changes (perceptual, two captures each side) as tape lines with their old and new pictures.
+  // W1b: confirmed icon and card changes (perceptual, two captures each side) as lines in the latest changes with their old and new pictures.
   const assets = await (await import("../asset-changes.server")).confirmedAssetChanges(FRONT_TAPE_DAYS, now).catch(() => []);
   const [{ assetChangeWhat, assetChangeWhen }, { brandName }, { cropSrc }] = await Promise.all([import("../asset-diff"), import("../brand-names"), import("../crops")]);
   const lines = assets.filter(c => active.has(c.domain)).map(c => ({ name: brandName(c.domain, null), what: assetChangeWhat(c.kind), when: assetChangeWhen(c), marks: [], id: -c.to.id, domain: c.domain, at: c.confirmed_at ?? c.to.last_seen_at,

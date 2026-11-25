@@ -4,7 +4,7 @@ import { resolveSector } from "./sector-lens";
 import { sectorName } from "./labels";
 import { inCategory, resolveCategory } from "./categories";
 
-export const BRAND_SORTS = [{ id: "change", label: "Last change", dir: "desc" }, { id: "moves", label: "Moves", dir: "desc" }, { id: "name", label: "Name", dir: "asc" }, { id: "sector", label: "Sector", dir: "asc" }] as const;
+export const BRAND_SORTS = [{ id: "change", label: "Last change", dir: "desc" }, { id: "moves", label: "Changes", dir: "desc" }, { id: "name", label: "Name", dir: "asc" }, { id: "sector", label: "Sector", dir: "asc" }] as const;
 export type BrandSort = (typeof BRAND_SORTS)[number]["id"];
 export type Dir = "asc" | "desc";
 export type BrandsView = { tab: "directory" | "moves"; q: string; sector: string; sort: BrandSort; dir: Dir; category?: string | null; sub?: string | null };
@@ -41,7 +41,7 @@ export function brandsIndex(sites: readonly BrandListing[], v: BrandsView) {
     // Brands without a change sort last whichever way "last change" runs.
     .sort((a, b) => (v.sort === "change" ? Number(!a.lastChange) - Number(!b.lastChange) : 0) || cmp(a, b) || name(a).localeCompare(name(b)) || a.domain.localeCompare(b.domain));
   const scope = v.sector === "all" ? "" : ` in ${sectorName(v.sector)}`;
-  const countLine = q ? `${rows.length} of ${sites.length} tracked brands match “${v.q.trim()}”${scope}.` : `${rows.length} tracked brands${scope}.`;
+  const countLine = q ? `${rows.length} of ${sites.length} brands match “${v.q.trim()}”${scope}.` : `${rows.length} brands slug reads${scope}.`;
   return { rows, countLine, empty: rows.length ? null : q ? `No tracked brand matches “${v.q.trim()}”${scope}. Try part of the name or the domain, or audit any site instead.` : `No tracked brand${scope} yet.` };
 }
 

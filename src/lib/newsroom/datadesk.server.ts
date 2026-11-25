@@ -91,7 +91,7 @@ export async function runDataChecks(db: Admin, o: { now?: number; write?: boolea
     const [today, rot] = await Promise.all([computeChecks(db as never, sample as never), carouselIds(db as never, sample as never)]);
     const rotating = new Set(rot);
     findings.push(...dd.detectorFindings(sample.map(e => { const t = today.get(e.id); return { id: e.id, domain: e.domain, type: e.type, detected_at: e.detected_at, stored: ev.checks.get(e.id)?.pass ?? [], rotating: rotating.has(e.id), today: { verdict: t?.verdict ?? "not checked", pass: t?.pass ?? [], failed: Object.values(t?.fields ?? {}).flatMap(f => f.failed).map(String) } }; })));
-    // 3 · values that cannot be true, on the tape and on the cards.
+    // 3 · values that cannot be true, in the latest changes and on the cards.
     const colours: dd.ShownColour[] = cards.flatMap(c => c.palette.filter(p => /^#[0-9a-f]{6}$/i.test(p.hex) && p.name).map(p => ({ where: `card:${c.domain}`, subject: c.domain, name: p.name, hex: p.hex })));
     findings.push(...dd.impossibleFindings(ev.tape.filter(e => active.has(e.domain)).map(e => ({ id: e.id, domain: e.domain, before: e.before ?? {}, after: e.after ?? {}, detected_at: e.detected_at })), colours, validMonthly));
     // 4 · coverage: a good capture (a title or a headline) in the last three days; sectors; pages chosen as product.

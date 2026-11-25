@@ -1,5 +1,5 @@
 // PHASE E2a · THE EDITOR'S CALL — what may become a story. Pure: same rows in, same candidates (and ids) out.
-// Three tiers: every confirmed change is a tape line (tape.ts); a story must be a positioning change, an identity change, a headline
+// Three tiers: every confirmed change is a line in the latest changes (tape.ts); a story must be a positioning change, an identity change, a headline
 // typeface change, a pattern (roundup, breakout, crossover, white space, shift, first seen), the weekly seasonal story or the weekly
 // against-the-grain roundup; outside news keeps its own rules. Changes to one brand inside seven days are one story.
 import type { NotSteady } from "./steady";
@@ -37,7 +37,7 @@ export const SHIFT_MIN_SHARE = 0.1;
 export const SHIFT_BRIEF_REASON = `Brief table only: on under ${Math.round(SHIFT_MIN_SHARE * 100)}% of tracked homepages`;
 /** Signals that answer one question together: their stage changes from one run pair are one story. */
 export const SHIFT_FAMILIES = new Set(["ai_positioning"]);
-export const TAPE_REASON = "Tape line: not a positioning, identity or headline typeface change";
+export const TAPE_REASON = "Latest changes line: not a positioning, identity or headline typeface change";
 export { WHITE_SPACE_NOT_APPLICABLE };
 export const notApplicable = (sector: string, key: string) => WHITE_SPACE_NOT_APPLICABLE[sector]?.[key] ?? null;
 
@@ -178,7 +178,7 @@ export function brandStory(ctx: Ctx, g: BrandGroup, calls: Record<number, { call
 
 // WEEKLY GATHERINGS ----------------------------------------------------------------------------------------------------------------
 /** E2g · no longer built (the sale-mode census replaced it); kept for its rule tests. The seasonal story: three or more brands seasonal within seven days, at most once a week; its members never run alone. A member's
- *  change must carry the sale wording itself (E2f: its new headline reads as a promotion); other changes on a seasonal page stay tape lines. */
+ *  change must carry the sale wording itself (E2f: its new headline reads as a promotion); other changes on a seasonal page stay lines in the latest changes. */
 export function seasonalStory(input: Pick<BuildInput, "now">, events: EventRow[], seasonal: Set<number>, names: ReadonlyMap<string, string | null>): Candidate | null {
   const since = Date.parse(input.now) - PATTERN_DAYS * DAY;
   const members = sortByTime(events.filter(e => seasonal.has(e.id) && promoWording(e) !== null && isHome(e) && Date.parse(e.detected_at) >= since && Date.parse(e.detected_at) <= Date.parse(input.now)).map(e => ({ e })));
@@ -198,7 +198,7 @@ export function seasonalStory(input: Pick<BuildInput, "now">, events: EventRow[]
 export const AGAINST_NAMED_MAX = 6;
 /**
  * Against the grain (E2c, the approved reading of E2a): once a week, three or more held counter-moves, not reversed, each with a stored
- * stage and share behind its signal, in one piece outside the daily five. Brands that also have a measured change on the tape that week
+ * stage and share behind its signal, in one piece outside the daily five. Brands that also have a measured change in the latest changes that week
  * come first, then by trendsetter rank; at most six are named, the rest counted. `measured` is the week's tape (any confirmed live change
  * that is not reversed); it orders the piece and never decides membership.
  */
@@ -303,7 +303,7 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   const texts = new Map(Object.entries(input.texts ?? {}).map(([k, v]) => [Number(k), v]));
   const seasonal = seasonalEventIds(input.events, texts);
   const reversed = reversalIds([...new Map([...(input.history ?? []), ...input.events].map(e => [e.id, e])).values()]);
-  // E2c · the carousel: a headline, hero or imagery change captured on a rotating first screen is a tape line marked Carousel and never
+  // E2c · the carousel: a headline, hero or imagery change captured on a rotating first screen is a line in the latest changes marked Carousel and never
   // makes or joins a story (its other layout fields are judged as before). Calls code makes (carousel, fragment) win over stored calls.
   const carouselSnaps = new Set(input.carousel ?? []), rotating = carouselEventIds(input.events, carouselSnaps);
   const calls: Record<number, { call: string; reason: string }> = { ...(input.calls ?? {}) };
@@ -316,7 +316,7 @@ export function allCandidates(raw: BuildInput): AllCandidates {
   const sectorOf = new Map(input.sites.map(s => [s.domain, s.sector ?? null]));
   const showcase = (e: EventRow) => isShowcaseSector(sectorOf.get(e.domain) ?? e.sector);
   const visible = judged.filter(e => isVisibleMove(e) && isHome(e)).sort((a, b) => a.detected_at.localeCompare(b.detected_at) || a.id - b.id);
-  // Story-eligible: measured, not seasonal, not reversed. Everything else stays a tape line.
+  // Story-eligible: measured, not seasonal, not reversed. Everything else stays a line in the latest changes.
   const eligible = visible.filter(e => !seasonal.has(e.id) && !reversed.has(e.id) && !AI_EVENTS.has(e.type));
   const changes = eligible.map(e => changeOf(e, kind(e.domain), (calls[e.id]?.call as HeadlineCallClass | undefined) ?? null, { showcase: showcase(e) }));
   const groups = brandGroups(changes), brand = groups.filter(g => g.qualifiedAt).map(g => brandStory(ctx, g, calls, names.get(g.domain)));

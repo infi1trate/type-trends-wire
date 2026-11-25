@@ -14,7 +14,7 @@ import { FigureView } from "@/components/data/Figures";
 
 const pct = (x: number | null) => (x == null ? "—" : `${Math.round(x * 100)}%`);
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
-const TITLES: Record<string, string> = { glance: "At a glance", type: "Type", color: "Color", layout: "Layout & components", vibe: "Vibe & voice", market: "Versus the market", moves: "Recent moves", whitespace: "White space", method: "Methodology" };
+const TITLES: Record<string, string> = { glance: "At a glance", type: "Type", color: "Color", layout: "Layout & components", vibe: "Vibe & voice", market: "Versus the market", moves: "Recent changes", whitespace: "White space", method: "Methodology" };
 
 function Trait({ t }: { t: TraitRef }) {
   return <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-1">
@@ -143,7 +143,7 @@ export function AuditView({ a, field = null }: { a: Audit; field?: FieldFig | nu
     </section>}
 
     {a.moves && <section className="ed-wrap mt-14" aria-labelledby="a-moves">
-      <SectionHead n={num("moves")} title="Recent moves" id="a-moves" kicker="Confirmed changes in the last 90 days (a change counts after two captures agree) and confirmed rebrands." />
+      <SectionHead n={num("moves")} title="Recent changes" id="a-moves" kicker="Confirmed changes in the last 90 days (a change counts after two captures agree) and confirmed rebrands." />
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">{a.moves.sites.map(s => <article key={s.domain} className="ed-hair pt-3">
         <h3 className="ed-kicker">{s.domain}</h3>
         <ul className="mt-2 flex flex-col gap-2">{s.items.map((i, k) => <li key={k} className="ed-small"><span className="ed-data ed-muted">{day(i.at)}</span> {i.text} <a href={i.href} className="ed-data" {...pr(i.href)}>receipt</a></li>)}</ul>
