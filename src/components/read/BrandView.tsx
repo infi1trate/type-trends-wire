@@ -5,11 +5,11 @@ import { SEASONAL_LABEL } from "@/lib/promo";
 import { REVERSED_LABEL } from "@/lib/reversal";
 import { Link } from "@tanstack/react-router";
 import { faceLine, openPairId, type BrandCard, type BrandPage, type Face } from "@/lib/brand-page";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { brandMovesQuery, brandSectionsQuery, brandSectorQuery, brandSimilarQuery, brandStoriesQuery } from "@/lib/data";
 import type { SimilarResult } from "@/lib/similar";
-import { Later, ROW } from "./Later";
+import { Later, PartBoundary, ROW } from "./Later";
 import type { Story } from "@/lib/stories";
 import { RelatedStories, Receipt } from "./StoryCard";
 import type { TraitRef } from "@/lib/agency/audit";
@@ -23,6 +23,7 @@ import { ObjectPage, BlockPart } from "./ObjectPage";
 import { SurfacesPart } from "./Surfaces";
 import { StructurePart } from "./Structure";
 import { TakeAway } from "./TakeAway";
+import { CompareEntry } from "./CompareEntry";
 import { ReadFooter } from "./Bits";
 import { Ledger } from "@/components/brand/Ledger";
 import { Card, Raised } from "@/components/brand/Containers";
@@ -143,6 +144,7 @@ function BrandBody({ b, parts, bare = false }: { b: CardIn; parts: Parts; bare?:
           <Raised href={b.actions.watch}>Watch this brand</Raised>
           <Raised href={b.actions.compare}>Audit a page against it</Raised>
         </div>
+        <div className="no-print mt-5 min-h-24 max-w-lg"><PartBoundary quiet><Suspense fallback={<div className="min-h-24" aria-busy="true"/>}><CompareEntry domain={b.domain}/></Suspense></PartBoundary></div>
         {b.lastMove && <p className="ed-standfirst mt-8 max-w-[62ch]">{b.lastMove.text}<span className="ed-caption mt-1 block">{storyTime(b.lastMove.at)}</span></p>}
         {parts.surfaces}
       </>,

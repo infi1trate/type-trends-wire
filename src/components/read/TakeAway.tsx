@@ -3,6 +3,7 @@ import { Copy, Check } from "lucide-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { brandStructureQuery } from "@/lib/data";
+import { PartBoundary } from "./Later";
 import { paletteHex, paletteCss, paletteTokens, typeCss, typeText, citation, sectionText, asksText, googleFontUrl, type KitBrand } from "@/lib/take-away";
 export function CopyText({ label, value, disabled = false }: { label: string; value: string; disabled?: boolean }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
@@ -32,7 +33,7 @@ export function TakeAway({ b, structure = true }: { b: KitBrand; structure?: boo
       <CopyText label="Palette tokens JSON" value={paletteTokens(b)} disabled={!b.identity.palette.length} />
       <CopyText label="Type CSS" value={typeCss(b)} disabled={!b.identity.h1 && !b.identity.body} />
       <CopyText label="Type text" value={typeText(b)} />
-      {structure && <Suspense fallback={<><CopyText label="Section order" value="" disabled /><CopyText label="First-screen asks" value="" disabled /></>}><StructureCopies domain={b.domain} /></Suspense>}
+      {structure && <PartBoundary quiet><Suspense fallback={<><CopyText label="Section order" value="" disabled /><CopyText label="First-screen asks" value="" disabled /></>}><StructureCopies domain={b.domain} /></Suspense></PartBoundary>}
       <CopyText label="Citation" value={citation(b)} />
     </div>
     {fonts.map(f => { const href = googleFontUrl(f); return href && <p key={f?.family} className="ed-caption mt-1"><a href={href} target="_blank" rel="noopener" className="ed-tap">Get it on Google Fonts · {f?.family} ↗</a></p>; })}

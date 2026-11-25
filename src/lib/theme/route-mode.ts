@@ -16,4 +16,4 @@ export const modeOf = (matches: readonly MatchLike[]): Mode =>
 /** Terminal-density route files (dark mode): the terminal, the chart of the week and the studio board. */
 export const DARK_ROUTE_FILES = ["terminal.tsx", "chart.index.tsx", "chart.$week.tsx", "ambient.index.tsx"] as const;
 /** Object routes with a Data view at the same address (U1). */
-export const VIEW_ROUTE_FILES = ["stories.$id.tsx", "brands.$domain.tsx", "signals.$key.tsx", "patterns.$key.tsx", "patterns.navigation.tsx", "data.$slug.tsx", "digest.$week.tsx"] as const;
+export const VIEW_ROUTE_FILES = ["stories.$id.tsx", "brands.$domain.tsx", "signals.$key.tsx", "patterns.$key.tsx", "patterns.navigation.tsx", "data.$slug.tsx", "digest.$week.tsx", "boards.index.tsx", "boards.$key.tsx", "compare.tsx"] as const;

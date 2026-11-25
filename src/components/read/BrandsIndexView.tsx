@@ -18,6 +18,8 @@ import { longDay, type Pic } from "@/lib/pictures";
 const shortDay = (iso: string, year: string) => (iso.slice(0, 4) === year ? longDay(iso).replace(/ \d{4}$/, "") : longDay(iso));
 import { moveAfterName } from "@/lib/brand-tiles";
 import { BrandMark } from "./BrandMark";
+import { BrandSearchInput } from "./BrandSearch";
+import { CompareSelection } from "./CompareSelect";
 import { CategoryChips } from "./CategoryChips";
 import { CATEGORY_TOO_FEW, CATEGORY_SHARE_MIN, categoryChips, categoryLabel, classOf, subcategoryChips } from "@/lib/categories";
 
@@ -61,8 +63,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
     {v.tab === "directory" ? <section aria-label="Brand directory" className="ed-wrap mt-[var(--sys-gap-section)]">
       <RuleBox className="p-4">
         <form role="search" method="get" action="/brands" className="flex flex-col gap-3 md:flex-row md:items-end" onSubmit={e => { e.preventDefault(); go(v); }}>
-          <div className="flex min-w-0 flex-1 flex-col gap-1"><label htmlFor="brands-q" className="ed-kicker">Search the brands</label>
-            <input id="brands-q" name="q" type="search" value={v.q} maxLength={80} onChange={e => go({ ...v, q: e.target.value }, true)} placeholder="Name or domain, e.g. linear" autoComplete="off" className="ed-data form-field min-h-11 w-full bg-transparent px-3" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1"><BrandSearchInput id="brands-q" label="Search the brands" value={v.q} onChange={q => void go({...v,q},true)}/>
           </div>
           {v.sector !== "all" && <input type="hidden" name="sector" value={v.sector} />}
           <noscript><button type="submit" className="c-raised ed-kicker">Search</button></noscript>
@@ -75,9 +76,9 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
       <p className="ed-caption mt-3" aria-live="polite" data-count-line="">{idx.countLine}{v.category && idx.rows.length < CATEGORY_SHARE_MIN ? ` ${CATEGORY_TOO_FEW}` : ""}</p>
       {idx.empty ? <div className="mt-4"><EmptyState mark="Nothing yet"><p>{idx.empty} <Link to="/audit/new" search={{ sites: undefined }} className="ed-tap">Audit a site →</Link></p></EmptyState></div>
         // S1 · the directory as tiles (a compact row under 480 px): logo plate, name, sector chip, moves and last change, the latest move.
-        : <><ul className="brand-grid mt-3" aria-label="Tracked brands" data-brand-grid="">{(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map((s, i) => { const name = s.name ?? s.domain, moved = movedNow.has(s.domain);
+        : <><CompareSelection>{control=><ul className="brand-grid mt-3" aria-label="Tracked brands" data-brand-grid="">{(all || more ? idx.rows : idx.rows.slice(0, BRANDS_FIRST)).map((s, i) => { const name = s.name ?? s.domain, moved = movedNow.has(s.domain);
           const facts = `${s.moves} ${s.moves === 1 ? "change" : "changes"} · ${s.lastChange ? `changed ${shortDay(s.lastChange, year)}` : voiced("read.brandsIndexView.1")}`;
-          return <li key={s.domain} className="brand-grid-item">
+          return <li key={s.domain} className="brand-grid-item flex flex-col [&>.brand-tile]:h-auto">
             <Link to="/brands/$domain" params={{ domain: s.domain }} className="brand-tile" data-brand-tile="" aria-label={`${name}, ${sectorName(s.sector)}, ${facts}${moved ? ", moved this week" : ""}`}>
               <BrandMark icon={icons[s.domain]} name={name} size={72} mobileSize={56} eager={i < 10} />
               <span className="brand-tile-body">
@@ -88,7 +89,7 @@ export function BrandsIndexView({ v, all = false }: { v: BrandsView; all?: boole
                 {s.lastMove && <span className="ed-caption brand-tile-move">{moveAfterName(s.lastMove, name, s.domain)}</span>}
               </span>
               {moved && <span className="c-sticker brand-tile-sticker" aria-hidden="true" data-container="sticker">Changed</span>}
-            </Link></li>; })}</ul>
+            </Link>{control(s.domain,name)}</li>; })}</ul>}</CompareSelection>
           {!all && !more && idx.rows.length > BRANDS_FIRST && <p className="ed-data mt-4"><Link to="/brands" search={{ ...brandsSearch(v), all: "1" }} resetScroll={false} className="c-raised ed-kicker no-underline" data-container="raised" data-show-all=""
             onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); setMore(true); requestAnimationFrame(() => document.querySelectorAll<HTMLElement>("[data-brand-tile]")[BRANDS_FIRST]?.focus()); }}>Show all {idx.rows.length} brands</Link> <span className="ed-caption">The first {BRANDS_FIRST} are shown.</span></p>}</>}
     </section> : <section aria-label="Recent changes" className="ed-wrap mt-[var(--sys-gap-section)]">

@@ -138,9 +138,9 @@ export function figureReceipt(study: { slug: string; number: number; headline: s
   return { type: "figure", title: tables[0]?.caption ?? study.headline, kicker: `STUDY NO. ${study.number} · FIGURE`, lines: [study.headline], tables: [...tables], full: dataHref({ type: "study", id: study.slug } as ObjectRef) + `#fig-${figureId}` };
 }
 /** One table as CSV (RFC 4180 quoting). */
+export const spreadsheetSafe = (v: string) => (/^[=+\-@\t\r]/.test(v) && !/^[+-]?\d[\d,]*(\.\d+)?%?$/.test(v) ? `'${v}` : v);
 export function tableCsv(t: Pick<ReceiptTable, "head" | "rows">): string {
   // Neutralise spreadsheet formulas (=, +, -, @, tab, CR) unless the cell is a plain number.
-  const safe = (v: string) => (/^[=+\-@\t\r]/.test(v) && !/^[+-]?\d[\d,]*(\.\d+)?%?$/.test(v) ? `'${v}` : v);
-  const cell = (raw: string) => { const v = safe(raw); return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  const cell = (raw: string) => { const v = spreadsheetSafe(raw); return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
   return [t.head, ...t.rows].map(r => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }

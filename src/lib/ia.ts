@@ -462,6 +462,7 @@ export const SURFACES: Record<string, Surface> = {
 export const DENSITIES = ["quiet", "steady", "loud"] as const;
 export type Density = (typeof DENSITIES)[number];
 export const DENSITY: Record<string, Density | "none"> = {
+  "boards.index": "steady", "boards.$key": "steady", compare: "steady",
   index: "steady", "signals.index": "steady", "signals.leading": "steady", "brands.index": "steady", "patterns.index": "steady", "digest.archive": "steady", editions: "steady",
   "sectors.index": "steady", "data.index": "steady", tools: "steady", colophon: "quiet", "audit.index": "quiet", "audit.new": "steady", "watch.$id": "steady", "watch.new": "steady",
   ledger: "steady", desk: "steady", status: "steady", "what-we-show": "steady", "brands.$domain": "steady", "patterns.$key": "steady", "patterns.navigation": "steady", "collections.index": "steady", "collections.$slug": "steady", "morning.index": "quiet", "morning.$date": "quiet",

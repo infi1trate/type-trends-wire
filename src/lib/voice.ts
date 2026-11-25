@@ -20,6 +20,10 @@ const empty = (where: string, text: string, ...next: Step[]): Said => ({ kind: "
 const loading = (where: string, text: string): Said => ({ kind: "loading", where, text, next: [] });
 
 export const VOICE = {
+  "boards.empty": empty("/boards/<signal> filtered board", "No brand matches these filters.", go("Every board", "/boards")),
+  "compare.searchEmpty": empty("Compare brand search", "No brand matches.", go("Every brand", "/brands")),
+  "boards.notFound": missing("Reference boards", "No reference board found", "No reference board found.", go("Every board", "/boards")),
+  "compare.notFound": missing("Brand comparison", "No brand comparison found", "No brand comparison found.", go("Every brand", "/brands")),
   // ── Whole-site pages ────────────────────────────────────────────────────────────────────────────────────────────────────────────
   "site.notFound": missing("Any address with no page (root 404)", "There's no page at this address",
     "The link may be mistyped, or the page has moved. Look up a brand or a signal below, read the newest story, or start from the front page.",

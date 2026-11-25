@@ -1,0 +1,7 @@
+import {it,expect} from "vitest";
+import {compareRows,compareTsv} from "./compare";
+import {sameValues,type KitRecord} from "./designer-kit";
+const r=(domain:string,theme:string):KitRecord=>({domain,name:domain,captured:"2026-11-25",sector:"fintech",category:null,subcategory:null,headline:null,body:null,theme,accent:null,ask:null,traits:[],firstSeen:{},structure:null,phone:null,lastChange:null,collections:[],identity:{h1:null,body:null,palette:[],tags:[],layout:[],theme,accent:null,receipt:""}});
+it("compares measured themes without a score",()=>{const themes=compareRows([r("stripe.com","light"),r("linear.app","dark")]).find(x=>x.name==="Theme");expect(themes?.values).toEqual(["light","dark"]);expect(sameValues(themes?.values??[])).toBe(false);});
+it("matching type readings are equal",()=>{const type=compareRows([r("a.com","light"),r("b.com","light")]).find(x=>x.name==="Headline and body type");expect(type?.values).toEqual(["Headline: not measured · Body: not measured","Headline: not measured · Body: not measured"]);expect(sameValues(type?.values??[])).toBe(true);});
+it("TSV has aligned headers and neutralises formulas",()=>{expect(compareTsv([r("=HYPERLINK(x)","light"),r("b.com","dark")]).split("\n")[0]).toBe("Reading\t'=HYPERLINK(x)\tb.com");});
