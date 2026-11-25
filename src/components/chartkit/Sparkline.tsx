@@ -9,7 +9,7 @@ import { CHART, lw, pt } from "./ink";
 /** `what`: how the line is read aloud (default "share by quarter, N quarters"). */
 /** `stretch` (S1 polish, the Signals rows): the line fills whatever box CSS gives the drawing, with the stroke and end dot kept at their
  *  drawn size, so a wider column draws a wider line at the same height. */
-function ReadSpark({ points, label, w = 96, h = 24, what, stretch = false }: { points: number[] | undefined; label: string; w?: number; h?: number; what?: string; stretch?: boolean }) {
+function ReadSpark({ points, label, w = 96, h = 24, what, stretch = false, joinIndex, joinNote }: { points: number[] | undefined; label: string; w?: number; h?: number; what?: string; stretch?: boolean; joinIndex?: number | undefined; joinNote?: string | undefined }) {
   const p = points ?? [];
   if (p.length < 2) return <span className="ed-caption" aria-label={`${label}: not enough history`}>—</span>;
   const W = w, H = h, max = Math.max(...p, 0.01), min = Math.min(...p, 0), r1 = (n: number) => Math.round(n * 10) / 10, x = (i: number) => r1(2 + (i / (p.length - 1)) * (W - 4)), y = (v: number) => r1(H - 2 - ((v - min) / Math.max(0.0001, max - min)) * (H - 4));
@@ -19,6 +19,7 @@ function ReadSpark({ points, label, w = 96, h = 24, what, stretch = false }: { p
     <path d={`M${x(p.length - 1)} ${y(p[p.length - 1]!)}h0`} fill="none" stroke="currentColor" strokeWidth={pt(4) * 2} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
   </svg>;
   return <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={name} className="inline-block h-auto max-w-full align-middle" overflow="visible">
+    {joinIndex != null && joinIndex >= 0 && <line x1={x(joinIndex)} x2={x(joinIndex)} y1={H - 8} y2={H} stroke="currentColor"><title>{joinNote}</title></line>}
     <polyline fill="none" stroke="currentColor" strokeWidth={lw(3)} strokeLinejoin="round" strokeLinecap="round" points={p.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
     <circle cx={x(p.length - 1)} cy={y(p[p.length - 1]!)} r={pt(4)} fill="currentColor" />
   </svg>;
@@ -68,15 +69,15 @@ function RankLine({ points }: { points: { date: string; rank: number }[] }) {
 
 
 export type SparklineProps =
-  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean; interactive?: boolean; periods?: string[] | undefined; counts?: (string | null)[] | undefined }
+  | { look: "read"; values: number[] | undefined; label: string; w?: number; h?: number; what?: string; format?: (v: number) => string; stretch?: boolean; interactive?: boolean; periods?: string[] | undefined; counts?: (string | null)[] | undefined; join?: { quarter: string; note: string } | undefined }
   | { look: "data"; values: number[] | undefined; label?: string }
   | { look: "data"; large: true; points: { date: string; rank: number }[] };
 /** A sparkline in either look. */
 export function Sparkline(p: SparklineProps) {
   if (p.look === "read") {
-    const { look: _l, values, format = pctText, interactive = false, periods, counts, ...rest } = p;
+    const { look: _l, values, format = pctText, interactive = false, periods, counts, join, ...rest } = p;
     const valuesList = values ?? [], W = rest.w ?? 96, H = rest.h ?? 24, max = Math.max(...valuesList, .01), min = Math.min(...valuesList, 0);
-    return <><ChartInteraction enabled={Boolean(interactive || rest.stretch || W > 240)} width={W} height={H} label={rest.label} points={valuesList.map((v, i) => ({ x: 2 + i / Math.max(1,valuesList.length - 1) * (W - 4), y: H - 2 - (v - min) / Math.max(.0001,max-min)*(H-4), period: quarterText(periods?.[i] ?? ""), lines: [[rest.label, format(v), counts?.[i]].filter(Boolean).join(" · ")] }))}><ReadSpark points={values} {...rest} /></ChartInteraction>{values && values.length >= 2 && <span className="sr-only">{values.map(format).join(", ")}</span>}</>;
+    return <><ChartInteraction enabled={Boolean(interactive || rest.stretch || W > 240)} width={W} height={H} label={rest.label} points={valuesList.map((v, i) => ({ x: 2 + i / Math.max(1,valuesList.length - 1) * (W - 4), y: H - 2 - (v - min) / Math.max(.0001,max-min)*(H-4), period: quarterText(periods?.[i] ?? ""), lines: [[rest.label, format(v), counts?.[i]].filter(Boolean).join(" · "), ...(join && periods?.[i] === join.quarter ? [join.note] : [])] }))}><ReadSpark points={values} {...rest} joinIndex={join ? periods?.indexOf(join.quarter) : undefined} joinNote={join?.note} /></ChartInteraction>{values && values.length >= 2 && <span className="sr-only">{values.map(format).join(", ")}</span>}</>;
   }
   if ("large" in p) {
     const ranks = p.points.map(p => p.rank), min = Math.min(...ranks), max = Math.max(...ranks);

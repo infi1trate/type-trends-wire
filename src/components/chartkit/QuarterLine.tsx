@@ -26,19 +26,20 @@ const ql = (i: number) => `${Math.floor(i / 4)}Q${(i % 4) + 1}`;
 export type LineSeries = { id: string; label: string; points: { x: string; y: number }[] };
 /** Series colours, in order: green (rising, measured), pink, yellow, red. Each line sits on an ink-and-paper double stroke. */
 const SERIES_BALL: GumballName[] = ["green", "pink", "yellow", "red"];
-function FramedLine({ series, y, ...frame }: FrameProps & { series: LineSeries[]; y: { label: string; format: (v: number) => string } }) {
+function FramedLine({ series, y, join, ...frame }: FrameProps & { series: LineSeries[]; y: { label: string; format: (v: number) => string }; join?: { quarter: string; note: string } | undefined }) {
   const gid = ballId(useId());
   const H = 260, m = { l: 40, r: 124, t: 14, b: 34 };
   const xs = [...new Set(series.flatMap(s => s.points.map(p => p.x)))].sort(), dy = extent(series.flatMap(s => s.points.map(p => p.y)));
   const sx = (q: string) => (xs.length < 2 ? (m.l + W - m.r) / 2 : m.l + (xs.indexOf(q) / (xs.length - 1)) * (W - m.r - m.l)), sy = linear(dy, [H - m.b, m.t]);
   const years = [...new Set(xs.map(q=>q.slice(0,4)))];
-  const readPoints = xs.map(q=>({x:sx(q),y:sy(series[0]?.points.find(p=>p.x===q)?.y ?? 0),period:quarterText(q),lines:series.flatMap(s=>{const p=s.points.find(p=>p.x===q);return p?[`${s.label} ${decimalLabel(y.format(p.y))}`]:[]})}));
+  const readPoints = xs.map(q=>({x:sx(q),y:sy(series[0]?.points.find(p=>p.x===q)?.y ?? 0),period:quarterText(q),lines:[...series.flatMap(s=>{const p=s.points.find(p=>p.x===q);return p?[`${s.label} ${decimalLabel(y.format(p.y))}`]:[]}), ...(join?.quarter === q ? [join.note] : [])]}));
   const empty = !series.some(s => s.points.length);
   return <ChartFrame {...frame} interaction={false} isEmpty={empty} table={{ columns: ["Quarter", ...series.map(s => s.label)], rows: xs.map(q => [q, ...series.map(s => { const p = s.points.find(v => v.x === q); return p ? y.format(p.y) : "—"; })]) }}>
     {ids => <ChartInteraction width={W} height={H} points={readPoints} label={frame.title}><svg viewBox={`0 0 ${W} ${H}`} className="tk-svg" role="img" aria-labelledby={ids.title} aria-describedby={ids.note}>
       <GumballDefs id={gid} />
       {ticks(dy[0], dy[1], 4).map(t => <g key={t} aria-hidden="true"><line x1={m.l} x2={W - m.r} y1={sy(t)} y2={sy(t)} className="tk-svg-grid" /><text x={m.l - 6} y={sy(t) + 4} textAnchor="end" className="tk-svg-text tk-svg-muted">{y.format(t)}</text></g>)}
       <Axis y0={H - m.b} x0={m.l} x1={W - m.r} />
+      {join && xs.includes(join.quarter) && <line x1={sx(join.quarter)} x2={sx(join.quarter)} y1={H - m.b - 8} y2={H - m.b + 8} className="tk-svg-axis"><title>{join.note}</title></line>}
       {years.map((year,i)=>{const q=xs.find(q=>q.startsWith(year));return q && <g key={year} aria-hidden="true"><line x1={sx(q)} x2={sx(q)} y1={H-m.b} y2={H-m.b+5} className="tk-svg-axis" />{(years.length<=4 || i%2===0 || i===years.length-1) && <text x={sx(q)} y={H-m.b+20} textAnchor="middle" className="tk-svg-text tk-svg-muted">{year}</text>}</g>;})}
       {series.map((s, i) => { const ball = SERIES_BALL[i % SERIES_BALL.length]!, last = s.points[s.points.length - 1], pts = s.points.map(p => `${sx(p.x)},${sy(p.y)}`).join(" "); return <g key={s.id} data-series={ball}>
         <g aria-hidden="true" fill="none" strokeLinejoin="round" strokeLinecap="round"><polyline points={pts} strokeWidth={lw(8)} className="tk-svg-line-outer" /><polyline points={pts} strokeWidth={lw(5)} className="tk-svg-line-inner" /><polyline points={pts} strokeWidth={lw(3)} style={{ stroke: `var(--tk-gumball-${ball}-base)` }} /></g>
@@ -109,7 +110,7 @@ function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }:
 type ConeProps = Parameters<typeof Cone>[0];
 
 export type QuarterLineProps =
-  | (FrameProps & { look: "read"; series: LineSeries[]; y: { label: string; format: (v: number) => string } })
+  | (FrameProps & { look: "read"; series: LineSeries[]; y: { label: string; format: (v: number) => string }; join?: { quarter: string; note: string } | undefined })
   | { look: "read"; card: Pick<CardModel, "series" | "forecast">; label: string; caption: ReactNode; basis?: Basis | undefined }
   | (ConeProps & { look: "data"; label?: string | undefined });
 /** Line by quarter in either look. */

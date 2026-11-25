@@ -4,6 +4,7 @@
 // false or zero. Section roles are the crawler's rule-based guess. No AI anywhere.
 
 export const STRUCTURE_FLOOR = 15;
+export const NAV_BUTTON_JOIN = { quarter: "2026Q4", note: "From 25 November 2026 slug also reads menu buttons, so the latest quarter counts more navigation items than earlier ones." };
 export type Viewport = "desktop" | "mobile";
 export const DESKTOP_SCREEN_PX = 900;
 export const PHONE_SCREEN_PX = 844;
@@ -34,7 +35,7 @@ export type StructureRecord = {
   nav_items: number | null; nav_depth: 1 | 2 | null; nav_labels: string[] | null; nav_words: NavWord[] | null; signin: SigninWording | null; signin_read: boolean;
   screens: number | null; first_buttons: number | null; bands: number | null;
   /** From the structure key; all null (or empty with structure_read false) when not read. */
-  structure_read: boolean; roles: string[] | null; sections: Section[] | null; page_h: number | null;
+  structure_read: boolean; roles: string[] | null; sections: Section[] | null; page_h: number | null; n_sections?: number | null;
   positions: Partial<Record<"logos" | "testimonials" | "pricing" | "faq" | "stats", number | null>> | null;
   primary_ask: string | null; asks: Ask[] | null; asks_n: number | null; start_and_demo: boolean | null;
   furniture: Furniture | null; mobile: PhoneFields | null; accent: string | null;
@@ -50,10 +51,11 @@ export function normLabel(raw: string): string {
 export function undouble(l: string): string { const w = l.trim().split(/\s+/); if (w.length % 2 === 0) { const a = w.slice(0, w.length / 2).join(" "), b = w.slice(w.length / 2).join(" "); if (a.toLowerCase() === b.toLowerCase()) return a; } return w.join(" "); }
 const LOGO = /(^|\s)home(page)?$|^navigate to home|^skip to|^go to home|^logo$|^back to top/;
 /** Top-level navigation items: depth 1 and visible, logo/home and skip links left out. Fewer than two such items = not read. */
-export function topLabels(nav: unknown): string[] | null {
-  if (!Array.isArray(nav)) return null;
+export function topLabels(nav: unknown, buttons?: unknown): string[] | null {
+  if (!Array.isArray(nav) && !Array.isArray(buttons)) return null;
   const out: string[] = [];
-  for (const n of nav) {
+  const items = [...(Array.isArray(nav) ? nav : []), ...(Array.isArray(buttons) ? buttons.filter((b): b is string => typeof b === "string").map(label => ({ label, depth: 1, visible: true })) : [])];
+  for (const n of items) {
     if (!isObj(n) || n["depth"] !== 1 || n["visible"] !== true) continue;
     const l = str(n["label"]); if (!l) continue;
     const t = normLabel(l); if (!t || LOGO.test(t) || t.length > 40) continue;
@@ -76,7 +78,8 @@ export const quarterOf = quarterOfDate;
 
 export function deriveRecord(s: StructureInput): StructureRecord {
   const vp: Viewport = s.viewport === "mobile" ? "mobile" : "desktop";
-  const labels = topLabels(s.nav);
+  const rawFurniture = isObj(s.structure) && isObj(s.structure["furniture"]) ? s.structure["furniture"] : null;
+  const labels = topLabels(s.nav, rawFurniture?.["nav_buttons"]);
   const words = labels ? [...new Set(labels.map(leadWord).filter((w): w is NavWord => !!w))] : null;
   const depth = Array.isArray(s.nav) ? (s.nav.some(n => isObj(n) && n["depth"] === 2) ? 2 : 1) : null;
   const st = isObj(s.structure) && s.structure["v"] != null ? s.structure : null;
@@ -102,7 +105,7 @@ export function deriveRecord(s: StructureInput): StructureRecord {
   return {
     nav_items: labels ? labels.length : null, nav_depth: labels ? (depth as 1 | 2) : null, nav_labels: labels, nav_words: words, signin, signin_read: !!labels || !!furniture,
     screens, first_buttons: firstButtons, bands,
-    structure_read: !!st, roles: sections ? sections.map(x => x.r) : null, sections, page_h: pageH,
+    structure_read: !!st, roles: sections ? sections.map(x => x.r) : null, sections, page_h: pageH, n_sections: st ? num(st["n_sections"]) : null,
     positions: st ? { logos: pos("logos"), testimonials: pos("testimonials"), pricing: pos("pricing"), faq: pos("faq"), stats: pos("stats") } : null,
     primary_ask: primary?.k ?? null, asks, asks_n: asks ? asks.length : null, start_and_demo: asks ? asks.some(a => a.k === "start") && asks.some(a => a.k === "demo" || a.k === "sales") : null,
     furniture, mobile, accent,
@@ -217,6 +220,12 @@ export const passesFloor = (s: { n_read: number } | null | undefined) => !!s && 
 export const NOT_READ = "Not read yet. slug reads page structure on the next weekly pass.";
 export const TOO_FEW = `Fewer than ${STRUCTURE_FLOOR} brands read yet.`;
 export const pctText = (x: number | null) => (x == null ? "—" : `${Math.round(x * 100)}%`);
+/** Stop at the captured sections when the stored list is truncated; never imply an unread blank tail. */
+export function stripExtent(r: Pick<StructureRecord, "sections" | "page_h" | "n_sections">) {
+  const sections = r.sections ?? [], more = Math.max(0, (r.n_sections ?? sections.length) - sections.length);
+  const end = Math.max(1, ...sections.map(s => s.y + s.h));
+  return { more, total: more ? end : Math.max(end, r.page_h ?? 0) };
+}
 /** "Desktop 41% · Phone 28%", each side only past the floor. */
 export function desktopPhone(d: { n_read: number; n_yes: number } | null | undefined, p: { n_read: number; n_yes: number } | null | undefined): { desktop: number | null; phone: number | null; line: string | null } {
   const a = shareOf(d), b = shareOf(p);

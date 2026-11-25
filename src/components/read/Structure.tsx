@@ -3,7 +3,7 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { brandStructureQuery, navPatternsQuery, scopeStructureQuery, structureIndexQuery, structureSignalQuery } from "@/lib/data";
-import { ASK_NAME, NAV_WORDS, NOT_READ, PHONE_NAV_NAME, ROLE_NAME, SIGNIN_WORDINGS, STRUCTURE_FLOOR, TOO_FEW, desktopPhone, navWordKey, pctText, quarterBack, quarterLabel, shareOf, signinKey, nearestRead, covered, type SeriesRow, type StructureRecord } from "@/lib/structure";
+import { ASK_NAME, NAV_WORDS, NAV_BUTTON_JOIN, stripExtent, NOT_READ, PHONE_NAV_NAME, ROLE_NAME, SIGNIN_WORDINGS, STRUCTURE_FLOOR, TOO_FEW, desktopPhone, navWordKey, pctText, quarterBack, quarterLabel, shareOf, signinKey, nearestRead, covered, type SeriesRow, type StructureRecord } from "@/lib/structure";
 import { sectorName } from "@/lib/labels";
 import { Bars, QuarterLine, Sparkline } from "@/components/chartkit";
 import { INK, MUTED, PAGE, RULE } from "@/components/chartkit/ink";
@@ -14,19 +14,21 @@ const signed = (v: number | null) => (v == null ? "—" : `${v >= 0 ? "+" : "−
 
 /** (a) the page as a vertical strip of its sections, each band's height proportional to its section. Hero in the brand's stored accent. */
 export function PageStrip({ r, label }: { r: StructureRecord; label: string }) {
-  const secs = (r.sections ?? []).filter(s => s.h > 0), total = Math.max(1, r.page_h ?? 0, ...secs.map(s => s.y + s.h));
+  const secs = (r.sections ?? []).filter(s => s.h > 0), { total, more } = stripExtent(r);
   const H = 360, BW = 56;
+  const drawH = more ? H - 28 : H;
   return <figure className="min-w-0" data-structure-strip={label}>
     <figcaption className="ed-kicker">{label}{r.screens != null ? ` · ${r.screens.toFixed(1)} screens` : ""}</figcaption>
     <svg viewBox={`0 0 220 ${H}`} className="mt-2 block h-[360px] w-full max-w-[220px]" role="img" aria-label={`${label}: ${secs.map(s => ROLE_NAME[s.r] ?? s.r).join(", ") || "no sections read"}`}>
-      <rect x={0} y={0} width={BW} height={H} fill={PAGE} stroke={RULE} />
-      {(() => { let last = -Infinity; return secs.map((s, i) => { const y = (s.y / total) * H, h = Math.max(1, (s.h / total) * H), hero = s.r === "hero", ty = y + Math.min(h / 2 + 4, Math.max(10, h - 2));
+      <rect x={0} y={0} width={BW} height={drawH} fill={PAGE} stroke={RULE} />
+      {(() => { let last = -Infinity; return secs.map((s, i) => { const y = (s.y / total) * drawH, h = Math.max(1, (s.h / total) * drawH), hero = s.r === "hero", ty = y + Math.min(h / 2 + 4, Math.max(10, h - 2));
         // A label shows only when its band is tall enough and it clears the label above, so names never overlap.
         const show = h >= 11 && ty - last >= 13; if (show) last = ty;
         return <g key={i} aria-hidden="true">
           <rect x={0} y={y} width={BW} height={h} fill={hero && r.accent ? r.accent : PAGE} stroke={INK} strokeWidth={1} />
           {show && <text x={BW + 8} y={ty} className="tk-svg-text" style={{ fill: hero ? INK : MUTED }}>{ROLE_NAME[s.r] ?? s.r}</text>}
         </g>; }); })()}
+      {more > 0 && <g><rect x={0} y={drawH} width={BW} height={24} fill={PAGE} stroke={RULE} strokeDasharray="3 2" /><text x={BW + 8} y={drawH + 17} className="tk-svg-text">+{more} more sections</text></g>}
     </svg>
   </figure>;
 }
@@ -40,7 +42,9 @@ export function StructurePart({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(brandStructureQuery(domain));
   const d = data.desktop?.record ?? null, p = data.phone?.record ?? null;
   if (!d && !p) return <p className="ed-small" data-structure-none="">{NOT_READ}</p>;
-  const main = d ?? p!, f = main.furniture ?? {}, asks = [...(main.asks ?? [])].sort((a, b) => Number(b.p) - Number(a.p));
+  const main = d ?? p;
+  if (!main) return null;
+  const f = main.furniture ?? {}, asks = [...(main.asks ?? [])].sort((a, b) => Number(b.p) - Number(a.p));
   const m = p?.mobile ?? null, yes = (v: unknown) => !!v;
   return <div data-structure-block="">
     <div className="flex flex-wrap gap-8">{d && <PageStrip r={d} label="Desktop" />}{p && <PageStrip r={p} label="Phone" />}</div>
@@ -116,7 +120,7 @@ export function StructureSignalView({ k }: { k: string }) {
   const { data } = useSuspenseQuery(structureSignalQuery(k));
   if (!data) return null;
   const vp = data.viewports.includes("desktop") ? "desktop" : "phone";
-  const pts = data.trail.filter(t => (vp === "desktop" ? t.desktop : t.phone) != null).map(t => ({ x: t.quarter, y: (vp === "desktop" ? t.desktop : t.phone)! }));
+  const pts = data.trail.flatMap(t => { const y = vp === "desktop" ? t.desktop : t.phone; return y == null ? [] : [{ x: t.quarter, y }]; });
   return <div className="ed-wrap mt-10 space-y-12" data-structure-signal={k}>
     <section aria-labelledby="ss-now">
       <h2 id="ss-now" className="ed-h3">Now</h2>
@@ -124,7 +128,8 @@ export function StructureSignalView({ k }: { k: string }) {
     </section>
     <section aria-labelledby="ss-trail">
       <h2 id="ss-trail" className="ed-h3">By quarter</h2>
-      {pts.length >= 2 ? <div className="mt-3"><QuarterLine look="read" series={[{ id: k, label: vp === "desktop" ? "Desktop" : "Phone", points: pts }]} y={{ label: "Share of brands read", format: x => pctText(x) }} title={`${data.name}, ${vp === "desktop" ? "desktop" : "phone"}`} note={`Quarters with ${STRUCTURE_FLOOR} or more brands read and at least a quarter of the most ever read; archived copies come about twice a year.`} source="Stored homepage captures and archive history" /></div>
+      {k.startsWith("nav:") && <p className="ed-caption mt-2">{NAV_BUTTON_JOIN.note}</p>}
+      {pts.length >= 2 ? <div className="mt-3"><QuarterLine look="read" series={[{ id: k, label: vp === "desktop" ? "Desktop" : "Phone", points: pts }]} join={k.startsWith("nav:") ? NAV_BUTTON_JOIN : undefined} y={{ label: "Share of brands read", format: x => pctText(x) }} title={`${data.name}, ${vp === "desktop" ? "desktop" : "phone"}`} note={`Quarters with ${STRUCTURE_FLOOR} or more brands read and at least a quarter of the most ever read; archived copies come about twice a year.`} source="Stored homepage captures and archive history" /></div>
         : <p className="ed-small mt-3">{data.source === "history" ? TOO_FEW : `This reading started ${pts[0] ? `in ${quarterLabel(pts[0].x)}` : "with the newest captures"}; a line needs two quarters.`}</p>}
     </section>
     <section aria-labelledby="ss-sectors">
@@ -149,8 +154,8 @@ export function NavPatternsView({ look = "read" }: { look?: "read" | "data" }) {
   const at = (rows: SeriesRow[], key: string, qq: string | null) => (qq ? rows.find(r => r.signal === key && r.quarter === qq) ?? null : null);
   const thenQ = back ? nearestRead(data.words, navWordKey("pricing"), "desktop", back)?.quarter ?? null : null;
   const words = NAV_WORDS.map(w => { const k = navWordKey(w), now = shareOf(at(data.words, k, q)), then = shareOf(at(data.words, k, thenQ));
-    const trail = covered(data.words.filter(r => r.signal === k)).sort((a, b) => a.quarter.localeCompare(b.quarter)).map(r => r.n_yes / r.n_read);
-    return { w, now, then, change: now != null && then != null ? now - then : null, trail }; }).sort((a, b) => (b.now ?? -1) - (a.now ?? -1));
+    const rows = covered(data.words.filter(r => r.signal === k)).sort((a, b) => a.quarter.localeCompare(b.quarter));
+    return { w, now, then, change: now != null && then != null ? now - then : null, trail: rows.map(r => r.n_yes / r.n_read), periods: rows.map(r => r.quarter), counts: rows.map(r => `${r.n_yes} of ${r.n_read}`) }; }).sort((a, b) => (b.now ?? -1) - (a.now ?? -1));
   const okQ = new Set(covered(data.signin.filter(r => r.signal === signinKey("log in"))).map(r => r.quarter));
   const qs = [...new Set(data.signin.map(r => r.quarter))].sort().filter(qq => okQ.has(qq));
   const split = qs.map(qq => ({ q: qq, parts: SIGNIN_WORDINGS.map(w => ({ w, s: shareOf(at(data.signin, signinKey(w), qq)) ?? 0 })) }));
@@ -158,11 +163,12 @@ export function NavPatternsView({ look = "read" }: { look?: "read" | "data" }) {
   return <div className="space-y-12" data-nav-patterns={look}>
     <section aria-labelledby="nav-words">
       <h2 id="nav-words" className={look === "read" ? "ed-h3" : "tk-t-label"}>Words that lead the top navigation</h2>
+      <p className={look === "read" ? "ed-caption mt-2" : "tk-t-caption tk-c-muted mt-2"}>{NAV_BUTTON_JOIN.note}</p>
       <p className={look === "read" ? "ed-caption mt-1" : "tk-t-caption tk-c-muted mt-1"}>Share of the homepages slug reads whose top navigation has an item starting with the word, desktop{q ? `, ${quarterLabel(q)}` : ""} against {thenQ ? quarterLabel(thenQ) : "five years ago (too few read)"}; archived copies come about twice a year, so “five years ago” is the nearest quarter with enough brands read. A share needs {STRUCTURE_FLOOR} brands read.</p>
       <div className="mt-3 overflow-x-auto"><table className={look === "read" ? "ed-data w-full tabular-nums" : "tk-t-data w-full tabular-nums"} data-nav-words="">
         <thead><tr className="ed-kicker text-left"><th className="py-2 pr-3">Word</th><th className="py-2 pr-3 text-right">Now</th><th className="py-2 pr-3 text-right">Five years ago</th><th className="py-2 pr-3 text-right">Change</th><th className="hidden py-2 md:table-cell">By quarter</th></tr></thead>
         <tbody>{words.map(r => <tr key={r.w} className="ed-hair"><td className="py-2 pr-3">{word(r.w)}</td><td className="py-2 pr-3 text-right">{pctText(r.now)}</td><td className="py-2 pr-3 text-right">{pctText(r.then)}</td><td className="py-2 pr-3 text-right">{signed(r.change)}</td>
-          <td className="hidden py-2 md:table-cell"><Sparkline look="read" w={160} h={24} values={r.trail} label={`“${word(r.w)}” in navigation, by quarter`} /></td></tr>)}</tbody>
+          <td className="hidden py-2 md:table-cell"><Sparkline look="read" w={160} h={24} values={r.trail} periods={r.periods} counts={r.counts} join={NAV_BUTTON_JOIN} interactive label={`“${word(r.w)}” in navigation, by quarter`} /></td></tr>)}</tbody>
       </table></div>
     </section>
     <section aria-labelledby="nav-signin">
