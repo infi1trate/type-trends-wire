@@ -189,6 +189,168 @@ export type Database = {
         }
         Relationships: []
       }
+      app_listing_versions: {
+        Row: {
+          age: string | null
+          app_id: string
+          currency: string | null
+          first_seen: string
+          id: number
+          languages: number | null
+          min_os: string | null
+          notes: string | null
+          notes_chars: number
+          price: number | null
+          shots: Json
+          size_mb: number | null
+          store: string
+          version: string
+          version_at: string | null
+        }
+        Insert: {
+          age?: string | null
+          app_id: string
+          currency?: string | null
+          first_seen?: string
+          id?: never
+          languages?: number | null
+          min_os?: string | null
+          notes?: string | null
+          notes_chars?: number
+          price?: number | null
+          shots?: Json
+          size_mb?: number | null
+          store: string
+          version?: string
+          version_at?: string | null
+        }
+        Update: {
+          age?: string | null
+          app_id?: string
+          currency?: string | null
+          first_seen?: string
+          id?: never
+          languages?: number | null
+          min_os?: string | null
+          notes?: string | null
+          notes_chars?: number
+          price?: number | null
+          shots?: Json
+          size_mb?: number | null
+          store?: string
+          version?: string
+          version_at?: string | null
+        }
+        Relationships: []
+      }
+      app_listing_weeks: {
+        Row: {
+          app_id: string
+          chart: string
+          day: string
+          genre_id: number
+          genre_name: string
+          id: number
+          rank: number
+          rating: number | null
+          ratings: number | null
+          store: string
+          stored_at: string
+          version: string
+          week: string
+        }
+        Insert: {
+          app_id: string
+          chart: string
+          day: string
+          genre_id: number
+          genre_name: string
+          id?: never
+          rank: number
+          rating?: number | null
+          ratings?: number | null
+          store: string
+          stored_at?: string
+          version?: string
+          week: string
+        }
+        Update: {
+          app_id?: string
+          chart?: string
+          day?: string
+          genre_id?: number
+          genre_name?: string
+          id?: never
+          rank?: number
+          rating?: number | null
+          ratings?: number | null
+          store?: string
+          stored_at?: string
+          version?: string
+          week?: string
+        }
+        Relationships: []
+      }
+      app_listings: {
+        Row: {
+          about: string | null
+          about_changed_at: string | null
+          about_chars: number
+          about_words: number
+          app_id: string
+          first_at: string | null
+          first_seen: string
+          genre: string | null
+          id: number
+          last_seen: string
+          link: string
+          maker: string
+          name: string
+          removed_at: string | null
+          removed_reason: string | null
+          site: string | null
+          store: string
+        }
+        Insert: {
+          about?: string | null
+          about_changed_at?: string | null
+          about_chars?: number
+          about_words?: number
+          app_id: string
+          first_at?: string | null
+          first_seen?: string
+          genre?: string | null
+          id?: never
+          last_seen?: string
+          link: string
+          maker: string
+          name: string
+          removed_at?: string | null
+          removed_reason?: string | null
+          site?: string | null
+          store: string
+        }
+        Update: {
+          about?: string | null
+          about_changed_at?: string | null
+          about_chars?: number
+          about_words?: number
+          app_id?: string
+          first_at?: string | null
+          first_seen?: string
+          genre?: string | null
+          id?: never
+          last_seen?: string
+          link?: string
+          maker?: string
+          name?: string
+          removed_at?: string | null
+          removed_reason?: string | null
+          site?: string | null
+          store?: string
+        }
+        Relationships: []
+      }
       art_works: {
         Row: {
           artist: string | null

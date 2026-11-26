@@ -472,9 +472,10 @@ export async function prodDeps(): Promise<DeskDeps> {
       draftStatus: async r => (await import("../newsroom/publisher.server")).insertDraftStatus(db, r),
       audience: async r => (await import("../newsroom/publisher.server")).insertAudience(db, r),
       sourceNote: async r => (await import("../newsroom/scout.server")).insertSourceNote(db, r),
+      // M2a · icon_remove also marks the app's listing removed and blanks its stored text, before the icon rows.
       // W3d-c · a removal rewrites the stored copies that can show the work or the app and clears this server's copies at once.
       artRemove: async r => { const out = await (await import("../art/ingest.server")).removeArtWork(r); return out && "removed" in out ? { ...out, copies: await (await import("../removal.server")).afterRemoval("art") } : out; },
-      iconRemove: async r => { const out = await (await import("../icons/ingest.server")).removeIconApp(r); return out && "removed" in out ? { ...out, copies: await (await import("../removal.server")).afterRemoval("icon") } : out; },
+      iconRemove: async r => { await (await import("../listings/ingest.server")).removeListingApp(r.app_id, r.reason); const out = await (await import("../icons/ingest.server")).removeIconApp(r); return out && "removed" in out ? { ...out, copies: await (await import("../removal.server")).afterRemoval("icon") } : out; },
       panelStep: async (who, dry) => (await import("../panel.server")).runPanelStep(db, who, new Date(), { dry }),
       candidateStatus: async r => (await import("../newsroom/scout.server")).insertCandidateStatus(db, r),
       rewrite: async r => (await import("./rewrite.server")).insertRewriteRequest(db, r),

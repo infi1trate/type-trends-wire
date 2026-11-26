@@ -90,6 +90,7 @@ import { Route as ApiPublicIngestCrawlRouteImport } from './routes/api/public/in
 import { Route as ApiPublicIngestCropsRouteImport } from './routes/api/public/ingest-crops'
 import { Route as ApiPublicIngestGfontsRouteImport } from './routes/api/public/ingest-gfonts'
 import { Route as ApiPublicIngestIconsRouteImport } from './routes/api/public/ingest-icons'
+import { Route as ApiPublicIngestListingsRouteImport } from './routes/api/public/ingest-listings'
 import { Route as ApiPublicIngestProducthuntRouteImport } from './routes/api/public/ingest-producthunt'
 import { Route as ApiPublicIngestSeriesRouteImport } from './routes/api/public/ingest-series'
 import { Route as ApiPublicIngestThumbsRouteImport } from './routes/api/public/ingest-thumbs'
@@ -525,6 +526,11 @@ const ApiPublicIngestIconsRoute = ApiPublicIngestIconsRouteImport.update({
   path: '/api/public/ingest-icons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestListingsRoute = ApiPublicIngestListingsRouteImport.update({
+  id: '/api/public/ingest-listings',
+  path: '/api/public/ingest-listings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIngestProducthuntRoute =
   ApiPublicIngestProducthuntRouteImport.update({
     id: '/api/public/ingest-producthunt',
@@ -735,6 +741,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-icons': typeof ApiPublicIngestIconsRoute
+  '/api/public/ingest-listings': typeof ApiPublicIngestListingsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-series': typeof ApiPublicIngestSeriesRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
@@ -842,6 +849,7 @@ export interface FileRoutesByTo {
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-icons': typeof ApiPublicIngestIconsRoute
+  '/api/public/ingest-listings': typeof ApiPublicIngestListingsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-series': typeof ApiPublicIngestSeriesRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
@@ -950,6 +958,7 @@ export interface FileRoutesById {
   '/api/public/ingest-crops': typeof ApiPublicIngestCropsRoute
   '/api/public/ingest-gfonts': typeof ApiPublicIngestGfontsRoute
   '/api/public/ingest-icons': typeof ApiPublicIngestIconsRoute
+  '/api/public/ingest-listings': typeof ApiPublicIngestListingsRoute
   '/api/public/ingest-producthunt': typeof ApiPublicIngestProducthuntRoute
   '/api/public/ingest-series': typeof ApiPublicIngestSeriesRoute
   '/api/public/ingest-thumbs': typeof ApiPublicIngestThumbsRoute
@@ -1059,6 +1068,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-icons'
+    | '/api/public/ingest-listings'
     | '/api/public/ingest-producthunt'
     | '/api/public/ingest-series'
     | '/api/public/ingest-thumbs'
@@ -1166,6 +1176,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-icons'
+    | '/api/public/ingest-listings'
     | '/api/public/ingest-producthunt'
     | '/api/public/ingest-series'
     | '/api/public/ingest-thumbs'
@@ -1273,6 +1284,7 @@ export interface FileRouteTypes {
     | '/api/public/ingest-crops'
     | '/api/public/ingest-gfonts'
     | '/api/public/ingest-icons'
+    | '/api/public/ingest-listings'
     | '/api/public/ingest-producthunt'
     | '/api/public/ingest-series'
     | '/api/public/ingest-thumbs'
@@ -1381,6 +1393,7 @@ export interface RootRouteChildren {
   ApiPublicIngestCropsRoute: typeof ApiPublicIngestCropsRoute
   ApiPublicIngestGfontsRoute: typeof ApiPublicIngestGfontsRoute
   ApiPublicIngestIconsRoute: typeof ApiPublicIngestIconsRoute
+  ApiPublicIngestListingsRoute: typeof ApiPublicIngestListingsRoute
   ApiPublicIngestProducthuntRoute: typeof ApiPublicIngestProducthuntRoute
   ApiPublicIngestSeriesRoute: typeof ApiPublicIngestSeriesRoute
   ApiPublicIngestThumbsRoute: typeof ApiPublicIngestThumbsRoute
@@ -1976,6 +1989,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestIconsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingest-listings': {
+      id: '/api/public/ingest-listings'
+      path: '/api/public/ingest-listings'
+      fullPath: '/api/public/ingest-listings'
+      preLoaderRoute: typeof ApiPublicIngestListingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ingest-producthunt': {
       id: '/api/public/ingest-producthunt'
       path: '/api/public/ingest-producthunt'
@@ -2229,6 +2249,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIngestCropsRoute: ApiPublicIngestCropsRoute,
   ApiPublicIngestGfontsRoute: ApiPublicIngestGfontsRoute,
   ApiPublicIngestIconsRoute: ApiPublicIngestIconsRoute,
+  ApiPublicIngestListingsRoute: ApiPublicIngestListingsRoute,
   ApiPublicIngestProducthuntRoute: ApiPublicIngestProducthuntRoute,
   ApiPublicIngestSeriesRoute: ApiPublicIngestSeriesRoute,
   ApiPublicIngestThumbsRoute: ApiPublicIngestThumbsRoute,
