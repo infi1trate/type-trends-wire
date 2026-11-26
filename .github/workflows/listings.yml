@@ -1,0 +1,50 @@
+name: app-listings
+# M2 · Reads what each top-free app's App Store listing says about itself (version and date, the "What's New" note, the opening
+# of the description, price, category, rating, size, maker's website, screenshot count and orientation) for the same eighteen
+# charts as the icon reading: one chart read and one lookup per category, paced under Apple's stated limit. The first two
+# screenshots are measured for colour in memory. No picture is kept or sent. By hand only until the site takes listings
+# (a run by hand is a dry run unless dry_run is set to 0; a site without the endpoint ends the run green with a notice).
+on:
+  workflow_dispatch:
+    inputs:
+      genres:
+        description: "Category names, comma-separated (empty = all eighteen)"
+        default: ""
+      limit:
+        description: "Apps per category (1-100)"
+        default: "100"
+      shots:
+        description: "Screenshots measured per app (0-2)"
+        default: "2"
+      dry_run:
+        description: "1 = read, print and upload the rows as an artifact; send nothing"
+        default: "1"
+permissions:
+  contents: read
+concurrency: { group: slug-app-listings, cancel-in-progress: false }
+defaults:
+  run:
+    working-directory: crawler
+jobs:
+  listings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: crawler/package-lock.json }
+      - run: npm ci
+      - name: Read the listings
+        env:
+          CRAWL_ENDPOINT: https://slug.global/api/public/ingest-crawl
+          CRAWL_SECRET: ${{ secrets.CRAWL_SECRET }}
+          LISTING_GENRES: ${{ inputs.genres || '' }}
+          LISTING_LIMIT: ${{ inputs.limit || '100' }}
+          LISTING_SHOTS: ${{ inputs.shots || '2' }}
+          LISTINGS_OUT: listings-out
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node src/listings.js
+      - name: Keep the rows of a dry run
+        if: ${{ inputs.dry_run == '1' }}
+        uses: actions/upload-artifact@v4
+        with: { name: listings-out, path: crawler/listings-out, retention-days: 7, if-no-files-found: ignore }
