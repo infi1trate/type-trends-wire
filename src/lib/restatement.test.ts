@@ -56,3 +56,24 @@ describe("R2b · every cross-run comparison goes through the panel rule", () => 
     expect(bad).toEqual([]);
   });
 });
+
+import { notReadyByReason, panelRecordKey, markedAt } from "./panel";
+describe("R2b · the dry step tells engineering why, and a real step marks brand lists", () => {
+  it("groups not-ready brands by reason with counts, examples and quarters", () => {
+    const g = notReadyByReason([
+      { domain: "b.com", missing: ["live home captures are not more than 24 hours apart"] },
+      { domain: "a.com", missing: ["live home captures are not more than 24 hours apart", "archive quarters not settled: 2022Q1, 2023Q1"] },
+      { domain: "c.com", missing: ["latest live capture does not read clearly"] },
+    ]);
+    expect(g[0]).toEqual({ reason: "second live reading less than a day after the first", count: 2, examples: ["a.com", "b.com"] });
+    expect(g.find(x => x.reason === "yearly archive quarter not settled")?.quarters).toEqual(["2022Q1", "2023Q1"]);
+    expect(g.find(x => x.reason === "latest reading unclear")?.count).toBe(1);
+    expect(notReadyByReason(Array.from({ length: 30 }, (_, i) => ({ domain: `d${i}.com`, missing: ["latest live capture does not read clearly"] })))[0]!.examples).toHaveLength(20);
+  });
+  it("marks brand lists, not brand cards; a marked record is past its interval", () => {
+    expect(panelRecordKey("brands-index")).toBe(true);
+    expect(panelRecordKey("collection:x:1")).toBe(true);
+    expect(panelRecordKey("brand-card:a.com")).toBe(false);
+    expect(Date.parse(markedAt(900_000, 1e12))).toBe(1e12 - 901_000);
+  });
+});

@@ -1,7 +1,7 @@
 /** R2a · loads readiness from stored rows and performs the one dated panel step. Pure rules live in panel.ts. */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { onboarding, panelInvariantProblems, planPanelStep, quarterOf, readiness, PANEL_RECOMPUTE_TOPICS, type PanelSite, type PanelStepPlan } from "./panel";
+import { AFTER_FORECAST_NOTE, markedAt, notReadyByReason, onboarding, panelInvariantProblems, panelRecordKey, planPanelStep, quarterOf, readiness, PANEL_RECOMPUTE_TOPICS, type NotReadyGroup, type PanelSite, type PanelStepPlan } from "./panel";
 type Admin = SupabaseClient<Database>;
 
 /** A capture reads clearly when it carries measured type or colour and no blocked reason. */
@@ -48,16 +48,16 @@ export async function readyDomains(db: Admin, sites: readonly PanelSite[], now =
   return (await readinessReport(db, sites, now)).ready;
 }
 
-export type DryStep = { dry: true; joining: string[]; by_sector: Record<string, number>; brands_before: number; brands_after: number; not_ready: Waiting[] };
+export type DryStep = { dry: true; joining: string[]; by_sector: Record<string, number>; brands_before: number; brands_after: number; not_ready: Waiting[]; /** R2b · for the desk log detail. */ not_ready_by_reason: NotReadyGroup[] };
 /** The door's panel_step: every ready brand joins at once (one statement), the step is recorded and the full recompute is marked.
  *  { dry: true } answers who would join and who is not ready, and writes nothing. */
-export async function runPanelStep(db: Admin, who: string, now = new Date(), opts: { dry?: boolean } = {}): Promise<{ step: PanelStepPlan } | { refused: string } | DryStep> {
+export async function runPanelStep(db: Admin, who: string, now = new Date(), opts: { dry?: boolean } = {}): Promise<{ step: PanelStepPlan; records?: { marked: string[]; failed: boolean }; note?: string } | { refused: string } | DryStep> {
   const sites = await loadSites(db);
   const { ready, waiting } = await readinessReport(db, sites, now);
   const plan = planPanelStep(sites, ready, now.toISOString());
   if (opts.dry) {
     const before = sites.filter(s => s.active === true && s.panel_since).length;
-    return { dry: true, joining: plan?.domains ?? [], by_sector: plan?.by_sector ?? {}, brands_before: before, brands_after: plan?.brands_after ?? before, not_ready: waiting };
+    return { dry: true, joining: plan?.domains ?? [], by_sector: plan?.by_sector ?? {}, brands_before: before, brands_after: plan?.brands_after ?? before, not_ready: waiting, not_ready_by_reason: notReadyByReason(waiting) };
   }
   if (!plan || plan.domains.length < 1) return { refused: "No onboarding brand is ready to join the panel." };
   // One statement: active, not onboarding, dated. library_sites_mark_upd marks their history for recompute (active changed).
@@ -66,7 +66,28 @@ export async function runPanelStep(db: Admin, who: string, now = new Date(), opt
   const { error: e2 } = await db.from("panel_steps").insert({ at: plan.at, brands_before: plan.brands_before, brands_after: plan.brands_after, by_sector: plan.by_sector, who, domains: plan.domains });
   if (e2) throw new Error("panel_step_insert_failed");
   await db.from("work_marks").upsert(PANEL_RECOMPUTE_TOPICS.map(topic => ({ topic, marked_at: plan.at, done_at: null })));
-  return { step: plan };
+  // R2b · mark the stored brand lists and counts so the records sweep rebuilds them at its next pass (no new job).
+  const records = await markPanelRecords(db, now.getTime()).catch(() => ({ marked: [] as string[], failed: true }));
+  return { step: plan, records, note: AFTER_FORECAST_NOTE };
+}
+
+/** Backdates the last build and last check of every stored record that lists or counts brands, to just past its interval. */
+export async function markPanelRecords(db: Admin, now: number): Promise<{ marked: string[]; failed: boolean }> {
+  const { everyOf } = await import("./records/records");
+  const keys: string[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from("read_records").select("key").order("key").range(from, from + 999);
+    if (error) throw new Error("panel_records_read_failed");
+    keys.push(...(data ?? []).map(r => r.key).filter(panelRecordKey));
+    if ((data ?? []).length < 1000) break;
+  }
+  let failed = false;
+  for (const key of keys) {
+    const at = markedAt(everyOf(key), now);
+    const [a, b] = await Promise.all([db.from("read_records").update({ computed_at: at }).eq("key", key), db.from("read_record_checks").update({ checked_at: at }).eq("key", key)]);
+    if (a.error || b.error) failed = true;
+  }
+  return { marked: keys, failed };
 }
 
 export type PanelFacts = { panel: number; onboarding: number; ready: number; unfiled: number; last_step: { at: string; brands_before: number; brands_after: number } | null; invariant: string[] };

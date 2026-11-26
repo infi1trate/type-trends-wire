@@ -122,3 +122,27 @@ export function panelInvariantProblems(rows: readonly PanelSite[]): string[] {
   if (both.length) p.push(`active and onboarding: ${both.slice(0, 10).join(", ")}${both.length > 10 ? ` (+${both.length - 10})` : ""}`);
   return p;
 }
+
+// R2b ------------------------------------------------------------------------------------------------
+/** Stored reader records that list or count brands; a real step marks them so the records sweep rebuilds them at its next pass. */
+export const PANEL_RECORD_KINDS = ['brands-index', 'site-index', 'collections', 'collection', 'gallery', 'data-index', 'signals', 'quarter-series'] as const;
+export const panelRecordKey = (key: string) => (PANEL_RECORD_KINDS as readonly string[]).includes(key.split(':')[0] ?? key);
+/** What is only right after the weekly forecast run on the new panel (written to the step's note). */
+export const AFTER_FORECAST_NOTE = 'Right only after the next weekly forecast run on this panel: the forecasts and tiers (held for one run), the structure series, lead and lag, and the designer-kit records. Shares and history restate within minutes; the stored brand lists rebuild at the next records sweep.';
+
+/** The dry step's not-ready brands grouped by reason, with counts and up to 20 example domains each. */
+export type NotReadyGroup = { reason: string; count: number; examples: string[]; quarters?: string[] };
+export function notReadyByReason(waiting: readonly { domain: string; missing: readonly string[] }[], max = 20): NotReadyGroup[] {
+  const groups = new Map<string, { domains: string[]; quarters: Set<string> }>();
+  const add = (reason: string, domain: string, qs: string[] = []) => { const g = groups.get(reason) ?? { domains: [], quarters: new Set<string>() }; g.domains.push(domain); qs.forEach(q => g.quarters.add(q)); groups.set(reason, g); };
+  for (const w of waiting) for (const m of w.missing) {
+    if (m.startsWith('live home captures:')) add('fewer than two live readings', w.domain);
+    else if (m.startsWith('live home captures are not')) add('second live reading less than a day after the first', w.domain);
+    else if (m.startsWith('archive quarters not settled:')) add('yearly archive quarter not settled', w.domain, m.slice('archive quarters not settled:'.length).split(',').map(x => x.trim()).filter(Boolean));
+    else if (m.startsWith('latest live capture')) add('latest reading unclear', w.domain);
+    else add(m, w.domain);
+  }
+  return [...groups].map(([reason, g]) => ({ reason, count: g.domains.length, examples: [...g.domains].sort().slice(0, max), ...(g.quarters.size ? { quarters: [...g.quarters].sort() } : {}) })).sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+}
+/** The backdated time that makes a record due at the sweep's next pass while readers keep its copy (older than `every`, younger than its max age). */
+export const markedAt = (every: number, now: number) => new Date(now - every - 1000).toISOString();

@@ -70,7 +70,7 @@ export type NewsroomStore = {
   artRemove?: (r: import("../art/contract").ArtRemove) => Promise<{ removed: true; thumb_deleted: boolean; copies?: import("../removal.server").RemovalCopies } | { refused: string } | null>;
   /** W3d · the owner removes an app from the icon study (rows kept with the reason; refused forever). */
   iconRemove?: (r: import("../icons/contract").IconRemove) => Promise<{ removed: true; rows: number; copies?: import("../removal.server").RemovalCopies } | { refused: string } | null>;
-  panelStep?: (who: string, dry: boolean) => Promise<{ step: { at: string; brands_before: number; brands_after: number; domains: string[] } } | { refused: string } | { dry: true; joining: string[]; by_sector: Record<string, number>; brands_before: number; brands_after: number; not_ready: { domain: string; sector: string; missing: string[] }[] }>;
+  panelStep?: (who: string, dry: boolean) => Promise<{ step: { at: string; brands_before: number; brands_after: number; domains: string[] }; records?: { marked: string[]; failed: boolean }; note?: string } | { refused: string } | { dry: true; joining: string[]; by_sector: Record<string, number>; brands_before: number; brands_after: number; not_ready: { domain: string; sector: string; missing: string[] }[]; not_ready_by_reason?: { reason: string; count: number; examples: string[]; quarters?: string[] }[] }>;
   candidateStatus?: (r: { candidate: number; status: string; actor: string; reason: string | null }) => Promise<{ status: string } | { refused: string } | null>;
   /** L2b · a rewrite request for a published story (refused while one for the same story is still open). */
   rewrite?: (r: { story_id: string; actor: string; reason: string }) => Promise<{ id: number } | { refused: string }>;
@@ -342,9 +342,9 @@ async function run(b: DeskBody, actor: string, d: DeskDeps, inner: { pass?: bool
     if (!d.store.panelStep) return missing;
     const r = await d.store.panelStep(actor, b.dry === true);
     // R2a-2 · a dry step writes nothing: who would join, by sector, and who is not ready with what is missing.
-    if ("dry" in r) return { status: 200, body: { ok: true, ...r }, decision: "done", reason: `dry: ${r.joining.length} ready, ${r.not_ready.length} not ready`, detail: { dry: true, joining: r.joining.length, not_ready: r.not_ready.length } };
+    if ("dry" in r) return { status: 200, body: { ok: true, ...r }, decision: "done", reason: `dry: ${r.joining.length} ready, ${r.not_ready.length} not ready`, detail: { dry: true, joining: r.joining.length, not_ready: r.not_ready.length, by_reason: r.not_ready_by_reason ?? [] } };
     if ("refused" in r) return { status: 409, body: { error: "refused", reason: r.refused }, decision: "refused", reason: r.refused };
-    return { status: 201, body: { ok: true, ...r.step }, decision: "done", reason: `${r.step.brands_before} to ${r.step.brands_after}${b.reason ? `: ${b.reason}` : ""}`.slice(0, 600), detail: { before: r.step.brands_before, after: r.step.brands_after, joined: r.step.domains.length } };
+    return { status: 201, body: { ok: true, ...r.step }, decision: "done", reason: `${r.step.brands_before} to ${r.step.brands_after}${b.reason ? `: ${b.reason}` : ""}`.slice(0, 600), detail: { before: r.step.brands_before, after: r.step.brands_after, joined: r.step.domains.length, records_marked: r.records?.marked.length ?? 0, records_failed: r.records?.failed ?? false, note: r.note ?? null } };
   }
   if (b.action === "candidate_status") {
     if (!d.store.candidateStatus) return missing;
