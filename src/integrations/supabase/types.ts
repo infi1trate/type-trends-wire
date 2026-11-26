@@ -1662,6 +1662,8 @@ export type Database = {
           error: string | null
           id: number
           model_card: Json
+          panel_size: number | null
+          panel_step_id: number | null
           status: string
         }
         Insert: {
@@ -1671,6 +1673,8 @@ export type Database = {
           error?: string | null
           id?: number
           model_card?: Json
+          panel_size?: number | null
+          panel_step_id?: number | null
           status?: string
         }
         Update: {
@@ -1680,6 +1684,8 @@ export type Database = {
           error?: string | null
           id?: number
           model_card?: Json
+          panel_size?: number | null
+          panel_step_id?: number | null
           status?: string
         }
         Relationships: []
