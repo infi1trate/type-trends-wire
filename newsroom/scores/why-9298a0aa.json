@@ -1,0 +1,226 @@
+{
+ "writer": "why",
+ "prompt_hash": "9298a0aa",
+ "models": [
+  "openai/gpt-6.2-astra",
+  "google/gemini-3.1-flash-lite"
+ ],
+ "template": "t1",
+ "source": "frozen examples through the checks + 3 live calls on the frozen dossier",
+ "scored_at": "2026-11-26T01:44:19.950Z",
+ "cost_usd": 0.033104,
+ "frozen": {
+  "passed": 10,
+  "total": 10,
+  "cases": [
+   {
+    "id": "pass-full",
+    "want": "pass",
+    "got": "pass",
+    "failures": []
+   },
+   {
+    "id": "pass-known-only",
+    "want": "pass",
+    "got": "pass",
+    "failures": []
+   },
+   {
+    "id": "pass-two-known",
+    "want": "pass",
+    "got": "pass",
+    "failures": []
+   },
+   {
+    "id": "refuse-after-rise",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "Known late is dated after the rise",
+     "Likely cites entry p1, which is not above it"
+    ]
+   },
+   {
+    "id": "refuse-likely-no-ref",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "Likely “It probably spread from tools.” carries no reference"
+    ]
+   },
+   {
+    "id": "refuse-read-number",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "Our read carries a number or date"
+    ]
+   },
+   {
+    "id": "refuse-known-no-link",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "Known k1 has no link",
+     "Likely cites entry p1, which is not above it"
+    ]
+   },
+   {
+    "id": "refuse-because",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "Likely “It likely rose because browsers shipped ” uses a causal word"
+    ]
+   },
+   {
+    "id": "refuse-read-name",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "Our read names someone (Jony, Ive)"
+    ]
+   },
+   {
+    "id": "refuse-no-known",
+    "want": "refuse",
+    "got": "refuse",
+    "failures": [
+     "no Known entry",
+     "Likely cites entry p1, which is not above it"
+    ]
+   }
+  ]
+ },
+ "live": {
+  "passed": 3,
+  "total": 3,
+  "calls": [
+   {
+    "n": 1,
+    "passed": true,
+    "failures": [],
+    "block": {
+     "known": [
+      {
+       "entry": "c1",
+       "sentence": "On March 2, 2024, Smashing Magazine published “Motion that greets you”.",
+       "date": "2024-03-02",
+       "link": "https://www.smashingmagazine.com/",
+       "source": "Smashing Magazine"
+      },
+      {
+       "entry": "p1",
+       "sentence": "According to MDN, all three major browsers supported @starting-style by August 2024.",
+       "date": "2024-08",
+       "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+       "source": "MDN"
+      }
+     ],
+     "likely": [
+      {
+       "sentence": "Designers were likely discussing entry motion before @starting-style had support across all three major browsers.",
+       "refs": [
+        {
+         "kind": "entry",
+         "id": "c1"
+        },
+        {
+         "kind": "entry",
+         "id": "p1"
+        }
+       ]
+      },
+      {
+       "sentence": "Wider support for @starting-style likely made entry animations easier to implement consistently across browsers.",
+       "refs": [
+        {
+         "kind": "entry",
+         "id": "p1"
+        }
+       ]
+      }
+     ],
+     "read": [
+      "Our read: Entry motion works best when it guides attention without making visitors wait."
+     ]
+    }
+   },
+   {
+    "n": 2,
+    "passed": true,
+    "failures": [],
+    "block": {
+     "known": [
+      {
+       "entry": "p1",
+       "sentence": "MDN reports that all three major browsers supported @starting-style by August 2024.",
+       "date": "2024-08",
+       "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+       "source": "MDN"
+      },
+      {
+       "entry": "c1",
+       "sentence": "On March 2, 2024, Smashing Magazine published the article “Motion that greets you”.",
+       "date": "2024-03-02",
+       "link": "https://www.smashingmagazine.com/",
+       "source": "Smashing Magazine"
+      }
+     ],
+     "likely": [
+      {
+       "sentence": "Support for @starting-style across browsers likely made entry animations easier to implement in CSS.",
+       "refs": [
+        {
+         "kind": "entry",
+         "id": "p1"
+        }
+       ]
+      }
+     ],
+     "read": [
+      "Our read: Entry motion works best when it draws attention to new content without making the reader wait."
+     ]
+    }
+   },
+   {
+    "n": 3,
+    "passed": true,
+    "failures": [],
+    "block": {
+     "known": [
+      {
+       "entry": "c1",
+       "sentence": "On March 2, 2024, Smashing Magazine published “Motion that greets you”.",
+       "date": "2024-03-02",
+       "link": "https://www.smashingmagazine.com/",
+       "source": "Smashing Magazine"
+      },
+      {
+       "entry": "p1",
+       "sentence": "According to MDN, all three major browsers supported @starting-style by August 2024.",
+       "date": "2024-08",
+       "link": "https://developer.mozilla.org/docs/Web/API/CSSStartingStyleRule",
+       "source": "MDN"
+      }
+     ],
+     "likely": [
+      {
+       "sentence": "Support across browsers likely made entry animations easier to implement in CSS.",
+       "refs": [
+        {
+         "kind": "entry",
+         "id": "p1"
+        }
+       ]
+      }
+     ],
+     "read": [
+      "Our read: Entry motion works best when it guides the eye without making the reader wait."
+     ]
+    }
+   }
+  ]
+ },
+ "passed": true
+}
