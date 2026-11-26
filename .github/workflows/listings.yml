@@ -2,9 +2,12 @@ name: app-listings
 # M2 · Reads what each top-free app's App Store listing says about itself (version and date, the "What's New" note, the opening
 # of the description, price, category, rating, size, maker's website, screenshot count and orientation) for the same eighteen
 # charts as the icon reading: one chart read and one lookup per category, paced under Apple's stated limit. The first two
-# screenshots are measured for colour in memory. No picture is kept or sent. By hand only until the site takes listings
-# (a run by hand is a dry run unless dry_run is set to 0; a site without the endpoint ends the run green with a notice).
+# screenshots are measured for colour in memory. No picture is kept or sent. One reading a week (the site keeps one weekly row
+# per app per category and stores a version's text once); a run by hand is a dry run unless dry_run is set to 0. A site without
+# the endpoint ends the run green with a notice.
 on:
+  schedule:
+    - cron: "53 15 * * 1"   # Mondays 15:53 UTC, half an hour after the icon reading
   workflow_dispatch:
     inputs:
       genres:
@@ -42,7 +45,7 @@ jobs:
           LISTING_LIMIT: ${{ inputs.limit || '100' }}
           LISTING_SHOTS: ${{ inputs.shots || '2' }}
           LISTINGS_OUT: listings-out
-          DRY_RUN: ${{ inputs.dry_run }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && '0' || inputs.dry_run }}
         run: node src/listings.js
       - name: Keep the rows of a dry run
         if: ${{ inputs.dry_run == '1' }}

@@ -65,8 +65,11 @@ export type VersionRow = { store: string; app_id: string; version: string; versi
 export type WeekRow = { week: string; store: string; chart: string; genre_id: number; app_id: string; genre_name: string; day: string; rank: number; rating: number | null; ratings: number | null; version: string };
 
 const t = (s: string | null) => (s ? Date.parse(s) : null);
+/** Screenshot facts in one fixed order: the database returns a stored object's keys in its own order (jsonb), so comparing the
+ *  objects as text would call every stored version changed and rewrite it each week. */
+export const shotsKey = (x: ListingApp["shots"] | null | undefined) => x ? [x.phone ?? 0, x.pad ?? 0, x.tv ?? 0, x.way ?? null, (x.palettes ?? []).map(p => p.map(c => [String(c.hex).toUpperCase(), Number(c.share)]))] : null;
 export const listingKey = (r: Omit<ListingRow, "about_changed_at">) => JSON.stringify([r.name, r.maker, r.link, r.genre, r.site, t(r.first_at), r.about, r.about_chars, r.about_words]);
-export const versionKey = (r: VersionRow) => JSON.stringify([t(r.version_at), r.notes, r.notes_chars, r.price === null ? null : Number(r.price), r.currency, r.size_mb === null ? null : Number(r.size_mb), r.min_os, r.languages, r.age, r.shots]);
+export const versionKey = (r: VersionRow) => JSON.stringify([t(r.version_at), r.notes, r.notes_chars, r.price === null ? null : Number(r.price), r.currency, r.size_mb === null ? null : Number(r.size_mb), r.min_os, r.languages, r.age, shotsKey(r.shots)]);
 export const weekKey = (r: WeekRow) => JSON.stringify([r.genre_name, r.day, r.rank, r.rating === null ? null : Number(r.rating), r.ratings, r.version]);
 
 export function rowsFor(a: ListingApp, p: Pick<ListingPayload, "store" | "chart" | "day" | "genre">) {
