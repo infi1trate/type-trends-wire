@@ -1,0 +1,2 @@
+ALTER TABLE public.ai_usage DROP CONSTRAINT ai_usage_kind_check_v3;
+ALTER TABLE public.ai_usage ADD CONSTRAINT ai_usage_kind_check_v4 CHECK (kind IN ('vision','pricing','changelog','product','brief','taste_brief','taste_vision','taste_fonts','story_why','desk_vision','why_now'));

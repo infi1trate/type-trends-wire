@@ -79,6 +79,7 @@ export const whyUser = (name: string, entries: readonly Entry[], figures: readon
   `<signal>${JSON.stringify(name)}</signal>\n<dossier>${JSON.stringify(entries.map(e => ({ id: e.id, drawer: e.drawer, date: e.date, phase: e.phase, sentence: e.sentence, source: e.source })))}</dossier>\n<figures>${JSON.stringify(figures)}</figures>`;
 /** The writer's answer as a block, joined with the dossier's dates and links (the writer never supplies a link). */
 export function parseWhy(raw: unknown, dossier: readonly Entry[], figures: readonly Figure[]): WhyNow | null {
+  if (typeof raw === "string") { try { raw = JSON.parse(raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { return null; } }
   if (!raw || typeof raw !== "object") return null;
   const r = raw as { known?: unknown; likely?: unknown; read?: unknown }, by = new Map(dossier.map(e => [e.id, e])), figs = new Set(figures.map(f => f.id));
   const known = (Array.isArray(r.known) ? r.known : []).flatMap((k: { entry?: unknown; sentence?: unknown }) => { const e = typeof k?.entry === "string" ? by.get(k.entry) : undefined;
