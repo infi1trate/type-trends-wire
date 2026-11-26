@@ -7,6 +7,7 @@ import { storyIndex, storyRaw } from "../stories/read.server";
 import { latestSignals } from "../signals.server";
 import { allCrops, siteTraitIndex } from "../read.server";
 import { comparisonPair } from "../run-gap";
+import { samePanel } from "../restatement";
 import { fetchReaderRuns, fetchRealRuns, fetchStageRows } from "../real-runs";
 import { stageChanges } from "../today";
 import { label } from "../labels";
@@ -26,7 +27,7 @@ const charts = memo(10 * 60_000, async (_: null): Promise<ChartRow[]> => (must(a
 const movingFor = memo(10 * 60_000, async (asOf: number): Promise<MovingInput> => {
   const db = supabaseAnon(), real = (await fetchRealRuns(db)).filter(r => Date.parse(r.at) < asOf), pair = comparisonPair(real);
   if (!pair) return { pair: null, items: [] };
-  const before = real.filter(r => r.id !== pair.latest.id && Date.parse(r.at) < Date.parse(pair.latest.at)).slice(-2).reverse();
+  const before = samePanel(pair.latest, real.filter(r => r.id !== pair.latest.id && Date.parse(r.at) < Date.parse(pair.latest.at))).slice(-2).reverse();
   const cols = "dimension,value,scope,status,stage,momentum,current_share,next_wave_score,sites:components->sites";
   const [latest, earlier, full, ...prev] = await Promise.all([
     fetchStageRows(db, pair.latest.id), fetchStageRows(db, pair.earlier.id),

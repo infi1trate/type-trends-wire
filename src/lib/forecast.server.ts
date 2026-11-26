@@ -26,7 +26,13 @@ const AI_DIMENSIONS = ["imagery", "aesthetic", "components", "hero_layout", "ai_
 export async function runForecast(opts: RunOptions = {}, mode: { defer?: boolean } = {}) {
   const steps = runSteps(opts);
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-  const run = await db.from("forecast_runs").insert({ status: "running" }).select("id").single();
+  // R2b · the run records the panel it is computed over and the latest step, so later comparisons can tell a restatement.
+  const [panelCount, lastStep] = await Promise.all([
+    db.from("library_sites").select("domain", { count: "exact", head: true }).eq("active", true).not("panel_since", "is", null),
+    db.from("panel_steps").select("id").order("id", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (panelCount.error || lastStep.error) throw panelCount.error ?? lastStep.error;
+  const run = await db.from("forecast_runs").insert({ status: "running", panel_size: panelCount.count ?? null, panel_step_id: lastStep.data?.id ?? null }).select("id").single();
   if (run.error) throw run.error; const runId = run.data.id;
   let stage = "compute";
   try {
@@ -35,7 +41,7 @@ export async function runForecast(opts: RunOptions = {}, mode: { defer?: boolean
     const fin = await db.from("forecast_runs").update({ status: "ok", data_cutoff_quarter: result.cutoff, coverage: result.coverage, model_card: result.card }).eq("id", runId);
     if (fin.error) throw fin.error;
     stage = "alerts";
-    const alerts = steps.alerts === "off" ? null : await emitAlerts(db, runId, result.alertInputs, steps.alerts === "dry", result.headline);
+    const alerts = steps.alerts === "off" ? null : await emitAlerts(db, runId, result.alertInputs, steps.alerts === "dry", result.headline, result.restated);
     stage = "prune";
     if (steps.prune) {
       const old = await db.from("forecast_runs").select("id").order("id", { ascending: false }).range(KEEP_RUNS, KEEP_RUNS + 500);
@@ -100,10 +106,17 @@ async function compute(db: Db, runId: number) {
     crawlIds.length ? pages(f => db.from("crawl_sites").select("run_id,domain,index_name,type,color,layout,tech,galleries").in("run_id", crawlIds).eq("ok", true).order("run_id").order("domain").range(f, f + 999)) : Promise.resolve([]),
     pages(f => db.from("discourse_counts").select("window_start,term,n,fatigue,sampled_posts").gte("window_start", new Date(now - DISCOURSE_WEEKS * 7 * 864e5).toISOString()).order("window_start").order("source").order("term").range(f, f + 999)),
     pages(f => db.from("gfont_first_seen").select("family,category,first_seen").order("family").range(f, f + 999)),
-    db.from("forecast_runs").select("id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(2),
+    db.from("forecast_runs").select("id,panel_step_id").eq("status", "ok").lt("id", runId).order("id", { ascending: false }).limit(2),
   ]);
   if (prevRunRes.error) throw prevRunRes.error;
-  const prevRunId = prevRunRes.data[0]?.id ?? null, prev2RunId = prevRunRes.data[1]?.id ?? null;
+  // R2b · tiers (headline for alerts) and alert baselines read only runs on this run's panel step; on a restatement run the earlier
+  // runs judge the headline set (tierBasis: the one-week hold), and no cross-panel stage comparison is made.
+  const self = await db.from("forecast_runs").select("id,panel_step_id").eq("id", runId).single();
+  if (self.error) throw self.error;
+  const { comparable, isRestatement } = await import("./restatement"), me = { id: runId, step: self.data.panel_step_id };
+  const restated = isRestatement(me, prevRunRes.data[0] ? { id: prevRunRes.data[0].id, step: prevRunRes.data[0].panel_step_id } : null);
+  const samePrev = prevRunRes.data.filter(r => comparable(me, { id: r.id, step: r.panel_step_id }));
+  const prevRunId = samePrev[0]?.id ?? null, prev2RunId = samePrev[1]?.id ?? null;
   const failedRes = await db.from("forecast_runs").select("id,computed_at,error").eq("status", "error").gt("id", prevRunId ?? 0).lt("id", runId).order("id").limit(10);
   if (failedRes.error) throw failedRes.error;
   const failedSince = (failedRes.data ?? []).map(r => ({ run_id: r.id, at: r.computed_at, error: r.error ?? null }));
@@ -113,7 +126,7 @@ async function compute(db: Db, runId: number) {
   const prev2ByTrait = new Map(prev2Rows.map(r => [`${r.dimension}:${r.value}`, r.stage]));
   // Stage-change alerts compare against the newest real run at least MIN_RUN_GAP_DAYS older (alertBaseline), so a rerun cannot fire them; prevByTrait stays for everything else.
   const { fetchRealRuns } = await import("./real-runs"), { alertBaseline } = await import("./run-gap");
-  const alertBase = alertBaseline(await fetchRealRuns(db as never, { upTo: runId - 1 }), { id: runId, at: new Date(now).toISOString() });
+  const alertBase = alertBaseline(await fetchRealRuns(db as never, { upTo: runId - 1 }), { id: runId, at: new Date(now).toISOString(), step: me.step });
   const alertPrevRows = !alertBase ? [] : alertBase.id === prevRunId ? prevRows : await pages(f => db.from("forecasts").select("dimension,value,scope,current_share,stage").eq("run_id", alertBase.id).eq("scope", "all").order("dimension").order("value").range(f, f + 999));
   const alertPrevByTrait = new Map(alertPrevRows.map(r => [`${r.dimension}:${r.value}`, r]));
   const latestCrawl = crawlRows.filter(r => r.run_id === crawlIds[0]) as CrawlTraitSite[], prevCrawl = crawlRows.filter(r => r.run_id === crawlIds[1]) as CrawlTraitSite[];
@@ -233,15 +246,16 @@ async function compute(db: Db, runId: number) {
     usable_quarters_all: Object.entries(quarterCoverage).filter(([, v]) => v.denom >= 15 && v.coverage >= 0.25).map(([q]) => q), next_wave_backtest: nwBacktest, next_wave_backtest_legacy_weights: nwLegacy, weights: NEXT_WAVE_WEIGHTS,
     component_coverage: { rows: allRows.length, scored: allRows.filter(r => r.next_wave_score != null).length, ...Object.fromEntries(COMPONENT_KEYS.map(k => [k, allRows.filter(r => ((r.components as { raw?: Components }).raw?.[k] ?? null) !== null).length])) },
     crawl: { run: crawlCov.run, used: crawlCov.use, finished_at: crawlCov.finished_at, age_days: crawlCov.age_days, stale: crawlCov.stale, notes: crawlCov.notes, prev_run: crawlIds[1] ?? null, n: Object.fromEntries(["mainstream", "vanguard", "curated"].map(i => [i, latestCrawl.filter(s => s.index_name === i).length])), gallery_mix: mix },
-    failed_runs_since_last_ok: failedSince, discourse_rows: discourseRows.length, ai_provider: providerLabel(process.env), thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
+    panel: { step: me.step, restated }, failed_runs_since_last_ok: failedSince, discourse_rows: discourseRows.length, ai_provider: providerLabel(process.env), thresholds: { denom_all: 15, denom_sector: 8, coverage: 0.25, min_quarters: 4, bootstrap: 200, interval: 0.8 } };
   // Alert candidates are restricted to headline signals (tiers.ts) from this run's own rows; the alert rules themselves are unchanged.
   const headline = headlineKeys(allRows.map(r => ({ key: `${r.dimension}:${r.value}`, stats: { status: r.status, stage: (r["stage"] as string | null) ?? null, momentum: (r["momentum"] as number | null) ?? null, sites: ((r.components as Record<string, unknown>)["sites"] as number | undefined) ?? null, prevStages: [prevByTrait.get(`${r.dimension}:${r.value}`)?.stage ?? null, prev2ByTrait.get(`${r.dimension}:${r.value}`) ?? null] } })));
-  return { cutoff: latestAll, coverage: quarterCoverage, card, alertInputs, headline };
+  return { cutoff: latestAll, coverage: quarterCoverage, card, alertInputs, headline, restated };
 }
 
 /** Weekly wire alerts: rule hits → one per trait, skip traits alerted in the last 28 days, ≤10. Dry runs only return them. */
-async function emitAlerts(db: Db, runId: number, inputs: AlertInput[], dry: boolean, headline: Set<string>): Promise<{ dry: boolean; candidates: number; skipped_recent: number; emitted: Alert[] }> {
-  const candidates = restrictToHeadline(alertCandidates(inputs), headline), since = new Date(Date.now() - ALERT_DEDUPE_DAYS * 864e5).toISOString();
+async function emitAlerts(db: Db, runId: number, inputs: AlertInput[], dry: boolean, headline: Set<string>, restated = false): Promise<{ dry: boolean; candidates: number; skipped_recent: number; emitted: Alert[] }> {
+  const { alertAllowed } = await import("./restatement");
+  const candidates = restrictToHeadline(alertCandidates(inputs), headline).filter(a => alertAllowed(a.kind, restated)), since = new Date(Date.now() - ALERT_DEDUPE_DAYS * 864e5).toISOString();
   const recent = await db.from("wire_items").select("ref").eq("source_kind", "alert").gte("published_at", since).not("ref", "is", null).limit(1000);
   if (recent.error) throw recent.error;
   const recentTraits = new Set((recent.data ?? []).map(r => r.ref!).filter(Boolean));

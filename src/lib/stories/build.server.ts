@@ -228,11 +228,11 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   const { supabaseAnon } = await import("../mcp/supabase");
   const db = supabaseAnon(), now = o.now ?? Date.now(), since = new Date(now - o.days * 864e5).toISOString();
   // Real runs, newest first: the latest three (tiers read the two before the latest) plus the gap partner for shifts and crossovers.
-  const realRuns = (await fetchRealRuns(db, { extra: o.realRunIds })).map(r => ({ id: r.id, computed_at: r.at })).reverse();
-  const pair = comparisonPair(realRuns.map(r => ({ id: r.id, at: r.computed_at })));
+  const realRuns = (await fetchRealRuns(db, { extra: o.realRunIds })).map(r => ({ id: r.id, computed_at: r.at, step: r.step ?? null })).reverse();
+  const pair = comparisonPair(realRuns.map(r => ({ id: r.id, at: r.computed_at, step: r.step })));
   const inWindow = realRuns.filter(r => r.computed_at >= since), pick = o.allRuns ? realRuns.slice(0, inWindow.length + 1) : realRuns.slice(0, 3);
   const chosen = [...new Map([...pick, ...realRuns.filter(r => r.id === pair?.earlier.id)].map(r => [r.id, r])).values()].sort((a, b) => a.id - b.id);
-  const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, rows: (await (await import("../forecast-rows.server")).forecastRunRows(r.id)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
+  const runs: RunRows[] = await Promise.all(chosen.map(async r => ({ id: r.id, at: r.computed_at, step: r.step, rows: (await (await import("../forecast-rows.server")).forecastRunRows(r.id)).map(x => ({ ...x, present: Array.isArray(x.present) ? x.present : [], sites: typeof x.sites === "number" ? x.sites : null, usable: typeof x.usable === "number" ? x.usable : null })) })));
   // P2b · the crossover rule reads the later run's stored quarters, only for the rows that pass every other crossover check.
   {
     const { context: ctxOf, crossoverQuarterNeeds } = await import("./candidates"), { forecastRowQuarters } = await import("../forecast-rows.server");

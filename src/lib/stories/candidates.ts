@@ -12,6 +12,7 @@ import { rowKey, tiersFrom, type SignalRow } from "../signals";
 import { SECTOR_COVERAGE_MIN } from "../sector-lens";
 import type { Tier } from "../tiers";
 import { comparisonPair } from "../run-gap";
+import { restatedIn, tierBasis } from "../restatement";
 import { isAiField, notSteadyReason, unsteadyKey, type AiField, type NotSteady, type Unsteady } from "./steady";
 import { SEASONAL_HELD_EVENTS, SEASONAL_REASON, seasonalEventIds } from "../promo";
 import { changedWhat, isRebrand, rebrandDimensions } from "../rebrand-rule";
@@ -22,7 +23,7 @@ import {
   WHITE_SPACE_MIN_SECTOR_SITES, FIRST_SEEN_MAX_BRANDS, WHITE_SPACE_SKIP_CATEGORIES, WHITE_SPACE_NOT_APPLICABLE, countWord, COUNTER_HELD_REASON, ESTIMATE_ONLY_REASON, NEWS_SUBJECT_TERMS, type Candidate, type Fact, type NewsDropReason,
 } from "./types";
 
-export type RunRows = { id: number; at: string; rows: SignalRow[] };
+export type RunRows = { id: number; at: string; rows: SignalRow[]; /** R2b · panel step the run was computed over. */ step?: number | null };
 export type WireIn = { id: number; title: string; url: string; source: string; source_kind: string; published_at: string; excerpt: string | null; ref?: string | null };
 export type SiteNow = { domain: string; name: string | null; sector: string; captured: string | null; traits: string[]; /** Site kind (brand-names.ts); absent reads the seed. */ kind?: string | null };
 /** One archive capture: its traits and the kinds of signal (categories) the capture actually measured, positive or not. */
@@ -88,9 +89,10 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export type Ctx = ReturnType<typeof context>;
 export function context(input: BuildInput) {
   const runs = [...input.runs].sort((a, b) => a.id - b.id), cur = runs.at(-1) ?? null;
-  const prevStages = new Map<string, (string | null)[]>();
-  [runs.at(-2), runs.at(-3)].forEach((r, i) => { for (const x of r?.rows ?? []) if (x.scope === "all") { const k = rowKey(x), a = prevStages.get(k) ?? [null, null]; a[i] = x.stage; prevStages.set(k, a); } });
-  const tierMap = cur ? tiersFrom(cur.rows, prevStages) : new Map();
+  // R2b · tiers come from tierBasis: same-panel history only, and on a restatement run the previous run's tiers hold (restatement.ts).
+  const tb = tierBasis(runs), prevStages = new Map<string, (string | null)[]>();
+  tb.prior.forEach((r, i) => { for (const x of r.rows) if (x.scope === "all") { const k = rowKey(x), a = prevStages.get(k) ?? [null, null]; a[i] = x.stage; prevStages.set(k, a); } });
+  const tierMap = tb.basis ? tiersFrom(tb.basis.rows, prevStages) : new Map();
   const tiers = new Map<string, Tier>([...tierMap.values()].map(t => [t.key, t.tier]));
   const index = new Map<number, Map<string, SignalRow>>(runs.map(r => [r.id, new Map(r.rows.map(x => [`${rowKey(x)}|${x.scope}`, x]))]));
   const row = (run: RunRows | null | undefined, key: string, scope = "all") => (run ? index.get(run.id)?.get(`${key}|${scope}`) ?? null : null);
@@ -286,6 +288,7 @@ export function breakoutCandidates(ctx: Ctx, alerts: WireIn[]): Candidate[] {
     const m = ALERT_RE.exec(a.url); if (!m || m[2] !== "breakout" || !a.ref) continue;
     const key = canonical(a.ref); if (!ctx.headline.has(key)) continue;
     const runId = Number(m[1]), scope = /[?&]sector=([a-z-]+)/.exec(a.url)?.[1] ?? "all", run = ctx.runs.find(r => r.id === runId), r = ctx.row(run, key, scope);
+    if (restatedIn(ctx.runs, runId)) continue; // R2b · a breakout on a restatement run is the panel growing
     const l = label(key), ex = ctx.showing(key, scope === "all" ? null : scope);
     out.push({ id: `breakout:${key}:${scope}:${runId}`, type: "breakout", kicker: `Breakout · ${l.dimension}${scope !== "all" ? ` · ${sectorName(scope)}` : ""}`,
       headline: `${l.name}: breaking out ${where(scope)}`,

@@ -12,11 +12,11 @@ export type StageRow = { dimension: string; value: string; stage: string | null;
 export async function fetchRealRuns(db: Db, o: { limit?: number; extra?: number[]; upTo?: number; runs?: RunRef[] } = {}): Promise<RunRef[]> {
   let runs = o.runs;
   if (!runs) {
-    let q = db.from("forecast_runs").select("id,computed_at").eq("status", "ok");
+    let q = db.from("forecast_runs").select("id,computed_at,panel_step_id").eq("status", "ok");
     if (o.upTo != null) q = q.lte("id", o.upTo);
     const ok = await q.order("id", { ascending: false }).limit(o.limit ?? 20);
     if (ok.error) throw ok.error;
-    runs = (ok.data ?? []).map(r => ({ id: r.id, at: r.computed_at }));
+    runs = (ok.data ?? []).map(r => ({ id: r.id, at: r.computed_at, step: r.panel_step_id ?? null }));
   }
   const ids = runs.map(r => r.id);
   if (!ids.length) return [];
@@ -52,9 +52,9 @@ export async function fetchStageRows(db: Db, runId: number): Promise<StageRow[]>
 
 /** The run reader pages read (readerRuns in run-gap.ts), cached five minutes per runtime: every public client sees the same runs, and server code makes a fresh anonymous client per call. */
 const reader = memoBy(5 * 60_000, async (db: Db): Promise<ReaderRuns<RunRef>> => {
-  const ok = await db.from("forecast_runs").select("id,computed_at").eq("status", "ok").order("id", { ascending: false }).limit(20);
+  const ok = await db.from("forecast_runs").select("id,computed_at,panel_step_id").eq("status", "ok").order("id", { ascending: false }).limit(20);
   if (ok.error) throw ok.error;
-  const runs = (ok.data ?? []).map(r => ({ id: r.id, at: r.computed_at }));
+  const runs = (ok.data ?? []).map(r => ({ id: r.id, at: r.computed_at, step: r.panel_step_id ?? null }));
   return readerRuns(runs, await fetchRealRuns(db, { runs }));
 }, { key: () => "reader" });
 export const fetchReaderRuns = (db: Db): Promise<ReaderRuns<RunRef>> => reader(db);

@@ -12,8 +12,10 @@ export const FORECAST_WEEKDAY = 0;
 /** Plain-words empty state wherever a run-to-run change would show. */
 export const NO_COMPARISON_TEXT = "No stage changes yet. The first week-over-week comparison lands after the next weekly forecast.";
 
+import { comparable } from "./restatement";
 const DAY = 864e5;
-export type RunRef = { id: number; at: string };
+/** `step`: the panel step the run was computed over (R2b); runs on different steps are never compared (restatement.ts). */
+export type RunRef = { id: number; at: string; step?: number | null };
 
 /** Real runs from ok runs plus the run ids that the brief, chart cards or ledger reference (and any ids the caller knows are real). Oldest first. */
 export function realRuns<R extends RunRef>(okRuns: R[], referenced: Iterable<number | null | undefined>, extra: Iterable<number> = []): R[] {
@@ -26,7 +28,7 @@ export function realRuns<R extends RunRef>(okRuns: R[], referenced: Iterable<num
 export function comparisonPair<R extends RunRef>(runs: R[]): { latest: R; earlier: R; days: number } | null {
   const sorted = [...runs].filter(r => Number.isFinite(Date.parse(r.at))).sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id - b.id), latest = sorted.at(-1);
   if (!latest) return null;
-  const cut = Date.parse(latest.at) - MIN_RUN_GAP_DAYS * DAY, earlier = sorted.filter(r => r.id !== latest.id && Date.parse(r.at) <= cut).at(-1);
+  const cut = Date.parse(latest.at) - MIN_RUN_GAP_DAYS * DAY, earlier = sorted.filter(r => r.id !== latest.id && Date.parse(r.at) <= cut && comparable(r, latest)).at(-1);
   return earlier ? { latest, earlier, days: Math.round((Date.parse(latest.at) - Date.parse(earlier.at)) / DAY * 10) / 10 } : null;
 }
 /**
@@ -36,7 +38,7 @@ export function comparisonPair<R extends RunRef>(runs: R[]): { latest: R; earlie
 export function gapChain<R extends RunRef>(runs: R[]): R[] {
   const sorted = [...runs].filter(r => Number.isFinite(Date.parse(r.at))).sort((a, b) => Date.parse(a.at) - Date.parse(b.at) || a.id - b.id);
   const out: R[] = [];
-  for (let i = sorted.length - 1; i >= 0; i--) { const r = sorted[i]!, last = out[0]; if (!last || Date.parse(r.at) <= Date.parse(last.at) - MIN_RUN_GAP_DAYS * DAY) out.unshift(r); }
+  for (let i = sorted.length - 1; i >= 0; i--) { const r = sorted[i]!, last = out[0]; if (last && !comparable(r, last)) break; if (!last || Date.parse(r.at) <= Date.parse(last.at) - MIN_RUN_GAP_DAYS * DAY) out.unshift(r); }
   return out;
 }
 /** True when two runs are far enough apart to compare. */
@@ -83,15 +85,15 @@ export type ReaderRuns<R extends RunRef> = { latest: R | null; prev: R[]; mode: 
 export function readerRuns<R extends RunRef>(ok: R[], real: R[], anchor: number = READABLE_SANDBOX_RUN): ReaderRuns<R> {
   const byId = (a: R, b: R) => b.id - a.id, realIds = new Set(real.map(r => r.id));
   const reals = ok.filter(r => realIds.has(r.id)).sort(byId);
-  if (reals[0] && reals[0].id > anchor) return { latest: reals[0], prev: reals.slice(1, 3), mode: "real" };
+  if (reals[0] && reals[0].id > anchor) return { latest: reals[0], prev: reals.slice(1, 3).filter(r => comparable(r, reals[0]!)), mode: "real" };
   // Before the switch: the newest ok run up to the anchor (today run 15), with the two ok runs before it, as before.
   const upTo = ok.filter(r => r.id <= anchor).sort(byId), latest = upTo[0] ?? null;
   if (!latest) return { latest: null, prev: [], mode: "none" };
-  return { latest, prev: upTo.slice(1, 3), mode: realIds.has(latest.id) ? "real" : "sandbox" };
+  return { latest, prev: upTo.slice(1, 3).filter(r => comparable(r, latest)), mode: realIds.has(latest.id) ? "real" : "sandbox" };
 }
 
 /** Stage-change alerts compare the new run against the most recent real run at least MIN_RUN_GAP_DAYS older, so a rerun cannot fire them. */
 export function alertBaseline<R extends RunRef>(real: R[], current: RunRef): R | null {
   const cut = Date.parse(current.at) - MIN_RUN_GAP_DAYS * DAY;
-  return [...real].filter(r => r.id !== current.id && Date.parse(r.at) <= cut).sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.id - a.id)[0] ?? null;
+  return [...real].filter(r => r.id !== current.id && Date.parse(r.at) <= cut && comparable(r, current)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.id - a.id)[0] ?? null;
 }
