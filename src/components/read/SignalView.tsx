@@ -21,11 +21,14 @@ import { FiltersScope, Trail } from "@/components/brand/Illustration";
 import { Count } from "@/components/brand/Motion";
 import { BrandMark } from "./BrandMark";
 import { QuarterLine } from "@/components/chartkit";
+import { useRestatedLine } from "./RestatedLine";
 
 export function SignalView({ page: p, sector }: { page: TraitPage; sector: string }) {
   const footer = { methodology: "/#m-the-digest", glossary: "/#g-stage", rss: "/digest/rss.xml", terminal: p.terminal, contact: null };
   const lens = sector !== "all" ? p.byScope.find(r => r.scope === sector) ?? null : null;
-  const note = sector !== "all" && !lens ? `${sectorName(sector)} has no forecast row for this signal, so numbers are all-sector` : null;
+  const restated = useRestatedLine();
+  const lensNote = sector !== "all" && !lens ? `${sectorName(sector)} has no forecast row for this signal, so numbers are all-sector` : null;
+  const note = [restated, lensNote].filter(Boolean).join(" ") || null;
   return <DigestShell label={`${p.name} signal`} section="signals" lens note={note}>
     <FiltersScope>
     <ObjectPage kind="signal" id="ed-signal" quiet blocks={{

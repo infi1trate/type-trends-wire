@@ -10,6 +10,7 @@ import { useSearch } from "@tanstack/react-router";
 import { lensSignals } from "@/lib/sector-lens";
 import { sectorName } from "@/lib/labels";
 import { TraitDrawer } from "./Forecast";
+import { useRestatedLine } from "@/components/read/RestatedLine";
 import { Empty, Loading, PanelHeader, Seg } from "./primitives";
 import { SignalTable, useTierChoice } from "./SignalBits";
 
@@ -24,12 +25,13 @@ const byMomentum = (a: Signal, b: Signal) => (b.momentum_index ?? -1) - (a.momen
 /** Headline signals for one dimension (or a set of dimensions): the default list on each panel. */
 export function HeadlineStrip({ dims, title, g, max, match }: { dims: Dimension[]; title: string; g: string; max?: number; match?: (key: string) => boolean }) {
   const { data } = useSuspenseQuery(signalsQuery()), isLoading = false;
-  const drawer = useSignalDrawer();
+  const drawer = useSignalDrawer(), restated = useRestatedLine();
   const { sector } = useSearch({ strict: false });
   const lens = useMemo(() => lensSignals(data.snap.rows, data.tiers, sector), [data, sector]);
   const rows = useMemo(() => headlineOnly(lens.signals).filter(s => dims.includes(s.dimension) && (!match || match(s.key))).sort(byMomentum).slice(0, max ?? 999), [lens, dims, max, match]);
   return <section aria-label={title} className="shrink-0 border-b border-rule">
     <PanelHeader title={title} g={g} meta={data ? <>{rows.length} HEADLINE · {sectorName(lens.scope).toUpperCase()} · RUN {data.snap.run_id}</> : null} />
+    {restated && <p className="border-b border-rule px-3 py-2 text-g500" data-restated="">{restated}</p>}
     {lens.note && <p className="border-b border-rule px-3 py-2 text-g500">{lens.note}</p>}
     {isLoading ? <div className="p-3"><Loading /></div> : rows.length ? <div className="max-h-[50vh] overflow-auto"><SignalTable rows={rows} onOpen={drawer.open} caption={title} /></div>
       : <Empty why={voiced("terminal.signals.1")} />}
