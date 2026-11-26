@@ -1,0 +1,172 @@
+{
+ "desk": "scout",
+ "version": "v3",
+ "prompt_hash": "76762d94",
+ "run_at": "2026-11-26T00:14:50.776Z",
+ "cases": 1,
+ "run": "N5-rescore",
+ "against": "v2",
+ "note": "Scout re-scored with the v2 category tree (254 sub-categories); same single fixture candidates call and bar as v2 (10 kept, every kept one classified); nothing stored or filed.",
+ "cost_usd": 0.22528,
+ "returned": 15,
+ "kept": [
+  {
+   "name": "Visa",
+   "domain": "visa.com",
+   "sector": "fintech",
+   "category": "payments",
+   "subcategory": "processing",
+   "why": "Visa’s global identity refresh introduces a standalone V and a custom typeface, Visa Sans, giving slug two specific changes to watch for on the homepage.",
+   "cites": "wire:143855",
+   "id": -1,
+   "log": null
+  },
+  {
+   "name": "HOFF",
+   "domain": "thehoffbrand.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "footwear",
+   "why": "HOFF’s Madrid flagship uses a colourful holiday sculpture to present its shoes, a seasonal visual direction worth comparing with its homepage.",
+   "cites": "wire:144402",
+   "id": -2,
+   "log": null
+  },
+  {
+   "name": "Programa",
+   "domain": "programa.design",
+   "sector": "enterprise-saas",
+   "category": "work-management",
+   "subcategory": "projects",
+   "why": "Programa’s redesign puts the less visible work of interior design, from tracking dimensions to counting materials, at the centre of its pitch to studios.",
+   "cites": "wire:80469",
+   "id": -3,
+   "log": null
+  },
+  {
+   "name": "Mondaine",
+   "domain": "mondaine.com",
+   "sector": "hardware",
+   "category": "wearables",
+   "subcategory": "watches",
+   "why": "Mondaine’s Solar Skeleton cuts a circular opening in the dial so the solar plates become part of the watch face rather than a hidden feature.",
+   "cites": "wire:129244",
+   "id": -4,
+   "log": null
+  },
+  {
+   "name": "Volvo Cars",
+   "domain": "volvocars.com",
+   "sector": "hardware",
+   "category": "vehicles",
+   "subcategory": "makers",
+   "why": "Volvo Cars traces the EX60’s colours, materials and lighting to forest walks and Nordic seas, giving its Scandinavian design story concrete details.",
+   "cites": "wire:151823",
+   "id": -5,
+   "log": null
+  },
+  {
+   "name": "Fireclay Tile",
+   "domain": "fireclaytile.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "home-goods",
+   "why": "Fireclay Tile translates familiar textile patterns, including plaids and stripes, into hand-painted ceramic tiles for its Idyllwild collection.",
+   "cites": "wire:137813",
+   "id": -6,
+   "log": null
+  },
+  {
+   "name": "Burberry",
+   "domain": "burberry.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury",
+   "why": "Burberry’s V&A Christmas tree uses biscuit-tin lids and horse brasses to tell a holiday story about British traditions.",
+   "cites": "wire:144167",
+   "id": -7,
+   "log": null
+  },
+  {
+   "name": "Dior",
+   "domain": "dior.com",
+   "sector": "commerce-dtc",
+   "category": "fashion",
+   "subcategory": "luxury",
+   "why": "Dior chose animator Sylvain Chomet to direct its holiday short, making his illustration style a reference point for the seasonal campaign.",
+   "cites": "wire:150264",
+   "id": -8,
+   "log": null
+  },
+  {
+   "name": "Teemill",
+   "domain": "teemill.com",
+   "sector": "commerce-dtc",
+   "category": "retail",
+   "subcategory": "commerce-platforms",
+   "why": "Teemill pitches print-on-demand merchandise through specific choices about how it is made and shipped: renewable energy, organic materials and plastic-free packaging.",
+   "cites": "wire:133101",
+   "id": -9,
+   "log": null
+  },
+  {
+   "name": "Davis Furniture",
+   "domain": "davisfurniture.com",
+   "sector": "commerce-dtc",
+   "category": "home",
+   "subcategory": "furniture",
+   "why": "The concealed engineering of Davis Furniture’s Laken nesting tables leaves their sculptural double-cone bases as the defining visual feature.",
+   "cites": "wire:146187",
+   "id": -10,
+   "log": null
+  }
+ ],
+ "dropped": [
+  {
+   "name": "Tiffany & Co.",
+   "website": "tiffany.com",
+   "sector": "commerce-dtc",
+   "cites": "wire:85332",
+   "reasons": [
+    "over the 10 kept a week"
+   ]
+  },
+  {
+   "name": "Firefly",
+   "website": "firefly.adobe.com",
+   "sector": "ai",
+   "cites": "wire:162014",
+   "reasons": [
+    "over the 10 kept a week"
+   ]
+  },
+  {
+   "name": "Granular.Build",
+   "website": "granular.build",
+   "sector": "ai",
+   "cites": "wire:155474",
+   "reasons": [
+    "over the 10 kept a week"
+   ]
+  },
+  {
+   "name": "tday.com",
+   "website": "tday.com",
+   "sector": "ai",
+   "cites": "wire:155481",
+   "reasons": [
+    "over the 10 kept a week"
+   ]
+  },
+  {
+   "name": "Briku.io",
+   "website": "briku.io",
+   "sector": "enterprise-saas",
+   "cites": "wire:131036",
+   "reasons": [
+    "over the 10 kept a week"
+   ]
+  }
+ ],
+ "unclassified": 0
+}
