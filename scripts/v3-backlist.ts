@@ -3,6 +3,7 @@
 // A rewrite that changes a number, date or brand is refused by the writer's check and the story keeps its text; held stories are never
 // asked. HAND-RUN ONLY, and only once the V2 writer is the deployed one (otherwise the live writer would rewrite in the old voice):
 //   bun scripts/v3-backlist.ts --deployed            files the requests (one door call each, logged with the copy desk as actor)
+//   bun scripts/v3-backlist.ts --deployed --limit 3  files at most 3 (the newest not yet asked)
 //   bun scripts/v3-backlist.ts --count               counts published stories and open V3 requests; writes nothing
 // Undo: the door's `text_restore` with id "all" (or one story id) stores each story's earlier text again as its newest version.
 import { V3_REASON, isV3Request } from "../src/lib/stories/restore";
@@ -18,7 +19,9 @@ const asked = new Set((asks ?? []).filter(a => isV3Request(a.reason)).map(a => a
 console.log(JSON.stringify({ published: shown.length, already_asked: asked.size }));
 if (!process.argv.includes("--deployed")) process.exit(0);
 const { deskDoor } = await import("../src/lib/stories/desk.server");
+const li = process.argv.indexOf("--limit"), limit = li > 0 ? Number(process.argv[li + 1]) : Infinity;
+if (!(limit > 0)) throw new Error("--limit needs a positive number");
 let filed = 0, refused = 0;
-for (const s of shown) { if (asked.has(s.id)) continue; const r = await deskDoor("copy desk", { action: "rewrite", id: s.id, reason: V3_REASON }); if (r.status === 201) filed++; else refused++; }
+for (const s of shown) { if (filed + refused >= limit) break; if (asked.has(s.id)) continue; const r = await deskDoor("copy desk", { action: "rewrite", id: s.id, reason: V3_REASON }); if (r.status === 201) { filed++; console.log(JSON.stringify({ filed: s.id, slug: (s as { slug?: string }).slug })); } else refused++; }
 console.log(JSON.stringify({ filed, refused }));
 process.exit(0);
