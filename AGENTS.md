@@ -32,6 +32,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Evidence calendar and rise timing use the share charts' forecast coverage constants and fail closed on missing coverage; stored blocks are revalidated without writer calls after dossier corrections so stale evidence cannot remain public.
 - Chart readouts share chartkit/Interaction with pure movement rules; explicit study/series coordinates or existing named SVG marks drive feedback only on intent, so resting charts and reader data reads stay unchanged.
 - Editorial row type, display percentage signs and section rhythm use the theme/system roles; the Read gap snaps to the existing density ladder without modifying shipped editions, while Terminal retains its own spacing.
 - Brand identity tiles use the shared read/BrandMark at the token scale, with stored-dimension eligibility and neutral initials; this keeps loading boxes and missing marks aligned in both views.

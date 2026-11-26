@@ -1,10 +1,11 @@
 // Y1 + Y2 · the evidence desk's matching and timing, and the "Why now" standards checks.
 import { describe, expect, it } from "vitest";
 import { PLATFORM, buildDossier, drawersFor, keywordIn, quoteHolds, type Entry } from "./dossier";
-import { mayCause, timing } from "./timing";
+import { covered, mayCause, timing } from "./timing";
+import { usableSeries } from "../chart/model";
 import { checkWhyNow, shownBlock, type WhyNow } from "./whynow";
 
-const qs = [{ q: "2021Q1", s: 0.02, n: 200 }, { q: "2023Q1", s: 0.025, n: 220 }, { q: "2024Q1", s: 0.03, n: 230 }, { q: "2025Q1", s: 0.09, n: 240 }, { q: "2026Q1", s: 0.14, n: 250 }, { q: "2026Q4", s: 0.13, n: 260 }];
+const qs = [{ q: "2021Q1", s: 0.02, n: 200 }, { q: "2023Q1", s: 0.025, n: 220 }, { q: "2024Q1", s: 0.03, n: 230 }, { q: "2025Q1", s: 0.09, n: 240 }, { q: "2026Q1", s: 0.14, n: 250 }, { q: "2026Q4", s: 0.13, n: 260 }].map(q => ({ ...q, c: q.n / 300 }));
 describe("platform dates", () => {
   it("every row has a source link on MDN; unknown fields are null, never guessed", () => {
     expect(PLATFORM.length).toBe(16);
@@ -19,9 +20,28 @@ describe("timing test", () => {
     expect(t.phaseOf("2023-06")).toBe("before"); expect(t.phaseOf("2024-08")).toBe("during"); expect(t.phaseOf("2026-08-01")).toBe("after");
     expect(mayCause("after")).toBe(false); expect(mayCause("during")).toBe(true);
   });
-  it("a flat series has no rise", () => { expect(timing([{ q: "2025Q1", s: 0.1, n: 300 }, { q: "2026Q1", s: 0.101, n: 300 }]).phaseOf("2025-06")).toBe("no rise"); });
+  it("a flat series has no rise", () => { expect(timing([{ q: "2025Q1", s: 0.1, n: 300, c: 1 }, { q: "2026Q1", s: 0.101, n: 300, c: 1 }]).phaseOf("2025-06")).toBe("no rise"); });
+  it("rise start and peak ignore low coverage and unknown coverage, just like share charts", () => {
+    const rows: Parameters<typeof timing>[0] = [...qs, { q: "2022Q1", s: 0.9, n: 20, c: 20 / 300 }, { q: "2026Q3", s: 1, n: 300 }];
+    expect(timing(rows).riseStart).toBe("2025Q1");
+    expect(timing(rows).riseEnd).toBe("2026Q1");
+    expect(rows.filter(covered).map(p => p.q)).toEqual(usableSeries({ quarters: rows.map(p => ({ ...p, c: p.c ?? 0 })) }).map(p => p.q));
+  });
 });
 describe("dossier", () => {
+  const calendar = (quarters: Parameters<typeof buildDossier>[0]["quarters"]) => buildDossier({ signal: "imagery:collage", name: "Collage", quarters, wire: [], brands: [], indicators: [] }).entries.filter(e => e.drawer === "calendar");
+  it("the real 2022Q1–2026Q4 collage denominators cannot support a seasonal entry", () => {
+    const ns = [241, 20, 243, 19, 245, 16, 116, 15, 254, 19, 0, 18, 261, 13, 2, 17, 263, 12, 0, 300];
+    const counts = [8, 1, 8, 1, 10, 0, 4, 1, 12, 0, 0, 1, 15, 0, 0, 1, 14, 0, 0, 24];
+    expect(calendar(ns.map((n, j) => ({ q: `${2022 + Math.floor(j / 4)}Q${j % 4 + 1}`, n, c: n / 300, s: n ? (counts[j] ?? 0) / n : null })))).toEqual([]);
+  });
+  it("full-panel seasonal quarters still support a calendar entry", () => {
+    const rows = Array.from({ length: 20 }, (_, j) => ({ q: `${2022 + Math.floor(j / 4)}Q${j % 4 + 1}`, n: 300, c: 1, s: j % 4 === 3 ? 0.2 : 0.05 }));
+    expect(calendar(rows)).toMatchObject([{ id: "k:imagery:collage:Q4", date: "2022-10" }]);
+  });
+  it("two earlier season quarters and two other chart-eligible quarters are required", () => {
+    expect(calendar([{ q: "2024Q4", s: .2, n: 300, c: 1 }, { q: "2025Q4", s: .2, n: 300, c: 1 }, { q: "2026Q1", s: .05, n: 300, c: 1 }, { q: "2026Q2", s: .05, n: 20, c: 20 / 300 }, { q: "2026Q4", s: .2, n: 300, c: 1 }])).toEqual([]);
+  });
   const wire = [{ id: 1, title: "The return of the entry animation", excerpt: null, url: "https://x.test/1", source: "Smashing Magazine", source_kind: "rss", published_at: "2024-06-02T00:00:00Z" },
     { id: 2, title: "Acme raises Series B", excerpt: "Acme announced", url: "https://x.test/2", source: "Dezeen", source_kind: "rss", published_at: "2025-03-01T00:00:00Z" },
     { id: 3, title: "New AI assistant for designers", excerpt: null, url: "https://x.test/3", source: "Hacker News", source_kind: "hn", published_at: "2026-01-01T00:00:00Z" }];
@@ -69,6 +89,11 @@ describe("why now: the standards desk's checks", () => {
   it("no Known, no block; a failed block is dropped whole", () => {
     expect(shownBlock({ known: [], likely: good.likely, read: good.read }, [])).toBeNull();
     expect(shownBlock(good, ["x"])).toBeNull(); expect(shownBlock(good, [])).toBe(good);
+  });
+  it("withdraws a stored block whose Known entry disappeared on rebuild", () => {
+    const failures = checkWhyNow(good, E.filter(e => e.id !== "p1"), F);
+    expect(failures.join()).toContain("maps to no dossier entry");
+    expect(shownBlock(good, failures)).toBeNull();
   });
 });
 

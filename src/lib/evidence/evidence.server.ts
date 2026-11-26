@@ -13,7 +13,13 @@ export async function buildDossiers(o: { budgetMs?: number; only?: string[]; fil
   const [{ snap, signals }, run] = await Promise.all([latestSignals("all"), readerRunId(db)]);
   const recent = await db.from("stories").select("signal_keys").eq("status", "published").gte("happened_at", new Date(start - 30 * 864e5).toISOString()).limit(500);
   const storyKeys = new Set((recent.data ?? []).flatMap(r => r.signal_keys ?? []));
-  const wanted = signals.filter(s => o.only ? o.only.includes(s.key) : (s.tier === "headline" && s.stage != null && MOVED_STAGES.includes(s.stage)) || storyKeys.has(s.key));
+  const wanted: { key: string; name: string }[] = signals.filter(s => o.only ? o.only.includes(s.key) : (s.tier === "headline" && s.stage != null && MOVED_STAGES.includes(s.stage)) || storyKeys.has(s.key));
+  // Maintenance must also rebuild dossiers whose signals are no longer in the current headline set.
+  if (o.only) {
+    const stored = await pagedRows((f, t) => db.from("evidence_dossiers").select("signal,name").order("signal").range(f, t));
+    if (stored.error) throw new Error("Cannot read stored dossiers");
+    for (const d of stored.data) if (o.only.includes(d.signal) && !wanted.some(s => s.key === d.signal)) wanted.push({ key: d.signal, name: d.name });
+  }
   const wireQ = await db.from("wire_items").select("id,title,excerpt,url,source,source_kind,published_at").in("source_kind", ["rss", "hn", "producthunt"]).order("published_at", { ascending: false }).limit(5000);
   const sites = await pagedRows((f, t) => db.from("library_sites").select("domain,name,active").order("domain").range(f, t));
   const wire = (wireQ.data ?? []) as WireIn[], names = new Map((sites.data ?? []).map(s => [s.domain, s.name ?? s.domain]));
@@ -21,8 +27,11 @@ export async function buildDossiers(o: { budgetMs?: number; only?: string[]; fil
   for (const s of wanted) {
     if (Date.now() - start > budget) break;
     const [dimension, ...rest] = s.key.split(":"), value = rest.join(":");
-    const f = await db.from("forecasts").select("quarters:evidence->quarters").eq("run_id", run).eq("scope", "all").eq("dimension", dimension!).eq("value", value).maybeSingle();
-    const quarters = (Array.isArray(f.data?.quarters) ? f.data!.quarters : []) as Quarter[];
+    if (!dimension) { out.errors.push(`${s.key}: missing dimension`); continue; }
+    const f = await db.from("forecasts").select("quarters:evidence->quarters").eq("run_id", run).eq("scope", "all").eq("dimension", dimension).eq("value", value).maybeSingle();
+    if (f.error) { out.errors.push(`${s.key}: forecast read failed`); continue; }
+    // Stored forecast evidence carries n and c from the very run the reader charts use.
+    const quarters = (Array.isArray(f.data?.quarters) ? f.data.quarters : []) as Quarter[];
     const row = snap.rows.find(r => `${r.dimension}:${r.value}` === s.key && r.scope === "all");
     const brands: BrandIn[] = (row?.present ?? []).map(d => ({ domain: d, name: names.get(d) ?? d }));
     const topic = SIGNAL_TOPIC[s.key];

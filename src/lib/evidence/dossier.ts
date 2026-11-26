@@ -6,7 +6,7 @@
 // Structure signals (nav/ask/furn/page/phone) use Business and Calendar only; furn:ask_ai matches wire items about AI assistants/agents.
 import { BRAND_NAME } from "../brand";
 import platform from "@/data/platform-dates.json";
-import { timing, type Phase, type Quarter } from "./timing";
+import { covered, timing, type Phase, type Quarter } from "./timing";
 
 export const DRAWERS = ["platform", "business", "culture", "calendar"] as const;
 export type Drawer = (typeof DRAWERS)[number];
@@ -96,12 +96,14 @@ export function buildDossier(i: DossierIn, drawers = drawersFor(i.signal)): { en
 }
 /** Calendar: when the newest quarter's share sits clearly above the same quarter in earlier years too, the season is a pattern. */
 function calendarEntries(i: DossierIn): Entry[] {
-  const qs = [...i.quarters].filter(q => q.s != null && q.n >= 15), last = qs.at(-1);
+  const qs = [...i.quarters].filter(covered).sort((a, b) => a.q.localeCompare(b.q)), last = qs.at(-1);
   if (!last) return [];
   const qn = last.q.slice(4), same = qs.filter(q => q.q.endsWith(qn) && q.q !== last.q), other = qs.filter(q => !q.q.endsWith(qn));
   if (same.length < 2 || other.length < 2) return [];
-  const avg = (xs: Quarter[]) => xs.reduce((t, x) => t + x.s!, 0) / xs.length;
+  const avg = (xs: (Quarter & { s: number })[]) => xs.reduce((t, x) => t + x.s, 0) / xs.length;
   if (avg(same) < avg(other) * 1.5) return [];
   const season = { Q1: "first", Q2: "second", Q3: "third", Q4: "fourth" }[qn] ?? qn;
-  return [{ id: `k:${i.signal}:${qn}`, drawer: "calendar", date: `${same[0]!.q.slice(0, 4)}-${String((Number(qn.slice(1)) - 1) * 3 + 1).padStart(2, "0")}`, sentence: `In ${BRAND_NAME}'s own history, ${i.name} has been more common in the ${season} quarter of the year than in the others since ${same[0]!.q.slice(0, 4)}.`, source: BRAND_NAME, link: `/signals/${encodeURIComponent(i.signal)}`, brand: null, match: "rule" }];
+  const first = same[0];
+  if (!first) return [];
+  return [{ id: `k:${i.signal}:${qn}`, drawer: "calendar", date: `${first.q.slice(0, 4)}-${String((Number(qn.slice(1)) - 1) * 3 + 1).padStart(2, "0")}`, sentence: `In ${BRAND_NAME}'s own history, ${i.name} has been more common in the ${season} quarter of the year than in the others since ${first.q.slice(0, 4)}.`, source: BRAND_NAME, link: `/signals/${encodeURIComponent(i.signal)}`, brand: null, match: "rule" }];
 }

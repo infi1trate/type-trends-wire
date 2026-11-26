@@ -5,7 +5,8 @@
 import { THRESHOLDS, qIndex } from "../forecast";
 export type Quarter = { q: string; s: number | null; n: number; c?: number };
 export type Phase = "before" | "during" | "after" | "no rise";
-const covered = (p: Quarter): p is Quarter & { s: number } => p.s != null && p.n >= THRESHOLDS.denomAll && (p.c == null || p.c >= THRESHOLDS.coverage);
+/** Same denominator and coverage gate as reader share charts; missing coverage fails closed. */
+export const covered = (p: Quarter): p is Quarter & { s: number } => p.s != null && Number.isFinite(p.s) && p.n >= THRESHOLDS.denomAll && p.c != null && p.c >= THRESHOLDS.coverage;
 export const noiseBand = (p: number, n: number) => 2 * Math.sqrt(Math.max(p * (1 - p), 1 / n) / n);
 /** First day of a quarter, as YYYY-MM-DD. */
 export const quarterStart = (q: string) => `${q.slice(0, 4)}-${String((Number(q.slice(5)) - 1) * 3 + 1).padStart(2, "0")}-01`;

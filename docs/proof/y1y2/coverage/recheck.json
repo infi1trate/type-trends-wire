@@ -1,0 +1,186 @@
+{
+  "run_at": "2026-11-26T02:20:02.123Z",
+  "dossiers_rebuilt": 67,
+  "dossiers_changed": 8,
+  "entries_dropped": 7,
+  "changes": [
+    {
+      "signal": "aesthetic:brutalist",
+      "dropped": [
+        {
+          "id": "k:aesthetic:brutalist:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 1,
+      "after_entries": 0,
+      "rise_before": [
+        null,
+        null
+      ],
+      "rise_after": [
+        null,
+        null
+      ]
+    },
+    {
+      "signal": "combo:immersive_3d",
+      "dropped": [],
+      "before_entries": 34,
+      "after_entries": 36,
+      "rise_before": [
+        "2024Q1",
+        "2026Q4"
+      ],
+      "rise_after": [
+        "2024Q1",
+        "2026Q4"
+      ]
+    },
+    {
+      "signal": "components:case_study_cards",
+      "dropped": [
+        {
+          "id": "k:components:case_study_cards:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 1,
+      "after_entries": 0,
+      "rise_before": [
+        "2026Q4",
+        "2026Q4"
+      ],
+      "rise_after": [
+        "2026Q4",
+        "2026Q4"
+      ]
+    },
+    {
+      "signal": "components:code_block",
+      "dropped": [
+        {
+          "id": "k:components:code_block:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 1,
+      "after_entries": 0,
+      "rise_before": [
+        "2024Q1",
+        "2026Q4"
+      ],
+      "rise_after": [
+        "2024Q1",
+        "2026Q4"
+      ]
+    },
+    {
+      "signal": "components:sticky_scroll_story",
+      "dropped": [
+        {
+          "id": "k:components:sticky_scroll_story:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 1,
+      "after_entries": 0,
+      "rise_before": [
+        null,
+        null
+      ],
+      "rise_after": [
+        null,
+        null
+      ]
+    },
+    {
+      "signal": "css:scroll_timeline",
+      "dropped": [
+        {
+          "id": "k:css:scroll_timeline:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 3,
+      "after_entries": 2,
+      "rise_before": [
+        "2024Q1",
+        "2026Q4"
+      ],
+      "rise_after": [
+        "2024Q1",
+        "2026Q4"
+      ]
+    },
+    {
+      "signal": "imagery:collage",
+      "dropped": [
+        {
+          "id": "k:imagery:collage:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 1,
+      "after_entries": 0,
+      "rise_before": [
+        "2025Q1",
+        "2025Q1"
+      ],
+      "rise_after": [
+        "2025Q1",
+        "2025Q1"
+      ]
+    },
+    {
+      "signal": "imagery:illustration_hand_drawn",
+      "dropped": [
+        {
+          "id": "k:imagery:illustration_hand_drawn:Q4",
+          "drawer": "calendar"
+        }
+      ],
+      "before_entries": 1,
+      "after_entries": 0,
+      "rise_before": [
+        null,
+        null
+      ],
+      "rise_after": [
+        null,
+        null
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "id": 1,
+      "signal": "css:starting_style",
+      "subject": "css:starting_style",
+      "before": "passed",
+      "after": "passed",
+      "failures": []
+    },
+    {
+      "id": 2,
+      "signal": "components:case_study_cards",
+      "subject": "components:case_study_cards",
+      "before": "passed",
+      "after": "refused",
+      "failures": [
+        "Known “Since October 2022, slug has seen case-s” maps to no dossier entry"
+      ]
+    },
+    {
+      "id": 3,
+      "signal": "imagery:collage",
+      "subject": "imagery:collage",
+      "before": "passed",
+      "after": "refused",
+      "failures": [
+        "Known “Since October 2022, slug has recorded co” maps to no dossier entry"
+      ]
+    }
+  ],
+  "writer_calls": 0
+}

@@ -1,7 +1,8 @@
 // Pure selection of the brief's "one call to watch" and the card model built from stored forecast evidence.
 import { qIdx, qLabel, type CardModel } from "./card";
 import { label as traitLabel } from "../labels";
-export const USABLE_N = 15, USABLE_COVERAGE = 0.25, MIN_SERIES = 2;
+import { THRESHOLDS } from "../forecast";
+export const USABLE_N = THRESHOLDS.denomAll, USABLE_COVERAGE = THRESHOLDS.coverage, MIN_SERIES = 2;
 type Citation = { kind: string; id: string };
 export type BriefLike = { headline: string; watch?: { id: string; call: string } | null; sections: { title: string; body: string; citations: Citation[] }[] };
 export type ForecastLike = { dimension: string; value: string; scope: string; stage: string | null; current_share: number | null; momentum: number | null; quarters: { q: string; s: number | null; n: number; c: number }[] | null; proj_q1: number | null; proj_q1_lo: number | null; proj_q1_hi: number | null; proj_q2: number | null; proj_q2_lo: number | null; proj_q2_hi: number | null; proj_q4: number | null; proj_q4_lo: number | null; proj_q4_hi: number | null; run_id?: number | null };

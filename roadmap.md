@@ -1,3 +1,8 @@
+# Y1/Y2 · Calendar coverage correction (26 Nov)
+- [x] Share-chart coverage gate for calendar and rise timing, regression tests.
+- [x] Rebuild every stored dossier; recheck every stored block without writer calls; verify withdrawals.
+- [x] Full suite (2,825 passed, 0 failed, 3 skipped), report and Y1 commit; no deployment.
+
 # F1 + F2 · Designer’s kit (25 Nov)
 - [x] J1b: navigation menu-button union, chart join note and truncated section stub (31 targeted tests; navigation proof at three widths)
 - [x] F1: brand take-away payloads and copy row (11 targeted checks, real Stripe copy/reset at three widths)

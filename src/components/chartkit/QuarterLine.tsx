@@ -17,6 +17,7 @@ import type { GumballName } from "@/lib/theme/contract";
 import { Axis, ChartFrame, Gumball, GumballDefs, Mark, W, ballId, type FrameProps } from "./Frame";
 import { ChartTable } from "./ChartTable";
 import { ROLE_PALETTE, lw, pt } from "./ink";
+import { THRESHOLDS } from "@/lib/forecast";
 export type Look = "read" | "data";
 
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "not measured" : d === 1 ? pctText(v) : `${(v * 100).toFixed(d)}%`);
@@ -84,7 +85,7 @@ function EditorialFigure({ card, label, caption, basis }: { card: Pick<CardModel
 // DATA ---------------------------------------------------------------------------------------------------------------------------
 export type QuarterPoint = { q: string; s: number | null; n: number; c: number };
 function Cone({ quarters: raw, proj, fitted, backtest, large = false, sectors }: { quarters: QuarterPoint[]; proj: { h: number; mid: number | null; lo: number | null; hi: number | null }[]; fitted?: { quarter: string; value: number }[] | undefined; backtest?: { quarter: string; predicted: number }[] | undefined; large?: boolean; sectors?: { scope: string; pts: QuarterPoint[] }[] }) {
-  const quarters = raw, pts = raw.filter(p => p.s !== null && p.n >= 15 && p.c >= .25), faint = raw.filter(p => p.s !== null && p.n > 0 && !(p.n >= 15 && p.c >= .25));
+  const quarters = raw, pts = raw.filter(p => p.s !== null && p.n >= THRESHOLDS.denomAll && p.c >= THRESHOLDS.coverage), faint = raw.filter(p => p.s !== null && p.n > 0 && !(p.n >= THRESHOLDS.denomAll && p.c >= THRESHOLDS.coverage));
   if (!pts.length) return <svg viewBox="0 0 120 32" className={large ? "h-64 w-full" : "h-8 w-28"} role="img" aria-label={voiced("terminal.forecast.2")}><line x1="0" x2="120" y1="31" y2="31" stroke="var(--sys-color-rule)" /></svg>;
   const p0 = pts[0]!, pn = pts[pts.length - 1]!, first = qi(quarters[0]?.q ?? p0.q), latest = qi(pn.q), last = latest + 4, W = large ? 600 : 120, H = large ? 220 : 32;
   const all = [...pts.map(p => p.s ?? 0), ...(large ? faint.map(p => p.s ?? 0) : []), ...proj.flatMap(p => [p.hi ?? 0, p.mid ?? 0]), ...(fitted ?? []).map(f => f.value), ...(sectors ?? []).flatMap(s => s.pts.map(p => p.s ?? 0))];
@@ -119,7 +120,7 @@ export function QuarterLine(p: QuarterLineProps) {
     const { look: _l, label, ...cone } = p;
     // The dense line sits in table cells; its table is only drawn with the large chart (the small one is named by its aria-label).
     return <>{<Cone {...cone} />}{cone.large && <ChartTable caption={`${label ?? "Share"} by quarter: the data behind the chart`} columns={["Quarter", "Share", "Homepages", "Usable"]}
-      rows={cone.quarters.filter(q => q.s !== null).map(q => [quarterText(q.q), pct(q.s), String(q.n), q.n >= 15 && q.c >= .25 ? "yes" : "no"])} />}</>;
+      rows={cone.quarters.filter(q => q.s !== null).map(q => [quarterText(q.q), pct(q.s), String(q.n), q.n >= THRESHOLDS.denomAll && q.c >= THRESHOLDS.coverage ? "yes" : "no"])} />}</>;
   }
   if ("card" in p) return <EditorialFigure card={p.card} label={p.label} caption={p.caption} basis={p.basis} />;
   const { look: _l, ...framed } = p;
