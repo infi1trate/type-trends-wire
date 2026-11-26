@@ -6,7 +6,7 @@
 
 export const DESKS = ["editor in chief", "copy desk", "standards", "news", "data", "graphics", "design review", "engineering", "publisher", "scout"];
 /** Actions a desk may send through this workflow. Reads (queue, memory, newsroom, staff) and owner actions are left out on purpose. */
-export const CARRIED = ["check", "pin", "hold", "kill", "correct", "restore", "note", "pitch", "assign", "spend", "propose", "wire_pick", "wire_drop", "picture", "finding", "finding_close", "data_run", "queue_add", "queue_move", "gate_result", "job_hold", "job_release", "audience", "source_note", "candidate_status", "rewrite"];
+export const CARRIED = ["check", "pin", "hold", "kill", "correct", "restore", "note", "pitch", "assign", "spend", "propose", "wire_pick", "wire_drop", "picture", "finding", "finding_close", "data_run", "queue_add", "queue_move", "gate_result", "job_hold", "job_release", "audience", "source_note", "candidate_status", "rewrite", "panel_step"];
 
 /** Pure: the request to send, or the reason it is refused here before anything leaves the runner. */
 export function prepare(actor, bodyText) {
@@ -35,7 +35,8 @@ export const isRefusal = (status) => status === 400 || status === 409 || status 
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const p = prepare(process.env.ACTOR, process.env.BODY ?? "");
-  if (p.error) { console.error(`refused here: ${p.error}`); process.exit(2); }
+  // A request this carrier does not take is the caller's slip, not a failed run: say so, send nothing, end green.
+  if (p.error) { console.log(`refused here: ${p.error}`); console.log(`::notice title=Not sent::${p.error.slice(0, 200)}`); process.exit(0); }
   console.log(`${p.send.actor} → ${p.send.action}${p.send.id ? ` ${p.send.id}` : ""}`);
   if (process.env.DRY_RUN === "1") { console.log("dry run: nothing sent"); process.exit(0); }
   const key = process.env.CRAWL_SECRET;
