@@ -120,6 +120,20 @@ export function factDates(facts: unknown): Set<string> {
   for (const m of t.matchAll(/\b\d{4}-(\d{2})-(\d{2})/g)) { const mo = MON[Number(m[1]) - 1]; if (mo) out.add(`${Number(m[2])} ${mo}`); }
   return out;
 }
+/** Brand names that are also ordinary words a sentence can open with ("On all three homepages…" is not the shoe brand On). */
+export const ORDINARY_WORD_BRANDS: ReadonlySet<string> = new Set(["On", "Now", "Here"]);
+/** Whether `t` names the brand `x` as a whole word. For an ordinary-word brand, an occurrence that opens a sentence (the start of a
+ *  part, or after . ! ? :) does not count: it is the word, not the brand. 27 Nov: two rewrites were refused for "adding" or "dropping"
+ *  the brand On because the old or the new text began a sentence with "On". Pure. */
+export function namesBrand(x: string, t: string): boolean {
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])${x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "gu");
+  for (const m of t.matchAll(re)) {
+    if (!ORDINARY_WORD_BRANDS.has(x)) return true;
+    const before = t.slice(0, m.index).replace(/[ \t"“‘'(]+$/, "");
+    if (before && !/[.!?:\n]$/.test(before)) return true;
+  }
+  return false;
+}
 /**
  * A rewrite may say fewer things, never different ones: every number and date it writes was in the previous text (a story reference
  * "No. 93" is not a fact of this story), and it names exactly
@@ -133,7 +147,7 @@ export function rewriteFactFailures(prev: Parameters<typeof textAll>[0], next: P
   for (const d of factDates(facts)) pd.add(d);
   for (const n of numsOf(b)) if (!pn.has(n)) out.push(`rewrite changes a number: ${n}`);
   for (const d of datesOf(b)) if (!pd.has(d)) out.push(`rewrite changes a date: ${d}`);
-  const named = (t: string) => new Set(brands.filter(x => x && new RegExp(`(?<![\\p{L}\\p{N}])${x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(t)));
+  const named = (t: string) => new Set(brands.filter(x => x && namesBrand(x, t)));
   const before = named(a), after = named(b);
   for (const x of after) if (!before.has(x)) out.push(`rewrite adds a brand: ${x}`);
   for (const x of before) if (!after.has(x)) out.push(`rewrite drops a brand: ${x}`);

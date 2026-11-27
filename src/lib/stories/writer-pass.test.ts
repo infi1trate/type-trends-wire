@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import * as wp from "./writer-pass";
 import { requestStanding } from "./rewrite";
-import { factDates, rewriteFactFailures } from "./voice-guide";
+import { factDates, namesBrand, rewriteFactFailures } from "./voice-guide";
 import { resetWriterPassCache, runWriterPassWith, type WriterPassDeps } from "./writer-pass.server";
 
 const T0 = Date.parse("2026-11-27T02:03:00Z");
@@ -121,5 +121,25 @@ describe("writer pass · it never repeats a heavy load for nothing", () => {
     const r = await runWriterPassWith(f.deps, T0, f.now);
     expect(r.ran).toBe(false); expect(r.note).toContain(wp.BACKING_OFF);
     expect(f.seen).toMatchObject({ jobs: 0, write: 0, start: 0 });
+  });
+});
+
+describe("rewrite check · a sentence that opens with On is not the brand On", () => {
+  const t = (deck: string, body: string[] = []) => ({ headline: "More homepages animate their entrances", deck, body, how_we_know: "Measured." });
+  it("the word at a sentence start does not name the brand; the brand inside a sentence does", () => {
+    expect(namesBrand("On", "On all three homepages, the animation is part of the entrance.")).toBe(false);
+    expect(namesBrand("On", "It moves. On all three it is part of the entrance.")).toBe(false);
+    expect(namesBrand("On", "A headline\nOn the page it reads well.")).toBe(false);
+    expect(namesBrand("On", "The running brand On changed its hero.")).toBe(true);
+    expect(namesBrand("On", "Vercel, On and Netlify all do it.")).toBe(true);
+    expect(namesBrand("On", "Only one does.")).toBe(false);
+    expect(namesBrand("Vercel", "Vercel changed its hero.")).toBe(true);   // an ordinary brand counts wherever it stands
+  });
+  it("the 27 Nov refusals no longer happen; a real added or dropped brand is still refused", () => {
+    const prev = t("Entry animations appeared on 33 of 299 homepages, including Vercel.", ["On all three homepages, the animation is part of the entrance."]);
+    expect(rewriteFactFailures(prev, t("33 of 299 homepages, Vercel among them, animate as they open.", ["It is part of the entrance."]), ["On", "Vercel"])).toEqual([]);
+    expect(rewriteFactFailures(t("Vercel animates.", []), t("Vercel animates.", ["On most pages it is subtle."]), ["On", "Vercel"])).toEqual([]);
+    expect(rewriteFactFailures(prev, t("33 of 299 homepages animate as they open.", []), ["On", "Vercel"])).toEqual(["rewrite drops a brand: Vercel"]);
+    expect(rewriteFactFailures(prev, t("33 of 299 homepages, Vercel and the shoe brand On among them.", []), ["On", "Vercel"])).toEqual(["rewrite adds a brand: On"]);
   });
 });
