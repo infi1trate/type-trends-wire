@@ -28,12 +28,12 @@ export const WRITER_CALL_MIN_MS = 15_000;
 export const WRITER_CONCURRENCY = 2;
 
 /** Write each story in order while the limits and the deadline allow; insert one version per story that got at least one call. */
-export async function writeStories(jobs: WriteJob[], io: WriterIO, known: Known, o: { deadline: number; perBuild?: number; now?: () => number }): Promise<WriteResult> {
-  const clock = o.now ?? Date.now, perBuild = Math.min(o.perBuild ?? WRITER_PER_BUILD, WRITER_PER_BUILD);
+export async function writeStories(jobs: WriteJob[], io: WriterIO, known: Known, o: { deadline: number; perBuild?: number; now?: () => number; /** The room a call needs before the deadline (default WRITER_CALL_MIN_MS; the writer pass, which aborts its own calls at its deadline, asks for less). */ minCallMs?: number }): Promise<WriteResult> {
+  const clock = o.now ?? Date.now, perBuild = Math.min(o.perBuild ?? WRITER_PER_BUILD, WRITER_PER_BUILD), minCall = Math.max(1000, o.minCallMs ?? WRITER_CALL_MIN_MS);
   const usedToday = await io.used().catch(() => WRITER_PER_DAY);
   let writerCalls = 0, calls = 0, skipped = 0;
   const canCall = (model: string) => {
-    if (!io.runs(model) || o.deadline - clock() < WRITER_CALL_MIN_MS) return false;
+    if (!io.runs(model) || o.deadline - clock() < minCall) return false;
     if (model === AI_MODELS.writer) { if (writerCalls >= perBuild || usedToday + writerCalls >= WRITER_PER_DAY) return false; writerCalls++; }
     calls++;
     return true;
@@ -45,7 +45,7 @@ export async function writeStories(jobs: WriteJob[], io: WriterIO, known: Known,
     for (let j = queue.shift(); j; j = queue.shift()) {
       // Out of writer calls (or time) while the provider can run the writer: the story waits for the next build with its template text.
       // The text model is the fallback for a writer that failed, not for a writer that ran out of calls.
-      if (o.deadline - clock() < WRITER_CALL_MIN_MS || (io.runs(AI_MODELS.writer) && (writerCalls >= perBuild || usedToday + writerCalls >= WRITER_PER_DAY))) { skipped++; continue; }
+      if (o.deadline - clock() < minCall || (io.runs(AI_MODELS.writer) && (writerCalls >= perBuild || usedToday + writerCalls >= WRITER_PER_DAY))) { skipped++; continue; }
       const g = retryGuard("writer", parseWritten);
       const prev = j.story.previous, extra = prev ? (t: WrittenText) => rewriteFactFailures(prev, t, [...j.facts.brands.map(b => b.name), ...(known.names ?? [])], j.facts) : undefined;
       const r = await writeWithFallback(j.facts, j.template, known, (model, failures) => g.call(io.call(model, j.facts, failures, AbortSignal.timeout(Math.max(1000, o.deadline - clock())))), m => g.open() && canCall(m), extra);

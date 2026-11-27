@@ -9,11 +9,20 @@
 export const HOST_MS = 30_000;
 /** Kept at the end for the version row and the finish row. */
 export const STORE_MS = 4_000;
-/** The room one writer call is given: the writer's own minimum (WRITER_CALL_MIN_MS); calls on 27 Nov took about 4 s. */
-export const CALL_MS = 15_000;
+/** The room one writer call is given before `writeEnd`. Calls on 27 Nov took about 4 s; the build's load takes 8 to 18 s of the
+ *  pass, so asking for the builds' 15 s would leave most passes with no call. A call still running at `writeEnd` is aborted by the
+ *  pass itself (settled and charged, about 2 cents, and tried again on a later pass), never cut off by the host. */
+export const CALL_MS = 8_000;
 /** After a pass found no room for a call, passes stand down this long (loading a build's input takes 12–18 s; never repeat it for nothing). */
 export const NO_ROOM_BACKOFF_MS = 30 * 60_000;
 export const NO_ROOM = "no time for a call after loading";
+/** Finish notes after which passes stand down for NO_ROOM_BACKOFF_MS: each means a pass did the heavy load and wrote nothing, so the
+ *  next pass would repeat that load for nothing (the database has been hurt by repeated heavy reads). */
+export const BACKOFF_NOTES = [NO_ROOM, "no fact sheet", "the writer skipped it", "no call made"] as const;
+export const backsOff = (note: string | null | undefined) => BACKOFF_NOTES.some(n => (note ?? "").includes(n));
+export const BACKING_OFF = "the last pass loaded and could not write";
+/** Writer calls left in today's allowance (never below 0; a count that cannot be read leaves none). */
+export const callsLeft = (used: number | null, perDay: number) => (used == null || !Number.isFinite(used) ? 0 : Math.max(0, perDay - used));
 /** At most this many writer calls in one pass. */
 export const PASS_CALLS_MAX = 3;
 /** A writer-pass start row with no finish newer than this blocks the next pass (a pass cannot outlive HOST_MS). */
@@ -32,7 +41,7 @@ export function passStandDown(s: { held: boolean; safeMode: boolean; buildRunnin
   if (s.safeMode) return "safe mode";
   if (s.buildRunning) return "a story build is running";
   if (s.passRunning) return "another writer pass is running";
-  if (s.lastNoRoomAgoMs != null && s.lastNoRoomAgoMs < NO_ROOM_BACKOFF_MS) return "the last pass had no time for a call";
+  if (s.lastNoRoomAgoMs != null && s.lastNoRoomAgoMs < NO_ROOM_BACKOFF_MS) return BACKING_OFF;
   return null;
 }
 /** The one story a pass takes: the first of the writer's queue (requested rewrites first, as `storiesToWrite` orders them). */

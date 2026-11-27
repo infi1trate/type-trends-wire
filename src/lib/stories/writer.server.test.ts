@@ -39,6 +39,14 @@ describe("writer orchestration", () => {
     const m = io(); await writeStories(["a", "b", "c", "d", "e", "f", "g", "h"].map(job), m.x, { names: ["DocuSign"] }, { deadline: later(), perBuild: 99 });
     expect(m.calls.filter(c => c === AI_MODELS.writer).length).toBeLessThanOrEqual(6);
   });
+  it("the writer pass may ask for less room: 10 s before the deadline starts no call by default, and one with minCallMs 8 s", async () => {
+    const a = io(); const ra = await writeStories([job("a")], a.x, { names: ["DocuSign"] }, { deadline: Date.now() + 10_000 });
+    expect(a.calls).toEqual([]); expect(ra.skipped).toBe(1);
+    const b = io(); await writeStories([job("a")], b.x, { names: ["DocuSign"] }, { deadline: Date.now() + 10_000, minCallMs: 8_000, perBuild: 1 });
+    expect(b.calls[0]).toBe(AI_MODELS.writer); expect(b.rows).toHaveLength(1);
+    const c = io(); const rc = await writeStories([job("a")], c.x, { names: ["DocuSign"] }, { deadline: Date.now() + 7_000, minCallMs: 8_000 });
+    expect(c.calls).toEqual([]); expect(rc.skipped).toBe(1);
+  });
   it("no call starts without time left before the deadline", async () => {
     const m = io(); const r = await writeStories([job("a")], m.x, { names: ["DocuSign"] }, { deadline: Date.now() + 1000 });
     expect(m.calls).toEqual([]); expect(r.skipped).toBe(1);
