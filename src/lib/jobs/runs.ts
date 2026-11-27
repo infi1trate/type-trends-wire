@@ -16,6 +16,7 @@ export const RUN_JOBS = {
   "forecast": { name: "Weekly forecast", limitMs: 60_000 },
   "desk-passes": { name: "Share and chart passes", limitMs: 60_000 },
   "review-passes": { name: "Review passes", limitMs: 60_000 },
+  "writer-pass": { name: "Story writer pass (in quiet review passes)", limitMs: 60_000 },
   "desk-jobs": { name: "Data checks, health run and design review (job tail)", limitMs: 60_000 },
   "health": { name: "Engineering health run", limitMs: 60_000 },
   "living-reading": { name: "Monthly design reading (L3)", limitMs: 60_000 },

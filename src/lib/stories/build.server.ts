@@ -97,6 +97,18 @@ export const toRow = (p: Planned, why: { line: string; model: string; at: string
   evidence: p.evidence, source_ids: p.sourceIds, basis: p.basis, happened_at: p.happenedAt,
 });
 
+/** The writer's jobs for these stories, with the facts a build gives them: counts and bases behind each share, continuity lines (V2).
+ *  Shared by the build and the writer pass (writer-pass.server.ts), so both write from the same fact sheet. */
+export async function writerJobs(stories: FactStory[], input: BuildInput, ctx: Ctx, deps: Pick<BuildDeps, "bases" | "prior">, clock: () => number = Date.now) {
+  const keys = [...new Set(stories.flatMap(st => st.signal_keys.slice(0, 3).map(canonical)))], scopes = [...new Set(["all", ...stories.map(st => st.sector).filter((x): x is string => !!x)])];
+  const bases = ctx.cur && keys.length && deps.bases ? await deps.bases(ctx.cur.id, keys, scopes).catch(() => new Map<string, ShareBase>()) : new Map<string, ShareBase>();
+  const src = factSource(input, ctx, bases);
+  const prior = deps.prior ? await deps.prior().catch(() => []) : [];
+  const { continuityLines } = await import("./voice-guide"), { brandName } = await import("../brand-names");
+  const jobs = stories.map(st => { const w = writerFacts(st, src), c = continuityLines(st, prior, clock(), d => brandName(d, null)); return { story: st, ...w, facts: c.length ? { ...w.facts, continuity: c } : w.facts }; });
+  return { jobs, src };
+}
+
 /** The pure-ish core with injected I/O (tests run it against memory stores). */
 export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<BuildResult> {
   const empty = { considered: 0, inserted: 0, published: 0, held: 0, why_lines: 0, timed_out: false, news_kept: 0, news_dropped: 0 };
@@ -177,12 +189,7 @@ export async function runBuild(deps: BuildDeps, o: BuildOptions = {}): Promise<B
       const fresh = plan.filter(p => p.status === "published" && p.type !== "launch").sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).map(p => p.id);
       const stories = await deps.toWrite(fresh, o.writeLimit ?? 12);
       // E2c: the count and base behind each share the writer may cite (one read for the stories being written; none = the share alone).
-      const keys = [...new Set(stories.flatMap(st => st.signal_keys.slice(0, 3).map(canonical)))], scopes = [...new Set(["all", ...stories.map(st => st.sector).filter((x): x is string => !!x)])];
-      const bases = ctx.cur && keys.length && deps.bases ? await deps.bases(ctx.cur.id, keys, scopes).catch(() => new Map<string, ShareBase>()) : new Map<string, ShareBase>();
-      const src = factSource(input, ctx, bases);
-      const prior = deps.prior ? await deps.prior().catch(() => []) : [];
-      const { continuityLines } = await import("./voice-guide"), { brandName } = await import("../brand-names");
-      const jobs = stories.map(st => { const w = writerFacts(st, src), c = continuityLines(st, prior, clock(), d => brandName(d, null)); return { story: st, ...w, facts: c.length ? { ...w.facts, continuity: c } : w.facts }; });
+      const { jobs, src } = await writerJobs(stories, input, ctx, deps, clock);
       const r = await writeStories(jobs, deps.writer, { names: src.known }, { deadline: o.writeDeadline ?? start + budget, now: clock, ...(o.writerPerBuild != null ? { perBuild: o.writerPerBuild } : {}) });
       texts = { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped, rows: r.rows };
       if (r.written && deps.writtenSheets) await deps.writtenSheets(r.rows.flatMap(x => { const j = jobs.find(y => y.story.id === x.story_id); return j ? [{ story_id: x.story_id, sheet: j.facts }] : []; })).catch(() => 0);
@@ -448,12 +455,12 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   if (extra.length) { const { data } = await admin.from("stories").select(cols).in("id", extra.slice(0, 50)).neq("type", "launch"); rows.push(...((data ?? []) as unknown as import("./edits").StoredStory[])); }
   if (!rows.length) return [];
   type Last = { created_at: string; model: string; attempts: number; failures: string[] | null; checked: boolean; headline: string; deck: string; body: string[] | null; how_we_know: string };
-  const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, Last>();
+  const ids = rows.map(r => r.id), edits: import("./edits").EditRow[] = [], last = new Map<string, Last>(), tries = new Map<string, Last[]>();
   for (let i = 0; i < ids.length; i += 200) {
     const [e, t] = await Promise.all([admin.from("story_edits").select("id,story_id,action,payload,note,at").in("story_id", ids.slice(i, i + 200)).order("id"), admin.from("story_texts").select("story_id,created_at,model,attempts,failures,checked,headline,deck,body,how_we_know").in("story_id", ids.slice(i, i + 200))]);
     if (e.error || t.error) throw new Error("to_write_read_failed");
     edits.push(...((e.data ?? []) as unknown as import("./edits").EditRow[]));
-    for (const x of (t.data ?? []) as unknown as (Last & { story_id: string })[]) if ((last.get(x.story_id)?.created_at ?? "") < x.created_at) last.set(x.story_id, x);
+    for (const x of (t.data ?? []) as unknown as (Last & { story_id: string })[]) { tries.set(x.story_id, [...(tries.get(x.story_id) ?? []), x]); if ((last.get(x.story_id)?.created_at ?? "") < x.created_at) last.set(x.story_id, x); }
   }
   const by = new Map<string, import("./edits").EditRow[]>(); for (const e of edits) by.set(e.story_id, [...(by.get(e.story_id) ?? []), e]);
   // N2: a story waiting for review is written first (the desks read its written text), alongside the published ones.
@@ -462,12 +469,16 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   const { foldedIds } = await import("./edits"), folded = foldedIds(shown);
   // Owed: no version since the last correction, the newest one never reached the writer (made while the writer was out of calls), or (E2c)
   // the newest checked version puts a share beside a base it was not counted on (today's check would refuse it).
-  const { followFailures, shareBaseFailures, textOf, writePriority } = await import("./writer"), { openRewrites, requestedFirst } = await import("./rewrite");
+  const { followFailures, shareBaseFailures, textOf, writePriority } = await import("./writer"), { openRewrites, requestedFirst, requestStanding } = await import("./rewrite");
   const published = new Set(shown.filter(x => x.state === "published").map(x => x.id));
-  const requested = new Map([...openRewrites(asks, last)].filter(([k]) => published.has(k) && !folded.has(k)));
+  const open = [...openRewrites(asks, last)].filter(([k]) => published.has(k) && !folded.has(k));
+  // Writer pass · a request that failed its check on two tries since it was made waits behind the normal queue, once a UTC day.
+  const standing = new Map(open.map(([k, at]) => [k, requestStanding(at, tries.get(k) ?? [], Date.now())]));
+  const requested = new Map(open.filter(([k]) => standing.get(k)!.first));
+  const demoted = new Set(open.filter(([k]) => !standing.get(k)!.first).map(([k]) => k)), demotedToday = new Set([...demoted].filter(k => standing.get(k)!.today));
   // N2: the newest checked version leaves out the line a page that followed its homepage added (W1c's promise; No. 85).
   const followMissing = (s: (typeof shown)[number], l: Last) => l.checked && followFailures(textOf(l), { lines: (Array.isArray(s.facts) ? s.facts as { text?: unknown }[] : []).map(f => ({ text: String(f.text ?? ""), basis: null })) }).length > 0;
-  const owed = shown.filter(s => { if (folded.has(s.id)) return false; if (requested.has(s.id)) return true; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)) || (l.checked && shareBaseFailures(textOf(l)).length > 0) || followMissing(s, l); });
+  const owed = shown.filter(s => { if (folded.has(s.id)) return false; if (requested.has(s.id) || demotedToday.has(s.id)) return true; if (demoted.has(s.id)) return false; const l = last.get(s.id); return !l || (s.correctedAt != null && s.correctedAt > l.created_at) || (writerRuns && !triedWriter(l)) || (l.checked && shareBaseFailures(textOf(l)).length > 0) || followMissing(s, l); });
   // E3b: the front page's lead first, then the census pieces, then the rest by the front page's rank. `fresh` (this build's stories)
   // are already among the owed ones and take their place by rank.
   void fresh;
@@ -478,7 +489,7 @@ export async function storiesToWrite(admin: Admin, fresh: string[], limit: numbe
   return requestedFirst(writePriority(owed, { leadId, rank: rankScores(stream), corrected }), requested).slice(0, limit)
     .map(s => ({ id: s.id, type: s.type, headline: s.headline, deck: s.deck, facts: s.facts, sector: s.sector, signal_keys: s.signal_keys, domains: s.domains, source_ids: s.source_ids, basis: s.basis, happened_at: s.happened_at, kicker: s.kicker,
       // V3 · a requested rewrite carries the text shown now, so the writer's check refuses any changed number, date or brand.
-      ...(() => { const l = last.get(s.id); return requested.has(s.id) && l?.checked ? { previous: { headline: l.headline, deck: l.deck, body: l.body ?? [], how_we_know: l.how_we_know } } : {}; })() }));
+      ...(() => { const l = (tries.get(s.id) ?? []).filter(x => x.checked).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]; return (requested.has(s.id) || demoted.has(s.id)) && l ? { previous: { headline: l.headline, deck: l.deck, body: l.body ?? [], how_we_know: l.how_we_know } } : {}; })() }));
 }
 
 /** Builds number stories first published in this many days (older ones were numbered by earlier builds or the backfill). */
@@ -566,10 +577,12 @@ export async function afterJob(job: string, jobStartedAt: number, extra: Pick<Bu
       return qnote;
     }
     const r = await Promise.race([buildStories({ ...build, budgetMs, writeDeadline }), new Promise<null>(res => setTimeout(() => res(null), Math.max(budgetMs, writeDeadline - now) + 2000))]);
-    if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls } : null });
+    if (r) console.info("story build", job, { inserted: r.inserted, published: r.published, held: r.held, texts: r.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls, skipped: r.texts.skipped } : null });
     else console.warn("story build timed out", job);
     const note = r?.skipped === "held" ? `${job} · held: job_hold on stories` : r ? `${job} · ${r.inserted} new, ${r.published} published, ${r.held} held${r.sheets != null ? `, ${r.sheets} sheets` : ""}` : `${job} · timed out after ${Math.round((Date.now() - now) / 1000)} s (${Math.round(budgetMs / 1000)} s left when it started)`;
-    await run.finish(!!r, note, r && !r.timed_out && r.skipped !== "held" ? { print, full: true, why: quick.why } : { why: quick.why });
+    // Writer pass · the writer's counts go in the detail, so a starved writer reads as skipped, not silence.
+    const texts = r?.texts ? { written: r.texts.written, checked: r.texts.checked, calls: r.texts.calls, skipped: r.texts.skipped } : null;
+    await run.finish(!!r, note, r && !r.timed_out && r.skipped !== "held" ? { print, full: true, why: quick.why, texts } : { why: quick.why, texts });
     // E3b: the front page's tape and card pictures come from records this build writes now, not from live reads per visit.
     if (r && r.skipped !== "held") await (await import("../records/refresh.server")).writeFrontRecords(job, jobStartedAt + LIMIT - 5000);
     // N1 · the state history: what this build and its writers stored, recorded as states (at most every five minutes; never fails the job).

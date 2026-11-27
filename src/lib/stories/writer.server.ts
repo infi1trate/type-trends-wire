@@ -47,7 +47,7 @@ export async function writeStories(jobs: WriteJob[], io: WriterIO, known: Known,
       // The text model is the fallback for a writer that failed, not for a writer that ran out of calls.
       if (o.deadline - clock() < WRITER_CALL_MIN_MS || (io.runs(AI_MODELS.writer) && (writerCalls >= perBuild || usedToday + writerCalls >= WRITER_PER_DAY))) { skipped++; continue; }
       const g = retryGuard("writer", parseWritten);
-      const prev = j.story.previous, extra = prev ? (t: WrittenText) => rewriteFactFailures(prev, t, [...j.facts.brands.map(b => b.name), ...(known.names ?? [])]) : undefined;
+      const prev = j.story.previous, extra = prev ? (t: WrittenText) => rewriteFactFailures(prev, t, [...j.facts.brands.map(b => b.name), ...(known.names ?? [])], j.facts) : undefined;
       const r = await writeWithFallback(j.facts, j.template, known, (model, failures) => g.call(io.call(model, j.facts, failures, AbortSignal.timeout(Math.max(1000, o.deadline - clock())))), m => g.open() && canCall(m), extra);
       if (!r.attempts) { skipped++; continue; }
       const t = r.text;

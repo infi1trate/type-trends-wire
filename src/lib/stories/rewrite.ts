@@ -19,3 +19,14 @@ export function requestedFirst<T extends { id: string }>(ordered: readonly T[], 
   const asked = ordered.filter(s => requested.has(s.id)).sort((a, b) => requested.get(a.id)!.localeCompare(requested.get(b.id)!));
   return [...asked, ...ordered.filter(s => !requested.has(s.id))];
 }
+
+/** Writer pass · a request whose rewrite failed its check on this many separate tries since it was made stops jumping the line. */
+export const REQUEST_FIRST_FAILURES = 2;
+/** Where an open request stands: `first` while fewer than two versions since the request failed their check; after that it waits
+ *  behind the normal queue and `today` is false once it was tried this UTC day (at most one try a day). Pure. */
+export function requestStanding(at: string, tries: readonly { created_at: string; checked: boolean }[], now: number): { first: boolean; today: boolean } {
+  const failed = tries.filter(t => t.created_at > at && !t.checked);
+  if (failed.length < REQUEST_FIRST_FAILURES) return { first: true, today: true };
+  const day = new Date(now).toISOString().slice(0, 10);
+  return { first: false, today: !failed.some(t => t.created_at.slice(0, 10) === day) };
+}

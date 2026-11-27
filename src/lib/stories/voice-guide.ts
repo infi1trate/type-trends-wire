@@ -112,15 +112,25 @@ const DAYMON = /\b(\d{1,2})(?:\s+and\s+(\d{1,2}))?\s+(Jan|Feb|Mar|Apr|May|Jun|Ju
 const textAll = (t: { headline: string; deck: string; body?: readonly string[] | null; how_we_know?: string | null }) => [t.headline, t.deck, ...(t.body ?? []), t.how_we_know ?? ""].join("\n");
 const datesOf = (s: string) => new Set([...s.matchAll(DAYMON)].flatMap(m => [m[1]!, ...(m[2] ? [m[2]] : [])].map(d => `${Number(d)} ${m[3]}`)));
 const numsOf = (s: string) => new Set([...s.replace(DAYMON, " ").replace(/\bNo\.\s*\d+/g, " ").matchAll(NUM)].map(m => m[0].replace(/,/g, "")));
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+/** Every day-and-month a fact sheet carries, written ("22 November") or ISO ("2026-11-22"), as "22 Nov". Pure. */
+export function factDates(facts: unknown): Set<string> {
+  if (facts == null) return new Set();
+  const t = typeof facts === "string" ? facts : JSON.stringify(facts), ISO = /\b\d{4}-(\d{2})-(\d{2})(?:T[\d:.]+Z?)?/g, out = datesOf(t.replace(ISO, " "));
+  for (const m of t.matchAll(/\b\d{4}-(\d{2})-(\d{2})/g)) { const mo = MON[Number(m[1]) - 1]; if (mo) out.add(`${Number(m[2])} ${mo}`); }
+  return out;
+}
 /**
  * A rewrite may say fewer things, never different ones: every number and date it writes was in the previous text (a story reference
  * "No. 93" is not a fact of this story), and it names exactly
  * the brands the previous text named (of `brands`, the story's and the library's names). Pure; `standards` refuses on any failure and
  * the story keeps its text.
  */
-export function rewriteFactFailures(prev: Parameters<typeof textAll>[0], next: Parameters<typeof textAll>[0], brands: readonly string[]): string[] {
+export function rewriteFactFailures(prev: Parameters<typeof textAll>[0], next: Parameters<typeof textAll>[0], brands: readonly string[], facts?: unknown): string[] {
   const a = textAll(prev), b = textAll(next), out: string[] = [];
   const pn = numsOf(a), pd = datesOf(a);
+  // Writer pass · a date on the story's own fact sheet may be added (the old text may simply not have said it); numbers and brands stay strict.
+  for (const d of factDates(facts)) pd.add(d);
   for (const n of numsOf(b)) if (!pn.has(n)) out.push(`rewrite changes a number: ${n}`);
   for (const d of datesOf(b)) if (!pd.has(d)) out.push(`rewrite changes a date: ${d}`);
   const named = (t: string) => new Set(brands.filter(x => x && new RegExp(`(?<![\\p{L}\\p{N}])${x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(t)));
