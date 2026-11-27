@@ -16,8 +16,8 @@ async function load(): Promise<FrontTape> {
     if (!data || data.length < 1000) break;
   }
   // I3b: only brands tracked now (an address that turned out to be another business leaves the latest changes).
-  const active = await (await import("../active-sites.server")).panelDomains(); // R2a: panel brands only
-  events.splice(0, events.length, ...events.filter(e => active.has(e.domain)));
+  // R2a: panel brands only; R2c: and only changes seen since the brand joined (panelRowsOnly).
+  events.splice(0, events.length, ...(await (await import("../active-sites.server")).panelRowsOnly(events)));
   const [{ latestChecks }, { reversalIds }] = await Promise.all([import("../integrity.server"), import("../reversal")]);
   const checks = await latestChecks(db, events.map(e => e.id));
   // Marks are read only for the changes behind the lines shown (each line can stand for several sightings).
@@ -34,7 +34,9 @@ async function load(): Promise<FrontTape> {
   // W1b: confirmed icon and card changes (perceptual, two captures each side) as lines in the latest changes with their old and new pictures.
   const assets = await (await import("../asset-changes.server")).confirmedAssetChanges(FRONT_TAPE_DAYS, now).catch(() => []);
   const [{ assetChangeWhat, assetChangeWhen }, { brandName }, { cropSrc }] = await Promise.all([import("../asset-diff"), import("../brand-names"), import("../crops")]);
-  const lines = assets.filter(c => active.has(c.domain)).map(c => ({ name: brandName(c.domain, null), what: assetChangeWhat(c.kind), when: assetChangeWhen(c), marks: [], id: -c.to.id, domain: c.domain, at: c.confirmed_at ?? c.to.last_seen_at,
+  // R2a: panel brands only; R2c: and only picture changes confirmed since the brand joined.
+  const [joined, { sinceJoined }] = await Promise.all([(await import("../active-sites.server")).panelSince(), import("../panel")]);
+  const lines = assets.filter(c => sinceJoined([{ domain: c.domain, detected_at: c.confirmed_at ?? c.to.last_seen_at }], joined).length > 0).map(c => ({ name: brandName(c.domain, null), what: assetChangeWhat(c.kind), when: assetChangeWhen(c), marks: [], id: -c.to.id, domain: c.domain, at: c.confirmed_at ?? c.to.last_seen_at,
     href: `/brands/${encodeURIComponent(c.domain)}`, icon: iconsFor(pics, [c.domain])[c.domain] ?? null,
     pair: { kind: c.kind as "icon" | "card", before: { src: cropSrc(c.from.path), w: c.from.width, h: c.from.height }, after: { src: cropSrc(c.to.path), w: c.to.width, h: c.to.height }, alt: `${brandName(c.domain, null)}'s ${c.kind === "icon" ? "site icon" : "social share image"}, before and after` } }));
   return withAssetLines(tape, lines);

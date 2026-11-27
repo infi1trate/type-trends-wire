@@ -268,8 +268,11 @@ export async function loadInput(o: { days: number; allRuns: boolean; realRunIds:
   for (const r of [alerts, launches, setters]) if (r.error) throw r.error;
   // I3b: changes count only for brands tracked now (an inactive brand is never a story candidate).
   // R2a: and only for panel brands; an onboarding brand's changes are stored but never enter the story queue (first-run noise).
+  // R2c: and only from the moment the brand joined (panel.ts sinceJoined): a panel step must not release a new brand's onboarding
+  // days into the story queue as if they had just happened.
   const sectorOf = new Map(sites.filter(x => x.active && x.panel_since).map(x => [x.domain, x.sector]));
-  const history = historyRows.filter(e => sectorOf.has(e.domain)).map(e => ({ ...e, sector: sectorOf.get(e.domain) ?? null })), events = history.filter(e => e.detected_at >= since);
+  const joinedAt = new Map(sites.filter(x => x.active && x.panel_since).map(x => [x.domain, x.panel_since as string]));
+  const history = (await import("../panel")).sinceJoined(historyRows, joinedAt).map(e => ({ ...e, sector: sectorOf.get(e.domain) ?? null })), events = history.filter(e => e.detected_at >= since);
   // E2e: every live change of the window (both viewports, every page) judged against the stored live captures. A failure fails the
   // build (fail closed: no change reaches a story unchecked).
   const checkEvents = await pages<EventRow & { viewport: string | null }>((f, t) => db.from("library_events").select("id,domain,type,before,after,detected_at,source,page_type,viewport,snapshot_id,prev_snapshot_id").eq("source", "live").gte("detected_at", new Date(now - (o.days + REVERSAL_DAYS) * 864e5).toISOString()).order("id").range(f, t) as never);

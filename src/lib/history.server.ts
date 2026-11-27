@@ -37,6 +37,17 @@ export async function historyRows<T>(db: Db, cols: string, o: { now?: boolean } 
   return out;
 }
 
+/** R2c · when each panel brand joined (domain → panel_since). Readers of changes use it through active-sites.server's panelRowsOnly. */
+export async function panelSinceMap(db: Db): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (let f = 0; ; f += HISTORY_PAGE) {
+    const { data, error } = await db.from("library_sites").select("domain,panel_since").eq("active", true).order("domain").range(f, f + HISTORY_PAGE - 1);
+    if (error) throw error;
+    for (const r of (data ?? []) as { domain: string; panel_since: string | null }[]) if (r.panel_since != null) out.set(r.domain, r.panel_since);
+    if (!data || data.length < HISTORY_PAGE) break;
+  }
+  return out;
+}
 /** R2a · the domains in the panel (active, with panel_since). Shares and trends read only these; brand pages read everything. */
 export async function panelDomainSet(db: Db): Promise<Set<string>> {
   const out = new Set<string>();

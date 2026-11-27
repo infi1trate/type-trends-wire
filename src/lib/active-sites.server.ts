@@ -21,9 +21,16 @@ export const panelDomains = memo(60_000, async (): Promise<ReadonlySet<string>> 
 });
 
 /** R2a-2 · library_event_feed and library_redesigns join library_sites without an active filter: every reader of them keeps panel rows only. */
-export async function panelRowsOnly<T extends { domain?: string | null }>(rows: readonly T[]): Promise<T[]> {
-  const p = await panelDomains();
-  return rows.filter(r => !!r.domain && p.has(r.domain));
+/** R2c · when each panel brand joined (domain → panel_since). */
+export const panelSince = memo(60_000, async (): Promise<ReadonlyMap<string, string>> => {
+  const { panelSinceMap } = await import("./history.server");
+  return panelSinceMap(supabaseAnon());
+});
+/** Rows of panel brands only, and (R2c, panel.ts sinceJoined) for rows that carry `detected_at`, only those seen since the brand
+ *  joined the panel: a change from a brand's onboarding days is never news. */
+export async function panelRowsOnly<T extends { domain?: string | null | undefined; detected_at?: string | null | undefined }>(rows: readonly T[]): Promise<T[]> {
+  const { sinceJoined } = await import("./panel");
+  return sinceJoined(rows, await panelSince());
 }
 
 /** Rows of brands in the library only. Pictures, crops, thumbnails and stored records exist for every brand the crawler reads,

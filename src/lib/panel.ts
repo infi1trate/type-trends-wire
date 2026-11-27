@@ -17,6 +17,22 @@ export const onboarding = (s: PanelSite) => s.onboarding === true;
 export const panelOnly = <T extends PanelSite>(rows: readonly T[]) => rows.filter(inPanel);
 export const panelDomains = (rows: readonly PanelSite[]) => new Set(panelOnly(rows).map(r => r.domain));
 
+/**
+ * R2c · A CHANGE IS NEWS ONLY FROM THE MOMENT ITS BRAND JOINED THE PANEL. What the crawler saw while a brand was onboarding stays on
+ * the brand's own page; it never reaches latest changes, the story queue, the Digest, briefs or RSS. Two reasons: a new brand's
+ * first readings over-report changes (on 27 Nov the 176 onboarding brands had 92 live changes in two days, 49 of them a "new
+ * surface", about twice the panel's rate), and a panel step would otherwise release days of them at once as if they had just
+ * happened. `since` maps each panel brand to its panel_since. A brand not in the map is not in the panel: its rows are dropped.
+ * A row with no date, or a join date that cannot be read, is judged on the brand alone. Pure.
+ */
+export function sinceJoined<T extends { domain?: string | null | undefined; detected_at?: string | null | undefined }>(rows: readonly T[], since: ReadonlyMap<string, string | null>): T[] {
+  return rows.filter(r => {
+    if (!r.domain || !since.has(r.domain)) return false;
+    const joined = Date.parse(since.get(r.domain) ?? ""), seen = r.detected_at ? Date.parse(r.detected_at) : NaN;
+    return !Number.isFinite(joined) || !Number.isFinite(seen) || seen >= joined;
+  });
+}
+
 /** Ready: two live home captures more than 24 h apart, archive back to 2021 Q1 settled, latest capture well read. */
 export function isReady(r: Readiness): boolean {
   const t = r.liveHomeCaptures.map(x => Date.parse(x)).filter(Number.isFinite).sort((a, b) => a - b);

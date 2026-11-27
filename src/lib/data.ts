@@ -12,6 +12,7 @@ let supabase!: SupabaseClient<Database>;
 let loading: Promise<void> | undefined;
 const ready = (): Promise<void> => (supabase ? Promise.resolve() : (loading ??= import("@/integrations/supabase/client").then(m => { supabase = m.supabase; }, e => { loading = undefined; throw e; })));
 import { computeBand, type BandResult, type RankPoint } from "./bands";
+import { sinceJoined } from "./panel";
 import type { Scope } from "./crawl";
 import type { Database } from "@/integrations/supabase/types";
 import { getLibrary, getLibrarySite, getLibraryHistory } from "./library.functions";
@@ -374,8 +375,9 @@ export const todayQuery = () => queryOptions({
     for (const r of [alerts, count, wireLatest, event, crawl]) if (r.error) throw r.error;
     const c = crawl.data?.[0], stats = (c?.stats ?? {}) as Record<string, { ok?: number } | unknown>;
     const sites = Object.values(stats).reduce<number>((n, v) => n + (v && typeof v === "object" && typeof (v as { ok?: unknown }).ok === "number" ? (v as { ok: number }).ok : 0), 0);
-    const cand = event.data ?? [], inPanel = cand.length ? new Set(((await supabase.from("library_sites").select("domain,active,panel_since").in("domain", [...new Set(cand.map(x => x.domain).filter((d): d is string => !!d))]).range(0, 999)).data ?? []).filter(x => x.active === true && x.panel_since).map(x => x.domain)) : new Set<string>();
-    const e = cand.find(x => !!x.domain && inPanel.has(x.domain));
+    const cand = event.data ?? [], inPanel = cand.length ? new Map(((await supabase.from("library_sites").select("domain,active,panel_since").in("domain", [...new Set(cand.map(x => x.domain).filter((d): d is string => !!d))]).range(0, 999)).data ?? []).filter(x => x.active === true && x.panel_since).map(x => [x.domain, x.panel_since as string] as const)) : new Map<string, string>();
+    // R2c · the newest change of a panel brand seen since that brand joined (panel.ts sinceJoined).
+    const e = sinceJoined(cand, inPanel)[0];
     return {
       now,
       runs: { latest: latest ?? null, previous: previous ?? null },
