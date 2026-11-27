@@ -25,6 +25,7 @@ export const resetWriterPassCache = () => { emptyCache = null; };
 
 export async function runWriterPassWith(deps: WriterPassDeps, t0: number, now: () => number = Date.now): Promise<WriterPassResult> {
   const out: WriterPassResult = { ran: false, note: "queue empty", story: null, calls: 0 };
+  let open: { finish: (ok: boolean, note: string, detail?: unknown) => Promise<void> } | null = null;
   try {
     const print = await deps.print();
     if (wp.emptyStillGood(emptyCache, print, now())) return out;
@@ -36,7 +37,7 @@ export async function runWriterPassWith(deps: WriterPassDeps, t0: number, now: (
     const g = await deps.guards(), why = wp.passStandDown(g);
     // A back-off repeats for half an hour: no run row for it (the pass that caused it has one).
     if (why === wp.BACKING_OFF) { out.note = wp.passNote({ skipped: why }); return out; }
-    const run = await deps.start(story.id);
+    const run = await deps.start(story.id); open = run;
     if (why) { out.note = wp.passNote({ skipped: why }); await run.finish(true, out.note); return out; }
     const end = wp.writeEnd(t0);
     if (wp.passCalls(end - now()) === 0) { out.note = wp.passNote({ skipped: "no time left in this pass" }); await run.finish(true, out.note); return out; }
@@ -48,7 +49,11 @@ export async function runWriterPassWith(deps: WriterPassDeps, t0: number, now: (
     out.ran = true; out.calls = r.calls;
     out.note = r.calls ? wp.passNote({ written: r.written, checked: r.checked, calls: r.calls }) : wp.passNote({ skipped: r.skipped ? "the writer skipped it (allowance or time)" : "no call made" });
     await run.finish(true, out.note, { story: story.id, ms: { ...ms, write: now() - tLoad - ms.load }, texts: { written: r.written, checked: r.checked, calls: r.calls, skipped: r.skipped }, failures: r.rows.flatMap(x => x.failures).slice(0, 8) });
-  } catch (e) { out.note = `writer pass · failed: ${e instanceof Error ? e.message.slice(0, 80) : "error"}`; console.error(out.note); }
+  } catch (e) {
+    out.note = `writer pass · failed: ${e instanceof Error ? e.message.slice(0, 80) : "error"}`; console.error(out.note);
+    // A pass that threw after its start row still gets a finish row, so a failure reads as a failure and not as a pass cut off.
+    if (open) await open.finish(false, out.note).catch(() => undefined);
+  }
   return out;
 }
 
@@ -83,7 +88,8 @@ export function writerPassDeps(db: Admin): WriterPassDeps {
       const openWithin = (job: string, ms: number) => rows.some(r => r.job === job && r.phase === "start" && !done.has(r.id) && Date.now() - Date.parse(r.at) < ms);
       const noRoom = rows.find(r => r.job === "writer-pass" && r.phase === "finish" && wp.backsOff(r.note));
       const [held, safe] = await Promise.all([isHeld(db as never, "stories"), safeModeOn().then(x => x.on).catch(() => false)]);
-      return { held, safeMode: safe, buildRunning: openWithin("story-build", runs.BUILD_ONE_AT_A_TIME_MS), passRunning: openWithin("writer-pass", wp.PASS_STALE_MS), lastNoRoomAgoMs: noRoom ? Date.now() - Date.parse(noRoom.at) : null };
+      const cut = wp.cutOffAgoMs(rows.filter(r => r.job === "writer-pass" && r.phase === "start"), done, Date.now());
+      return { held, safeMode: safe, buildRunning: openWithin("story-build", runs.BUILD_ONE_AT_A_TIME_MS), passRunning: openWithin("writer-pass", wp.PASS_STALE_MS), lastNoRoomAgoMs: wp.sooner(noRoom ? Date.now() - Date.parse(noRoom.at) : null, cut) };
     },
     jobs: async stories => {
       const b = await import("./build.server"), { allCandidates } = await import("./candidates"), { confirmedInput } = await import("./editor");

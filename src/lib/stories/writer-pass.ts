@@ -1,11 +1,11 @@
 // Writer pass (health:writer-starved) · THE WRITER'S OWN SHORT PASS (pure). Since T1 the follow-ups pass leaves the story build too little
-// time to start a writer call, so the writer has its own pass: the first story of the writer's queue, written inside the review pass's
-// handler when that pass found nothing waiting. The pass never outlives its host: the review-passes handler runs inline (no waitUntil)
-// and is treated as alive for HOST_MS from its start; calls stop at HOST_MS − STORE_MS so the version and finish rows are stored in time;
-// a call starts only with CALL_MS left before that, so the host never cuts one off mid-flight (an aborted call is charged in full).
+// time to start a writer call, so the writer has its own pass: the first story of the writer's queue, run AFTER the review-passes route
+// has answered, when that review pass found nothing waiting (lib/jobs/review-passes.server.ts; the scheduled caller gives up after five
+// seconds and a pass run before the answer never finished). The pass never outlives its host: the host keeps work handed to it alive
+// for HOST_MS after the answer; calls stop at HOST_MS − STORE_MS so the version and finish rows are stored in time; a call starts only
+// with CALL_MS left before that, and a call still running then is aborted by the pass itself, so the host never cuts one off mid-flight.
 
-/** How long the host handler is treated as alive from its start: the 30 s a cron-called route is given after its answer, the shortest
- *  window any scheduled route here works in (inline review passes have finished at up to 25.4 s; REVIEW_PASS_MS is 40 s). */
+/** How long the host keeps the pass alive, counted from the answer (wire-followups.ts HOST_AFTER_ANSWER_MS; a test ties the two). */
 export const HOST_MS = 30_000;
 /** Kept at the end for the version row and the finish row. */
 export const STORE_MS = 4_000;
@@ -18,7 +18,7 @@ export const NO_ROOM_BACKOFF_MS = 30 * 60_000;
 export const NO_ROOM = "no time for a call after loading";
 /** Finish notes after which passes stand down for NO_ROOM_BACKOFF_MS: each means a pass did the heavy load and wrote nothing, so the
  *  next pass would repeat that load for nothing (the database has been hurt by repeated heavy reads). */
-export const BACKOFF_NOTES = [NO_ROOM, "no fact sheet", "the writer skipped it", "no call made"] as const;
+export const BACKOFF_NOTES = [NO_ROOM, "no fact sheet", "the writer skipped it", "no call made", "writer pass · failed"] as const;
 export const backsOff = (note: string | null | undefined) => BACKOFF_NOTES.some(n => (note ?? "").includes(n));
 export const BACKING_OFF = "the last pass loaded and could not write";
 /** Writer calls left in today's allowance (never below 0; a count that cannot be read leaves none). */
@@ -27,6 +27,14 @@ export const callsLeft = (used: number | null, perDay: number) => (used == null 
 export const PASS_CALLS_MAX = 3;
 /** A writer-pass start row with no finish newer than this blocks the next pass (a pass cannot outlive HOST_MS). */
 export const PASS_STALE_MS = 60_000;
+/** A start row older than PASS_STALE_MS with no finish is a pass that was cut off: it backs the next passes off like a pass that
+ *  loaded and wrote nothing. Returns how long ago the newest such start was, or null. Pure. */
+export function cutOffAgoMs(starts: readonly { id: number; at: string }[], finishedStartIds: ReadonlySet<number | null>, now: number): number | null {
+  const ages = starts.filter(s => !finishedStartIds.has(s.id)).map(s => now - Date.parse(s.at)).filter(a => a >= PASS_STALE_MS);
+  return ages.length ? Math.min(...ages) : null;
+}
+/** The newer of two "how long ago" readings (null = never). */
+export const sooner = (a: number | null, b: number | null) => (a == null ? b : b == null ? a : Math.min(a, b));
 /** An empty queue read is reused for this long while nothing it depends on has moved. */
 export const EMPTY_TTL_MS = 2 * 3600_000;
 

@@ -119,6 +119,15 @@ async function answer(request: Request, env: unknown, ctx: unknown): Promise<Res
           return await handleWireFollowups(request, { waitUntil });
         }
       }
+      // Writer pass · story review's scheduled pass answers here too when the host offers waitUntil, so the story writer's pass runs
+      // after the answer (the caller gives up after five seconds; a pass run before the answer never finished).
+      if (request.method === "POST" && new URL(request.url).pathname === "/api/public/jobs/review-passes") {
+        const waitUntil = hostWaitUntil(request, c);
+        if (waitUntil) {
+          const { handleReviewPasses } = await import("./lib/jobs/review-passes.server");
+          return await handleReviewPasses(request, { waitUntil });
+        }
+      }
       // T1 · DEV ONLY: `?__cold=1` empties every per-instance memo first, so the page is drawn the way a fresh instance draws it.
       if (import.meta.env.DEV && request.method === "GET" && new URL(request.url).searchParams.get("__cold") === "1") (await import("./lib/memo")).clearAllMemosForDev();
       // P1/I1: public Read pages are the same for every visitor; serve a copy drawn in the last five minutes when there is one.
