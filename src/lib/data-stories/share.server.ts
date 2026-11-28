@@ -1,3 +1,4 @@
+import { entryOf, withheld } from "./registry";
 // Share image (/data/<slug>.png) and one-step embed (/data/embed/<slug>?step=) for live studies. Both stay behind the site gate
 // while DATA_STORIES_PUBLIC is false; neither is listed in OPEN_PATHS, and the embed keeps the site's default framing rules until launch.
 import { createElement } from "react";
@@ -13,6 +14,7 @@ const preparing = () => new Response("This study is being prepared; back in a fe
 export async function dataStoryImage(param: string) {
   const m = /^([a-z0-9-]{1,80})(?:\.(png|svg))?$/.exec(param);
   if (!m) return nf();
+  const held = entryOf(m[1]!); if (!held || withheld(held)) return nf();
   const page = await loadDataStory(m[1]!).catch(() => null);
   if (page?.kind === "preparing") return preparing();
   if (!page || page.kind !== "live") return nf();
@@ -20,6 +22,8 @@ export async function dataStoryImage(param: string) {
   return respond(dataStoryOgScene({ ...page.story, headline: page.story.text.headline }), (m[2] as "png" | "svg" | undefined) ?? "png", `Study No. ${page.story.number}: ${page.story.text.headline} ${page.story.key.n} ${page.story.key.label}`);
 }
 export async function dataStoryEmbed(slug: string, rawStep: string | null) {
+  const held = entryOf(slug);
+  if (!held || withheld(held)) return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex" } });
   const page = await loadDataStory(slug).catch(() => null);
   if (page?.kind === "preparing") return preparing();
   if (!page || page.kind !== "live") return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex" } });

@@ -12,7 +12,7 @@ export type KeyStore = {
 };
 export type Caller = { kind: "anon" } | { kind: "key"; id: string; rate: number } | { kind: "denied" };
 
-/** Resolve the caller from the Authorization header. Lookup is by SHA-256 (never the key); results cached ~30 s. */
+/** Resolve the caller from the Authorization header. Lookup is by SHA-256 (never the key); only denied results are cached (~30 s), so a revoked key stops working on its next request. */
 export function createKeyResolver(store: () => Promise<KeyStore>, ttlMs = 30000) {
   const cache = new Map<string, { at: number; v: Caller }>();
   return async (header: string | null, now = Date.now()): Promise<Caller> => {
@@ -20,11 +20,10 @@ export function createKeyResolver(store: () => Promise<KeyStore>, ttlMs = 30000)
     if (a.kind === "none") return { kind: "anon" };
     if (a.kind === "invalid") return { kind: "denied" };
     const hash = await keyHash(a.key), hit = cache.get(hash);
-    if (hit && now - hit.at < ttlMs) return hit.v;
+    if (hit && now - hit.at < ttlMs && hit.v.kind === "denied") return hit.v;
     const row = await (await store()).byHash(hash);
     const v: Caller = row && !row.revoked_at && safeEqual(row.key_sha256, hash) ? { kind: "key", id: row.id, rate: row.rate_per_min } : { kind: "denied" };
-    if (cache.size >= 1000) cache.clear();
-    cache.set(hash, { at: now, v });
+    if (v.kind === "denied") { if (cache.size >= 1000) cache.clear(); cache.set(hash, { at: now, v }); } else cache.delete(hash);
     return v;
   };
 }
